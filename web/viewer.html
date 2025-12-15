@@ -83,13 +83,13 @@ See https://github.com/adobe-type-tools/cmap-resources
           "web-pdf_layer_viewer": "./pdf_layer_viewer.js",
           "web-pdf_outline_viewer": "./pdf_outline_viewer.js",
           "web-pdf_presentation_mode": "./pdf_presentation_mode.js",
-          "web-pdf_sidebar": "./pdf_sidebar.js",
           "web-pdf_thumbnail_viewer": "./pdf_thumbnail_viewer.js",
           "web-preferences": "./genericcom.js",
           "web-print_service": "./pdf_print_service.js",
           "web-secondary_toolbar": "./secondary_toolbar.js",
           "web-signature_manager": "./signature_manager.js",
-          "web-toolbar": "./toolbar.js"
+          "web-toolbar": "./toolbar.js",
+          "web-views_manager": "./views_manager.js"
         }
       }
     </script>
@@ -101,105 +101,186 @@ See https://github.com/adobe-type-tools/cmap-resources
     <div id="outerContainer">
       <span id="viewer-alert" class="visuallyHidden" role="alert"></span>
 
-      <div id="sidebarContainer">
-        <div id="toolbarSidebar" class="toolbarHorizontalGroup">
-          <div id="toolbarSidebarLeft">
-            <div id="sidebarViewButtons" class="toolbarHorizontalGroup toggled" role="radiogroup">
-              <button
-                id="viewThumbnail"
-                class="toolbarButton toggled"
-                type="button"
-                tabindex="0"
-                data-l10n-id="pdfjs-thumbs-button"
-                role="radio"
-                aria-checked="true"
-                aria-controls="thumbnailView"
-              >
-                <span data-l10n-id="pdfjs-thumbs-button-label"></span>
-              </button>
-              <button
-                id="viewOutline"
-                class="toolbarButton"
-                type="button"
-                tabindex="0"
-                data-l10n-id="pdfjs-document-outline-button"
-                role="radio"
-                aria-checked="false"
-                aria-controls="outlineView"
-              >
-                <span data-l10n-id="pdfjs-document-outline-button-label"></span>
-              </button>
-              <button
-                id="viewAttachments"
-                class="toolbarButton"
-                type="button"
-                tabindex="0"
-                data-l10n-id="pdfjs-attachments-button"
-                role="radio"
-                aria-checked="false"
-                aria-controls="attachmentsView"
-              >
-                <span data-l10n-id="pdfjs-attachments-button-label"></span>
-              </button>
-              <button
-                id="viewLayers"
-                class="toolbarButton"
-                type="button"
-                tabindex="0"
-                data-l10n-id="pdfjs-layers-button"
-                role="radio"
-                aria-checked="false"
-                aria-controls="layersView"
-              >
-                <span data-l10n-id="pdfjs-layers-button-label"></span>
-              </button>
-            </div>
-          </div>
-
-          <div id="toolbarSidebarRight">
-            <div id="outlineOptionsContainer" class="toolbarHorizontalGroup">
-              <div class="verticalToolbarSeparator"></div>
-
-              <button
-                id="currentOutlineItem"
-                class="toolbarButton"
-                type="button"
-                disabled="disabled"
-                tabindex="0"
-                data-l10n-id="pdfjs-current-outline-item-button"
-              >
-                <span data-l10n-id="pdfjs-current-outline-item-button-label"></span>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div id="sidebarContent">
-          <div id="thumbnailView"></div>
-          <div id="outlineView" class="treeView hidden"></div>
-          <div id="attachmentsView" class="hidden"></div>
-          <div id="layersView" class="treeView hidden"></div>
-        </div>
-        <div id="sidebarResizer"></div>
-      </div>
-      <!-- sidebarContainer -->
-
       <div id="mainContainer">
         <div class="toolbar">
           <div id="toolbarContainer">
             <div id="toolbarViewer" class="toolbarHorizontalGroup">
               <div id="toolbarViewerLeft" class="toolbarHorizontalGroup">
                 <button
-                  id="sidebarToggleButton"
+                  id="viewsManagerToggleButton"
                   class="toolbarButton"
                   type="button"
                   tabindex="0"
-                  data-l10n-id="pdfjs-toggle-sidebar-button"
+                  data-l10n-id="pdfjs-toggle-views-manager-button"
                   aria-expanded="false"
                   aria-haspopup="true"
-                  aria-controls="sidebarContainer"
+                  aria-controls="viewsManager"
                 >
-                  <span data-l10n-id="pdfjs-toggle-sidebar-button-label"></span>
+                  <span data-l10n-id="pdfjs-toggle-views-manager-button-label"></span>
                 </button>
+                <div
+                  id="viewsManager"
+                  class="menuContainer sidebar"
+                  hidden="true"
+                  role="dialog"
+                  aria-describedby="viewsManagerHeaderLabel"
+                  data-l10n-id="pdfjs-views-manager-sidebar"
+                >
+                  <div id="viewsManagerHeader" role="heading" aria-level="2">
+                    <div id="viewsManagerTitle">
+                      <div id="viewsManagerSelector">
+                        <button
+                          class="toolbarButton viewsManagerButton"
+                          type="button"
+                          id="viewsManagerSelectorButton"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-views-manager-view-selector-button"
+                          aria-expanded="false"
+                          aria-haspopup="listbox"
+                          aria-controls="viewsManagerSelectorOptions"
+                        >
+                          <span data-l10n-id="pdfjs-views-manager-view-selector-button-label"></span>
+                        </button>
+                        <menu id="viewsManagerSelectorOptions" role="listbox" class="popupMenu hidden withMark">
+                          <li>
+                            <button id="thumbnailsViewMenu" role="option" type="button" tabindex="-1">
+                              <span data-l10n-id="pdfjs-views-manager-pages-option-label"></span>
+                            </button>
+                          </li>
+                          <li>
+                            <button id="outlinesViewMenu" role="option" type="button" tabindex="-1">
+                              <span data-l10n-id="pdfjs-views-manager-outlines-option-label"></span>
+                            </button>
+                          </li>
+                          <li>
+                            <button id="attachmentsViewMenu" role="option" type="button" tabindex="-1">
+                              <span data-l10n-id="pdfjs-views-manager-attachments-option-label"></span>
+                            </button>
+                          </li>
+                          <li>
+                            <button id="layersViewMenu" role="option" type="button" tabindex="-1">
+                              <span data-l10n-id="pdfjs-views-manager-layers-option-label"></span>
+                            </button>
+                          </li>
+                        </menu>
+                      </div>
+                      <span id="viewsManagerHeaderLabel" class="viewsManagerLabel"></span>
+                      <button
+                        id="viewsManagerAddFileButton"
+                        class="toolbarButton viewsManagerButton"
+                        type="button"
+                        tabindex="0"
+                        data-l10n-id="pdfjs-views-manager-add-file-button"
+                        hidden="true"
+                      >
+                        <span data-l10n-id="pdfjs-views-manager-add-file-button-label"></span>
+                      </button>
+                      <button
+                        id="viewsManagerCurrentOutlineButton"
+                        class="toolbarButton viewsManagerButton"
+                        type="button"
+                        tabindex="0"
+                        data-l10n-id="pdfjs-current-outline-item-button"
+                        hidden="true"
+                      >
+                        <span data-l10n-id="pdfjs-current-outline-item-button-label"></span>
+                      </button>
+                    </div>
+                    <div id="viewsManagerStatus">
+                      <div id="viewsManagerStatusAction" class="hidden">
+                        <span
+                          id="viewsManagerStatusActionLabel"
+                          class="viewsManagerStatusLabel"
+                          data-l10n-id="pdfjs-views-manager-pages-status-none-action-label"
+                        ></span>
+                        <div id="actionSelector">
+                          <button
+                            id="viewsManagerStatusActionButton"
+                            class="viewsManagerButton"
+                            type="button"
+                            tabindex="0"
+                            aria-haspopup="menu"
+                            aria-controls="viewsManagerStatusActionOptions"
+                          >
+                            <span data-l10n-id="pdfjs-views-manager-pages-status-action-button-label"></span>
+                          </button>
+                          <menu id="viewsManagerStatusActionOptions" class="popupMenu hidden">
+                            <li>
+                              <button id="viewsManagerStatusActionCopy" class="noIcon" role="menuitem" type="button" tabindex="0">
+                                <span data-l10n-id="pdfjs-views-manager-pages-status-copy-button-label"></span>
+                              </button>
+                            </li>
+                            <li>
+                              <button id="viewsManagerStatusActionCut" class="noIcon" role="menuitem" type="button" tabindex="0">
+                                <span data-l10n-id="pdfjs-views-manager-pages-status-cut-button-label"></span>
+                              </button>
+                            </li>
+                            <li>
+                              <button id="viewsManagerStatusActionDelete" class="noIcon" role="menuitem" type="button" tabindex="0">
+                                <span data-l10n-id="pdfjs-views-manager-pages-status-delete-button-label"></span>
+                              </button>
+                            </li>
+                            <li>
+                              <button id="viewsManagerStatusActionSaveAs" class="noIcon" role="menuitem" type="button" tabindex="0">
+                                <span data-l10n-id="pdfjs-views-manager-pages-status-save-as-button-label"></span>
+                              </button>
+                            </li>
+                          </menu>
+                        </div>
+                      </div>
+                      <div id="viewsManagerStatusUndo" class="hidden">
+                        <span class="viewsManagerStatusLabel" data-l10n-id="pdfjs-views-manager-status-undo-cut-label" data-l10n-args='{"count": 0}'></span>
+                        <div>
+                          <button id="viewsManagerStatusUndoButton" class="viewsManagerButton" type="button" tabindex="0">
+                            <span data-l10n-id="pdfjs-views-manager-status-undo-button-label"></span>
+                          </button>
+                          <button
+                            id="viewsManagerStatusUndoCloseButton"
+                            class="toolbarButton viewsManagerButton viewsCloseButton"
+                            type="button"
+                            tabindex="0"
+                            data-l10n-id="pdfjs-views-manager-status-close-button"
+                          >
+                            <span data-l10n-id="pdfjs-views-manager-status-close-button-label"></span>
+                          </button>
+                        </div>
+                      </div>
+                      <div id="viewsManagerStatusWarning" class="hidden">
+                        <span class="viewsManagerStatusLabel"></span>
+                        <button
+                          id="viewsManagerStatusWarningCloseButton"
+                          class="toolbarButton viewsManagerButton viewsCloseButton"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-views-manager-status-close-button"
+                        >
+                          <span data-l10n-id="pdfjs-views-manager-status-close-button-label"></span>
+                        </button>
+                      </div>
+                      <div id="viewsManagerStatusWaiting" class="hidden">
+                        <span class="viewsManagerStatusLabel"></span>
+                        <button
+                          id="viewsManagerStatusWaitingCloseButton"
+                          class="toolbarButton viewsManagerButton viewsCloseButton"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-views-manager-status-close-button"
+                        >
+                          <span data-l10n-id="pdfjs-views-manager-status-close-button-label"></span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div id="viewsManagerContent" tabindex="-1">
+                    <div id="thumbnailsView" class="thumbnailsView hidden" tabindex="-1"></div>
+                    <div id="outlinesView" class="treeView hidden"></div>
+                    <div id="attachmentsView" class="hidden"></div>
+                    <div id="layersView" class="treeView hidden"></div>
+                  </div>
+                  <div id="viewsManagerResizer" class="sidebarResizer"></div>
+                </div>
+                <!-- sidebarContainer -->
+
                 <div class="toolbarButtonSpacer"></div>
                 <div class="toolbarButtonWithContainer">
                   <button

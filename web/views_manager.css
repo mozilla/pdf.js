@@ -1,0 +1,623 @@
+/* Copyright 2025 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#outerContainer {
+  &.viewsManagerMoving {
+    #viewsManager {
+      visibility: visible;
+    }
+  }
+
+  &.viewsManagerOpen {
+    #viewsManager {
+      visibility: visible;
+      inset-inline-start: 1px;
+    }
+
+    #viewerContainer:not(.pdfPresentationMode) {
+      inset-inline-start: var(--viewsManager-width, 0);
+      transition-property: inset-inline-start;
+    }
+  }
+
+  &.viewsManagerResizing :is(#sidebarContainer, #viewerContainer, #loadingBar) {
+    /* Improve responsiveness and avoid visual glitches when the sidebar is resized. */
+    transition-duration: 0s;
+  }
+}
+
+#viewsManager {
+  --views-manager-button-icon: url(images/pages_viewButton.svg);
+  --views-manager-button-arrow-icon: url(images/pages_viewArrow.svg);
+  --views-manager-add-file-button-icon: url(images/toolbarButton-zoomIn.svg);
+  --current-outline-button-icon: url(images/toolbarButton-currentOutlineItem.svg);
+  --menuitem-thumbnailsView-icon: url(images/pages_viewButton.svg);
+  --menuitem-outlinesView-icon: url(images/toolbarButton-viewOutline.svg);
+  --menuitem-attachmentsView-icon: url(images/toolbarButton-viewAttachments.svg);
+  --menuitem-layersView-icon: url(images/toolbarButton-viewLayers.svg);
+  --manage-button-icon: url(images/toolbarButton-pageDown.svg);
+  --close-button-icon: url(images/pages_closeButton.svg);
+  --undo-label-icon: url(images/altText_done.svg);
+  --pages-selected-icon: url(images/pages_selected.svg);
+  --spinner-icon: url(images/altText_spinner.svg);
+
+  --sidebar-bg-color: light-dark(rgb(255 255 255 / 0.92), rgb(35 34 43 / 0.92));
+  --sidebar-backdrop-filter: blur(7px);
+  --sidebar-width: 230px;
+  --sidebar-min-width: min-content;
+  --sidebar-max-width: 50vw;
+
+  --text-color: light-dark(#15141a, #fbfbfe);
+  --button-fg: var(--text-color);
+  --button-no-bg: transparent;
+  --button-bg: light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07));
+  --button-border-color: transparent;
+  --button-hover-bg: light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14));
+  --button-hover-fg: var(--text-color);
+  --button-hover-border-color: var(--button-border-color);
+  --button-active-bg: light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21));
+  --button-active-fg: var(--text-color);
+  --button-active-border-color: var(--button-border-color);
+  --button-focus-no-bg: color-mix(in srgb, var(--text-color), transparent 93%);
+  --button-focus-outline-color: light-dark(#0062fa, #00cadb);
+  --button-focus-border-color: light-dark(white, black);
+  --status-border-color: transparent;
+  --status-actions-bg: light-dark(
+    rgb(21 20 26 / 0.03),
+    rgb(251 251 254 / 0.03)
+  );
+  --status-undo-bg: light-dark(rgb(0 98 250 / 0.08), rgb(0 202 219 / 0.08));
+  --status-waiting-bg: var(--status-undo-bg);
+  --indicator-color: light-dark(#0062fa, #00cadb);
+  --status-warning-bg: light-dark(#ffe8ea, #6e001f);
+  --indicator-warning-color: light-dark(#b20037, #ffa0aa);
+  --header-shadow:
+    0 0.25px 0.75px -0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+    0 2px 6px -6px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-outline: none;
+  --image-border-width: 4px;
+  --image-border-color: light-dark(#cfcfd8, #3a3944);
+  --image-hover-border-color: light-dark(#cfcfd8, #3a3944);
+  --image-current-border-color: var(--button-focus-outline-color);
+  --image-current-focused-outline-color: var(--image-hover-border-color);
+  --image-page-number-bg: light-dark(#f0f0f4, #23222b);
+  --image-page-number-fg: var(--text-color);
+  --image-shadow:
+    0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+    0 0 0 1px var(--image-border-color),
+    0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-hover-shadow:
+    0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+    0 0 0 var(--image-border-width) var(--image-hover-border-color),
+    0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-current-shadow:
+    0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+    0 0 0 var(--image-border-width) var(--image-current-border-color),
+    0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+
+  @media screen and (forced-colors: active) {
+    --text-color: CanvasText;
+    --button-fg: ButtonText;
+    --button-bg: ButtonFace;
+    --button-no-bg: ButtonFace;
+    --button-border-color: ButtonText;
+    --button-hover-bg: SelectedItemText;
+    --button-hover-fg: SelectedItem;
+    --button-hover-border-color: SelectedItem;
+    --button-active-bg: SelectedItemText;
+    --button-active-fg: SelectedItem;
+    --button-active-border-color: ButtonText;
+    --button-focus-no-bg: ButtonFace;
+    --button-focus-outline-color: CanvasText;
+    --button-focus-border-color: none;
+    --status-border-color: CanvasText;
+    --status-undo-bg: none;
+    --indicator-color: CanvasText;
+    --status-warning-bg: none;
+    --indicator-warning-color: CanvasText;
+    --header-shadow: none;
+    --image-shadow: 0 0 0 1px CanvasText;
+    --image-outline: 1px solid CanvasText;
+    --image-border-color: CanvasText;
+    --image-hover-border-color: SelectedItem;
+    --image-current-border-color: ButtonBorder;
+    --image-current-focused-outline-color: var(--image-hover-border-color);
+    --image-page-number-bg: ButtonFace;
+    --image-page-number-fg: CanvasText;
+  }
+
+  display: flex;
+  padding-bottom: 16px;
+  flex-direction: column;
+  align-items: flex-start;
+  height: calc(
+    var(--viewer-container-height) - var(--toolbar-height) -
+      var(--doorhanger-height)
+  );
+  position: absolute;
+
+  inset-inline-start: calc(
+    -1 * var(--viewsManager-width, --sidebar-width) - 1px
+  );
+  transition-property: inset-inline-start;
+  transition-duration: var(--sidebar-transition-duration);
+  transition-timing-function: var(--sidebar-transition-timing-function);
+
+  .sidebarResizer {
+    inset-inline-start: 100%;
+  }
+
+  .viewsManagerButton {
+    width: auto;
+    color: var(--button-fg);
+    border-radius: 8px;
+    border: 1px solid var(--button-border-color);
+    background: var(--button-bg);
+
+    &:hover {
+      background-color: var(--button-hover-bg) !important;
+      color: var(--button-hover-fg) !important;
+      border-color: var(--button-hover-border-color) !important;
+
+      &::before {
+        background-color: var(--button-hover-fg) !important;
+      }
+    }
+    &:active {
+      background: var(--button-active-bg) !important;
+      color: var(--button-active-fg) !important;
+      border-color: var(--button-active-border-color) !important;
+
+      &::before {
+        background-color: var(--button-active-fg) !important;
+      }
+    }
+    &:focus-visible {
+      outline: 2px solid var(--button-focus-outline-color);
+      outline-offset: 2px;
+      border-color: var(--button-focus-border-color);
+    }
+
+    &.viewsCloseButton {
+      width: 32px;
+      height: 32px;
+      padding: 4px;
+      border-radius: 8px;
+
+      &::before {
+        mask-image: var(--close-button-icon);
+      }
+    }
+  }
+
+  #viewsManagerHeader {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    align-self: stretch;
+    width: 100%;
+    box-shadow: var(--header-shadow);
+    flex: 0 0 auto;
+
+    .viewsManagerLabel {
+      flex: 1 0 0;
+      color: var(--text-color);
+      text-align: center;
+      height: fit-content;
+      user-select: none;
+
+      font: menu;
+      font-size: 15px;
+      font-style: normal;
+      font-weight: 400;
+      line-height: normal;
+    }
+
+    #viewsManagerTitle {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      align-self: stretch;
+      justify-content: space-between;
+      width: auto;
+      padding: 12px 16px 12px 8px;
+
+      #viewsManagerSelector {
+        width: 48px;
+        height: 32px;
+        display: block;
+
+        > button {
+          background: var(--button-no-bg);
+          width: 100%;
+          height: 100%;
+
+          &:focus-visible {
+            background-color: var(--button-focus-no-bg);
+          }
+
+          &::before {
+            mask-repeat: no-repeat;
+            mask-image: var(--views-manager-button-icon);
+            background-color: var(--button-fg);
+
+            &:hover {
+              background-color: var(--button-hover-fg) !important;
+            }
+            &:active {
+              background-color: var(--button-active-fg) !important;
+            }
+          }
+
+          &::after {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-left: 8px;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-image: var(--views-manager-button-arrow-icon);
+            background-color: var(--button-fg);
+
+            &:hover {
+              background-color: var(--button-hover-fg) !important;
+            }
+            &:active {
+              background-color: var(--button-active-fg) !important;
+            }
+          }
+        }
+
+        > .popupMenu {
+          min-width: 182px;
+          z-index: 1;
+
+          > li > button {
+            &#thumbnailsViewMenu::before {
+              mask-image: var(--menuitem-thumbnailsView-icon);
+            }
+            &#outlinesViewMenu::before {
+              mask-image: var(--menuitem-outlinesView-icon);
+            }
+            &#attachmentsViewMenu::before {
+              mask-image: var(--menuitem-attachmentsView-icon);
+            }
+            &#layersViewMenu::before {
+              mask-image: var(--menuitem-layersView-icon);
+            }
+          }
+        }
+      }
+
+      #viewsManagerAddFileButton {
+        background: var(--button-no-bg);
+        width: 32px;
+        height: 32px;
+
+        &:focus-visible {
+          background-color: var(--button-focus-no-bg);
+        }
+
+        &::before {
+          mask-repeat: no-repeat;
+          mask-image: var(--views-manager-add-file-button-icon);
+        }
+      }
+
+      #viewsManagerCurrentOutlineButton {
+        background: var(--button-no-bg);
+        width: 32px;
+        height: 32px;
+
+        &:focus-visible {
+          background-color: var(--button-focus-no-bg);
+        }
+
+        &::before {
+          mask-repeat: no-repeat;
+          mask-image: var(--current-outline-button-icon);
+        }
+      }
+    }
+
+    #viewsManagerStatus {
+      display: flex;
+      align-items: center;
+      align-self: stretch;
+      justify-content: space-between;
+      width: auto;
+      border: 1px solid var(--status-border-color);
+
+      > div {
+        min-height: 64px;
+        width: 100%;
+        padding-inline: 16px;
+      }
+
+      .viewsManagerStatusLabel {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        font: menu;
+        font-size: 13px;
+      }
+
+      #viewsManagerStatusAction {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        align-self: stretch;
+        background-color: var(--status-actions-bg);
+
+        > span.selected::before {
+          content: "";
+          display: inline-block;
+          width: var(--icon-size);
+          height: var(--icon-size);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          background-color: var(--indicator-color);
+          mask-image: var(--pages-selected-icon);
+        }
+
+        #actionSelector {
+          height: 32px;
+          width: auto;
+          display: block;
+
+          #viewsManagerStatusActionButton {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            padding: 4px 16px;
+
+            &::after {
+              content: "";
+              display: inline-block;
+              width: var(--icon-size);
+              height: var(--icon-size);
+              mask-repeat: no-repeat;
+              mask-position: center;
+              mask-image: var(--manage-button-icon);
+              background-color: var(--button-fg);
+
+              &:hover {
+                background-color: var(--button-hover-fg) !important;
+              }
+              &:active {
+                background-color: var(--button-active-fg) !important;
+              }
+            }
+          }
+
+          > .contextMenu {
+            min-width: 115px;
+          }
+        }
+      }
+
+      #viewsManagerStatusUndo {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        align-self: stretch;
+        background-color: var(--status-undo-bg);
+
+        > span::before {
+          content: "";
+          display: inline-block;
+          width: var(--icon-size);
+          height: var(--icon-size);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          mask-image: var(--undo-label-icon);
+          background-color: var(--indicator-color);
+        }
+
+        > div {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: auto;
+
+          #viewsManagerStatusUndoButton {
+            width: auto;
+            min-height: 24px;
+            padding: 4px 8px;
+          }
+        }
+      }
+
+      #viewsManagerStatusWarning {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--status-warning-bg);
+
+        > span {
+          align-items: flex-start;
+
+          &::before {
+            content: "";
+            display: inline-block;
+            width: var(--icon-size);
+            height: var(--icon-size);
+            mask-repeat: no-repeat;
+            mask-position: center;
+            background-color: var(--indicator-warning-color);
+            mask-image: var(--undo-label-icon);
+            flex: 0 0 auto;
+          }
+        }
+      }
+
+      #viewsManagerStatusWaiting {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: var(--status-waiting-bg);
+
+        > span::before {
+          content: "";
+          display: inline-block;
+          width: var(--icon-size);
+          height: var(--icon-size);
+          mask-repeat: no-repeat;
+          mask-position: center;
+          background-color: var(--indicator-color);
+          mask-image: var(--spinner-icon);
+          flex: 0 0 auto;
+        }
+      }
+    }
+  }
+
+  #viewsManagerContent {
+    width: 100%;
+    flex: 1 1 0%;
+    overflow: auto;
+
+    #thumbnailsView {
+      --thumbnail-width: 126px;
+
+      display: flex;
+      flex-flow: row wrap;
+      align-items: center;
+      justify-content: space-evenly;
+      padding: 20px 32px;
+      gap: 16px;
+      width: 100%;
+      box-sizing: border-box;
+
+      > .thumbnail {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        gap: 16px;
+        width: auto;
+        height: auto;
+        position: relative;
+        scroll-margin-top: 20px;
+
+        > input {
+          display: none;
+        }
+
+        &::after {
+          content: attr(page-number);
+          border-radius: 8px;
+          background-color: var(--image-page-number-bg);
+          color: var(--image-page-number-fg);
+          position: absolute;
+          bottom: 5px;
+          right: calc(var(--thumbnail-width) / 2);
+          min-width: 32px;
+          height: 16px;
+          text-align: center;
+          translate: 50%;
+
+          font: menu;
+          font-size: 13px;
+          font-style: normal;
+          font-weight: 400;
+          line-height: normal;
+          pointer-events: none;
+        }
+
+        > .thumbnailImage {
+          width: var(--thumbnail-width);
+          border: none;
+          border-radius: 8px;
+          box-shadow: var(--image-shadow);
+          box-sizing: content-box;
+          outline: var(--image-outline);
+
+          &.missingThumbnailImage {
+            content-visibility: hidden;
+          }
+
+          &:hover {
+            cursor: pointer;
+            box-shadow: var(--image-hover-shadow);
+          }
+
+          &:focus-visible {
+            &:not([aria-current="page"]) {
+              box-shadow: var(--image-hover-shadow);
+              outline: none;
+            }
+
+            &[aria-current="page"] {
+              outline: var(--image-border-width) solid
+                var(--image-current-focused-outline-color);
+              outline-offset: var(--image-border-width);
+            }
+          }
+
+          &[aria-current="page"] {
+            box-shadow: var(--image-current-shadow);
+          }
+        }
+      }
+    }
+
+    #attachmentsView {
+      --attachment-color: light-dark(rgb(0 0 0 / 0.8), rgb(255 255 255 / 0.8));
+      --attachment-bg-color: light-dark(
+        rgb(0 0 0 / 0.15),
+        rgb(255 255 255 / 0.15)
+      );
+      --attachment-hover-color: light-dark(
+        rgb(0 0 0 / 0.9),
+        rgb(255 255 255 / 0.9)
+      );
+
+      > ul {
+        list-style-type: none;
+        padding: 0;
+
+        > li > a {
+          text-decoration: none;
+          display: inline-block;
+          /* Subtract the right padding (left, in RTL mode) of the container: */
+          min-width: calc(100% - 4px);
+          height: auto;
+          margin-bottom: 1px;
+          padding: 2px 0 5px;
+          padding-inline-start: 4px;
+          border-radius: 2px;
+          color: var(--attachment-color);
+          font-size: 13px;
+          line-height: 15px;
+          user-select: none;
+          white-space: normal;
+          cursor: pointer;
+
+          &:hover {
+            background-color: var(--attachment-bg-color);
+            background-clip: padding-box;
+            border-radius: 2px;
+            color: var(--attachment-hover-color);
+          }
+        }
+      }
+    }
+  }
+}
