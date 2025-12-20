@@ -52,7 +52,8 @@ pdfjs-download-button =
 
 # Used in Firefox for Android as a label for the download button (“download” is a verb).
 # Length of the translation matters since we are in a mobile context, with limited screen estate.
-pdfjs-download-button-label = Download
+pdfjs-download-button =
+  .aria-label = Download PDF
 
 pdfjs-bookmark-button =
     .title = Current Page (View URL from Current Page)
