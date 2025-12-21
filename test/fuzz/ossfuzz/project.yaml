@@ -1,0 +1,13 @@
+homepage: "https://github.com/nicktao1997/pdfjs"
+language: javascript
+primary_contact: "nicktao1997@mozilla.com"
+main_repo: "https://github.com/nicktao1997/pdfjs"
+vendor_ccs:
+  - nicktao.dev@gmail.com
+fuzzing_engines:
+  - libfuzzer
+  - afl
+  - honggfuzz
+sanitizers:
+  - address
+  - undefined

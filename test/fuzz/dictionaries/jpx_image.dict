@@ -1,0 +1,84 @@
+# JPEG2000 (JP2/JPX) format dictionary
+# JP2 signature
+"\x00\x00\x00\x0c\x6a\x50\x20\x20\x0d\x0a\x87\x0a"
+
+# File type box
+"ftyp"
+"jp2 "
+"jpx "
+"jpxb"
+
+# JP2 header box
+"jp2h"
+
+# Image header box
+"ihdr"
+
+# Color specification box
+"colr"
+
+# Contiguous codestream box
+"jp2c"
+
+# SOC (Start of codestream)
+"\xff\x4f"
+
+# SIZ (Image and tile size)
+"\xff\x51"
+
+# COD (Coding style default)
+"\xff\x52"
+
+# COC (Coding style component)
+"\xff\x53"
+
+# QCD (Quantization default)
+"\xff\x5c"
+
+# QCC (Quantization component)
+"\xff\x5d"
+
+# RGN (Region of interest)
+"\xff\x5e"
+
+# POC (Progression order change)
+"\xff\x5f"
+
+# SOT (Start of tile)
+"\xff\x90"
+
+# SOP (Start of packet)
+"\xff\x91"
+
+# EPH (End of packet header)
+"\xff\x92"
+
+# SOD (Start of data)
+"\xff\x93"
+
+# EOC (End of codestream)
+"\xff\xd9"
+
+# TLM (Tile-part length)
+"\xff\x55"
+
+# PLM/PLT (Packet length)
+"\xff\x57"
+"\xff\x58"
+
+# PPM/PPT (Packed packet headers)
+"\xff\x60"
+"\xff\x61"
+
+# CRG (Component registration)
+"\xff\x63"
+
+# COM (Comment)
+"\xff\x64"
+
+# Common box sizes
+"\x00\x00\x00\x00"
+"\x00\x00\x00\x08"
+"\x00\x00\x00\x10"
+"\x00\x00\x00\x14"
+"\x00\x00\x00\x16"

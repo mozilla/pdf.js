@@ -1,0 +1,51 @@
+# CCITT Fax format dictionary
+# EOL marker (End of Line)
+"\x00\x01"
+"\x80\x00"
+
+# White run codes
+"\x35"
+"\x07"
+"\x07\x08"
+"\x08"
+
+# Black run codes
+"\x02"
+"\x03"
+"\x02\x03"
+
+# 2D mode codes
+"\x01"
+"\x02"
+"\x03"
+"\x04"
+"\x05"
+"\x06"
+"\x07"
+
+# Fill bits
+"\x00"
+"\xff"
+
+# RTC (Return To Control)
+"\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01\x00\x01"
+
+# Common pattern bytes
+"\x80"
+"\x40"
+"\x20"
+"\x10"
+"\x08"
+"\x04"
+"\x02"
+"\x01"
+
+# Length markers
+"\x00\x00"
+"\x00\x01"
+"\x00\x10"
+"\x00\x80"
+"\x01\x00"
+"\x04\x00"
+"\x08\x00"
+"\x10\x00"

@@ -1,0 +1,67 @@
+# CMap format dictionary
+# Header
+"/CIDInit"
+"/ProcSet"
+"findresource"
+"begin"
+"12 dict"
+"begincmap"
+"endcmap"
+"CMapName"
+"currentdict"
+"CMapType"
+"end"
+
+# CMap operators
+"begincodespacerange"
+"endcodespacerange"
+"beginbfchar"
+"endbfchar"
+"beginbfrange"
+"endbfrange"
+"begincidchar"
+"endcidchar"
+"begincidrange"
+"endcidrange"
+"beginnotdefchar"
+"endnotdefchar"
+"beginnotdefrange"
+"endnotdefrange"
+
+# Code values
+"<00>"
+"<0000>"
+"<00000000>"
+"<ff>"
+"<ffff>"
+"<ffffffff>"
+"<0020>"
+"<0041>"
+"<005a>"
+"<0061>"
+"<007a>"
+
+# Registry/Ordering
+"/CIDSystemInfo"
+"/Registry"
+"/Ordering"
+"/Supplement"
+"(Adobe)"
+"(Identity)"
+"(Japan1)"
+"(Korea1)"
+"(CNS1)"
+"(GB1)"
+
+# Common CMap names
+"/Identity-H"
+"/Identity-V"
+"/UniJIS-UTF16-H"
+"/UniGB-UTF16-H"
+"/UniCNS-UTF16-H"
+"/UniKS-UTF16-H"
+
+# Define operator
+"def"
+"readonly"
+"pop"
