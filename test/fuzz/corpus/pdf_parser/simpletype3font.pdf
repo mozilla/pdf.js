@@ -1,0 +1,141 @@
+%PDF-1.4
+%цдья
+1 0 obj
+<<
+/Type /Catalog
+/Version /1.4
+/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+/Type /Pages
+/Kids [3 0 R]
+/Count 1
+>>
+endobj
+3 0 obj
+<<
+/Type /Page
+/MediaBox [0 0 612 792]
+/Parent 2 0 R
+/Resources 4 0 R
+/Contents 5 0 R
+>>
+endobj
+4 0 obj
+<<
+/Font 6 0 R
+/XObject <<
+>>
+>>
+endobj
+5 0 obj
+<<
+/Length 7 0 R
+>>
+stream
+/F0 12 Tf
+BT
+100 700 Td
+(ababab) Tj
+ET
+
+endstream
+endobj
+6 0 obj
+<<
+/F0 8 0 R
+>>
+endobj
+7 0 obj
+39
+endobj
+8 0 obj
+<<
+/Type /Font
+/Subtype /Type3
+/FontBBox [0 0 750 750]
+/FontMatrix [0.001 0 0 0.001 0 0]
+/CharProcs 9 0 R
+/Encoding 10 0 R
+/FirstChar 97
+/LastChar 98
+/Widths [1000 1000]
+/FontDescriptor 11 0 R
+>>
+endobj
+9 0 obj
+<<
+/square 12 0 R
+/triangle 13 0 R
+>>
+endobj
+10 0 obj
+<<
+/Type /Encoding
+/Differences [97 /square /triangle]
+>>
+endobj
+11 0 obj
+<<
+/Type /FontDescriptor
+/FontName /SandT
+/Flags 262178
+/Ascent 0
+/CapHeight 0
+/Descent 0
+/ItalicAngle 0
+/StemV 0
+/FontBBox [0 0 750 750]
+>>
+endobj
+12 0 obj
+<<
+/Length 14 0 R
+>>
+stream
+1000 0 0 0 750 750 d1 0 0 750 750 re f
+endstream
+endobj
+13 0 obj
+<<
+/Length 15 0 R
+>>
+stream
+1000 0 0 0 750 750 d1 0 0 m 375 750 l 750 0 l f
+endstream
+endobj
+14 0 obj
+38
+endobj
+15 0 obj
+47
+endobj
+xref
+0 16
+0000000000 65535 f
+0000000015 00000 n
+0000000078 00000 n
+0000000135 00000 n
+0000000239 00000 n
+0000000287 00000 n
+0000000381 00000 n
+0000000412 00000 n
+0000000430 00000 n
+0000000641 00000 n
+0000000694 00000 n
+0000000768 00000 n
+0000000925 00000 n
+0000001020 00000 n
+0000001124 00000 n
+0000001143 00000 n
+trailer
+<<
+/Root 1 0 R
+/ID [<DD02410A8B7AD4A0EE0D50E4180FABAC> <DD02410A8B7AD4A0EE0D50E4180FABAC>]
+/Size 16
+>>
+startxref
+1162
+%%EOF

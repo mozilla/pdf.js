@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" xmlns:xfa="http://www.xfa.org/schema/xfa-template/3.0/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.0/">
+    <subform name="form1" layout="tb">
+      <pageSet>
+        <pageArea name="Page1">
+          <contentArea x="0.25in" y="0.25in" w="8in" h="10.5in"/>
+        </pageArea>
+      </pageSet>
+      <subform name="subform1">
+        <field name="TextField1" w="2in" h="0.25in">
+          <ui><textEdit/></ui>
+          <value><text>Sample</text></value>
+          <caption><value><text>Name:</text></value></caption>
+        </field>
+        <field name="NumericField1" w="2in" h="0.25in">
+          <ui><numericEdit/></ui>
+          <value><integer>42</integer></value>
+        </field>
+        <field name="DateField1" w="2in" h="0.25in">
+          <ui><dateTimeEdit/></ui>
+          <value><date>2024-01-01</date></value>
+        </field>
+        <field name="CheckBox1" w="0.25in" h="0.25in">
+          <ui><checkButton/></ui>
+          <items><integer>0</integer><integer>1</integer></items>
+        </field>
+      </subform>
+      <event activity="initialize">
+        <script contentType="application/x-formcalc">
+          TextField1 = "Initialized"
+        </script>
+      </event>
+    </subform>
+  </template>
+</xdp:xdp>
