@@ -1039,6 +1039,7 @@ class PartialEvaluator {
       if (
         isAddToPathSet ||
         state.fillColorSpace.name === "Pattern" ||
+        state.strokeColorSpace.name === "Pattern" ||
         font.disableFontFace
       ) {
         PartialEvaluator.buildFontPaths(
