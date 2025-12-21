@@ -13099,5 +13099,12 @@
     "enableXfa": true,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue20513",
+    "file": "pdfs/issue20513.pdf",
+    "md5": "19a3a347773518242fa3cf1c04a9a1e4",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
