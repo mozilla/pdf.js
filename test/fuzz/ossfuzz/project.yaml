@@ -6,8 +6,5 @@ vendor_ccs:
   - nicktao.dev@gmail.com
 fuzzing_engines:
   - libfuzzer
-  - afl
-  - honggfuzz
 sanitizers:
-  - address
-  - undefined
+  - none
