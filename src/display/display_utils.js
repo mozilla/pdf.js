@@ -615,6 +615,30 @@ function getRGB(color) {
   return [0, 0, 0];
 }
 
+/**
+ * Calculate the relative luminance of an RGB color.
+ * @param {Array<number>} rgb - RGB values [r, g, b] in range 0-255.
+ * @returns {number} Luminance value between 0 and 1.
+ */
+function getColorLuminance(rgb) {
+  const [r, g, b] = rgb.map(c => {
+    const normalized = c / 255;
+    return normalized <= 0.03928
+      ? normalized / 12.92
+      : Math.pow((normalized + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/**
+ * Determine if a color is considered "light" based on its luminance.
+ * @param {Array<number>} rgb - RGB values [r, g, b] in range 0-255.
+ * @returns {boolean} True if the color is light, false if dark.
+ */
+function isLightColor(rgb) {
+  return getColorLuminance(rgb) > 0.5;
+}
+
 function getColorValues(colors) {
   const span = document.createElement("span");
   span.style.visibility = "hidden";
@@ -1041,6 +1065,7 @@ export {
   deprecated,
   fetchData,
   findContrastColor,
+  getColorLuminance,
   getColorValues,
   getCurrentTransform,
   getCurrentTransformInverse,
@@ -1049,6 +1074,7 @@ export {
   getRGB,
   getXfaPageViewport,
   isDataScheme,
+  isLightColor,
   isPdfFile,
   isValidFetchUrl,
   makePathFromDrawOPS,

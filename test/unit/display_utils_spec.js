@@ -16,8 +16,10 @@
 import {
   applyOpacity,
   findContrastColor,
+  getColorLuminance,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  isLightColor,
   isValidFetchUrl,
   PDFDateString,
   renderRichText,
@@ -389,6 +391,36 @@ describe("display_utils", function () {
             '<span style="font-weight: bold;">Hello</span> world!</p></div>'
         )
       );
+    });
+  });
+
+  describe("getColorLuminance", function () {
+    it("should calculate luminance for pure colors", function () {
+      expect(getColorLuminance([0, 0, 0])).toBeCloseTo(0, 3); // Black
+      expect(getColorLuminance([255, 255, 255])).toBeCloseTo(1, 3); // White
+      expect(getColorLuminance([255, 0, 0])).toBeCloseTo(0.2126, 3); // Red
+      expect(getColorLuminance([0, 255, 0])).toBeCloseTo(0.7152, 3); // Green
+      expect(getColorLuminance([0, 0, 255])).toBeCloseTo(0.0722, 3); // Blue
+    });
+
+    it("should calculate luminance for mixed colors", function () {
+      expect(getColorLuminance([128, 128, 128])).toBeCloseTo(0.2158, 3); // Gray
+      expect(getColorLuminance([255, 255, 0])).toBeCloseTo(0.9278, 3); // Yellow
+    });
+  });
+
+  describe("isLightColor", function () {
+    it("should identify light colors correctly", function () {
+      expect(isLightColor([255, 255, 255])).toBe(true); // White
+      expect(isLightColor([255, 255, 0])).toBe(true); // Yellow
+      expect(isLightColor([200, 200, 200])).toBe(false); // Light gray
+    });
+
+    it("should identify dark colors correctly", function () {
+      expect(isLightColor([0, 0, 0])).toBe(false); // Black
+      expect(isLightColor([255, 0, 0])).toBe(false); // Red
+      expect(isLightColor([0, 0, 255])).toBe(false); // Blue
+      expect(isLightColor([100, 100, 100])).toBe(false); // Dark gray
     });
   });
 });
