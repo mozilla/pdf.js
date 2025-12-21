@@ -24,9 +24,7 @@ RUN apt-get update && apt-get install -y \
     libtool
 
 # Clone pdf.js repository
-RUN git clone --depth 1 https://github.com/nicktao1997/pdfjs.git pdf-js
-# After upstream merge, use:
-# RUN git clone --depth 1 https://github.com/nicktao1997/pdfjs.git pdf-js
+RUN git clone --depth 1 https://github.com/mozilla/pdf.js.git pdf-js
 
 WORKDIR pdf-js
 COPY build.sh $SRC/

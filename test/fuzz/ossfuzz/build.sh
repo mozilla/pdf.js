@@ -38,31 +38,31 @@ gulp image_decoders
 compile_javascript_fuzzer pdf-js test/fuzz/pdf_parser.fuzz.js
 
 # Image decoder fuzzers
-compile_javascript_fuzzer pdf-js test/fuzz/jpeg_image.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/jbig2_image.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/jpx_image.fuzz.js --sync
+compile_javascript_fuzzer pdf-js test/fuzz/jpeg_image.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/jbig2_image.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/jpx_image.fuzz.js
 
 # Stream decoder fuzzers
-compile_javascript_fuzzer pdf-js test/fuzz/flate_stream.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/ccitt_stream.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/lzw_stream.fuzz.js --sync
+compile_javascript_fuzzer pdf-js test/fuzz/flate_stream.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/ccitt_stream.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/lzw_stream.fuzz.js
 
 # Font parser fuzzers
-compile_javascript_fuzzer pdf-js test/fuzz/cff_parser.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/type1_parser.fuzz.js --sync
+compile_javascript_fuzzer pdf-js test/fuzz/cff_parser.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/type1_parser.fuzz.js
 compile_javascript_fuzzer pdf-js test/fuzz/cmap_parser.fuzz.js
 
 # Crypto fuzzer
-compile_javascript_fuzzer pdf-js test/fuzz/crypto.fuzz.js --sync
+compile_javascript_fuzzer pdf-js test/fuzz/crypto.fuzz.js
 
 # XFA/XML fuzzers
-compile_javascript_fuzzer pdf-js test/fuzz/xfa_parser.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/xml_parser.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/formcalc_parser.fuzz.js --sync
+compile_javascript_fuzzer pdf-js test/fuzz/xfa_parser.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/xml_parser.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/formcalc_parser.fuzz.js
 
 # Other parsers
-compile_javascript_fuzzer pdf-js test/fuzz/ps_parser.fuzz.js --sync
-compile_javascript_fuzzer pdf-js test/fuzz/colorspace.fuzz.js --sync
+compile_javascript_fuzzer pdf-js test/fuzz/ps_parser.fuzz.js
+compile_javascript_fuzzer pdf-js test/fuzz/colorspace.fuzz.js
 
 # ============================================================================
 # Copy dictionaries
