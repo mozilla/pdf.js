@@ -1158,6 +1158,26 @@ describe("pdf_find_controller", function () {
     });
   });
 
+  it("performs a search with a group of punctuation signs to escape", async () => {
+    const { eventBus, pdfFindController } =
+      await initPdfFindController("issue20516.pdf");
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: `("client")`,
+      },
+      matchesPerPage: [1],
+      selectedMatch: {
+        pageIndex: 0,
+        matchIndex: 0,
+      },
+      pageMatches: [[6]],
+      pageMatchesLength: [[10]],
+    });
+  });
+
   describe("custom matcher", () => {
     it("calls to the matcher with the right arguments", async () => {
       const QUERY = "Foo  bar";
