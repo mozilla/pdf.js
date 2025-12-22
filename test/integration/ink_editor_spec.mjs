@@ -52,6 +52,15 @@ const commit = async page => {
 
 const switchToInk = switchToEditor.bind(null, "Ink");
 
+const drawLine = async (page, x0, y0, x1, y1) => {
+  const clickHandle = await waitForPointerUp(page);
+  await page.mouse.move(x0, y0);
+  await page.mouse.down();
+  await page.mouse.move(x1, y1);
+  await page.mouse.up();
+  await awaitPromise(clickHandle);
+};
+
 describe("Ink Editor", () => {
   describe("Basic operations", () => {
     let pages;
@@ -74,13 +83,7 @@ describe("Ink Editor", () => {
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 100 + i * 100;
             const y = rect.y + 100 + i * 100;
-            const clickHandle = await waitForPointerUp(page);
-            await page.mouse.move(x, y);
-            await page.mouse.down();
-            await page.mouse.move(x + 50, y + 50);
-            await page.mouse.up();
-            await awaitPromise(clickHandle);
-
+            await drawLine(page, x, y, x + 50, y + 50);
             await commit(page);
           }
 
@@ -107,15 +110,9 @@ describe("Ink Editor", () => {
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
-
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const rectBefore = await getRect(page, ".canvasWrapper .draw");
@@ -149,13 +146,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 100;
           const y = rect.y + 100;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
-
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const editorSelector = getEditorSelector(0);
@@ -205,13 +196,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
-
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           await selectAll(page);
@@ -244,13 +229,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
-
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const oneToFourteen = Array.from(new Array(13).keys(), n => n + 2);
@@ -299,12 +278,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          await drawLine(page, x, y, x + 50, y + 50);
 
           await page.mouse.click(rect.x - 10, rect.y + 10);
           await page.waitForSelector(`${getEditorSelector(0)}.disabled`);
@@ -331,14 +305,9 @@ describe("Ink Editor", () => {
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const editorSelector = getEditorSelector(0);
@@ -375,14 +344,9 @@ describe("Ink Editor", () => {
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const editorSelector = getEditorSelector(0);
@@ -432,14 +396,9 @@ describe("Ink Editor", () => {
 
           const rect = await getRect(page, ".annotationEditorLayer");
 
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const editorSelector = getEditorSelector(0);
@@ -483,16 +442,11 @@ describe("Ink Editor", () => {
           await switchToInk(page);
           const rect = await getRect(page, ".annotationEditorLayer");
 
-          let xStart = rect.x + 10;
-          const yStart = rect.y + 10;
+          let x = rect.x + 10;
+          const y = rect.y + 10;
           for (let i = 0; i < 5; i++) {
-            const clickHandle = await waitForPointerUp(page);
-            await page.mouse.move(xStart, yStart);
-            await page.mouse.down();
-            await page.mouse.move(xStart + 50, yStart + 50);
-            await page.mouse.up();
-            await awaitPromise(clickHandle);
-            xStart += 70;
+            await drawLine(page, x, y, x + 50, y + 50);
+            x += 70;
           }
           await commit(page);
 
@@ -561,13 +515,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
-
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const drawSelector = `.page[data-page-number = "1"] .canvasWrapper .draw`;
@@ -636,12 +584,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          await drawLine(page, x, y, x + 50, y + 50);
 
           const drawSelector = `.canvasWrapper svg.draw path[d]:not([d=""])`;
           await page.waitForSelector(drawSelector);
@@ -680,12 +623,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          await drawLine(page, x, y, x + 50, y + 50);
 
           await page.evaluate(() => {
             window.focusedIds = [];
@@ -884,14 +822,9 @@ describe("Ink Editor", () => {
           await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           await page.waitForSelector(editorSelector);
@@ -918,14 +851,9 @@ describe("Ink Editor", () => {
           await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           await page.waitForSelector(editorSelector);
@@ -957,14 +885,9 @@ describe("Ink Editor", () => {
           await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-          const xStart = rect.x + 300;
-          const yStart = rect.y + 300;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(xStart, yStart);
-          await page.mouse.down();
-          await page.mouse.move(xStart + 50, yStart + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           await page.waitForSelector(editorSelector);
@@ -976,14 +899,9 @@ describe("Ink Editor", () => {
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           const newRect = await getRect(page, ".annotationEditorLayer");
-          const newXStart = newRect.x + 300;
-          const newYStart = newRect.y + 300;
-          const newClickHandle = await waitForPointerUp(page);
-          await page.mouse.move(newXStart, newYStart);
-          await page.mouse.down();
-          await page.mouse.move(newXStart + 50, newYStart + 50);
-          await page.mouse.up();
-          await awaitPromise(newClickHandle);
+          const newX = newRect.x + 300;
+          const newY = newRect.y + 300;
+          await drawLine(page, newX, newY, newX + 50, newY + 50);
           await commit(page);
 
           await page.waitForSelector(getEditorSelector(1));
@@ -1014,12 +932,7 @@ describe("Ink Editor", () => {
 
           const x = rect.x + 20;
           const y = rect.y + 20;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          await drawLine(page, x, y, x + 50, y + 50);
 
           const svgSelector = ".canvasWrapper svg.draw";
           const strokeWidth = await page.$eval(svgSelector, el =>
@@ -1082,14 +995,9 @@ describe("Ink Editor", () => {
               page,
               `${pageSelector} .annotationEditorLayer`
             );
-            const xStart = rect.x + 10;
-            const yStart = rect.y + 10;
-            const clickHandle = await waitForPointerUp(page);
-            await page.mouse.move(xStart, yStart);
-            await page.mouse.down();
-            await page.mouse.move(xStart + 10, yStart + 10);
-            await page.mouse.up();
-            await awaitPromise(clickHandle);
+            const x = rect.x + 10;
+            const y = rect.y + 10;
+            await drawLine(page, x, y, x + 10, y + 10);
             await commit(page);
           }
 
@@ -1148,15 +1056,10 @@ describe("Ink Editor", () => {
           await switchToInk(page);
 
           const editorLayerRect = await getRect(page, ".annotationEditorLayer");
-          const drawStartX = editorLayerRect.x + 100;
-          const drawStartY = editorLayerRect.y + 100;
 
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(drawStartX, drawStartY);
-          await page.mouse.down();
-          await page.mouse.move(drawStartX + 50, drawStartY + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          const x = editorLayerRect.x + 100;
+          const y = editorLayerRect.y + 100;
+          await drawLine(page, x, y, x + 50, y + 50);
           await commit(page);
 
           const pageFinalPosition = await getRect(
@@ -1257,16 +1160,10 @@ describe("Should switch from an editor and mode to others by double clicking", (
         await switchToInk(page);
 
         const editorLayerRect = await getRect(page, ".annotationEditorLayer");
-        const drawStartX = editorLayerRect.x + 100;
-        const drawStartY = editorLayerRect.y + 100;
 
-        const inkSelector = getEditorSelector(0);
-        const clickHandle = await waitForPointerUp(page);
-        await page.mouse.move(drawStartX, drawStartY);
-        await page.mouse.down();
-        await page.mouse.move(drawStartX + 50, drawStartY + 50);
-        await page.mouse.up();
-        await awaitPromise(clickHandle);
+        const x = editorLayerRect.x + 100;
+        const y = editorLayerRect.y + 100;
+        await drawLine(page, x, y, x + 50, y + 50);
         await commit(page);
 
         await switchToEditor("FreeText", page);
@@ -1286,6 +1183,7 @@ describe("Should switch from an editor and mode to others by double clicking", (
 
         await page.waitForSelector("#editorInkButton:not(.toggled)");
         let modeChangedHandle = await waitForAnnotationModeChanged(page);
+        const inkSelector = getEditorSelector(0);
         await selectEditor(page, inkSelector, 2);
         await awaitPromise(modeChangedHandle);
         await page.waitForSelector("#editorInkButton.toggled");
@@ -1322,12 +1220,7 @@ describe("Ink must update its color", () => {
 
         const x = rect.x + 20;
         const y = rect.y + 20;
-        const clickHandle = await waitForPointerUp(page);
-        await page.mouse.move(x, y);
-        await page.mouse.down();
-        await page.mouse.move(x + 50, y + 50);
-        await page.mouse.up();
-        await awaitPromise(clickHandle);
+        await drawLine(page, x, y, x + 50, y + 50);
         await commit(page);
 
         const editorSelector = getEditorSelector(0);
