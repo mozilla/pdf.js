@@ -573,11 +573,6 @@ pdfjs-editor-add-signature-cancel-button = Otkaži
 pdfjs-editor-add-signature-add-button = Dodaj
 pdfjs-editor-edit-signature-update-button = Ažuriraj
 
-## Edit a comment button in the editor toolbar
-
-pdfjs-editor-edit-comment-button =
-    .title = Uredi komentar
-
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

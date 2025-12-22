@@ -630,8 +630,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Бекор кардан
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = Таҳрир кардани шарҳ
 pdfjs-editor-add-comment-button =
     .title = Илова кардани шарҳ
 

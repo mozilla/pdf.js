@@ -34,7 +34,7 @@ pdfjs-presentation-mode-button =
     .title = Անցնել Ներկայացման եղանակին
 pdfjs-presentation-mode-button-label = Ներկայացման եղանակ
 pdfjs-open-file-button =
-    .title = Բացել նիշք
+    .title = Բացել ֆայլ
 pdfjs-open-file-button-label = Բացել
 pdfjs-print-button =
     .title = Տպել
@@ -102,8 +102,8 @@ pdfjs-spread-even-button-label = Զույգ վերածածկեր
 pdfjs-document-properties-button =
     .title = Փաստաթղթի հատկությունները…
 pdfjs-document-properties-button-label = Փաստաթղթի հատկությունները…
-pdfjs-document-properties-file-name = Նիշքի անունը.
-pdfjs-document-properties-file-size = Նիշք չափը.
+pdfjs-document-properties-file-name = Ֆայլի անունը.
+pdfjs-document-properties-file-size = Ֆայլի չափը.
 # Variables:
 #   $kb (Number) - the PDF file size in kilobytes
 #   $b (Number) - the PDF file size in bytes
@@ -585,11 +585,6 @@ pdfjs-editor-add-signature-error-close-button = Փակել
 pdfjs-editor-add-signature-cancel-button = Չեղարկել
 pdfjs-editor-add-signature-add-button = Ավելացնել
 pdfjs-editor-edit-signature-update-button = Թարմացնել
-
-## Edit a comment button in the editor toolbar
-
-pdfjs-editor-edit-comment-button =
-    .title = Խմբագրել մեկնաբանությունը
 
 ## Main menu for adding/removing signatures
 

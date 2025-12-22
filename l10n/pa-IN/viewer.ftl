@@ -630,8 +630,6 @@ pdfjs-editor-edit-comment-dialog-cancel-button = ਰੱਦ ਕਰੋ
 
 ## Edit a comment button in the editor toolbar
 
-pdfjs-editor-edit-comment-button =
-    .title = ਟਿੱਪਣੀ ਨੂੰ ਸੋਧੋ
 pdfjs-editor-add-comment-button =
     .title = ਟਿੱਪਣੀ ਜੋੜੋ
 
