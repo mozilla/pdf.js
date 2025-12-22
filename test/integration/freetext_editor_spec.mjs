@@ -1799,6 +1799,60 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (open existing generated with Cairo)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "issue20504.pdf",
+        ".annotationEditorLayer",
+        100
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must open some existing annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const boxes = [];
+          for (const num of [48, 49, 50, 51, 52]) {
+            const id = `${num}R`;
+            await page.waitForSelector(getAnnotationSelector(id), {
+              visible: true,
+            });
+            const rect = await getRect(page, getAnnotationSelector(id));
+            boxes.push(rect);
+          }
+
+          await switchToFreeText(page);
+
+          for (let i = 0; i < boxes.length; i++) {
+            const rect = await getRect(
+              page,
+              `#pdfjs_internal_editor_${i}-editor`
+            );
+
+            expect(Math.abs(rect.width - boxes[i].width) <= 20)
+              .withContext(`In ${browserName}`)
+              .toEqual(true);
+            expect(Math.abs(rect.height - boxes[i].height) <= 20)
+              .withContext(`In ${browserName}`)
+              .toEqual(true);
+            expect(Math.abs(rect.x - boxes[i].x) <= 20)
+              .withContext(`In ${browserName}`)
+              .toEqual(true);
+            expect(Math.abs(rect.y - boxes[i].y) <= 20)
+              .withContext(`In ${browserName}`)
+              .toEqual(true);
+          }
+        })
+      );
+    });
+  });
+
   describe("Keyboard shortcuts when the editor layer isn't focused", () => {
     let pages;
 
