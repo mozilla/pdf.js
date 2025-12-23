@@ -449,7 +449,6 @@ class PDFThumbnailView {
    */
   setPageLabel(label) {
     this.pageLabel = typeof label === "string" ? label : null;
-    this.anchor.setAttribute("data-l10n-args", this.#pageL10nArgs);
     this.image.setAttribute("data-l10n-args", this.#pageL10nArgs);
   }
 }
