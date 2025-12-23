@@ -654,6 +654,7 @@
     "md5": "8f9347b0d5620537850b24b8385b0982",
     "rounds": 1,
     "link": true,
+    "talos": false,
     "firstPage": 4,
     "lastPage": 4,
     "type": "eq"
@@ -664,6 +665,7 @@
     "md5": "8f9347b0d5620537850b24b8385b0982",
     "rounds": 1,
     "link": true,
+    "talos": false,
     "firstPage": 4,
     "lastPage": 4,
     "type": "eq",
