@@ -1,0 +1,68 @@
+# PDF Colorspace dictionary
+# Device colorspaces
+"/DeviceGray"
+"/DeviceRGB"
+"/DeviceCMYK"
+"/DeviceN"
+
+# CIE-based colorspaces
+"/CalGray"
+"/CalRGB"
+"/Lab"
+"/ICCBased"
+
+# Special colorspaces
+"/Indexed"
+"/Separation"
+"/Pattern"
+
+# Colorspace keys
+"/WhitePoint"
+"/BlackPoint"
+"/Gamma"
+"/Matrix"
+"/Range"
+"/N"
+"/Alternate"
+"/Tint"
+"/Base"
+"/HiVal"
+"/Lookup"
+
+# ICC Profile header
+"acsp"
+"ADBE"
+"APPL"
+"MSFT"
+"mntr"
+"scnr"
+"prtr"
+"RGB "
+"CMYK"
+"GRAY"
+"XYZ "
+"Lab "
+
+# Common values
+"[0 1]"
+"[0 0 0]"
+"[1 1 1]"
+"[0.9505 1 1.089]"
+"[0 0 0 0]"
+"[1 1 1 1]"
+"[0 100 -128 127 -128 127]"
+
+# ICC tag signatures
+"desc"
+"cprt"
+"wtpt"
+"bkpt"
+"rXYZ"
+"gXYZ"
+"bXYZ"
+"rTRC"
+"gTRC"
+"bTRC"
+"A2B0"
+"B2A0"
+"chad"

@@ -1,0 +1,73 @@
+# PostScript calculator function dictionary
+# Stack operations
+"dup"
+"exch"
+"pop"
+"copy"
+"index"
+"roll"
+
+# Arithmetic
+"add"
+"sub"
+"mul"
+"div"
+"idiv"
+"mod"
+"neg"
+"abs"
+"ceiling"
+"floor"
+"round"
+"truncate"
+"sqrt"
+"exp"
+"ln"
+"log"
+"sin"
+"cos"
+"atan"
+
+# Relational
+"eq"
+"ne"
+"lt"
+"le"
+"gt"
+"ge"
+
+# Logical
+"and"
+"or"
+"xor"
+"not"
+"bitshift"
+
+# Conditionals
+"if"
+"ifelse"
+
+# Delimiters
+"{"
+"}"
+"["
+"]"
+
+# Constants
+"true"
+"false"
+
+# Numbers
+"0"
+"1"
+"-1"
+"0.0"
+"1.0"
+"-0.5"
+"0.5"
+"2"
+"10"
+"100"
+"255"
+"360"
+"3.14159"
