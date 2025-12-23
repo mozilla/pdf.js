@@ -436,7 +436,7 @@ class FontFaceObject {
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = makePathFromDrawOPS(cmds.path);
+    const path = makePathFromDrawOPS(cmds?.path);
 
     if (!this.fontExtraProperties) {
       // Remove the raw path-string, since we don't need it anymore.
