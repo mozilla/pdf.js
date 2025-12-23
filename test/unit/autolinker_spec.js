@@ -90,6 +90,10 @@ describe("autolinker", function () {
       ["partl@mail.boku.ac.at", "mailto:partl@mail.boku.ac.at"],
       ["Irene.Hyna@bmwf.ac.at", "mailto:Irene.Hyna@bmwf.ac.at"],
       ["<hi@foo.bar.baz>", "mailto:hi@foo.bar.baz"],
+      [
+        "foo@用户@例子.广告",
+        "mailto:%E7%94%A8%E6%88%B7@%E4%BE%8B%E5%AD%90.%E5%B9%BF%E5%91%8A",
+      ],
     ]);
   });
 
@@ -144,6 +148,7 @@ describe("autolinker", function () {
         "http//[]", // Empty IPv6 address.
         "abc.example.com", // URL without scheme.
         "JD?M$0QP)lKn06l1apKDC@\\qJ4B!!(5m+j.7F790m", // Not a valid email.
+        "262@0.302304", // Invalid domain.
       ].join("\n")
     );
     expect(matches.length).toEqual(0);
