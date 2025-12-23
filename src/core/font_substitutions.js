@@ -306,6 +306,64 @@ const substitutionMap = new Map([
       alias: "Wingdings",
     },
   ],
+  [
+    "\xCB\xCE\xCC\xE5",
+    {
+      local: ["SimSun", "SimSun Regular", "NSimSun"],
+      style: NORMAL,
+      ultimate: "serif",
+    },
+  ],
+  [
+    "\xBA\xDA\xCC\xE5",
+    {
+      local: ["SimHei", "SimHei Regular"],
+      style: NORMAL,
+      ultimate: "sans-serif",
+    },
+  ],
+  [
+    "\xBF\xAC\xCC\xE5",
+    {
+      local: ["KaiTi", "SimKai", "SimKai Regular"],
+      style: NORMAL,
+      ultimate: "sans-serif",
+    },
+  ],
+  [
+    "\xB7\xC2\xCB\xCE",
+    {
+      local: ["FangSong", "SimFang", "SimFang Regular"],
+      style: NORMAL,
+      ultimate: "serif",
+    },
+  ],
+  [
+    "\xBF\xAC\xCC\xE5_GB2312",
+    {
+      alias: "\xBF\xAC\xCC\xE5",
+    },
+  ],
+  [
+    "\xB7\xC2\xCB\xCE_GB2312",
+    {
+      alias: "\xB7\xC2\xCB\xCE",
+    },
+  ],
+  [
+    "\xC1\xA5\xCA\xE9",
+    {
+      local: ["SimLi", "SimLi Regular"],
+      style: NORMAL,
+      ultimate: "serif",
+    },
+  ],
+  [
+    "\xD0\xC2\xCB\xCE",
+    {
+      alias: "\xCB\xCE\xCC\xE5",
+    },
+  ],
 ]);
 
 const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
