@@ -133,10 +133,12 @@ class Autolinker {
 
   static #regex;
 
+  static #numericTLDRegex;
+
   static findLinks(text) {
     // Regex can be tested and verified at https://regex101.com/r/rXoLiT/2.
     this.#regex ??=
-      /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|\b[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
+      /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|(?=\p{L})[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[\p{P}<>]]+(?:\.[\S--[\p{P}<>]]+)+)/gmv;
 
     const [normalizedText, diffs] = normalize(text, { ignoreDashEOL: true });
     const matches = normalizedText.matchAll(this.#regex);
@@ -150,11 +152,19 @@ class Autolinker {
         url.startsWith("https://")
       ) {
         raw = url;
-      } else if (URL.canParse(`http://${emailDomain}`)) {
-        raw = url.startsWith("mailto:") ? url : `mailto:${url}`;
-      } else {
-        continue;
+      } else if (emailDomain) {
+        const hostname = URL.parse(`http://${emailDomain}`)?.hostname;
+        if (!hostname) {
+          continue;
+        }
+        this.#numericTLDRegex ??= /\.\d+$/;
+        if (this.#numericTLDRegex.test(hostname)) {
+          // Skip emails with a numeric TLD as domain.
+          continue;
+        }
       }
+      raw ??= url.startsWith("mailto:") ? url : `mailto:${url}`;
+
       const absoluteURL = createValidAbsoluteUrl(raw, null, {
         addDefaultProtocol: true,
       });
