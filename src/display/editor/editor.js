@@ -33,7 +33,6 @@ import { AltText } from "./alt_text.js";
 import { Comment } from "./comment.js";
 import { EditorToolbar } from "./toolbar.js";
 import { TouchManager } from "../touch_manager.js";
-import Signer from "../../../web/Signer.js";
 
 /**
  * @typedef {Object} AnnotationEditorParameters
@@ -131,6 +130,11 @@ class AnnotationEditor {
   // like the thickness of a line.
   static _telemetryTimeout = 1000;
 
+  // Dotti
+  signerId = "";
+
+  placeholderType = "";
+
   static get _resizerKeyboardManager() {
     const resize = AnnotationEditor.prototype._resizeWithKeyboard;
     const small = AnnotationEditorUIManager.TRANSLATE_SMALL;
@@ -164,8 +168,6 @@ class AnnotationEditor {
     );
   }
 
-  signer = null;
-
   /**
    * @param {AnnotationEditorParameters} parameters
    */
@@ -190,7 +192,9 @@ class AnnotationEditor {
     this._structTreeParentId = null;
     this.annotationElementId = parameters.annotationElementId || null;
     this.creationDate = new Date();
-    this.signer = parameters.signer;
+    // Dotti
+    this.signerId = parameters.signerId;
+    this.placeholderType = parameters.placeholderType;
 
     const {
       rotation,
@@ -1782,12 +1786,15 @@ class AnnotationEditor {
       pageHeight
     );
 
-    // TouchSign: if x & y is present, use x & y from serialization
+    // Dotti: if x & y is present, use x & y from serialization
     editor.x = data.x ?? x / pageWidth;
     editor.y = data.y ?? y / pageHeight;
     editor.width = width / pageWidth;
     editor.height = height / pageHeight;
-    editor.signer = data.signer ? new Signer(data.signer) : null;
+
+    // Dotti: deserialize those 2 properties
+    editor.signerId = data.signerId ?? "";
+    editor.placeholderType = data.placeholderType;
 
     return editor;
   }
@@ -1999,13 +2006,8 @@ class AnnotationEditor {
    * Select this editor.
    */
   select() {
-    // TouchSign: disable all select
-    if (
-      window.DottiStore.displayMode === "view" ||
-      window.DottiStore.displayMode === "task"
-    ) {
-      return;
-    }
+    // Dotti: disable all select
+    /*
     if (this.isSelected && this._editToolbar) {
       return;
     }
@@ -2025,6 +2027,7 @@ class AnnotationEditor {
     }
     this._editToolbar?.show();
     this.#altText?.toggleAltTextBadge(false);
+    */
   }
 
   /**

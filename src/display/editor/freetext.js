@@ -635,7 +635,7 @@ class FreeTextEditor extends AnnotationEditor {
         }
         this.setAt(posX * parentWidth, posY * parentHeight, tx, ty);
       } else {
-        // TouchSign: suppress paste logic for paste
+        // Dotti: suppress paste logic for paste
         // for now because of deserialize
         // this._moveAfterPaste(baseX, baseY);
       }
@@ -857,9 +857,6 @@ class FreeTextEditor extends AnnotationEditor {
       rect,
       rotation: this.rotation,
       structTreeParentId: this._structTreeParentId,
-      x: this.x,
-      y: this.y,
-      signer: this.signer.serializable,
     };
     this.addComment(serialized);
 

@@ -734,7 +734,8 @@ class AnnotationEditorLayer {
     let newY = event.offsetY;
     let newWidth = null;
     let newHeight = null;
-    let newSigner = null;
+    let newSignerId = "";
+    let newPlaceholderType = "Signature";
     if (data.signOnPlaceholder) {
       const stampEditor = data.editor;
       const [pageW, pageH] = stampEditor.parentDimensions;
@@ -742,7 +743,8 @@ class AnnotationEditorLayer {
       newY = pageH * stampEditor.y + (pageH * stampEditor.height) / 2;
       newWidth = stampEditor.width;
       newHeight = stampEditor.height;
-      newSigner = stampEditor.signer;
+      newSignerId = stampEditor.signerId;
+      newPlaceholderType = stampEditor.placeholderType;
     }
 
     const id = this.getNextId();
@@ -753,9 +755,10 @@ class AnnotationEditorLayer {
       y: newY, // event.offsetY,
       width: newWidth, // not passed in before
       height: newHeight, // not passed in before
-      signer: newSigner,
       uiManager: this.#uiManager,
       isCentered,
+      signerId: newSignerId,
+      placeholderType: newPlaceholderType,
       ...data,
     });
     if (editor) {

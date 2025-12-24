@@ -52,7 +52,7 @@ class StampEditor extends AnnotationEditor {
 
   isStampPlaceholder = false;
 
-  stampURL = null;
+  sealAdded = false;
 
   static _type = "stamp";
 
@@ -376,6 +376,18 @@ class StampEditor extends AnnotationEditor {
     super.render();
     this.div.hidden = true;
 
+    if (this.isSignaturePlaceholder) {
+      const placeholderContent = document.createElement("div");
+      placeholderContent.className = "placeholder-content-sig";
+      placeholderContent.innerHTML = `<div>请您双击此处进行签名<span style="color: red;">*</span></div>`;
+      this.div.append(placeholderContent);
+    } else if (this.isStampPlaceholder) {
+      const placeholderContent = document.createElement("div");
+      placeholderContent.className = "placeholder-content-seal";
+      placeholderContent.innerHTML = `<div>请您双击此处进行盖章<span style="color: red;">*</span></div>`;
+      this.div.append(placeholderContent);
+    }
+
     this.createAltText();
 
     if (!this.#missingCanvas) {
@@ -386,7 +398,7 @@ class StampEditor extends AnnotationEditor {
       }
     }
 
-    // TouchSign suppres copy logic for deserialization
+    // Dotti: suppres copy logic for deserialization
     // if (this._isCopy) {
     //   this._moveAfterPaste(baseX, baseY);
     // }
@@ -867,11 +879,12 @@ class StampEditor extends AnnotationEditor {
       structTreeParentId: this._structTreeParentId,
       x: this.x,
       y: this.y,
-      signer: this.signer.serializable,
+      signerId: this.signerId,
       isSignaturePlaceholder: this.isSignaturePlaceholder,
       isStampPlaceholder: this.isStampPlaceholder,
       signTimestamp: Date.now(),
       fieldName: crypto.randomUUID(),
+      placeholderType: this.placeholderType,
     };
     this.addComment(serialized);
 
@@ -974,11 +987,6 @@ class StampEditor extends AnnotationEditor {
    */
   dblclick(event) {
     if (this.isSignaturePlaceholder) {
-      if (!window.DottiStore.canSign(this.signer)) {
-        // eslint-disable-next-line no-alert
-        alert(`请【${this.signer.name}】使用正确的入口进行签字`);
-        return;
-      }
       window.DottiStore.setSigningStampEditor(this);
       this._uiManager._eventBus.dispatch("switchannotationeditormode", {
         source: "dblclick_signature_placeholder",
@@ -996,7 +1004,7 @@ class StampEditor extends AnnotationEditor {
         });
       }, 100);
     } else if (this.isStampPlaceholder) {
-      if (!window.DottiStore.canStamp(this.signer)) {
+      if (!window.DottiStore.canStamp(this.signerId)) {
         // eslint-disable-next-line no-alert
         alert(`您没有权限加盖此章`);
         return;
@@ -1005,10 +1013,10 @@ class StampEditor extends AnnotationEditor {
       if (confirm("确定盖章吗")) {
         this.remove(false);
         this.#bitmapId = null;
-        this.#bitmapUrl = window.DottiStore.getSignImageURLByKey(
-          this.signer.email
+        this.#bitmapUrl = window.DottiStore.getSignImageURLBySignerId(
+          this.signerId
         ); // stamp url
-        this.stampURL = this.signer.email;
+        this.sealAdded = true;
         this.#getBitmap();
       }
     }

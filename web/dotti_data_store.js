@@ -30,7 +30,14 @@ const DottiStore = {
   getFileContents() {
     return this.task ? this.task.fileContents : this.workflow.fileContents;
   },
-  sameSigner(annotationSigner) {
+  getSigners() {
+    return this.task ? this.task.workflow.signers : this.workflow.signers;
+  },
+  getSignerById(id) {
+    return this.getSigners().find(s => s.id === id);
+  },
+  sameSigner(signerId) {
+    const annotationSigner = this.getSignerById(signerId);
     if (annotationSigner.organizationId) {
       const pms = this.profile.permissions ?? [];
       const validPermissions = pms.filter(
@@ -40,18 +47,34 @@ const DottiStore = {
     }
     return annotationSigner.phone === this.profile.phone;
   },
-  sameSortNum(annotationSigner) {
+  sameSortNum(signerId) {
+    const annotationSigner = this.getSignerById(signerId);
     return annotationSigner.sortNum === this.task.sortNum;
   },
   getPDFURL() {
+    if (this.isFinishedWorkflow()) {
+      return this.getResultFileContents().url;
+    }
+    return this.getOriginalFileContents().url;
+  },
+  getOriginalFileContents() {
     const fileContents = this.getFileContents();
-    return this.isFinishedWorkflow()
-      ? fileContents[1].url
-      : fileContents[0].url;
+    return fileContents.find(fc => fc.type === "ORIGINAL");
+  },
+  getResultFileContents() {
+    const fileContents = this.getFileContents();
+    return fileContents.find(fc => fc.type === "RESULT");
   },
   getSignImageURLByKey(key) {
-    const fileContents = this.getFileContents();
-    return fileContents[0].signContents.find(st => st.key === key)?.url ?? "";
+    const fileContents = this.getOriginalFileContents();
+    return fileContents.signContents.find(st => st.key === key)?.url ?? "";
+  },
+  getSignImageURLBySignerId(signerId) {
+    const fileContents = this.getOriginalFileContents();
+    const signer = this.getSignerById(signerId);
+    return (
+      fileContents.signContents.find(st => st.key === signer.sealKey)?.url ?? ""
+    );
   },
   getCurrentSigner() {
     // 如果是个签名任务，则直接拿Signer里的信息，如果是盖章任务，则需要拿profile里的信息，这里默认加入组织的用户必须已经实名认证过
@@ -78,19 +101,19 @@ const DottiStore = {
     return signer.organizationId ? "stamp" : "signature";
   },
   getRawAnnotations() {
-    const fileContents = this.getFileContents();
-    return fileContents[0].attr?.annotations;
+    const fileContents = this.getOriginalFileContents();
+    return fileContents.attr?.annotations;
   },
   getRawSignAnnotations() {
-    const fileContents = this.getFileContents();
-    return fileContents[0].signContents;
+    const fileContents = this.getOriginalFileContents();
+    return fileContents.signContents;
   },
   isProcessingTask() {
     return !!this.task && this.task.taskStatus === "PROCESSING";
   },
   isFinishedWorkflow() {
     const fileContents = this.getFileContents();
-    return fileContents.length === 2;
+    return fileContents.some(fc => fc.type === "RESULT");
   },
   isPlaceholderEditor(editor) {
     return editor.isSignaturePlaceholder || editor.isStampPlaceholder;
@@ -101,13 +124,8 @@ const DottiStore = {
   isStampPlaceholderEditor(editor) {
     return editor.isStampPlaceholder;
   },
-  canSign(editorSigner) {
-    if (this.displayMode === "task") {
-      return editorSigner.phone === this.profile.phone;
-    }
-    return false;
-  },
-  canStamp(editorSigner) {
+  canStamp(signerId) {
+    const editorSigner = this.getSignerById(signerId);
     if (this.displayMode === "task") {
       const pms = this.profile.permissions ?? [];
       const orgPermissions = pms.filter(
@@ -135,8 +153,8 @@ const DottiStore = {
   assignCorrectDate(annotation) {
     // make sure we assign to the correct signer
     if (
-      this.sameSigner(annotation.signer) &&
-      this.sameSortNum(annotation.signer)
+      this.sameSigner(annotation.signerId) &&
+      this.sameSortNum(annotation.signerId)
     ) {
       if (annotation.placeholderType === "DateSigned") {
         annotation.value = getMandarinDate();
@@ -165,8 +183,8 @@ const DottiStore = {
             if (this.isPlaceholderEditor(editor)) {
               if (this.isProcessingTask()) {
                 if (
-                  this.sameSigner(editor.signer) &&
-                  this.sameSortNum(editor.signer)
+                  this.sameSigner(editor.signerId) &&
+                  this.sameSortNum(editor.signerId)
                 ) {
                   layer.deserialize(editor).then(deserializedEditor => {
                     if (!deserializedEditor) {
@@ -193,9 +211,8 @@ const DottiStore = {
           // signContents can contain 2 things:
           // 1. just pure key and url for saving stamp image
           // 2. real annotation data
-          const editor = rsa.attr;
-          if (editor) {
-            const annotation = editor.annotation;
+          const annotation = rsa.attr?.annotation;
+          if (annotation) {
             // Assign correct date to signer
             if (this.isProcessingTask()) {
               this.assignCorrectDate(annotation);
@@ -264,8 +281,8 @@ const DottiStore = {
       return rawAnnotations.filter(annotation => {
         if (this.isSignaturePlaceholderEditor(annotation)) {
           if (
-            this.sameSigner(annotation.signer) &&
-            this.sameSortNum(annotation.signer)
+            this.sameSigner(annotation.signerId) &&
+            this.sameSortNum(annotation.signerId)
           ) {
             return true;
           }
@@ -281,8 +298,8 @@ const DottiStore = {
       return rawAnnotations.filter(annotation => {
         if (this.isStampPlaceholderEditor(annotation)) {
           if (
-            this.sameSigner(annotation.signer) &&
-            this.sameSortNum(annotation.signer)
+            this.sameSigner(annotation.signerId) &&
+            this.sameSortNum(annotation.signerId)
           ) {
             return true;
           }
@@ -361,16 +378,17 @@ const DottiStore = {
         signatureEditorsSerialized.push(serialized);
       }
     }
-    this.submitSignatureTask(signatureEditorsSerialized);
+    this.submitSignatureTaskWithoutFacialRecognition(signatureEditorsSerialized);
   },
   submitSignatureTask(signatureAnnotations) {
     if (this.task) {
       const annotations = this.task.fileContents[0].attr.annotations;
       // find out this task is individual or entity
       const entityAnnotations = annotations.filter(annotation => {
+        const correctSigner = this.getSignerById(annotation.signerId);
         if (
-          annotation.signer.organizationId &&
-          this.sameSortNum(annotation.signer)
+          correctSigner.organizationId &&
+          this.sameSortNum(annotation.signerId)
         ) {
           return true;
         }
@@ -394,9 +412,8 @@ const DottiStore = {
         this.task.fileContents[0].signContents ?? [];
       // assign correct date
       for (const rsa of mergedSignatureAnnotations) {
-        const editor = rsa.attr;
-        if (editor) {
-          const annotation = editor.annotation;
+        const annotation = rsa.attr?.annotation;
+        if (annotation) {
           // Assign correct date to signer
           // no need to check task status because he is submitting the task
           this.assignCorrectDate(annotation);
@@ -521,8 +538,9 @@ const DottiStore = {
       const annotations = this.task.fileContents[0].attr.annotations;
       // find out this task is individual or entity
       const entityAnnotations = annotations.filter(annotation => {
+        const correctSigner = this.getSignerById(annotation.signerId);
         if (
-          annotation.signer.organizationId &&
+          correctSigner.organizationId &&
           this.sameSortNum(annotation.signer)
         ) {
           return true;
@@ -547,9 +565,8 @@ const DottiStore = {
         this.task.fileContents[0].signContents ?? [];
       // assign correct date
       for (const rsa of mergedSignatureAnnotations) {
-        const editor = rsa.attr;
-        if (editor) {
-          const annotation = editor.annotation;
+        const annotation = rsa.attr?.annotation;
+        if (annotation) {
           // Assign correct date to signer
           // no need to check task status because he is submitting the task
           this.assignCorrectDate(annotation);

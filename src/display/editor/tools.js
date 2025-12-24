@@ -2049,8 +2049,8 @@ class AnnotationEditorUIManager {
     for (const editor of this.#allEditors.values()) {
       if (
         editor.name === "signatureEditor" &&
-        window.DottiStore.sameSigner(editor.signer) &&
-        window.DottiStore.sameSortNum(editor.signer)
+        window.DottiStore.sameSigner(editor.signerId) &&
+        window.DottiStore.sameSortNum(editor.signerId)
       ) {
         editors.push(editor);
       }
@@ -2072,7 +2072,7 @@ class AnnotationEditorUIManager {
     const editors = [];
     for (const editor of this.#allEditors.values()) {
       if (window.DottiStore.isStampPlaceholderEditor(editor)) {
-        if (editor.stampURL !== editor.signer.email) {
+        if (!editor.sealAdded) {
           editors.push(editor);
         }
       }

@@ -1,3 +1,242 @@
+:root {
+  --elevation-100: 0 1px 3px 0 #00000026, 0 0 .5px 0 #0000004d;
+  --elevation-200: 0 1px 3px 0 #0000001a, 0 3px 8px 0 #0000001a, 0 0 .5px 0 #0000002e;
+  --elevation-300: 0 1px 3px 0 #0000001a, 0 5px 12px 0 #00000021, 0 0 .5px 0 #00000026;
+  --elevation-400: 0 2px 5px 0 #00000026, 0 10px 16px 0 #0000001f, 0 0 .5px 0 #0000001f;
+  --elevation-500: 0 2px 5px 0 #00000026, 0 10px 24px 0 #0000002e, 0 0 .5px 0 #00000014;
+  --font-family-dotti: "PingFang SC", Inter, Helvetica, Arial, sans-serif;
+  --font-family-default: "Inter", ui-sans-serif, system-ui, -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", sans-serif, "SFProLocalRange";
+  --font-family-display: "Whyte", ui-sans-serif, system-ui, -apple-system, "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", sans-serif;
+  --font-family-mono: "Roboto Mono", "Monaco", "Courier New", monospace;
+  --font-weight-default: 450;
+  --font-weight-strong: 550;
+  --radius-full: 9999px;
+  --radius-large: .8125rem;
+  --radius-medium: .3125rem;
+  --radius-none: 0;
+  --radius-small: .125rem;
+  --ramp-black-100: #0000000d;
+  --ramp-black-200: #0000001a;
+  --ramp-black-300: #00000033;
+  --ramp-black-400: #0000004d;
+  --ramp-black-500: #00000080;
+  --ramp-black-600: #000000cc;
+  --ramp-black-700: #000000d9;
+  --ramp-black-800: #000000e6;
+  --ramp-black-900: #000000f2;
+  --ramp-black-1000: #000000;
+  --ramp-blue-100: #f2f9ff;
+  --ramp-blue-200: #e5f4ff;
+  --ramp-blue-300: #bde3ff;
+  --ramp-blue-400: #80caff;
+  --ramp-blue-500: #0d99ff;
+  --ramp-blue-600: #007be5;
+  --ramp-blue-700: #0768cf;
+  --ramp-blue-800: #034ac1;
+  --ramp-blue-900: #093077;
+  --ramp-blue-1000: #0d193f;
+  --ramp-green-100: #edfcf0;
+  --ramp-green-200: #d5f7da;
+  --ramp-green-300: #aff4c6;
+  --ramp-green-400: #85e0a3;
+  --ramp-green-500: #14ae5c;
+  --ramp-green-600: #009951;
+  --ramp-green-700: #008043;
+  --ramp-green-800: #036838;
+  --ramp-green-900: #024626;
+  --ramp-green-1000: #083a23;
+  --ramp-grey-100: #f5f5f5;
+  --ramp-grey-200: #e6e6e6;
+  --ramp-grey-300: #d9d9d9;
+  --ramp-grey-400: #b3b3b3;
+  --ramp-grey-500: #757575;
+  --ramp-grey-600: #444444;
+  --ramp-grey-700: #383838;
+  --ramp-grey-800: #2c2c2c;
+  --ramp-grey-900: #1e1e1e;
+  --ramp-grey-1000: #111111;
+  --ramp-orange-100: #fff4e5;
+  --ramp-orange-200: #ffe0c2;
+  --ramp-orange-300: #fcd19c;
+  --ramp-orange-400: #ffc470;
+  --ramp-orange-500: #ffa629;
+  --ramp-orange-600: #fc9e24;
+  --ramp-orange-700: #f79722;
+  --ramp-orange-800: #dd7c0e;
+  --ramp-orange-900: #ce7012;
+  --ramp-orange-1000: #8a480f;
+  --ramp-pale-blue-100: #f1f5f8;
+  --ramp-pale-blue-200: #e3ecf2;
+  --ramp-pale-blue-300: #d2dae4;
+  --ramp-pale-blue-400: #afbccf;
+  --ramp-pale-blue-500: #667799;
+  --ramp-pale-blue-600: #536383;
+  --ramp-pale-blue-700: #4a5878;
+  --ramp-pale-blue-800: #394360;
+  --ramp-pale-blue-900: #252d41;
+  --ramp-pale-blue-1000: #121721;
+  --ramp-pale-green-100: #f1f8f2;
+  --ramp-pale-green-200: #daecdf;
+  --ramp-pale-green-300: #c3e0cc;
+  --ramp-pale-green-400: #9fc1aa;
+  --ramp-pale-green-500: #678e79;
+  --ramp-pale-green-600: #5c806d;
+  --ramp-pale-green-700: #517361;
+  --ramp-pale-green-800: #476656;
+  --ramp-pale-green-900: #2f483c;
+  --ramp-pale-green-1000: #172b22;
+  --ramp-pale-persimmon-100: #faefeb;
+  --ramp-pale-persimmon-200: #f8e9e2;
+  --ramp-pale-persimmon-300: #f3d6c9;
+  --ramp-pale-persimmon-400: #ebb49d;
+  --ramp-pale-persimmon-500: #d4693b;
+  --ramp-pale-persimmon-600: #a55e40;
+  --ramp-pale-persimmon-700: #864e37;
+  --ramp-pale-persimmon-800: #603a2a;
+  --ramp-pale-persimmon-900: #412b21;
+  --ramp-pale-persimmon-1000: #1f1714;
+  --ramp-pale-pink-100: #f6eef4;
+  --ramp-pale-pink-200: #f2e3ee;
+  --ramp-pale-pink-300: #e8cee1;
+  --ramp-pale-pink-400: #daaace;
+  --ramp-pale-pink-500: #ab5998;
+  --ramp-pale-pink-600: #86507a;
+  --ramp-pale-pink-700: #724667;
+  --ramp-pale-pink-800: #51344a;
+  --ramp-pale-pink-900: #33252f;
+  --ramp-pale-pink-1000: #1b1318;
+  --ramp-pale-purple-100: #f4f1f8;
+  --ramp-pale-purple-200: #ede7f3;
+  --ramp-pale-purple-300: #e0d4ed;
+  --ramp-pale-purple-400: #c5b2dc;
+  --ramp-pale-purple-500: #7f699b;
+  --ramp-pale-purple-600: #6b5884;
+  --ramp-pale-purple-700: #604d75;
+  --ramp-pale-purple-800: #473956;
+  --ramp-pale-purple-900: #33293d;
+  --ramp-pale-purple-1000: #1a141f;
+  --ramp-pale-red-100: #faedeb;
+  --ramp-pale-red-200: #f8e5e2;
+  --ramp-pale-red-300: #f3cfc9;
+  --ramp-pale-red-400: #eba99d;
+  --ramp-pale-red-500: #d4583b;
+  --ramp-pale-red-600: #a55440;
+  --ramp-pale-red-700: #864537;
+  --ramp-pale-red-800: #60332a;
+  --ramp-pale-red-900: #412621;
+  --ramp-pale-red-1000: #1f1514;
+  --ramp-pale-teal-100: #f1f6f8;
+  --ramp-pale-teal-200: #e3eef2;
+  --ramp-pale-teal-300: #cedee4;
+  --ramp-pale-teal-400: #a3c2cc;
+  --ramp-pale-teal-500: #518394;
+  --ramp-pale-teal-600: #436c7a;
+  --ramp-pale-teal-700: #3c606d;
+  --ramp-pale-teal-800: #2f4c56;
+  --ramp-pale-teal-900: #1f3238;
+  --ramp-pale-teal-1000: #101a1e;
+  --ramp-pale-violet-100: #f1f1f8;
+  --ramp-pale-violet-200: #e7e7f3;
+  --ramp-pale-violet-300: #d4d4ed;
+  --ramp-pale-violet-400: #b3b2dc;
+  --ramp-pale-violet-500: #6a699b;
+  --ramp-pale-violet-600: #595884;
+  --ramp-pale-violet-700: #4e4d75;
+  --ramp-pale-violet-800: #393956;
+  --ramp-pale-violet-900: #29293d;
+  --ramp-pale-violet-1000: #14141f;
+  --ramp-pale-yellow-100: #fff5eb;
+  --ramp-pale-yellow-200: #fdeece;
+  --ramp-pale-yellow-300: #f5dfa8;
+  --ramp-pale-yellow-400: #e8cd7d;
+  --ramp-pale-yellow-500: #ad7f00;
+  --ramp-pale-yellow-600: #906800;
+  --ramp-pale-yellow-700: #7a5800;
+  --ramp-pale-yellow-800: #5c4100;
+  --ramp-pale-yellow-900: #3a2a10;
+  --ramp-pale-yellow-1000: #211a12;
+  --ramp-persimmon-100: #fff2eb;
+  --ramp-persimmon-200: #ffdfcc;
+  --ramp-persimmon-300: #ffbb9e;
+  --ramp-persimmon-400: #ffa27a;
+  --ramp-persimmon-500: #ff5c16;
+  --ramp-persimmon-600: #e24c0c;
+  --ramp-persimmon-700: #c53e0d;
+  --ramp-persimmon-800: #aa370d;
+  --ramp-persimmon-900: #842d0b;
+  --ramp-persimmon-1000: #611d0a;
+  --ramp-pink-100: #fff0fe;
+  --ramp-pink-200: #ffe0fc;
+  --ramp-pink-300: #ffbdf2;
+  --ramp-pink-400: #ff99e0;
+  --ramp-pink-500: #ff24bd;
+  --ramp-pink-600: #ea10ac;
+  --ramp-pink-700: #cb0b96;
+  --ramp-pink-800: #971172;
+  --ramp-pink-900: #5f114c;
+  --ramp-pink-1000: #451138;
+  --ramp-purple-100: #f9f5ff;
+  --ramp-purple-200: #f1e5ff;
+  --ramp-purple-300: #e4ccff;
+  --ramp-purple-400: #d9b8ff;
+  --ramp-purple-500: #9747ff;
+  --ramp-purple-600: #8638e5;
+  --ramp-purple-700: #7c2bda;
+  --ramp-purple-800: #681abb;
+  --ramp-purple-900: #4b0d87;
+  --ramp-purple-1000: #2d0f46;
+  --ramp-red-100: #fff5f5;
+  --ramp-red-200: #ffe2e0;
+  --ramp-red-300: #ffc7c2;
+  --ramp-red-400: #ffafa3;
+  --ramp-red-500: #f24822;
+  --ramp-red-600: #dc3412;
+  --ramp-red-700: #bd2915;
+  --ramp-red-800: #9f1f18;
+  --ramp-red-900: #771208;
+  --ramp-red-1000: #660e0b;
+  --ramp-teal-100: #ebfbff;
+  --ramp-teal-200: #cef0f8;
+  --ramp-teal-300: #b6ecf7;
+  --ramp-teal-400: #75d7f0;
+  --ramp-teal-500: #00a2c2;
+  --ramp-teal-600: #0087a8;
+  --ramp-teal-700: #047195;
+  --ramp-teal-800: #085a78;
+  --ramp-teal-900: #093c53;
+  --ramp-teal-1000: #0e2f43;
+  --ramp-violet-100: #f5f5ff;
+  --ramp-violet-200: #ebebff;
+  --ramp-violet-300: #d3d1ff;
+  --ramp-violet-400: #b4b2ff;
+  --ramp-violet-500: #4d49fc;
+  --ramp-violet-600: #443deb;
+  --ramp-violet-700: #3d32e2;
+  --ramp-violet-800: #3620df;
+  --ramp-violet-900: #2f15ac;
+  --ramp-violet-1000: #1d1254;
+  --ramp-white-100: #ffffff0d;
+  --ramp-white-200: #ffffff1a;
+  --ramp-white-300: #ffffff33;
+  --ramp-white-400: #ffffff66;
+  --ramp-white-500: #ffffffb3;
+  --ramp-white-600: #ffffffcc;
+  --ramp-white-700: #ffffffd9;
+  --ramp-white-800: #ffffffe6;
+  --ramp-white-900: #fffffff2;
+  --ramp-white-1000: #ffffff;
+  --ramp-yellow-100: #fffbeb;
+  --ramp-yellow-200: #fff1c2;
+  --ramp-yellow-300: #ffe8a3;
+  --ramp-yellow-400: #ffd966;
+  --ramp-yellow-500: #ffcd29;
+  --ramp-yellow-600: #ffc21a;
+  --ramp-yellow-700: #fab815;
+  --ramp-yellow-800: #eba611;
+  --ramp-yellow-900: #dd940e;
+  --ramp-yellow-1000: #b86200;
+}
+
 .dotti_brand {
   display: flex;
   align-items: center;
@@ -72,3 +311,57 @@ html, body {
   0% { background-position: 0% 50%; }
   100% { background-position: 400% 50%; }
 }
+
+/*scrollbar styling*/
+::-webkit-scrollbar {
+  width: 15px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  border-radius: 999px;
+  /*box-shadow: inset 0 0 10px 10px  var(--ramp-black-100);*/
+  border: solid 5px transparent;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  box-shadow: inset 0 0 10px 10px var(--ramp-black-400);
+  border: solid 5px transparent;
+}
+
+.placeholder-content-sig {
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  border: 2px dashed var(--ramp-blue-600); /* Placeholder border style */
+  /*background-color: rgba(0, 123, 255, 0.1);*/
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ramp-black-1000);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.placeholder-content-seal {
+  user-select: none;
+  width: 100%;
+  height: 100%;
+  border: 2px dashed var(--ramp-persimmon-600); /* Placeholder border style */
+  /*background-color: rgba(0, 123, 255, 0.1);*/
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ramp-black-1000);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 8px;
+  overflow: hidden;
+}
+
