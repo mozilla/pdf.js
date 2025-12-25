@@ -13123,5 +13123,13 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "issue18062",
+    "file": "pdfs/issue18062.pdf",
+    "md5": "b8fb6d5622f0a2f45be8e26da7de969c",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
   }
 ]

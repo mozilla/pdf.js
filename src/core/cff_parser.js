@@ -255,6 +255,8 @@ class CFFParser {
     const charStringOffset = topDict.getByName("CharStrings");
     const charStringIndex = this.parseIndex(charStringOffset).obj;
 
+    cff.charStringCount = charStringIndex.count;
+
     const fontMatrix = topDict.getByName("FontMatrix");
     if (fontMatrix) {
       properties.fontMatrix = fontMatrix;
@@ -1005,6 +1007,7 @@ class CFF {
     this.fdSelect = null;
 
     this.isCIDFont = false;
+    this.charStringCount = 0;
   }
 
   duplicateFirstGlyph() {
