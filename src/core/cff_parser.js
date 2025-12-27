@@ -119,8 +119,8 @@ const CharstringValidationData = [
   /*  7 */ { id: "vlineto", min: 1, resetStack: true },
   /*  8 */ { id: "rrcurveto", min: 6, resetStack: true },
   /*  9 */ null,
-  /* 10 */ { id: "callsubr", min: 1, undefStack: true },
-  /* 11 */ { id: "return", min: 0, undefStack: true },
+  /* 10 */ { id: "callsubr", min: 1 },
+  /* 11 */ { id: "return", min: 0 },
   /* 12 */ null,
   /* 13 */ null,
   /* 14 */ { id: "endchar", min: 0, stackClearing: true },
@@ -138,7 +138,7 @@ const CharstringValidationData = [
   /* 26 */ { id: "vvcurveto", min: 4, resetStack: true },
   /* 27 */ { id: "hhcurveto", min: 4, resetStack: true },
   /* 28 */ null, // shortint
-  /* 29 */ { id: "callgsubr", min: 1, undefStack: true },
+  /* 29 */ { id: "callgsubr", min: 1 },
   /* 30 */ { id: "vhcurveto", min: 4, resetStack: true },
   /* 31 */ { id: "hvcurveto", min: 4, resetStack: true },
 ];
@@ -627,26 +627,24 @@ class CFFParser {
             data[j - 1] = value === 1 ? 3 : 23;
           }
         }
-        if ("min" in validationCommand) {
-          if (!state.undefStack && stackSize < validationCommand.min) {
-            warn(
-              "Not enough parameters for " +
-                validationCommand.id +
-                "; actual: " +
-                stackSize +
-                ", expected: " +
-                validationCommand.min
-            );
+        if (stackSize < validationCommand.min) {
+          warn(
+            "Not enough parameters for " +
+              validationCommand.id +
+              "; actual: " +
+              stackSize +
+              ", expected: " +
+              validationCommand.min
+          );
 
-            if (stackSize === 0) {
-              // Just "fix" the outline in replacing command by a endchar:
-              // it could lead to wrong rendering of some glyphs or not.
-              // For example, the pdf in #6132 is well-rendered.
-              data[j - 1] = 14;
-              return true;
-            }
-            return false;
+          if (stackSize === 0) {
+            // Just "fix" the outline in replacing command by a endchar:
+            // it could lead to wrong rendering of some glyphs or not.
+            // For example, the pdf in #6132 is well-rendered.
+            data[j - 1] = 14;
+            return true;
           }
+          return false;
         }
         if (state.firstStackClearing && validationCommand.stackClearing) {
           state.firstStackClearing = false;
@@ -670,15 +668,11 @@ class CFFParser {
             validationCommand.stackFn(stack, stackSize);
           }
           stackSize += validationCommand.stackDelta;
-        } else if (validationCommand.stackClearing) {
+        } else if (
+          validationCommand.stackClearing ||
+          validationCommand.resetStack
+        ) {
           stackSize = 0;
-        } else if (validationCommand.resetStack) {
-          stackSize = 0;
-          state.undefStack = false;
-        } else if (validationCommand.undefStack) {
-          stackSize = 0;
-          state.undefStack = true;
-          state.firstStackClearing = false;
         }
       }
     }
@@ -706,7 +700,6 @@ class CFFParser {
         callDepth: 0,
         stackSize: 0,
         stack: [],
-        undefStack: true,
         hints: 0,
         firstStackClearing: true,
         seac: null,
