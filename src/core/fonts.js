@@ -2702,13 +2702,36 @@ class Font {
       writeUint32(tables.maxp.data, 0, version);
     }
 
+    let isGlyphLocationsLong = int16(
+      tables.head.data[50],
+      tables.head.data[51]
+    );
+    if (tables.loca) {
+      const locaLength = isGlyphLocationsLong
+        ? (numGlyphs + 1) * 4
+        : (numGlyphs + 1) * 2;
+      if (tables.loca.length !== locaLength) {
+        warn("Incorrect 'loca' table length -- attempting to fix it.");
+        // The length of the loca table is wrong (see #13425), so we check if we
+        // have enough space to fix it.
+        const sortedTables = Object.values(tables)
+          .filter(Boolean)
+          .sort((a, b) => a.offset - b.offset);
+        const locaIndex = sortedTables.indexOf(tables.loca);
+        const nextTable = sortedTables[locaIndex + 1] || null;
+        if (nextTable && tables.loca.offset + locaLength < nextTable.offset) {
+          const previousPos = font.pos;
+          font.pos = font.start || 0;
+          font.skip(tables.loca.offset);
+          tables.loca.data = font.getBytes(locaLength);
+          tables.loca.length = locaLength;
+          font.pos = previousPos;
+        }
+      }
+    }
+
     if (properties.scaleFactors?.length === numGlyphs && isTrueType) {
       const { scaleFactors } = properties;
-      const isGlyphLocationsLong = int16(
-        tables.head.data[50],
-        tables.head.data[51]
-      );
-
       const glyphs = new GlyfTable({
         glyfTable: tables.glyf.data,
         isGlyphLocationsLong,
@@ -2723,7 +2746,7 @@ class Font {
 
       if (isLocationLong !== !!isGlyphLocationsLong) {
         tables.head.data[50] = 0;
-        tables.head.data[51] = isLocationLong ? 1 : 0;
+        isGlyphLocationsLong = tables.head.data[51] = isLocationLong ? 1 : 0;
       }
 
       const metrics = tables.hmtx.data;
@@ -2801,10 +2824,6 @@ class Font {
 
     let missingGlyphs = Object.create(null);
     if (isTrueType) {
-      const isGlyphLocationsLong = int16(
-        tables.head.data[50],
-        tables.head.data[51]
-      );
       const glyphsInfo = sanitizeGlyphLocations(
         tables.loca,
         tables.glyf,
