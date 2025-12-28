@@ -60,7 +60,6 @@ import { CFFFont } from "./cff_font.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { getFontBasicMetrics } from "./metrics.js";
 import { GlyfTable } from "./glyf.js";
-import { IdentityCMap } from "./cmap.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
 import { readUint32 } from "./core_utils.js";
 import { Stream } from "./stream.js";
@@ -2638,27 +2637,23 @@ class Font {
       header = readOpenTypeHeader(font);
       tables = readTables(font, header.numTables);
     }
-    let cff, cffFile;
 
     const isTrueType = !tables["CFF "];
     if (!isTrueType) {
-      const isComposite =
-        properties.composite &&
-        (properties.cidToGidMap?.length > 0 ||
-          !(properties.cMap instanceof IdentityCMap));
       // OpenType font (skip composite fonts with non-default glyph mapping).
       if (
-        (header.version === "OTTO" && !isComposite) ||
+        (header.version === "OTTO" && !properties.composite) ||
         !tables.head ||
         !tables.hhea ||
         !tables.maxp ||
         !tables.post
       ) {
         // No major tables: throwing everything at `CFFFont`.
-        cffFile = new Stream(tables["CFF "].data);
-        cff = new CFFFont(cffFile, properties);
-
-        return this.convert(name, cff, properties);
+        return this.convert(
+          name,
+          new CFFFont(new Stream(tables["CFF "].data), properties),
+          properties
+        );
       }
 
       delete tables.glyf;
@@ -2686,9 +2681,32 @@ class Font {
       throw new FormatError('Required "maxp" table is not found');
     }
 
+    let numGlyphsFromCFF;
+    if (!isTrueType) {
+      try {
+        // Trying to repair CFF file
+        const parser = new CFFParser(
+          new Stream(tables["CFF "].data),
+          properties,
+          SEAC_ANALYSIS_ENABLED
+        );
+        const cff = parser.parse();
+        cff.duplicateFirstGlyph();
+        const compiler = new CFFCompiler(cff);
+        tables["CFF "].data = compiler.compile();
+        numGlyphsFromCFF = cff.charStringCount;
+      } catch {
+        warn("Failed to compile font " + properties.loadedName);
+      }
+    }
+
     font.pos = (font.start || 0) + tables.maxp.offset;
     let version = font.getInt32();
-    const numGlyphs = font.getUint16();
+    const numGlyphs = numGlyphsFromCFF ?? font.getUint16();
+    if (version === 0x00005000 && tables.maxp.length !== 6) {
+      tables.maxp.data = tables.maxp.data.subarray(0, 6);
+      tables.maxp.length = 6;
+    }
 
     if (version !== 0x00010000 && version !== 0x00005000) {
       // https://learn.microsoft.com/en-us/typography/opentype/spec/maxp
@@ -3096,24 +3114,6 @@ class Font {
             metricsOverride
           ),
         };
-      }
-    }
-
-    if (!isTrueType) {
-      try {
-        // Trying to repair CFF file
-        cffFile = new Stream(tables["CFF "].data);
-        const parser = new CFFParser(
-          cffFile,
-          properties,
-          SEAC_ANALYSIS_ENABLED
-        );
-        cff = parser.parse();
-        cff.duplicateFirstGlyph();
-        const compiler = new CFFCompiler(cff);
-        tables["CFF "].data = compiler.compile();
-      } catch {
-        warn("Failed to compile font " + properties.loadedName);
       }
     }
 
