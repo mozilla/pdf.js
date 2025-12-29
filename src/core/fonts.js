@@ -2670,10 +2670,23 @@ class Font {
     }
 
     const isTrueType = !tables["CFF "];
+    let parsedCff = null;
     if (!isTrueType) {
+      try {
+        parsedCff = new CFFParser(
+          new Stream(tables["CFF "].data),
+          properties,
+          SEAC_ANALYSIS_ENABLED
+        ).parse();
+      } catch {
+        warn("Failed to parse font " + properties.loadedName);
+      }
+
       // OpenType font (skip composite fonts with non-default glyph mapping).
       if (
-        (header.version === "OTTO" && !properties.composite) ||
+        (header.version === "OTTO" &&
+          (!properties.composite ||
+            (properties.fontFileN === 3 && parsedCff?.isCIDFont))) ||
         !tables.head ||
         !tables.hhea ||
         !tables.maxp ||
@@ -2713,19 +2726,11 @@ class Font {
     }
 
     let numGlyphsFromCFF;
-    if (!isTrueType) {
+    if (parsedCff) {
       try {
-        // Trying to repair CFF file
-        const parser = new CFFParser(
-          new Stream(tables["CFF "].data),
-          properties,
-          SEAC_ANALYSIS_ENABLED
-        );
-        const cff = parser.parse();
-        cff.duplicateFirstGlyph();
-        const compiler = new CFFCompiler(cff);
-        tables["CFF "].data = compiler.compile();
-        numGlyphsFromCFF = cff.charStringCount;
+        parsedCff.duplicateFirstGlyph();
+        tables["CFF "].data = new CFFCompiler(parsedCff).compile();
+        numGlyphsFromCFF = parsedCff.charStringCount;
       } catch {
         warn("Failed to compile font " + properties.loadedName);
       }

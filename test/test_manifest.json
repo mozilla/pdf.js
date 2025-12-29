@@ -14260,5 +14260,12 @@
     "rounds": 1,
     "type": "eq",
     "about": "Non-isolated knockout group with a nested non-isolated subgroup over existing text."
+  },
+  {
+    "id": "Embedded_font.pdf",
+    "file": "pdfs/Embedded_font.pdf",
+    "md5": "b68dd5a3e6833d1af94e295fe1d60285",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
