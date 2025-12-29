@@ -4558,9 +4558,22 @@ class PartialEvaluator {
       throw new FormatError("invalid font name");
     }
 
-    let fontFile, subtype, length1, length2, length3;
+    let fontFile, fontFileN, subtype, length1, length2, length3;
     try {
-      fontFile = descriptor.get("FontFile", "FontFile2", "FontFile3");
+      fontFile = descriptor.get("FontFile");
+      if (fontFile) {
+        fontFileN = 1;
+      } else {
+        fontFile = descriptor.get("FontFile2");
+        if (fontFile) {
+          fontFileN = 2;
+        } else {
+          fontFile = descriptor.get("FontFile3");
+          if (fontFile) {
+            fontFileN = 3;
+          }
+        }
+      }
 
       if (fontFile) {
         if (!(fontFile instanceof BaseStream)) {
@@ -4662,6 +4675,7 @@ class PartialEvaluator {
       name: fontName.name,
       subtype,
       file: fontFile,
+      fontFileN,
       length1,
       length2,
       length3,

@@ -13131,5 +13131,12 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "Embedded_font.pdf",
+    "file": "pdfs/Embedded_font.pdf",
+    "md5": "5625dc05630ca728f45b02baf11dc540",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
