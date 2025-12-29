@@ -2642,7 +2642,8 @@ class Font {
     if (!isTrueType) {
       // OpenType font (skip composite fonts with non-default glyph mapping).
       if (
-        (header.version === "OTTO" && !properties.composite) ||
+        (header.version === "OTTO" &&
+          (!properties.composite || properties.fontFileN === 3)) ||
         !tables.head ||
         !tables.hhea ||
         !tables.maxp ||
