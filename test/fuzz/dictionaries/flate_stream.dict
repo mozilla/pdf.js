@@ -1,0 +1,61 @@
+# Deflate/Zlib format dictionary
+# Zlib headers (CMF, FLG)
+"\x78\x01"
+"\x78\x5e"
+"\x78\x9c"
+"\x78\xda"
+
+# Raw deflate block types
+"\x00"
+"\x01"
+"\x02"
+"\x03"
+
+# Final block flag
+"\x01"
+
+# Non-compressed block
+"\x00\x00\xff\xff"
+"\x01\x00\xfe\xff"
+
+# Fixed Huffman block
+"\x03"
+
+# Dynamic Huffman block
+"\x04"
+"\x05"
+
+# Common literal/length codes
+"\x00"
+"\x01"
+"\x02"
+"\x03"
+"\x04"
+"\x0a"
+"\x0d"
+"\x20"
+"\xff"
+
+# Distance codes
+"\x00\x00"
+"\x00\x01"
+"\x00\x02"
+"\x01\x00"
+
+# End of block marker
+"\x00"
+
+# ADLER-32 checksum patterns
+"\x00\x00\x00\x01"
+"\x00\x01\x00\x01"
+"\xff\xff\xff\xff"
+
+# Repeat codes
+"\xed"
+"\xee"
+"\xef"
+
+# Back references
+"\x01\x01"
+"\x02\x02"
+"\x03\x03"

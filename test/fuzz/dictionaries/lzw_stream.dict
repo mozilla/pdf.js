@@ -1,0 +1,39 @@
+# LZW compression format dictionary
+# Clear code (256)
+"\x80\x00"
+
+# EOD code (257)
+"\x80\x40"
+
+# Initial codes (0-255 literals)
+"\x00"
+"\x01"
+"\x20"
+"\x41"
+"\x5a"
+"\x61"
+"\x7a"
+"\xff"
+
+# Common code patterns
+"\x80"
+"\x81"
+"\x82"
+"\x83"
+"\x84"
+
+# Extended codes
+"\x01\x00"
+"\x01\x01"
+"\x01\x02"
+"\x02\x00"
+"\x02\x01"
+"\x02\x02"
+
+# Reset patterns
+"\x80\x00\x80\x00"
+
+# Common byte sequences
+"\x00\x00\x00\x00"
+"\xff\xff\xff\xff"
+"\x01\x02\x03\x04"

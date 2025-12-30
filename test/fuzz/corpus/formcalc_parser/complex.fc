@@ -1,0 +1,29 @@
+// Complex FormCalc script
+var total = 0
+var count = 0
+var avg = 0
+
+func Calculate(a, b, c)
+  var sum = a + b + c
+  return sum / 3
+endfunc
+
+for i = 1 upto 10 step 1 do
+  total = total + i
+  count = count + 1
+endfor
+
+if (count > 0) then
+  avg = total / count
+  if (avg > 5) then
+    avg = Round(avg, 2)
+  endif
+endif
+
+foreach item in (1, 2, 3, 4, 5) do
+  total = total + item
+endfor
+
+while (count < 20) do
+  count = count + 1
+endwhile
