@@ -16,6 +16,8 @@ get involved, visit:
 + [Frequently Asked Questions](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions)
 + [Good Beginner Bugs](https://github.com/mozilla/pdf.js/issues?q=is%3Aissue%20state%3Aopen%20label%3Agood-beginner-bug)
 + [Projects](https://github.com/mozilla/pdf.js/projects)
++ [PDF viewer keyboard shortcuts (FAQ)](https://github.com/mozilla/pdf.js/wiki/Frequently-Asked-Questions#viewer-controls)
+
 
 Feel free to stop by our [Matrix room](https://chat.mozilla.org/#/room/#pdfjs:mozilla.org) for questions or guidance.
 
