@@ -23,7 +23,7 @@
     "eslint-plugin-jasmine": "^4.2.2",
     "eslint-plugin-json": "^4.0.1",
     "eslint-plugin-no-unsanitized": "^4.1.4",
-    "eslint-plugin-perfectionist": "^4.15.1",
+    "eslint-plugin-perfectionist": "^5.2.0",
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-unicorn": "^62.0.0",
     "globals": "^17.0.0",
