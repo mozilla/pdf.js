@@ -13139,5 +13139,14 @@
     "rounds": 1,
     "link": true,
     "type": "eq"
+  },
+  {
+    "id": "JBIG2Globals_nowasm",
+    "file": "pdfs/JBIG2Globals.pdf",
+    "md5": "78ee015a604678a4efbdcd993e0d77aa",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "useWasm": false
   }
 ]

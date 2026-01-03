@@ -63,7 +63,7 @@ class JBig2WasmImage {
       return successCallback(results.instance);
     } catch (reason) {
       warn(`JBig2Image#instantiateWasm: ${reason}`);
-      return null;
+      return fallbackCallback(null);
     } finally {
       this.#handler = null;
     }
