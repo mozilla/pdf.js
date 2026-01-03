@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
+import { shadow, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
 import { Jbig2Image } from "./jbig2.js";
-import { shadow } from "../shared/util.js";
+import { JBig2WasmImage } from "./jbig2_wasm.js";
 
 /**
  * For JBIG2's we use a library to decode these images and
@@ -47,7 +48,40 @@ class Jbig2Stream extends DecodeStream {
     this.decodeImage();
   }
 
-  decodeImage(bytes) {
+  get isAsyncDecoder() {
+    return true;
+  }
+
+  async decodeImage(bytes, _decoderOptions) {
+    if (this.eof) {
+      return this.buffer;
+    }
+    bytes ||= this.bytes;
+    try {
+      let globals = null;
+      if (this.params instanceof Dict) {
+        const globalsStream = this.params.get("JBIG2Globals");
+        if (globalsStream instanceof BaseStream) {
+          globals = globalsStream.getBytes();
+        }
+      }
+      this.buffer = await JBig2WasmImage.decode(
+        bytes,
+        this.dict.get("Width"),
+        this.dict.get("Height"),
+        globals
+      );
+    } catch {
+      warn("Jbig2Stream: Falling back to JS JBIG2 decoder.");
+      return this.decodeImageFallback(bytes);
+    }
+    this.bufferLength = this.buffer.length;
+    this.eof = true;
+
+    return this.buffer;
+  }
+
+  async decodeImageFallback(bytes) {
     if (this.eof) {
       return this.buffer;
     }

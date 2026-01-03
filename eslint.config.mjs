@@ -35,6 +35,7 @@ export default [
       "external/builder/fixtures_babel/",
       "external/openjpeg/",
       "external/qcms/",
+      "external/jbig2/",
       "external/quickjs/",
       "test/stats/results/",
       "test/tmp/",
