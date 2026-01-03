@@ -2820,6 +2820,13 @@
     "type": "eq"
   },
   {
+    "id": "issue20461",
+    "file": "pdfs/bitmap-symbol-context-reuse.pdf",
+    "md5": "3d79e2d087515c2fdbed6fec0ad86e91",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue20439",
     "file": "pdfs/issue20439.pdf",
     "md5": "3c7e888b26ff00943ec1610d93235efc",
