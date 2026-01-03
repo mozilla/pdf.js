@@ -410,16 +410,19 @@ function handleSessionTimeout(session) {
   closeSession(browser);
 }
 
-function getTestManifest() {
+function getTestManifest(label = null) {
   var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
 
   const testFilter = options.testfilter.slice(0),
     xfaOnly = options.xfaOnly;
-  if (testFilter.length || xfaOnly) {
+  if (label || testFilter.length || xfaOnly) {
     manifest = manifest.filter(function (item) {
       var i = testFilter.indexOf(item.id);
       if (i !== -1) {
         testFilter.splice(i, 1);
+        return true;
+      }
+      if (label && item.labels?.includes(label)) {
         return true;
       }
       if (xfaOnly && item.enableXfa) {
@@ -809,6 +812,7 @@ function onAllSessionsClosedAfterTests(name) {
     }
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
+    process.exit(numErrors > 0 ? 1 : 0);
   };
 }
 
@@ -1088,8 +1092,8 @@ async function closeSession(browser) {
   }
 }
 
-async function ensurePDFsDownloaded() {
-  const manifest = getTestManifest();
+async function ensurePDFsDownloaded(label = null) {
+  const manifest = getTestManifest(label);
   await downloadManifestFiles(manifest);
   try {
     await verifyManifestFiles(manifest);
@@ -1124,7 +1128,7 @@ async function main() {
       await startUnitTest("/test/font/font_test.html", "font");
     } else if (options.integration) {
       // Allows linked PDF files in integration-tests as well.
-      await ensurePDFsDownloaded();
+      await ensurePDFsDownloaded("integration");
       await startIntegrationTest();
     } else {
       await startRefTest(options.masterMode, options.reftest);
