@@ -369,7 +369,7 @@ class PDFImage {
     const inverseDecode = decode?.[0] > 0;
 
     const computedLength = ((width + 7) >> 3) * height;
-    const imgArray = image.getBytes(computedLength);
+    const imgArray = await image.getImageData(computedLength);
 
     const isSingleOpaquePixel =
       width === 1 &&

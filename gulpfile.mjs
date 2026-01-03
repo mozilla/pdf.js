@@ -696,6 +696,10 @@ function createWasmBundle() {
       base: "external/qcms",
       encoding: false,
     }),
+    gulp.src(["external/jbig2/*.wasm", "external/jbig2/LICENSE_*"], {
+      base: "external/jbig2",
+      encoding: false,
+    }),
   ]);
 }
 
@@ -1696,6 +1700,7 @@ function buildLib(defines, dir) {
     gulp.src("test/unit/*.js", { base: ".", encoding: false }),
     gulp.src("external/openjpeg/*.js", { base: "openjpeg/", encoding: false }),
     gulp.src("external/qcms/*.js", { base: "qcms/", encoding: false }),
+    gulp.src("external/jbig2/*.js", { base: "jbig2/", encoding: false }),
   ]);
 
   return buildLibHelper(bundleDefines, inputStream, dir);
@@ -2207,7 +2212,7 @@ gulp.task(
     },
     function watchWasm() {
       gulp.watch(
-        ["external/openjpeg/*", "external/qcms/*"],
+        ["external/openjpeg/*", "external/qcms/*", "external/jbig2/*"],
         { ignoreInitial: false },
         gulp.series("dev-wasm")
       );

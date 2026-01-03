@@ -22,6 +22,7 @@ import {
 } from "../shared/util.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
 import { ImageResizer } from "./image_resizer.js";
+import { JBig2WasmImage } from "./jbig2_wasm.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 import { MissingDataException } from "./core_utils.js";
@@ -81,6 +82,7 @@ class BasePdfManager {
     JpxImage.setOptions(options);
     IccColorSpace.setOptions(options);
     CmykICCBasedCS.setOptions(options);
+    JBig2WasmImage.setOptions(options);
   }
 
   get docId() {
