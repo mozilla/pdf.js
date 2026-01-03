@@ -167,10 +167,10 @@ pdfjs-printing-not-ready = Warnowanje: PDF njejo se za śišćanje dopołnje zac
 ## Tooltips and alt text for side panel toolbar buttons
 
 pdfjs-toggle-sidebar-button =
-    .title = Bócnicu pokazaś/schowaś
+    .title = Bocnicu pokazaś/schowaś
 pdfjs-toggle-sidebar-notification-button =
     .title = Bocnicu pśešaltowaś (dokument rozrědowanje/pśipiski/warstwy wopśimujo)
-pdfjs-toggle-sidebar-button-label = Bócnicu pokazaś/schowaś
+pdfjs-toggle-sidebar-button-label = Bocnicu pokazaś/schowaś
 pdfjs-document-outline-button =
     .title = Dokumentowe naraźenje pokazaś (dwójne kliknjenje, aby se wšykne zapiski pokazali/schowali)
 pdfjs-document-outline-button-label = Dokumentowa struktura
@@ -389,9 +389,9 @@ pdfjs-editor-comments-sidebar-title =
        *[other] { $count } komentarow
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Bócnicu zacyniś
-    .aria-label = Bócnicu zacyniś
-pdfjs-editor-comments-sidebar-close-button-label = Bócnicu zacyniś
+    .title = Bocnicu zacyniś
+    .aria-label = Bocnicu zacyniś
+pdfjs-editor-comments-sidebar-close-button-label = Bocnicu zacyniś
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Wiźiśo něco wobspomnjeśa gódnego? Wuzwigniśo to a zawóstajśo komentar.
 pdfjs-editor-comments-sidebar-no-comments-link = Dalšne informacije
