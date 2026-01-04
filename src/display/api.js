@@ -1188,6 +1188,8 @@ class PDFDocumentProxy {
  *   'beginMarkedContentProps', or 'endMarkedContent'.
  * @property {string} id - The marked content identifier. Only used for type
  *   'beginMarkedContentProps'.
+ * @property {string|null} tag - The marked content tag.
+ * @property {string|null} lang - The lang attribute for the marked content.
  */
 
 /**
