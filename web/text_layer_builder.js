@@ -307,6 +307,9 @@ class TextLayerBuilder {
         if (anchor.nodeType === Node.TEXT_NODE) {
           anchor = anchor.parentNode;
         }
+        if (anchor.classList?.contains("highlight")) {
+          anchor = anchor.parentNode;
+        }
         if (!modifyStart && range.endOffset === 0) {
           do {
             while (!anchor.previousSibling) {
@@ -318,8 +321,7 @@ class TextLayerBuilder {
 
         const parentTextLayer = anchor.parentElement?.closest(".textLayer");
         const endDiv = this.#textLayers.get(parentTextLayer);
-        const anchorHighlighted = anchor.classList?.contains("highlight");
-        if (endDiv && !anchorHighlighted) {
+        if (endDiv) {
           endDiv.style.width = parentTextLayer.style.width;
           endDiv.style.height = parentTextLayer.style.height;
           anchor.parentElement.insertBefore(
