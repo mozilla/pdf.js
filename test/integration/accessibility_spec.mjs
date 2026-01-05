@@ -460,4 +460,42 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("No alt-text with MathML", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug2004951.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that there's no alt-text on the MathML node", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const isSanitizerSupported = await page.evaluate(() => {
+            try {
+              // eslint-disable-next-line no-undef
+              return typeof Sanitizer !== "undefined";
+            } catch {
+              return false;
+            }
+          });
+          const ariaLabel = await page.$eval(
+            "span[aria-owns='p3R_mc2']",
+            el => el.getAttribute("aria-label") || ""
+          );
+          if (isSanitizerSupported) {
+            expect(ariaLabel).withContext(`In ${browserName}`).toEqual("");
+          } else {
+            expect(ariaLabel)
+              .withContext(`In ${browserName}`)
+              .toEqual("cube root of , x plus y end cube root ");
+          }
+        })
+      );
+    });
+  });
 });
