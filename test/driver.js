@@ -628,6 +628,13 @@ class Driver {
         `[${this.currentTask + 1}/${this.manifest.length}] ${task.id}:\n`
       );
 
+      if (task.type === "skip-because-failing") {
+        this._log(`  Skipping file "${task.file} because it's failing"\n`);
+        this.currentTask++;
+        this._nextTask();
+        return;
+      }
+
       // Support *linked* test-cases for the other suites, e.g. unit- and
       // integration-tests, without needing to run them as reference-tests.
       if (task.type === "other") {
