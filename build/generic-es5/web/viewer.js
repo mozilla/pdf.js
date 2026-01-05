@@ -2179,7 +2179,43 @@ var PDFViewerApplication = {
 exports.PDFViewerApplication = PDFViewerApplication;
 var validateFileURL;
 {
-  validateFileURL = function validateFileURL(file) {};
+  var S3_ORIGIN = "https://s3.amazonaws.com";
+  var ALLOWED_ORIGINS = ['https://assets.datacamp.com', 'https://assets.datacamp-staging.com', "https://projector-video-pdf-converter.datacamp.com", "https://projector-video-pdf-converter.datacamp-staging.com", S3_ORIGIN];
+  var ALLOWED_BUCKETS = ["assets.datacamp.com"];
+
+  validateFileURL = function validateFileURL(file) {
+    if (file === undefined) {
+      return;
+    }
+
+    try {
+      var _URL = new URL(file, window.location.href),
+          origin = _URL.origin,
+          protocol = _URL.protocol;
+
+      if (S3_ORIGIN === origin && !ALLOWED_BUCKETS.find(function (bucket) {
+        return file.startsWith("".concat(S3_ORIGIN, "/").concat(bucket));
+      })) {
+        throw new Error('file origin is not allowed');
+      }
+
+      if (protocol === 'blob:') {
+        return;
+      }
+
+      if (!ALLOWED_ORIGINS.includes(origin)) {
+        throw new Error('file origin is not allowed');
+      }
+    } catch (ex) {
+      var message = ex && ex.message;
+      PDFViewerApplication.l10n.get('loading_error', null, 'An error occurred while loading the PDF.').then(function (loadingErrorMessage) {
+        PDFViewerApplication.error(loadingErrorMessage, {
+          message: message
+        });
+      });
+      throw ex;
+    }
+  };
 }
 
 function loadFakeWorker() {
