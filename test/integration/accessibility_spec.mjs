@@ -430,4 +430,34 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("Artifacts must be aria-hidden", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug1937438_mml_from_latex.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that some artifacts are aria-hidden", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const parentSquareRootHidden = await page.evaluate(() => {
+            for (const span of document.querySelectorAll(".textLayer span")) {
+              if (span.textContent === "√") {
+                return span.parentElement.getAttribute("aria-hidden");
+              }
+            }
+            return false;
+          });
+          expect(parentSquareRootHidden)
+            .withContext(`In ${browserName}`)
+            .toEqual("true");
+        })
+      );
+    });
+  });
 });

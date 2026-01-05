@@ -294,6 +294,9 @@ class TextLayer {
           if (item.id) {
             this.#container.setAttribute("id", `${item.id}`);
           }
+          if (item.tag === "Artifact") {
+            this.#container.ariaHidden = true;
+          }
           parent.append(this.#container);
         } else if (item.type === "endMarkedContent") {
           this.#container = this.#container.parentNode;
