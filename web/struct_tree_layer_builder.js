@@ -370,6 +370,10 @@ class StructTreeLayerBuilder {
               elem.ariaHidden = true;
             }
           }
+          // For now, we don't want to keep the alt text if there's valid
+          // MathML (see https://github.com/w3c/mathml-aam/issues/37).
+          // TODO: Revisit this decision in the future.
+          delete node.alt;
         }
         if (
           !node.mathML &&
@@ -377,6 +381,7 @@ class StructTreeLayerBuilder {
           node.children[0].role !== "math"
         ) {
           element = document.createElementNS(MathMLNamespace, "math");
+          delete node.alt;
         }
       }
     }
