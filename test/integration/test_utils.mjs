@@ -158,6 +158,24 @@ async function waitForSandboxTrip(page) {
   await awaitPromise(handle);
 }
 
+async function waitForDOMMutation(page, callback) {
+  return page.evaluateHandle(
+    cb => [
+      new Promise(resolve => {
+        const mutationObserver = new MutationObserver(mutationList => {
+          // eslint-disable-next-line no-eval
+          if (eval(`(${cb})`)(mutationList)) {
+            mutationObserver.disconnect();
+            resolve();
+          }
+        });
+        mutationObserver.observe(document, { childList: true, subtree: true });
+      }),
+    ],
+    callback.toString()
+  );
+}
+
 function waitForTimeout(milliseconds) {
   /**
    * Wait for the given number of milliseconds.
@@ -232,6 +250,10 @@ function getEditorSelector(n) {
 
 function getAnnotationSelector(id) {
   return `[data-annotation-id="${id}"]`;
+}
+
+function getThumbnailSelector(pageNumber) {
+  return `.thumbnailImage[data-l10n-args='{"page":${pageNumber}}']`;
 }
 
 async function getSpanRectFromText(page, pageNumber, text) {
@@ -957,6 +979,7 @@ export {
   getSelector,
   getSerialized,
   getSpanRectFromText,
+  getThumbnailSelector,
   getXY,
   highlightSpan,
   isCanvasMonochrome,
@@ -991,6 +1014,7 @@ export {
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
+  waitForDOMMutation,
   waitForEntryInStorage,
   waitForEvent,
   waitForNoElement,

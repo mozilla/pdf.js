@@ -37,6 +37,7 @@ async function runTests(results) {
       "freetext_editor_spec.mjs",
       "highlight_editor_spec.mjs",
       "ink_editor_spec.mjs",
+      "reorganize_pages_spec.mjs",
       "scripting_spec.mjs",
       "signature_editor_spec.mjs",
       "stamp_editor_spec.mjs",
