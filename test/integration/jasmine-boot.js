@@ -44,6 +44,7 @@ async function runTests(results) {
       "text_layer_spec.mjs",
       "thumbnail_view_spec.mjs",
       "viewer_spec.mjs",
+      "reorganize_pages_spec.mjs",
     ],
   });
 
