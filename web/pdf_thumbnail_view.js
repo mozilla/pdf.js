@@ -97,6 +97,7 @@ class PDFThumbnailView {
     maxCanvasPixels,
     maxCanvasDim,
     pageColors,
+    enableSplitMerge = false,
   }) {
     this.id = id;
     this.renderingId = "thumbnail" + id;
@@ -118,22 +119,28 @@ class PDFThumbnailView {
     this.renderTask = null;
     this.renderingState = RenderingStates.INITIAL;
     this.resume = null;
+    this.placeholder = null;
 
     const imageContainer = (this.div = document.createElement("div"));
     imageContainer.className = "thumbnail";
-    imageContainer.setAttribute("page-number", this.#pageNumber);
+    imageContainer.setAttribute("page-number", id);
+    imageContainer.setAttribute("page-id", id);
 
-    const checkbox = (this.checkbox = document.createElement("input"));
-    checkbox.type = "checkbox";
-    checkbox.tabIndex = -1;
+    if (enableSplitMerge) {
+      const checkbox = (this.checkbox = document.createElement("input"));
+      checkbox.type = "checkbox";
+      checkbox.tabIndex = -1;
+      imageContainer.append(checkbox);
+    }
 
     const image = (this.image = document.createElement("img"));
     image.classList.add("thumbnailImage", "missingThumbnailImage");
     image.role = "button";
     image.tabIndex = -1;
+    image.draggable = false;
     this.#updateDims();
 
-    imageContainer.append(checkbox, image);
+    imageContainer.append(image);
     container.append(imageContainer);
   }
 
@@ -438,10 +445,6 @@ class PDFThumbnailView {
 
   get #pageL10nArgs() {
     return JSON.stringify({ page: this.pageLabel ?? this.id });
-  }
-
-  get #pageNumber() {
-    return this.pageLabel ?? this.id;
   }
 
   /**

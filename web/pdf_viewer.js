@@ -52,6 +52,7 @@ import {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
+  PagesMapper,
   PresentationModeState,
   removeNullCharacters,
   RenderingStates,
@@ -287,6 +288,10 @@ class PDFViewer {
   #textLayerMode = TextLayerMode.ENABLE;
 
   #viewerAlert = null;
+
+  #originalPages = null;
+
+  #pagesMapper = PagesMapper.instance;
 
   /**
    * @param {PDFViewerOptions} options
@@ -1171,6 +1176,39 @@ class PDFViewer {
       });
   }
 
+  onBeforePagesEdited() {
+    this._currentPageId = this.#pagesMapper.getPageId(this._currentPageNumber);
+  }
+
+  onPagesEdited({ index, pagesToMove }) {
+    const pagesMapper = this.#pagesMapper;
+    this._currentPageNumber = pagesMapper.getPageNumber(this._currentPageId);
+
+    const viewerElement =
+      this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
+    if (viewerElement) {
+      const pages = this._pages;
+      let page = pages[pagesToMove[0] - 1].div;
+      if (index === 0) {
+        pages[0].div.before(page);
+      } else {
+        pages[index - 1].div.after(page);
+      }
+      for (let i = 1, ii = pagesToMove.length; i < ii; i++) {
+        const newPage = pages[pagesToMove[i] - 1].div;
+        page.after(newPage);
+        page = newPage;
+      }
+    }
+
+    this.#originalPages ||= this._pages;
+    const newPages = (this._pages = []);
+    for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
+      const pageView = this.#originalPages[pagesMapper.getPageId(i + 1) - 1];
+      newPages.push(pageView);
+    }
+  }
+
   /**
    * @param {Array|null} labels
    */
@@ -1315,11 +1353,12 @@ class PDFViewer {
 
   #scrollIntoView(pageView, pageSpot = null) {
     const { div, id } = pageView;
+    const pageNumber = this.#pagesMapper.getPageNumber(id);
 
     // Ensure that `this._currentPageNumber` is correct, when `#scrollIntoView`
     // is called directly (and not from `#resetCurrentPageView`).
-    if (this._currentPageNumber !== id) {
-      this._setCurrentPageNumber(id);
+    if (this._currentPageNumber !== pageNumber) {
+      this._setCurrentPageNumber(pageNumber);
     }
     if (this._scrollMode === ScrollMode.PAGE) {
       this.#ensurePageViewVisible();
@@ -1780,7 +1819,7 @@ class PDFViewer {
       this._spreadMode === SpreadMode.NONE &&
       (this._scrollMode === ScrollMode.PAGE ||
         this._scrollMode === ScrollMode.VERTICAL);
-    const currentId = this._currentPageNumber;
+    const currentId = this.#pagesMapper.getPageId(this._currentPageNumber);
     let stillFullyVisible = false;
 
     for (const page of visiblePages) {
@@ -1793,7 +1832,9 @@ class PDFViewer {
       }
     }
     this._setCurrentPageNumber(
-      stillFullyVisible ? currentId : visiblePages[0].id
+      stillFullyVisible
+        ? this._currentPageNumber
+        : this.#pagesMapper.getPageNumber(visiblePages[0].id)
     );
 
     this._updateLocation(visible.first);
