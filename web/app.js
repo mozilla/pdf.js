@@ -708,6 +708,11 @@ const PDFViewerApplication = {
         appConfig.secondaryToolbar,
         eventBus
       );
+
+      this.eventBus.dispatch("rememberlastzoomchanged", {
+        source: this,
+        enabled: AppOptions.get("rememberLastZoom"),
+      });
     }
 
     if (
@@ -1500,8 +1505,24 @@ const PDFViewerApplication = {
           const initialBookmark = this.initialBookmark;
 
           // Initialize the default values, from user preferences.
-          const zoom = AppOptions.get("defaultZoomValue");
-          let hash = zoom ? `zoom=${zoom}` : null;
+          const defaultZoomValue = AppOptions.get("defaultZoomValue");
+          const rememberLastZoom = AppOptions.get("rememberLastZoom");
+          const rememberLastZoomValue = rememberLastZoom
+            ? AppOptions.get("rememberLastZoomValue")
+            : "";
+
+          let initialZoom = defaultZoomValue || null;
+          const canUseRememberedZoom =
+            !initialZoom &&
+            rememberLastZoom &&
+            rememberLastZoomValue &&
+            (!stored?.page || viewOnLoad === ViewOnLoad.INITIAL);
+
+          if (canUseRememberedZoom) {
+            initialZoom = rememberLastZoomValue;
+          }
+
+          let hash = initialZoom ? `zoom=${initialZoom}` : null;
 
           let rotation = null;
           let sidebarView = AppOptions.get("sidebarViewOnLoad");
@@ -1509,8 +1530,10 @@ const PDFViewerApplication = {
           let spreadMode = AppOptions.get("spreadModeOnLoad");
 
           if (stored?.page && viewOnLoad !== ViewOnLoad.INITIAL) {
+            const storedZoom =
+              defaultZoomValue || stored.zoom || DEFAULT_SCALE_VALUE;
             hash =
-              `page=${stored.page}&zoom=${zoom || stored.zoom},` +
+              `page=${stored.page}&zoom=${storedZoom},` +
               `${stored.scrollLeft},${stored.scrollTop}`;
 
             rotation = parseInt(stored.rotation, 10);
@@ -2138,6 +2161,11 @@ const PDFViewerApplication = {
       opts
     );
     eventBus._on(
+      "rememberlastzoomtoggle",
+      this._toggleRememberLastZoom.bind(this),
+      opts
+    );
+    eventBus._on(
       "imagealttextsettings",
       onImageAltTextSettings.bind(this),
       opts
@@ -2184,6 +2212,28 @@ const PDFViewerApplication = {
         evt => preferences.set(evt.name, evt.value),
         opts
       );
+    }
+  },
+
+  async _toggleRememberLastZoom() {
+    const enabled = !AppOptions.get("rememberLastZoom");
+    try {
+      // Update AppOptions immediately for Firefox and other builds
+      AppOptions.set("rememberLastZoom", enabled);
+      
+      await this.preferences?.set("rememberLastZoom", enabled);
+      const fallbackZoom =
+        this.pdfViewer?.currentScaleValue ||
+        AppOptions.get("defaultZoomValue") ||
+        DEFAULT_SCALE_VALUE;
+      const nextZoom = enabled ? fallbackZoom : "";
+      await this.preferences?.set("rememberLastZoomValue", `${nextZoom}`);
+      this.eventBus.dispatch("rememberlastzoomchanged", {
+        source: this,
+        enabled,
+      });
+    } catch (ex) {
+      console.error("_toggleRememberLastZoom:", ex);
     }
   },
 
@@ -2695,6 +2745,20 @@ function onUpdateFindControlState({
 
 function onScaleChanging(evt) {
   this.toolbar?.setPageScale(evt.presetValue, evt.scale);
+
+  if (AppOptions.get("rememberLastZoom")) {
+    const zoomValue =
+      !evt.presetValue || evt.presetValue === "custom"
+        ? `${evt.scale}`
+        : evt.presetValue;
+    // Store in AppOptions as well for Firefox compatibility
+    AppOptions.set("rememberLastZoomValue", zoomValue);
+    this.preferences
+      ?.set("rememberLastZoomValue", zoomValue)
+      .catch(() => {
+        /* Unable to persist remembered zoom; ignore. */
+      });
+  }
 
   this.pdfViewer.update();
 }
