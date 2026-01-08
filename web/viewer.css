@@ -844,6 +844,22 @@ dialog :link {
     }
   }
 }
+/* Show tooltips for keyboard users */
+.toolbarButton:focus::after,
+.toolbarButton:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgb(0 0 0 / 0.8);
+  color: #fff;
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+}
 
 .toolbarButtonWithContainer {
   height: 100%;
@@ -1462,20 +1478,4 @@ dialog :link {
   #scaleSelectContainer {
     display: none;
   }
-}
-/* Show tooltips for keyboard users */
-.toolbarButton:focus::after,
-.toolbarButton:hover::after {
-  content: attr(title);
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  background: rgb(0 0 0 / 0.8);
-  color: #fff;
-  padding: 4px 6px;
-  border-radius: 4px;
-  font-size: 12px;
-  pointer-events: none;
 }
