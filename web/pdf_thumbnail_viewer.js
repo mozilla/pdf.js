@@ -21,12 +21,14 @@
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
 import {
+  binarySearchFirstItem,
   getVisibleElements,
   isValidRotation,
+  PagesMapper,
   RenderingStates,
   watchScroll,
 } from "./ui_utils.js";
-import { MathClamp, stopEvent } from "pdfjs-lib";
+import { MathClamp, noContextMenu, stopEvent } from "pdfjs-lib";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 
 const SCROLL_OPTIONS = {
@@ -35,6 +37,12 @@ const SCROLL_OPTIONS = {
   inline: "nearest",
   container: "nearest",
 };
+
+// This value is based on the one used in Firefox.
+// See
+// https://searchfox.org/firefox-main/rev/04cf27582307a9c351e991c740828d54cf786b76/dom/events/EventStateManager.cpp#2675-2698
+// This threshold is used to distinguish between a click and a drag.
+const DRAG_THRESHOLD = 5;
 
 /**
  * @typedef {Object} PDFThumbnailViewerOptions
@@ -56,12 +64,52 @@ const SCROLL_OPTIONS = {
  *   events.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `false`.
+ * @property {boolean} [enableSplitMerge] - Enables split and merge features.
+ *   The default value is `false`.
  */
 
 /**
  * Viewer control to display thumbnails for pages in a PDF document.
  */
 class PDFThumbnailViewer {
+  static #draggingScaleFactor = 0;
+
+  #enableSplitMerge = false;
+
+  #dragAC = null;
+
+  #draggedContainer = null;
+
+  #thumbnailsPositions = null;
+
+  #lastDraggedOverIndex = NaN;
+
+  #selectedPages = null;
+
+  #draggedImageX = 0;
+
+  #draggedImageY = 0;
+
+  #draggedImageWidth = 0;
+
+  #draggedImageHeight = 0;
+
+  #draggedImageOffsetX = 0;
+
+  #draggedImageOffsetY = 0;
+
+  #dragMarker = null;
+
+  #pageNumberToRemove = NaN;
+
+  #currentScrollBottom = 0;
+
+  #currentScrollTop = 0;
+
+  #pagesMapper = PagesMapper.instance;
+
+  #originalThumbnails = null;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -75,6 +123,7 @@ class PDFThumbnailViewer {
     pageColors,
     abortSignal,
     enableHWA,
+    enableSplitMerge,
   }) {
     this.scrollableContainer = container.parentElement;
     this.container = container;
@@ -85,6 +134,7 @@ class PDFThumbnailViewer {
     this.maxCanvasDim = maxCanvasDim;
     this.pageColors = pageColors || null;
     this.enableHWA = enableHWA || false;
+    this.#enableSplitMerge = enableSplitMerge || false;
 
     this.scroll = watchScroll(
       this.scrollableContainer,
@@ -120,7 +170,6 @@ class PDFThumbnailViewer {
       console.error('scrollThumbnailIntoView: Invalid "pageNumber" parameter.');
       return;
     }
-
     if (pageNumber !== this._currentPageNumber) {
       const prevThumbnailView = this._thumbnails[this._currentPageNumber - 1];
       prevThumbnailView.toggleCurrent(/* isCurrent = */ false);
@@ -132,11 +181,15 @@ class PDFThumbnailViewer {
     // If the thumbnail isn't currently visible, scroll it into view.
     if (views.length > 0) {
       let shouldScroll = false;
-      if (pageNumber <= first.id || pageNumber >= last.id) {
+      if (
+        pageNumber <= this.#pagesMapper.getPageNumber(first.id) ||
+        pageNumber >= this.#pagesMapper.getPageNumber(last.id)
+      ) {
         shouldScroll = true;
       } else {
         for (const { id, percent } of views) {
-          if (id !== pageNumber) {
+          const mappedPageNumber = this.#pagesMapper.getPageNumber(id);
+          if (mappedPageNumber !== pageNumber) {
             continue;
           }
           shouldScroll = percent < 100;
@@ -228,6 +281,7 @@ class PDFThumbnailViewer {
             maxCanvasDim: this.maxCanvasDim,
             pageColors: this.pageColors,
             enableHWA: this.enableHWA,
+            enableSplitMerge: this.#enableSplitMerge,
           });
           this._thumbnails.push(thumbnail);
         }
@@ -323,7 +377,295 @@ class PDFThumbnailViewer {
     return false;
   }
 
+  static #getScaleFactor(image) {
+    return (PDFThumbnailViewer.#draggingScaleFactor ||= parseFloat(
+      getComputedStyle(image).getPropertyValue("--thumbnail-dragging-scale")
+    ));
+  }
+
+  #onStartDragging(draggedThumbnail) {
+    this.#currentScrollTop = this.scrollableContainer.scrollTop;
+    this.#currentScrollBottom =
+      this.#currentScrollTop + this.scrollableContainer.clientHeight;
+    this.#dragAC = new AbortController();
+    this.container.classList.add("isDragging");
+    const startPageNumber = parseInt(
+      draggedThumbnail.getAttribute("page-number"),
+      10
+    );
+    this.#lastDraggedOverIndex = startPageNumber - 1;
+    if (!this.#selectedPages?.has(startPageNumber)) {
+      this.#pageNumberToRemove = startPageNumber;
+      this.#selectPage(startPageNumber, true);
+    }
+
+    for (const selected of this.#selectedPages) {
+      const thumbnail = this._thumbnails[selected - 1];
+      const placeholder = (thumbnail.placeholder =
+        document.createElement("div"));
+      placeholder.classList.add("thumbnailImage", "placeholder");
+      const { div, image } = thumbnail;
+      div.classList.add("isDragging");
+      placeholder.style.height = getComputedStyle(image).height;
+      image.after(placeholder);
+      if (selected !== startPageNumber) {
+        image.classList.add("hidden");
+        continue;
+      }
+      if (this.#selectedPages.size === 1) {
+        image.classList.add("draggingThumbnail");
+        this.#draggedContainer = image;
+        continue;
+      }
+      // For multiple selected thumbnails, only the one being dragged is shown
+      // (with the dragging style), while the others are hidden.
+      const draggedContainer = (this.#draggedContainer =
+        document.createElement("div"));
+      draggedContainer.classList.add(
+        "draggingThumbnail",
+        "thumbnailImage",
+        "multiple"
+      );
+      draggedContainer.style.height = getComputedStyle(image).height;
+      image.replaceWith(draggedContainer);
+      image.classList.remove("thumbnailImage");
+      draggedContainer.append(image);
+      draggedContainer.setAttribute(
+        "data-multiple-count",
+        this.#selectedPages.size
+      );
+    }
+  }
+
+  #onStopDragging(isDropping = false) {
+    const draggedContainer = this.#draggedContainer;
+    this.#draggedContainer = null;
+    const lastDraggedOverIndex = this.#lastDraggedOverIndex;
+    this.#lastDraggedOverIndex = NaN;
+    this.#dragMarker?.remove();
+    this.#dragMarker = null;
+    this.#dragAC.abort();
+    this.#dragAC = null;
+
+    this.#originalThumbnails ||= this._thumbnails;
+
+    this.container.classList.remove("isDragging");
+    for (const selected of this.#selectedPages) {
+      const thumbnail = this._thumbnails[selected - 1];
+      const { div, placeholder, image } = thumbnail;
+      placeholder.remove();
+      image.classList.remove("draggingThumbnail", "hidden");
+      div.classList.remove("isDragging");
+    }
+
+    if (draggedContainer.classList.contains("multiple")) {
+      // Restore the dragged image to its thumbnail.
+      const originalImage = draggedContainer.firstElementChild;
+      draggedContainer.replaceWith(originalImage);
+      originalImage.classList.add("thumbnailImage");
+    } else {
+      draggedContainer.style.translate = "";
+    }
+
+    const selectedPages = this.#selectedPages;
+    if (
+      !isNaN(lastDraggedOverIndex) &&
+      isDropping &&
+      !(
+        selectedPages.size === 1 &&
+        (selectedPages.has(lastDraggedOverIndex + 1) ||
+          selectedPages.has(lastDraggedOverIndex + 2))
+      )
+    ) {
+      const newIndex = lastDraggedOverIndex + 1;
+      const pagesToMove = Array.from(selectedPages).sort((a, b) => a - b);
+      const movedCount = pagesToMove.length;
+      const thumbnails = this._thumbnails;
+      const pagesMapper = this.#pagesMapper;
+      const N = thumbnails.length;
+      pagesMapper.pagesNumber = N;
+      const currentPageId = pagesMapper.getPageId(this._currentPageNumber);
+
+      // Move the thumbnails in the DOM.
+      let thumbnail = thumbnails[pagesToMove[0] - 1];
+      thumbnail.checkbox.checked = false;
+      if (newIndex === 0) {
+        thumbnails[0].div.before(thumbnail.div);
+      } else {
+        thumbnails[newIndex - 1].div.after(thumbnail.div);
+      }
+      for (let i = 1; i < movedCount; i++) {
+        const newThumbnail = thumbnails[pagesToMove[i] - 1];
+        newThumbnail.checkbox.checked = false;
+        thumbnail.div.after(newThumbnail.div);
+        thumbnail = newThumbnail;
+      }
+
+      this.eventBus.dispatch("beforepagesedited", {
+        source: this,
+        pagesMapper,
+        index: newIndex,
+        pagesToMove,
+      });
+
+      pagesMapper.movePages(selectedPages, pagesToMove, newIndex);
+
+      const newThumbnails = (this._thumbnails = new Array(N));
+      const originalThumbnails = this.#originalThumbnails;
+      for (let i = 0; i < N; i++) {
+        const newThumbnail = (newThumbnails[i] =
+          originalThumbnails[pagesMapper.getPageId(i + 1) - 1]);
+        newThumbnail.div.setAttribute("page-number", i + 1);
+      }
+
+      this._currentPageNumber = pagesMapper.getPageNumber(currentPageId);
+      this.#computeThumbnailsPosition();
+
+      selectedPages.clear();
+      this.#pageNumberToRemove = NaN;
+
+      this.eventBus.dispatch("pagesedited", {
+        source: this,
+        pagesMapper,
+        index: newIndex,
+        pagesToMove,
+      });
+    }
+
+    if (!isNaN(this.#pageNumberToRemove)) {
+      this.#selectPage(this.#pageNumberToRemove, false);
+      this.#pageNumberToRemove = NaN;
+    }
+  }
+
+  #moveDraggedContainer(dx, dy) {
+    this.#draggedImageOffsetX += dx;
+    this.#draggedImageOffsetY += dy;
+    this.#draggedImageX += dx;
+    this.#draggedImageY += dy;
+    this.#draggedContainer.style.translate = `${this.#draggedImageOffsetX}px ${this.#draggedImageOffsetY}px`;
+    if (
+      this.#draggedImageY + this.#draggedImageHeight >
+      this.#currentScrollBottom
+    ) {
+      this.scrollableContainer.scrollTop = Math.min(
+        this.scrollableContainer.scrollTop + 20,
+        this.scrollableContainer.scrollHeight
+      );
+    } else if (this.#draggedImageY < this.#currentScrollTop) {
+      this.scrollableContainer.scrollTop = Math.max(
+        this.scrollableContainer.scrollTop - 20,
+        0
+      );
+    }
+
+    const positionData = this.#findClosestThumbnail(
+      this.#draggedImageX + this.#draggedImageWidth / 2,
+      this.#draggedImageY + this.#draggedImageHeight / 2
+    );
+    if (!positionData) {
+      return;
+    }
+    let dragMarker = this.#dragMarker;
+    if (!dragMarker) {
+      dragMarker = this.#dragMarker = document.createElement("div");
+      dragMarker.className = "dragMarker";
+      this.container.firstChild.before(dragMarker);
+    }
+
+    const [index, space] = positionData;
+    const dragMarkerStyle = dragMarker.style;
+    const { bbox, x: xPos } = this.#thumbnailsPositions;
+    let x, y, width, height;
+    if (index < 0) {
+      if (xPos.length === 1) {
+        y = bbox[1] - 8;
+        x = bbox[4];
+        width = bbox[2];
+      } else {
+        y = bbox[1];
+        x = bbox[0] - 4;
+        height = bbox[3];
+      }
+    } else if (xPos.length === 1) {
+      y = bbox[index * 4 + 1] + bbox[index * 4 + 3] + space;
+      x = bbox[index * 4];
+      width = bbox[index * 4 + 2];
+    } else {
+      y = bbox[index * 4 + 1];
+      x = bbox[index * 4] + bbox[index * 4 + 2] + space;
+      height = bbox[index * 4 + 3];
+    }
+    dragMarkerStyle.translate = `${x}px ${y}px`;
+    dragMarkerStyle.width = width ? `${width}px` : "";
+    dragMarkerStyle.height = height ? `${height}px` : "";
+  }
+
+  #computeThumbnailsPosition() {
+    // Collect the center of each thumbnail.
+    // This is used to determine the closest thumbnail when dragging.
+    // TODO: handle the RTL case.
+    const positionsX = [];
+    const positionsY = [];
+    const positionsLastX = [];
+    const bbox = new Float32Array(this._thumbnails.length * 4);
+    let prevX = -Infinity;
+    let prevY = -Infinity;
+    let reminder = -1;
+    let firstRightX;
+    let lastRightX;
+    let firstBottomY;
+    for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
+      const { div } = this._thumbnails[i];
+      const {
+        offsetTop: y,
+        offsetLeft: x,
+        offsetWidth: w,
+        offsetHeight: h,
+      } = div;
+      bbox[i * 4] = x;
+      bbox[i * 4 + 1] = y;
+      bbox[i * 4 + 2] = w;
+      bbox[i * 4 + 3] = h;
+      if (x > prevX) {
+        prevX = x + w / 2;
+        firstRightX ??= prevX + w;
+        positionsX.push(prevX);
+      }
+      if (reminder > 0 && i >= ii - reminder) {
+        const cx = x + w / 2;
+        positionsLastX.push(cx);
+        lastRightX ??= cx + w;
+      }
+      if (y > prevY) {
+        if (reminder === -1 && positionsX.length > 1) {
+          reminder = ii % positionsX.length;
+        }
+        prevY = y + h / 2;
+        firstBottomY ??= prevY + h;
+        positionsY.push(prevY);
+      }
+    }
+    const space =
+      positionsX.length > 1
+        ? (positionsX[1] - firstRightX) / 2
+        : (positionsY[1] - firstBottomY) / 2;
+    this.#thumbnailsPositions = {
+      x: positionsX,
+      y: positionsY,
+      lastX: positionsLastX,
+      space,
+      lastSpace: (positionsLastX.at(-1) - lastRightX) / 2,
+      bbox,
+    };
+  }
+
   #addEventListeners() {
+    this.eventBus.on("resize", ({ source }) => {
+      if (source.thumbnailsView === this.container) {
+        this.#computeThumbnailsPosition();
+      }
+    });
     this.container.addEventListener("keydown", e => {
       switch (e.key) {
         case "ArrowLeft":
@@ -356,7 +698,159 @@ class PDFThumbnailViewer {
           break;
       }
     });
-    this.container.addEventListener("click", this.#goToPage.bind(this));
+    this.container.addEventListener("click", e => {
+      const { target } = e;
+      if (target instanceof HTMLInputElement) {
+        const pageNumber = parseInt(
+          target.parentElement.getAttribute("page-number"),
+          10
+        );
+        this.#selectPage(pageNumber, target.checked);
+        return;
+      }
+      this.#goToPage(e);
+    });
+    this.#addDragListeners();
+  }
+
+  #selectPage(pageNumber, checked) {
+    const set = (this.#selectedPages ??= new Set());
+    if (checked) {
+      set.add(pageNumber);
+    } else {
+      set.delete(pageNumber);
+    }
+  }
+
+  #addDragListeners() {
+    if (!this.#enableSplitMerge) {
+      return;
+    }
+    this.container.addEventListener("pointerdown", e => {
+      const {
+        target: draggedImage,
+        clientX: clickX,
+        clientY: clickY,
+        pointerId: dragPointerId,
+      } = e;
+      if (
+        !isNaN(this.#lastDraggedOverIndex) ||
+        !draggedImage.classList.contains("thumbnailImage")
+      ) {
+        // We're already handling a drag, or the target is not draggable.
+        return;
+      }
+
+      const thumbnail = draggedImage.parentElement;
+      const pointerDownAC = new AbortController();
+      const { signal: pointerDownSignal } = pointerDownAC;
+      let prevDragX = clickX;
+      let prevDragY = clickY;
+      let prevScrollTop = this.scrollableContainer.scrollTop;
+
+      // When dragging, the thumbnail is scaled down. To keep the cursor at the
+      // same position on the thumbnail, we need to adjust the offset
+      // accordingly.
+      const scaleFactor = PDFThumbnailViewer.#getScaleFactor(draggedImage);
+      this.#draggedImageOffsetX =
+        ((scaleFactor - 1) * e.layerX + draggedImage.offsetLeft) / scaleFactor;
+      this.#draggedImageOffsetY =
+        ((scaleFactor - 1) * e.layerY + draggedImage.offsetTop) / scaleFactor;
+
+      this.#draggedImageX = thumbnail.offsetLeft + this.#draggedImageOffsetX;
+      this.#draggedImageY = thumbnail.offsetTop + this.#draggedImageOffsetY;
+      this.#draggedImageWidth = draggedImage.offsetWidth / scaleFactor;
+      this.#draggedImageHeight = draggedImage.offsetHeight / scaleFactor;
+
+      this.container.addEventListener(
+        "pointermove",
+        ev => {
+          const { clientX: x, clientY: y, pointerId } = ev;
+          if (
+            pointerId !== dragPointerId ||
+            (Math.abs(x - clickX) <= DRAG_THRESHOLD &&
+              Math.abs(y - clickY) <= DRAG_THRESHOLD)
+          ) {
+            // Not enough movement to be considered a drag.
+            return;
+          }
+
+          if (isNaN(this.#lastDraggedOverIndex)) {
+            // First movement while dragging.
+            this.#onStartDragging(thumbnail);
+            const stopDragging = (_e, isDropping = false) => {
+              this.#onStopDragging(isDropping);
+              pointerDownAC.abort();
+            };
+            const { signal } = this.#dragAC;
+            window.addEventListener(
+              "touchmove",
+              stopEvent /* Prevent the container from scrolling */,
+              { passive: false, signal }
+            );
+            window.addEventListener("contextmenu", noContextMenu, { signal });
+            this.scrollableContainer.addEventListener(
+              "scrollend",
+              () => {
+                const {
+                  scrollableContainer: { clientHeight, scrollTop },
+                } = this;
+                this.#currentScrollTop = scrollTop;
+                this.#currentScrollBottom = scrollTop + clientHeight;
+                const dy = scrollTop - prevScrollTop;
+                prevScrollTop = scrollTop;
+                this.#moveDraggedContainer(0, dy);
+              },
+              { passive: true, signal }
+            );
+            window.addEventListener(
+              "pointerup",
+              upEv => {
+                if (upEv.pointerId !== dragPointerId) {
+                  return;
+                }
+                // Prevent the subsequent click event after pointerup.
+                window.addEventListener("click", stopEvent, {
+                  capture: true,
+                  once: true,
+                  signal,
+                });
+                stopEvent(upEv);
+                stopDragging(upEv, /* isDropping = */ true);
+              },
+              { signal }
+            );
+            window.addEventListener("blur", stopDragging, { signal });
+            window.addEventListener("pointercancel", stopDragging, { signal });
+            window.addEventListener("wheel", stopEvent, {
+              passive: false,
+              signal,
+            });
+          }
+
+          const dx = x - prevDragX;
+          const dy = y - prevDragY;
+          prevDragX = x;
+          prevDragY = y;
+          this.#moveDraggedContainer(dx, dy);
+        },
+        { passive: true, signal: pointerDownSignal }
+      );
+      window.addEventListener(
+        "pointerup",
+        ({ pointerId }) => {
+          if (pointerId !== dragPointerId) {
+            return;
+          }
+          pointerDownAC.abort();
+        },
+        { signal: pointerDownSignal }
+      );
+      window.addEventListener("dragstart", stopEvent, {
+        capture: true,
+        signal: pointerDownSignal,
+      });
+    });
   }
 
   #goToPage(e) {
@@ -422,6 +916,52 @@ class PDFThumbnailViewer {
     if (nextThumbnail) {
       nextThumbnail.image.focus();
     }
+  }
+
+  #findClosestThumbnail(x, y) {
+    const {
+      x: positionsX,
+      y: positionsY,
+      lastX: positionsLastX,
+      space: spaceBetweenThumbnails,
+      lastSpace: lastSpaceBetweenThumbnails,
+    } = this.#thumbnailsPositions;
+    const lastDraggedOverIndex = this.#lastDraggedOverIndex;
+    let xPos = lastDraggedOverIndex % positionsX.length;
+    let yPos = Math.floor(lastDraggedOverIndex / positionsX.length);
+    let xArray = yPos === positionsY.length - 1 ? positionsLastX : positionsX;
+    if (
+      positionsY[yPos] <= y &&
+      y < (positionsY[yPos + 1] ?? Infinity) &&
+      xArray[xPos] <= x &&
+      x < (xArray[xPos + 1] ?? Infinity)
+    ) {
+      // Fast-path: we're still in the same thumbnail.
+      return null;
+    }
+
+    yPos = binarySearchFirstItem(positionsY, cy => y < cy) - 1;
+    xArray =
+      yPos === positionsY.length - 1 && positionsLastX.length > 0
+        ? positionsLastX
+        : positionsX;
+    xPos = Math.max(0, binarySearchFirstItem(xArray, cx => x < cx) - 1);
+    const index = MathClamp(
+      yPos * positionsX.length + xPos,
+      -1,
+      this._thumbnails.length - 1
+    );
+    if (index === lastDraggedOverIndex) {
+      // No change.
+      return null;
+    }
+    this.#lastDraggedOverIndex = index;
+    const space =
+      yPos === positionsY.length - 1 && positionsLastX.length > 0 && xPos >= 0
+        ? lastSpaceBetweenThumbnails
+        : spaceBetweenThumbnails;
+
+    return [index, space];
   }
 }
 

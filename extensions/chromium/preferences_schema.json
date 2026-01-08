@@ -79,6 +79,10 @@
       "type": "boolean",
       "default": false
     },
+    "enableSplitMerge": {
+      "type": "boolean",
+      "default": false
+    },
     "enableUpdatedAddImage": {
       "type": "boolean",
       "default": false
