@@ -1214,7 +1214,7 @@ function buildComponents(defines, dir) {
     "web/images/comment-*.svg",
     "web/images/treeitem-*.svg",
     "web/images/checkmark.svg",
-    "web/images/pages_*.svg"
+    "web/images/pages_*.svg",
   ];
 
   return ordered([
