@@ -13146,5 +13146,781 @@
     "link": true,
     "type": "eq",
     "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_and_xnor_halftone",
+    "file": "pdfs/bitmap-composite-and-xnor-halftone.pdf",
+    "md5": "a77d3da5d6c91d6cc655471c038da2f0",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_and_xnor_refine",
+    "file": "pdfs/bitmap-composite-and-xnor-refine.pdf",
+    "md5": "e0c09e61d4a7724f2e1308f187a4c414",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_and_xnor_text",
+    "file": "pdfs/bitmap-composite-and-xnor-text.pdf",
+    "md5": "a6d69e1860c25b0b4e9c424668005e4e",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_and_xnor",
+    "file": "pdfs/bitmap-composite-and-xnor.pdf",
+    "md5": "12c6ada861fd8e421b7d0d6348574341",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_or_xor_replace_halftone",
+    "file": "pdfs/bitmap-composite-or-xor-replace-halftone.pdf",
+    "md5": "8adf5710547917a2d3986e3e610651c8",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_or_xor_replace_refine",
+    "file": "pdfs/bitmap-composite-or-xor-replace-refine.pdf",
+    "md5": "03f601e7fe85e0bfcca7089efa40b831",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_or_xor_replace_text",
+    "file": "pdfs/bitmap-composite-or-xor-replace-text.pdf",
+    "md5": "b3e37786c4cfc98923829454f0ec7f21",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_composite_or_xor_replace",
+    "file": "pdfs/bitmap-composite-or-xor-replace.pdf",
+    "md5": "24677d71c5df2d27da552e65805553e2",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_customat_tpgdon",
+    "file": "pdfs/bitmap-customat-tpgdon.pdf",
+    "md5": "da567101b5f54e439d110997fef344de",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_customat",
+    "file": "pdfs/bitmap-customat.pdf",
+    "md5": "f4f1a5dfd6cd95a237e05b72f19762fe",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_10bpp_mmr",
+    "file": "pdfs/bitmap-halftone-10bpp-mmr.pdf",
+    "md5": "1cad7f6f560df2a0111d3593fbc51ebd",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_10bpp",
+    "file": "pdfs/bitmap-halftone-10bpp.pdf",
+    "md5": "4a7857edfb67c241947e4780e65b74b2",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_composite",
+    "file": "pdfs/bitmap-halftone-composite.pdf",
+    "md5": "a46ef5da5687b8a2800ca3555af7d66a",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_grid",
+    "file": "pdfs/bitmap-halftone-grid.pdf",
+    "md5": "0efdf0b9d397c52cc4bb68fb51d7f16a",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_refine",
+    "file": "pdfs/bitmap-halftone-refine.pdf",
+    "md5": "5cea98829b0d42eb4948e61a1de0b6bc",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_skip_dummy",
+    "file": "pdfs/bitmap-halftone-skip-dummy.pdf",
+    "md5": "46359ae6a5863ad20ba5b4cea3f398d2",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_skip_grid_template1",
+    "file": "pdfs/bitmap-halftone-skip-grid-template1.pdf",
+    "md5": "d21fb5040dca82e703ffb9904cdd25e3",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_skip_grid_template2",
+    "file": "pdfs/bitmap-halftone-skip-grid-template2.pdf",
+    "md5": "ed0e16b55692114dc7fb31aeb16b87c8",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_skip_grid_template3",
+    "file": "pdfs/bitmap-halftone-skip-grid-template3.pdf",
+    "md5": "93f9dc98185ea945e9b59f9a151168ff",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_skip_grid",
+    "file": "pdfs/bitmap-halftone-skip-grid.pdf",
+    "md5": "e0452decae31de349addd4e7049885e1",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_template1",
+    "file": "pdfs/bitmap-halftone-template1.pdf",
+    "md5": "63054038653d317330145eb13cfad258",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_template2",
+    "file": "pdfs/bitmap-halftone-template2.pdf",
+    "md5": "0fcb87492a7f214a119688b8032a1023",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone_template3",
+    "file": "pdfs/bitmap-halftone-template3.pdf",
+    "md5": "158d8d260d9307cd68f8bafcf75eaa88",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_halftone",
+    "file": "pdfs/bitmap-halftone.pdf",
+    "md5": "4791f79b95cc89ff85ccb3bfddba8c96",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_initially_unknown_size",
+    "file": "pdfs/bitmap-initially-unknown-size.pdf",
+    "md5": "2841f0d2d16ec8357c7b1908dbbaf351",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_mmr",
+    "file": "pdfs/bitmap-mmr.pdf",
+    "md5": "1a7c5fd82f677a1dc59cdffed59137e6",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_p32_eof",
+    "file": "pdfs/bitmap-p32-eof.pdf",
+    "md5": "7088483fbe20e574d9b27237df59858b",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_randomaccess",
+    "file": "pdfs/bitmap-randomaccess.pdf",
+    "md5": "11a3e831c4a5bc86e3bbdbf8fbd4d68e",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_customat_tpgron",
+    "file": "pdfs/bitmap-refine-customat-tpgron.pdf",
+    "md5": "0a996e86abf30eb4164dba726a57ec1d",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_customat",
+    "file": "pdfs/bitmap-refine-customat.pdf",
+    "md5": "04f33f12b957c270d1d3d75cf13986b3",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_lossless",
+    "file": "pdfs/bitmap-refine-lossless.pdf",
+    "md5": "2d9b2e9254cbf4faf0c4213e5765c269",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_page_subrect",
+    "file": "pdfs/bitmap-refine-page-subrect.pdf",
+    "md5": "2d377f293fc8294737d38cc6f93223e2",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_page",
+    "file": "pdfs/bitmap-refine-page.pdf",
+    "md5": "567edcc44c4b7a97cd6934d126937db0",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_refine",
+    "file": "pdfs/bitmap-refine-refine.pdf",
+    "md5": "ea6ce30d00d2f8830f631a7148a341e7",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_template1_tpgron",
+    "file": "pdfs/bitmap-refine-template1-tpgron.pdf",
+    "md5": "79fde0d9f427bc97df2aabb85fee7ffc",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_template1",
+    "file": "pdfs/bitmap-refine-template1.pdf",
+    "md5": "28d6b6ed08bc11a4e04d0f08cffff475",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine_tpgron",
+    "file": "pdfs/bitmap-refine-tpgron.pdf",
+    "md5": "f2a6d11f7bd2661fda927403fae49e4f",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_refine",
+    "file": "pdfs/bitmap-refine.pdf",
+    "md5": "ea12446bec650af20aa323b12a65e1a0",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_stripe_initially_unknown_height",
+    "file": "pdfs/bitmap-stripe-initially-unknown-height.pdf",
+    "md5": "994f24e1a2342021d96dd4983431360d",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_stripe_last_implicit",
+    "file": "pdfs/bitmap-stripe-last-implicit.pdf",
+    "md5": "43837c2415655455ca65d4b53e213dd8",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_stripe_single_no_end_of_stripe",
+    "file": "pdfs/bitmap-stripe-single-no-end-of-stripe.pdf",
+    "md5": "d80a71a28272583170e0a7f914ea9069",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_stripe_single",
+    "file": "pdfs/bitmap-stripe-single.pdf",
+    "md5": "2237ef0a6eaae86581eb5ebe9430af32",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_stripe",
+    "file": "pdfs/bitmap-stripe.pdf",
+    "md5": "0ffde3ed882e92cdbc4b9aa18db24b08",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_big_segmentid",
+    "file": "pdfs/bitmap-symbol-big-segmentid.pdf",
+    "md5": "c8bf7ee5a479c1ee1adf9b1032257b37",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_context_reuse",
+    "file": "pdfs/bitmap-symbol-context-reuse.pdf",
+    "md5": "3d79e2d087515c2fdbed6fec0ad86e91",
+    "rounds": 1,
+    "type": "skip-because-failing",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_empty",
+    "file": "pdfs/bitmap-symbol-empty.pdf",
+    "md5": "16ff6f22b1d59a7f7bc0ad31ddabfc25",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_manyrefs",
+    "file": "pdfs/issue20439.pdf",
+    "md5": "3c7e888b26ff00943ec1610d93235efc",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_negative_sbdsoffset",
+    "file": "pdfs/bitmap-symbol-negative-sbdsoffset.pdf",
+    "md5": "5169c0dd1f26e79237a65c028d4b580e",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_refine",
+    "file": "pdfs/bitmap-symbol-refine.pdf",
+    "md5": "3322963ec3c2b3652c90af5aac3b58f8",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symbolrefine_textrefine",
+    "file": "pdfs/bitmap-symbol-symbolrefine-textrefine.pdf",
+    "md5": "bda5cf6a3dc876de5ac2bc076371b2a7",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symbolrefineone_customat",
+    "file": "pdfs/bitmap-symbol-symbolrefineone-customat.pdf",
+    "md5": "d67f45685e34f20c7fa07e150097f3a0",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symbolrefineone_template1",
+    "file": "pdfs/bitmap-symbol-symbolrefineone-template1.pdf",
+    "md5": "15a39ecea87de8ed1c78c0930aab4bef",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symbolrefineone",
+    "file": "pdfs/bitmap-symbol-symbolrefineone.pdf",
+    "md5": "3746d882563237e2393c71dc7f2e8166",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symbolrefineseveral",
+    "file": "pdfs/bitmap-symbol-symbolrefineseveral.pdf",
+    "md5": "ca9e4e311153891efeb96fe3feb99d04",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuff_texthuff",
+    "file": "pdfs/bitmap-symbol-symhuff-texthuff.pdf",
+    "md5": "ee1856f1df3cf10714580399bb46a625",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuff_texthuffB10B13",
+    "file": "pdfs/bitmap-symbol-symhuff-texthuffB10B13.pdf",
+    "md5": "4350b99f5ead4b659643dffbe272643b",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuffB5B3_texthuffB7B9B12",
+    "file": "pdfs/bitmap-symbol-symhuffB5B3-texthuffB7B9B12.pdf",
+    "md5": "ddaba35e1fc50fe5efb4856b56ddd9ac",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuffcustom_texthuffcustom",
+    "file": "pdfs/bitmap-symbol-symhuffcustom-texthuffcustom.pdf",
+    "md5": "f263eb271c15cf6e45ca3a5d349b85ab",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuffrefine_textrefine",
+    "file": "pdfs/bitmap-symbol-symhuffrefine-textrefine.pdf",
+    "md5": "b08310fef3bc6fb135ae2476222aa7ac",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuffrefineone",
+    "file": "pdfs/bitmap-symbol-symhuffrefineone.pdf",
+    "md5": "4ec0a1801baeaaacf92789b80a09bbfd",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuffrefineseveral",
+    "file": "pdfs/bitmap-symbol-symhuffrefineseveral.pdf",
+    "md5": "d799afc007ca54c13119a86e71e12023",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_symhuffuncompressed_texthuff",
+    "file": "pdfs/bitmap-symbol-symhuffuncompressed-texthuff.pdf",
+    "md5": "e552a77516645faeb4adda60340337ac",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textbottomleft",
+    "file": "pdfs/bitmap-symbol-textbottomleft.pdf",
+    "md5": "3b8f453aa05baffec624291d4e17f97a",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textbottomlefttranspose",
+    "file": "pdfs/bitmap-symbol-textbottomlefttranspose.pdf",
+    "md5": "214e98a76d189932bb912b9031d68446",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textbottomright",
+    "file": "pdfs/bitmap-symbol-textbottomright.pdf",
+    "md5": "e8354ea479cc578aaf62f5105dffb848",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textbottomrighttranspose",
+    "file": "pdfs/bitmap-symbol-textbottomrighttranspose.pdf",
+    "md5": "bbd7f1822bb4da7b4fc9d52ac390a062",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textcomposite",
+    "file": "pdfs/bitmap-symbol-textcomposite.pdf",
+    "md5": "6cb309575ed177c00a12a45f04a7d086",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefine",
+    "file": "pdfs/bitmap-symbol-texthuffrefine.pdf",
+    "md5": "3302283333e831b36e08fbb15a0842fa",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefineB15",
+    "file": "pdfs/bitmap-symbol-texthuffrefineB15.pdf",
+    "md5": "b6d491848685401795404b630561d4db",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefinecustom",
+    "file": "pdfs/bitmap-symbol-texthuffrefinecustom.pdf",
+    "md5": "a9b54b635b9267ae2327ea7803d2abbc",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefinecustomdims",
+    "file": "pdfs/bitmap-symbol-texthuffrefinecustomdims.pdf",
+    "md5": "f0cb756069702611ee77e1c695d5b18a",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefinecustompos",
+    "file": "pdfs/bitmap-symbol-texthuffrefinecustompos.pdf",
+    "md5": "ad22f4d6703fd83ededf5d356bcc673b",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefinecustomposdims",
+    "file": "pdfs/bitmap-symbol-texthuffrefinecustomposdims.pdf",
+    "md5": "ca4a404744f6efed9b5016d94d14b0bb",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texthuffrefinecustomsize",
+    "file": "pdfs/bitmap-symbol-texthuffrefinecustomsize.pdf",
+    "md5": "e5568f865bf1f294d67dc7f199871f29",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textrefine_customat",
+    "file": "pdfs/bitmap-symbol-textrefine-customat.pdf",
+    "md5": "1d3aff50c775034420e02cdbfcca0d7c",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textrefine_negative_delta_width",
+    "file": "pdfs/bitmap-symbol-textrefine-negative-delta-width.pdf",
+    "md5": "b5f5825e6fa8bdada571c58df860a727",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_textrefine",
+    "file": "pdfs/bitmap-symbol-textrefine.pdf",
+    "md5": "4a242bf4b85f515d19b53fd3ebb65c8f",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texttopright",
+    "file": "pdfs/bitmap-symbol-texttopright.pdf",
+    "md5": "a69cba023f5abf3c2a6e5626ba56ab44",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texttoprighttranspose",
+    "file": "pdfs/bitmap-symbol-texttoprighttranspose.pdf",
+    "md5": "e0b1fc022bf507a1ccd53d475f1886f4",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol_texttranspose",
+    "file": "pdfs/bitmap-symbol-texttranspose.pdf",
+    "md5": "a23a2c40403d539d4262481bc8e1cd90",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_symbol",
+    "file": "pdfs/bitmap-symbol.pdf",
+    "md5": "0cc955e37519f779444c84a4a4bc6f0b",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template1_customat_tpgdon",
+    "file": "pdfs/bitmap-template1-customat-tpgdon.pdf",
+    "md5": "256d406fd2fab60747d900619245e35c",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template1_customat",
+    "file": "pdfs/bitmap-template1-customat.pdf",
+    "md5": "8a2ac48d97b5042192d2b4a2106f918d",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template1_tpgdon",
+    "file": "pdfs/bitmap-template1-tpgdon.pdf",
+    "md5": "4014fcdc5c263f6174bdd08ce564068a",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template1",
+    "file": "pdfs/bitmap-template1.pdf",
+    "md5": "a63bcf2f545950139d3753b1bc0e02de",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template2_customat_tpgdon",
+    "file": "pdfs/bitmap-template2-customat-tpgdon.pdf",
+    "md5": "28e16035900ea4a8e7b3ba32fd71c51b",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template2_customat",
+    "file": "pdfs/bitmap-template2-customat.pdf",
+    "md5": "17f2e6c4968257e94237a1218bccc6fb",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template2_tpgdon",
+    "file": "pdfs/bitmap-template2-tpgdon.pdf",
+    "md5": "648a4345fad43da9e52c190aa61d89b3",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template2",
+    "file": "pdfs/bitmap-template2.pdf",
+    "md5": "809f22283f3d5d2c26ab9de64caf681a",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template3_customat_tpgdon",
+    "file": "pdfs/bitmap-template3-customat-tpgdon.pdf",
+    "md5": "8441c64ded69dea250543ea6cc01f5e1",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template3_customat",
+    "file": "pdfs/bitmap-template3-customat.pdf",
+    "md5": "3a920c2115c751f2bfeff198c04ca6a8",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template3_tpgdon",
+    "file": "pdfs/bitmap-template3-tpgdon.pdf",
+    "md5": "11cc6b7f7ae109211c0b7a3d9c7bdee8",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_template3",
+    "file": "pdfs/bitmap-template3.pdf",
+    "md5": "d91f1c341817b8c20a6e8e7fb5c5aaa6",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_tpgdon",
+    "file": "pdfs/bitmap-tpgdon.pdf",
+    "md5": "6bcf8f02d776d87a4972316863f593b3",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_trailing_7fff_stripped_harder_refine",
+    "file": "pdfs/bitmap-trailing-7fff-stripped-harder-refine.pdf",
+    "md5": "38bbef1a67579625ad159ac6634ba79d",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_trailing_7fff_stripped_harder",
+    "file": "pdfs/bitmap-trailing-7fff-stripped-harder.pdf",
+    "md5": "7eadf55c6689431a162fb084fd3970ba",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
+  },
+  {
+    "id": "jbig2_bitmap_trailing_7fff_stripped",
+    "file": "pdfs/bitmap-trailing-7fff-stripped.pdf",
+    "md5": "157322e2f6b83743635d9994607c1c57",
+    "rounds": 1,
+    "type": "eq",
+    "useWasm": false
   }
 ]
