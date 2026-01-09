@@ -1463,3 +1463,17 @@ dialog :link {
     display: none;
   }
 }
+
+.zoom-to-rect-grab {
+  cursor: crosshair !important;
+}
+
+.zoom-to-rect-grabbing {
+  position: fixed;
+  z-index: 50000;
+  border: 2px dashed #000;
+  background-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
