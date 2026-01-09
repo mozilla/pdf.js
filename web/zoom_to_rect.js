@@ -62,27 +62,41 @@ class ZoomToRect {
     }
 
     #onMouseDown(event) {
-        if (event.button !== 0) {
+        if (event.button !== 0 || this.#mouseDownAC) {
             return;
         }
-        // TODO: Ignore targets like scrollbars if necessary, similar to GrabToPan.
-
+        const { element, overlay } = this;
+        const rect = element.getBoundingClientRect();
         this.startX = event.clientX;
         this.startY = event.clientY;
+        this.startTop = rect.top;
+        this.startLeft = rect.left;
 
         this.#mouseDownAC = new AbortController();
         const boundEndZoom = this.#endZoom.bind(this);
         const mouseOpts = { capture: true, signal: this.#mouseDownAC.signal };
 
-        this.document.addEventListener(
+        window.addEventListener(
             "mousemove",
             this.#onMouseMove.bind(this),
             mouseOpts
         );
-        this.document.addEventListener("mouseup", boundEndZoom, mouseOpts);
+        window.addEventListener("mouseup", boundEndZoom, mouseOpts);
+        window.addEventListener("keydown", this.#onKeyDown.bind(this), mouseOpts);
+
+        element.classList.add("zoom-to-rect-grabbing");
+        overlay.style.width = "0";
+        overlay.style.height = "0";
+        this.document.body.append(overlay);
 
         event.preventDefault();
         event.stopPropagation();
+    }
+
+    #onKeyDown(event) {
+        if (event.key === "Escape") {
+            this.#endZoom(null);
+        }
     }
 
     #onMouseMove(event) {
@@ -94,10 +108,6 @@ class ZoomToRect {
         const width = Math.abs(this.startX - currentX);
         const height = Math.abs(this.startY - currentY);
 
-        if (!this.overlay.parentNode) {
-            this.document.body.append(this.overlay);
-        }
-
         this.overlay.style.left = `${x}px`;
         this.overlay.style.top = `${y}px`;
         this.overlay.style.width = `${width}px`;
@@ -107,12 +117,8 @@ class ZoomToRect {
     #endZoom(event) {
         this.#mouseDownAC?.abort();
         this.#mouseDownAC = null;
-
-        if (this.overlay.parentNode) {
-            this.overlay.remove();
-            this.overlay.style.width = "0";
-            this.overlay.style.height = "0";
-        }
+        this.element.classList.remove("zoom-to-rect-grabbing");
+        this.overlay.remove();
 
         if (event) {
             const rect = {
@@ -127,6 +133,7 @@ class ZoomToRect {
             }
         }
     }
+
 }
 
 export { ZoomToRect };

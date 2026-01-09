@@ -45,10 +45,8 @@
   --toolbar-icon-bg-color: light-dark(rgb(0 0 0), rgb(255 255 255));
   --toolbar-icon-hover-bg-color: light-dark(rgb(0 0 0), rgb(255 255 255));
 
-  --sidebar-narrow-bg-color: light-dark(
-    rgb(212 212 215 / 0.9),
-    rgb(42 42 46 / 0.9)
-  );
+  --sidebar-narrow-bg-color: light-dark(rgb(212 212 215 / 0.9),
+      rgb(42 42 46 / 0.9));
   --sidebar-toolbar-bg-color: light-dark(rgb(245 246 247), rgb(50 50 52));
   --toolbar-bg-color: light-dark(rgb(249 249 250), rgb(56 56 61));
   --toolbar-border-color: light-dark(rgb(184 184 184), rgb(12 12 13));
@@ -75,10 +73,8 @@
   --doorhanger-separator-color: light-dark(rgb(222 222 222), rgb(92 92 97));
   --dialog-button-border: none;
   --dialog-button-bg-color: light-dark(rgb(12 12 13 / 0.1), rgb(92 92 97));
-  --dialog-button-hover-bg-color: light-dark(
-    rgb(12 12 13 / 0.3),
-    rgb(115 115 115)
-  );
+  --dialog-button-hover-bg-color: light-dark(rgb(12 12 13 / 0.3),
+      rgb(115 115 115));
 
   --loading-icon: url(images/loading.svg);
   --toolbarButton-editorComment-icon: url(images/comment-editButton.svg);
@@ -98,6 +94,8 @@
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
   /*#if GENERIC*/
   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
+  /*#endif*/
+  --secondaryToolbarButton-zoomTool-icon: url(images/toolbarButton-zoomIn.svg);
   /*#endif*/
   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
   --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
@@ -122,9 +120,7 @@
   --secondaryToolbarButton-spreadNone-icon: url(images/secondaryToolbarButton-spreadNone.svg);
   --secondaryToolbarButton-spreadOdd-icon: url(images/secondaryToolbarButton-spreadOdd.svg);
   --secondaryToolbarButton-spreadEven-icon: url(images/secondaryToolbarButton-spreadEven.svg);
-  --secondaryToolbarButton-imageAltTextSettings-icon: var(
-    --toolbarButton-editorStamp-icon
-  );
+  --secondaryToolbarButton-imageAltTextSettings-icon: var(--toolbarButton-editorStamp-icon);
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
   --comment-edit-button-icon: url(images/comment-editButton.svg);
@@ -187,6 +183,7 @@ html {
   &[data-toolbar-density="compact"] {
     --toolbar-height: 30px;
   }
+
   &[data-toolbar-density="touch"] {
     --toolbar-height: 44px;
   }
@@ -252,7 +249,7 @@ body {
   cursor: none;
 }
 
-.pdfPresentationMode.pdfPresentationModeControls > *,
+.pdfPresentationMode.pdfPresentationModeControls>*,
 .pdfPresentationMode.pdfPresentationModeControls .textLayer span {
   cursor: default;
 }
@@ -412,7 +409,7 @@ body {
   background-color: var(--dialog-button-hover-bg-color);
 }
 
-.dialogButton:is(:hover, :focus-visible) > span {
+.dialogButton:is(:hover, :focus-visible)>span {
   color: var(--dialog-button-hover-color);
 }
 
@@ -551,7 +548,7 @@ body {
     background-color: var(--button-hover-color);
   }
 
-  & > input {
+  &>input {
     position: absolute;
     top: 50%;
     left: 50%;
@@ -580,7 +577,8 @@ body {
 }
 
 #pageNumber {
-  -moz-appearance: textfield; /* hides the spinner in moz */
+  -moz-appearance: textfield;
+  /* hides the spinner in moz */
   text-align: end;
   width: 40px;
   background-size: 0 0;
@@ -590,6 +588,7 @@ body {
   &::-webkit-inner-spin-button {
     -webkit-appearance: none;
   }
+
   /*#endif*/
 
   .loadingInput:has(> &.loading)::after {
@@ -625,6 +624,7 @@ body {
     inset-inline-end: 4px;
   }
 }
+
 #outlineOptionsContainer {
   display: none;
 
@@ -660,11 +660,11 @@ dialog::backdrop {
   background-color: rgb(0 0 0 / 0.2);
 }
 
-dialog > .row {
+dialog>.row {
   display: table-row;
 }
 
-dialog > .row > * {
+dialog>.row>* {
   display: table-cell;
 }
 
@@ -702,17 +702,17 @@ dialog :link {
   text-align: left;
 }
 
-#documentPropertiesDialog .row > * {
+#documentPropertiesDialog .row>* {
   min-width: 100px;
   text-align: start;
 }
 
-#documentPropertiesDialog .row > span {
+#documentPropertiesDialog .row>span {
   width: 125px;
   word-wrap: break-word;
 }
 
-#documentPropertiesDialog .row > p {
+#documentPropertiesDialog .row>p {
   max-width: 225px;
   word-wrap: break-word;
 }
@@ -725,8 +725,7 @@ dialog :link {
   cursor: grab !important;
 }
 
-.grab-to-pan-grab
-  *:not(input):not(textarea):not(button):not(select):not(:link) {
+.grab-to-pan-grab *:not(input):not(textarea):not(button):not(select):not(:link) {
   cursor: inherit !important;
 }
 
@@ -741,7 +740,8 @@ dialog :link {
   display: block;
   inset: 0;
   overflow: hidden;
-  z-index: 50000; /* should be higher than anything else in PDF.js! */
+  z-index: 50000;
+  /* should be higher than anything else in PDF.js! */
 }
 
 .toolbarButton {
@@ -761,7 +761,7 @@ dialog :link {
   position: relative;
   padding: 0;
 
-  > span {
+  >span {
     display: inline-block;
     width: 0;
     height: 0;
@@ -837,7 +837,7 @@ dialog :link {
       color: var(--doorhanger-hover-color);
     }
 
-    > span {
+    >span {
       display: inline-block;
       width: max-content;
       height: auto;
@@ -852,7 +852,7 @@ dialog :link {
   position: relative;
   flex: none;
 
-  > .toolbarButton {
+  >.toolbarButton {
     width: 100%;
     height: 100%;
   }
@@ -863,10 +863,7 @@ dialog :link {
 
   .menuContainer {
     height: auto;
-    max-height: calc(
-      var(--viewer-container-height) - var(--toolbar-height) -
-        var(--doorhanger-height)
-    );
+    max-height: calc(var(--viewer-container-height) - var(--toolbar-height) - var(--doorhanger-height));
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -912,7 +909,7 @@ dialog :link {
       padding-inline: 10px;
       padding-block: 10px;
 
-      > .editorParamsSetter {
+      >.editorParamsSetter {
         min-height: 26px;
         display: flex;
         align-items: center;
@@ -964,10 +961,12 @@ dialog :link {
   max-height: calc(var(--viewer-container-height) - 40px);
 
   #secondaryToolbarButtonContainer {
+
     /*#if GENERIC*/
     #secondaryOpenFile::before {
       mask-image: var(--toolbarButton-openFile-icon);
     }
+
     /*#endif*/
 
     #secondaryPrint::before {
@@ -1008,6 +1007,10 @@ dialog :link {
 
     #cursorHandTool::before {
       mask-image: var(--secondaryToolbarButton-handTool-icon);
+    }
+
+    #cursorZoomTool::before {
+      mask-image: var(--secondaryToolbarButton-zoomTool-icon);
     }
 
     #scrollPage::before {
@@ -1066,7 +1069,7 @@ dialog :link {
   flex-wrap: wrap;
   justify-content: flex-start;
 
-  > * {
+  >* {
     height: var(--toolbar-height);
     padding: var(--findbar-padding);
   }
@@ -1090,6 +1093,7 @@ dialog :link {
       &::-webkit-input-placeholder {
         color: rgb(191 191 191);
       }
+
       /*#endif*/
       &::placeholder {
         font-style: normal;
@@ -1188,7 +1192,7 @@ dialog :link {
   }
 
   /* wrapper around (scaled) print canvas elements */
-  #printContainer > .printedPage {
+  #printContainer>.printedPage {
     page-break-after: always;
     page-break-inside: avoid;
 
@@ -1202,11 +1206,11 @@ dialog :link {
     align-items: center;
   }
 
-  #printContainer > .xfaPrintedPage .xfaPage {
+  #printContainer>.xfaPrintedPage .xfaPage {
     position: absolute;
   }
 
-  #printContainer > .xfaPrintedPage {
+  #printContainer>.xfaPrintedPage {
     page-break-after: always;
     page-break-inside: avoid;
     width: 100%;
@@ -1214,7 +1218,7 @@ dialog :link {
     position: relative;
   }
 
-  #printContainer > .printedPage :is(canvas, img) {
+  #printContainer>.printedPage :is(canvas, img) {
     /* The intrinsic canvas / image size will make sure that we fit the page. */
     max-width: 100%;
     max-height: 100%;
@@ -1248,7 +1252,7 @@ dialog :link {
   align-items: center;
   justify-content: center;
 
-  > label {
+  >label {
     width: 100%;
   }
 }
@@ -1288,7 +1292,7 @@ dialog :link {
     background-color: var(--button-hover-color);
   }
 
-  > select {
+  >select {
     appearance: none;
     width: inherit;
     min-width: inherit;
@@ -1303,7 +1307,7 @@ dialog :link {
     outline: none;
     background-color: var(--dropdown-btn-bg-color);
 
-    > option {
+    >option {
       background: var(--doorhanger-bg-color);
       color: var(--main-color);
     }
@@ -1354,7 +1358,7 @@ dialog :link {
     height: 100%;
     justify-content: space-between;
 
-    > * {
+    >* {
       flex: none;
     }
 
@@ -1414,15 +1418,13 @@ dialog :link {
         inset-inline-start: 0;
         height: 100%;
         width: calc(100% + 150px);
-        background: repeating-linear-gradient(
-          135deg,
-          var(--progressBar-blend-color) 0,
-          var(--progressBar-bg-color) 5px,
-          var(--progressBar-bg-color) 45px,
-          var(--progressBar-color) 55px,
-          var(--progressBar-color) 95px,
-          var(--progressBar-blend-color) 100px
-        );
+        background: repeating-linear-gradient(135deg,
+            var(--progressBar-blend-color) 0,
+            var(--progressBar-bg-color) 5px,
+            var(--progressBar-bg-color) 45px,
+            var(--progressBar-color) 55px,
+            var(--progressBar-color) 95px,
+            var(--progressBar-blend-color) 100px);
         animation: progressIndeterminate 1s linear infinite;
       }
     }
@@ -1433,6 +1435,7 @@ dialog :link {
   #sidebarContainer {
     background-color: var(--sidebar-narrow-bg-color);
   }
+
   #outerContainer.viewsManagerOpen #viewerContainer {
     inset-inline-start: 0 !important;
   }
@@ -1442,12 +1445,14 @@ dialog :link {
   #outerContainer .hiddenMediumView {
     display: none !important;
   }
+
   #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
     display: inline-block !important;
   }
 }
 
 @media all and (max-width: 690px) {
+
   .hiddenSmallView,
   .hiddenSmallView * {
     display: none !important;
@@ -1476,4 +1481,3 @@ dialog :link {
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.2);
   pointer-events: none;
 }
-
