@@ -249,7 +249,11 @@ class SecondaryToolbar {
   }
 
   #cursorToolChanged({ tool, disabled }) {
-    const { cursorSelectToolButton, cursorHandToolButton, cursorZoomToolButton } = this.#opts;
+    const {
+      cursorSelectToolButton,
+      cursorHandToolButton,
+      cursorZoomToolButton,
+    } = this.#opts;
 
     toggleCheckedBtn(cursorSelectToolButton, tool === CursorTool.SELECT);
     toggleCheckedBtn(cursorHandToolButton, tool === CursorTool.HAND);

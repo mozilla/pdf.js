@@ -14,120 +14,120 @@
  */
 
 class ZoomToRect {
-    #activateAC = null;
+  #activateAC = null;
 
-    #mouseDownAC = null;
+  #mouseDownAC = null;
 
-    constructor({ element, onZoom }) {
-        this.element = element;
-        this.document = element.ownerDocument;
-        this.onZoom = onZoom;
+  constructor({ element, onZoom }) {
+    this.element = element;
+    this.document = element.ownerDocument;
+    this.onZoom = onZoom;
 
-        const overlay = (this.overlay = document.createElement("div"));
-        overlay.className = "zoom-to-rect-grabbing";
+    const overlay = (this.overlay = document.createElement("div"));
+    overlay.className = "zoom-to-rect-grabbing";
+  }
+
+  activate() {
+    if (!this.#activateAC) {
+      this.#activateAC = new AbortController();
+
+      this.element.addEventListener("mousedown", this.#onMouseDown.bind(this), {
+        capture: true,
+        signal: this.#activateAC.signal,
+      });
+      this.element.classList.add("zoom-to-rect-grab");
     }
+  }
 
-    activate() {
-        if (!this.#activateAC) {
-            this.#activateAC = new AbortController();
-
-            this.element.addEventListener("mousedown", this.#onMouseDown.bind(this), {
-                capture: true,
-                signal: this.#activateAC.signal,
-            });
-            this.element.classList.add("zoom-to-rect-grab");
-        }
+  deactivate() {
+    if (this.#activateAC) {
+      this.#activateAC.abort();
+      this.#activateAC = null;
+      this.#endZoom();
+      this.element.classList.remove("zoom-to-rect-grab");
     }
+  }
 
-    deactivate() {
-        if (this.#activateAC) {
-            this.#activateAC.abort();
-            this.#activateAC = null;
-            this.#endZoom();
-            this.element.classList.remove("zoom-to-rect-grab");
-        }
+  toggle() {
+    if (this.#activateAC) {
+      this.deactivate();
+    } else {
+      this.activate();
     }
+  }
 
-    toggle() {
-        if (this.#activateAC) {
-            this.deactivate();
-        } else {
-            this.activate();
-        }
+  #onMouseDown(event) {
+    if (event.button !== 0 || this.#mouseDownAC) {
+      return;
     }
+    const { element, overlay } = this;
+    const rect = element.getBoundingClientRect();
+    this.startX = event.clientX;
+    this.startY = event.clientY;
+    this.startTop = rect.top;
+    this.startLeft = rect.left;
 
-    #onMouseDown(event) {
-        if (event.button !== 0 || this.#mouseDownAC) {
-            return;
-        }
-        const { element, overlay } = this;
-        const rect = element.getBoundingClientRect();
-        this.startX = event.clientX;
-        this.startY = event.clientY;
-        this.startTop = rect.top;
-        this.startLeft = rect.left;
+    this.#mouseDownAC = new AbortController();
+    const boundEndZoom = this.#endZoom.bind(this);
+    const mouseOpts = { capture: true, signal: this.#mouseDownAC.signal };
 
-        this.#mouseDownAC = new AbortController();
-        const boundEndZoom = this.#endZoom.bind(this);
-        const mouseOpts = { capture: true, signal: this.#mouseDownAC.signal };
+    window.addEventListener(
+      "mousemove",
+      this.#onMouseMove.bind(this),
+      mouseOpts
+    );
+    window.addEventListener("mouseup", boundEndZoom, mouseOpts);
+    window.addEventListener("keydown", this.#onKeyDown.bind(this), mouseOpts);
 
-        window.addEventListener(
-            "mousemove",
-            this.#onMouseMove.bind(this),
-            mouseOpts
-        );
-        window.addEventListener("mouseup", boundEndZoom, mouseOpts);
-        window.addEventListener("keydown", this.#onKeyDown.bind(this), mouseOpts);
+    element.classList.add("zoom-to-rect-grabbing");
+    overlay.style.width = "0";
+    overlay.style.height = "0";
+    this.document.body.append(overlay);
 
-        element.classList.add("zoom-to-rect-grabbing");
-        overlay.style.width = "0";
-        overlay.style.height = "0";
-        this.document.body.append(overlay);
+    event.preventDefault();
+    event.stopPropagation();
+  }
 
-        event.preventDefault();
-        event.stopPropagation();
+  #onKeyDown(event) {
+    if (event.key === "Escape") {
+      this.#endZoom(null);
     }
+  }
 
-    #onKeyDown(event) {
-        if (event.key === "Escape") {
-            this.#endZoom(null);
-        }
+  #onMouseMove(event) {
+    const currentX = event.clientX;
+    const currentY = event.clientY;
+
+    const x = Math.min(this.startX, currentX);
+    const y = Math.min(this.startY, currentY);
+    const width = Math.abs(this.startX - currentX);
+    const height = Math.abs(this.startY - currentY);
+
+    this.overlay.style.left = `${x}px`;
+    this.overlay.style.top = `${y}px`;
+    this.overlay.style.width = `${width}px`;
+    this.overlay.style.height = `${height}px`;
+  }
+
+  #endZoom(event) {
+    this.#mouseDownAC?.abort();
+    this.#mouseDownAC = null;
+    this.element.classList.remove("zoom-to-rect-grabbing");
+    this.overlay.remove();
+
+    if (event) {
+      const rect = {
+        x: Math.min(this.startX, event.clientX),
+        y: Math.min(this.startY, event.clientY),
+        width: Math.abs(this.startX - event.clientX),
+        height: Math.abs(this.startY - event.clientY),
+      };
+      // Ignore very small clicks/drags to prevent accidental zooms
+      if (rect.width > 5 && rect.height > 5) {
+        this.onZoom(rect);
+      }
     }
-
-    #onMouseMove(event) {
-        const currentX = event.clientX;
-        const currentY = event.clientY;
-
-        const x = Math.min(this.startX, currentX);
-        const y = Math.min(this.startY, currentY);
-        const width = Math.abs(this.startX - currentX);
-        const height = Math.abs(this.startY - currentY);
-
-        this.overlay.style.left = `${x}px`;
-        this.overlay.style.top = `${y}px`;
-        this.overlay.style.width = `${width}px`;
-        this.overlay.style.height = `${height}px`;
-    }
-
-    #endZoom(event) {
-        this.#mouseDownAC?.abort();
-        this.#mouseDownAC = null;
-        this.element.classList.remove("zoom-to-rect-grabbing");
-        this.overlay.remove();
-
-        if (event) {
-            const rect = {
-                x: Math.min(this.startX, event.clientX),
-                y: Math.min(this.startY, event.clientY),
-                width: Math.abs(this.startX - event.clientX),
-                height: Math.abs(this.startY - event.clientY),
-            };
-            // Ignore very small clicks/drags to prevent accidental zooms
-            if (rect.width > 5 && rect.height > 5) {
-                this.onZoom(rect);
-            }
-        }
-    }
+  }
 }
 
 export { ZoomToRect };
