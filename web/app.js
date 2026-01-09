@@ -272,72 +272,6 @@ const PDFViewerApplication = {
     this.bindEvents();
     this.bindWindowEvents();
 
-    // Listen for the "zoomtorect" event.
-    this.eventBus._on("zoomtorect", evt => {
-      const { rect } = evt;
-      // The rect is in the viewer ("container") coordinates.
-      // We need to convert it to a page point or use it to calculate the scale.
-
-      // Get the current view (likely the first visible page or just use the current scroll/scale).
-      // Actually, we want to zoom such that the rect fills the viewer container.
-      const container = this.appConfig.mainContainer;
-      const containerWidth = container.clientWidth;
-      const containerHeight = container.clientHeight;
-
-      // Calculate the new scale.
-      // We want the rect's width/height to fit into the container's width/height.
-      const scaleX = containerWidth / rect.width;
-      const scaleY = containerHeight / rect.height;
-      let newScale = Math.min(scaleX, scaleY);
-
-      // Apply the current scale to get the absolute scale factor
-      const currentScale = this.pdfViewer.currentScale;
-      newScale = newScale * currentScale;
-
-      // Clamp the scale
-      // We can use the constants from ui_utils.js via an import or just hardcode/clamp
-      // using the viewer's method if available, but usually we just set currentScaleValue.
-
-      // We need to center the point.
-      // The top-left of the rect in absolute coords (relative to the total scrollable area):
-      const scrollLeft = container.scrollLeft;
-      const scrollTop = container.scrollTop;
-
-      // Rect x/y are relative to the *visible* top-left (clientX/Y logic in ZoomToRect uses client coords, 
-      // but we need to check if we used page coords or client coords).
-      // ZoomToRect used clientX/Y. We should subtract the container's clientRect.
-      const containerRect = container.getBoundingClientRect();
-      const rectX = rect.x - containerRect.left + scrollLeft;
-      const rectY = rect.y - containerRect.top + scrollTop;
-
-      // Calculate the center of the zoom rect in absolute coords (at current scale)
-      const centerX = rectX + rect.width / 2;
-      const centerY = rectY + rect.height / 2;
-
-      // We want to scroll to (centerX, centerY) * (newScale / currentScale)
-      // But pdfViewer.scrollPageIntoView or internal scrolling handles scale changes.
-      // The easiest way is to set the scale, and then scroll.
-      // BUT, setting scale resets scroll.
-
-      // Let's use the pdfViewer.currentScaleValue setter which handles some magic,
-      // but likely we need to do manual scrolling.
-
-      this.pdfViewer.currentScaleValue = newScale;
-
-      // After scale change, we need to scroll to the new center.
-      // We can do this in a timeout or promise, or calculate the *dest* offset.
-      // The center point in the *new* scale will be:
-      const destX = (centerX / currentScale) * newScale;
-      const destY = (centerY / currentScale) * newScale;
-
-      const newScrollLeft = destX - containerWidth / 2;
-      const newScrollTop = destY - containerHeight / 2;
-
-      container.scrollLeft = newScrollLeft;
-      container.scrollTop = newScrollTop;
-
-    });
-
     this._initializedCapability.settled = true;
     this._initializedCapability.resolve();
   },
@@ -476,10 +410,10 @@ const PDFViewerApplication = {
     const eventBus =
       typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
         ? new FirefoxEventBus(
-          AppOptions.get("allowedGlobalEvents"),
-          externalServices,
-          AppOptions.get("isInAutomation")
-        )
+            AppOptions.get("allowedGlobalEvents"),
+            externalServices,
+            AppOptions.get("isInAutomation")
+          )
         : new EventBus();
     this.eventBus = AppOptions.eventBus = eventBus;
 
@@ -523,28 +457,28 @@ const PDFViewerApplication = {
       window.matchMedia("(forced-colors: active)").matches;
     const pageColors = hasForcedColors
       ? {
-        background: AppOptions.get("pageColorsBackground"),
-        foreground: AppOptions.get("pageColorsForeground"),
-      }
+          background: AppOptions.get("pageColorsBackground"),
+          foreground: AppOptions.get("pageColorsForeground"),
+        }
       : null;
 
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
       altTextManager = appConfig.newAltTextDialog
         ? new NewAltTextManager(
-          appConfig.newAltTextDialog,
-          overlayManager,
-          eventBus
-        )
+            appConfig.newAltTextDialog,
+            overlayManager,
+            eventBus
+          )
         : null;
     } else {
       altTextManager = appConfig.altTextDialog
         ? new AltTextManager(
-          appConfig.altTextDialog,
-          container,
-          overlayManager,
-          eventBus
-        )
+            appConfig.altTextDialog,
+            container,
+            overlayManager,
+            eventBus
+          )
         : null;
     }
 
@@ -555,15 +489,15 @@ const PDFViewerApplication = {
     const signatureManager =
       AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog
         ? new SignatureManager(
-          appConfig.addSignatureDialog,
-          appConfig.editSignatureDialog,
-          appConfig.annotationEditorParams?.editorSignatureAddSignature ||
-          null,
-          overlayManager,
-          l10n,
-          externalServices.createSignatureStorage(eventBus, abortSignal),
-          eventBus
-        )
+            appConfig.addSignatureDialog,
+            appConfig.editSignatureDialog,
+            appConfig.annotationEditorParams?.editorSignatureAddSignature ||
+              null,
+            overlayManager,
+            l10n,
+            externalServices.createSignatureStorage(eventBus, abortSignal),
+            eventBus
+          )
         : null;
 
     const ltr = appConfig.viewerContainer
@@ -572,35 +506,35 @@ const PDFViewerApplication = {
     const commentManager =
       AppOptions.get("enableComment") && appConfig.editCommentDialog
         ? new CommentManager(
-          appConfig.editCommentDialog,
-          {
-            learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
-            sidebar:
-              appConfig.annotationEditorParams?.editorCommentsSidebar || null,
-            sidebarResizer:
-              appConfig.annotationEditorParams
-                ?.editorCommentsSidebarResizer || null,
-            commentsList:
-              appConfig.annotationEditorParams?.editorCommentsSidebarList ||
-              null,
-            commentCount:
-              appConfig.annotationEditorParams?.editorCommentsSidebarCount ||
-              null,
-            sidebarTitle:
-              appConfig.annotationEditorParams?.editorCommentsSidebarTitle ||
-              null,
-            closeButton:
-              appConfig.annotationEditorParams
-                ?.editorCommentsSidebarCloseButton || null,
-            commentToolbarButton:
-              appConfig.toolbar?.editorCommentButton || null,
-          },
-          eventBus,
-          linkService,
-          overlayManager,
-          ltr,
-          hasForcedColors
-        )
+            appConfig.editCommentDialog,
+            {
+              learnMoreUrl: AppOptions.get("commentLearnMoreUrl"),
+              sidebar:
+                appConfig.annotationEditorParams?.editorCommentsSidebar || null,
+              sidebarResizer:
+                appConfig.annotationEditorParams
+                  ?.editorCommentsSidebarResizer || null,
+              commentsList:
+                appConfig.annotationEditorParams?.editorCommentsSidebarList ||
+                null,
+              commentCount:
+                appConfig.annotationEditorParams?.editorCommentsSidebarCount ||
+                null,
+              sidebarTitle:
+                appConfig.annotationEditorParams?.editorCommentsSidebarTitle ||
+                null,
+              closeButton:
+                appConfig.annotationEditorParams
+                  ?.editorCommentsSidebarCloseButton || null,
+              commentToolbarButton:
+                appConfig.toolbar?.editorCommentButton || null,
+            },
+            eventBus,
+            linkService,
+            overlayManager,
+            ltr,
+            hasForcedColors
+          )
         : null;
 
     const enableHWA = AppOptions.get("enableHWA"),
@@ -726,8 +660,8 @@ const PDFViewerApplication = {
         overlayManager,
         eventBus,
         l10n,
-        /* fileNameLookup = */() => this._docFilename,
-        /* titleLookup = */() => this._docTitle
+        /* fileNameLookup = */ () => this._docFilename,
+        /* titleLookup = */ () => this._docTitle
       );
     }
 
@@ -1034,7 +968,7 @@ const PDFViewerApplication = {
       this,
       "supportsPrinting",
       AppOptions.get("supportsPrinting") &&
-      PDFPrintServiceFactory.supportsPrinting
+        PDFPrintServiceFactory.supportsPrinting
     );
   },
 
@@ -1808,9 +1742,9 @@ const PDFViewerApplication = {
     // Provides some basic debug information
     console.log(
       `PDF ${pdfDocument.fingerprints[0]} [${info.PDFFormatVersion} ` +
-      `${(metadata?.get("pdf:producer") || info.Producer || "-").trim()} / ` +
-      `${(metadata?.get("xmp:creatortool") || info.Creator || "-").trim()}` +
-      `] (PDF.js: ${version || "?"} [${build || "?"}])`
+        `${(metadata?.get("pdf:producer") || info.Producer || "-").trim()} / ` +
+        `${(metadata?.get("xmp:creatortool") || info.Creator || "-").trim()}` +
+        `] (PDF.js: ${version || "?"} [${build || "?"}])`
     );
     const pdfTitle = this._docTitle;
 
@@ -2462,7 +2396,7 @@ const PDFViewerApplication = {
     document.blockUnblockOnload?.(false);
 
     // Ensure that this method is only ever run once.
-    this._unblockDocumentLoadEvent = () => { };
+    this._unblockDocumentLoadEvent = () => {};
   },
 
   /**

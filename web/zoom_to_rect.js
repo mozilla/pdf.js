@@ -25,11 +25,6 @@ class ZoomToRect {
 
         const overlay = (this.overlay = document.createElement("div"));
         overlay.className = "zoom-to-rect-grabbing";
-        // We need to disable pointer events on the overlay so that the mouse events
-        // can pass through to the document for the 'mouseup' event to trigger properly,
-        // or we need to capture events.
-        // However, for a selection box, usually we want it to just be visual.
-        // In GrabToPan, it appends to body.
     }
 
     activate() {
@@ -133,7 +128,6 @@ class ZoomToRect {
             }
         }
     }
-
 }
 
 export { ZoomToRect };
