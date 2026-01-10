@@ -44,7 +44,7 @@
         backdrop-filter: var(--hcm-highlight-filter);
       }
 
-      & > a:hover {
+      &>a:hover {
         opacity: 0 !important;
         background: none !important;
         box-shadow: none;
@@ -82,14 +82,17 @@
   &[data-main-rotation="90"] .norotate {
     transform: rotate(270deg) translateX(-100%);
   }
+
   &[data-main-rotation="180"] .norotate {
     transform: rotate(180deg) translate(-100%, -100%);
   }
+
   &[data-main-rotation="270"] .norotate {
     transform: rotate(90deg) translateY(-100%);
   }
 
   &.disabled {
+
     section,
     .popup {
       pointer-events: none;
@@ -138,11 +141,11 @@
     }
   }
 
-  .textLayer.selecting ~ & section {
+  .textLayer.selecting~& section {
     pointer-events: none;
   }
 
-  :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton) > a {
+  :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton)>a {
     position: absolute;
     font-size: 1em;
     top: 0;
@@ -151,8 +154,7 @@
     height: 100%;
   }
 
-  :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton):not(.hasBorder)
-    > a:hover {
+  :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton):not(.hasBorder)>a:hover {
     opacity: 0.2;
     background-color: rgb(255 255 0);
   }
@@ -172,6 +174,14 @@
     height: 100%;
     top: 0;
     left: 0;
+  }
+
+  .highlightAnnotation,
+  .underlineAnnotation,
+  .squigglyAnnotation,
+  .strikeoutAnnotation {
+    cursor: pointer;
+    pointer-events: none;
   }
 
   .textWidgetAnnotation :is(input, textarea),
@@ -218,6 +228,7 @@
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:hover {
     border: 2px solid var(--input-hover-border-color);
   }
+
   .textWidgetAnnotation :is(input, textarea):hover,
   .choiceWidgetAnnotation select:hover,
   .buttonWidgetAnnotation.checkBox input:hover {
@@ -317,8 +328,7 @@
   .popup {
     background-color: rgb(255 255 153);
     color: black;
-    box-shadow: 0 calc(2px * var(--total-scale-factor))
-      calc(5px * var(--total-scale-factor)) rgb(136 136 136);
+    box-shadow: 0 calc(2px * var(--total-scale-factor)) calc(5px * var(--total-scale-factor)) rgb(136 136 136);
     border-radius: calc(2px * var(--total-scale-factor));
     outline: 1.5px solid rgb(255 255 74);
     padding: calc(6px * var(--total-scale-factor));
@@ -338,16 +348,16 @@
     font-size: calc(9px * var(--total-scale-factor));
   }
 
-  .popup > .header {
+  .popup>.header {
     display: inline-block;
   }
 
-  .popup > .header > .title {
+  .popup>.header>.title {
     display: inline;
     font-weight: bold;
   }
 
-  .popup > .header .popupDate {
+  .popup>.header .popupDate {
     display: inline-block;
     margin-left: calc(5px * var(--total-scale-factor));
     width: fit-content;
@@ -359,7 +369,7 @@
     padding-top: calc(2px * var(--total-scale-factor));
   }
 
-  .richText > * {
+  .richText>* {
     white-space: pre-wrap;
     font-size: calc(9px * var(--total-scale-factor));
   }
