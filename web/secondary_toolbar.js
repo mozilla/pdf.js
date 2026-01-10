@@ -49,6 +49,22 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   select tool.
  * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
+ * @property {HTMLButtonElement} scrollPageButton - Button to enable page
+ *   scrolling.
+ * @property {HTMLButtonElement} scrollVerticalButton - Button to enable
+ *   vertical scrolling.
+ * @property {HTMLButtonElement} scrollHorizontalButton - Button to enable
+ *   horizontal scrolling.
+ * @property {HTMLButtonElement} scrollWrappedButton - Button to enable
+ *   wrapped scrolling.
+ * @property {HTMLButtonElement} spreadNoneButton - Button to switch to no
+ *   spreads.
+ * @property {HTMLButtonElement} spreadOddButton - Button to switch to odd
+ *   spreads.
+ * @property {HTMLButtonElement} spreadEvenButton - Button to switch to even
+ *   spreads.
+ * @property {HTMLButtonElement} rememberLastZoomButton - Button to toggle
+ *   reusing the last zoom level on load.
  * @property {HTMLButtonElement} imageAltTextSettingsButton - Button for opening
  *   the image alt-text settings dialog.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
@@ -138,6 +154,11 @@ class SecondaryToolbar {
         eventName: "switchspreadmode",
         eventDetails: { mode: SpreadMode.EVEN },
         close: true,
+      },
+      {
+        element: options.rememberLastZoomButton,
+        eventName: "rememberlastzoomtoggle",
+        close: false,
       },
       {
         element: options.imageAltTextSettingsButton,
@@ -238,6 +259,10 @@ class SecondaryToolbar {
     eventBus._on("cursortoolchanged", this.#cursorToolChanged.bind(this));
     eventBus._on("scrollmodechanged", this.#scrollModeChanged.bind(this));
     eventBus._on("spreadmodechanged", this.#spreadModeChanged.bind(this));
+    eventBus._on(
+      "rememberlastzoomchanged",
+      this.#rememberLastZoomChanged.bind(this)
+    );
   }
 
   #cursorToolChanged({ tool, disabled }) {
@@ -289,6 +314,14 @@ class SecondaryToolbar {
     toggleCheckedBtn(spreadNoneButton, mode === SpreadMode.NONE);
     toggleCheckedBtn(spreadOddButton, mode === SpreadMode.ODD);
     toggleCheckedBtn(spreadEvenButton, mode === SpreadMode.EVEN);
+  }
+
+  #rememberLastZoomChanged({ enabled }) {
+    const { rememberLastZoomButton } = this.#opts;
+    if (!rememberLastZoomButton) {
+      return;
+    }
+    toggleCheckedBtn(rememberLastZoomButton, !!enabled);
   }
 
   open() {

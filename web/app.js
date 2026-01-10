@@ -2220,7 +2220,7 @@ const PDFViewerApplication = {
     try {
       // Update AppOptions immediately for Firefox and other builds
       AppOptions.set("rememberLastZoom", enabled);
-      
+
       await this.preferences?.set("rememberLastZoom", enabled);
       const fallbackZoom =
         this.pdfViewer?.currentScaleValue ||
@@ -2753,11 +2753,9 @@ function onScaleChanging(evt) {
         : evt.presetValue;
     // Store in AppOptions as well for Firefox compatibility
     AppOptions.set("rememberLastZoomValue", zoomValue);
-    this.preferences
-      ?.set("rememberLastZoomValue", zoomValue)
-      .catch(() => {
-        /* Unable to persist remembered zoom; ignore. */
-      });
+    this.preferences?.set("rememberLastZoomValue", zoomValue).catch(() => {
+      /* Unable to persist remembered zoom; ignore. */
+    });
   }
 
   this.pdfViewer.update();

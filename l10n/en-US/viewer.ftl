@@ -103,6 +103,9 @@ pdfjs-spread-odd-button-label = Odd Spreads
 pdfjs-spread-even-button =
     .title = Join page spreads starting with even-numbered pages
 pdfjs-spread-even-button-label = Even Spreads
+pdfjs-remember-last-zoom-button =
+    .title = Remember the last zoom used when reopening a PDF
+pdfjs-remember-last-zoom-button-label = Remember zoom
 
 ## Document properties dialog
 
