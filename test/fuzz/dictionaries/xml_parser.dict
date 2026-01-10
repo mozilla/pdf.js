@@ -1,0 +1,85 @@
+# XML format dictionary
+# Declarations
+"<?xml"
+"<?xml version=\"1.0\"?>"
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+"<?xml-stylesheet"
+"?>"
+
+# DOCTYPE
+"<!DOCTYPE"
+"<!ENTITY"
+"<!ELEMENT"
+"<!ATTLIST"
+"SYSTEM"
+"PUBLIC"
+"]>"
+
+# Common elements
+"<root"
+"</root>"
+"<item"
+"</item>"
+"<data"
+"</data>"
+"<value"
+"</value>"
+
+# Namespaces
+"xmlns"
+"xmlns:"
+"http://"
+"https://"
+
+# Attributes
+"id="
+"name="
+"type="
+"value="
+"href="
+"src="
+
+# Text content
+"<![CDATA["
+"]]>"
+
+# Comments
+"<!--"
+"-->"
+
+# Processing instructions
+"<?"
+"?>"
+
+# Entity references
+"&lt;"
+"&gt;"
+"&amp;"
+"&apos;"
+"&quot;"
+"&#"
+"&#x"
+
+# Delimiters
+"<"
+">"
+"</"
+"/>"
+"="
+"\""
+"'"
+" "
+
+# Common values
+"true"
+"false"
+"null"
+"0"
+"1"
+"-1"
+
+# Whitespace
+"\x20"
+"\x09"
+"\x0a"
+"\x0d"

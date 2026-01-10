@@ -1,0 +1,71 @@
+# JPEG format dictionary
+# SOI marker
+"\xff\xd8"
+
+# JFIF/EXIF markers
+"\xff\xe0"
+"\xff\xe1"
+
+# APP markers
+"\xff\xe0\x00\x10JFIF\x00"
+"\xff\xe1\x00\x08Exif\x00\x00"
+
+# DQT (Define Quantization Table)
+"\xff\xdb"
+
+# DHT (Define Huffman Table)
+"\xff\xc4"
+
+# SOF markers (Start of Frame)
+"\xff\xc0"
+"\xff\xc1"
+"\xff\xc2"
+"\xff\xc3"
+"\xff\xc5"
+"\xff\xc6"
+"\xff\xc7"
+"\xff\xc9"
+"\xff\xca"
+"\xff\xcb"
+"\xff\xcd"
+"\xff\xce"
+"\xff\xcf"
+
+# SOS (Start of Scan)
+"\xff\xda"
+
+# EOI marker
+"\xff\xd9"
+
+# RST markers (Restart)
+"\xff\xd0"
+"\xff\xd1"
+"\xff\xd2"
+"\xff\xd3"
+"\xff\xd4"
+"\xff\xd5"
+"\xff\xd6"
+"\xff\xd7"
+
+# DNL (Define Number of Lines)
+"\xff\xdc"
+
+# DRI (Define Restart Interval)
+"\xff\xdd"
+
+# COM (Comment)
+"\xff\xfe"
+
+# Adobe marker
+"\xff\xee"
+"Adobe"
+
+# Length bytes
+"\x00\x00"
+"\x00\x01"
+"\x00\x02"
+"\x00\x08"
+"\x00\x10"
+"\x00\x11"
+"\x00\x40"
+"\xff\xff"

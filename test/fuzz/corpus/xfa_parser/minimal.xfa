@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.0/">
+    <subform name="form1">
+      <field name="field1">
+        <value><text>Sample</text></value>
+      </field>
+    </subform>
+  </template>
+</xdp:xdp>

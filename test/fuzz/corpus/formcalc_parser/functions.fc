@@ -1,0 +1,7 @@
+func Add(a, b)
+  return a + b
+endfunc
+
+var result = Add(10, 20)
+var text = Concat("Hello ", "World")
+var len = Len(text)

@@ -1,0 +1,5 @@
+var x = 1 + 2
+var y = x * 3
+if (y > 5) then
+  y = y - 1
+endif
