@@ -1209,9 +1209,12 @@ function buildComponents(defines, dir) {
     "web/images/altText_*.svg",
     "web/images/editor-toolbar-*.svg",
     "web/images/messageBar_*.svg",
-    "web/images/toolbarButton-{editorHighlight,menuArrow}.svg",
+    "web/images/toolbarButton-*.svg",
     "web/images/cursor-*.svg",
     "web/images/comment-*.svg",
+    "web/images/treeitem-*.svg",
+    "web/images/checkmark.svg",
+    "web/images/pages_*.svg",
   ];
 
   return ordered([
