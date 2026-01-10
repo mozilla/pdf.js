@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// Minimum drag size (in pixels) to trigger zoom, prevents accidental clicks
+const MIN_DRAG_SIZE = 5;
+
 class ZoomToRect {
   #activateAC = null;
 
@@ -123,7 +126,7 @@ class ZoomToRect {
         height: Math.abs(this.startY - event.clientY),
       };
       // Ignore very small clicks/drags to prevent accidental zooms
-      if (rect.width > 5 && rect.height > 5) {
+      if (rect.width > MIN_DRAG_SIZE && rect.height > MIN_DRAG_SIZE) {
         this.onZoom(rect);
       }
     }
