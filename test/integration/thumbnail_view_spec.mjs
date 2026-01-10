@@ -1,15 +1,17 @@
 import {
-  awaitPromise,
   closePages,
   kbFocusNext,
   loadAndWait,
+  scrollIntoView,
+  waitForPageRendered,
 } from "./test_utils.mjs";
 
-function waitForThumbnailVisible(page, pageNum) {
-  return page.waitForSelector(
-    `.thumbnailImage[data-l10n-args='{"page":${pageNum}}']`,
-    { visible: true }
-  );
+function waitForThumbnailVisible(page, pageNum, current = false) {
+  let selector = `.thumbnailImage[data-l10n-args='{"page":${pageNum}}']`;
+  if (current) {
+    selector += '[aria-current="page"]';
+  }
+  return page.waitForSelector(selector, { visible: true });
 }
 
 describe("PDF Thumbnail View", () => {
@@ -32,7 +34,7 @@ describe("PDF Thumbnail View", () => {
           const thumbSelector = "#thumbnailsView .thumbnailImage";
           await page.waitForSelector(thumbSelector, { visible: true });
 
-          await waitForThumbnailVisible(page, 1);
+          await waitForThumbnailVisible(page, 1, /* current = */ true);
 
           const src = await page.$eval(thumbSelector, el => el.src);
           expect(src)
@@ -47,42 +49,32 @@ describe("PDF Thumbnail View", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("tracemonkey.pdf", "#viewsManagerToggleButton");
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`
+      );
     });
 
     afterEach(async () => {
       await closePages(pages);
     });
 
-    async function goToPage(page, number) {
-      const handle = await page.evaluateHandle(
-        num => [
-          new Promise(resolve => {
-            const container = document.getElementById("viewsManagerContent");
-            container.addEventListener("scrollend", resolve, { once: true });
-            // eslint-disable-next-line no-undef
-            PDFViewerApplication.pdfLinkService.goToPage(num);
-          }),
-        ],
-        number
-      );
-      return awaitPromise(handle);
-    }
-
     it("should scroll the view", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.click("#viewsManagerToggleButton");
 
-          await waitForThumbnailVisible(page, 1);
+          await waitForThumbnailVisible(page, 1, /* current = */ true);
 
           for (const pageNum of [14, 1, 13, 2]) {
-            await goToPage(page, pageNum);
+            const pageSelector = `.page[data-page-number = "${pageNum}"]`;
+            await page.waitForSelector(pageSelector);
+            await scrollIntoView(page, pageSelector);
+            await waitForPageRendered(page, pageNum);
+
+            await waitForThumbnailVisible(page, pageNum, /* current = */ true);
+
             const thumbSelector = `.thumbnailImage[data-l10n-args='{"page":${pageNum}}']`;
-            await page.waitForSelector(
-              `.thumbnail ${thumbSelector}[aria-current="page"]`,
-              { visible: true }
-            );
             const src = await page.$eval(thumbSelector, el => el.src);
             expect(src)
               .withContext(`In ${browserName}`)
@@ -115,7 +107,7 @@ describe("PDF Thumbnail View", () => {
         pages.map(async ([browserName, page]) => {
           await page.click("#viewsManagerToggleButton");
 
-          await waitForThumbnailVisible(page, 1);
+          await waitForThumbnailVisible(page, 1, /* current = */ true);
           await waitForThumbnailVisible(page, 2);
           await waitForThumbnailVisible(page, 3);
 
