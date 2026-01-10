@@ -83,6 +83,8 @@ class WorkerMessageHandler {
 
   static setup(handler, port) {
     let testMessageProcessed = false;
+    let rendererHandler = null;
+
     handler.on("test", data => {
       if (testMessageProcessed) {
         return; // we already processed 'test' message once
@@ -95,12 +97,19 @@ class WorkerMessageHandler {
 
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
+      rendererHandler = new MessageHandler(
+        "worker-channel",
+        "renderer-channel",
+        data.channelPort
+      );
     });
 
-    handler.on("GetDocRequest", data => this.createDocumentHandler(data, port));
+    handler.on("GetDocRequest", data =>
+      this.createDocumentHandler(data, port, rendererHandler)
+    );
   }
 
-  static createDocumentHandler(docParams, port) {
+  static createDocumentHandler(docParams, port, rendererHandler = null) {
     // This context is actually holds references on pdfManager and handler,
     // until the latter is destroyed.
     let pdfManager;
@@ -174,7 +183,11 @@ class WorkerMessageHandler {
         const task = new WorkerTask("loadXfaResources");
         startWorkerTask(task);
 
-        await pdfManager.ensureDoc("loadXfaResources", [handler, task]);
+        await pdfManager.ensureDoc("loadXfaResources", [
+          handler,
+          task,
+          rendererHandler,
+        ]);
         finishWorkerTask(task);
       }
 
@@ -482,7 +495,8 @@ class WorkerMessageHandler {
                     task,
                     types,
                     annotationPromises,
-                    annotationGlobals
+                    annotationGlobals,
+                    rendererHandler
                   ) || []
                 );
               })
@@ -532,16 +546,18 @@ class WorkerMessageHandler {
         const task = new WorkerTask(`GetAnnotations: page ${pageIndex}`);
         startWorkerTask(task);
 
-        return page.getAnnotationsData(handler, task, intent).then(
-          data => {
-            finishWorkerTask(task);
-            return data;
-          },
-          reason => {
-            finishWorkerTask(task);
-            throw reason;
-          }
-        );
+        return page
+          .getAnnotationsData(handler, task, intent, rendererHandler)
+          .then(
+            data => {
+              finishWorkerTask(task);
+              return data;
+            },
+            reason => {
+              finishWorkerTask(task);
+              throw reason;
+            }
+          );
       });
     });
 
@@ -717,7 +733,8 @@ class WorkerMessageHandler {
                     task,
                     annotations,
                     imagePromises,
-                    changes
+                    changes,
+                    rendererHandler
                   )
                   .finally(function () {
                     finishWorkerTask(task);
@@ -763,7 +780,13 @@ class WorkerMessageHandler {
                 startWorkerTask(task);
 
                 return page
-                  .save(handler, task, annotationStorage, changes)
+                  .save(
+                    handler,
+                    task,
+                    annotationStorage,
+                    changes,
+                    rendererHandler
+                  )
                   .finally(function () {
                     finishWorkerTask(task);
                   });
@@ -865,6 +888,7 @@ class WorkerMessageHandler {
         page
           .getOperatorList({
             handler,
+            rendererHandler,
             sink,
             task,
             intent: data.intent,
@@ -911,6 +935,7 @@ class WorkerMessageHandler {
         page
           .extractTextContent({
             handler,
+            rendererHandler,
             task,
             sink,
             includeMarkedContent,
@@ -949,7 +974,11 @@ class WorkerMessageHandler {
     });
 
     handler.on("FontFallback", function (data) {
-      return pdfManager.fontFallback(data.id, handler);
+      return pdfManager.fontFallback(data.id, handler, rendererHandler);
+    });
+
+    rendererHandler.on("FontFallback", function (data) {
+      return pdfManager.fontFallback(data.id, handler, rendererHandler);
     });
 
     handler.on("Cleanup", function (data) {

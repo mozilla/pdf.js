@@ -301,6 +301,12 @@ class PDFThumbnailView {
       await renderTask.promise;
     } catch (e) {
       if (e instanceof RenderingCancelledException) {
+        const resetWorkerCanvas = canvas._pdfjsResetWorkerCanvas;
+        if (typeof resetWorkerCanvas === "function") {
+          resetWorkerCanvas();
+        } else {
+          canvas.width = canvas.height = 0;
+        }
         return;
       }
       error = e;
@@ -315,6 +321,12 @@ class PDFThumbnailView {
     this.renderingState = RenderingStates.FINISHED;
 
     await this.#convertCanvasToImage(canvas);
+    const resetWorkerCanvas = canvas._pdfjsResetWorkerCanvas;
+    if (typeof resetWorkerCanvas === "function") {
+      resetWorkerCanvas();
+    } else {
+      canvas.width = canvas.height = 0;
+    }
 
     this.eventBus.dispatch("thumbnailrendered", {
       source: this,
