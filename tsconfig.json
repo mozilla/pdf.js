@@ -7,7 +7,6 @@
     "emitDeclarationOnly": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "6.0",
     "moduleResolution": "node",
     "paths": {
       "pdfjs-lib": ["./src/pdf"],
