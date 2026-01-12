@@ -28,6 +28,7 @@
 
   @media screen and (forced-colors: active) {
     opacity: 1;
+    forced-color-adjust: auto;
   }
 
   &.highlighting {
