@@ -2754,11 +2754,9 @@ function onScaleChanging(evt) {
       !evt.presetValue || evt.presetValue === "custom"
         ? `${evt.scale}`
         : evt.presetValue;
-    this.store
-      ?.set("rememberLastZoom", zoomValue)
-      .catch(() => {
-        /* Unable to persist remembered zoom; ignore. */
-      });
+    this.store?.set("rememberLastZoom", zoomValue).catch(() => {
+      /* Unable to persist remembered zoom; ignore. */
+    });
   }
 
   this.pdfViewer.update();
