@@ -64,6 +64,10 @@ class JpxStream extends DecodeStream {
   get canAsyncDecodeImageFromBuffer() {
     return this.stream.isAsync;
   }
+
+  get isImageStream() {
+    return true;
+  }
 }
 
 export { JpxStream };

@@ -194,6 +194,10 @@ class JpegStream extends DecodeStream {
       decoder?.close();
     }
   }
+
+  get isImageStream() {
+    return true;
+  }
 }
 
 export { JpegStream };

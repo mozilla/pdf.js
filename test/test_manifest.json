@@ -13922,5 +13922,12 @@
     "rounds": 1,
     "type": "eq",
     "useWasm": false
+  },
+  {
+    "id": "bomb_giant_contents_image_stream",
+    "file": "pdfs/bomb_giant.pdf",
+    "md5": "e515a9abb11ab74332e57e371bfae61e",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

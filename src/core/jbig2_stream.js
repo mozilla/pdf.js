@@ -52,6 +52,10 @@ class Jbig2Stream extends DecodeStream {
     return true;
   }
 
+  get isImageStream() {
+    return true;
+  }
+
   async decodeImage(bytes, _decoderOptions) {
     if (this.eof) {
       return this.buffer;

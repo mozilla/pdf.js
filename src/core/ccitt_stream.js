@@ -55,6 +55,10 @@ class CCITTFaxStream extends DecodeStream {
       this.buffer[this.bufferLength++] = c;
     }
   }
+
+  get isImageStream() {
+    return true;
+  }
 }
 
 export { CCITTFaxStream };
