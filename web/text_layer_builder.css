@@ -18,17 +18,16 @@
   text-align: initial;
   inset: 0;
   overflow: clip;
-  opacity: 1;
+  opacity: 0.4;
   line-height: 1;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
   z-index: 0;
-  mix-blend-mode: multiply;
 
   @media screen and (forced-colors: active) {
+    opacity: 1;
     forced-color-adjust: auto;
-    mix-blend-mode: normal;
   }
 
   caret-color: CanvasText;
@@ -77,8 +76,8 @@
   }
 
   .highlight {
-    --highlight-bg-color: rgb(180 0 170 / 0.25);
-    --highlight-selected-bg-color: rgb(0 100 0 / 0.25);
+    --highlight-bg-color: rgb(180 0 170);
+    --highlight-selected-bg-color: rgb(0 100 0);
     --highlight-backdrop-filter: none;
     --highlight-selected-backdrop-filter: none;
 
@@ -122,9 +121,9 @@
   ::selection {
     /* stylelint-disable declaration-block-no-duplicate-properties */
     /*#if !MOZCENTRAL*/
-    background: rgba(0 0 255 / 0.25);
+    background: rgb(0 0 255);
     /*#endif*/
-    background: color-mix(in srgb, AccentColor, transparent 75%);
+    background: AccentColor;
     /* stylelint-enable declaration-block-no-duplicate-properties */
   }
 
