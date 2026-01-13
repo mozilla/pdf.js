@@ -18,18 +18,20 @@
   text-align: initial;
   inset: 0;
   overflow: clip;
-  opacity: 0.25;
+  opacity: 1;
   line-height: 1;
   text-size-adjust: none;
   forced-color-adjust: none;
   transform-origin: 0 0;
-  caret-color: CanvasText;
   z-index: 0;
+  mix-blend-mode: multiply;
 
   @media screen and (forced-colors: active) {
-    opacity: 1;
     forced-color-adjust: auto;
+    mix-blend-mode: normal;
   }
+
+  caret-color: CanvasText;
 
   &.highlighting {
     touch-action: none;
@@ -61,7 +63,8 @@
 
     --scale-x: 1;
     --rotate: 0deg;
-    transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+    transform: rotate(var(--rotate)) scaleX(var(--scale-x))
+      scale(var(--min-font-size-inv));
   }
 
   .markedContent {
@@ -74,8 +77,8 @@
   }
 
   .highlight {
-    --highlight-bg-color: rgb(180 0 170);
-    --highlight-selected-bg-color: rgb(0 100 0);
+    --highlight-bg-color: rgb(180 0 170 / 0.25);
+    --highlight-selected-bg-color: rgb(0 100 0 / 0.25);
     --highlight-backdrop-filter: none;
     --highlight-selected-backdrop-filter: none;
 
@@ -83,7 +86,9 @@
       --highlight-bg-color: transparent;
       --highlight-selected-bg-color: transparent;
       --highlight-backdrop-filter: var(--hcm-highlight-filter);
-      --highlight-selected-backdrop-filter: var(--hcm-highlight-selected-filter);
+      --highlight-selected-backdrop-filter: var(
+        --hcm-highlight-selected-filter
+      );
     }
 
     margin: -1px;
@@ -117,11 +122,10 @@
   ::selection {
     /* stylelint-disable declaration-block-no-duplicate-properties */
     /*#if !MOZCENTRAL*/
-    background: rgba(0 0 255);
+    background: rgba(0 0 255 / 0.25);
     /*#endif*/
+    background: color-mix(in srgb, AccentColor, transparent 75%);
     /* stylelint-enable declaration-block-no-duplicate-properties */
-    background: AccentColor;
-    color: transparent;
   }
 
   /* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
