@@ -1204,6 +1204,9 @@ class AnnotationEditor {
   }
 
   get comment() {
+    if (!this.#comment) {
+      return null;
+    }
     const {
       data: { richText, text, date, deleted },
     } = this.#comment;

@@ -3645,4 +3645,46 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("No exception when moving (issue 20571)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        100
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the buttons work correctly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          await createFreeTextEditor({
+            page,
+            x: rect.x + 100,
+            y: rect.y + 100,
+            data: "Hello PDF.js World !!",
+          });
+
+          await switchToFreeText(page, /* disable = */ true);
+          await switchToFreeText(page);
+
+          const editorSelector = getEditorSelector(0);
+          await selectEditor(page, editorSelector);
+          await dragAndDrop(page, editorSelector, [[10, 10]]);
+
+          await switchToFreeText(page, /* disable = */ true);
+          await switchToFreeText(page);
+        })
+      );
+    });
+  });
 });
