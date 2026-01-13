@@ -1478,6 +1478,7 @@ const PDFViewerApplication = {
         sidebarView: SidebarView.UNKNOWN,
         scrollMode: ScrollMode.UNKNOWN,
         spreadMode: SpreadMode.UNKNOWN,
+        rememberLastZoom: "",
       })
       .catch(() => {
         /* Unable to read from storage; ignoring errors. */
@@ -1508,7 +1509,7 @@ const PDFViewerApplication = {
           const defaultZoomValue = AppOptions.get("defaultZoomValue");
           const rememberLastZoom = AppOptions.get("rememberLastZoom");
           const rememberLastZoomValue = rememberLastZoom
-            ? AppOptions.get("rememberLastZoomValue")
+            ? stored?.rememberLastZoom
             : "";
 
           let initialZoom = defaultZoomValue || null;
@@ -2222,12 +2223,14 @@ const PDFViewerApplication = {
       AppOptions.set("rememberLastZoom", enabled);
 
       await this.preferences?.set("rememberLastZoom", enabled);
-      const fallbackZoom =
-        this.pdfViewer?.currentScaleValue ||
-        AppOptions.get("defaultZoomValue") ||
-        DEFAULT_SCALE_VALUE;
-      const nextZoom = enabled ? fallbackZoom : "";
-      await this.preferences?.set("rememberLastZoomValue", `${nextZoom}`);
+      if (enabled && this.pdfViewer?.currentScaleValue) {
+        await this.store?.set(
+          "rememberLastZoom",
+          `${this.pdfViewer.currentScaleValue}`
+        );
+      } else if (!enabled) {
+        await this.store?.set("rememberLastZoom", "");
+      }
       this.eventBus.dispatch("rememberlastzoomchanged", {
         source: this,
         enabled,
@@ -2751,11 +2754,11 @@ function onScaleChanging(evt) {
       !evt.presetValue || evt.presetValue === "custom"
         ? `${evt.scale}`
         : evt.presetValue;
-    // Store in AppOptions as well for Firefox compatibility
-    AppOptions.set("rememberLastZoomValue", zoomValue);
-    this.preferences?.set("rememberLastZoomValue", zoomValue).catch(() => {
-      /* Unable to persist remembered zoom; ignore. */
-    });
+    this.store
+      ?.set("rememberLastZoom", zoomValue)
+      .catch(() => {
+        /* Unable to persist remembered zoom; ignore. */
+      });
   }
 
   this.pdfViewer.update();

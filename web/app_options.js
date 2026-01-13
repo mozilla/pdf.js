@@ -206,11 +206,6 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
-  rememberLastZoomValue: {
-    /** @type {string} */
-    value: "",
-    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-  },
   disableHistory: {
     /** @type {boolean} */
     value: false,
