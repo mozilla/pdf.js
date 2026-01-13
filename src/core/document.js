@@ -270,7 +270,7 @@ class Page {
   async getContentStream() {
     const content = await this.pdfManager.ensure(this, "content");
 
-    if (content instanceof BaseStream) {
+    if (content instanceof BaseStream && !content.isImageStream) {
       return content;
     }
     if (Array.isArray(content)) {
