@@ -498,4 +498,50 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("Text elements must be aria-hidden when there's MathML and annotations", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug2009627.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the text in text layer is aria-hidden", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const isSanitizerSupported = await page.evaluate(() => {
+            try {
+              // eslint-disable-next-line no-undef
+              return typeof Sanitizer !== "undefined";
+            } catch {
+              return false;
+            }
+          });
+          const ariaHidden = await page.evaluate(() =>
+            Array.from(
+              document.querySelectorAll(".structTree :has(> math)")
+            ).map(el =>
+              document
+                .getElementById(el.getAttribute("aria-owns"))
+                .getAttribute("aria-hidden")
+            )
+          );
+          if (isSanitizerSupported) {
+            expect(ariaHidden)
+              .withContext(`In ${browserName}`)
+              .toEqual(["true", "true", "true"]);
+          } else {
+            // eslint-disable-next-line no-console
+            console.log(
+              `Pending in Chrome: Sanitizer API (in ${browserName}) is not supported`
+            );
+          }
+        })
+      );
+    });
+  });
 });

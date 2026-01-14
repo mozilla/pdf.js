@@ -184,6 +184,10 @@ class StructTreeLayerBuilder {
 
   #elementsToAddToTextLayer = null;
 
+  #elementsToHideInTextLayer = null;
+
+  #elementsToStealFromTextLayer = null;
+
   /**
    * @param {StructTreeLayerBuilderOptions} options
    */
@@ -304,15 +308,49 @@ class StructTreeLayerBuilder {
     return true;
   }
 
-  addElementsToTextLayer() {
-    if (!this.#elementsToAddToTextLayer) {
-      return;
+  updateTextLayer() {
+    if (this.#elementsToAddToTextLayer) {
+      for (const [id, img] of this.#elementsToAddToTextLayer) {
+        document.getElementById(id)?.append(img);
+      }
+      this.#elementsToAddToTextLayer.clear();
+      this.#elementsToAddToTextLayer = null;
     }
-    for (const [id, img] of this.#elementsToAddToTextLayer) {
-      document.getElementById(id)?.append(img);
+    if (this.#elementsToHideInTextLayer) {
+      for (const id of this.#elementsToHideInTextLayer) {
+        const elem = document.getElementById(id);
+        if (elem) {
+          elem.ariaHidden = true;
+        }
+      }
+      this.#elementsToHideInTextLayer.length = 0;
+      this.#elementsToHideInTextLayer = null;
     }
-    this.#elementsToAddToTextLayer.clear();
-    this.#elementsToAddToTextLayer = null;
+    if (this.#elementsToStealFromTextLayer) {
+      for (
+        let i = 0, ii = this.#elementsToStealFromTextLayer.length;
+        i < ii;
+        i += 2
+      ) {
+        const element = this.#elementsToStealFromTextLayer[i];
+        const ids = this.#elementsToStealFromTextLayer[i + 1];
+        let textContent = "";
+        for (const id of ids) {
+          const elem = document.getElementById(id);
+          if (elem) {
+            textContent += elem.textContent.trim() || "";
+            // Aria-hide the element in order to avoid duplicate reading of the
+            // math content by screen readers.
+            elem.ariaHidden = "true";
+          }
+        }
+        if (textContent) {
+          element.textContent = textContent;
+        }
+      }
+      this.#elementsToStealFromTextLayer.length = 0;
+      this.#elementsToStealFromTextLayer = null;
+    }
   }
 
   #walk(node) {
@@ -325,21 +363,13 @@ class StructTreeLayerBuilder {
       const { role } = node;
       if (MathMLElements.has(role)) {
         element = document.createElementNS(MathMLNamespace, role);
-        let text = "";
+        const ids = [];
+        (this.#elementsToStealFromTextLayer ||= []).push(element, ids);
         for (const { type, id } of node.children || []) {
-          if (type !== "content" || !id) {
-            continue;
+          if (type === "content" && id) {
+            ids.push(id);
           }
-          const elem = document.getElementById(id);
-          if (!elem) {
-            continue;
-          }
-          text += elem.textContent.trim() || "";
-          // Aria-hide the element in order to avoid duplicate reading of the
-          // math content by screen readers.
-          elem.ariaHidden = "true";
         }
-        element.textContent = text;
       } else {
         element = document.createElement("span");
       }
@@ -365,10 +395,7 @@ class StructTreeLayerBuilder {
             if (!id) {
               continue;
             }
-            const elem = document.getElementById(id);
-            if (elem) {
-              elem.ariaHidden = true;
-            }
+            (this.#elementsToHideInTextLayer ||= []).push(id);
           }
           // For now, we don't want to keep the alt text if there's valid
           // MathML (see https://github.com/w3c/mathml-aam/issues/37).
