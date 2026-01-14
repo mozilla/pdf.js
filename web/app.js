@@ -377,6 +377,7 @@ const PDFViewerApplication = {
         enableFakeMLManager: x => x === "true",
         enableGuessAltText: x => x === "true",
         enablePermissions: x => x === "true",
+        enableSplitMerge: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
         highlightEditorColors: x => x,
         maxCanvasPixels: x => parseInt(x),
@@ -602,6 +603,7 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableHWA,
+        enableSplitMerge: AppOptions.get("enableSplitMerge"),
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
@@ -2185,6 +2187,12 @@ const PDFViewerApplication = {
         opts
       );
     }
+    eventBus._on("pagesedited", this.onPagesEdited.bind(this), opts);
+    eventBus._on(
+      "beforepagesedited",
+      this.onBeforePagesEdited.bind(this),
+      opts
+    );
   },
 
   bindWindowEvents() {
@@ -2357,6 +2365,14 @@ const PDFViewerApplication = {
     this.findBar?.close();
 
     await Promise.all([this.l10n?.destroy(), this.close()]);
+  },
+
+  onBeforePagesEdited(data) {
+    this.pdfViewer.onBeforePagesEdited(data);
+  },
+
+  onPagesEdited(data) {
+    this.pdfViewer.onPagesEdited(data);
   },
 
   _accumulateTicks(ticks, prop) {

@@ -87,25 +87,42 @@
     0 0.25px 0.75px -0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
     0 2px 6px -6px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --image-outline: none;
-  --image-border-width: 4px;
+  --image-border-width: 6px;
   --image-border-color: light-dark(#cfcfd8, #3a3944);
-  --image-hover-border-color: light-dark(#cfcfd8, #3a3944);
+  --image-hover-border-color: #bfbfc9;
   --image-current-border-color: var(--button-focus-outline-color);
   --image-current-focused-outline-color: var(--image-hover-border-color);
   --image-page-number-bg: light-dark(#f0f0f4, #23222b);
   --image-page-number-fg: var(--text-color);
+  --image-current-page-number-bg: var(--image-current-border-color);
+  --image-current-page-number-fg: light-dark(#fff, #15141a);
   --image-shadow:
     0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
     0 0 0 1px var(--image-border-color),
     0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --image-hover-shadow:
     0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
+    0 0 0 1px light-dark(rgb(21 20 26 / 0.1), rgb(251 251 254 / 0.1)),
     0 0 0 var(--image-border-width) var(--image-hover-border-color),
     0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --image-current-shadow:
     0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
     0 0 0 var(--image-border-width) var(--image-current-border-color),
     0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-dragging-placeholder-bg: light-dark(
+    rgb(0 98 250 / 0.08),
+    rgb(0 202 219 / 0.08)
+  );
+  --multiple-dragging-bg: white;
+  --image-multiple-dragging-shadow:
+    0 0 0 var(--image-border-width) var(--image-current-border-color),
+    var(--image-border-width) var(--image-border-width) 0
+      calc(var(--image-border-width) / 2) var(--multiple-dragging-bg),
+    var(--image-border-width) var(--image-border-width) 0
+      calc(3 * var(--image-border-width) / 2) var(--image-current-border-color);
+  --image-dragging-shadow: 0 0 0 var(--image-border-width)
+    var(--image-current-border-color);
+  --multiple-dragging-text-color: light-dark(#fbfbfe, #15141a);
 
   @media screen and (forced-colors: active) {
     --text-color: CanvasText;
@@ -136,6 +153,7 @@
     --image-current-focused-outline-color: var(--image-hover-border-color);
     --image-page-number-bg: ButtonFace;
     --image-page-number-fg: CanvasText;
+    --multiple-dragging-bg: Canvas;
   }
 
   display: flex;
@@ -494,6 +512,10 @@
     flex: 1 1 0%;
     overflow: auto;
 
+    &:has(#thumbnailsView.isDragging) {
+      overflow-x: hidden;
+    }
+
     #thumbnailsView {
       --thumbnail-width: 126px;
 
@@ -502,9 +524,36 @@
       align-items: center;
       justify-content: space-evenly;
       padding: 20px 32px;
-      gap: 16px;
+      gap: 20px;
       width: 100%;
       box-sizing: border-box;
+      position: relative;
+
+      &.isDragging {
+        cursor: grabbing;
+
+        > .thumbnail {
+          > .thumbnailImage:hover {
+            cursor: grabbing;
+
+            &:not([aria-current="page"]) {
+              box-shadow: var(--image-shadow);
+            }
+          }
+
+          > input {
+            pointer-events: none;
+          }
+        }
+
+        > .dragMarker {
+          position: absolute;
+          top: 0;
+          left: 0;
+          border: 2px solid var(--indicator-color);
+          contain: strict;
+        }
+      }
 
       > .thumbnail {
         display: inline-flex;
@@ -516,38 +565,52 @@
         position: relative;
         scroll-margin-top: 20px;
 
-        > input {
-          display: none;
-        }
-
-        &::after {
+        &:not(.isDragging)::after {
           content: attr(page-number);
           border-radius: 8px;
           background-color: var(--image-page-number-bg);
           color: var(--image-page-number-fg);
           position: absolute;
           bottom: 5px;
-          right: calc(var(--thumbnail-width) / 2);
+          inset-inline-end: calc(var(--thumbnail-width) / 2);
           min-width: 32px;
           height: 16px;
           text-align: center;
-          translate: 50%;
+          translate: calc(var(--dir-factor) * 50%);
 
           font: menu;
           font-size: 13px;
           font-style: normal;
           font-weight: 400;
           line-height: normal;
+
           pointer-events: none;
+          user-select: none;
+        }
+
+        &:has([aria-current="page"]):not(.isDragging)::after {
+          background-color: var(--image-current-page-number-bg);
+          color: var(--image-current-page-number-fg);
+        }
+
+        &.isDragging > input {
+          visibility: hidden;
+        }
+
+        > input {
+          margin: 0;
         }
 
         > .thumbnailImage {
+          --thumbnail-dragging-scale: 1.4;
+
           width: var(--thumbnail-width);
           border: none;
           border-radius: 8px;
           box-shadow: var(--image-shadow);
           box-sizing: content-box;
           outline: var(--image-outline);
+          user-select: none;
 
           &.missingThumbnailImage {
             content-visibility: hidden;
@@ -573,6 +636,58 @@
 
           &[aria-current="page"] {
             box-shadow: var(--image-current-shadow);
+          }
+
+          &.placeholder {
+            background-color: var(--image-dragging-placeholder-bg);
+            box-shadow: none !important;
+          }
+
+          &.draggingThumbnail {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 1;
+            transform-origin: 0 0 0;
+            scale: calc(1 / var(--thumbnail-dragging-scale));
+            pointer-events: none;
+            box-shadow: var(--image-dragging-shadow);
+
+            &.multiple {
+              box-shadow: var(--image-multiple-dragging-shadow);
+
+              > img {
+                position: absolute;
+                top: 0;
+                left: 0;
+
+                width: var(--thumbnail-width);
+                border: none;
+                border-radius: 8px;
+                box-sizing: content-box;
+                outline: none;
+                user-select: none;
+              }
+
+              &::after {
+                content: attr(data-multiple-count);
+                border-radius: calc(8px * var(--thumbnail-dragging-scale));
+                background-color: var(--indicator-color);
+                color: var(--multiple-dragging-text-color);
+                position: absolute;
+                inset-block-end: calc(4px * var(--thumbnail-dragging-scale));
+                inset-inline-start: calc(4px * var(--thumbnail-dragging-scale));
+                min-width: calc(32px * var(--thumbnail-dragging-scale));
+                height: calc(16px * var(--thumbnail-dragging-scale));
+                text-align: center;
+                font: menu;
+                font-size: calc(13px * var(--thumbnail-dragging-scale));
+                font-style: normal;
+                font-weight: 400;
+                line-height: normal;
+                contain: strict;
+              }
+            }
           }
         }
       }
