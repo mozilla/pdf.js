@@ -1371,8 +1371,12 @@ class AnnotationEditorUIManager {
     if (!boxes) {
       return;
     }
+    const layer = this.#getLayerForTextLayer(textLayer);
+    if (layer) {
+      layer.div.hidden = false;
+    }
     this.#floatingToolbar ||= new FloatingToolbar(this);
-    this.#floatingToolbar.show(textLayer, boxes, this.direction === "ltr");
+    this.#floatingToolbar.show(layer?.div || textLayer, boxes, this.direction === "ltr");
   }
 
   /**
@@ -1427,6 +1431,14 @@ class AnnotationEditorUIManager {
     if (!selection || selection.isCollapsed) {
       if (this.#selectedTextNode) {
         this.#floatingToolbar?.hide();
+        const anchorElement = this.#getAnchorElementForSelection(selection);
+        const textLayer = anchorElement?.closest(".textLayer");
+        if (textLayer) {
+          const layer = this.#getLayerForTextLayer(textLayer);
+          if (layer?.isEmpty && this.#mode === AnnotationEditorType.NONE) {
+            layer.div.hidden = true;
+          }
+        }
         this.#selectedTextNode = null;
         this.#dispatchUpdateStates({
           hasSelectedText: false,
