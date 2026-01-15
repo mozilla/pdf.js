@@ -79,6 +79,8 @@ class AnnotationFactory {
       return undefined;
     }
 
+    const acroFormDict = acroForm instanceof Dict ? acroForm : Dict.empty;
+
     const id = isRef(ref) ? ref.toString() : `annot_${idFactory.createObjId()}`;
 
     // Determine the annotation's subtype.
@@ -93,7 +95,8 @@ class AnnotationFactory {
       subtype,
       id,
       pdfManager,
-      acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
+      acroForm: acroFormDict,
+      needAppearances: acroFormDict.get("NeedAppearances") === true,
     };
 
     switch (subtype) {
@@ -970,6 +973,7 @@ class WidgetAnnotation extends Annotation {
     const dict = params.dict;
     const data = this.data;
     this.ref = params.ref;
+    this.needAppearances = params.needAppearances;
 
     data.annotationType = AnnotationType.WIDGET;
     data.fieldName = this._constructFieldName(dict);
@@ -1135,7 +1139,13 @@ class WidgetAnnotation extends Annotation {
     }
 
     return this._getAppearance(evaluator, task, annotationStorage).then(
-      content => {
+      async content => {
+        if (this.needAppearances) {
+          content = await this._getAppearance(evaluator, task, {
+            [this.data.id]: { value: this.data.fieldValue },
+          });
+        }
+
         if (this.appearance && content === null) {
           return super.getOperatorList(
             evaluator,
@@ -1160,7 +1170,6 @@ class WidgetAnnotation extends Annotation {
           this.data.rect[2] - this.data.rect[0],
           this.data.rect[3] - this.data.rect[1],
         ];
-
         const transform = getTransformMatrix(this.data.rect, bbox, matrix);
         operatorList.addOp(OPS.beginAnnotation, [
           this.data.rect,
@@ -1169,12 +1178,19 @@ class WidgetAnnotation extends Annotation {
         ]);
 
         const stream = new StringStream(content);
+        // Fallback font dict for when the font isn't in resources
+        const fallbackFontDict = new Dict();
+        fallbackFontDict.set("BaseFont", Name.get("Helvetica"));
+        fallbackFontDict.set("Type", Name.get("Font"));
+        fallbackFontDict.set("Subtype", Name.get("Type1"));
+
         return evaluator
           .getOperatorList({
             stream,
             task,
             resources: this._fieldResources.mergedResources,
             operatorList,
+            fallbackFontDict,
           })
           .then(function () {
             operatorList.addOp(OPS.endAnnotation, []);
