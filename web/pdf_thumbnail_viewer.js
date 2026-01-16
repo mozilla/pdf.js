@@ -487,6 +487,11 @@ class PDFThumbnailViewer {
       const N = thumbnails.length;
       pagesMapper.pagesNumber = N;
       const currentPageId = pagesMapper.getPageId(this._currentPageNumber);
+      const newCurrentPageId = pagesMapper.getPageId(
+        isNaN(this.#pageNumberToRemove)
+          ? pagesToMove[0]
+          : this.#pageNumberToRemove
+      );
 
       // Move the thumbnails in the DOM.
       let thumbnail = thumbnails[pagesToMove[0] - 1];
@@ -532,6 +537,11 @@ class PDFThumbnailViewer {
         index: newIndex,
         pagesToMove,
       });
+
+      const newCurrentPageNumber = pagesMapper.getPageNumber(newCurrentPageId);
+      setTimeout(() => {
+        this.linkService.goToPage(newCurrentPageNumber);
+      }, 0);
     }
 
     if (!isNaN(this.#pageNumberToRemove)) {

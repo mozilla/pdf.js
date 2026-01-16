@@ -231,5 +231,35 @@ describe("Reorganize Pages View", () => {
         })
       );
     });
+
+    it("should select the dropped page (bug 2010820)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          const rect1 = await getRect(page, getThumbnailSelector(1));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+
+          await page.click(getThumbnailSelector(2));
+          await page.waitForSelector(
+            `${getThumbnailSelector(2)}[aria-current="page"]`
+          );
+
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            10
+          );
+          await awaitPromise(handlePagesEdited);
+          await page.waitForSelector(
+            `${getThumbnailSelector(2)}[aria-current="false"]`
+          );
+          await page.waitForSelector(
+            `${getThumbnailSelector(1)}[aria-current="page"]`
+          );
+        })
+      );
+    });
   });
 });
