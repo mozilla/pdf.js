@@ -15,6 +15,7 @@
 
 import {
   awaitPromise,
+  clearInput,
   closePages,
   createPromise,
   dragAndDrop,
@@ -54,6 +55,46 @@ function waitForPagesEdited(page) {
       }
     );
   });
+}
+
+function getSearchResults(page) {
+  return page.evaluate(() => {
+    const pages = document.querySelectorAll(".page");
+    const results = [];
+    for (let i = 0; i < pages.length; i++) {
+      const domPage = pages[i];
+      const pageNumber = parseInt(domPage.getAttribute("data-page-number"), 10);
+      const highlights = domPage.querySelectorAll("span.highlight");
+      if (highlights.length === 0) {
+        continue;
+      }
+      results.push([
+        i + 1,
+        pageNumber,
+        Array.from(highlights).map(span => span.textContent),
+      ]);
+    }
+    return results;
+  });
+}
+
+function movePages(page, selectedPages, atIndex) {
+  return page.evaluate(
+    (selected, index) => {
+      const viewer = window.PDFViewerApplication.pdfViewer;
+      const pagesToMove = Array.from(selected).sort((a, b) => a - b);
+      viewer.pagesMapper.pagesNumber =
+        document.querySelectorAll(".page").length;
+      viewer.pagesMapper.movePages(new Set(pagesToMove), pagesToMove, index);
+      window.PDFViewerApplication.eventBus.dispatch("pagesedited", {
+        pagesMapper: viewer.pagesMapper,
+        index,
+        pagesToMove,
+      });
+    },
+    selectedPages,
+    atIndex
+  );
 }
 
 describe("Reorganize Pages View", () => {
@@ -258,6 +299,118 @@ describe("Reorganize Pages View", () => {
           await page.waitForSelector(
             `${getThumbnailSelector(1)}[aria-current="page"]`
           );
+        })
+      );
+    });
+  });
+
+  describe("Search in pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check if the search is working after moving pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#viewFindButton");
+          await page.waitForSelector(":has(> #findHighlightAll)", {
+            visible: true,
+          });
+          await page.click(":has(> #findHighlightAll)");
+
+          await page.waitForSelector("#findInput", { visible: true });
+          await page.type("#findInput", "1");
+          await page.keyboard.press("Enter");
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 10
+          );
+
+          let results = await getSearchResults(page);
+          expect(results)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              // Page number, Id, [matches]
+              [1, 1, ["1"]],
+              [10, 10, ["1"]],
+              [11, 11, ["1", "1"]],
+              [12, 12, ["1"]],
+              [13, 13, ["1"]],
+              [14, 14, ["1"]],
+              [15, 15, ["1"]],
+              [16, 16, ["1"]],
+              [17, 17, ["1"]],
+            ]);
+
+          await movePages(page, [11, 2], 3);
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 0
+          );
+
+          await clearInput(page, "#findInput", true);
+          await page.type("#findInput", "1");
+          await page.keyboard.press("Enter");
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 10
+          );
+
+          results = await getSearchResults(page);
+          expect(results)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              // Page number, Id, [matches]
+              [1, 1, ["1"]],
+              [4, 11, ["1", "1"]],
+              [11, 10, ["1"]],
+              [12, 12, ["1"]],
+              [13, 13, ["1"]],
+              [14, 14, ["1"]],
+              [15, 15, ["1"]],
+              [16, 16, ["1"]],
+              [17, 17, ["1"]],
+            ]);
+
+          await movePages(page, [13], 0);
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 0
+          );
+
+          await clearInput(page, "#findInput", true);
+          await page.type("#findInput", "1");
+          await page.keyboard.press("Enter");
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 10
+          );
+
+          results = await getSearchResults(page);
+          expect(results)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              // Page number, Id, [matches]
+              [1, 13, ["1"]],
+              [2, 1, ["1"]],
+              [5, 11, ["1", "1"]],
+              [12, 10, ["1"]],
+              [13, 12, ["1"]],
+              [14, 14, ["1"]],
+              [15, 15, ["1"]],
+              [16, 16, ["1"]],
+              [17, 17, ["1"]],
+            ]);
         })
       );
     });
