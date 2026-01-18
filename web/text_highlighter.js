@@ -77,7 +77,7 @@ class TextHighlighter {
       this.eventBus._on(
         "updatetextlayermatches",
         evt => {
-          if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
+          if (evt.pageId === this.pageIdx || evt.pageId === -1) {
             this._updateMatches();
           }
         },
@@ -159,7 +159,8 @@ class TextHighlighter {
     const { findController, pageIdx } = this;
     const { textContentItemsStr, textDivs } = this;
 
-    const isSelectedPage = pageIdx === findController.selected.pageIdx;
+    const isSelectedPage =
+      findController.getPageNumber(pageIdx) === findController.selected.pageIdx;
     const selectedMatchIdx = findController.selected.matchIdx;
     const highlightAll = findController.state.highlightAll;
     let prevEnd = null;
@@ -273,7 +274,7 @@ class TextHighlighter {
         findController.scrollMatchIntoView({
           element: textDivs[begin.divIdx],
           selectedLeft,
-          pageIndex: pageIdx,
+          pageIndex: findController.getPageNumber(pageIdx),
           matchIndex: selectedMatchIdx,
         });
       }
@@ -308,8 +309,10 @@ class TextHighlighter {
     }
     // Convert the matches on the `findController` into the match format
     // used for the textLayer.
-    const pageMatches = findController.pageMatches[pageIdx] || null;
-    const pageMatchesLength = findController.pageMatchesLength[pageIdx] || null;
+    const pageNumber = findController.getPageNumber(pageIdx);
+    const pageMatches = findController.pageMatches[pageNumber] || null;
+    const pageMatchesLength =
+      findController.pageMatchesLength[pageNumber] || null;
 
     this.matches = this._convertMatches(pageMatches, pageMatchesLength);
     this._renderMatches(this.matches);
