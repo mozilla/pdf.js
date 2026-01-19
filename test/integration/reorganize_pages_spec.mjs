@@ -568,4 +568,66 @@ describe("Reorganize Pages View", () => {
       );
     });
   });
+
+  describe("Save a pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check that a save is triggered", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+          const rect1 = await getRect(page, getThumbnailSelector(1));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            10
+          );
+
+          const handleSaveAs = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "savepageseditedpdf",
+              ({ data }) => {
+                resolve(Array.from(data.pageIndices));
+              },
+              {
+                once: true,
+              }
+            );
+          });
+
+          await page.click("#viewsManagerStatusActionButton");
+          await page.waitForSelector("#viewsManagerStatusActionSaveAs", {
+            visible: true,
+          });
+          await page.click("#viewsManagerStatusActionSaveAs");
+          const pageIndices = await awaitPromise(handleSaveAs);
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              1, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16,
+            ]);
+        })
+      );
+    });
+  });
 });

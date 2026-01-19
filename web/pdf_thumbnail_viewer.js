@@ -28,6 +28,7 @@ import {
   watchScroll,
 } from "./ui_utils.js";
 import { MathClamp, noContextMenu, PagesMapper, stopEvent } from "pdfjs-lib";
+import { Menu } from "./menu.js";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 
 const SCROLL_OPTIONS = {
@@ -67,6 +68,8 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  *   rendering. The default value is `false`.
  * @property {boolean} [enableSplitMerge] - Enables split and merge features.
  *   The default value is `false`.
+ * @property {Object} [manageMenu] - The menu elements to manage saving edited
+ *   PDF.
  */
 
 /**
@@ -109,6 +112,8 @@ class PDFThumbnailViewer {
 
   #pagesMapper = PagesMapper.instance;
 
+  #manageSaveAsButton = null;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -123,6 +128,7 @@ class PDFThumbnailViewer {
     abortSignal,
     enableHWA,
     enableSplitMerge,
+    manageMenu,
   }) {
     this.scrollableContainer = container.parentElement;
     this.container = container;
@@ -134,6 +140,20 @@ class PDFThumbnailViewer {
     this.pageColors = pageColors || null;
     this.enableHWA = enableHWA || false;
     this.#enableSplitMerge = enableSplitMerge || false;
+
+    if (this.#enableSplitMerge && manageMenu) {
+      const { button, menu, copy, cut, delete: del, saveAs } = manageMenu;
+      this._manageMenu = new Menu(menu, button, [copy, cut, del, saveAs]);
+      this.#manageSaveAsButton = saveAs;
+      saveAs.addEventListener("click", () => {
+        this.eventBus.dispatch("savepageseditedpdf", {
+          source: this,
+          data: this.#pagesMapper.getPageMappingForSaving(),
+        });
+      });
+    } else {
+      manageMenu.button.hidden = true;
+    }
 
     this.scroll = watchScroll(
       this.scrollableContainer,
@@ -519,10 +539,16 @@ class PDFThumbnailViewer {
       selectedPages.clear();
       this.#pageNumberToRemove = NaN;
 
-      this.eventBus.dispatch("pagesedited", {
-        source: this,
-        pagesMapper,
-      });
+      const isIdentity = (this.#manageSaveAsButton.disabled =
+        !this.#pagesMapper.hasBeenAltered());
+      if (!isIdentity) {
+        this.eventBus.dispatch("pagesedited", {
+          source: this,
+          pagesMapper,
+          index: newIndex,
+          pagesToMove,
+        });
+      }
 
       const newCurrentPageNumber = pagesMapper.getPageNumber(newCurrentPageId);
       setTimeout(() => {

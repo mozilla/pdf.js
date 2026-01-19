@@ -605,6 +605,7 @@ const PDFViewerApplication = {
         abortSignal,
         enableHWA,
         enableSplitMerge: AppOptions.get("enableSplitMerge"),
+        manageMenu: appConfig.viewsManager.manageMenu,
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
@@ -2194,6 +2195,11 @@ const PDFViewerApplication = {
       this.onBeforePagesEdited.bind(this),
       opts
     );
+    eventBus._on(
+      "savepageseditedpdf",
+      this.onSavePagesEditedPDF.bind(this),
+      opts
+    );
   },
 
   bindWindowEvents() {
@@ -2374,6 +2380,35 @@ const PDFViewerApplication = {
 
   onPagesEdited(data) {
     this.pdfViewer.onPagesEdited(data);
+  },
+
+  async onSavePagesEditedPDF({
+    data: { includePages, excludePages, pageIndices },
+  }) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
+      return;
+    }
+    if (!this.pdfDocument) {
+      return;
+    }
+    const pageInfo = {
+      document: null, // For now, no merge.
+      includePages,
+      excludePages,
+      pageIndices,
+    };
+    const modifiedPdfBytes = await this.pdfDocument.extractPages([pageInfo]);
+    if (!modifiedPdfBytes) {
+      console.error(
+        "Something wrong happened when saving the edited PDF.\nPlease file a bug."
+      );
+      return;
+    }
+    this.downloadManager.download(
+      modifiedPdfBytes,
+      this._downloadUrl,
+      this._docFilename
+    );
   },
 
   _accumulateTicks(ticks, prop) {
