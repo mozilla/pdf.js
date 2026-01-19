@@ -16,8 +16,8 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
+import { PagesMapper, parseQueryString } from "./ui_utils.js";
 import { isValidExplicitDest } from "pdfjs-lib";
-import { parseQueryString } from "./ui_utils.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 
@@ -49,6 +49,8 @@ const LinkTarget = {
  */
 class PDFLinkService {
   externalLinkEnabled = true;
+
+  #pagesMapper = PagesMapper.instance;
 
   /**
    * @param {PDFLinkServiceOptions} options
@@ -138,7 +140,7 @@ class PDFLinkService {
     if (!this.pdfDocument) {
       return;
     }
-    let namedDest, explicitDest, pageNumber;
+    let namedDest, explicitDest, pageId;
     if (typeof dest === "string") {
       namedDest = dest;
       explicitDest = await this.pdfDocument.getDestination(dest);
@@ -156,13 +158,13 @@ class PDFLinkService {
     const [destRef] = explicitDest;
 
     if (destRef && typeof destRef === "object") {
-      pageNumber = this.pdfDocument.cachedPageNumber(destRef);
+      pageId = this.pdfDocument.cachedPageNumber(destRef);
 
-      if (!pageNumber) {
+      if (!pageId) {
         // Fetch the page reference if it's not yet available. This could
         // only occur during loading, before all pages have been resolved.
         try {
-          pageNumber = (await this.pdfDocument.getPageIndex(destRef)) + 1;
+          pageId = (await this.pdfDocument.getPageIndex(destRef)) + 1;
         } catch {
           console.error(
             `goToDestination: "${destRef}" is not a valid page reference, for dest="${dest}".`
@@ -171,12 +173,17 @@ class PDFLinkService {
         }
       }
     } else if (Number.isInteger(destRef)) {
-      pageNumber = destRef + 1;
+      pageId = destRef + 1;
     }
-    if (!pageNumber || pageNumber < 1 || pageNumber > this.pagesCount) {
+    if (!pageId || pageId < 1 || pageId > this.pagesCount) {
       console.error(
-        `goToDestination: "${pageNumber}" is not a valid page number, for dest="${dest}".`
+        `goToDestination: "${pageId}" is not a valid page number, for dest="${dest}".`
       );
+      return;
+    }
+
+    const pageNumber = this.#pagesMapper.getPageNumber(pageId);
+    if (pageNumber === null) {
       return;
     }
 
@@ -184,7 +191,7 @@ class PDFLinkService {
       // Update the browser history before scrolling the new destination into
       // view, to be able to accurately capture the current document position.
       this.pdfHistory.pushCurrentPosition();
-      this.pdfHistory.push({ namedDest, explicitDest, pageNumber });
+      this.pdfHistory.push({ namedDest, explicitDest, pageNumber: pageId });
     }
 
     this.pdfViewer.scrollPageIntoView({
@@ -197,7 +204,7 @@ class PDFLinkService {
     this.eventBus._on(
       "textlayerrendered",
       evt => {
-        if (evt.pageNumber === pageNumber) {
+        if (evt.pageNumber === pageId) {
           evt.source.textLayer.div.focus();
           ac.abort();
         }
