@@ -13,6 +13,16 @@
  * limitations under the License.
  */
 
+button.hasPopupMenu {
+  &[aria-expanded="true"] + menu {
+    visibility: visible;
+  }
+
+  &[aria-expanded="false"] + menu {
+    visibility: hidden;
+  }
+}
+
 .popupMenu {
   --menuitem-checkmark-icon: url(images/checkmark.svg);
   --menu-mark-icon-size: 0;
@@ -75,6 +85,7 @@
   top: 1px;
   margin: 0;
   padding: 5px;
+  box-sizing: border-box;
 
   background: var(--menu-bg);
   background-blend-mode: var(--menu-background-blend-mode);
