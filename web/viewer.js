@@ -49,6 +49,10 @@ function getViewerConfiguration() {
       editorCommentParamsToolbar: document.getElementById(
         "editorCommentParamsToolbar"
       ),
+      editorEraserButton: document.getElementById("editorEraserButton"),
+      editorEraserParamsToolbar: document.getElementById(
+        "editorEraserParamsToolbar"
+      ),
       editorFreeTextButton: document.getElementById("editorFreeTextButton"),
       editorFreeTextParamsToolbar: document.getElementById(
         "editorFreeTextParamsToolbar"
@@ -271,6 +275,7 @@ function getViewerConfiguration() {
       editorCommentsSidebarResizer: document.getElementById(
         "editorCommentsSidebarResizer"
       ),
+      editorEraserThickness: document.getElementById("editorEraserThickness"),
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),
       editorInkColor: document.getElementById("editorInkColor"),
@@ -295,8 +300,13 @@ function getViewerConfiguration() {
     editCommentDialog: {
       dialog: document.getElementById("commentManagerDialog"),
       toolbar: document.getElementById("commentManagerToolbar"),
-      title: document.getElementById("commentManagerTitle"),
+      actions: document.getElementById("commentActionsButton"),
+      menu: document.getElementById("commentActionsMenu"),
+      editMenuItem: document.getElementById("commentActionsEditButton"),
+      deleteMenuItem: document.getElementById("commentActionsDeleteButton"),
+      closeButton: document.getElementById("commentCloseButton"),
       textInput: document.getElementById("commentManagerTextInput"),
+      textView: document.getElementById("commentManagerTextView"),
       cancelButton: document.getElementById("commentManagerCancelButton"),
       saveButton: document.getElementById("commentManagerSaveButton"),
     },

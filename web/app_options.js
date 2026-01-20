@@ -236,6 +236,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER,
   },
+  enableEraser: {
+    /** @type {boolean} */
+    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableGuessAltText: {
     /** @type {boolean} */
     value: true,

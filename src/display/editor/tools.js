@@ -1931,6 +1931,8 @@ class AnnotationEditorUIManager {
    *   edit mode.
    * @param {boolean} [editComment] - true if the mode change is due to a
    *   comment edit.
+   * @param {boolean} [isFromEvent] - true if the mode change is due to an event
+   * (e.g. toolbar button clicked).
    */
   async updateMode(
     mode,
@@ -1938,7 +1940,8 @@ class AnnotationEditorUIManager {
     isFromUser = false,
     isFromKeyboard = false,
     mustEnterInEditMode = false,
-    editComment = false
+    editComment = false,
+    isFromEvent = false
   ) {
     if (this.#mode === mode) {
       return;
@@ -1981,6 +1984,10 @@ class AnnotationEditorUIManager {
 
     if (mode === AnnotationEditorType.SIGNATURE) {
       await this.#signatureManager?.loadSignatures();
+    }
+    if (isFromEvent) {
+      // reinitialize the pointer type when mode changed by an event
+      CurrentPointers.clearPointerType();
     }
 
     if (isFromUser) {

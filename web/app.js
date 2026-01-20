@@ -696,6 +696,10 @@ const PDFViewerApplication = {
       }
     }
 
+    if (!AppOptions.get("enableEraser")) {
+      appConfig.toolbar?.editorEraserButton?.parentElement.remove();
+    }
+
     if (appConfig.secondaryToolbar) {
       if (AppOptions.get("enableAltText")) {
         appConfig.secondaryToolbar.imageAltTextSettingsButton?.classList.remove(

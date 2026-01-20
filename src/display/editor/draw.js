@@ -91,6 +91,10 @@ class DrawingEditor extends AnnotationEditor {
     this._addOutlines(params);
   }
 
+  get _drawOutlines() {
+    return this.#drawOutlines;
+  }
+
   /** @inheritdoc */
   onUpdatedColor() {
     this._colorPicker?.update(this.color);

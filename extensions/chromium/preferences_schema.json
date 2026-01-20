@@ -247,6 +247,11 @@
       "type": "boolean",
       "default": false
     },
+    "enableEraser": {
+      "description": "Enable the eraser to erase annotations like Ink.",
+      "type": "boolean",
+      "default": false
+    },
     "enableOptimizedPartialRendering": {
       "description": "Enable tracking of PDF operations to optimize partial rendering.",
       "type": "boolean",

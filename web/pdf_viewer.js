@@ -2549,7 +2549,8 @@ class PDFViewer {
         /* isFromUser = */ true,
         isFromKeyboard,
         mustEnterInEditMode,
-        editComment
+        editComment,
+        true
       );
       if (
         mode !== this.#annotationEditorMode ||
