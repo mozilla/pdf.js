@@ -1,0 +1,576 @@
+%PDF-1.7
+% Copyright 2021, PDF Association.
+
+1 0 obj
+<< /Type      /Catalog
+   /Outlines  2 0 R
+   /Pages     3 0 R
+>>
+endobj
+
+2 0 obj
+<< /Type  /Outlines
+   /Count 0
+>>
+endobj
+
+3 0 obj
+<< /Type  /Pages
+   /Kids  [4 0 R]
+   /Count 1
+>>
+endobj
+
+4 0 obj
+<< /Type      /Page
+   /Parent    3 0 R
+   /MediaBox  [0 0 900 900]
+   /Contents  5 0 R
+   /Resources 
+   << /ColorSpace 
+      << /3chanRGB [ /CalRGB
+                     << /WhitePoint [0.9505 1.0 1.0890]
+                        /Gamma  [0.5 1.2 1.9]
+                        /Matrix [0.4497 0.2446 0.0252
+                                 0.3163 0.4920 0.1412
+                                 0.3845 0.0833 0.9227]
+                     >> ]
+      >>
+      /Font << /F1 6 0 R >>
+   >>
+>>
+endobj
+
+5 0 obj
+<< /Length 13569  >>
+stream
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #1: Only full key names --> all PDF parsers should support!
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 45 520 Tm
+  (1) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+10 400 200 100 re f  % Paint green rectangle below image
+200 0 0 100 10 400 cm
+BI
+  /Width           20
+  /Height          10
+  /BitsPerComponent  8
+  /ColorSpace      /DeviceRGB
+  /Filter          [/ASCIIHexDecode] 
+  /Length          1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #2: Only abbreviated key names --> all PDF parsers should support!
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 255 520 Tm
+  (2) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+220 400 200 100 re f % Paint green rectangle below image
+200 0 0 100 220 400 cm
+BI
+  /W   20
+  /H   10
+  /BPC 8
+  /CS  /RGB
+  /F   [/AHx] 
+  /L   1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #3: CORRECT abbreviated key names, INCORRECT full keys
+% (width x height = constant). 
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 465 520 Tm
+  (3) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+430 400 200 100 re f % Paint green rectangle below image
+200 0 0 100 430 400 cm
+BI
+  /W      20    %% COMMENT OUT THIS LINE (and below) TO SEE EFFECT!
+  /Width  10
+  /H      10     %% COMMENT OUT THIS LINE (and above) TO SEE EFFECT!
+  /Height 40
+  /BPC 8
+  /BitsPerComponent 4
+  /CS  /RGB
+  /F   [/AHx] 
+  /L   1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #4: CORRECT abbreviated key names, INCORRECT full keys
+% for Filter
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 675 520 Tm
+  (4) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+640 400 200 100 re f % Paint green rectangle below image
+200 0 0 100 640 400 cm
+BI
+  /W   20
+  /H   10
+  /BPC 8
+  /CS  /RGB
+  /F   [/AHx] 
+  /Filter [/A85]
+  /Length 1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #5: CORRECT abbreviated key names, INCORRECT full keys
+% for ColorSpace. Visual colour shift if INCORRECT (compared
+% to other images)
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 45 220 Tm
+  (5) Tj
+ET
+Q
+q
+0 1 0 rg            % Green fill
+10 100 200 100 re f % Paint green rectangle below image
+200 0 0 100 10 100 cm
+BI
+  /W   20
+  /H   10
+  /BPC 8
+  /CS          /RGB  %% COMMENT OUT THIS LINE TO SEE EFFECT!
+  /ColorSpace  /3chanRGB
+  /F   [/AHx] 
+  /Length 1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #6: CORRECT abbreviated key names, INCORRECT full keys
+% for Decode. Colours will be inverted if PDF parser is wrong!
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 255 220 Tm
+  (6) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+220 100 200 100 re f % Paint green rectangle below image
+200 0 0 100 220 100 cm
+BI
+  /W   20
+  /H   10
+  /BPC 8
+  /CS  /RGB
+  /D      [ 0 1 0 1 0 1 ]  %% COMMENT OUT THIS LINE TO SEE EFFECT!
+  /Decode [ 1 0 1 0 1 0 ]
+  /F   [/AHx] 
+  /Length 1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #7: CORRECT abbreviated key names, INCORRECT full keys
+% for Interpolate. If appearance is different to the other
+% images then the PDF parser is incorrect!
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 465 220 Tm
+  (7) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+430 100 200 100 re f % Paint green rectangle below image
+200 0 0 100 430 100 cm
+BI
+  /W   20
+  /H   10
+  /BPC 8
+  /CS  /RGB
+  /I           false %% COMMENT OUT THIS LINE TO SEE EFFECT!
+  /Interpolate true
+  /F   [/AHx] 
+  /Length 1240
+ID
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ffff00ffff00ff
+ff00ffff00ff0000ff0000ffff000000
+ff0000ff0000ffffff000000ffffff00
+ffff00ffff000000ffffff00ffff00ff
+ff000000ff0000ffffff00ffff00ffff
+00ff0000ff0000ffff00ffff000000ff
+ffff00ffff000000ff0000ffffff0000
+00ff0000ffffff00ffff000000ffffff
+00ffff000000ffffff00ffff00ff0000
+ff0000ffff00ffff000000ffffff00ff
+ff000000ffffff000000ffffff000000
+ffffff000000ffffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+ff00ffff000000ffffff00ffff000000
+ffffff000000ffffff000000ffffff00
+0000ffffff00ffff000000ff0000ffff
+ff00ffff00ff0000ff0000ffff00ffff
+000000ffffff00ffff000000ffffff00
+ffff00ffff000000ffffff00ffff0000
+00ffffff00ffff000000ffffff00ffff
+00ff0000ff0000ffff000000ff0000ff
+0000ffffff000000ffffff00ffff00ff
+ff000000ffffff00ffff00ffff000000
+ff0000ff0000ffffff00ffff00ff0000
+ff0000ffff00ffff00ffff00ffff00ff
+ff00ffff00ffff00ffff00ffff00ffff
+00ffff00ffff00ffff00ffff00ffff00
+ffff00ffff00ffff00ff0000ff0000ff
+0000ff0000ff0000ff0000ff0000ff00
+00ff0000ff0000ff0000ff0000ff0000
+ff0000ff0000ff0000ff0000ff0000ff
+0000ff0000ff0000 >
+EI
+Q
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% #8: CORRECT abbreviated key names, INCORRECT full keys
+% for DecodeParams. If appearance is different to the other
+% images then the PDF parser is incorrect!
+q
+BT
+  0 0 0 rg % Black text
+  /F1 8 Tf
+  10 0 0 10 675 220 Tm
+  (8) Tj
+ET
+Q
+q
+0 1 0 rg             % Green fill
+640 100 200 100 re f % Paint green rectangle below image
+200 0 0 100 640 100 cm
+BI
+  /W   20
+  /H   10
+  /BPC 8
+  /CS  /RGB
+  /F   [ /AHx /Fl ] 
+  /DP  [ null << /Predictor 15 /Colors 3 /BitsPerComponent 8 /Columns 20 >> ] %% THIS IS REQUIRED TO VIEW IMAGE CORRECTLY
+  /DecodeParms [ null null ] 
+  /Length 197
+ID
+28919d90510e80200c435be2fdaf5c3f
+a6653297280b2165e175050afb7500c0
+9e01312e41c50a3d2f3c753e02372cd1
+bb998594283137c76ba2b894bdac2d5a
+b8ab25790be7094e9b9b13ae8fac5ef5
+c3c2f05776a3e8677da81323233119>
+EI
+
+endstream
+endobj
+
+6 0 obj
+<< /Type     /Font
+   /Subtype  /Type1
+   /BaseFont /Helvetica
+>>
+endobj
+
+7 0 obj
+<< /CreationDate (D:20210529)
+   /Producer     (Manual)
+   /Creator      (Peter Wyatt for SafeDocs)
+   /Author       (Peter Wyatt)
+   /Subject      (Inline Image Test for abbreviated and full key names)
+   /Title        (Inline Image Test for abbreviated and full key names)
+   /Keywords     (image, inline, abbreviation, ambiguous)
+>>
+endobj
+
+xref
+0 8
+0000000000 65536 f
+0000000048 00000 n
+0000000137 00000 n
+0000000194 00000 n
+0000000267 00000 n
+0000000791 00000 n
+0000014420 00000 n
+0000014509 00000 n
+trailer
+<< /Size 8
+   /Root 1 0 R
+   /Info 7 0 R
+>>
+startxref
+14872
+%%EOF
