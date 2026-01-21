@@ -982,11 +982,11 @@ class CommentPopup {
           },
         },
       });
-      const savedComment = this.#editor.comment?.text;
       const editor = this.#editor;
+      const savedData = editor.comment;
       this.destroy();
-      if (savedComment) {
-        editor._uiManager.deleteComment(editor, savedComment);
+      if (savedData?.text) {
+        editor._uiManager.deleteComment(editor, savedData);
       } else {
         editor.comment = null;
       }

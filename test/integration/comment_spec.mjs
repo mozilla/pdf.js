@@ -999,6 +999,14 @@ describe("Comment", () => {
           );
 
           await page.waitForSelector("#commentPopup", { visible: true });
+
+          // Capture the date before deletion
+          const dateBefore = await page.evaluate(
+            () =>
+              document.querySelector("#commentPopup .commentPopupTime")
+                ?.textContent
+          );
+
           await waitAndClick(page, "button.commentPopupDelete");
 
           await page.waitForSelector("#editorUndoBar", { visible: true });
@@ -1016,6 +1024,16 @@ describe("Comment", () => {
                 ?.textContent
           );
           expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
+
+          // Check that the date is preserved
+          const dateAfter = await page.evaluate(
+            () =>
+              document.querySelector("#commentPopup .commentPopupTime")
+                ?.textContent
+          );
+          expect(dateAfter)
+            .withContext(`In ${browserName}`)
+            .toEqual(dateBefore);
         })
       );
     });
