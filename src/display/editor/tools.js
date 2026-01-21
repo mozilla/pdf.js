@@ -1177,6 +1177,22 @@ class AnnotationEditorUIManager {
     this.#commentManager?.removeComments([editor.uid]);
   }
 
+  /**
+   * Delete a comment from an editor with undo support.
+   * @param {AnnotationEditor} editor - The editor whose comment to delete.
+   * @param {string} savedComment - The comment text to save for undo.
+   */
+  deleteComment(editor, savedComment) {
+    const undo = () => {
+      editor.comment = savedComment;
+    };
+    const cmd = () => {
+      this._editorUndoBar?.show(undo, "comment");
+      editor.comment = null;
+    };
+    this.addCommands({ cmd, undo, mustExec: true });
+  }
+
   toggleComment(editor, isSelected, visibility = undefined) {
     this.#commentManager?.toggleCommentPopup(editor, isSelected, visibility);
   }

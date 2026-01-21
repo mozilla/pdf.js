@@ -965,4 +965,159 @@ describe("Comment", () => {
       );
     });
   });
+
+  describe("Undo deletion popup for comments (bug 1999154)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that deleting a comment can be undone using the undo button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          const comment = "Test comment for undo";
+          await editComment(page, editorSelector, comment);
+
+          // Stay in highlight mode - don't disable it
+          await waitAndClick(
+            page,
+            `${editorSelector} .annotationCommentButton`
+          );
+
+          await page.waitForSelector("#commentPopup", { visible: true });
+          await waitAndClick(page, "button.commentPopupDelete");
+
+          await page.waitForSelector("#editorUndoBar", { visible: true });
+          await page.waitForSelector("#editorUndoBarUndoButton", {
+            visible: true,
+          });
+          await page.click("#editorUndoBarUndoButton");
+
+          // Check that the comment is restored by hovering to show the popup
+          await page.hover(`${editorSelector} .annotationCommentButton`);
+          await page.waitForSelector("#commentPopup", { visible: true });
+          const popupText = await page.evaluate(
+            () =>
+              document.querySelector("#commentPopup .commentPopupText")
+                ?.textContent
+          );
+          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
+        })
+      );
+    });
+
+    it("must check that the undo deletion popup displays 'Comment removed' message", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Test comment");
+
+          // Stay in highlight mode - don't disable it
+          await waitAndClick(
+            page,
+            `${editorSelector} .annotationCommentButton`
+          );
+
+          await page.waitForSelector("#commentPopup", { visible: true });
+          await waitAndClick(page, "button.commentPopupDelete");
+
+          await page.waitForFunction(() => {
+            const messageElement = document.querySelector(
+              "#editorUndoBarMessage"
+            );
+            return messageElement && messageElement.textContent.trim() !== "";
+          });
+          const message = await page.waitForSelector("#editorUndoBarMessage");
+          const messageText = await page.evaluate(
+            el => el.textContent,
+            message
+          );
+          expect(messageText)
+            .withContext(`In ${browserName}`)
+            .toContain("Comment removed");
+        })
+      );
+    });
+
+    it("must check that the undo bar closes when clicking the close button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Test comment");
+
+          // Stay in highlight mode - don't disable it
+          await waitAndClick(
+            page,
+            `${editorSelector} .annotationCommentButton`
+          );
+
+          await page.waitForSelector("#commentPopup", { visible: true });
+          await waitAndClick(page, "button.commentPopupDelete");
+
+          await page.waitForSelector("#editorUndoBar", { visible: true });
+          await waitAndClick(page, "#editorUndoBarCloseButton");
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+        })
+      );
+    });
+
+    it("must check that deleting a comment can be undone using Ctrl+Z", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          const comment = "Test comment for Ctrl+Z undo";
+          await editComment(page, editorSelector, comment);
+
+          // Stay in highlight mode - don't disable it
+          await waitAndClick(
+            page,
+            `${editorSelector} .annotationCommentButton`
+          );
+
+          await page.waitForSelector("#commentPopup", { visible: true });
+          await waitAndClick(page, "button.commentPopupDelete");
+
+          await page.waitForSelector("#editorUndoBar", { visible: true });
+
+          // Use Ctrl+Z to undo
+          await kbModifierDown(page);
+          await page.keyboard.press("z");
+          await kbModifierUp(page);
+
+          // The undo bar should be hidden after undo
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+
+          // Check that the comment is restored by hovering to show the popup
+          await page.hover(`${editorSelector} .annotationCommentButton`);
+          await page.waitForSelector("#commentPopup", { visible: true });
+          const popupText = await page.evaluate(
+            () =>
+              document.querySelector("#commentPopup .commentPopupText")
+                ?.textContent
+          );
+          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
+        })
+      );
+    });
+  });
 });
