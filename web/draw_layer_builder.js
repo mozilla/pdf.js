@@ -16,24 +16,12 @@
 import { DrawLayer } from "pdfjs-lib";
 
 /**
- * @typedef {Object} DrawLayerBuilderOptions
- * @property {number} pageIndex
- */
-
-/**
  * @typedef {Object} DrawLayerBuilderRenderOptions
  * @property {string} [intent] - The default value is "display".
  */
 
 class DrawLayerBuilder {
   #drawLayer = null;
-
-  /**
-   * @param {DrawLayerBuilderOptions} options
-   */
-  constructor(options) {
-    this.pageIndex = options.pageIndex;
-  }
 
   /**
    * @param {DrawLayerBuilderRenderOptions} options
@@ -43,9 +31,7 @@ class DrawLayerBuilder {
     if (intent !== "display" || this.#drawLayer || this._cancelled) {
       return;
     }
-    this.#drawLayer = new DrawLayer({
-      pageIndex: this.pageIndex,
-    });
+    this.#drawLayer = new DrawLayer();
   }
 
   cancel() {

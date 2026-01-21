@@ -319,6 +319,25 @@ class PDFPageView extends BasePDFPageView {
     );
   }
 
+  updatePageNumber(newPageNumber) {
+    if (this.id === newPageNumber) {
+      return;
+    }
+    this.id = newPageNumber;
+    this.renderingId = `page${newPageNumber}`;
+    if (this.pdfPage) {
+      this.pdfPage.pageNumber = newPageNumber;
+    }
+    // TODO: do we set the page label ?
+    this.setPageLabel(this.pageLabel);
+    const { div } = this;
+    div.setAttribute("data-page-number", newPageNumber);
+    div.setAttribute("data-l10n-args", JSON.stringify({ page: newPageNumber }));
+    this._textHighlighter.pageIdx = newPageNumber - 1;
+    // Don't update the page index for the draw layer, since it's just used as
+    // an identifier.
+  }
+
   setPdfPage(pdfPage) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
@@ -1116,9 +1135,7 @@ class PDFPageView extends BasePDFPageView {
       if (!annotationEditorUIManager) {
         return;
       }
-      this.drawLayer ||= new DrawLayerBuilder({
-        pageIndex: this.id,
-      });
+      this.drawLayer ||= new DrawLayerBuilder();
       await this.#renderDrawLayer();
       this.drawLayer.setParent(canvasWrapper);
 

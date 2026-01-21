@@ -33,6 +33,7 @@ import {
   AnnotationEditorUIManager,
   AnnotationMode,
   MathClamp,
+  PagesMapper,
   PermissionFlag,
   PixelsPerInch,
   shadow,
@@ -52,7 +53,6 @@ import {
   MAX_AUTO_SCALE,
   MAX_SCALE,
   MIN_SCALE,
-  PagesMapper,
   PresentationModeState,
   removeNullCharacters,
   RenderingStates,
@@ -288,8 +288,6 @@ class PDFViewer {
   #textLayerMode = TextLayerMode.ENABLE;
 
   #viewerAlert = null;
-
-  #originalPages = null;
 
   #pagesMapper = PagesMapper.instance;
 
@@ -885,6 +883,7 @@ class PDFViewer {
       this.#annotationEditorMode = AnnotationEditorType.NONE;
 
       this.#printingAllowed = true;
+      this.#pagesMapper.pagesNumber = 0;
     }
 
     this.pdfDocument = pdfDocument;
@@ -1180,37 +1179,40 @@ class PDFViewer {
       });
   }
 
-  onBeforePagesEdited() {
-    this._currentPageId = this.#pagesMapper.getPageId(this._currentPageNumber);
+  async onBeforePagesEdited({ pagesMapper }) {
+    await this._pagesCapability.promise;
+    this._currentPageId = pagesMapper.getPageId(this._currentPageNumber);
   }
 
-  onPagesEdited({ index, pagesToMove }) {
-    const pagesMapper = this.#pagesMapper;
+  onPagesEdited({ pagesMapper }) {
     this._currentPageNumber = pagesMapper.getPageNumber(this._currentPageId);
+    const prevPages = this._pages;
+    const newPages = (this._pages = []);
+    for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
+      const prevPageNumber = pagesMapper.getPrevPageNumber(i + 1) - 1;
+      if (prevPageNumber === -1) {
+        continue;
+      }
+      const page = prevPages[prevPageNumber];
+      newPages[i] = page;
+      page.updatePageNumber(i + 1);
+    }
 
     const viewerElement =
       this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
     if (viewerElement) {
-      const pages = this._pages;
-      let page = pages[pagesToMove[0] - 1].div;
-      if (index === 0) {
-        pages[0].div.before(page);
-      } else {
-        pages[index - 1].div.after(page);
+      viewerElement.replaceChildren();
+      const fragment = document.createDocumentFragment();
+      for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
+        const { div } = newPages[i];
+        div.setAttribute("data-page-number", i + 1);
+        fragment.append(div);
       }
-      for (let i = 1, ii = pagesToMove.length; i < ii; i++) {
-        const newPage = pages[pagesToMove[i] - 1].div;
-        page.after(newPage);
-        page = newPage;
-      }
+      viewerElement.append(fragment);
     }
-
-    this.#originalPages ||= this._pages;
-    const newPages = (this._pages = []);
-    for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
-      const pageView = this.#originalPages[pagesMapper.getPageId(i + 1) - 1];
-      newPages.push(pageView);
-    }
+    setTimeout(() => {
+      this.forceRendering();
+    });
   }
 
   /**
@@ -1357,12 +1359,11 @@ class PDFViewer {
 
   #scrollIntoView(pageView, pageSpot = null) {
     const { div, id } = pageView;
-    const pageNumber = this.#pagesMapper.getPageNumber(id);
 
     // Ensure that `this._currentPageNumber` is correct, when `#scrollIntoView`
     // is called directly (and not from `#resetCurrentPageView`).
-    if (this._currentPageNumber !== pageNumber) {
-      this._setCurrentPageNumber(pageNumber);
+    if (this._currentPageNumber !== id) {
+      this._setCurrentPageNumber(id);
     }
     if (this._scrollMode === ScrollMode.PAGE) {
       this.#ensurePageViewVisible();
@@ -1823,22 +1824,20 @@ class PDFViewer {
       this._spreadMode === SpreadMode.NONE &&
       (this._scrollMode === ScrollMode.PAGE ||
         this._scrollMode === ScrollMode.VERTICAL);
-    const currentId = this.#pagesMapper.getPageId(this._currentPageNumber);
+    const currentPageNumber = this._currentPageNumber;
     let stillFullyVisible = false;
 
     for (const page of visiblePages) {
       if (page.percent < 100) {
         break;
       }
-      if (page.id === currentId && isSimpleLayout) {
+      if (page.id === currentPageNumber && isSimpleLayout) {
         stillFullyVisible = true;
         break;
       }
     }
     this._setCurrentPageNumber(
-      stillFullyVisible
-        ? this._currentPageNumber
-        : this.#pagesMapper.getPageNumber(visiblePages[0].id)
+      stillFullyVisible ? this._currentPageNumber : visiblePages[0].id
     );
 
     this._updateLocation(visible.first);

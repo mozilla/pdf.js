@@ -59,20 +59,40 @@ function waitForPagesEdited(page) {
   });
 }
 
+async function waitForHavingContents(page, expected) {
+  await page.evaluate(() => {
+    // Make sure all the pages will be visible.
+    window.PDFViewerApplication.pdfViewer.scrollMode = 2 /* = ScrollMode.WRAPPED = */;
+    window.PDFViewerApplication.pdfViewer.updateScale({
+      drawingDelay: 0,
+      scaleFactor: 0.01,
+    });
+  });
+  return page.waitForFunction(
+    ex => {
+      const buffer = [];
+      for (const textLayer of document.querySelectorAll(".textLayer")) {
+        buffer.push(parseInt(textLayer.textContent.trim(), 10));
+      }
+      return ex.length === buffer.length && ex.every((v, i) => v === buffer[i]);
+    },
+    {},
+    expected
+  );
+}
+
 function getSearchResults(page) {
   return page.evaluate(() => {
     const pages = document.querySelectorAll(".page");
     const results = [];
     for (let i = 0; i < pages.length; i++) {
       const domPage = pages[i];
-      const pageNumber = parseInt(domPage.getAttribute("data-page-number"), 10);
       const highlights = domPage.querySelectorAll("span.highlight");
       if (highlights.length === 0) {
         continue;
       }
       results.push([
         i + 1,
-        pageNumber,
         Array.from(highlights).map(span => span.textContent),
       ]);
     }
@@ -184,11 +204,13 @@ describe("Reorganize Pages View", () => {
             10
           );
           const pagesMapping = await awaitPromise(handlePagesEdited);
+          const expected = [
+            2, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
           expect(pagesMapping)
             .withContext(`In ${browserName}`)
-            .toEqual([
-              2, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-            ]);
+            .toEqual(expected);
+          await waitForHavingContents(page, expected);
         })
       );
     });
@@ -208,11 +230,13 @@ describe("Reorganize Pages View", () => {
             10
           );
           const pagesMapping = await awaitPromise(handlePagesEdited);
+          const expected = [
+            2, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
           expect(pagesMapping)
             .withContext(`In ${browserName}`)
-            .toEqual([
-              2, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-            ]);
+            .toEqual(expected);
+          await waitForHavingContents(page, expected);
         })
       );
     });
@@ -233,11 +257,13 @@ describe("Reorganize Pages View", () => {
             10
           );
           const pagesMapping = await awaitPromise(handlePagesEdited);
+          const expected = [
+            3, 4, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
           expect(pagesMapping)
             .withContext(`In ${browserName}`)
-            .toEqual([
-              3, 4, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-            ]);
+            .toEqual(expected);
+          await waitForHavingContents(page, expected);
         })
       );
     });
@@ -266,11 +292,13 @@ describe("Reorganize Pages View", () => {
             10
           );
           const pagesMapping = await awaitPromise(handlePagesEdited);
+          const expected = [
+            2, 1, 14, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17,
+          ];
           expect(pagesMapping)
             .withContext(`In ${browserName}`)
-            .toEqual([
-              2, 1, 14, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17,
-            ]);
+            .toEqual(expected);
+          await waitForHavingContents(page, expected);
         })
       );
     });
@@ -296,10 +324,10 @@ describe("Reorganize Pages View", () => {
           );
           await awaitPromise(handlePagesEdited);
           await page.waitForSelector(
-            `${getThumbnailSelector(2)}[aria-current="false"]`
+            `${getThumbnailSelector(2)}[aria-current="page"]`
           );
           await page.waitForSelector(
-            `${getThumbnailSelector(1)}[aria-current="page"]`
+            `${getThumbnailSelector(1)}[aria-current="false"]`
           );
         })
       );
@@ -344,16 +372,16 @@ describe("Reorganize Pages View", () => {
           expect(results)
             .withContext(`In ${browserName}`)
             .toEqual([
-              // Page number, Id, [matches]
-              [1, 1, ["1"]],
-              [10, 10, ["1"]],
-              [11, 11, ["1", "1"]],
-              [12, 12, ["1"]],
-              [13, 13, ["1"]],
-              [14, 14, ["1"]],
-              [15, 15, ["1"]],
-              [16, 16, ["1"]],
-              [17, 17, ["1"]],
+              // Page number, [matches]
+              [1, ["1"]],
+              [10, ["1"]],
+              [11, ["1", "1"]],
+              [12, ["1"]],
+              [13, ["1"]],
+              [14, ["1"]],
+              [15, ["1"]],
+              [16, ["1"]],
+              [17, ["1"]],
             ]);
 
           await movePages(page, [11, 2], 3);
@@ -373,16 +401,16 @@ describe("Reorganize Pages View", () => {
           expect(results)
             .withContext(`In ${browserName}`)
             .toEqual([
-              // Page number, Id, [matches]
-              [1, 1, ["1"]],
-              [4, 11, ["1", "1"]],
-              [11, 10, ["1"]],
-              [12, 12, ["1"]],
-              [13, 13, ["1"]],
-              [14, 14, ["1"]],
-              [15, 15, ["1"]],
-              [16, 16, ["1"]],
-              [17, 17, ["1"]],
+              // Page number, [matches]
+              [1, ["1"]],
+              [4, ["1", "1"]],
+              [11, ["1"]],
+              [12, ["1"]],
+              [13, ["1"]],
+              [14, ["1"]],
+              [15, ["1"]],
+              [16, ["1"]],
+              [17, ["1"]],
             ]);
 
           await movePages(page, [13], 0);
@@ -402,16 +430,16 @@ describe("Reorganize Pages View", () => {
           expect(results)
             .withContext(`In ${browserName}`)
             .toEqual([
-              // Page number, Id, [matches]
-              [1, 13, ["1"]],
-              [2, 1, ["1"]],
-              [5, 11, ["1", "1"]],
-              [12, 10, ["1"]],
-              [13, 12, ["1"]],
-              [14, 14, ["1"]],
-              [15, 15, ["1"]],
-              [16, 16, ["1"]],
-              [17, 17, ["1"]],
+              // Page number, [matches]
+              [1, ["1"]],
+              [2, ["1"]],
+              [5, ["1", "1"]],
+              [12, ["1"]],
+              [13, ["1"]],
+              [14, ["1"]],
+              [15, ["1"]],
+              [16, ["1"]],
+              [17, ["1"]],
             ]);
         })
       );
@@ -442,13 +470,6 @@ describe("Reorganize Pages View", () => {
           await movePages(page, [2], 10);
           await scrollIntoView(page, getAnnotationSelector("107R"));
           await page.click(getAnnotationSelector("107R"));
-          await page.waitForSelector(
-            ".page[data-page-number='10'] + .page[data-page-number='2']",
-            {
-              visible: true,
-            }
-          );
-
           const currentPage = await page.$eval(
             "#pageNumber",
             el => el.valueAsNumber
@@ -469,12 +490,6 @@ describe("Reorganize Pages View", () => {
           await page.waitForSelector("#outlinesView", { visible: true });
 
           await page.click("#outlinesView .treeItem:nth-child(2)");
-          await page.waitForSelector(
-            ".page[data-page-number='10'] + .page[data-page-number='2']",
-            {
-              visible: true,
-            }
-          );
 
           const currentPage = await page.$eval(
             "#pageNumber",

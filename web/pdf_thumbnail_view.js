@@ -100,7 +100,7 @@ class PDFThumbnailView {
     enableSplitMerge = false,
   }) {
     this.id = id;
-    this.renderingId = "thumbnail" + id;
+    this.renderingId = `thumbnail${id}`;
     this.pageLabel = null;
 
     this.pdfPage = null;
@@ -142,6 +142,14 @@ class PDFThumbnailView {
 
     imageContainer.append(image);
     container.append(imageContainer);
+  }
+
+  updateId(newId) {
+    this.id = newId;
+    this.renderingId = `thumbnail${newId}`;
+    this.div.setAttribute("page-number", newId);
+    // TODO: do we set the page label ?
+    this.setPageLabel(this.pageLabel);
   }
 
   #updateDims() {
