@@ -1120,9 +1120,7 @@ describe("Comment", () => {
           await page.waitForSelector("#editorUndoBar", { visible: true });
 
           // Use Ctrl+Z to undo
-          await kbModifierDown(page);
-          await page.keyboard.press("z");
-          await kbModifierUp(page);
+          await kbUndo(page);
 
           // The undo bar should be hidden after undo
           await page.waitForSelector("#editorUndoBar", { hidden: true });
