@@ -24,6 +24,8 @@ import {
   highlightSpan,
   kbModifierDown,
   kbModifierUp,
+  kbRedo,
+  kbUndo,
   loadAndWait,
   scrollIntoView,
   selectEditor,
@@ -1134,6 +1136,44 @@ describe("Comment", () => {
                 ?.textContent
           );
           expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
+        })
+      );
+    });
+
+    it("must check that the comment popup is hidden after redo", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          const comment = "Test comment for redo";
+          await editComment(page, editorSelector, comment);
+
+          // Show the popup by clicking the comment button
+          await waitAndClick(
+            page,
+            `${editorSelector} .annotationCommentButton`
+          );
+          await page.waitForSelector("#commentPopup", { visible: true });
+
+          // Delete the comment
+          await waitAndClick(page, "button.commentPopupDelete");
+          await page.waitForSelector("#editorUndoBar", { visible: true });
+
+          // Undo the deletion
+          await kbUndo(page);
+          await page.waitForSelector("#editorUndoBar", { hidden: true });
+
+          // Show the popup again by clicking the comment button
+          await waitAndClick(
+            page,
+            `${editorSelector} .annotationCommentButton`
+          );
+          await page.waitForSelector("#commentPopup", { visible: true });
+
+          // Redo the deletion - popup should be hidden
+          await kbRedo(page);
+          await page.waitForSelector("#commentPopup", { hidden: true });
         })
       );
     });

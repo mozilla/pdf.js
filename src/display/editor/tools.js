@@ -1188,6 +1188,7 @@ class AnnotationEditorUIManager {
     };
     const cmd = () => {
       this._editorUndoBar?.show(undo, "comment");
+      this.toggleComment(/* editor = */ null);
       editor.comment = null;
     };
     this.addCommands({ cmd, undo, mustExec: true });
