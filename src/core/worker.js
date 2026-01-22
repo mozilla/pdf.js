@@ -401,6 +401,26 @@ class WorkerMessageHandler {
       });
     });
 
+    handler.on("GetPagesInfo", function (data) {
+      return pdfManager.ensureDoc("numPages").then(function (numPages) {
+        const promises = [];
+        for (let i = 0; i < numPages; i++) {
+          promises.push(
+            pdfManager.getPage(i).then(function (page) {
+              return Promise.all([
+                pdfManager.ensure(page, "view"),
+                pdfManager.ensure(page, "rotate"),
+                pdfManager.ensure(page, "userUnit"),
+              ]).then(function ([view, rotate, userUnit]) {
+                return { view, rotate, userUnit };
+              });
+            })
+          );
+        }
+        return Promise.all(promises);
+      });
+    });
+
     handler.on("GetPageIndex", function (data) {
       const pageRef = Ref.get(data.num, data.gen);
       return pdfManager.ensureCatalog("getPageIndex", [pageRef]);
