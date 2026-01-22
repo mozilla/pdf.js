@@ -1203,16 +1203,7 @@ gulp.task(
 function buildComponents(defines, dir) {
   fs.rmSync(dir, { recursive: true, force: true });
 
-  const COMPONENTS_IMAGES = [
-    "web/images/annotation-*.svg",
-    "web/images/loading-icon.gif",
-    "web/images/altText_*.svg",
-    "web/images/editor-toolbar-*.svg",
-    "web/images/messageBar_*.svg",
-    "web/images/toolbarButton-{editorHighlight,menuArrow}.svg",
-    "web/images/cursor-*.svg",
-    "web/images/comment-*.svg",
-  ];
+  const COMPONENTS_IMAGES = ["web/images/*.svg", "web/images/*.gif"];
 
   return ordered([
     createComponentsBundle(defines).pipe(gulp.dest(dir)),
