@@ -19,9 +19,11 @@ import {
   closePages,
   createPromise,
   dragAndDrop,
+  getAnnotationSelector,
   getRect,
   getThumbnailSelector,
   loadAndWait,
+  scrollIntoView,
   waitForDOMMutation,
 } from "./test_utils.mjs";
 
@@ -411,6 +413,75 @@ describe("Reorganize Pages View", () => {
               [16, 16, ["1"]],
               [17, 17, ["1"]],
             ]);
+        })
+      );
+    });
+  });
+
+  describe("Links and outlines", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number_and_link.pdf",
+        "#viewsManagerToggleButton",
+        "page-fit",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check that link is updated after moving pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await movePages(page, [2], 10);
+          await scrollIntoView(page, getAnnotationSelector("107R"));
+          await page.click(getAnnotationSelector("107R"));
+          await page.waitForSelector(
+            ".page[data-page-number='10'] + .page[data-page-number='2']",
+            {
+              visible: true,
+            }
+          );
+
+          const currentPage = await page.$eval(
+            "#pageNumber",
+            el => el.valueAsNumber
+          );
+          expect(currentPage).withContext(`In ${browserName}`).toBe(10);
+        })
+      );
+    });
+
+    it("should check that outlines are updated after moving pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await movePages(page, [2, 4], 10);
+
+          await page.click("#viewsManagerSelectorButton");
+          await page.click("#outlinesViewMenu");
+          await page.waitForSelector("#outlinesView", { visible: true });
+
+          await page.click("#outlinesView .treeItem:nth-child(2)");
+          await page.waitForSelector(
+            ".page[data-page-number='10'] + .page[data-page-number='2']",
+            {
+              visible: true,
+            }
+          );
+
+          const currentPage = await page.$eval(
+            "#pageNumber",
+            el => el.valueAsNumber
+          );
+          // 9 because 2 and 4 were moved after page 10.
+          expect(currentPage).withContext(`In ${browserName}`).toBe(9);
         })
       );
     });
