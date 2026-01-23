@@ -1706,7 +1706,7 @@ class PartialEvaluator {
     return null;
   }
 
-  getOperatorList({
+  async getOperatorList({
     stream,
     task,
     resources,
@@ -1715,6 +1715,13 @@ class PartialEvaluator {
     fallbackFontDict = null,
     prevRefs = null,
   }) {
+    if (stream.isAsync) {
+      const bytes = await stream.asyncGetBytes();
+      if (bytes) {
+        stream = new Stream(bytes, 0, bytes.length, stream.dict);
+      }
+    }
+
     const objId = stream.dict?.objId;
     const seenRefs = new RefSet(prevRefs);
 
@@ -2373,7 +2380,7 @@ class PartialEvaluator {
     });
   }
 
-  getTextContent({
+  async getTextContent({
     stream,
     task,
     resources,
@@ -2389,6 +2396,13 @@ class PartialEvaluator {
     prevRefs = null,
     intersector = null,
   }) {
+    if (stream.isAsync) {
+      const bytes = await stream.asyncGetBytes();
+      if (bytes) {
+        stream = new Stream(bytes, 0, bytes.length, stream.dict);
+      }
+    }
+
     const objId = stream.dict?.objId;
     const seenRefs = new RefSet(prevRefs);
 
@@ -4565,8 +4579,16 @@ class PartialEvaluator {
       if (fontFile) {
         if (!(fontFile instanceof BaseStream)) {
           throw new FormatError("FontFile should be a stream");
-        } else if (fontFile.isEmpty) {
-          throw new FormatError("FontFile is empty");
+        } else {
+          if (fontFile.isAsync) {
+            const bytes = await fontFile.asyncGetBytes();
+            if (bytes) {
+              fontFile = new Stream(bytes, 0, bytes.length, fontFile.dict);
+            }
+          }
+          if (fontFile.isEmpty) {
+            throw new FormatError("FontFile is empty");
+          }
         }
       }
     } catch (ex) {
