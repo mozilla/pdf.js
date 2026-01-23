@@ -394,6 +394,7 @@
 
         #actionSelector {
           height: 32px;
+          min-width: 115px;
           width: auto;
           display: block;
 
@@ -425,8 +426,9 @@
             }
           }
 
-          > .contextMenu {
-            min-width: 115px;
+          > .popupMenu {
+            width: auto;
+            z-index: 1;
           }
         }
       }

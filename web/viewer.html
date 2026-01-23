@@ -130,7 +130,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     <div id="viewsManagerTitle">
                       <div id="viewsManagerSelector">
                         <button
-                          class="toolbarButton viewsManagerButton"
+                          class="toolbarButton viewsManagerButton hasPopupMenu"
                           type="button"
                           id="viewsManagerSelectorButton"
                           tabindex="0"
@@ -141,7 +141,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                         >
                           <span data-l10n-id="pdfjs-views-manager-view-selector-button-label"></span>
                         </button>
-                        <menu id="viewsManagerSelectorOptions" role="listbox" class="popupMenu hidden withMark">
+                        <menu id="viewsManagerSelectorOptions" role="listbox" class="popupMenu withMark">
                           <li>
                             <button id="thumbnailsViewMenu" role="option" type="button" tabindex="-1">
                               <span data-l10n-id="pdfjs-views-manager-pages-option-label"></span>
@@ -196,15 +196,16 @@ See https://github.com/adobe-type-tools/cmap-resources
                         <div id="actionSelector">
                           <button
                             id="viewsManagerStatusActionButton"
-                            class="viewsManagerButton"
+                            class="viewsManagerButton hasPopupMenu"
                             type="button"
                             tabindex="0"
                             aria-haspopup="menu"
                             aria-controls="viewsManagerStatusActionOptions"
+                            aria-expanded="false"
                           >
                             <span data-l10n-id="pdfjs-views-manager-pages-status-action-button-label"></span>
                           </button>
-                          <menu id="viewsManagerStatusActionOptions" class="popupMenu hidden">
+                          <menu id="viewsManagerStatusActionOptions" class="popupMenu">
                             <li>
                               <button id="viewsManagerStatusActionCopy" class="noIcon" role="menuitem" type="button" tabindex="0">
                                 <span data-l10n-id="pdfjs-views-manager-pages-status-copy-button-label"></span>
