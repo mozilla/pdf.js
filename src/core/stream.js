@@ -51,6 +51,7 @@ class Stream extends BaseStream {
     const strEnd = this.end;
 
     if (!length) {
+      this.pos = strEnd;
       return bytes.subarray(pos, strEnd);
     }
     let end = pos + length;

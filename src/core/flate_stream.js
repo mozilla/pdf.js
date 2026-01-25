@@ -122,6 +122,8 @@ const fixedDistCodeTab = [
 ];
 
 class FlateStream extends DecodeStream {
+  #isAsync = true;
+
   constructor(str, maybeLength) {
     super(maybeLength);
 
@@ -162,7 +164,9 @@ class FlateStream extends DecodeStream {
 
   async asyncGetBytes() {
     this.stream.reset();
-    const bytes = this.stream.getBytes();
+    const bytes = this.stream.isAsync
+      ? await this.stream.asyncGetBytes()
+      : this.stream.getBytes();
 
     try {
       const { readable, writable } = new DecompressionStream("deflate");
@@ -200,6 +204,7 @@ class FlateStream extends DecodeStream {
       // decoder.
       // We already get the bytes from the underlying stream, so we just reuse
       // them to avoid get them again.
+      this.#isAsync = false;
       this.stream = new Stream(
         bytes,
         2 /* = header size (see ctor) */,
@@ -212,7 +217,7 @@ class FlateStream extends DecodeStream {
   }
 
   get isAsync() {
-    return true;
+    return this.#isAsync;
   }
 
   getBits(bits) {
