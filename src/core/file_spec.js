@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { shadow, stringToPDFString, warn } from "../shared/util.js";
+import { stringToPDFString, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { Dict } from "./primitives.js";
 
@@ -43,11 +43,10 @@ function stripPath(str) {
 class FileSpec {
   #contentAvailable = false;
 
-  constructor(root, xref, skipContent = false) {
+  constructor(root, skipContent = false) {
     if (!(root instanceof Dict)) {
       return;
     }
-    this.xref = xref;
     this.root = root;
     if (root.has("FS")) {
       this.fs = root.get("FS");
@@ -65,56 +64,45 @@ class FileSpec {
   }
 
   get filename() {
-    let filename = "";
-
     const item = pickPlatformItem(this.root);
+    let name;
     if (item && typeof item === "string") {
-      filename = stringToPDFString(item, /* keepEscapeSequence = */ true)
+      name = stringToPDFString(item, /* keepEscapeSequence = */ true)
         .replaceAll("\\\\", "\\")
         .replaceAll("\\/", "/")
         .replaceAll("\\", "/");
     }
-    return shadow(this, "filename", filename || "unnamed");
+    return name || "unnamed";
   }
 
   get content() {
     if (!this.#contentAvailable) {
       return null;
     }
-    this._contentRef ||= pickPlatformItem(this.root?.get("EF"));
+    const ef = pickPlatformItem(this.root?.get("EF"));
 
-    let content = null;
-    if (this._contentRef) {
-      const fileObj = this.xref.fetchIfRef(this._contentRef);
-      if (fileObj instanceof BaseStream) {
-        content = fileObj.getBytes();
-      } else {
-        warn(
-          "Embedded file specification points to non-existing/invalid content"
-        );
-      }
-    } else {
-      warn("Embedded file specification does not have any content");
+    if (ef instanceof BaseStream) {
+      return ef.getBytes();
     }
-    return content;
+    warn("Embedded file specification points to non-existing/invalid content");
+    return null;
   }
 
   get description() {
-    let description = "";
-
     const desc = this.root?.get("Desc");
     if (desc && typeof desc === "string") {
-      description = stringToPDFString(desc);
+      return stringToPDFString(desc);
     }
-    return shadow(this, "description", description);
+    return "";
   }
 
   get serializable() {
+    const { filename, content, description } = this;
     return {
-      rawFilename: this.filename,
-      filename: stripPath(this.filename),
-      content: this.content,
-      description: this.description,
+      rawFilename: filename,
+      filename: stripPath(filename),
+      content,
+      description,
     };
   }
 }

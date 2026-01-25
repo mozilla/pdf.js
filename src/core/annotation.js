@@ -5290,8 +5290,8 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
 
-    const { dict, xref } = params;
-    const file = new FileSpec(dict.get("FS"), xref);
+    const { dict } = params;
+    const file = new FileSpec(dict.get("FS"));
 
     this.data.annotationType = AnnotationType.FILEATTACHMENT;
     this.data.hasOwnCanvas = this.data.noRotate;

@@ -1057,7 +1057,7 @@ class Catalog {
     if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
       const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
-        const fs = new FileSpec(value, this.xref);
+        const fs = new FileSpec(value);
         attachments ??= Object.create(null);
         attachments[stringToPDFString(key, /* keepEscapeSequence = */ true)] =
           fs.serializable;
@@ -1623,11 +1623,7 @@ class Catalog {
         case "GoToR":
           const urlDict = action.get("F");
           if (urlDict instanceof Dict) {
-            const fs = new FileSpec(
-              urlDict,
-              /* xref = */ null,
-              /* skipContent = */ true
-            );
+            const fs = new FileSpec(urlDict, /* skipContent = */ true);
             ({ rawFilename: url } = fs.serializable);
           } else if (typeof urlDict === "string") {
             url = urlDict;
