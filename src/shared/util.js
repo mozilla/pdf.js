@@ -1235,31 +1235,6 @@ function MathClamp(v, min, max) {
   return Math.min(Math.max(v, min), max);
 }
 
-// TODO: Remove this once `Uint8Array.prototype.toHex` is generally available.
-function toHexUtil(arr) {
-  if (Uint8Array.prototype.toHex) {
-    return arr.toHex();
-  }
-  return Array.from(arr, num => hexNumbers[num]).join("");
-}
-
-// TODO: Remove this once `Uint8Array.prototype.toBase64` is generally
-//       available.
-function toBase64Util(arr) {
-  if (Uint8Array.prototype.toBase64) {
-    return arr.toBase64();
-  }
-  return btoa(bytesToString(arr));
-}
-
-// TODO: Remove this once `Uint8Array.fromBase64` is generally available.
-function fromBase64Util(str) {
-  if (Uint8Array.fromBase64) {
-    return Uint8Array.fromBase64(str);
-  }
-  return stringToBytes(atob(str));
-}
-
 // TODO: Remove this once the `javascript.options.experimental.math_sumprecise`
 //       preference is removed from Firefox.
 if (typeof Math.sumPrecise !== "function") {
@@ -1325,7 +1300,6 @@ export {
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   FormatError,
-  fromBase64Util,
   getModificationDate,
   getUuid,
   getVerbosityLevel,
@@ -1355,8 +1329,6 @@ export {
   stringToPDFString,
   stringToUTF8String,
   TextRenderingMode,
-  toBase64Util,
-  toHexUtil,
   UnknownErrorException,
   unreachable,
   updateUrlHash,

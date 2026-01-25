@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-import { bytesToString, stringToBytes } from "../../src/shared/util.js";
-
-function decodeFontData(base64) {
-  const str = atob(base64);
-  return stringToBytes(str);
-}
-
-function encodeFontData(data) {
-  const str = bytesToString(data);
-  return btoa(str);
-}
-
 async function ttx(data) {
   const response = await fetch("/ttx", {
     method: "POST",
-    body: encodeFontData(data),
+    body: data.toBase64(),
   });
 
   if (!response.ok) {
@@ -45,4 +33,4 @@ function verifyTtxOutput(output) {
   }
 }
 
-export { decodeFontData, encodeFontData, ttx, verifyTtxOutput };
+export { ttx, verifyTtxOutput };
