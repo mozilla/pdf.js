@@ -104,8 +104,14 @@ class PDFNodeStreamFsFullReader {
     const fs = process.getBuiltinModule("fs");
     fs.promises.lstat(this._url).then(
       stat => {
+        const { size } = stat;
+        if (size <= 2 * this._rangeChunkSize) {
+          // The file size is smaller than the size of two chunks, so it doesn't
+          // make any sense to abort the request and retry with a range request.
+          this._isRangeSupported = false;
+        }
         // Setting right content length.
-        this._contentLength = stat.size;
+        this._contentLength = size;
 
         this._setReadableStream(fs.createReadStream(this._url));
         this._headersCapability.resolve();
