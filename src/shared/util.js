@@ -1260,19 +1260,6 @@ function fromBase64Util(str) {
   return stringToBytes(atob(str));
 }
 
-// TODO: Remove this once https://bugzilla.mozilla.org/show_bug.cgi?id=1928493
-//       is fixed.
-if (
-  (typeof PDFJSDev === "undefined" || PDFJSDev.test("SKIP_BABEL")) &&
-  typeof Promise.try !== "function"
-) {
-  Promise.try = function (fn, ...args) {
-    return new Promise(resolve => {
-      resolve(fn(...args));
-    });
-  };
-}
-
 // TODO: Remove this once the `javascript.options.experimental.math_sumprecise`
 //       preference is removed from Firefox.
 if (typeof Math.sumPrecise !== "function") {
