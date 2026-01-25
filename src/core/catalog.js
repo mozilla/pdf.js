@@ -1628,18 +1628,20 @@ class Catalog {
               /* xref = */ null,
               /* skipContent = */ true
             );
-            const { rawFilename } = fs.serializable;
-            url = rawFilename;
+            ({ rawFilename: url } = fs.serializable);
           } else if (typeof urlDict === "string") {
             url = urlDict;
+          } else {
+            break;
           }
 
           // NOTE: the destination is relative to the *remote* document.
           const remoteDest = fetchRemoteDest(action);
-          if (remoteDest && typeof url === "string") {
+          if (remoteDest) {
             // NOTE: We don't use the `updateUrlHash` function here, since
-            // the `createValidAbsoluteUrl` function (see below) already
-            // handles parsing and validation of the final URL.
+            // the `createValidAbsoluteUrl` function (see below) already handles
+            // parsing/validation of the final URL and manual splitting also
+            // ensures that the `unsafeUrl` property will be available/correct.
             url = /* baseUrl = */ url.split("#", 1)[0] + "#" + remoteDest;
           }
           // The 'NewWindow' property, equal to `LinkTarget.BLANK`.

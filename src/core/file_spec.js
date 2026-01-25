@@ -18,21 +18,13 @@ import { BaseStream } from "./base_stream.js";
 import { Dict } from "./primitives.js";
 
 function pickPlatformItem(dict) {
-  if (!(dict instanceof Dict)) {
-    return null;
-  }
-  // Look for the filename in this order:
-  // UF, F, Unix, Mac, DOS
-  if (dict.has("UF")) {
-    return dict.get("UF");
-  } else if (dict.has("F")) {
-    return dict.get("F");
-  } else if (dict.has("Unix")) {
-    return dict.get("Unix");
-  } else if (dict.has("Mac")) {
-    return dict.get("Mac");
-  } else if (dict.has("DOS")) {
-    return dict.get("DOS");
+  if (dict instanceof Dict) {
+    // Look for the filename in this order: UF, F, Unix, Mac, DOS
+    for (const key of ["UF", "F", "Unix", "Mac", "DOS"]) {
+      if (dict.has(key)) {
+        return dict.get(key);
+      }
+    }
   }
   return null;
 }
