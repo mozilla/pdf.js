@@ -65,14 +65,15 @@ class FileSpec {
 
   get filename() {
     const item = pickPlatformItem(this.root);
-    let name;
     if (item && typeof item === "string") {
-      name = stringToPDFString(item, /* keepEscapeSequence = */ true)
+      // NOTE: The following replacement order is INTENTIONAL, regardless of
+      //       what some static code analysers (e.g. CodeQL) may claim.
+      return stringToPDFString(item, /* keepEscapeSequence = */ true)
         .replaceAll("\\\\", "\\")
         .replaceAll("\\/", "/")
         .replaceAll("\\", "/");
     }
-    return name || "unnamed";
+    return "";
   }
 
   get content() {
@@ -100,7 +101,7 @@ class FileSpec {
     const { filename, content, description } = this;
     return {
       rawFilename: filename,
-      filename: stripPath(filename),
+      filename: stripPath(filename) || "unnamed",
       content,
       description,
     };
