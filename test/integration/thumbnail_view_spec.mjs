@@ -126,6 +126,13 @@ describe("PDF Thumbnail View", () => {
 
           await kbFocusNext(page);
           expect(
+            await isElementFocused(page, "#viewsManagerStatusActionButton")
+          )
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+
+          await kbFocusNext(page);
+          expect(
             await isElementFocused(
               page,
               `#thumbnailsView .thumbnailImage[data-l10n-args='{"page":1}']`

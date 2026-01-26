@@ -132,6 +132,14 @@ function getViewerConfiguration() {
       viewsManagerHeaderLabel: document.getElementById(
         "viewsManagerHeaderLabel"
       ),
+      manageMenu: {
+        button: document.getElementById("viewsManagerStatusActionButton"),
+        menu: document.getElementById("viewsManagerStatusActionOptions"),
+        copy: document.getElementById("viewsManagerStatusActionCopy"),
+        cut: document.getElementById("viewsManagerStatusActionCut"),
+        delete: document.getElementById("viewsManagerStatusActionDelete"),
+        saveAs: document.getElementById("viewsManagerStatusActionSaveAs"),
+      },
     },
     findBar: {
       bar: document.getElementById("findbar"),

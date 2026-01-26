@@ -1182,10 +1182,39 @@ class PagesMapper {
     // Finally insert the moved pages.
     pageNumberToId.set(mappedPagesToMove, adjustedTarget);
 
+    let hasChanged = false;
     for (let i = 0, ii = pagesNumber; i < ii; i++) {
-      idToPageNumber[pageNumberToId[i] - 1] = i + 1;
+      const id = pageNumberToId[i];
+      hasChanged ||= id !== i + 1;
+      idToPageNumber[id - 1] = i + 1;
     }
     this.#updateListeners();
+
+    if (!hasChanged) {
+      // Reset.
+      this.pagesNumber = 0;
+    }
+  }
+
+  /**
+   * Checks if the page mappings have been altered from their initial state.
+   * @returns {boolean} True if the mappings have been altered, false otherwise.
+   */
+  hasBeenAltered() {
+    return PagesMapper.#pageNumberToId !== null;
+  }
+
+  /**
+   * Gets the current page mapping suitable for saving.
+   * @returns {Object} An object containing the page indices.
+   */
+  getPageMappingForSaving() {
+    // Saving is index-based.
+    return {
+      pageIndices: PagesMapper.#idToPageNumber
+        ? PagesMapper.#idToPageNumber.map(x => x - 1)
+        : null,
+    };
   }
 
   getPrevPageNumber(pageNumber) {
