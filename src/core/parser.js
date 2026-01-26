@@ -29,6 +29,7 @@ import {
 import { NullStream, Stream } from "./stream.js";
 import { Ascii85Stream } from "./ascii_85_stream.js";
 import { AsciiHexStream } from "./ascii_hex_stream.js";
+import { BrotliStream } from "./brotli_stream.js";
 import { CCITTFaxStream } from "./ccitt_stream.js";
 import { FlateStream } from "./flate_stream.js";
 import { Jbig2Stream } from "./jbig2_stream.js";
@@ -822,6 +823,8 @@ class Parser {
           return new RunLengthStream(stream, maybeLength);
         case "JBIG2Decode":
           return new Jbig2Stream(stream, maybeLength, params);
+        case "BrotliDecode":
+          return new BrotliStream(stream, maybeLength, params);
       }
       warn(`Filter "${name}" is not supported.`);
       return stream;
