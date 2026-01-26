@@ -464,6 +464,8 @@ class Page {
     task,
     intent,
     cacheKey,
+    pageId = this.pageIndex,
+    pageIndex = this.pageIndex,
     annotationStorage = null,
     modifiedIds = null,
   }) {
@@ -549,13 +551,12 @@ class Page {
         RESOURCES_KEYS_OPERATOR_LIST
       );
       const opList = new OperatorList(intent, sink);
-
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(
           resources,
           this.nonBlendModesSet
         ),
-        pageIndex: this.pageIndex,
+        pageIndex,
         cacheKey,
       });
 

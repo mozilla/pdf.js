@@ -17,6 +17,7 @@ import {
   BaseException,
   DrawOPS,
   FeatureTest,
+  MathClamp,
   shadow,
   Util,
   warn,
@@ -1034,6 +1035,197 @@ function makePathFromDrawOPS(data) {
   return path;
 }
 
+/**
+ * Maps between page IDs and page numbers, allowing bidirectional conversion
+ * between the two representations. This is useful when the page numbering
+ * in the PDF document doesn't match the default sequential ordering.
+ */
+class PagesMapper {
+  /**
+   * Maps page IDs to their corresponding page numbers.
+   * @type {Uint32Array|null}
+   */
+  static #idToPageNumber = null;
+
+  /**
+   * Maps page numbers to their corresponding page IDs.
+   * @type {Uint32Array|null}
+   */
+  static #pageNumberToId = null;
+
+  /**
+   * Previous mapping of page IDs to page numbers.
+   * @type {Uint32Array|null}
+   */
+  static #prevIdToPageNumber = null;
+
+  /**
+   * The total number of pages.
+   * @type {number}
+   */
+  static #pagesNumber = 0;
+
+  /**
+   * Listeners for page changes.
+   * @type {Array<function>}
+   */
+  static #listeners = [];
+
+  /**
+   * Gets the total number of pages.
+   * @returns {number} The number of pages.
+   */
+  get pagesNumber() {
+    return PagesMapper.#pagesNumber;
+  }
+
+  /**
+   * Sets the total number of pages and initializes default mappings
+   * where page IDs equal page numbers (1-indexed).
+   * @param {number} n - The total number of pages.
+   */
+  set pagesNumber(n) {
+    if (PagesMapper.#pagesNumber === n) {
+      return;
+    }
+    PagesMapper.#pagesNumber = n;
+    if (n === 0) {
+      PagesMapper.#pageNumberToId = null;
+      PagesMapper.#idToPageNumber = null;
+    }
+  }
+
+  addListener(listener) {
+    PagesMapper.#listeners.push(listener);
+  }
+
+  removeListener(listener) {
+    const index = PagesMapper.#listeners.indexOf(listener);
+    if (index >= 0) {
+      PagesMapper.#listeners.splice(index, 1);
+    }
+  }
+
+  #updateListeners() {
+    for (const listener of PagesMapper.#listeners) {
+      listener();
+    }
+  }
+
+  #init(mustInit) {
+    if (PagesMapper.#pageNumberToId) {
+      return;
+    }
+    const n = PagesMapper.#pagesNumber;
+
+    // Allocate a single array for better memory locality.
+    const array = new Uint32Array(3 * n);
+    const pageNumberToId = (PagesMapper.#pageNumberToId = array.subarray(0, n));
+    const idToPageNumber = (PagesMapper.#idToPageNumber = array.subarray(
+      n,
+      2 * n
+    ));
+    if (mustInit) {
+      for (let i = 0; i < n; i++) {
+        pageNumberToId[i] = idToPageNumber[i] = i + 1;
+      }
+    }
+    PagesMapper.#prevIdToPageNumber = array.subarray(2 * n);
+  }
+
+  /**
+   * Move a set of pages to a new position while keeping ID→number mappings in
+   * sync.
+   *
+   * @param {Set<number>} selectedPages - Page numbers being moved (1-indexed).
+   * @param {number[]} pagesToMove - Ordered list of page numbers to move.
+   * @param {number} index - Zero-based insertion index in the page-number list.
+   */
+  movePages(selectedPages, pagesToMove, index) {
+    this.#init(true);
+    const pageNumberToId = PagesMapper.#pageNumberToId;
+    const idToPageNumber = PagesMapper.#idToPageNumber;
+    PagesMapper.#prevIdToPageNumber.set(idToPageNumber);
+    const movedCount = pagesToMove.length;
+    const mappedPagesToMove = new Uint32Array(movedCount);
+    let removedBeforeTarget = 0;
+
+    for (let i = 0; i < movedCount; i++) {
+      const pageIndex = pagesToMove[i] - 1;
+      mappedPagesToMove[i] = pageNumberToId[pageIndex];
+      if (pageIndex < index) {
+        removedBeforeTarget += 1;
+      }
+    }
+
+    const pagesNumber = PagesMapper.#pagesNumber;
+    // target index after removing elements that were before it
+    let adjustedTarget = index - removedBeforeTarget;
+    const remainingLen = pagesNumber - movedCount;
+    adjustedTarget = MathClamp(adjustedTarget, 0, remainingLen);
+
+    // Create the new mapping.
+    // First copy over the pages that are not being moved.
+    // Then insert the moved pages at the target position.
+    for (let i = 0, r = 0; i < pagesNumber; i++) {
+      if (!selectedPages.has(i + 1)) {
+        pageNumberToId[r++] = pageNumberToId[i];
+      }
+    }
+
+    // Shift the pages after the target position.
+    pageNumberToId.copyWithin(
+      adjustedTarget + movedCount,
+      adjustedTarget,
+      remainingLen
+    );
+    // Finally insert the moved pages.
+    pageNumberToId.set(mappedPagesToMove, adjustedTarget);
+
+    for (let i = 0, ii = pagesNumber; i < ii; i++) {
+      idToPageNumber[pageNumberToId[i] - 1] = i + 1;
+    }
+    this.#updateListeners();
+  }
+
+  getPrevPageNumber(pageNumber) {
+    return PagesMapper.#prevIdToPageNumber[
+      PagesMapper.#pageNumberToId[pageNumber - 1] - 1
+    ];
+  }
+
+  /**
+   * Gets the page number for a given page ID.
+   * @param {number} id - The page ID (1-indexed).
+   * @returns {number} The page number, or the ID itself if no mapping exists.
+   */
+  getPageNumber(id) {
+    return PagesMapper.#idToPageNumber?.[id - 1] ?? id;
+  }
+
+  /**
+   * Gets the page ID for a given page number.
+   * @param {number} pageNumber - The page number (1-indexed).
+   * @returns {number} The page ID, or the page number itself if no mapping
+   * exists.
+   */
+  getPageId(pageNumber) {
+    return PagesMapper.#pageNumberToId?.[pageNumber - 1] ?? pageNumber;
+  }
+
+  /**
+   * Gets or creates a singleton instance of PagesMapper.
+   * @returns {PagesMapper} The singleton instance.
+   */
+  static get instance() {
+    return shadow(this, "instance", new PagesMapper());
+  }
+
+  getMapping() {
+    return PagesMapper.#pageNumberToId.subarray(0, this.pagesNumber);
+  }
+}
+
 export {
   applyOpacity,
   ColorScheme,
@@ -1054,6 +1246,7 @@ export {
   makePathFromDrawOPS,
   noContextMenu,
   OutputScale,
+  PagesMapper,
   PageViewport,
   PDFDateString,
   PixelsPerInch,

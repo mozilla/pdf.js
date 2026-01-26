@@ -177,7 +177,7 @@ describe("Signature Editor", () => {
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
           await page.waitForSelector(
-            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            `.canvasWrapper > svg use[href="#path_0"]`,
             { visible: true }
           );
 
@@ -282,7 +282,7 @@ describe("Signature Editor", () => {
           });
 
           await page.waitForSelector(
-            ".canvasWrapper > svg use[href='#path_p1_0']"
+            ".canvasWrapper > svg use[href='#path_0']"
           );
         })
       );
@@ -340,7 +340,7 @@ describe("Signature Editor", () => {
           });
 
           await page.waitForSelector(
-            ".canvasWrapper > svg use[href='#path_p1_0']"
+            ".canvasWrapper > svg use[href='#path_0']"
           );
         })
       );
@@ -427,7 +427,7 @@ describe("Signature Editor", () => {
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
           await page.waitForSelector(
-            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            `.canvasWrapper > svg use[href="#path_0"]`,
             { visible: true }
           );
 
@@ -527,13 +527,13 @@ describe("Signature Editor", () => {
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
           await page.waitForSelector(
-            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            `.canvasWrapper > svg use[href="#path_0"]`,
             { visible: true }
           );
 
           const color = await page.evaluate(() => {
             const use = document.querySelector(
-              `.canvasWrapper > svg use[href="#path_p1_0"]`
+              `.canvasWrapper > svg use[href="#path_0"]`
             );
             return use.parentNode.getAttribute("fill");
           });
@@ -583,13 +583,13 @@ describe("Signature Editor", () => {
           const editorSelector = getEditorSelector(0);
           await page.waitForSelector(editorSelector, { visible: true });
           await page.waitForSelector(
-            `.canvasWrapper > svg use[href="#path_p1_0"]`,
+            `.canvasWrapper > svg use[href="#path_0"]`,
             { visible: true }
           );
 
           const color = await page.evaluate(() => {
             const use = document.querySelector(
-              `.canvasWrapper > svg use[href="#path_p1_0"]`
+              `.canvasWrapper > svg use[href="#path_0"]`
             );
             return use.parentNode.getAttribute("fill");
           });
@@ -672,7 +672,7 @@ describe("Signature Editor", () => {
           });
           const { width, height } = await getRect(
             page,
-            ".canvasWrapper > svg use[href='#path_p1_0']"
+            ".canvasWrapper > svg use[href='#path_0']"
           );
 
           expect(Math.abs(contentWidth / width - contentHeight / height))

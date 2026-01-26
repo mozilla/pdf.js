@@ -17,11 +17,7 @@
 /** @typedef {import("./event_utils").EventBus} EventBus */
 /** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
-import {
-  binarySearchFirstItem,
-  PagesMapper,
-  scrollIntoView,
-} from "./ui_utils.js";
+import { binarySearchFirstItem, scrollIntoView } from "./ui_utils.js";
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
 
 const FindState = {
@@ -426,8 +422,6 @@ class PDFFindController {
 
   #visitedPagesCount = 0;
 
-  #pagesMapper = PagesMapper.instance;
-
   /**
    * @param {PDFFindControllerOptions} options
    */
@@ -801,13 +795,12 @@ class PDFFindController {
     if (query.length === 0) {
       return; // Do nothing: the matches should be wiped out already.
     }
-    const pageId = this.getPageId(pageIndex);
-    const pageContent = this._pageContents[pageId];
+    const pageContent = this._pageContents[pageIndex];
     const matcherResult = this.match(query, pageContent, pageIndex);
 
     const matches = (this._pageMatches[pageIndex] = []);
     const matchesLength = (this._pageMatchesLength[pageIndex] = []);
-    const diffs = this._pageDiffs[pageId];
+    const diffs = this._pageDiffs[pageIndex];
 
     matcherResult?.forEach(({ index, length }) => {
       const [matchPos, matchLen] = getOriginalIndex(diffs, index, length);
@@ -856,7 +849,7 @@ class PDFFindController {
    *   page.
    */
   match(query, pageContent, pageIndex) {
-    const hasDiacritics = this._hasDiacritics[this.getPageId(pageIndex)];
+    const hasDiacritics = this._hasDiacritics[pageIndex];
 
     let isUnicode = false;
     if (typeof query === "string") {
@@ -957,14 +950,6 @@ class PDFFindController {
     }
   }
 
-  getPageNumber(idx) {
-    return this.#pagesMapper.getPageNumber(idx + 1) - 1;
-  }
-
-  getPageId(pageNumber) {
-    return this.#pagesMapper.getPageId(pageNumber + 1) - 1;
-  }
-
   #updatePage(index) {
     if (this._scrollMatches && this._selected.pageIdx === index) {
       // If the page is selected, scroll the page into view, which triggers
@@ -976,7 +961,6 @@ class PDFFindController {
     this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
       pageIndex: index,
-      pageId: this.getPageId(index),
     });
   }
 
@@ -984,7 +968,6 @@ class PDFFindController {
     this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
       pageIndex: -1,
-      pageId: -1,
     });
   }
 
@@ -1016,7 +999,7 @@ class PDFFindController {
           continue;
         }
         this._pendingFindMatches.add(i);
-        this._extractTextPromises[this.getPageId(i)].then(() => {
+        this._extractTextPromises[i].then(() => {
           this._pendingFindMatches.delete(i);
           this.#calculateMatch(i);
         });
@@ -1144,12 +1127,23 @@ class PDFFindController {
     }
   }
 
-  #onPagesEdited() {
+  #onPagesEdited({ pagesMapper }) {
     if (this._extractTextPromises.length === 0) {
       return;
     }
     this.#onFindBarClose();
     this._dirtyMatch = true;
+    const prevTextPromises = this._extractTextPromises;
+    const extractTextPromises = (this._extractTextPromises.length = []);
+    for (let i = 0, ii = pagesMapper.length; i < ii; i++) {
+      const prevPageIndex = pagesMapper.getPrevPageNumber(i + 1) - 1;
+      if (prevPageIndex === -1) {
+        continue;
+      }
+      extractTextPromises.push(
+        prevTextPromises[prevPageIndex] || Promise.resolve()
+      );
+    }
   }
 
   #onFindBarClose(evt) {

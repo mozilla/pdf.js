@@ -853,8 +853,8 @@ class WorkerMessageHandler {
     );
 
     handler.on("GetOperatorList", function (data, sink) {
-      const pageIndex = data.pageIndex;
-      pdfManager.getPage(pageIndex).then(function (page) {
+      const { pageId, pageIndex } = data;
+      pdfManager.getPage(pageId).then(function (page) {
         const task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
         startWorkerTask(task);
 
@@ -871,6 +871,7 @@ class WorkerMessageHandler {
             cacheKey: data.cacheKey,
             annotationStorage: data.annotationStorage,
             modifiedIds: data.modifiedIds,
+            pageIndex,
           })
           .then(
             function (operatorListInfo) {
@@ -899,9 +900,10 @@ class WorkerMessageHandler {
     });
 
     handler.on("GetTextContent", function (data, sink) {
-      const { pageIndex, includeMarkedContent, disableNormalization } = data;
+      const { pageId, pageIndex, includeMarkedContent, disableNormalization } =
+        data;
 
-      pdfManager.getPage(pageIndex).then(function (page) {
+      pdfManager.getPage(pageId).then(function (page) {
         const task = new WorkerTask("GetTextContent: page " + pageIndex);
         startWorkerTask(task);
 

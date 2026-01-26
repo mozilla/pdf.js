@@ -144,6 +144,10 @@ class AnnotationEditorLayer {
     this.#uiManager.addLayer(this);
   }
 
+  updatePageIndex(newPageIndex) {
+    this.pageIndex = newPageIndex;
+  }
+
   get isEmpty() {
     return this.#editors.size === 0;
   }

@@ -24,11 +24,10 @@ import {
   binarySearchFirstItem,
   getVisibleElements,
   isValidRotation,
-  PagesMapper,
   RenderingStates,
   watchScroll,
 } from "./ui_utils.js";
-import { MathClamp, noContextMenu, stopEvent } from "pdfjs-lib";
+import { MathClamp, noContextMenu, PagesMapper, stopEvent } from "pdfjs-lib";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 
 const SCROLL_OPTIONS = {
@@ -109,8 +108,6 @@ class PDFThumbnailViewer {
   #currentScrollTop = 0;
 
   #pagesMapper = PagesMapper.instance;
-
-  #originalThumbnails = null;
 
   /**
    * @param {PDFThumbnailViewerOptions} options
@@ -385,6 +382,26 @@ class PDFThumbnailViewer {
     ));
   }
 
+  #updateThumbnails() {
+    const pagesMapper = this.#pagesMapper;
+    this.container.replaceChildren();
+    const prevThumbnails = this._thumbnails;
+    const newThumbnails = (this._thumbnails = []);
+    const fragment = document.createDocumentFragment();
+    for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
+      const prevPageIndex = pagesMapper.getPrevPageNumber(i + 1) - 1;
+      if (prevPageIndex === -1) {
+        continue;
+      }
+      const newThumbnail = prevThumbnails[prevPageIndex];
+      newThumbnails.push(newThumbnail);
+      newThumbnail.updateId(i + 1);
+      newThumbnail.checkbox.checked = false;
+      fragment.append(newThumbnail.div);
+    }
+    this.container.append(fragment);
+  }
+
   #onStartDragging(draggedThumbnail) {
     this.#currentScrollTop = this.scrollableContainer.scrollTop;
     this.#currentScrollBottom =
@@ -449,8 +466,6 @@ class PDFThumbnailViewer {
     this.#dragAC.abort();
     this.#dragAC = null;
 
-    this.#originalThumbnails ||= this._thumbnails;
-
     this.container.classList.remove("isDragging");
     for (const selected of this.#selectedPages) {
       const thumbnail = this._thumbnails[selected - 1];
@@ -481,11 +496,7 @@ class PDFThumbnailViewer {
     ) {
       const newIndex = lastDraggedOverIndex + 1;
       const pagesToMove = Array.from(selectedPages).sort((a, b) => a - b);
-      const movedCount = pagesToMove.length;
-      const thumbnails = this._thumbnails;
       const pagesMapper = this.#pagesMapper;
-      const N = thumbnails.length;
-      pagesMapper.pagesNumber = N;
       const currentPageId = pagesMapper.getPageId(this._currentPageNumber);
       const newCurrentPageId = pagesMapper.getPageId(
         isNaN(this.#pageNumberToRemove)
@@ -493,37 +504,14 @@ class PDFThumbnailViewer {
           : this.#pageNumberToRemove
       );
 
-      // Move the thumbnails in the DOM.
-      let thumbnail = thumbnails[pagesToMove[0] - 1];
-      thumbnail.checkbox.checked = false;
-      if (newIndex === 0) {
-        thumbnails[0].div.before(thumbnail.div);
-      } else {
-        thumbnails[newIndex - 1].div.after(thumbnail.div);
-      }
-      for (let i = 1; i < movedCount; i++) {
-        const newThumbnail = thumbnails[pagesToMove[i] - 1];
-        newThumbnail.checkbox.checked = false;
-        thumbnail.div.after(newThumbnail.div);
-        thumbnail = newThumbnail;
-      }
-
       this.eventBus.dispatch("beforepagesedited", {
         source: this,
         pagesMapper,
-        index: newIndex,
-        pagesToMove,
       });
 
       pagesMapper.movePages(selectedPages, pagesToMove, newIndex);
 
-      const newThumbnails = (this._thumbnails = new Array(N));
-      const originalThumbnails = this.#originalThumbnails;
-      for (let i = 0; i < N; i++) {
-        const newThumbnail = (newThumbnails[i] =
-          originalThumbnails[pagesMapper.getPageId(i + 1) - 1]);
-        newThumbnail.div.setAttribute("page-number", i + 1);
-      }
+      this.#updateThumbnails();
 
       this._currentPageNumber = pagesMapper.getPageNumber(currentPageId);
       this.#computeThumbnailsPosition();
@@ -534,8 +522,6 @@ class PDFThumbnailViewer {
       this.eventBus.dispatch("pagesedited", {
         source: this,
         pagesMapper,
-        index: newIndex,
-        pagesToMove,
       });
 
       const newCurrentPageNumber = pagesMapper.getPageNumber(newCurrentPageId);

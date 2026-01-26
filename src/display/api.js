@@ -40,6 +40,7 @@ import {
   deprecated,
   isDataScheme,
   isValidFetchUrl,
+  PagesMapper,
   PageViewport,
   RenderingCancelledException,
   StatTimer,
@@ -1328,6 +1329,8 @@ class PDFDocumentProxy {
 class PDFPageProxy {
   #pendingCleanup = false;
 
+  #pagesMapper = PagesMapper.instance;
+
   constructor(pageIndex, pageInfo, transport, pdfBug = false) {
     this._pageIndex = pageIndex;
     this._pageInfo = pageInfo;
@@ -1348,6 +1351,13 @@ class PDFPageProxy {
    */
   get pageNumber() {
     return this._pageIndex + 1;
+  }
+
+  /**
+   * @param {number} value - The page number to set. First page is 1.
+   */
+  set pageNumber(value) {
+    this._pageIndex = value - 1;
   }
 
   /**
@@ -1699,6 +1709,7 @@ class PDFPageProxy {
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
+        pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
         pageIndex: this._pageIndex,
         includeMarkedContent: includeMarkedContent === true,
         disableNormalization: disableNormalization === true,
@@ -1884,6 +1895,7 @@ class PDFPageProxy {
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
       {
+        pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         cacheKey,
@@ -2389,6 +2401,8 @@ class WorkerTransport {
 
   #passwordCapability = null;
 
+  #pagesMapper = PagesMapper.instance;
+
   constructor(
     messageHandler,
     loadingTask,
@@ -2424,6 +2438,8 @@ class WorkerTransport {
 
     this.setupMessageHandler();
 
+    this.#pagesMapper.addListener(this.#updateCaches.bind(this));
+
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getNetworkStreamName", {
@@ -2446,6 +2462,24 @@ class WorkerTransport {
           this.messageHandler.sendWithPromise("GetAnnotArray", { pageIndex }),
       });
     }
+  }
+
+  #updateCaches() {
+    const newPageCache = new Map();
+    const newPromiseCache = new Map();
+    for (let i = 0, ii = this.#pagesMapper.pagesNumber; i < ii; i++) {
+      const prevPageIndex = this.#pagesMapper.getPrevPageNumber(i + 1) - 1;
+      const page = this.#pageCache.get(prevPageIndex);
+      if (page) {
+        newPageCache.set(i, page);
+      }
+      const promise = this.#pagePromises.get(prevPageIndex);
+      if (promise) {
+        newPromiseCache.set(i, promise);
+      }
+    }
+    this.#pageCache = newPageCache;
+    this.#pagePromises = newPromiseCache;
   }
 
   #cacheSimpleMethod(name, data = null) {
@@ -2710,6 +2744,7 @@ class WorkerTransport {
     });
 
     messageHandler.on("GetDoc", ({ pdfInfo }) => {
+      this.#pagesMapper.pagesNumber = pdfInfo.numPages;
       this._numPages = pdfInfo.numPages;
       this._htmlForXfa = pdfInfo.htmlForXfa;
       delete pdfInfo.htmlForXfa;
@@ -2932,26 +2967,27 @@ class WorkerTransport {
     if (
       !Number.isInteger(pageNumber) ||
       pageNumber <= 0 ||
-      pageNumber > this._numPages
+      pageNumber > this.#pagesMapper.pagesNumber
     ) {
       return Promise.reject(new Error("Invalid page request."));
     }
+    const pageIndex = pageNumber - 1;
+    const newPageIndex = this.#pagesMapper.getPageId(pageNumber) - 1;
 
-    const pageIndex = pageNumber - 1,
-      cachedPromise = this.#pagePromises.get(pageIndex);
+    const cachedPromise = this.#pagePromises.get(pageIndex);
     if (cachedPromise) {
       return cachedPromise;
     }
     const promise = this.messageHandler
       .sendWithPromise("GetPage", {
-        pageIndex,
+        pageIndex: newPageIndex,
       })
       .then(pageInfo => {
         if (this.destroyed) {
           throw new Error("Transport destroyed");
         }
         if (pageInfo.refStr) {
-          this.#pageRefCache.set(pageInfo.refStr, pageNumber);
+          this.#pageRefCache.set(pageInfo.refStr, newPageIndex);
         }
 
         const page = new PDFPageProxy(
@@ -2967,19 +3003,20 @@ class WorkerTransport {
     return promise;
   }
 
-  getPageIndex(ref) {
+  async getPageIndex(ref) {
     if (!isRefProxy(ref)) {
-      return Promise.reject(new Error("Invalid pageIndex request."));
+      throw new Error("Invalid pageIndex request.");
     }
-    return this.messageHandler.sendWithPromise("GetPageIndex", {
+    const index = await this.messageHandler.sendWithPromise("GetPageIndex", {
       num: ref.num,
       gen: ref.gen,
     });
+    return this.#pagesMapper.getPageNumber(index + 1) - 1;
   }
 
   getAnnotations(pageIndex, intent) {
     return this.messageHandler.sendWithPromise("GetAnnotations", {
-      pageIndex,
+      pageIndex: this.#pagesMapper.getPageId(pageIndex + 1) - 1,
       intent,
     });
   }
@@ -3046,13 +3083,13 @@ class WorkerTransport {
 
   getPageJSActions(pageIndex) {
     return this.messageHandler.sendWithPromise("GetPageJSActions", {
-      pageIndex,
+      pageIndex: this.#pagesMapper.getPageId(pageIndex + 1) - 1,
     });
   }
 
   getStructTree(pageIndex) {
     return this.messageHandler.sendWithPromise("GetStructTree", {
-      pageIndex,
+      pageIndex: this.#pagesMapper.getPageId(pageIndex + 1) - 1,
     });
   }
 
@@ -3122,7 +3159,10 @@ class WorkerTransport {
       return null;
     }
     const refStr = ref.gen === 0 ? `${ref.num}R` : `${ref.num}R${ref.gen}`;
-    return this.#pageRefCache.get(refStr) ?? null;
+    const pageIndex = this.#pageRefCache.get(refStr);
+    return pageIndex >= 0
+      ? this.#pagesMapper.getPageNumber(pageIndex + 1)
+      : null;
   }
 }
 
@@ -3130,7 +3170,7 @@ class WorkerTransport {
  * Allows controlling of the rendering tasks.
  */
 class RenderTask {
-  #internalRenderTask = null;
+  _internalRenderTask = null;
 
   /**
    * Callback for incremental rendering -- a function that will be called
@@ -3151,12 +3191,12 @@ class RenderTask {
   onError = null;
 
   constructor(internalRenderTask) {
-    this.#internalRenderTask = internalRenderTask;
+    this._internalRenderTask = internalRenderTask;
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "getOperatorList", {
-        value: () => this.#internalRenderTask.operatorList,
+        value: () => this._internalRenderTask.operatorList,
       });
     }
   }
@@ -3166,7 +3206,7 @@ class RenderTask {
    * @type {Promise<void>}
    */
   get promise() {
-    return this.#internalRenderTask.capability.promise;
+    return this._internalRenderTask.capability.promise;
   }
 
   /**
@@ -3177,7 +3217,7 @@ class RenderTask {
    * @param {number} [extraDelay]
    */
   cancel(extraDelay = 0) {
-    this.#internalRenderTask.cancel(/* error = */ null, extraDelay);
+    this._internalRenderTask.cancel(/* error = */ null, extraDelay);
   }
 
   /**
@@ -3185,11 +3225,11 @@ class RenderTask {
    * @type {boolean}
    */
   get separateAnnots() {
-    const { separateAnnots } = this.#internalRenderTask.operatorList;
+    const { separateAnnots } = this._internalRenderTask.operatorList;
     if (!separateAnnots) {
       return false;
     }
-    const { annotationCanvasMap } = this.#internalRenderTask;
+    const { annotationCanvasMap } = this._internalRenderTask;
     return (
       separateAnnots.form ||
       (separateAnnots.canvas && annotationCanvasMap?.size > 0)
@@ -3389,7 +3429,6 @@ class InternalRenderTask {
       if (this.operatorList.lastChunk) {
         this.gfx.endDrawing();
         InternalRenderTask.#canvasInUse.delete(this._canvas);
-
         this.callback();
       }
     }

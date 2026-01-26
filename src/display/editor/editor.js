@@ -209,6 +209,10 @@ class AnnotationEditor {
     this.deleted = false;
   }
 
+  updatePageIndex(newPageIndex) {
+    this.pageIndex = newPageIndex;
+  }
+
   get editorType() {
     return Object.getPrototypeOf(this).constructor._type;
   }

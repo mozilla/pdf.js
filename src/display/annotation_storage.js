@@ -196,6 +196,10 @@ class AnnotationStorage {
         val instanceof AnnotationEditor
           ? val.serialize(/* isForCopying = */ false, context)
           : val;
+      if (val.page) {
+        val.pageIndex = val.page._pageIndex;
+        delete val.page;
+      }
       if (serialized) {
         map.set(key, serialized);
 
