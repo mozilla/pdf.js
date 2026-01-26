@@ -635,6 +635,10 @@ class PDFThumbnailViewer {
         offsetWidth: w,
         offsetHeight: h,
       } = div;
+      if (w === 0) {
+        // The thumbnail view isn't visible.
+        return;
+      }
       bbox[i * 4] = x;
       bbox[i * 4 + 1] = y;
       bbox[i * 4 + 2] = w;

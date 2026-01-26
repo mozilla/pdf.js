@@ -486,4 +486,71 @@ describe("Reorganize Pages View", () => {
       );
     });
   });
+
+  describe("Drag marker must have the right non-zero dimensions", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number_and_link.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        {
+          enableSplitMerge: true,
+          sidebarViewOnLoad: 2 /* = SidebarView.OUTLINES */,
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check if the drag marker width is non-zero", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector("#outlinesView", { visible: true });
+          await page.waitForSelector("#viewsManagerSelectorButton", {
+            visible: true,
+          });
+          await page.click("#viewsManagerSelectorButton");
+          await page.waitForSelector("#thumbnailsViewMenu", { visible: true });
+          await page.click("#thumbnailsViewMenu");
+
+          const thumbSelector = "#thumbnailsView .thumbnailImage";
+          await page.waitForSelector(thumbSelector, { visible: true });
+          const rect1 = await getRect(page, getThumbnailSelector(1));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+
+          const handleAddedMarker = await waitForDOMMutation(
+            page,
+            mutationList => {
+              for (const mutation of mutationList) {
+                if (mutation.type !== "childList") {
+                  continue;
+                }
+                for (const node of mutation.addedNodes) {
+                  if (node.classList.contains("dragMarker")) {
+                    const rect = node.getBoundingClientRect();
+                    return rect.width !== 0;
+                  }
+                }
+              }
+              return false;
+            }
+          );
+
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            10
+          );
+
+          await awaitPromise(handleAddedMarker);
+        })
+      );
+    });
+  });
 });
