@@ -209,4 +209,14 @@ describe("autolinker", function () {
       ],
     ]);
   });
+
+  it("should correctly find emails with hyphens in domain (bug 20557)", function () {
+    testLinks([
+      [
+        "john.doe@faculity.uni-cityname.tld",
+        "mailto:john.doe@faculity.uni-cityname.tld",
+      ],
+      ["john.doe@uni-cityname.tld", "mailto:john.doe@uni-cityname.tld"],
+    ]);
+  });
 });
