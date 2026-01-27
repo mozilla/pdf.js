@@ -1288,6 +1288,37 @@ describe("api", function () {
       }
     });
 
+    it("gets pages info", async function () {
+      const pagesInfo = await pdfDocument.getPagesInfo();
+
+      expect(Array.isArray(pagesInfo)).toEqual(true);
+      expect(pagesInfo.length).toEqual(pdfDocument.numPages);
+
+      for (let i = 0; i < pagesInfo.length; i++) {
+        const pageInfo = pagesInfo[i];
+        expect(pageInfo).toEqual(
+          jasmine.objectContaining({
+            view: jasmine.any(Array),
+            rotate: jasmine.any(Number),
+            userUnit: jasmine.any(Number),
+          })
+        );
+      }
+    });
+
+    it("gets pages info matching individual page data", async function () {
+      const pagesInfo = await pdfDocument.getPagesInfo();
+
+      for (let i = 0; i < pagesInfo.length; i++) {
+        const page = await pdfDocument.getPage(i + 1);
+        const pageInfo = pagesInfo[i];
+
+        expect(pageInfo.view).toEqual(page.view);
+        expect(pageInfo.rotate).toEqual(page.rotate);
+        expect(pageInfo.userUnit).toEqual(page.userUnit);
+      }
+    });
+
     it("gets destinations, from /Dests dictionary", async function () {
       const destinations = await pdfDocument.getDestinations();
       expect(destinations).toEqual({

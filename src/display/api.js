@@ -831,6 +831,16 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @returns {Promise<Array<Object>>} A promise that is resolved with an array
+   *   of objects containing page layout information (view, rotate, userUnit)
+   *   for all pages in the document. Each object in the array corresponds to
+   *   a page, with the first page at index 0.
+   */
+  getPagesInfo() {
+    return this._transport.getPagesInfo();
+  }
+
+  /**
    * @param {RefProxy} ref - The page reference.
    * @returns {Promise<number>} A promise that is resolved with the page index,
    *   starting from zero, that is associated with the reference.
@@ -3012,6 +3022,10 @@ class WorkerTransport {
       gen: ref.gen,
     });
     return this.#pagesMapper.getPageNumber(index + 1) - 1;
+  }
+
+  getPagesInfo() {
+    return this.messageHandler.sendWithPromise("GetPagesInfo", null);
   }
 
   getAnnotations(pageIndex, intent) {
