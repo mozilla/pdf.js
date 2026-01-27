@@ -48,6 +48,7 @@
   min-width: var(--sidebar-min-width);
   max-width: var(--sidebar-max-width);
   backdrop-filter: var(--sidebar-backdrop-filter);
+  box-sizing: border-box;
 
   .sidebarResizer {
     width: var(--resizer-width);
