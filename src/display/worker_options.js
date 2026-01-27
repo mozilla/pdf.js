@@ -18,6 +18,8 @@ class GlobalWorkerOptions {
 
   static #src = "";
 
+  static #rendererSrc = "";
+
   /**
    * @type {Worker | null}
    */
@@ -58,6 +60,27 @@ class GlobalWorkerOptions {
       throw new Error("Invalid `workerSrc` type.");
     }
     this.#src = val;
+  }
+
+  /**
+   * @type {string}
+   */
+  static get rendererSrc() {
+    return this.#rendererSrc;
+  }
+
+  /**
+   * @param {string} rendererSrc - A string containing the path and filename of
+   *   the renderer worker file.
+   *
+   *   NOTE: The `rendererSrc` option should always be set, in order to prevent
+   *         any issues when using the PDF.js library with worker rendering.
+   */
+  static set rendererSrc(val) {
+    if (typeof val !== "string") {
+      throw new Error("Invalid `rendererSrc` type.");
+    }
+    this.#rendererSrc = val;
   }
 }
 

@@ -302,6 +302,7 @@ class PDFThumbnailView {
     };
 
     const renderContext = {
+      canvasContext: canvas.getContext("2d", { alpha: false }),
       canvas,
       transform,
       viewport: drawViewport,
@@ -316,6 +317,12 @@ class PDFThumbnailView {
       await renderTask.promise;
     } catch (e) {
       if (e instanceof RenderingCancelledException) {
+        const resetWorkerCanvas = canvas.resetWorkerCanvas;
+        if (typeof resetWorkerCanvas === "function") {
+          resetWorkerCanvas();
+        } else {
+          canvas.width = canvas.height = 0;
+        }
         return;
       }
       error = e;
@@ -330,6 +337,12 @@ class PDFThumbnailView {
     this.renderingState = RenderingStates.FINISHED;
 
     await this.#convertCanvasToImage(canvas);
+    const resetWorkerCanvas = canvas.resetWorkerCanvas;
+    if (typeof resetWorkerCanvas === "function") {
+      resetWorkerCanvas();
+    } else {
+      canvas.width = canvas.height = 0;
+    }
 
     this.eventBus.dispatch("thumbnailrendered", {
       source: this,

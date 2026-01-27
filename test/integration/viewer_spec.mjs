@@ -480,23 +480,35 @@ describe("PDF viewer", () => {
       };
     }
 
-    function extractCanvases(pageNumber) {
+    async function extractCanvases(pageNumber) {
       const pageOne = document.querySelector(
         `.page[data-page-number='${pageNumber}']`
       );
-      return Array.from(pageOne.querySelectorAll("canvas"), canvas => {
-        const { width, height } = canvas;
-        const ctx = canvas.getContext("2d");
-        const topLeft = ctx.getImageData(2, 2, 1, 1).data;
-        const bottomRight = ctx.getImageData(width - 3, height - 3, 1, 1).data;
-        return {
-          size: width * height,
-          width,
-          height,
-          topLeft: globalThis.pdfjsLib.Util.makeHexColor(...topLeft),
-          bottomRight: globalThis.pdfjsLib.Util.makeHexColor(...bottomRight),
-        };
-      });
+      return Promise.all(
+        Array.from(pageOne.querySelectorAll("canvas"), async canvas => {
+          const { width, height } = canvas;
+          let topLeft, bottomRight;
+          try {
+            const ctx = canvas.getContext("2d");
+            topLeft = ctx.getImageData(2, 2, 1, 1).data;
+            bottomRight = ctx.getImageData(width - 3, height - 3, 1, 1).data;
+          } catch (ex) {
+            const getImageData = canvas.getImageData;
+            if (typeof getImageData !== "function") {
+              throw ex;
+            }
+            topLeft = await getImageData(2, 2, 1, 1);
+            bottomRight = await getImageData(width - 3, height - 3, 1, 1);
+          }
+          return {
+            size: width * height,
+            width,
+            height,
+            topLeft: globalThis.pdfjsLib.Util.makeHexColor(...topLeft),
+            bottomRight: globalThis.pdfjsLib.Util.makeHexColor(...bottomRight),
+          };
+        })
+      );
     }
 
     function waitForDetailRendered(page) {
