@@ -22,7 +22,7 @@ import {
   PDFDateString,
   renderRichText,
 } from "../../src/display/display_utils.js";
-import { isNodeJS, toBase64Util } from "../../src/shared/util.js";
+import { isNodeJS } from "../../src/shared/util.js";
 
 describe("display_utils", function () {
   describe("getFilenameFromUrl", function () {
@@ -183,9 +183,7 @@ describe("display_utils", function () {
 
     it('gets fallback filename from query string appended to "data:" URL', function () {
       const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
-      const dataUrl = `data:application/pdf;base64,${toBase64Util(typedArray)}`;
-      // Sanity check to ensure that a "data:" URL was returned.
-      expect(dataUrl.startsWith("data:")).toEqual(true);
+      const dataUrl = `data:application/pdf;base64,${typedArray.toBase64()}`;
 
       expect(getPdfFilenameFromUrl(dataUrl + "?file1.pdf")).toEqual(
         "document.pdf"
