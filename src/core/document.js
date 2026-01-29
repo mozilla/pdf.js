@@ -1038,8 +1038,8 @@ class PDFDocument {
     };
   }
 
-  parse(recoveryMode) {
-    this.xref.parse(recoveryMode);
+  async parse(recoveryMode) {
+    await this.xref.parse(recoveryMode);
     this.catalog = new Catalog(this.pdfManager, this.xref);
   }
 

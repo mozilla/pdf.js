@@ -31,6 +31,7 @@ import {
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { CipherTransformFactory } from "./crypto.js";
+import { Stream } from "./stream.js";
 
 class XRef {
   constructor(stream, pdfManager) {
@@ -43,6 +44,7 @@ class XRef {
     this._newPersistentRefNum = null;
     this._newTemporaryRefNum = null;
     this._persistentRefsCache = null;
+    this._objectStreams = new Map();
   }
 
   getNewPersistentRef(obj) {
@@ -96,7 +98,7 @@ class XRef {
     this.startXRefQueue = [startXRef];
   }
 
-  parse(recoveryMode = false) {
+  async parse(recoveryMode = false) {
     let trailerDict;
     if (!recoveryMode) {
       trailerDict = this.readXRef();
@@ -106,6 +108,8 @@ class XRef {
     }
     trailerDict.assignXref(this);
     this.trailer = trailerDict;
+
+    await this.decompressObjectStreams();
 
     let encrypt;
     try {
@@ -925,7 +929,29 @@ class XRef {
 
   fetchCompressed(ref, xrefEntry, suppressEncryption = false) {
     const tableOffset = xrefEntry.offset;
-    const stream = this.fetch(Ref.get(tableOffset, 0));
+    const objectStream = this._objectStreams.get(tableOffset);
+    let stream;
+    if (objectStream) {
+      // The object stream has already been parsed.
+      stream = objectStream;
+      this._objectStreams.delete(tableOffset);
+    } else {
+      try {
+        stream = this.fetch(Ref.get(tableOffset, 0));
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          const objStream = this.entries[tableOffset];
+          const start = this.stream.start + objStream.offset;
+          const end = this.stream.start + this.entries[tableOffset + 1].offset;
+          throw new MissingDataException(
+            start,
+            end,
+            /* objStreamRefNum = */ ref.num
+          );
+        }
+        throw new FormatError("bad ObjStm stream");
+      }
+    }
     if (!(stream instanceof BaseStream)) {
       throw new FormatError("bad ObjStm stream");
     }
@@ -1029,6 +1055,58 @@ class XRef {
 
   getCatalogObj() {
     return this.root;
+  }
+
+  async decompressObjectStreams(entryOffset = null) {
+    const done = new Set([0]);
+    const promises = [];
+    let entries = this.entries;
+    if (entryOffset !== null) {
+      entries = { [entryOffset]: this.entries[entryOffset] };
+    }
+    for (const num in entries) {
+      if (!Object.hasOwn(entries, num)) {
+        continue;
+      }
+      const entry = entries[num];
+      if (entry.uncompressed) {
+        continue;
+      }
+      const tableOffset = entry.offset;
+      if (done.has(tableOffset)) {
+        continue;
+      }
+      done.add(tableOffset);
+      let stream;
+      try {
+        stream = this.fetch(Ref.get(tableOffset, 0));
+      } catch {}
+
+      if (
+        !(stream instanceof BaseStream) ||
+        !stream.isAsync ||
+        !stream.isDataLoaded
+      ) {
+        continue;
+      }
+
+      promises.push(
+        stream
+          .asyncGetBytes()
+          .then(bytes => {
+            if (bytes) {
+              this._objectStreams.set(
+                tableOffset,
+                new Stream(bytes, 0, bytes.length, stream.dict)
+              );
+            }
+          })
+          .catch(() => {
+            /* no-op */
+          })
+      );
+    }
+    await Promise.all(promises);
   }
 }
 
