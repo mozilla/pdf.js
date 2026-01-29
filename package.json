@@ -39,6 +39,7 @@
     "jstransformer-nunjucks": "^1.2.0",
     "metalsmith": "^2.6.3",
     "metalsmith-html-relative": "^2.0.9",
+    "node-readable-to-web-readable-stream": "^0.4.2",
     "ordered-read-streams": "^2.0.0",
     "pngjs": "^7.0.0",
     "postcss": "^8.5.6",
