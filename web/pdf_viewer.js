@@ -2410,12 +2410,9 @@ class PDFViewer {
     if (scaleFactor > 0 && scaleFactor !== 1) {
       newScale = Math.round(newScale * scaleFactor * 100) / 100;
     } else if (steps) {
-      const delta = steps > 0 ? DEFAULT_SCALE_DELTA : 1 / DEFAULT_SCALE_DELTA;
-      const round = steps > 0 ? Math.ceil : Math.floor;
-      steps = Math.abs(steps);
-      do {
-        newScale = round((newScale * delta).toFixed(2) * 10) / 10;
-      } while (--steps > 0);
+      // Additive 5% increments per tick
+      newScale += Math.sign(steps) * 0.05;
+      newScale = Math.round(newScale * 100) / 100;
     }
     newScale = MathClamp(newScale, MIN_SCALE, MAX_SCALE);
     this.#setScale(newScale, { noScroll: false, drawingDelay, origin });

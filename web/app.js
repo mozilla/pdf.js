@@ -918,11 +918,13 @@ const PDFViewerApplication = {
   },
 
   zoomIn() {
-    this.updateZoom(1);
+    const newScale = this.pdfViewer.currentScale + 0.25;
+    this.pdfViewer.currentScaleValue = Math.round(newScale * 100) / 100;
   },
 
   zoomOut() {
-    this.updateZoom(-1);
+    const newScale = this.pdfViewer.currentScale - 0.25;
+    this.pdfViewer.currentScaleValue = Math.round(newScale * 100) / 100;
   },
 
   zoomReset() {
