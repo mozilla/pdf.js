@@ -31,77 +31,80 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
 const OK_RESPONSE = 200;
 const PARTIAL_CONTENT_RESPONSE = 206;
 
-function getArrayBuffer(xhr) {
-  const data = xhr.response;
-  if (typeof data !== "string") {
-    return data;
-  }
-  return stringToBytes(data).buffer;
+function getArrayBuffer(val) {
+  return typeof val !== "string" ? val : stringToBytes(val).buffer;
 }
 
-class NetworkManager {
+/** @implements {IPDFStream} */
+class PDFNetworkStream {
+  #pendingRequests = new WeakMap();
+
+  _fullRequestReader = null;
+
+  _rangeRequestReaders = [];
+
   _responseOrigin = null;
 
-  constructor({ url, httpHeaders, withCredentials }) {
-    this.url = url;
-    this.isHttp = /^https?:/i.test(url);
-    this.headers = createHeaders(this.isHttp, httpHeaders);
-    this.withCredentials = withCredentials || false;
-
-    this.currXhrId = 0;
-    this.pendingRequests = Object.create(null);
+  constructor(source) {
+    this._source = source;
+    this.url = source.url;
+    this.isHttp = /^https?:/i.test(this.url);
+    this.headers = createHeaders(this.isHttp, source.httpHeaders);
   }
 
-  request(args) {
+  /**
+   * @ignore
+   */
+  _request(args) {
     const xhr = new XMLHttpRequest();
-    const xhrId = this.currXhrId++;
-    const pendingRequest = (this.pendingRequests[xhrId] = { xhr });
+    const pendingRequest = {
+      validateStatus: null,
+      onHeadersReceived: args.onHeadersReceived,
+      onDone: args.onDone,
+      onError: args.onError,
+      onProgress: args.onProgress,
+    };
+    this.#pendingRequests.set(xhr, pendingRequest);
 
     xhr.open("GET", this.url);
-    xhr.withCredentials = this.withCredentials;
+    xhr.withCredentials = this._source.withCredentials;
     for (const [key, val] of this.headers) {
       xhr.setRequestHeader(key, val);
     }
     if (this.isHttp && "begin" in args && "end" in args) {
       xhr.setRequestHeader("Range", `bytes=${args.begin}-${args.end - 1}`);
-      pendingRequest.expectedStatus = PARTIAL_CONTENT_RESPONSE;
+
+      // From http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35.2:
+      // "A server MAY ignore the Range header". This means it's possible to
+      // get a 200 rather than a 206 response from a range request.
+      pendingRequest.validateStatus = status =>
+        status === PARTIAL_CONTENT_RESPONSE || status === OK_RESPONSE;
     } else {
-      pendingRequest.expectedStatus = OK_RESPONSE;
+      pendingRequest.validateStatus = status => status === OK_RESPONSE;
     }
     xhr.responseType = "arraybuffer";
 
     assert(args.onError, "Expected `onError` callback to be provided.");
-    xhr.onerror = () => {
-      args.onError(xhr.status);
-    };
-    xhr.onreadystatechange = this.onStateChange.bind(this, xhrId);
-    xhr.onprogress = this.onProgress.bind(this, xhrId);
-
-    pendingRequest.onHeadersReceived = args.onHeadersReceived;
-    pendingRequest.onDone = args.onDone;
-    pendingRequest.onError = args.onError;
-    pendingRequest.onProgress = args.onProgress;
+    xhr.onerror = () => args.onError(xhr.status);
+    xhr.onreadystatechange = this.#onStateChange.bind(this, xhr);
+    xhr.onprogress = this.#onProgress.bind(this, xhr);
 
     xhr.send(null);
 
-    return xhrId;
+    return xhr;
   }
 
-  onProgress(xhrId, evt) {
-    const pendingRequest = this.pendingRequests[xhrId];
+  #onProgress(xhr, evt) {
+    const pendingRequest = this.#pendingRequests.get(xhr);
+    pendingRequest?.onProgress?.(evt);
+  }
+
+  #onStateChange(xhr, evt) {
+    const pendingRequest = this.#pendingRequests.get(xhr);
     if (!pendingRequest) {
       return; // Maybe abortRequest was called...
     }
-    pendingRequest.onProgress?.(evt);
-  }
 
-  onStateChange(xhrId, evt) {
-    const pendingRequest = this.pendingRequests[xhrId];
-    if (!pendingRequest) {
-      return; // Maybe abortRequest was called...
-    }
-
-    const xhr = pendingRequest.xhr;
     if (xhr.readyState >= 2 && pendingRequest.onHeadersReceived) {
       pendingRequest.onHeadersReceived();
       delete pendingRequest.onHeadersReceived;
@@ -111,13 +114,12 @@ class NetworkManager {
       return;
     }
 
-    if (!(xhrId in this.pendingRequests)) {
+    if (!this.#pendingRequests.has(xhr)) {
       // The XHR request might have been aborted in onHeadersReceived()
       // callback, in which case we should abort request.
       return;
     }
-
-    delete this.pendingRequests[xhrId];
+    this.#pendingRequests.delete(xhr);
 
     // Success status == 0 can be on ftp, file and other protocols.
     if (xhr.status === 0 && this.isHttp) {
@@ -126,73 +128,35 @@ class NetworkManager {
     }
     const xhrStatus = xhr.status || OK_RESPONSE;
 
-    // From http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.35.2:
-    // "A server MAY ignore the Range header". This means it's possible to
-    // get a 200 rather than a 206 response from a range request.
-    const ok_response_on_range_request =
-      xhrStatus === OK_RESPONSE &&
-      pendingRequest.expectedStatus === PARTIAL_CONTENT_RESPONSE;
-
-    if (
-      !ok_response_on_range_request &&
-      xhrStatus !== pendingRequest.expectedStatus
-    ) {
+    if (!pendingRequest.validateStatus(xhrStatus)) {
       pendingRequest.onError(xhr.status);
       return;
     }
 
-    const chunk = getArrayBuffer(xhr);
+    const chunk = getArrayBuffer(xhr.response);
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
       const rangeHeader = xhr.getResponseHeader("Content-Range");
-      const matches = /bytes (\d+)-(\d+)\/(\d+)/.exec(rangeHeader);
-      if (matches) {
-        pendingRequest.onDone({
-          begin: parseInt(matches[1], 10),
-          chunk,
-        });
+      if (/bytes (\d+)-(\d+)\/(\d+)/.test(rangeHeader)) {
+        pendingRequest.onDone(chunk);
       } else {
         warn(`Missing or invalid "Content-Range" header.`);
         pendingRequest.onError(0);
       }
     } else if (chunk) {
-      pendingRequest.onDone({
-        begin: 0,
-        chunk,
-      });
+      pendingRequest.onDone(chunk);
     } else {
       pendingRequest.onError(xhr.status);
     }
   }
 
-  getRequestXhr(xhrId) {
-    return this.pendingRequests[xhrId].xhr;
-  }
-
-  isPendingRequest(xhrId) {
-    return xhrId in this.pendingRequests;
-  }
-
-  abortRequest(xhrId) {
-    const xhr = this.pendingRequests[xhrId].xhr;
-    delete this.pendingRequests[xhrId];
-    xhr.abort();
-  }
-}
-
-/** @implements {IPDFStream} */
-class PDFNetworkStream {
-  constructor(source) {
-    this._source = source;
-    this._manager = new NetworkManager(source);
-    this._rangeChunkSize = source.rangeChunkSize;
-    this._fullRequestReader = null;
-    this._rangeRequestReaders = [];
-  }
-
-  _onRangeRequestReaderClosed(reader) {
-    const i = this._rangeRequestReaders.indexOf(reader);
-    if (i >= 0) {
-      this._rangeRequestReaders.splice(i, 1);
+  /**
+   * Abort the request, if it's pending.
+   * @ignore
+   */
+  _abortRequest(xhr) {
+    if (this.#pendingRequests.has(xhr)) {
+      this.#pendingRequests.delete(xhr);
+      xhr.abort();
     }
   }
 
@@ -201,20 +165,18 @@ class PDFNetworkStream {
       !this._fullRequestReader,
       "PDFNetworkStream.getFullReader can only be called once."
     );
-    this._fullRequestReader = new PDFNetworkStreamFullRequestReader(
-      this._manager,
-      this._source
-    );
+    this._fullRequestReader = new PDFNetworkStreamFullRequestReader(this);
     return this._fullRequestReader;
   }
 
   getRangeReader(begin, end) {
-    const reader = new PDFNetworkStreamRangeRequestReader(
-      this._manager,
-      begin,
-      end
-    );
-    reader.onClosed = this._onRangeRequestReaderClosed.bind(this);
+    const reader = new PDFNetworkStreamRangeRequestReader(this, begin, end);
+    reader.onClosed = () => {
+      const i = this._rangeRequestReaders.indexOf(reader);
+      if (i >= 0) {
+        this._rangeRequestReaders.splice(i, 1);
+      }
+    };
     this._rangeRequestReaders.push(reader);
     return reader;
   }
@@ -230,20 +192,20 @@ class PDFNetworkStream {
 
 /** @implements {IPDFStreamReader} */
 class PDFNetworkStreamFullRequestReader {
-  constructor(manager, source) {
-    this._manager = manager;
+  constructor(stream) {
+    this._stream = stream;
+    const { disableRange, length, rangeChunkSize } = stream._source;
 
-    this._url = source.url;
-    this._fullRequestId = manager.request({
+    this._fullRequestXhr = stream._request({
       onHeadersReceived: this._onHeadersReceived.bind(this),
       onDone: this._onDone.bind(this),
       onError: this._onError.bind(this),
       onProgress: this._onProgress.bind(this),
     });
     this._headersCapability = Promise.withResolvers();
-    this._disableRange = source.disableRange || false;
-    this._contentLength = source.length; // Optional
-    this._rangeChunkSize = source.rangeChunkSize;
+    this._disableRange = disableRange || false;
+    this._contentLength = length; // Optional
+    this._rangeChunkSize = rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
       this._disableRange = true;
     }
@@ -261,12 +223,10 @@ class PDFNetworkStreamFullRequestReader {
   }
 
   _onHeadersReceived() {
-    const fullRequestXhrId = this._fullRequestId;
-    const fullRequestXhr = this._manager.getRequestXhr(fullRequestXhrId);
+    const stream = this._stream;
+    const fullRequestXhr = this._fullRequestXhr;
 
-    this._manager._responseOrigin = getResponseOrigin(
-      fullRequestXhr.responseURL
-    );
+    stream._responseOrigin = getResponseOrigin(fullRequestXhr.responseURL);
 
     const rawResponseHeaders = fullRequestXhr.getAllResponseHeaders();
     const responseHeaders = new Headers(
@@ -285,7 +245,7 @@ class PDFNetworkStreamFullRequestReader {
     const { allowRangeRequests, suggestedLength } =
       validateRangeRequestCapabilities({
         responseHeaders,
-        isHttp: this._manager.isHttp,
+        isHttp: stream.isHttp,
         rangeChunkSize: this._rangeChunkSize,
         disableRange: this._disableRange,
       });
@@ -303,20 +263,18 @@ class PDFNetworkStreamFullRequestReader {
       // requests, there will be an issue for sites where you can only
       // request the pdf once. However, if this is the case, then the
       // server should not be returning that it can support range requests.
-      this._manager.abortRequest(fullRequestXhrId);
+      stream._abortRequest(fullRequestXhr);
     }
 
     this._headersCapability.resolve();
   }
 
-  _onDone(data) {
-    if (data) {
-      if (this._requests.length > 0) {
-        const requestCapability = this._requests.shift();
-        requestCapability.resolve({ value: data.chunk, done: false });
-      } else {
-        this._cachedChunks.push(data.chunk);
-      }
+  _onDone(chunk) {
+    if (this._requests.length > 0) {
+      const requestCapability = this._requests.shift();
+      requestCapability.resolve({ value: chunk, done: false });
+    } else {
+      this._cachedChunks.push(chunk);
     }
     this._done = true;
     if (this._cachedChunks.length > 0) {
@@ -329,7 +287,7 @@ class PDFNetworkStreamFullRequestReader {
   }
 
   _onError(status) {
-    this._storedError = createResponseError(status, this._url);
+    this._storedError = createResponseError(status, this._stream.url);
     this._headersCapability.reject(this._storedError);
     for (const requestCapability of this._requests) {
       requestCapability.reject(this._storedError);
@@ -390,20 +348,20 @@ class PDFNetworkStreamFullRequestReader {
       requestCapability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
-    if (this._manager.isPendingRequest(this._fullRequestId)) {
-      this._manager.abortRequest(this._fullRequestId);
-    }
-    this._fullRequestReader = null;
+
+    this._stream._abortRequest(this._fullRequestXhr);
+    this._fullRequestXhr = null;
   }
 }
 
 /** @implements {IPDFStreamRangeReader} */
 class PDFNetworkStreamRangeRequestReader {
-  constructor(manager, begin, end) {
-    this._manager = manager;
+  onClosed = null;
 
-    this._url = manager.url;
-    this._requestId = manager.request({
+  constructor(stream, begin, end) {
+    this._stream = stream;
+
+    this._requestXhr = stream._request({
       begin,
       end,
       onHeadersReceived: this._onHeadersReceived.bind(this),
@@ -417,28 +375,20 @@ class PDFNetworkStreamRangeRequestReader {
     this._storedError = undefined;
 
     this.onProgress = null;
-    this.onClosed = null;
   }
 
   _onHeadersReceived() {
-    const responseOrigin = getResponseOrigin(
-      this._manager.getRequestXhr(this._requestId)?.responseURL
-    );
+    const responseOrigin = getResponseOrigin(this._requestXhr?.responseURL);
 
-    if (responseOrigin !== this._manager._responseOrigin) {
+    if (responseOrigin !== this._stream._responseOrigin) {
       this._storedError = new Error(
-        `Expected range response-origin "${responseOrigin}" to match "${this._manager._responseOrigin}".`
+        `Expected range response-origin "${responseOrigin}" to match "${this._stream._responseOrigin}".`
       );
       this._onError(0);
     }
   }
 
-  _close() {
-    this.onClosed?.(this);
-  }
-
-  _onDone(data) {
-    const chunk = data.chunk;
+  _onDone(chunk) {
     if (this._requests.length > 0) {
       const requestCapability = this._requests.shift();
       requestCapability.resolve({ value: chunk, done: false });
@@ -450,11 +400,11 @@ class PDFNetworkStreamRangeRequestReader {
       requestCapability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
-    this._close();
+    this.onClosed?.(this);
   }
 
   _onError(status) {
-    this._storedError ??= createResponseError(status, this._url);
+    this._storedError ??= createResponseError(status, this._stream.url);
     for (const requestCapability of this._requests) {
       requestCapability.reject(this._storedError);
     }
@@ -495,10 +445,9 @@ class PDFNetworkStreamRangeRequestReader {
       requestCapability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
-    if (this._manager.isPendingRequest(this._requestId)) {
-      this._manager.abortRequest(this._requestId);
-    }
-    this._close();
+
+    this._stream._abortRequest(this._requestXhr);
+    this.onClosed?.(this);
   }
 }
 
