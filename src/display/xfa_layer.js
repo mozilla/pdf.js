@@ -16,7 +16,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_storage").AnnotationStorage} AnnotationStorage */
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
-/** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
 
 import { XfaText } from "./xfa_text.js";
 
@@ -26,7 +25,7 @@ import { XfaText } from "./xfa_text.js";
  * @property {HTMLDivElement} div
  * @property {Object} xfaHtml
  * @property {AnnotationStorage} [annotationStorage]
- * @property {IPDFLinkService} linkService
+ * @property {PDFLinkService} linkService
  * @property {string} [intent] - (default value is 'display').
  */
 

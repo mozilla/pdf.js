@@ -19,7 +19,6 @@
 /** @typedef {import("../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/interfaces").IDownloadManager} IDownloadManager */
-/** @typedef {import("../../web/interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 // eslint-disable-next-line max-len
@@ -57,7 +56,7 @@ const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
  * @typedef {Object} AnnotationElementParameters
  * @property {Object} data
  * @property {HTMLDivElement} layer
- * @property {IPDFLinkService} linkService
+ * @property {PDFLinkService} linkService
  * @property {IDownloadManager} [downloadManager]
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
@@ -3736,7 +3735,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {HTMLDivElement} div
  * @property {Array} annotations
  * @property {PDFPageProxy} page
- * @property {IPDFLinkService} linkService
+ * @property {PDFLinkService} linkService
  * @property {IDownloadManager} [downloadManager]
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
@@ -4018,8 +4017,6 @@ class AnnotationLayer {
    * Add link annotations to the annotation layer.
    *
    * @param {Array<Object>} annotations
-   * @param {IPDFLinkService} linkService
-   * @memberof AnnotationLayer
    */
   async addLinkAnnotations(annotations) {
     const elementParams = {

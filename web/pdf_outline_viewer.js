@@ -16,7 +16,6 @@
 /** @typedef {import("./event_utils.js").EventBus} EventBus */
 // eslint-disable-next-line max-len
 /** @typedef {import("./download_manager.js").DownloadManager} DownloadManager */
-/** @typedef {import("./interfaces.js").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
 
@@ -27,7 +26,7 @@ import { SidebarView } from "./ui_utils.js";
  * @typedef {Object} PDFOutlineViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
- * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {PDFLinkService} linkService - The navigation/linking service.
  * @property {DownloadManager} downloadManager - The download manager.
  */
 

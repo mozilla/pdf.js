@@ -22,103 +22,6 @@
 /**
  * @interface
  */
-class IPDFLinkService {
-  /**
-   * @type {number}
-   */
-  get pagesCount() {}
-
-  /**
-   * @type {number}
-   */
-  get page() {}
-
-  /**
-   * @param {number} value
-   */
-  set page(value) {}
-
-  /**
-   * @type {number}
-   */
-  get rotation() {}
-
-  /**
-   * @param {number} value
-   */
-  set rotation(value) {}
-
-  /**
-   * @type {boolean}
-   */
-  get isInPresentationMode() {}
-
-  /**
-   * @type {boolean}
-   */
-  get externalLinkEnabled() {}
-
-  /**
-   * @param {boolean} value
-   */
-  set externalLinkEnabled(value) {}
-
-  /**
-   * @param {string|Array} dest - The named, or explicit, PDF destination.
-   */
-  async goToDestination(dest) {}
-
-  /**
-   * @param {number|string} val - The page number, or page label.
-   */
-  goToPage(val) {}
-
-  /**
-   * Scrolls to a specific location in the PDF document.
-   * @param {number} pageNumber - The page number to scroll to.
-   * @param {number} x - The x-coordinate to scroll to in page coordinates.
-   * @param {number} y - The y-coordinate to scroll to in page coordinates.
-   */
-  goToXY(pageNumber, x, y) {}
-
-  /**
-   * @param {HTMLAnchorElement} link
-   * @param {string} url
-   * @param {boolean} [newWindow]
-   */
-  addLinkAttributes(link, url, newWindow = false) {}
-
-  /**
-   * @param dest - The PDF destination object.
-   * @returns {string} The hyperlink to the PDF object.
-   */
-  getDestinationHash(dest) {}
-
-  /**
-   * @param hash - The PDF parameters/hash.
-   * @returns {string} The hyperlink to the PDF object.
-   */
-  getAnchorUrl(hash) {}
-
-  /**
-   * @param {string} hash
-   */
-  setHash(hash) {}
-
-  /**
-   * @param {string} action
-   */
-  executeNamedAction(action) {}
-
-  /**
-   * @param {Object} action
-   */
-  executeSetOCGState(action) {}
-}
-
-/**
- * @interface
- */
 class IRenderableView {
   constructor() {
     /** @type {function | null} */
@@ -226,10 +129,4 @@ class IPDFPrintServiceFactory {
   }
 }
 
-export {
-  IDownloadManager,
-  IL10n,
-  IPDFLinkService,
-  IPDFPrintServiceFactory,
-  IRenderableView,
-};
+export { IDownloadManager, IL10n, IPDFPrintServiceFactory, IRenderableView };

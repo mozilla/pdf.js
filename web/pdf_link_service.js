@@ -14,7 +14,6 @@
  */
 
 /** @typedef {import("./event_utils").EventBus} EventBus */
-/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 
 import { isValidExplicitDest } from "pdfjs-lib";
 import { parseQueryString } from "./ui_utils.js";
@@ -45,7 +44,6 @@ const LinkTarget = {
 /**
  * Performs navigation functions inside PDF, such as opening specified page,
  * or destination.
- * @implements {IPDFLinkService}
  */
 class PDFLinkService {
   externalLinkEnabled = true;
@@ -517,9 +515,6 @@ class PDFLinkService {
   }
 }
 
-/**
- * @implements {IPDFLinkService}
- */
 class SimpleLinkService extends PDFLinkService {
   setDocument(pdfDocument, baseUrl = null) {}
 }
