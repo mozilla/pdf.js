@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { AbortException, assert, warn } from "../shared/util.js";
+import { AbortException, warn } from "../shared/util.js";
 import {
   createHeaders,
   createResponseError,
@@ -22,6 +22,7 @@ import {
   validateRangeRequestCapabilities,
   validateResponseStatus,
 } from "./network_utils.js";
+import { BasePDFStream } from "../shared/base_pdf_stream.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -51,47 +52,13 @@ function getArrayBuffer(val) {
   return new Uint8Array(val).buffer;
 }
 
-/** @implements {IPDFStream} */
-class PDFFetchStream {
+class PDFFetchStream extends BasePDFStream {
   _responseOrigin = null;
 
   constructor(source) {
-    this.source = source;
+    super(source, PDFFetchStreamReader, PDFFetchStreamRangeReader);
     this.isHttp = /^https?:/i.test(source.url);
     this.headers = createHeaders(this.isHttp, source.httpHeaders);
-
-    this._fullRequestReader = null;
-    this._rangeRequestReaders = [];
-  }
-
-  get _progressiveDataLength() {
-    return this._fullRequestReader?._loaded ?? 0;
-  }
-
-  getFullReader() {
-    assert(
-      !this._fullRequestReader,
-      "PDFFetchStream.getFullReader can only be called once."
-    );
-    this._fullRequestReader = new PDFFetchStreamReader(this);
-    return this._fullRequestReader;
-  }
-
-  getRangeReader(begin, end) {
-    if (end <= this._progressiveDataLength) {
-      return null;
-    }
-    const reader = new PDFFetchStreamRangeReader(this, begin, end);
-    this._rangeRequestReaders.push(reader);
-    return reader;
-  }
-
-  cancelAllRequests(reason) {
-    this._fullRequestReader?.cancel(reason);
-
-    for (const reader of this._rangeRequestReaders.slice(0)) {
-      reader.cancel(reason);
-    }
   }
 }
 
@@ -102,7 +69,7 @@ class PDFFetchStreamReader {
     this._reader = null;
     this._loaded = 0;
     this._filename = null;
-    const source = stream.source;
+    const source = stream._source;
     this._withCredentials = source.withCredentials || false;
     this._contentLength = source.length;
     this._headersCapability = Promise.withResolvers();
@@ -205,7 +172,7 @@ class PDFFetchStreamRangeReader {
   constructor(stream, begin, end) {
     this._stream = stream;
     this._reader = null;
-    const source = stream.source;
+    const source = stream._source;
     this._withCredentials = source.withCredentials || false;
     this._readCapability = Promise.withResolvers();
 

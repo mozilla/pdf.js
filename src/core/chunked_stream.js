@@ -272,17 +272,17 @@ class ChunkedStreamManager {
 
   _requestsByChunk = new Map();
 
-  constructor(pdfNetworkStream, args) {
+  constructor(pdfStream, args) {
     this.length = args.length;
     this.chunkSize = args.rangeChunkSize;
     this.stream = new ChunkedStream(this.length, this.chunkSize, this);
-    this.pdfNetworkStream = pdfNetworkStream;
+    this.pdfStream = pdfStream;
     this.disableAutoFetch = args.disableAutoFetch;
     this.msgHandler = args.msgHandler;
   }
 
   sendRequest(begin, end) {
-    const rangeReader = this.pdfNetworkStream.getRangeReader(begin, end);
+    const rangeReader = this.pdfStream.getRangeReader(begin, end);
 
     let chunks = [];
     return new Promise((resolve, reject) => {
@@ -530,7 +530,7 @@ class ChunkedStreamManager {
 
   abort(reason) {
     this.aborted = true;
-    this.pdfNetworkStream?.cancelAllRequests(reason);
+    this.pdfStream?.cancelAllRequests(reason);
 
     for (const capability of this._promisesByRequest.values()) {
       capability.reject(reason);

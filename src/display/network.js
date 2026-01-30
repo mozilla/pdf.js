@@ -21,6 +21,7 @@ import {
   getResponseOrigin,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
+import { BasePDFStream } from "../shared/base_pdf_stream.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -35,18 +36,13 @@ function getArrayBuffer(val) {
   return typeof val !== "string" ? val : stringToBytes(val).buffer;
 }
 
-/** @implements {IPDFStream} */
-class PDFNetworkStream {
+class PDFNetworkStream extends BasePDFStream {
   #pendingRequests = new WeakMap();
-
-  _fullRequestReader = null;
-
-  _rangeRequestReaders = [];
 
   _responseOrigin = null;
 
   constructor(source) {
-    this._source = source;
+    super(source, PDFNetworkStreamFullReader, PDFNetworkStreamRangeReader);
     this.url = source.url;
     this.isHttp = /^https?:/i.test(this.url);
     this.headers = createHeaders(this.isHttp, source.httpHeaders);
@@ -160,38 +156,18 @@ class PDFNetworkStream {
     }
   }
 
-  getFullReader() {
-    assert(
-      !this._fullRequestReader,
-      "PDFNetworkStream.getFullReader can only be called once."
-    );
-    this._fullRequestReader = new PDFNetworkStreamFullRequestReader(this);
-    return this._fullRequestReader;
-  }
-
   getRangeReader(begin, end) {
-    const reader = new PDFNetworkStreamRangeRequestReader(this, begin, end);
-    reader.onClosed = () => {
-      const i = this._rangeRequestReaders.indexOf(reader);
-      if (i >= 0) {
-        this._rangeRequestReaders.splice(i, 1);
-      }
-    };
-    this._rangeRequestReaders.push(reader);
-    return reader;
-  }
+    const reader = super.getRangeReader(begin, end);
 
-  cancelAllRequests(reason) {
-    this._fullRequestReader?.cancel(reason);
-
-    for (const reader of this._rangeRequestReaders.slice(0)) {
-      reader.cancel(reason);
+    if (reader) {
+      reader.onClosed = () => this._rangeReaders.delete(reader);
     }
+    return reader;
   }
 }
 
 /** @implements {IPDFStreamReader} */
-class PDFNetworkStreamFullRequestReader {
+class PDFNetworkStreamFullReader {
   constructor(stream) {
     this._stream = stream;
     const { disableRange, length, rangeChunkSize } = stream._source;
@@ -355,7 +331,7 @@ class PDFNetworkStreamFullRequestReader {
 }
 
 /** @implements {IPDFStreamRangeReader} */
-class PDFNetworkStreamRangeRequestReader {
+class PDFNetworkStreamRangeReader {
   onClosed = null;
 
   constructor(stream, begin, end) {
@@ -398,7 +374,7 @@ class PDFNetworkStreamRangeRequestReader {
       requestCapability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
-    this.onClosed?.(this);
+    this.onClosed?.();
   }
 
   _onError(status) {
@@ -435,7 +411,7 @@ class PDFNetworkStreamRangeRequestReader {
     this._requests.length = 0;
 
     this._stream._abortRequest(this._requestXhr);
-    this.onClosed?.(this);
+    this.onClosed?.();
   }
 }
 

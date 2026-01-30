@@ -15,6 +15,7 @@
 /* globals process */
 
 import { AbortException, assert, warn } from "../shared/util.js";
+import { BasePDFStream } from "../shared/base_pdf_stream.js";
 import { createResponseError } from "./network_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
@@ -60,47 +61,14 @@ function getArrayBuffer(val) {
   return new Uint8Array(val).buffer;
 }
 
-class PDFNodeStream {
+class PDFNodeStream extends BasePDFStream {
   constructor(source) {
-    this.source = source;
+    super(source, PDFNodeStreamFsFullReader, PDFNodeStreamFsRangeReader);
     this.url = parseUrlOrPath(source.url);
     assert(
       this.url.protocol === "file:",
       "PDFNodeStream only supports file:// URLs."
     );
-
-    this._fullRequestReader = null;
-    this._rangeRequestReaders = [];
-  }
-
-  get _progressiveDataLength() {
-    return this._fullRequestReader?._loaded ?? 0;
-  }
-
-  getFullReader() {
-    assert(
-      !this._fullRequestReader,
-      "PDFNodeStream.getFullReader can only be called once."
-    );
-    this._fullRequestReader = new PDFNodeStreamFsFullReader(this);
-    return this._fullRequestReader;
-  }
-
-  getRangeReader(begin, end) {
-    if (end <= this._progressiveDataLength) {
-      return null;
-    }
-    const rangeReader = new PDFNodeStreamFsRangeReader(this, begin, end);
-    this._rangeRequestReaders.push(rangeReader);
-    return rangeReader;
-  }
-
-  cancelAllRequests(reason) {
-    this._fullRequestReader?.cancel(reason);
-
-    for (const reader of this._rangeRequestReaders.slice(0)) {
-      reader.cancel(reason);
-    }
   }
 }
 
@@ -111,7 +79,7 @@ class PDFNodeStreamFsFullReader {
 
   constructor(stream) {
     this.onProgress = null;
-    const source = stream.source;
+    const source = stream._source;
     this._contentLength = source.length; // optional
     this._loaded = 0;
     this._filename = null;

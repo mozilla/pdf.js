@@ -13,40 +13,83 @@
  * limitations under the License.
  */
 
+import { assert, unreachable } from "./util.js";
+
 /**
  * Interface that represents PDF data transport. If possible, it allows
  * progressively load entire or fragment of the PDF binary data.
- *
- * @interface
  */
-class IPDFStream {
+class BasePDFStream {
+  #PDFStreamReader = null;
+
+  #PDFStreamRangeReader = null;
+
+  _fullReader = null;
+
+  _rangeReaders = new Set();
+
+  _source = null;
+
+  constructor(source, PDFStreamReader, PDFStreamRangeReader) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BasePDFStream
+    ) {
+      unreachable("Cannot initialize BasePDFStream.");
+    }
+    this._source = source;
+
+    this.#PDFStreamReader = PDFStreamReader;
+    this.#PDFStreamRangeReader = PDFStreamRangeReader;
+  }
+
+  get _progressiveDataLength() {
+    return this._fullReader?._loaded ?? 0;
+  }
+
   /**
    * Gets a reader for the entire PDF data.
-   * @returns {IPDFStreamReader}
+   * @returns {BasePDFStreamReader}
    */
   getFullReader() {
-    return null;
+    assert(
+      !this._fullReader,
+      "BasePDFStream.getFullReader can only be called once."
+    );
+    return (this._fullReader = new this.#PDFStreamReader(this));
   }
 
   /**
    * Gets a reader for the range of the PDF data.
    *
    * NOTE: Currently this method is only expected to be invoked *after*
-   * the `IPDFStreamReader.prototype.headersReady` promise has resolved.
+   * the `BasePDFStreamReader.prototype.headersReady` promise has resolved.
    *
    * @param {number} begin - the start offset of the data.
    * @param {number} end - the end offset of the data.
-   * @returns {IPDFStreamRangeReader}
+   * @returns {BasePDFStreamRangeReader}
    */
   getRangeReader(begin, end) {
-    return null;
+    if (end <= this._progressiveDataLength) {
+      return null;
+    }
+    const reader = new this.#PDFStreamRangeReader(this, begin, end);
+    this._rangeReaders.add(reader);
+    return reader;
   }
 
   /**
    * Cancels all opened reader and closes all their opened requests.
    * @param {Object} reason - the reason for cancelling
    */
-  cancelAllRequests(reason) {}
+  cancelAllRequests(reason) {
+    this._fullReader?.cancel(reason);
+
+    // Always create a copy of the rangeReaders.
+    for (const reader of new Set(this._rangeReaders)) {
+      reader.cancel(reason);
+    }
+  }
 }
 
 /**
@@ -152,4 +195,4 @@ class IPDFStreamRangeReader {
   cancel(reason) {}
 }
 
-export { IPDFStream, IPDFStreamRangeReader, IPDFStreamReader };
+export { BasePDFStream, IPDFStreamRangeReader, IPDFStreamReader };

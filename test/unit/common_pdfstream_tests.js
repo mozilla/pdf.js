@@ -16,8 +16,7 @@
 import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { getCrossOriginHostname, TestPdfsServer } from "./test_utils.js";
 
-// Common tests to verify behavior across implementations of the IPDFStream
-// interface:
+// Common tests to verify behavior across `BasePDFStream` implementations:
 // - PDFNetworkStream by network_spec.js
 // - PDFFetchStream by fetch_stream_spec.js
 async function testCrossOriginRedirects({

@@ -13,55 +13,28 @@
  * limitations under the License.
  */
 
-import { assert } from "../shared/util.js";
+import { BasePDFStream } from "../shared/base_pdf_stream.js";
 
-/** @implements {IPDFStream} */
-class PDFWorkerStream {
-  constructor(msgHandler) {
-    this._msgHandler = msgHandler;
-    this._contentLength = null;
-    this._fullRequestReader = null;
-    this._rangeRequestReaders = [];
-  }
-
-  getFullReader() {
-    assert(
-      !this._fullRequestReader,
-      "PDFWorkerStream.getFullReader can only be called once."
-    );
-    this._fullRequestReader = new PDFWorkerStreamReader(this._msgHandler);
-    return this._fullRequestReader;
-  }
-
-  getRangeReader(begin, end) {
-    const reader = new PDFWorkerStreamRangeReader(begin, end, this._msgHandler);
-    this._rangeRequestReaders.push(reader);
-    return reader;
-  }
-
-  cancelAllRequests(reason) {
-    this._fullRequestReader?.cancel(reason);
-
-    for (const reader of this._rangeRequestReaders.slice(0)) {
-      reader.cancel(reason);
-    }
+class PDFWorkerStream extends BasePDFStream {
+  constructor(source) {
+    super(source, PDFWorkerStreamReader, PDFWorkerStreamRangeReader);
   }
 }
 
 /** @implements {IPDFStreamReader} */
 class PDFWorkerStreamReader {
-  constructor(msgHandler) {
-    this._msgHandler = msgHandler;
+  constructor(stream) {
+    const { msgHandler } = stream._source;
     this.onProgress = null;
 
     this._contentLength = null;
     this._isRangeSupported = false;
     this._isStreamingSupported = false;
 
-    const readableStream = this._msgHandler.sendWithStream("GetReader");
+    const readableStream = msgHandler.sendWithStream("GetReader");
     this._reader = readableStream.getReader();
 
-    this._headersReady = this._msgHandler
+    this._headersReady = msgHandler
       .sendWithPromise("ReaderHeadersReady")
       .then(data => {
         this._isStreamingSupported = data.isStreamingSupported;
@@ -103,10 +76,10 @@ class PDFWorkerStreamReader {
 
 /** @implements {IPDFStreamRangeReader} */
 class PDFWorkerStreamRangeReader {
-  constructor(begin, end, msgHandler) {
-    this._msgHandler = msgHandler;
+  constructor(stream, begin, end) {
+    const { msgHandler } = stream._source;
 
-    const readableStream = this._msgHandler.sendWithStream("GetRangeReader", {
+    const readableStream = msgHandler.sendWithStream("GetRangeReader", {
       begin,
       end,
     });
