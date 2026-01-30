@@ -13,12 +13,9 @@
  * limitations under the License.
  */
 
-/** @typedef {import("./interfaces").IL10n} IL10n */
-
 /**
  * NOTE: The L10n-implementations should use lowercase language-codes
  *       internally.
- * @implements {IL10n}
  */
 class L10n {
   #dir;

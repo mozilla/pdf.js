@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-/** @typedef {import("./interfaces.js").IL10n} IL10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
 // eslint-disable-next-line max-len
@@ -160,7 +159,7 @@ const PDFViewerApplication = {
   secondaryToolbar: null,
   /** @type {EventBus} */
   eventBus: null,
-  /** @type {IL10n} */
+  /** @type {L10n} */
   l10n: null,
   /** @type {AnnotationEditorParams} */
   annotationEditorParams: null,

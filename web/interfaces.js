@@ -74,49 +74,6 @@ class IDownloadManager {
 /**
  * @interface
  */
-class IL10n {
-  /**
-   * @returns {string} - The current locale.
-   */
-  getLanguage() {}
-
-  /**
-   * @returns {string} - 'rtl' or 'ltr'.
-   */
-  getDirection() {}
-
-  /**
-   * Translates text identified by the key and adds/formats data using the args
-   * property bag. If the key was not found, translation falls back to the
-   * fallback text.
-   * @param {Array | string} ids
-   * @param {Object | null} [args]
-   * @param {string} [fallback]
-   * @returns {Promise<string>}
-   */
-  async get(ids, args = null, fallback) {}
-
-  /**
-   * Translates HTML element.
-   * @param {HTMLElement} element
-   * @returns {Promise<void>}
-   */
-  async translate(element) {}
-
-  /**
-   * Pause the localization.
-   */
-  pause() {}
-
-  /**
-   * Resume the localization.
-   */
-  resume() {}
-}
-
-/**
- * @interface
- */
 class IPDFPrintServiceFactory {
   static initGlobals() {}
 
@@ -129,4 +86,4 @@ class IPDFPrintServiceFactory {
   }
 }
 
-export { IDownloadManager, IL10n, IPDFPrintServiceFactory, IRenderableView };
+export { IDownloadManager, IPDFPrintServiceFactory, IRenderableView };

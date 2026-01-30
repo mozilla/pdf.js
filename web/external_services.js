@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-/** @typedef {import("./interfaces.js").IL10n} IL10n */
-
 class BaseExternalServices {
   constructor() {
     if (
@@ -36,7 +34,7 @@ class BaseExternalServices {
   reportText(data) {}
 
   /**
-   * @returns {Promise<IL10n>}
+   * @returns {Promise<L10n>}
    */
   async createL10n() {
     throw new Error("Not implemented: createL10n");

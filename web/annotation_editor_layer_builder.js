@@ -20,7 +20,6 @@
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
-/** @typedef {import("./interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/annotation_layer.js").AnnotationLayer} AnnotationLayer */
 // eslint-disable-next-line max-len
@@ -33,7 +32,7 @@ import { GenericL10n } from "web-null_l10n";
  * @typedef {Object} AnnotationEditorLayerBuilderOptions
  * @property {AnnotationEditorUIManager} [uiManager]
  * @property {PDFPageProxy} pdfPage
- * @property {IL10n} [l10n]
+ * @property {L10n} [l10n]
  * @property {StructTreeLayerBuilder} [structTreeLayer]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationLayer} [annotationLayer]

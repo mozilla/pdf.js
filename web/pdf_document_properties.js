@@ -14,7 +14,6 @@
  */
 
 /** @typedef {import("./event_utils.js").EventBus} EventBus */
-/** @typedef {import("./interfaces.js").IL10n} IL10n */
 /** @typedef {import("./overlay_manager.js").OverlayManager} OverlayManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
@@ -58,7 +57,7 @@ class PDFDocumentProperties {
    * @param {PDFDocumentPropertiesOptions} options
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {EventBus} eventBus - The application event bus.
-   * @param {IL10n} l10n - Localization service.
+   * @param {L10n} l10n - Localization service.
    * @param {function} fileNameLookup - The function that is used to lookup
    *   the document fileName.
    */

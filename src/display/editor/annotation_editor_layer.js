@@ -18,7 +18,6 @@
 /** @typedef {import("../display_utils.js").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
-/** @typedef {import("../../../web/interfaces").IL10n} IL10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("../annotation_layer.js").AnnotationLayer} AnnotationLayer */
 /** @typedef {import("../draw_layer.js").DrawLayer} DrawLayer */
@@ -47,7 +46,7 @@ import { StampEditor } from "./stamp.js";
  * @property {boolean} enabled
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {number} pageIndex
- * @property {IL10n} l10n
+ * @property {L10n} l10n
  * @property {AnnotationLayer} [annotationLayer]
  * @property {HTMLDivElement} [textLayer]
  * @property {DrawLayer} drawLayer
