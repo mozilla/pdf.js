@@ -1,11 +1,11 @@
-name: Lint
+name: Prefs tests
 on: [push, pull_request]
 permissions:
   contents: read
 
 jobs:
-  lint:
-    name: Lint
+  test:
+    name: Test
     runs-on: ubuntu-latest
 
     strategy:
@@ -27,8 +27,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run lint
-        run: npx gulp lint
-
-      - name: Run lint-mozcentral
-        run: npx gulp lint-mozcentral
+      - name: Run prefs tests
+        run: npx gulp prefstest

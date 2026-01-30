@@ -111,7 +111,7 @@ describe("Comment", () => {
         ".annotationEditorLayer",
         "page-width",
         null,
-        { enableComment: true, localeProperties: "ar" }
+        { enableComment: true, locale: "ar" }
       );
     });
 
