@@ -15,6 +15,7 @@
 
 import {
   BasePDFStream,
+  BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 
@@ -58,9 +59,11 @@ class PDFWorkerStreamReader extends BasePDFStreamReader {
   }
 }
 
-/** @implements {IPDFStreamRangeReader} */
-class PDFWorkerStreamRangeReader {
+class PDFWorkerStreamRangeReader extends BasePDFStreamRangeReader {
+  _reader = null;
+
   constructor(stream, begin, end) {
+    super(stream, begin, end);
     const { msgHandler } = stream._source;
 
     const readableStream = msgHandler.sendWithStream("GetRangeReader", {

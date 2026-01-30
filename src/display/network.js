@@ -16,11 +16,13 @@
 import { assert, stringToBytes, warn } from "../shared/util.js";
 import {
   BasePDFStream,
+  BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 import {
   createHeaders,
   createResponseError,
+  ensureResponseOrigin,
   extractFilenameFromHeader,
   getResponseOrigin,
   validateRangeRequestCapabilities,
@@ -307,57 +309,59 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
   }
 }
 
-/** @implements {IPDFStreamRangeReader} */
-class PDFNetworkStreamRangeReader {
+class PDFNetworkStreamRangeReader extends BasePDFStreamRangeReader {
   onClosed = null;
 
+  _done = false;
+
+  _queuedChunk = null;
+
+  _requests = [];
+
+  _storedError = null;
+
   constructor(stream, begin, end) {
-    this._stream = stream;
+    super(stream, begin, end);
 
     this._requestXhr = stream._request({
       begin,
       end,
-      onHeadersReceived: this._onHeadersReceived.bind(this),
-      onDone: this._onDone.bind(this),
-      onError: this._onError.bind(this),
+      onHeadersReceived: this.#onHeadersReceived.bind(this),
+      onDone: this.#onDone.bind(this),
+      onError: this.#onError.bind(this),
       onProgress: null,
     });
-    this._requests = [];
-    this._queuedChunk = null;
-    this._done = false;
-    this._storedError = undefined;
   }
 
-  _onHeadersReceived() {
+  #onHeadersReceived() {
     const responseOrigin = getResponseOrigin(this._requestXhr?.responseURL);
-
-    if (responseOrigin !== this._stream._responseOrigin) {
-      this._storedError = new Error(
-        `Expected range response-origin "${responseOrigin}" to match "${this._stream._responseOrigin}".`
-      );
-      this._onError(0);
+    try {
+      ensureResponseOrigin(responseOrigin, this._stream._responseOrigin);
+    } catch (ex) {
+      this._storedError = ex;
+      this.#onError(0);
     }
   }
 
-  _onDone(chunk) {
+  #onDone(chunk) {
     if (this._requests.length > 0) {
-      const requestCapability = this._requests.shift();
-      requestCapability.resolve({ value: chunk, done: false });
+      const capability = this._requests.shift();
+      capability.resolve({ value: chunk, done: false });
     } else {
       this._queuedChunk = chunk;
     }
     this._done = true;
-    for (const requestCapability of this._requests) {
-      requestCapability.resolve({ value: undefined, done: true });
+    for (const capability of this._requests) {
+      capability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
     this.onClosed?.();
   }
 
-  _onError(status) {
+  #onError(status) {
     this._storedError ??= createResponseError(status, this._stream.url);
-    for (const requestCapability of this._requests) {
-      requestCapability.reject(this._storedError);
+    for (const capability of this._requests) {
+      capability.reject(this._storedError);
     }
     this._requests.length = 0;
     this._queuedChunk = null;
@@ -375,15 +379,15 @@ class PDFNetworkStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = Promise.withResolvers();
-    this._requests.push(requestCapability);
-    return requestCapability.promise;
+    const capability = Promise.withResolvers();
+    this._requests.push(capability);
+    return capability.promise;
   }
 
   cancel(reason) {
     this._done = true;
-    for (const requestCapability of this._requests) {
-      requestCapability.resolve({ value: undefined, done: true });
+    for (const capability of this._requests) {
+      capability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
 

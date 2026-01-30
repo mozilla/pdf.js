@@ -198,10 +198,20 @@ class BasePDFStreamReader {
 
 /**
  * Interface for a PDF binary data fragment reader.
- *
- * @interface
  */
-class IPDFStreamRangeReader {
+class BasePDFStreamRangeReader {
+  _stream = null;
+
+  constructor(stream, begin, end) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BasePDFStreamRangeReader
+    ) {
+      unreachable("Cannot initialize BasePDFStreamRangeReader.");
+    }
+    this._stream = stream;
+  }
+
   /**
    * Requests a chunk of the binary data. The method returns the promise, which
    * is resolved into object with properties "value" and "done". If the done
@@ -210,13 +220,17 @@ class IPDFStreamRangeReader {
    * set to true.
    * @returns {Promise}
    */
-  async read() {}
+  async read() {
+    unreachable("Abstract method `read` called");
+  }
 
   /**
    * Cancels all pending read requests and closes the stream.
    * @param {Object} reason
    */
-  cancel(reason) {}
+  cancel(reason) {
+    unreachable("Abstract method `cancel` called");
+  }
 }
 
-export { BasePDFStream, BasePDFStreamReader, IPDFStreamRangeReader };
+export { BasePDFStream, BasePDFStreamRangeReader, BasePDFStreamReader };

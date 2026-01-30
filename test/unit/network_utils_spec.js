@@ -18,7 +18,6 @@ import {
   createResponseError,
   extractFilenameFromHeader,
   validateRangeRequestCapabilities,
-  validateResponseStatus,
 } from "../../src/display/network_utils.js";
 import { ResponseException } from "../../src/shared/util.js";
 
@@ -389,20 +388,6 @@ describe("network_utils", function () {
       testCreateResponseError("https://foo.com/bar.pdf", 302, false);
 
       testCreateResponseError("https://foo.com/bar.pdf", 0, false);
-    });
-  });
-
-  describe("validateResponseStatus", function () {
-    it("accepts valid response statuses", function () {
-      expect(validateResponseStatus(200)).toEqual(true);
-      expect(validateResponseStatus(206)).toEqual(true);
-    });
-
-    it("rejects invalid response statuses", function () {
-      expect(validateResponseStatus(302)).toEqual(false);
-      expect(validateResponseStatus(404)).toEqual(false);
-      expect(validateResponseStatus(null)).toEqual(false);
-      expect(validateResponseStatus(undefined)).toEqual(false);
     });
   });
 });

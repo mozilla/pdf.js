@@ -17,6 +17,7 @@
 import { AbortException, assert, warn } from "../shared/util.js";
 import {
   BasePDFStream,
+  BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 import { createResponseError } from "./network_utils.js";
@@ -66,7 +67,7 @@ function getArrayBuffer(val) {
 
 class PDFNodeStream extends BasePDFStream {
   constructor(source) {
-    super(source, PDFNodeStreamReader, PDFNodeStreamFsRangeReader);
+    super(source, PDFNodeStreamReader, PDFNodeStreamRangeReader);
     this.url = parseUrlOrPath(source.url);
     assert(
       this.url.protocol === "file:",
@@ -142,12 +143,14 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
   }
 }
 
-class PDFNodeStreamFsRangeReader {
+class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
   _readCapability = Promise.withResolvers();
 
   _reader = null;
 
   constructor(stream, begin, end) {
+    super(stream, begin, end);
+
     const url = stream.url;
     const fs = process.getBuiltinModule("fs");
     try {

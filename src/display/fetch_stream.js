@@ -16,15 +16,16 @@
 import { AbortException, warn } from "../shared/util.js";
 import {
   BasePDFStream,
+  BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 import {
   createHeaders,
   createResponseError,
+  ensureResponseOrigin,
   extractFilenameFromHeader,
   getResponseOrigin,
   validateRangeRequestCapabilities,
-  validateResponseStatus,
 } from "./network_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
@@ -42,6 +43,12 @@ function fetchUrl(url, headers, withCredentials, abortController) {
     credentials: withCredentials ? "include" : "same-origin",
     redirect: "follow",
   });
+}
+
+function ensureResponseStatus(status, url) {
+  if (status !== 200 && status !== 206) {
+    throw createResponseError(status, url);
+  }
 }
 
 function getArrayBuffer(val) {
@@ -91,9 +98,7 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
       .then(response => {
         stream._responseOrigin = getResponseOrigin(response.url);
 
-        if (!validateResponseStatus(response.status)) {
-          throw createResponseError(response.status, url);
-        }
+        ensureResponseStatus(response.status, url);
         this._reader = response.body.getReader();
 
         const responseHeaders = response.headers;
@@ -144,35 +149,30 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
   }
 }
 
-/** @implements {IPDFStreamRangeReader} */
-class PDFFetchStreamRangeReader {
-  constructor(stream, begin, end) {
-    this._stream = stream;
-    this._reader = null;
-    const source = stream._source;
-    this._withCredentials = source.withCredentials || false;
-    this._readCapability = Promise.withResolvers();
+class PDFFetchStreamRangeReader extends BasePDFStreamRangeReader {
+  _abortController = new AbortController();
 
-    this._abortController = new AbortController();
+  _readCapability = Promise.withResolvers();
+
+  _reader = null;
+
+  constructor(stream, begin, end) {
+    super(stream, begin, end);
+    const { url, withCredentials } = stream._source;
+
     // Always create a copy of the headers.
     const headers = new Headers(stream.headers);
     headers.append("Range", `bytes=${begin}-${end - 1}`);
 
-    const url = source.url;
-    fetchUrl(url, headers, this._withCredentials, this._abortController)
+    fetchUrl(url, headers, withCredentials, this._abortController)
       .then(response => {
         const responseOrigin = getResponseOrigin(response.url);
 
-        if (responseOrigin !== stream._responseOrigin) {
-          throw new Error(
-            `Expected range response-origin "${responseOrigin}" to match "${stream._responseOrigin}".`
-          );
-        }
-        if (!validateResponseStatus(response.status)) {
-          throw createResponseError(response.status, url);
-        }
-        this._readCapability.resolve();
+        ensureResponseOrigin(responseOrigin, stream._responseOrigin);
+        ensureResponseStatus(response.status, url);
         this._reader = response.body.getReader();
+
+        this._readCapability.resolve();
       })
       .catch(this._readCapability.reject);
   }

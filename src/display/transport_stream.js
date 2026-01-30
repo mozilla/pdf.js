@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-// eslint-disable-next-line max-len
-/** @typedef {import("../interfaces").IPDFStreamRangeReader} IPDFStreamRangeReader */
-
 import {
   BasePDFStream,
+  BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 import { assert } from "../shared/util.js";
@@ -187,17 +185,20 @@ class PDFDataTransportStreamReader extends BasePDFStreamReader {
   }
 }
 
-/** @implements {IPDFStreamRangeReader} */
-class PDFDataTransportStreamRangeReader {
+class PDFDataTransportStreamRangeReader extends BasePDFStreamRangeReader {
   onDone = null;
 
+  _begin = -1;
+
+  _done = false;
+
+  _queuedChunk = null;
+
+  _requests = [];
+
   constructor(stream, begin, end) {
-    this._stream = stream;
+    super(stream, begin, end);
     this._begin = begin;
-    this._end = end;
-    this._queuedChunk = null;
-    this._requests = [];
-    this._done = false;
   }
 
   _enqueue(chunk) {
@@ -207,10 +208,11 @@ class PDFDataTransportStreamRangeReader {
     if (this._requests.length === 0) {
       this._queuedChunk = chunk;
     } else {
-      const requestsCapability = this._requests.shift();
-      requestsCapability.resolve({ value: chunk, done: false });
-      for (const requestCapability of this._requests) {
-        requestCapability.resolve({ value: undefined, done: true });
+      const firstCapability = this._requests.shift();
+      firstCapability.resolve({ value: chunk, done: false });
+
+      for (const capability of this._requests) {
+        capability.resolve({ value: undefined, done: true });
       }
       this._requests.length = 0;
     }
@@ -227,15 +229,15 @@ class PDFDataTransportStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const requestCapability = Promise.withResolvers();
-    this._requests.push(requestCapability);
-    return requestCapability.promise;
+    const capability = Promise.withResolvers();
+    this._requests.push(capability);
+    return capability.promise;
   }
 
   cancel(reason) {
     this._done = true;
-    for (const requestCapability of this._requests) {
-      requestCapability.resolve({ value: undefined, done: true });
+    for (const capability of this._requests) {
+      capability.resolve({ value: undefined, done: true });
     }
     this._requests.length = 0;
     this.onDone?.();
