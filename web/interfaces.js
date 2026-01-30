@@ -71,19 +71,4 @@ class IDownloadManager {
   download(data, url, filename) {}
 }
 
-/**
- * @interface
- */
-class IPDFPrintServiceFactory {
-  static initGlobals() {}
-
-  static get supportsPrinting() {
-    return false;
-  }
-
-  static createPrintService() {
-    throw new Error("Not implemented: createPrintService");
-  }
-}
-
-export { IDownloadManager, IPDFPrintServiceFactory, IRenderableView };
+export { IDownloadManager, IRenderableView };

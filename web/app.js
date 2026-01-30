@@ -2456,10 +2456,7 @@ const PDFViewerApplication = {
 };
 
 initCom(PDFViewerApplication);
-
-if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-  PDFPrintServiceFactory.initGlobals(PDFViewerApplication);
-}
+PDFPrintServiceFactory.initGlobals(PDFViewerApplication);
 
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   const HOSTED_VIEWER_ORIGINS = new Set([

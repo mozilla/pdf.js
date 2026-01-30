@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-// eslint-disable-next-line max-len
-/** @typedef {import("./interfaces.js").IPDFPrintServiceFactory} IPDFPrintServiceFactory */
-
 import {
   AnnotationMode,
   PixelsPerInch,
   RenderingCancelledException,
   shadow,
 } from "pdfjs-lib";
-import { getXfaHtmlForPrinting } from "./print_utils.js";
+import {
+  BasePrintServiceFactory,
+  getXfaHtmlForPrinting,
+} from "./print_utils.js";
 
 let activeService = null;
 let dialog = null;
@@ -371,10 +371,7 @@ function ensureOverlay() {
   return overlayPromise;
 }
 
-/**
- * @implements {IPDFPrintServiceFactory}
- */
-class PDFPrintServiceFactory {
+class PDFPrintServiceFactory extends BasePrintServiceFactory {
   static initGlobals(app) {
     viewerApp = app;
   }
