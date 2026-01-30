@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-// TODO: Remove the exception below once someone figures out how to fix it.
-// eslint-disable-next-line import/no-unresolved
 import { parse, registerWalkers, Root } from "postcss-values-parser";
 import { isString } from "stylelint/lib/utils/validateTypes.mjs";
 import stylelint from "stylelint";
