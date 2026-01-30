@@ -206,9 +206,6 @@ class PDFNodeStreamFsRangeReader {
   _reader = null;
 
   constructor(stream, begin, end) {
-    this.onProgress = null;
-    this._loaded = 0;
-
     const url = stream.url;
     const fs = process.getBuiltinModule("fs");
     try {
@@ -232,9 +229,6 @@ class PDFNodeStreamFsRangeReader {
     if (done) {
       return { value, done };
     }
-    this._loaded += value.length;
-    this.onProgress?.({ loaded: this._loaded });
-
     return { value: getArrayBuffer(value), done: false };
   }
 

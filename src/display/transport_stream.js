@@ -111,10 +111,7 @@ class PDFDataTransportStream {
   }
 
   _onProgress(evt) {
-    if (evt.total === undefined) {
-      // Reporting to first range reader, if it exists.
-      this._rangeReaders[0]?.onProgress?.({ loaded: evt.loaded });
-    } else {
+    if (evt.total !== undefined) {
       this._fullRequestReader?.onProgress?.({
         loaded: evt.loaded,
         total: evt.total,
@@ -265,8 +262,6 @@ class PDFDataTransportStreamRangeReader {
     this._queuedChunk = null;
     this._requests = [];
     this._done = false;
-
-    this.onProgress = null;
   }
 
   _enqueue(chunk) {

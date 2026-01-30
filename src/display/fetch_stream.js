@@ -205,7 +205,6 @@ class PDFFetchStreamRangeReader {
   constructor(stream, begin, end) {
     this._stream = stream;
     this._reader = null;
-    this._loaded = 0;
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
     this._readCapability = Promise.withResolvers();
@@ -235,8 +234,6 @@ class PDFFetchStreamRangeReader {
         this._reader = response.body.getReader();
       })
       .catch(this._readCapability.reject);
-
-    this.onProgress = null;
   }
 
   async read() {
@@ -245,9 +242,6 @@ class PDFFetchStreamRangeReader {
     if (done) {
       return { value, done };
     }
-    this._loaded += value.byteLength;
-    this.onProgress?.({ loaded: this._loaded });
-
     return { value: getArrayBuffer(value), done: false };
   }
 

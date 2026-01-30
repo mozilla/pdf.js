@@ -367,14 +367,12 @@ class PDFNetworkStreamRangeRequestReader {
       onHeadersReceived: this._onHeadersReceived.bind(this),
       onDone: this._onDone.bind(this),
       onError: this._onError.bind(this),
-      onProgress: this._onProgress.bind(this),
+      onProgress: null,
     });
     this._requests = [];
     this._queuedChunk = null;
     this._done = false;
     this._storedError = undefined;
-
-    this.onProgress = null;
   }
 
   _onHeadersReceived() {
@@ -410,10 +408,6 @@ class PDFNetworkStreamRangeRequestReader {
     }
     this._requests.length = 0;
     this._queuedChunk = null;
-  }
-
-  _onProgress(evt) {
-    this.onProgress?.({ loaded: evt.loaded });
   }
 
   async read() {

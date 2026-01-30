@@ -135,16 +135,6 @@ class IPDFStreamReader {
  * @interface
  */
 class IPDFStreamRangeReader {
-  constructor() {
-    /**
-     * Sets or gets the progress callback. The callback can be useful when the
-     * isStreamingSupported property of the object is defined as false.
-     * The callback is called with one parameter: an object with the loaded
-     * property.
-     */
-    this.onProgress = null;
-  }
-
   /**
    * Requests a chunk of the binary data. The method returns the promise, which
    * is resolved into object with properties "value" and "done". If the done
