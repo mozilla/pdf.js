@@ -18,7 +18,6 @@
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/annotation_storage").AnnotationStorage} AnnotationStorage */
-/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("./struct_tree_layer_builder.js").StructTreeLayerBuilder} StructTreeLayerBuilder */
 // eslint-disable-next-line max-len
@@ -43,7 +42,7 @@ import { PresentationModeState } from "./ui_utils.js";
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
  * @property {PDFLinkService} linkService
- * @property {IDownloadManager} [downloadManager]
+ * @property {BaseDownloadManager} [downloadManager]
  * @property {boolean} [enableComment]
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]

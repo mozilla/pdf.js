@@ -20,7 +20,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
 /** @typedef {import("./event_utils").EventBus} EventBus */
-/** @typedef {import("./interfaces").IDownloadManager} IDownloadManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_find_controller").PDFFindController} PDFFindController */
 // eslint-disable-next-line max-len
@@ -89,7 +88,7 @@ function isValidAnnotationEditorMode(mode) {
  * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {PDFLinkService} [linkService] - The navigation/linking service.
- * @property {IDownloadManager} [downloadManager] - The download manager
+ * @property {BaseDownloadManager} [downloadManager] - The download manager
  *   component.
  * @property {PDFFindController} [findController] - The find controller
  *   component.

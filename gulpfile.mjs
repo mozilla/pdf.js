@@ -231,7 +231,7 @@ function createWebpackAlias(defines) {
     libraryAlias["display-fetch_stream"] = "src/display/fetch_stream.js";
     libraryAlias["display-network"] = "src/display/network.js";
 
-    viewerAlias["web-download_manager"] = "web/download_manager.js";
+    viewerAlias["web-download_manager"] = "web/chromecom.js";
     viewerAlias["web-external_services"] = "web/chromecom.js";
     viewerAlias["web-null_l10n"] = "web/l10n.js";
     viewerAlias["web-preferences"] = "web/chromecom.js";

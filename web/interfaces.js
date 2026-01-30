@@ -44,31 +44,4 @@ class IRenderableView {
   async draw() {}
 }
 
-/**
- * @interface
- */
-class IDownloadManager {
-  /**
-   * @param {Uint8Array} data
-   * @param {string} filename
-   * @param {string} [contentType]
-   */
-  downloadData(data, filename, contentType) {}
-
-  /**
-   * @param {Uint8Array} data
-   * @param {string} filename
-   * @param {string | null} [dest]
-   * @returns {boolean} Indicating if the data was opened.
-   */
-  openOrDownloadData(data, filename, dest = null) {}
-
-  /**
-   * @param {Uint8Array} data
-   * @param {string} url
-   * @param {string} filename
-   */
-  download(data, url, filename) {}
-}
-
-export { IDownloadManager, IRenderableView };
+export { IRenderableView };

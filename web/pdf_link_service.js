@@ -423,7 +423,7 @@ class PDFLinkService {
       }
       // Support opening of PDF attachments in the Firefox PDF Viewer,
       // which uses a couple of non-standard hash parameters; refer to
-      // `DownloadManager.openOrDownloadData` in the firefoxcom.js file.
+      // `DownloadManager._getOpenDataUrl` in the firefoxcom.js file.
       if (!params.has("filename") || !params.has("filedest")) {
         return;
       }
