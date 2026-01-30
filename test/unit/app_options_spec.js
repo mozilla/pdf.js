@@ -14,6 +14,7 @@
  */
 
 import { AppOptions, OptionKind } from "../../web/app_options.js";
+import { BasePreferences } from "../../web/preferences.js";
 import { objectSize } from "../../src/shared/util.js";
 
 describe("AppOptions", function () {
@@ -37,5 +38,22 @@ describe("AppOptions", function () {
 
     const options = AppOptions.getAll(OptionKind.PREFERENCE);
     expect(objectSize(options)).toBeLessThanOrEqual(MAX_NUMBER_OF_PREFS);
+  });
+});
+
+describe("BasePreferences", function () {
+  it("checks that preference defaults are correct", async function () {
+    const TestPreferences = class extends BasePreferences {
+      async _readFromStorage(prefObj) {
+        return { prefs: Object.create(null) };
+      }
+    };
+
+    const testPrefs = new TestPreferences();
+    await testPrefs.initializedPromise;
+
+    expect(testPrefs.defaults).toEqual(
+      AppOptions.getAll(OptionKind.PREFERENCE, /* defaultOnly = */ true)
+    );
   });
 });

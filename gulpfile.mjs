@@ -284,7 +284,6 @@ function createWebpackConfig(
     disableVersionInfo = false,
     disableSourceMaps = false,
     disableLicenseHeader = false,
-    defaultPreferencesDir = null,
   } = {}
 ) {
   const versionInfo = !disableVersionInfo
@@ -295,9 +294,6 @@ function createWebpackConfig(
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: defines.TESTING ?? process.env.TESTING === "true",
-    DEFAULT_PREFERENCES: defaultPreferencesDir
-      ? getDefaultPreferences(defaultPreferencesDir)
-      : {},
     DEFAULT_FTL: defines.GENERIC ? getDefaultFtl() : "",
   };
   const licenseHeaderLibre = fs
@@ -546,36 +542,24 @@ function createWorkerBundle(defines) {
 }
 
 function createWebBundle(defines, options) {
-  const viewerFileConfig = createWebpackConfig(
-    defines,
-    {
-      filename: "viewer.mjs",
-      library: {
-        type: "module",
-      },
+  const viewerFileConfig = createWebpackConfig(defines, {
+    filename: "viewer.mjs",
+    library: {
+      type: "module",
     },
-    {
-      defaultPreferencesDir: options.defaultPreferencesDir,
-    }
-  );
+  });
   return gulp
     .src("./web/viewer.js", { encoding: false })
     .pipe(webpack2Stream(viewerFileConfig));
 }
 
 function createGVWebBundle(defines, options) {
-  const viewerFileConfig = createWebpackConfig(
-    defines,
-    {
-      filename: "viewer-geckoview.mjs",
-      library: {
-        type: "module",
-      },
+  const viewerFileConfig = createWebpackConfig(defines, {
+    filename: "viewer-geckoview.mjs",
+    library: {
+      type: "module",
     },
-    {
-      defaultPreferencesDir: options.defaultPreferencesDir,
-    }
-  );
+  });
   return gulp
     .src("./web/viewer-geckoview.js", { encoding: false })
     .pipe(webpack2Stream(viewerFileConfig));
@@ -1063,11 +1047,7 @@ function buildGeneric(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
-    createWebBundle(defines, {
-      defaultPreferencesDir: defines.SKIP_BABEL
-        ? "generic/"
-        : "generic-legacy/",
-    }).pipe(gulp.dest(dir + "web")),
+    createWebBundle(defines).pipe(gulp.dest(dir + "web")),
     gulp
       .src(COMMON_WEB_FILES, { base: "web/", encoding: false })
       .pipe(gulp.dest(dir + "web")),
@@ -1111,13 +1091,7 @@ gulp.task(
     "locale",
     function scriptingGeneric() {
       const defines = { ...DEFINES, GENERIC: true };
-      return ordered([
-        buildDefaultPreferences(defines, "generic/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    async function prefsGeneric() {
-      await parseDefaultPreferences("generic/");
+      return createTemporaryScriptingBundle(defines);
     },
     function createGeneric() {
       console.log();
@@ -1138,13 +1112,7 @@ gulp.task(
     "locale",
     function scriptingGenericLegacy() {
       const defines = { ...DEFINES, GENERIC: true, SKIP_BABEL: false };
-      return ordered([
-        buildDefaultPreferences(defines, "generic-legacy/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    async function prefsGenericLegacy() {
-      await parseDefaultPreferences("generic-legacy/");
+      return createTemporaryScriptingBundle(defines);
     },
     function createGenericLegacy() {
       console.log();
@@ -1258,13 +1226,7 @@ gulp.task(
     "locale",
     function scriptingMinified() {
       const defines = { ...DEFINES, MINIFIED: true, GENERIC: true };
-      return ordered([
-        buildDefaultPreferences(defines, "minified/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    async function prefsMinified() {
-      await parseDefaultPreferences("minified/");
+      return createTemporaryScriptingBundle(defines);
     },
     function createMinified() {
       console.log();
@@ -1288,13 +1250,7 @@ gulp.task(
         GENERIC: true,
         SKIP_BABEL: false,
       };
-      return ordered([
-        buildDefaultPreferences(defines, "minified-legacy/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    async function prefsMinifiedLegacy() {
-      await parseDefaultPreferences("minified-legacy/");
+      return createTemporaryScriptingBundle(defines);
     },
     function createMinifiedLegacy() {
       console.log();
@@ -1389,12 +1345,12 @@ gulp.task(
         createWorkerBundle(defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
         ),
-        createWebBundle(defines, { defaultPreferencesDir: "mozcentral/" }).pipe(
+        createWebBundle(defines).pipe(
           gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
         ),
-        createGVWebBundle(gvDefines, {
-          defaultPreferencesDir: "mozcentral/",
-        }).pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
+        createGVWebBundle(gvDefines).pipe(
+          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
+        ),
         gulp
           .src(MOZCENTRAL_WEB_FILES, { base: "web/", encoding: false })
           .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
@@ -1499,7 +1455,7 @@ gulp.task(
         createSandboxBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
-        createWebBundle(defines, { defaultPreferencesDir: "chromium/" }).pipe(
+        createWebBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
         ),
         gulp
@@ -1634,9 +1590,6 @@ function buildLib(defines, dir) {
     BUNDLE_VERSION: versionInfo.version,
     BUNDLE_BUILD: versionInfo.commit,
     TESTING: defines.TESTING ?? process.env.TESTING === "true",
-    DEFAULT_PREFERENCES: getDefaultPreferences(
-      defines.SKIP_BABEL ? "lib/" : "lib-legacy/"
-    ),
     DEFAULT_FTL: getDefaultFtl(),
   };
 
@@ -1667,13 +1620,7 @@ gulp.task(
     createBuildNumber,
     function scriptingLib() {
       const defines = { ...DEFINES, GENERIC: true, LIB: true };
-      return ordered([
-        buildDefaultPreferences(defines, "lib/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    async function prefsLib() {
-      await parseDefaultPreferences("lib/");
+      return createTemporaryScriptingBundle(defines);
     },
     function createLib() {
       const defines = { ...DEFINES, GENERIC: true, LIB: true };
@@ -1697,13 +1644,7 @@ gulp.task(
         LIB: true,
         SKIP_BABEL: false,
       };
-      return ordered([
-        buildDefaultPreferences(defines, "lib-legacy/"),
-        createTemporaryScriptingBundle(defines),
-      ]);
-    },
-    async function prefsLibLegacy() {
-      await parseDefaultPreferences("lib-legacy/");
+      return createTemporaryScriptingBundle(defines);
     },
     function createLibLegacy() {
       const defines = {
