@@ -15,7 +15,10 @@
 /* globals process */
 
 import { AbortException, assert, warn } from "../shared/util.js";
-import { BasePDFStream } from "../shared/base_pdf_stream.js";
+import {
+  BasePDFStream,
+  BasePDFStreamReader,
+} from "../shared/base_pdf_stream.js";
 import { createResponseError } from "./network_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
@@ -63,7 +66,7 @@ function getArrayBuffer(val) {
 
 class PDFNodeStream extends BasePDFStream {
   constructor(source) {
-    super(source, PDFNodeStreamFsFullReader, PDFNodeStreamFsRangeReader);
+    super(source, PDFNodeStreamReader, PDFNodeStreamFsRangeReader);
     this.url = parseUrlOrPath(source.url);
     assert(
       this.url.protocol === "file:",
@@ -72,26 +75,17 @@ class PDFNodeStream extends BasePDFStream {
   }
 }
 
-class PDFNodeStreamFsFullReader {
-  _headersCapability = Promise.withResolvers();
-
+class PDFNodeStreamReader extends BasePDFStreamReader {
   _reader = null;
 
   constructor(stream) {
-    this.onProgress = null;
-    const source = stream._source;
-    this._contentLength = source.length; // optional
-    this._loaded = 0;
-    this._filename = null;
+    super(stream);
+    const { disableRange, disableStream, length, rangeChunkSize } =
+      stream._source;
 
-    this._disableRange = source.disableRange || false;
-    this._rangeChunkSize = source.rangeChunkSize;
-    if (!this._rangeChunkSize && !this._disableRange) {
-      this._disableRange = true;
-    }
-
-    this._isStreamingSupported = !source.disableStream;
-    this._isRangeSupported = !source.disableRange;
+    this._contentLength = length;
+    this._isStreamingSupported = !disableStream;
+    this._isRangeSupported = !disableRange;
 
     const url = stream.url;
     const fs = process.getBuiltinModule("fs");
@@ -104,7 +98,7 @@ class PDFNodeStreamFsFullReader {
         this._reader = readableStream.getReader();
 
         const { size } = stat;
-        if (size <= 2 * this._rangeChunkSize) {
+        if (size <= 2 * rangeChunkSize) {
           // The file size is smaller than the size of two chunks, so it doesn't
           // make any sense to abort the request and retry with a range request.
           this._isRangeSupported = false;
@@ -126,26 +120,6 @@ class PDFNodeStreamFsFullReader {
         }
         this._headersCapability.reject(error);
       });
-  }
-
-  get headersReady() {
-    return this._headersCapability.promise;
-  }
-
-  get filename() {
-    return this._filename;
-  }
-
-  get contentLength() {
-    return this._contentLength;
-  }
-
-  get isRangeSupported() {
-    return this._isRangeSupported;
-  }
-
-  get isStreamingSupported() {
-    return this._isStreamingSupported;
   }
 
   async read() {

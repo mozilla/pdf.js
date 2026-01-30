@@ -94,18 +94,38 @@ class BasePDFStream {
 
 /**
  * Interface for a PDF binary data reader.
- *
- * @interface
  */
-class IPDFStreamReader {
-  constructor() {
-    /**
-     * Sets or gets the progress callback. The callback can be useful when the
-     * isStreamingSupported property of the object is defined as false.
-     * The callback is called with one parameter: an object with the loaded and
-     * total properties.
-     */
-    this.onProgress = null;
+class BasePDFStreamReader {
+  /**
+   * Sets or gets the progress callback. The callback can be useful when the
+   * isStreamingSupported property of the object is defined as false.
+   * The callback is called with one parameter: an object with the loaded and
+   * total properties.
+   */
+  onProgress = null;
+
+  _contentLength = 0;
+
+  _filename = null;
+
+  _headersCapability = Promise.withResolvers();
+
+  _isRangeSupported = false;
+
+  _isStreamingSupported = false;
+
+  _loaded = 0;
+
+  _stream = null;
+
+  constructor(stream) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      this.constructor === BasePDFStreamReader
+    ) {
+      unreachable("Cannot initialize BasePDFStreamReader.");
+    }
+    this._stream = stream;
   }
 
   /**
@@ -114,7 +134,7 @@ class IPDFStreamReader {
    * @type {Promise}
    */
   get headersReady() {
-    return Promise.resolve();
+    return this._headersCapability.promise;
   }
 
   /**
@@ -124,7 +144,7 @@ class IPDFStreamReader {
    *                     header is missing/invalid.
    */
   get filename() {
-    return null;
+    return this._filename;
   }
 
   /**
@@ -133,7 +153,7 @@ class IPDFStreamReader {
    * @type {number} The data length (or 0 if unknown).
    */
   get contentLength() {
-    return 0;
+    return this._contentLength;
   }
 
   /**
@@ -143,7 +163,7 @@ class IPDFStreamReader {
    * @type {boolean}
    */
   get isRangeSupported() {
-    return false;
+    return this._isRangeSupported;
   }
 
   /**
@@ -152,7 +172,7 @@ class IPDFStreamReader {
    * @type {boolean}
    */
   get isStreamingSupported() {
-    return false;
+    return this._isStreamingSupported;
   }
 
   /**
@@ -163,13 +183,17 @@ class IPDFStreamReader {
    * set to true.
    * @returns {Promise}
    */
-  async read() {}
+  async read() {
+    unreachable("Abstract method `read` called");
+  }
 
   /**
    * Cancels all pending read requests and closes the stream.
    * @param {Object} reason
    */
-  cancel(reason) {}
+  cancel(reason) {
+    unreachable("Abstract method `cancel` called");
+  }
 }
 
 /**
@@ -195,4 +219,4 @@ class IPDFStreamRangeReader {
   cancel(reason) {}
 }
 
-export { BasePDFStream, IPDFStreamRangeReader, IPDFStreamReader };
+export { BasePDFStream, BasePDFStreamReader, IPDFStreamRangeReader };

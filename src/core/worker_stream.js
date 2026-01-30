@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-import { BasePDFStream } from "../shared/base_pdf_stream.js";
+import {
+  BasePDFStream,
+  BasePDFStreamReader,
+} from "../shared/base_pdf_stream.js";
 
 class PDFWorkerStream extends BasePDFStream {
   constructor(source) {
@@ -21,42 +24,23 @@ class PDFWorkerStream extends BasePDFStream {
   }
 }
 
-/** @implements {IPDFStreamReader} */
-class PDFWorkerStreamReader {
-  constructor(stream) {
-    const { msgHandler } = stream._source;
-    this.onProgress = null;
+class PDFWorkerStreamReader extends BasePDFStreamReader {
+  _reader = null;
 
-    this._contentLength = null;
-    this._isRangeSupported = false;
-    this._isStreamingSupported = false;
+  constructor(stream) {
+    super(stream);
+    const { msgHandler } = stream._source;
 
     const readableStream = msgHandler.sendWithStream("GetReader");
     this._reader = readableStream.getReader();
 
-    this._headersReady = msgHandler
-      .sendWithPromise("ReaderHeadersReady")
-      .then(data => {
-        this._isStreamingSupported = data.isStreamingSupported;
-        this._isRangeSupported = data.isRangeSupported;
-        this._contentLength = data.contentLength;
-      });
-  }
+    msgHandler.sendWithPromise("ReaderHeadersReady").then(data => {
+      this._contentLength = data.contentLength;
+      this._isStreamingSupported = data.isStreamingSupported;
+      this._isRangeSupported = data.isRangeSupported;
 
-  get headersReady() {
-    return this._headersReady;
-  }
-
-  get contentLength() {
-    return this._contentLength;
-  }
-
-  get isStreamingSupported() {
-    return this._isStreamingSupported;
-  }
-
-  get isRangeSupported() {
-    return this._isRangeSupported;
+      this._headersCapability.resolve();
+    }, this._headersCapability.reject);
   }
 
   async read() {
