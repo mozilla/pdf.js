@@ -283,7 +283,6 @@ class ChunkedStreamManager {
 
   sendRequest(begin, end) {
     const rangeReader = this.pdfNetworkStream.getRangeReader(begin, end);
-    rangeReader.onProgress = this.onProgress.bind(this);
 
     let chunks = [];
     return new Promise((resolve, reject) => {
@@ -439,13 +438,6 @@ class ChunkedStreamManager {
       prevChunk = chunk;
     }
     return groupedChunks;
-  }
-
-  onProgress(args) {
-    this.msgHandler.send("DocProgress", {
-      loaded: this.stream.numChunksLoaded * this.chunkSize + args.loaded,
-      total: this.length,
-    });
   }
 
   onReceiveData(args) {
