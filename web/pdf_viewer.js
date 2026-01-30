@@ -52,7 +52,6 @@ import {
   MIN_SCALE,
   PresentationModeState,
   removeNullCharacters,
-  RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
   ScrollMode,
@@ -65,6 +64,7 @@ import {
 import { GenericL10n } from "web-null_l10n";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
+import { RenderingStates } from "./renderable_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 
 const DEFAULT_CACHE_SIZE = 10;

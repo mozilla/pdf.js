@@ -33,7 +33,6 @@ import {
   normalizeWheelEventDirection,
   parseQueryString,
   ProgressBar,
-  RenderingStates,
   ScrollMode,
   SidebarView,
   SpreadMode,
@@ -91,6 +90,7 @@ import { PdfTextExtractor } from "./pdf_text_extractor.js";
 import { PDFThumbnailViewer } from "web-pdf_thumbnail_viewer";
 import { PDFViewer } from "./pdf_viewer.js";
 import { Preferences } from "web-preferences";
+import { RenderingStates } from "./renderable_view.js";
 import { SecondaryToolbar } from "web-secondary_toolbar";
 import { SignatureManager } from "web-signature_manager";
 import { Toolbar } from "web-toolbar";

@@ -18,7 +18,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
 /** @typedef {import("./event_utils").EventBus} EventBus */
-/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 /** @typedef {import("./comment_manager.js").CommentManager} CommentManager */
@@ -36,7 +35,6 @@ import {
   calcRound,
   DEFAULT_SCALE,
   floorToDivide,
-  RenderingStates,
   TextLayerMode,
 } from "./ui_utils.js";
 import { AnnotationEditorLayerBuilder } from "./annotation_editor_layer_builder.js";
@@ -47,6 +45,7 @@ import { BasePDFPageView } from "./base_pdf_page_view.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
 import { GenericL10n } from "web-null_l10n";
 import { PDFPageDetailView } from "./pdf_page_detail_view.js";
+import { RenderingStates } from "./renderable_view.js";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
@@ -129,9 +128,6 @@ const LAYERS_ORDER = new Map([
   ["xfaLayer", 3],
 ]);
 
-/**
- * @implements {IRenderableView}
- */
 class PDFPageView extends BasePDFPageView {
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 

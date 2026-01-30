@@ -18,7 +18,6 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
 /** @typedef {import("./event_utils").EventBus} EventBus */
-/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
@@ -27,8 +26,8 @@ import {
   OutputScale,
   RenderingCancelledException,
 } from "pdfjs-lib";
+import { RenderableView, RenderingStates } from "./renderable_view.js";
 import { AppOptions } from "./app_options.js";
-import { RenderingStates } from "./ui_utils.js";
 
 const DRAW_UPSCALE_FACTOR = 2; // See comment in `PDFThumbnailView.draw` below.
 const MAX_NUM_SCALING_STEPS = 3;
@@ -78,10 +77,9 @@ class TempImageFactory {
   }
 }
 
-/**
- * @implements {IRenderableView}
- */
-class PDFThumbnailView {
+class PDFThumbnailView extends RenderableView {
+  #renderingState = RenderingStates.INITIAL;
+
   /**
    * @param {PDFThumbnailViewOptions} options
    */
@@ -98,6 +96,7 @@ class PDFThumbnailView {
     pageColors,
     enableSplitMerge = false,
   }) {
+    super();
     this.id = id;
     this.renderingId = `thumbnail${id}`;
     this.pageLabel = null;
@@ -115,9 +114,6 @@ class PDFThumbnailView {
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
 
-    this.renderTask = null;
-    this.renderingState = RenderingStates.INITIAL;
-    this.resume = null;
     this.placeholder = null;
 
     const imageContainer = (this.div = document.createElement("div"));
@@ -160,6 +156,14 @@ class PDFThumbnailView {
     this.scale = canvasWidth / width;
 
     this.image.style.height = `${canvasHeight}px`;
+  }
+
+  get renderingState() {
+    return this.#renderingState;
+  }
+
+  set renderingState(state) {
+    this.#renderingState = state;
   }
 
   setPdfPage(pdfPage) {

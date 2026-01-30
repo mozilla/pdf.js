@@ -23,12 +23,12 @@ import {
   binarySearchFirstItem,
   getVisibleElements,
   isValidRotation,
-  RenderingStates,
   watchScroll,
 } from "./ui_utils.js";
 import { MathClamp, noContextMenu, PagesMapper, stopEvent } from "pdfjs-lib";
 import { Menu } from "./menu.js";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
+import { RenderingStates } from "./renderable_view.js";
 
 const SCROLL_OPTIONS = {
   behavior: "instant",
