@@ -68,6 +68,7 @@ const GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 const DIST_DIR = BUILD_DIR + "dist/";
 const TYPES_DIR = BUILD_DIR + "types/";
 const TMP_DIR = BUILD_DIR + "tmp/";
+const PREFSTEST_DIR = BUILD_DIR + "prefstest/";
 const TYPESTEST_DIR = BUILD_DIR + "typestest/";
 const COMMON_WEB_FILES = [
   "web/images/*.{png,svg,gif}",
@@ -677,8 +678,7 @@ function getTempFile(prefix, suffix) {
 
 function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
   return new Promise((resolve, reject) => {
-    console.log();
-    console.log("### Running " + testsName + " tests");
+    console.log("\n### Running " + testsName + " tests");
 
     const PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
     let forceNoChrome = false;
@@ -763,8 +763,7 @@ function collectArgs(options, args) {
 }
 
 function makeRef(done, bot) {
-  console.log();
-  console.log("### Creating reference images");
+  console.log("\n### Creating reference images");
 
   let forceNoChrome = false;
   const args = ["test.mjs", "--masterMode"];
@@ -815,8 +814,7 @@ gulp.task("default", function (done) {
 });
 
 function createBuildNumber(done) {
-  console.log();
-  console.log("### Getting extension build number");
+  console.log("\n### Getting extension build number");
 
   exec(
     "git log --format=oneline " + config.baseVersion + "..",
@@ -861,8 +859,7 @@ function createBuildNumber(done) {
 }
 
 function buildDefaultPreferences(defines, dir) {
-  console.log();
-  console.log("### Building default preferences");
+  console.log(`\n### Building default preferences (${dir})`);
 
   const bundleDefines = {
     ...defines,
@@ -889,8 +886,7 @@ function buildDefaultPreferences(defines, dir) {
 }
 
 function getDefaultPreferences(dir) {
-  console.log();
-  console.log("### Parsing default preferences");
+  console.log(`\n### Parsing default preferences (${dir})`);
 
   const require = process
     .getBuiltinModule("module")
@@ -905,7 +901,7 @@ function getDefaultPreferences(dir) {
     /* defaultOnly = */ true
   );
   if (Object.keys(prefs).length === 0) {
-    throw new Error("No default preferences found.");
+    throw new Error(`No default preferences found in "${dir}".`);
   }
   return prefs;
 }
@@ -928,8 +924,7 @@ function getDefaultFtl() {
 gulp.task("locale", function () {
   const VIEWER_LOCALE_OUTPUT = "web/locale/";
 
-  console.log();
-  console.log("### Building localization files");
+  console.log("\n### Building localization files");
 
   fs.rmSync(VIEWER_LOCALE_OUTPUT, { recursive: true, force: true });
   fs.mkdirSync(VIEWER_LOCALE_OUTPUT, { recursive: true });
@@ -977,8 +972,7 @@ gulp.task("cmaps", async function () {
   const CMAP_INPUT = "external/cmaps";
   const VIEWER_CMAP_OUTPUT = "external/bcmaps";
 
-  console.log();
-  console.log("### Building cmaps");
+  console.log("\n### Building cmaps");
 
   // Testing a file that usually present.
   if (!checkFile(CMAP_INPUT + "/UniJIS-UCS2-H")) {
@@ -1086,8 +1080,7 @@ gulp.task(
       return createTemporaryScriptingBundle(defines);
     },
     function createGeneric() {
-      console.log();
-      console.log("### Creating generic viewer");
+      console.log("\n### Creating generic viewer");
       const defines = { ...DEFINES, GENERIC: true };
 
       return buildGeneric(defines, GENERIC_DIR);
@@ -1107,8 +1100,7 @@ gulp.task(
       return createTemporaryScriptingBundle(defines);
     },
     function createGenericLegacy() {
-      console.log();
-      console.log("### Creating generic (legacy) viewer");
+      console.log("\n### Creating generic (legacy) viewer");
       const defines = { ...DEFINES, GENERIC: true, SKIP_BABEL: false };
 
       return buildGeneric(defines, GENERIC_LEGACY_DIR);
@@ -1143,8 +1135,7 @@ function buildComponents(defines, dir) {
 gulp.task(
   "components",
   gulp.series(createBuildNumber, function createComponents() {
-    console.log();
-    console.log("### Creating generic components");
+    console.log("\n### Creating generic components");
     const defines = { ...DEFINES, COMPONENTS: true, GENERIC: true };
 
     return buildComponents(defines, COMPONENTS_DIR);
@@ -1154,8 +1145,7 @@ gulp.task(
 gulp.task(
   "components-legacy",
   gulp.series(createBuildNumber, function createComponentsLegacy() {
-    console.log();
-    console.log("### Creating generic (legacy) components");
+    console.log("\n### Creating generic (legacy) components");
     const defines = {
       ...DEFINES,
       COMPONENTS: true,
@@ -1170,8 +1160,7 @@ gulp.task(
 gulp.task(
   "image_decoders",
   gulp.series(createBuildNumber, function createImageDecoders() {
-    console.log();
-    console.log("### Creating image decoders");
+    console.log("\n### Creating image decoders");
     const defines = { ...DEFINES, GENERIC: true, IMAGE_DECODERS: true };
 
     return createImageDecodersBundle(defines).pipe(
@@ -1183,8 +1172,7 @@ gulp.task(
 gulp.task(
   "image_decoders-legacy",
   gulp.series(createBuildNumber, function createImageDecodersLegacy() {
-    console.log();
-    console.log("### Creating (legacy) image decoders");
+    console.log("\n### Creating (legacy) image decoders");
     const defines = {
       ...DEFINES,
       GENERIC: true,
@@ -1221,8 +1209,7 @@ gulp.task(
       return createTemporaryScriptingBundle(defines);
     },
     function createMinified() {
-      console.log();
-      console.log("### Creating minified viewer");
+      console.log("\n### Creating minified viewer");
       const defines = { ...DEFINES, MINIFIED: true, GENERIC: true };
 
       return buildMinified(defines, MINIFIED_DIR);
@@ -1245,8 +1232,7 @@ gulp.task(
       return createTemporaryScriptingBundle(defines);
     },
     function createMinifiedLegacy() {
-      console.log();
-      console.log("### Creating minified (legacy) viewer");
+      console.log("\n### Creating minified (legacy) viewer");
       const defines = {
         ...DEFINES,
         MINIFIED: true,
@@ -1260,6 +1246,8 @@ gulp.task(
 );
 
 function createDefaultPrefsFile() {
+  console.log("\n### Building mozilla-central preferences file");
+
   const defaultFileName = "PdfJsDefaultPrefs.js",
     overrideFileName = "PdfJsOverridePrefs.js";
   const licenseHeader = fs.readFileSync("./src/license_header.js").toString();
@@ -1299,8 +1287,7 @@ gulp.task(
       return buildDefaultPreferences(defines, "mozcentral/");
     },
     function createMozcentral() {
-      console.log();
-      console.log("### Building mozilla-central extension");
+      console.log("\n### Building mozilla-central extension");
       const defines = { ...DEFINES, MOZCENTRAL: true };
       const gvDefines = { ...defines, GECKOVIEW: true };
 
@@ -1392,6 +1379,8 @@ gulp.task(
 );
 
 function createChromiumPrefsSchema() {
+  console.log("\n### Building Chromium preferences file");
+
   const prefs = getDefaultPreferences("chromium/");
   const chromiumPrefs = buildPrefsSchema(prefs);
 
@@ -1414,8 +1403,7 @@ gulp.task(
       ]);
     },
     function createChromium() {
-      console.log();
-      console.log("### Building Chromium extension");
+      console.log("\n### Building Chromium extension");
       const defines = { ...DEFINES, CHROME: true, SKIP_BABEL: false };
 
       const CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
@@ -1502,8 +1490,7 @@ gulp.task(
 );
 
 gulp.task("jsdoc", function (done) {
-  console.log();
-  console.log("### Generating documentation (JSDoc)");
+  console.log("\n### Generating documentation (JSDoc)");
 
   fs.rmSync(JSDOC_BUILD_DIR, { recursive: true, force: true });
   fs.mkdirSync(JSDOC_BUILD_DIR, { recursive: true });
@@ -1814,6 +1801,49 @@ gulp.task(
 );
 
 gulp.task(
+  "prefstest",
+  gulp.series(
+    setTestEnv,
+    function genericPrefs() {
+      const defines = { ...DEFINES, GENERIC: true };
+      return buildDefaultPreferences(defines, "generic/");
+    },
+    function genericLegacyPrefs() {
+      const defines = { ...DEFINES, GENERIC: true, SKIP_BABEL: false };
+      return buildDefaultPreferences(defines, "generic-legacy/");
+    },
+    function chromiumPrefs() {
+      const defines = { ...DEFINES, CHROME: true, SKIP_BABEL: false };
+      return buildDefaultPreferences(defines, "chromium/");
+    },
+    function mozcentralPrefs() {
+      const defines = { ...DEFINES, MOZCENTRAL: true };
+      return buildDefaultPreferences(defines, "mozcentral/");
+    },
+    function checkPrefs() {
+      console.log("\n### Checking preference generation");
+
+      // Check that the preferences were correctly generated,
+      // for all the relevant builds.
+      for (const dir of [
+        "generic/",
+        "generic-legacy/",
+        "chromium/",
+        "mozcentral/",
+      ]) {
+        getDefaultPreferences(dir);
+      }
+
+      // Check that all the relevant files can be generated.
+      return ordered([
+        createChromiumPrefsSchema().pipe(gulp.dest(PREFSTEST_DIR)),
+        createDefaultPrefsFile().pipe(gulp.dest(PREFSTEST_DIR)),
+      ]);
+    }
+  )
+);
+
+gulp.task(
   "typestest",
   gulp.series(
     setTestEnv,
@@ -1846,8 +1876,7 @@ gulp.task(
 );
 
 function createBaseline(done) {
-  console.log();
-  console.log("### Creating baseline environment");
+  console.log("\n### Creating baseline environment");
 
   const baselineCommit = process.env.BASELINE;
   if (!baselineCommit) {
@@ -1908,8 +1937,7 @@ gulp.task(
 );
 
 gulp.task("lint", function (done) {
-  console.log();
-  console.log("### Linting JS/CSS/JSON/SVG/HTML files");
+  console.log("\n### Linting JS/CSS/JSON/SVG/HTML files");
 
   // Ensure that we lint the Firefox specific *.jsm files too.
   const esLintOptions = [
@@ -1989,8 +2017,7 @@ gulp.task("lint", function (done) {
 gulp.task(
   "lint-mozcentral",
   gulp.series("mozcentral", function runLintMozcentral(done) {
-    console.log();
-    console.log("### Checking mozilla-central files");
+    console.log("\n### Checking mozilla-central files");
 
     const styleLintOptions = [
       "../../node_modules/stylelint/bin/stylelint.mjs",
@@ -2034,8 +2061,7 @@ gulp.task(
       });
     },
     function createDevSandbox() {
-      console.log();
-      console.log("### Building development sandbox");
+      console.log("\n### Building development sandbox");
 
       const defines = { ...DEFINES, GENERIC: true, TESTING: true };
       const sandboxDir = BUILD_DIR + "dev-sandbox/";
@@ -2079,8 +2105,7 @@ gulp.task(
       );
     },
     async function createServer() {
-      console.log();
-      console.log("### Starting local server");
+      console.log("\n### Starting local server");
 
       let port = 8888;
       const i = process.argv.indexOf("--port");
@@ -2101,8 +2126,7 @@ gulp.task(
 );
 
 gulp.task("clean", function (done) {
-  console.log();
-  console.log("### Cleaning up project builds");
+  console.log("\n### Cleaning up project builds");
 
   fs.rmSync(BUILD_DIR, { recursive: true, force: true });
   done();
@@ -2111,8 +2135,7 @@ gulp.task("clean", function (done) {
 gulp.task("importl10n", async function () {
   const { downloadL10n } = await import("./external/importL10n/locales.mjs");
 
-  console.log();
-  console.log("### Importing translations from mozilla-central");
+  console.log("\n### Importing translations from mozilla-central");
 
   if (!fs.existsSync(L10N_DIR)) {
     fs.mkdirSync(L10N_DIR);
@@ -2121,8 +2144,7 @@ gulp.task("importl10n", async function () {
 });
 
 function ghPagesPrepare() {
-  console.log();
-  console.log("### Creating web site");
+  console.log("\n### Creating web site");
 
   fs.rmSync(GH_PAGES_DIR, { recursive: true, force: true });
 
@@ -2391,8 +2413,7 @@ gulp.task(
 gulp.task(
   "mozcentralbaseline",
   gulp.series(createBaseline, function createMozcentralBaseline(done) {
-    console.log();
-    console.log("### Creating mozcentral baseline environment");
+    console.log("\n### Creating mozcentral baseline environment");
 
     // Create a mozcentral build.
     fs.rmSync(BASELINE_DIR + BUILD_DIR, { recursive: true, force: true });
@@ -2429,8 +2450,7 @@ gulp.task(
     "mozcentral",
     "mozcentralbaseline",
     function createMozcentralDiff(done) {
-      console.log();
-      console.log("### Creating mozcentral diff");
+      console.log("\n### Creating mozcentral diff");
 
       // Create the diff between the current mozcentral build and the
       // baseline mozcentral build, which both exist at this point.
@@ -2472,14 +2492,12 @@ gulp.task(
 );
 
 gulp.task("externaltest", function (done) {
-  console.log();
-  console.log("### Running test-fixtures.js");
+  console.log("\n### Running test-fixtures.js");
   safeSpawnSync("node", ["external/builder/test-fixtures.mjs"], {
     stdio: "inherit",
   });
 
-  console.log();
-  console.log("### Running test-fixtures_babel.js");
+  console.log("\n### Running test-fixtures_babel.js");
   safeSpawnSync("node", ["external/builder/test-fixtures_babel.mjs"], {
     stdio: "inherit",
   });

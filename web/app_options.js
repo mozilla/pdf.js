@@ -582,7 +582,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   };
 }
 
-if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || LIB")) {
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
   // Ensure that the `defaultOptions` are correctly specified.
   for (const name in defaultOptions) {
     const { value, kind, type } = defaultOptions[name];
