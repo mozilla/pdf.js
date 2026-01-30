@@ -387,7 +387,6 @@ const PDFViewerApplication = {
         forcePageColors: x => x === "true",
         pageColorsBackground: x => x,
         pageColorsForeground: x => x,
-        localeProperties: x => ({ lang: x }),
         sidebarViewOnLoad: x => parseInt(x),
       });
     }

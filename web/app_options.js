@@ -37,19 +37,15 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
 
   // Limit canvas size to 5 mega-pixels on mobile.
   // Support: Android, iOS
-  (function () {
-    if (isIOS || isAndroid) {
-      compatParams.set("maxCanvasPixels", 5242880);
-    }
-  })();
+  if (isIOS || isAndroid) {
+    compatParams.set("maxCanvasPixels", 5242880);
+  }
 
   // Don't use system fonts on Android (issue 18210).
   // Support: Android
-  (function () {
-    if (isAndroid) {
-      compatParams.set("useSystemFonts", false);
-    }
-  })();
+  if (isAndroid) {
+    compatParams.set("useSystemFonts", false);
+  }
 }
 
 const OptionKind = {
