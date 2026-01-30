@@ -888,12 +888,15 @@ function buildDefaultPreferences(defines, dir) {
     .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + dir));
 }
 
-async function parseDefaultPreferences(dir) {
+function getDefaultPreferences(dir) {
   console.log();
   console.log("### Parsing default preferences");
 
-  // eslint-disable-next-line no-unsanitized/method
-  const { AppOptions, OptionKind } = await import(
+  const require = process
+    .getBuiltinModule("module")
+    .createRequire(import.meta.url);
+
+  const { AppOptions, OptionKind } = require(
     "./" + DEFAULT_PREFERENCES_DIR + dir + "app_options.mjs"
   );
 
@@ -904,18 +907,7 @@ async function parseDefaultPreferences(dir) {
   if (Object.keys(prefs).length === 0) {
     throw new Error("No default preferences found.");
   }
-
-  fs.writeFileSync(
-    DEFAULT_PREFERENCES_DIR + dir + "default_preferences.json",
-    JSON.stringify(prefs)
-  );
-}
-
-function getDefaultPreferences(dir) {
-  const str = fs
-    .readFileSync(DEFAULT_PREFERENCES_DIR + dir + "default_preferences.json")
-    .toString();
-  return JSON.parse(str);
+  return prefs;
 }
 
 function getDefaultFtl() {
@@ -1306,9 +1298,6 @@ gulp.task(
       const defines = { ...DEFINES, MOZCENTRAL: true };
       return buildDefaultPreferences(defines, "mozcentral/");
     },
-    async function prefsMozcentral() {
-      await parseDefaultPreferences("mozcentral/");
-    },
     function createMozcentral() {
       console.log();
       console.log("### Building mozilla-central extension");
@@ -1423,9 +1412,6 @@ gulp.task(
         buildDefaultPreferences(defines, "chromium/"),
         createTemporaryScriptingBundle(defines),
       ]);
-    },
-    async function prefsChromium() {
-      await parseDefaultPreferences("chromium/");
     },
     function createChromium() {
       console.log();
