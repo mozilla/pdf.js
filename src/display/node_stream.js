@@ -208,8 +208,6 @@ class PDFNodeStreamFsRangeReader {
   constructor(stream, begin, end) {
     this.onProgress = null;
     this._loaded = 0;
-    const source = stream.source;
-    this._isStreamingSupported = !source.disableStream;
 
     const url = stream.url;
     const fs = process.getBuiltinModule("fs");
@@ -226,10 +224,6 @@ class PDFNodeStreamFsRangeReader {
     } catch (error) {
       this._readCapability.reject(error);
     }
-  }
-
-  get isStreamingSupported() {
-    return this._isStreamingSupported;
   }
 
   async read() {

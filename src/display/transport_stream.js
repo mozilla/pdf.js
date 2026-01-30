@@ -287,10 +287,6 @@ class PDFDataTransportStreamRangeReader {
     this._stream._removeRangeReader(this);
   }
 
-  get isStreamingSupported() {
-    return false;
-  }
-
   async read() {
     if (this._queuedChunk) {
       const chunk = this._queuedChunk;

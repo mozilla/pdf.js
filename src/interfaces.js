@@ -146,14 +146,6 @@ class IPDFStreamRangeReader {
   }
 
   /**
-   * Gets ability of the stream to progressively load binary data.
-   * @type {boolean}
-   */
-  get isStreamingSupported() {
-    return false;
-  }
-
-  /**
    * Requests a chunk of the binary data. The method returns the promise, which
    * is resolved into object with properties "value" and "done". If the done
    * is set to true, then the stream has reached its end, otherwise the value

@@ -209,7 +209,6 @@ class PDFFetchStreamRangeReader {
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
     this._readCapability = Promise.withResolvers();
-    this._isStreamingSupported = !source.disableStream;
 
     this._abortController = new AbortController();
     // Always create a copy of the headers.
@@ -238,10 +237,6 @@ class PDFFetchStreamRangeReader {
       .catch(this._readCapability.reject);
 
     this.onProgress = null;
-  }
-
-  get isStreamingSupported() {
-    return this._isStreamingSupported;
   }
 
   async read() {

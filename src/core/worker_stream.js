@@ -114,10 +114,6 @@ class PDFWorkerStreamRangeReader {
     this._reader = readableStream.getReader();
   }
 
-  get isStreamingSupported() {
-    return false;
-  }
-
   async read() {
     const { value, done } = await this._reader.read();
     if (done) {

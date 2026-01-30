@@ -413,13 +413,7 @@ class PDFNetworkStreamRangeRequestReader {
   }
 
   _onProgress(evt) {
-    if (!this.isStreamingSupported) {
-      this.onProgress?.({ loaded: evt.loaded });
-    }
-  }
-
-  get isStreamingSupported() {
-    return false;
+    this.onProgress?.({ loaded: evt.loaded });
   }
 
   async read() {

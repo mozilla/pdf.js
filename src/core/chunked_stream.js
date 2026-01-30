@@ -283,19 +283,15 @@ class ChunkedStreamManager {
 
   sendRequest(begin, end) {
     const rangeReader = this.pdfNetworkStream.getRangeReader(begin, end);
-    if (!rangeReader.isStreamingSupported) {
-      rangeReader.onProgress = this.onProgress.bind(this);
-    }
+    rangeReader.onProgress = this.onProgress.bind(this);
 
-    let chunks = [],
-      loaded = 0;
+    let chunks = [];
     return new Promise((resolve, reject) => {
       const readChunk = ({ value, done }) => {
         try {
           if (done) {
-            const chunkData = arrayBuffersToBytes(chunks);
+            resolve(arrayBuffersToBytes(chunks));
             chunks = null;
-            resolve(chunkData);
             return;
           }
           if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -304,12 +300,6 @@ class ChunkedStreamManager {
               "readChunk (sendRequest) - expected an ArrayBuffer."
             );
           }
-          loaded += value.byteLength;
-
-          if (rangeReader.isStreamingSupported) {
-            this.onProgress({ loaded });
-          }
-
           chunks.push(value);
           rangeReader.read().then(readChunk, reject);
         } catch (e) {
