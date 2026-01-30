@@ -25,6 +25,7 @@ import {
   getVerbosityLevel,
   info,
   isNodeJS,
+  MathClamp,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -525,6 +526,8 @@ function getDocument(src = {}) {
  * @typedef {Object} OnProgressParameters
  * @property {number} loaded - Currently loaded number of bytes.
  * @property {number} total - Total number of bytes in the PDF file.
+ * @property {number} percent - Currently loaded percentage, as an integer value
+ *   in the [0, 100] range. If `total` is undefined, the percentage is `NaN`.
  */
 
 /**
@@ -2396,8 +2399,6 @@ class WorkerTransport {
 
   #fullReader = null;
 
-  #lastProgress = null;
-
   #methodPromises = new Map();
 
   #networkStream = null;
@@ -2490,6 +2491,14 @@ class WorkerTransport {
 
     this.#methodPromises.set(name, promise);
     return promise;
+  }
+
+  #onProgress({ loaded, total }) {
+    this.loadingTask.onProgress?.({
+      loaded,
+      total,
+      percent: MathClamp(Math.round((loaded / total) * 100), 0, 100),
+    });
   }
 
   get annotationStorage() {
@@ -2624,12 +2633,10 @@ class WorkerTransport {
         "GetReader - no `BasePDFStream` instance available."
       );
       this.#fullReader = this.#networkStream.getFullReader();
-      this.#fullReader.onProgress = evt => {
-        this.#lastProgress = {
-          loaded: evt.loaded,
-          total: evt.total,
-        };
-      };
+      // If stream or range turn out to be disabled, once `headersReady` is
+      // resolved, this is our only way to report loading progress.
+      this.#fullReader.onProgress = evt => this.#onProgress(evt);
+
       sink.onPull = () => {
         this.#fullReader
           .read()
@@ -2669,20 +2676,9 @@ class WorkerTransport {
       const { isStreamingSupported, isRangeSupported, contentLength } =
         this.#fullReader;
 
-      // If stream or range are disabled, it's our only way to report
-      // loading progress.
-      if (!isStreamingSupported || !isRangeSupported) {
-        if (this.#lastProgress) {
-          loadingTask.onProgress?.(this.#lastProgress);
-        }
-        this.#fullReader.onProgress = evt => {
-          loadingTask.onProgress?.({
-            loaded: evt.loaded,
-            total: evt.total,
-          });
-        };
+      if (isStreamingSupported && isRangeSupported) {
+        this.#fullReader.onProgress = null; // See comment in "GetReader" above.
       }
-
       return { isStreamingSupported, isRangeSupported, contentLength };
     });
 
@@ -2779,10 +2775,7 @@ class WorkerTransport {
     messageHandler.on("DataLoaded", data => {
       // For consistency: Ensure that progress is always reported when the
       // entire PDF file has been loaded, regardless of how it was fetched.
-      loadingTask.onProgress?.({
-        loaded: data.length,
-        total: data.length,
-      });
+      this.#onProgress({ loaded: data.length, total: data.length });
 
       this.downloadInfoCapability.resolve(data);
     });
@@ -2905,10 +2898,7 @@ class WorkerTransport {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
-      loadingTask.onProgress?.({
-        loaded: data.loaded,
-        total: data.total,
-      });
+      this.#onProgress(data);
     });
 
     messageHandler.on("FetchBinaryData", async data => {

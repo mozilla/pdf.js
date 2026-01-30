@@ -709,7 +709,7 @@ class ProgressBar {
   }
 
   set percent(val) {
-    this.#percent = MathClamp(val, 0, 100);
+    this.#percent = val;
 
     if (isNaN(val)) {
       this.#classList.add("indeterminate");
