@@ -20,6 +20,7 @@ import {
 import { exec, execSync, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
 import babel from "@babel/core";
+import { buildPrefsSchema } from "./external/chromium/prefs.mjs";
 import crypto from "crypto";
 import fs from "fs";
 import gulp from "gulp";
@@ -450,51 +451,6 @@ function webpack2Stream(webpackConfig) {
 
 function getVersionJSON() {
   return JSON.parse(fs.readFileSync(BUILD_DIR + "version.json").toString());
-}
-
-function checkChromePreferencesFile(chromePrefsPath, webPrefs) {
-  const chromePrefs = JSON.parse(fs.readFileSync(chromePrefsPath).toString());
-  const chromePrefsKeys = Object.keys(chromePrefs.properties).filter(key => {
-    const description = chromePrefs.properties[key].description;
-    // Deprecated keys are allowed in the managed preferences file.
-    // The code maintainer is responsible for adding migration logic to
-    // extensions/chromium/options/migration.js and web/chromecom.js .
-    return !description?.startsWith("DEPRECATED.");
-  });
-
-  let ret = true;
-  // Verify that every entry in webPrefs is also in preferences_schema.json.
-  for (const [key, value] of Object.entries(webPrefs)) {
-    if (!chromePrefsKeys.includes(key)) {
-      // Note: this would also reject keys that are present but marked as
-      // DEPRECATED. A key should not be marked as DEPRECATED if it is still
-      // listed in webPrefs.
-      ret = false;
-      console.log(
-        `Warning: ${chromePrefsPath} does not contain an entry for pref: ${key}`
-      );
-    } else if (chromePrefs.properties[key].default !== value) {
-      ret = false;
-      console.log(
-        `Warning: not the same values (for "${key}"): ` +
-          `${chromePrefs.properties[key].default} !== ${value}`
-      );
-    }
-  }
-
-  // Verify that preferences_schema.json does not contain entries that are not
-  // in webPrefs (app_options.js).
-  for (const key of chromePrefsKeys) {
-    if (!(key in webPrefs)) {
-      ret = false;
-      console.log(
-        `Warning: ${chromePrefsPath} contains an unrecognized pref: ${key}. ` +
-          `Remove it, or prepend "DEPRECATED. " and add migration logic to ` +
-          `extensions/chromium/options/migration.js and web/chromecom.js.`
-      );
-    }
-  }
-  return ret;
 }
 
 function createMainBundle(defines) {
@@ -1490,6 +1446,16 @@ gulp.task(
   )
 );
 
+function createChromiumPrefsSchema() {
+  const prefs = getDefaultPreferences("chromium/");
+  const chromiumPrefs = buildPrefsSchema(prefs);
+
+  return createStringSource(
+    "preferences_schema.json",
+    JSON.stringify(chromiumPrefs, null, 2)
+  );
+}
+
 gulp.task(
   "chromium",
   gulp.series(
@@ -1582,14 +1548,12 @@ gulp.task(
           .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
           .pipe(gulp.dest(CHROME_BUILD_DIR)),
         gulp
-          .src(
-            [
-              "extensions/chromium/**/*.{html,js,css,png}",
-              "extensions/chromium/preferences_schema.json",
-            ],
-            { base: "extensions/chromium/", encoding: false }
-          )
+          .src(["extensions/chromium/**/*.{html,js,css,png}"], {
+            base: "extensions/chromium/",
+            encoding: false,
+          })
           .pipe(gulp.dest(CHROME_BUILD_DIR)),
+        createChromiumPrefsSchema().pipe(gulp.dest(CHROME_BUILD_DIR)),
       ]);
     }
   )
@@ -2122,39 +2086,6 @@ gulp.task(
       done();
     });
   })
-);
-
-gulp.task(
-  "lint-chromium",
-  gulp.series(
-    function scriptingLintChromium() {
-      const defines = {
-        ...DEFINES,
-        CHROME: true,
-        SKIP_BABEL: false,
-        TESTING: false,
-      };
-      return buildDefaultPreferences(defines, "lint-chromium/");
-    },
-    async function prefsLintChromium() {
-      await parseDefaultPreferences("lint-chromium/");
-    },
-    function runLintChromium(done) {
-      console.log();
-      console.log("### Checking supplemental Chromium files");
-
-      if (
-        !checkChromePreferencesFile(
-          "extensions/chromium/preferences_schema.json",
-          getDefaultPreferences("lint-chromium/")
-        )
-      ) {
-        done(new Error("chromium/preferences_schema is not in sync."));
-        return;
-      }
-      done();
-    }
-  )
 );
 
 gulp.task("dev-wasm", function () {
