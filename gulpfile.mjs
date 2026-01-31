@@ -21,6 +21,7 @@ import { exec, execSync, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
 import babel from "@babel/core";
 import crypto from "crypto";
+import { finished } from "stream/promises";
 import fs from "fs";
 import gulp from "gulp";
 import hljs from "highlight.js";
@@ -874,6 +875,28 @@ gulp.task("default", function (done) {
   done();
 });
 
+gulp.task("release-brotli", async function (done) {
+  const hashIndex = process.argv.indexOf("--hash");
+  if (hashIndex === -1 || hashIndex + 1 >= process.argv.length) {
+    throw new Error('Missing "--hash <commit-hash>" argument.');
+  }
+  console.log();
+  console.log("### Getting Brotli js file for release");
+
+  const OUTPUT_DIR = "./external/brotli/";
+  const hash = process.argv[hashIndex + 1];
+  const url = `https://raw.githubusercontent.com/google/brotli/${hash}/js/decode.js`;
+  const outputPath = OUTPUT_DIR + "decode.js";
+  const res = await fetch(url);
+  const fileStream = fs.createWriteStream(outputPath, { flags: "w" });
+  await finished(stream.Readable.fromWeb(res.body).pipe(fileStream));
+  fileStream.end();
+
+  console.log(`Brotli js file saved to: ${outputPath}`);
+
+  done();
+});
+
 function createBuildNumber(done) {
   console.log();
   console.log("### Getting extension build number");
@@ -1692,6 +1715,7 @@ function buildLib(defines, dir) {
     gulp.src("external/openjpeg/*.js", { base: "openjpeg/", encoding: false }),
     gulp.src("external/qcms/*.js", { base: "qcms/", encoding: false }),
     gulp.src("external/jbig2/*.js", { base: "jbig2/", encoding: false }),
+    gulp.src("external/brotli/*.js", { base: "brotli/", encoding: false }),
   ]);
 
   return buildLibHelper(bundleDefines, inputStream, dir);

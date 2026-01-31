@@ -31,6 +31,7 @@ export default [
       "**/docs/",
       "**/node_modules/",
       "external/bcmaps/",
+      "external/brotli/",
       "external/builder/fixtures/",
       "external/builder/fixtures_babel/",
       "external/openjpeg/",
