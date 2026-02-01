@@ -17,8 +17,8 @@ import { shadow, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
+import { JBig2CCITTFaxWasmImage } from "./jbig2_ccittFax_wasm.js";
 import { Jbig2Image } from "./jbig2.js";
-import { JBig2WasmImage } from "./jbig2_wasm.js";
 
 /**
  * For JBIG2's we use a library to decode these images and
@@ -45,7 +45,7 @@ class Jbig2Stream extends DecodeStream {
   }
 
   readBlock() {
-    this.decodeImage();
+    this.decodeImageFallback();
   }
 
   get isAsyncDecoder() {
@@ -56,7 +56,7 @@ class Jbig2Stream extends DecodeStream {
     return true;
   }
 
-  async decodeImage(bytes, _decoderOptions) {
+  async decodeImage(bytes, length, _decoderOptions) {
     if (this.eof) {
       return this.buffer;
     }
@@ -69,7 +69,7 @@ class Jbig2Stream extends DecodeStream {
           globals = globalsStream.getBytes();
         }
       }
-      this.buffer = await JBig2WasmImage.decode(
+      this.buffer = await JBig2CCITTFaxWasmImage.decode(
         bytes,
         this.dict.get("Width"),
         this.dict.get("Height"),
@@ -77,7 +77,7 @@ class Jbig2Stream extends DecodeStream {
       );
     } catch {
       warn("Jbig2Stream: Falling back to JS JBIG2 decoder.");
-      return this.decodeImageFallback(bytes);
+      return this.decodeImageFallback(bytes, length);
     }
     this.bufferLength = this.buffer.length;
     this.eof = true;
@@ -85,7 +85,7 @@ class Jbig2Stream extends DecodeStream {
     return this.buffer;
   }
 
-  async decodeImageFallback(bytes) {
+  decodeImageFallback(bytes, _length) {
     if (this.eof) {
       return this.buffer;
     }
