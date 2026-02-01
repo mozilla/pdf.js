@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { AbortException, warn } from "../shared/util.js";
+import { AbortException, assert, warn } from "../shared/util.js";
 import {
   BasePDFStream,
   BasePDFStreamRangeReader,
@@ -69,8 +69,11 @@ class PDFFetchStream extends BasePDFStream {
     super(source, PDFFetchStreamReader, PDFFetchStreamRangeReader);
     const { httpHeaders, url } = source;
 
-    this.isHttp = /https?:/.test(url.protocol);
-    this.headers = createHeaders(this.isHttp, httpHeaders);
+    assert(
+      /https?:/.test(url.protocol),
+      "PDFFetchStream only supports http(s):// URLs."
+    );
+    this.headers = createHeaders(/* isHttp = */ true, httpHeaders);
   }
 }
 
@@ -108,7 +111,7 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
         const { allowRangeRequests, suggestedLength } =
           validateRangeRequestCapabilities({
             responseHeaders,
-            isHttp: stream.isHttp,
+            isHttp: true,
             rangeChunkSize,
             disableRange,
           });
