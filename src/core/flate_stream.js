@@ -163,57 +163,26 @@ class FlateStream extends DecodeStream {
   }
 
   async asyncGetBytes() {
-    this.stream.reset();
-    const bytes = this.stream.isAsync
-      ? await this.stream.asyncGetBytes()
-      : this.stream.getBytes();
-
-    try {
-      const { readable, writable } = new DecompressionStream("deflate");
-      const writer = writable.getWriter();
-      await writer.ready;
-
-      // We can't await writer.write() because it'll block until the reader
-      // starts which happens few lines below.
-      writer
-        .write(bytes)
-        .then(async () => {
-          await writer.ready;
-          await writer.close();
-        })
-        .catch(() => {});
-
-      const chunks = [];
-      let totalLength = 0;
-
-      for await (const chunk of readable) {
-        chunks.push(chunk);
-        totalLength += chunk.byteLength;
-      }
-      const data = new Uint8Array(totalLength);
-      let offset = 0;
-      for (const chunk of chunks) {
-        data.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-
-      return data;
-    } catch {
-      // DecompressionStream failed (for example because there are some extra
-      // bytes after the end of the compressed data), so we fallback to our
-      // decoder.
-      // We already get the bytes from the underlying stream, so we just reuse
-      // them to avoid get them again.
-      this.#isAsync = false;
-      this.stream = new Stream(
-        bytes,
-        2 /* = header size (see ctor) */,
-        bytes.length,
-        this.stream.dict
-      );
-      this.reset();
-      return null;
+    const { decompressed, compressed } =
+      await this.asyncGetBytesFromDecompressionStream("deflate");
+    if (decompressed) {
+      return decompressed;
     }
+    // DecompressionStream failed (for example because there are some extra
+    // bytes after the end of the compressed data), so we fallback to our
+    // decoder.
+    // We already get the bytes from the underlying stream, so we just reuse
+    // them to avoid get them again.
+
+    this.#isAsync = false;
+    this.stream = new Stream(
+      compressed,
+      2 /* = header size (see ctor) */,
+      compressed.length,
+      this.stream.dict
+    );
+    this.reset();
+    return null;
   }
 
   get isAsync() {

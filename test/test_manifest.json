@@ -13929,5 +13929,12 @@
     "md5": "e515a9abb11ab74332e57e371bfae61e",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "Brotli-Prototype-FileA",
+    "file": "pdfs/Brotli-Prototype-FileA.pdf",
+    "md5": "9113370932798776ba91c807ce95082e",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
