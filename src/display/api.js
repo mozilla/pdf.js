@@ -25,6 +25,7 @@ import {
   getVerbosityLevel,
   info,
   isNodeJS,
+  MathClamp,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -440,6 +441,7 @@ function getDocument(src = {}) {
     ownerDocument,
     pdfBug,
     styleElement,
+    enableHWA,
     loadingParams: {
       disableAutoFetch,
       enableXfa,
@@ -463,7 +465,8 @@ function getDocument(src = {}) {
 
       let networkStream;
       if (rangeTransport) {
-        networkStream = new PDFDataTransportStream(rangeTransport, {
+        networkStream = new PDFDataTransportStream({
+          pdfDataRangeTransport: rangeTransport,
           disableRange,
           disableStream,
         });
@@ -508,8 +511,7 @@ function getDocument(src = {}) {
           task,
           networkStream,
           transportParams,
-          transportFactory,
-          enableHWA
+          transportFactory
         );
         task._transport = transport;
         messageHandler.send("Ready", null);
@@ -524,6 +526,8 @@ function getDocument(src = {}) {
  * @typedef {Object} OnProgressParameters
  * @property {number} loaded - Currently loaded number of bytes.
  * @property {number} total - Total number of bytes in the PDF file.
+ * @property {number} percent - Currently loaded percentage, as an integer value
+ *   in the [0, 100] range. If `total` is undefined, the percentage is `NaN`.
  */
 
 /**
@@ -2391,7 +2395,13 @@ class PDFWorker {
  * @ignore
  */
 class WorkerTransport {
+  downloadInfoCapability = Promise.withResolvers();
+
+  #fullReader = null;
+
   #methodPromises = new Map();
+
+  #networkStream = null;
 
   #pageCache = new Map();
 
@@ -2403,21 +2413,17 @@ class WorkerTransport {
 
   #pagesMapper = PagesMapper.instance;
 
-  constructor(
-    messageHandler,
-    loadingTask,
-    networkStream,
-    params,
-    factory,
-    enableHWA
-  ) {
+  constructor(messageHandler, loadingTask, networkStream, params, factory) {
     this.messageHandler = messageHandler;
     this.loadingTask = loadingTask;
+    this.#networkStream = networkStream;
+
     this.commonObjs = new PDFObjects();
     this.fontLoader = new FontLoader({
       ownerDocument: params.ownerDocument,
       styleElement: params.styleElement,
     });
+    this.enableHWA = params.enableHWA;
     this.loadingParams = params.loadingParams;
     this._params = params;
 
@@ -2429,12 +2435,6 @@ class WorkerTransport {
 
     this.destroyed = false;
     this.destroyCapability = null;
-
-    this._networkStream = networkStream;
-    this._fullReader = null;
-    this._lastProgress = null;
-    this.downloadInfoCapability = Promise.withResolvers();
-    this.enableHWA = enableHWA;
 
     this.setupMessageHandler();
 
@@ -2491,6 +2491,14 @@ class WorkerTransport {
 
     this.#methodPromises.set(name, promise);
     return promise;
+  }
+
+  #onProgress({ loaded, total }) {
+    this.loadingTask.onProgress?.({
+      loaded,
+      total,
+      percent: MathClamp(Math.round((loaded / total) * 100), 0, 100),
+    });
   }
 
   get annotationStorage() {
@@ -2604,7 +2612,7 @@ class WorkerTransport {
       this.filterFactory.destroy();
       TextLayer.cleanup();
 
-      this._networkStream?.cancelAllRequests(
+      this.#networkStream?.cancelAllRequests(
         new AbortException("Worker was terminated.")
       );
 
@@ -2621,18 +2629,16 @@ class WorkerTransport {
 
     messageHandler.on("GetReader", (data, sink) => {
       assert(
-        this._networkStream,
-        "GetReader - no `IPDFStream` instance available."
+        this.#networkStream,
+        "GetReader - no `BasePDFStream` instance available."
       );
-      this._fullReader = this._networkStream.getFullReader();
-      this._fullReader.onProgress = evt => {
-        this._lastProgress = {
-          loaded: evt.loaded,
-          total: evt.total,
-        };
-      };
+      this.#fullReader = this.#networkStream.getFullReader();
+      // If stream or range turn out to be disabled, once `headersReady` is
+      // resolved, this is our only way to report loading progress.
+      this.#fullReader.onProgress = evt => this.#onProgress(evt);
+
       sink.onPull = () => {
-        this._fullReader
+        this.#fullReader
           .read()
           .then(function ({ value, done }) {
             if (done) {
@@ -2653,7 +2659,7 @@ class WorkerTransport {
       };
 
       sink.onCancel = reason => {
-        this._fullReader.cancel(reason);
+        this.#fullReader.cancel(reason);
 
         sink.ready.catch(readyReason => {
           if (this.destroyed) {
@@ -2665,40 +2671,29 @@ class WorkerTransport {
     });
 
     messageHandler.on("ReaderHeadersReady", async data => {
-      await this._fullReader.headersReady;
+      await this.#fullReader.headersReady;
 
       const { isStreamingSupported, isRangeSupported, contentLength } =
-        this._fullReader;
+        this.#fullReader;
 
-      // If stream or range are disabled, it's our only way to report
-      // loading progress.
-      if (!isStreamingSupported || !isRangeSupported) {
-        if (this._lastProgress) {
-          loadingTask.onProgress?.(this._lastProgress);
-        }
-        this._fullReader.onProgress = evt => {
-          loadingTask.onProgress?.({
-            loaded: evt.loaded,
-            total: evt.total,
-          });
-        };
+      if (isStreamingSupported && isRangeSupported) {
+        this.#fullReader.onProgress = null; // See comment in "GetReader" above.
       }
-
       return { isStreamingSupported, isRangeSupported, contentLength };
     });
 
     messageHandler.on("GetRangeReader", (data, sink) => {
       assert(
-        this._networkStream,
-        "GetRangeReader - no `IPDFStream` instance available."
+        this.#networkStream,
+        "GetRangeReader - no `BasePDFStream` instance available."
       );
-      const rangeReader = this._networkStream.getRangeReader(
+      const rangeReader = this.#networkStream.getRangeReader(
         data.begin,
         data.end
       );
 
       // When streaming is enabled, it's possible that the data requested here
-      // has already been fetched via the `_fullRequestReader` implementation.
+      // has already been fetched via the `#fullReader` implementation.
       // However, given that the PDF data is loaded asynchronously on the
       // main-thread and then sent via `postMessage` to the worker-thread,
       // it may not have been available during parsing (hence the attempt to
@@ -2706,7 +2701,7 @@ class WorkerTransport {
       //
       // To avoid wasting time and resources here, we'll thus *not* dispatch
       // range requests if the data was already loaded but has not been sent to
-      // the worker-thread yet (which will happen via the `_fullRequestReader`).
+      // the worker-thread yet (which will happen via the `#fullReader`).
       if (!rangeReader) {
         sink.close();
         return;
@@ -2780,10 +2775,7 @@ class WorkerTransport {
     messageHandler.on("DataLoaded", data => {
       // For consistency: Ensure that progress is always reported when the
       // entire PDF file has been loaded, regardless of how it was fetched.
-      loadingTask.onProgress?.({
-        loaded: data.length,
-        total: data.length,
-      });
+      this.#onProgress({ loaded: data.length, total: data.length });
 
       this.downloadInfoCapability.resolve(data);
     });
@@ -2906,10 +2898,7 @@ class WorkerTransport {
       if (this.destroyed) {
         return; // Ignore any pending requests if the worker was terminated.
       }
-      loadingTask.onProgress?.({
-        loaded: data.loaded,
-        total: data.total,
-      });
+      this.#onProgress(data);
     });
 
     messageHandler.on("FetchBinaryData", async data => {
@@ -2950,7 +2939,7 @@ class WorkerTransport {
           isPureXfa: !!this._htmlForXfa,
           numPages: this._numPages,
           annotationStorage: map,
-          filename: this._fullReader?.filename ?? null,
+          filename: this.#fullReader?.filename ?? null,
         },
         transfer
       )
@@ -3118,8 +3107,8 @@ class WorkerTransport {
       .then(results => ({
         info: results[0],
         metadata: results[1] ? new Metadata(results[1]) : null,
-        contentDispositionFilename: this._fullReader?.filename ?? null,
-        contentLength: this._fullReader?.contentLength ?? null,
+        contentDispositionFilename: this.#fullReader?.filename ?? null,
+        contentLength: this.#fullReader?.contentLength ?? null,
         hasStructTree: results[2],
       }));
     this.#methodPromises.set(name, promise);

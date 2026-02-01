@@ -160,14 +160,18 @@ describe("api", function () {
         progressReportedCapability.resolve(progressData);
       };
 
-      const data = await Promise.all([
-        progressReportedCapability.promise,
+      const [pdfDoc, progress] = await Promise.all([
         loadingTask.promise,
+        progressReportedCapability.promise,
       ]);
 
-      expect(data[0].loaded / data[0].total >= 0).toEqual(true);
-      expect(data[1] instanceof PDFDocumentProxy).toEqual(true);
-      expect(loadingTask).toEqual(data[1].loadingTask);
+      expect(pdfDoc instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDoc.loadingTask).toBe(loadingTask);
+
+      expect(progress.loaded).toBeGreaterThanOrEqual(0);
+      expect(progress.total).toEqual(basicApiFileLength);
+      expect(progress.percent).toBeGreaterThanOrEqual(0);
+      expect(progress.percent).toBeLessThanOrEqual(100);
 
       await loadingTask.destroy();
     });
@@ -218,12 +222,17 @@ describe("api", function () {
         progressReportedCapability.resolve(data);
       };
 
-      const data = await Promise.all([
+      const [pdfDoc, progress] = await Promise.all([
         loadingTask.promise,
         progressReportedCapability.promise,
       ]);
-      expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
-      expect(data[1].loaded / data[1].total).toEqual(1);
+
+      expect(pdfDoc instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDoc.loadingTask).toBe(loadingTask);
+
+      expect(progress.loaded).toEqual(basicApiFileLength);
+      expect(progress.total).toEqual(basicApiFileLength);
+      expect(progress.percent).toEqual(100);
 
       // Check that the TypedArray was transferred.
       expect(typedArrayPdf.length).toEqual(0);

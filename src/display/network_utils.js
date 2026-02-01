@@ -107,15 +107,19 @@ function createResponseError(status, url) {
   );
 }
 
-function validateResponseStatus(status) {
-  return status === 200 || status === 206;
+function ensureResponseOrigin(rangeOrigin, origin) {
+  if (rangeOrigin !== origin) {
+    throw new Error(
+      `Expected range response-origin "${rangeOrigin}" to match "${origin}".`
+    );
+  }
 }
 
 export {
   createHeaders,
   createResponseError,
+  ensureResponseOrigin,
   extractFilenameFromHeader,
   getResponseOrigin,
   validateRangeRequestCapabilities,
-  validateResponseStatus,
 };

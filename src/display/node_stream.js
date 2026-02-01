@@ -15,6 +15,11 @@
 /* globals process */
 
 import { AbortException, assert, warn } from "../shared/util.js";
+import {
+  BasePDFStream,
+  BasePDFStreamRangeReader,
+  BasePDFStreamReader,
+} from "../shared/base_pdf_stream.js";
 import { createResponseError } from "./network_utils.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
@@ -60,70 +65,28 @@ function getArrayBuffer(val) {
   return new Uint8Array(val).buffer;
 }
 
-class PDFNodeStream {
+class PDFNodeStream extends BasePDFStream {
   constructor(source) {
-    this.source = source;
+    super(source, PDFNodeStreamReader, PDFNodeStreamRangeReader);
     this.url = parseUrlOrPath(source.url);
     assert(
       this.url.protocol === "file:",
       "PDFNodeStream only supports file:// URLs."
     );
-
-    this._fullRequestReader = null;
-    this._rangeRequestReaders = [];
-  }
-
-  get _progressiveDataLength() {
-    return this._fullRequestReader?._loaded ?? 0;
-  }
-
-  getFullReader() {
-    assert(
-      !this._fullRequestReader,
-      "PDFNodeStream.getFullReader can only be called once."
-    );
-    this._fullRequestReader = new PDFNodeStreamFsFullReader(this);
-    return this._fullRequestReader;
-  }
-
-  getRangeReader(begin, end) {
-    if (end <= this._progressiveDataLength) {
-      return null;
-    }
-    const rangeReader = new PDFNodeStreamFsRangeReader(this, begin, end);
-    this._rangeRequestReaders.push(rangeReader);
-    return rangeReader;
-  }
-
-  cancelAllRequests(reason) {
-    this._fullRequestReader?.cancel(reason);
-
-    for (const reader of this._rangeRequestReaders.slice(0)) {
-      reader.cancel(reason);
-    }
   }
 }
 
-class PDFNodeStreamFsFullReader {
-  _headersCapability = Promise.withResolvers();
-
+class PDFNodeStreamReader extends BasePDFStreamReader {
   _reader = null;
 
   constructor(stream) {
-    this.onProgress = null;
-    const source = stream.source;
-    this._contentLength = source.length; // optional
-    this._loaded = 0;
-    this._filename = null;
+    super(stream);
+    const { disableRange, disableStream, length, rangeChunkSize } =
+      stream._source;
 
-    this._disableRange = source.disableRange || false;
-    this._rangeChunkSize = source.rangeChunkSize;
-    if (!this._rangeChunkSize && !this._disableRange) {
-      this._disableRange = true;
-    }
-
-    this._isStreamingSupported = !source.disableStream;
-    this._isRangeSupported = !source.disableRange;
+    this._contentLength = length;
+    this._isStreamingSupported = !disableStream;
+    this._isRangeSupported = !disableRange;
 
     const url = stream.url;
     const fs = process.getBuiltinModule("fs");
@@ -136,7 +99,7 @@ class PDFNodeStreamFsFullReader {
         this._reader = readableStream.getReader();
 
         const { size } = stat;
-        if (size <= 2 * this._rangeChunkSize) {
+        if (size <= 2 * rangeChunkSize) {
           // The file size is smaller than the size of two chunks, so it doesn't
           // make any sense to abort the request and retry with a range request.
           this._isRangeSupported = false;
@@ -160,26 +123,6 @@ class PDFNodeStreamFsFullReader {
       });
   }
 
-  get headersReady() {
-    return this._headersCapability.promise;
-  }
-
-  get filename() {
-    return this._filename;
-  }
-
-  get contentLength() {
-    return this._contentLength;
-  }
-
-  get isRangeSupported() {
-    return this._isRangeSupported;
-  }
-
-  get isStreamingSupported() {
-    return this._isStreamingSupported;
-  }
-
   async read() {
     await this._headersCapability.promise;
     const { value, done } = await this._reader.read();
@@ -200,16 +143,13 @@ class PDFNodeStreamFsFullReader {
   }
 }
 
-class PDFNodeStreamFsRangeReader {
+class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
   _readCapability = Promise.withResolvers();
 
   _reader = null;
 
   constructor(stream, begin, end) {
-    this.onProgress = null;
-    this._loaded = 0;
-    const source = stream.source;
-    this._isStreamingSupported = !source.disableStream;
+    super(stream, begin, end);
 
     const url = stream.url;
     const fs = process.getBuiltinModule("fs");
@@ -228,19 +168,12 @@ class PDFNodeStreamFsRangeReader {
     }
   }
 
-  get isStreamingSupported() {
-    return this._isStreamingSupported;
-  }
-
   async read() {
     await this._readCapability.promise;
     const { value, done } = await this._reader.read();
     if (done) {
       return { value, done };
     }
-    this._loaded += value.length;
-    this.onProgress?.({ loaded: this._loaded });
-
     return { value: getArrayBuffer(value), done: false };
   }
 

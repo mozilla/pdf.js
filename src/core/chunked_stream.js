@@ -18,6 +18,12 @@ import { assert } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 class ChunkedStream extends Stream {
+  progressiveDataLength = 0;
+
+  _lastSuccessfulEnsureByteChunk = -1; // Single-entry cache
+
+  _loadedChunks = new Set();
+
   constructor(length, chunkSize, manager) {
     super(
       /* arrayBuffer = */ new Uint8Array(length),
@@ -27,11 +33,8 @@ class ChunkedStream extends Stream {
     );
 
     this.chunkSize = chunkSize;
-    this._loadedChunks = new Set();
     this.numChunks = Math.ceil(length / chunkSize);
     this.manager = manager;
-    this.progressiveDataLength = 0;
-    this.lastSuccessfulEnsureByteChunk = -1; // Single-entry cache
   }
 
   // If a particular stream does not implement one or more of these methods,
@@ -106,14 +109,14 @@ class ChunkedStream extends Stream {
     if (chunk > this.numChunks) {
       return;
     }
-    if (chunk === this.lastSuccessfulEnsureByteChunk) {
+    if (chunk === this._lastSuccessfulEnsureByteChunk) {
       return;
     }
 
     if (!this._loadedChunks.has(chunk)) {
       throw new MissingDataException(pos, pos + 1);
     }
-    this.lastSuccessfulEnsureByteChunk = chunk;
+    this._lastSuccessfulEnsureByteChunk = chunk;
   }
 
   ensureRange(begin, end) {
@@ -257,40 +260,37 @@ class ChunkedStream extends Stream {
 }
 
 class ChunkedStreamManager {
-  constructor(pdfNetworkStream, args) {
+  aborted = false;
+
+  currRequestId = 0;
+
+  _chunksNeededByRequest = new Map();
+
+  _loadedStreamCapability = Promise.withResolvers();
+
+  _promisesByRequest = new Map();
+
+  _requestsByChunk = new Map();
+
+  constructor(pdfStream, args) {
     this.length = args.length;
     this.chunkSize = args.rangeChunkSize;
     this.stream = new ChunkedStream(this.length, this.chunkSize, this);
-    this.pdfNetworkStream = pdfNetworkStream;
+    this.pdfStream = pdfStream;
     this.disableAutoFetch = args.disableAutoFetch;
     this.msgHandler = args.msgHandler;
-
-    this.currRequestId = 0;
-
-    this._chunksNeededByRequest = new Map();
-    this._requestsByChunk = new Map();
-    this._promisesByRequest = new Map();
-    this.progressiveDataLength = 0;
-    this.aborted = false;
-
-    this._loadedStreamCapability = Promise.withResolvers();
   }
 
   sendRequest(begin, end) {
-    const rangeReader = this.pdfNetworkStream.getRangeReader(begin, end);
-    if (!rangeReader.isStreamingSupported) {
-      rangeReader.onProgress = this.onProgress.bind(this);
-    }
+    const rangeReader = this.pdfStream.getRangeReader(begin, end);
 
-    let chunks = [],
-      loaded = 0;
+    let chunks = [];
     return new Promise((resolve, reject) => {
       const readChunk = ({ value, done }) => {
         try {
           if (done) {
-            const chunkData = arrayBuffersToBytes(chunks);
+            resolve(arrayBuffersToBytes(chunks));
             chunks = null;
-            resolve(chunkData);
             return;
           }
           if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -299,12 +299,6 @@ class ChunkedStreamManager {
               "readChunk (sendRequest) - expected an ArrayBuffer."
             );
           }
-          loaded += value.byteLength;
-
-          if (rangeReader.isStreamingSupported) {
-            this.onProgress({ loaded });
-          }
-
           chunks.push(value);
           rangeReader.read().then(readChunk, reject);
         } catch (e) {
@@ -446,34 +440,26 @@ class ChunkedStreamManager {
     return groupedChunks;
   }
 
-  onProgress(args) {
-    this.msgHandler.send("DocProgress", {
-      loaded: this.stream.numChunksLoaded * this.chunkSize + args.loaded,
-      total: this.length,
-    });
-  }
-
   onReceiveData(args) {
+    const { chunkSize, length, stream } = this;
+
     const chunk = args.chunk;
     const isProgressive = args.begin === undefined;
-    const begin = isProgressive ? this.progressiveDataLength : args.begin;
+    const begin = isProgressive ? stream.progressiveDataLength : args.begin;
     const end = begin + chunk.byteLength;
 
-    const beginChunk = Math.floor(begin / this.chunkSize);
+    const beginChunk = Math.floor(begin / chunkSize);
     const endChunk =
-      end < this.length
-        ? Math.floor(end / this.chunkSize)
-        : Math.ceil(end / this.chunkSize);
+      end < length ? Math.floor(end / chunkSize) : Math.ceil(end / chunkSize);
 
     if (isProgressive) {
-      this.stream.onReceiveProgressiveData(chunk);
-      this.progressiveDataLength = end;
+      stream.onReceiveProgressiveData(chunk);
     } else {
-      this.stream.onReceiveData(begin, chunk);
+      stream.onReceiveData(begin, chunk);
     }
 
-    if (this.stream.isDataLoaded) {
-      this._loadedStreamCapability.resolve(this.stream);
+    if (stream.isDataLoaded) {
+      this._loadedStreamCapability.resolve(stream);
     }
 
     const loadedRequests = [];
@@ -502,16 +488,16 @@ class ChunkedStreamManager {
     // unfetched chunk of the PDF file.
     if (!this.disableAutoFetch && this._requestsByChunk.size === 0) {
       let nextEmptyChunk;
-      if (this.stream.numChunksLoaded === 1) {
+      if (stream.numChunksLoaded === 1) {
         // This is a special optimization so that after fetching the first
         // chunk, rather than fetching the second chunk, we fetch the last
         // chunk.
-        const lastChunk = this.stream.numChunks - 1;
-        if (!this.stream.hasChunk(lastChunk)) {
+        const lastChunk = stream.numChunks - 1;
+        if (!stream.hasChunk(lastChunk)) {
           nextEmptyChunk = lastChunk;
         }
       } else {
-        nextEmptyChunk = this.stream.nextEmptyChunk(endChunk);
+        nextEmptyChunk = stream.nextEmptyChunk(endChunk);
       }
       if (Number.isInteger(nextEmptyChunk)) {
         this._requestChunks([nextEmptyChunk]);
@@ -525,8 +511,8 @@ class ChunkedStreamManager {
     }
 
     this.msgHandler.send("DocProgress", {
-      loaded: this.stream.numChunksLoaded * this.chunkSize,
-      total: this.length,
+      loaded: stream.numChunksLoaded * chunkSize,
+      total: length,
     });
   }
 
@@ -544,7 +530,7 @@ class ChunkedStreamManager {
 
   abort(reason) {
     this.aborted = true;
-    this.pdfNetworkStream?.cancelAllRequests(reason);
+    this.pdfStream?.cancelAllRequests(reason);
 
     for (const capability of this._promisesByRequest.values()) {
       capability.reject(reason);
