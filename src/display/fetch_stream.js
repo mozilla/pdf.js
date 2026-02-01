@@ -135,10 +135,7 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
       return { value, done };
     }
     this._loaded += value.byteLength;
-    this.onProgress?.({
-      loaded: this._loaded,
-      total: this._contentLength,
-    });
+    this._callOnProgress();
 
     return { value: getArrayBuffer(value), done: false };
   }

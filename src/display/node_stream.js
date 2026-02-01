@@ -129,11 +129,8 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
     if (done) {
       return { value, done };
     }
-    this._loaded += value.length;
-    this.onProgress?.({
-      loaded: this._loaded,
-      total: this._contentLength,
-    });
+    this._loaded += value.byteLength;
+    this._callOnProgress();
 
     return { value: getArrayBuffer(value), done: false };
   }
