@@ -25,7 +25,7 @@ function getUrlProp(val) {
     return null; // The 'url' is unused with `PDFDataRangeTransport`.
   }
   if (val instanceof URL) {
-    return val.href;
+    return val;
   }
   if (typeof val === "string") {
     if (
@@ -33,13 +33,18 @@ function getUrlProp(val) {
       PDFJSDev.test("GENERIC") &&
       isNodeJS
     ) {
-      return val; // Use the url as-is in Node.js environments.
+      if (/^[a-z][a-z0-9\-+.]+:/i.test(val)) {
+        return new URL(val);
+      }
+      // eslint-disable-next-line no-undef
+      const url = process.getBuiltinModule("url");
+      return new URL(url.pathToFileURL(val));
     }
 
     // The full path is required in the 'url' field.
     const url = URL.parse(val, window.location);
     if (url) {
-      return url.href;
+      return url;
     }
   }
   throw new Error(

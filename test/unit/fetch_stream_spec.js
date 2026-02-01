@@ -20,7 +20,7 @@ import { TestPdfsServer } from "./test_utils.js";
 
 describe("fetch_stream", function () {
   function getPdfUrl() {
-    return TestPdfsServer.resolveURL("tracemonkey.pdf").href;
+    return TestPdfsServer.resolveURL("tracemonkey.pdf");
   }
   const pdfLength = 1016315;
 

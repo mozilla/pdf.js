@@ -19,7 +19,7 @@ import { testCrossOriginRedirects } from "./common_pdfstream_tests.js";
 import { TestPdfsServer } from "./test_utils.js";
 
 describe("network", function () {
-  const pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location).href;
+  const pdf1 = new URL("../pdfs/tracemonkey.pdf", window.location);
   const pdf1Length = 1016315;
 
   it("read without stream and range", async function () {
@@ -124,9 +124,12 @@ describe("network", function () {
     }
 
     async function readRanges(mode) {
+      const pdfUrl = new URL(pdf1);
+      pdfUrl.searchParams.set("test-network-break-ranges", mode);
+
       const rangeSize = 32768;
       const stream = new PDFNetworkStream({
-        url: `${pdf1}?test-network-break-ranges=${mode}`,
+        url: pdfUrl,
         length: pdf1Length,
         rangeChunkSize: rangeSize,
         disableStream: true,

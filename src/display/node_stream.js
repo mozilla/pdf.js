@@ -28,16 +28,6 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   );
 }
 
-const urlRegex = /^[a-z][a-z0-9\-+.]+:/i;
-
-function parseUrlOrPath(sourceUrl) {
-  if (urlRegex.test(sourceUrl)) {
-    return new URL(sourceUrl);
-  }
-  const url = process.getBuiltinModule("url");
-  return new URL(url.pathToFileURL(sourceUrl));
-}
-
 function getReadableStream(readStream) {
   const { Readable } = process.getBuiltinModule("stream");
 
@@ -68,9 +58,10 @@ function getArrayBuffer(val) {
 class PDFNodeStream extends BasePDFStream {
   constructor(source) {
     super(source, PDFNodeStreamReader, PDFNodeStreamRangeReader);
-    this.url = parseUrlOrPath(source.url);
+    const { url } = source;
+
     assert(
-      this.url.protocol === "file:",
+      url.protocol === "file:",
       "PDFNodeStream only supports file:// URLs."
     );
   }
@@ -81,14 +72,13 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
 
   constructor(stream) {
     super(stream);
-    const { disableRange, disableStream, length, rangeChunkSize } =
+    const { disableRange, disableStream, length, rangeChunkSize, url } =
       stream._source;
 
     this._contentLength = length;
     this._isStreamingSupported = !disableStream;
     this._isRangeSupported = !disableRange;
 
-    const url = stream.url;
     const fs = process.getBuiltinModule("fs");
     fs.promises
       .lstat(url)
@@ -117,7 +107,7 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
       })
       .catch(error => {
         if (error.code === "ENOENT") {
-          error = createResponseError(/* status = */ 0, url.href);
+          error = createResponseError(/* status = */ 0, url);
         }
         this._headersCapability.reject(error);
       });
@@ -150,8 +140,8 @@ class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
 
   constructor(stream, begin, end) {
     super(stream, begin, end);
+    const { url } = stream._source;
 
-    const url = stream.url;
     const fs = process.getBuiltinModule("fs");
     try {
       const readStream = fs.createReadStream(url, {
