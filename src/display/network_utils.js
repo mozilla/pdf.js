@@ -101,9 +101,9 @@ function extractFilenameFromHeader(responseHeaders) {
 
 function createResponseError(status, url) {
   return new ResponseException(
-    `Unexpected server response (${status}) while retrieving PDF "${url}".`,
+    `Unexpected server response (${status}) while retrieving PDF "${url.href}".`,
     status,
-    /* missing = */ status === 404 || (status === 0 && url.startsWith("file:"))
+    /* missing = */ status === 404 || (status === 0 && url.protocol === "file:")
   );
 }
 

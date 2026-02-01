@@ -372,22 +372,22 @@ describe("network_utils", function () {
 
       expect(error instanceof ResponseException).toEqual(true);
       expect(error.message).toEqual(
-        `Unexpected server response (${status}) while retrieving PDF "${url}".`
+        `Unexpected server response (${status}) while retrieving PDF "${url.href}".`
       );
       expect(error.status).toEqual(status);
       expect(error.missing).toEqual(missing);
     }
 
     it("handles missing PDF file responses", function () {
-      testCreateResponseError("https://foo.com/bar.pdf", 404, true);
+      testCreateResponseError(new URL("https://foo.com/bar.pdf"), 404, true);
 
-      testCreateResponseError("file://foo.pdf", 0, true);
+      testCreateResponseError(new URL("file://foo.pdf"), 0, true);
     });
 
     it("handles unexpected responses", function () {
-      testCreateResponseError("https://foo.com/bar.pdf", 302, false);
+      testCreateResponseError(new URL("https://foo.com/bar.pdf"), 302, false);
 
-      testCreateResponseError("https://foo.com/bar.pdf", 0, false);
+      testCreateResponseError(new URL("https://foo.com/bar.pdf"), 0, false);
     });
   });
 });

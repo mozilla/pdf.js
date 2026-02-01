@@ -26,7 +26,7 @@ if (!isNodeJS) {
 describe("node_stream", function () {
   const url = process.getBuiltinModule("url");
   const cwdURL = url.pathToFileURL(process.cwd()) + "/";
-  const pdf = new URL("./test/pdfs/tracemonkey.pdf", cwdURL).href;
+  const pdf = new URL("./test/pdfs/tracemonkey.pdf", cwdURL);
   const pdfLength = 1016315;
 
   it("read filesystem pdf files", async function () {
@@ -119,7 +119,7 @@ describe("node_stream", function () {
   });
 
   it("read filesystem pdf files (smaller than two range requests)", async function () {
-    const smallPdf = new URL("./test/pdfs/empty.pdf", cwdURL).href;
+    const smallPdf = new URL("./test/pdfs/empty.pdf", cwdURL);
     const smallLength = 4920;
 
     const stream = new PDFNodeStream({

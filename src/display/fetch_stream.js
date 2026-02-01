@@ -67,8 +67,10 @@ class PDFFetchStream extends BasePDFStream {
 
   constructor(source) {
     super(source, PDFFetchStreamReader, PDFFetchStreamRangeReader);
-    this.isHttp = /^https?:/i.test(source.url);
-    this.headers = createHeaders(this.isHttp, source.httpHeaders);
+    const { httpHeaders, url } = source;
+
+    this.isHttp = /https?:/.test(url.protocol);
+    this.headers = createHeaders(this.isHttp, httpHeaders);
   }
 }
 

@@ -464,7 +464,7 @@ function isValidFetchUrl(url, baseUrl) {
   }
   const res = baseUrl ? URL.parse(url, baseUrl) : URL.parse(url);
   // The Fetch API only supports the http/https protocols, and not file/ftp.
-  return res?.protocol === "http:" || res?.protocol === "https:";
+  return /https?:/.test(res?.protocol ?? "");
 }
 
 /**
