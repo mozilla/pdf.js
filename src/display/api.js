@@ -639,8 +639,6 @@ class PDFDataRangeTransport {
 
   #progressiveReadListeners = [];
 
-  #progressListeners = [];
-
   #rangeListeners = [];
 
   /**
@@ -659,6 +657,18 @@ class PDFDataRangeTransport {
     this.initialData = initialData;
     this.progressiveDone = progressiveDone;
     this.contentDispositionFilename = contentDispositionFilename;
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      Object.defineProperty(this, "onDataProgress", {
+        value: () => {
+          deprecated(
+            "`PDFDataRangeTransport.prototype.onDataProgress` - method was " +
+              "removed, since loading progress is now reported automatically " +
+              "through the `PDFDataTransportStream` class (and related code)."
+          );
+        },
+      });
+    }
   }
 
   /**
@@ -666,13 +676,6 @@ class PDFDataRangeTransport {
    */
   addRangeListener(listener) {
     this.#rangeListeners.push(listener);
-  }
-
-  /**
-   * @param {function} listener
-   */
-  addProgressListener(listener) {
-    this.#progressListeners.push(listener);
   }
 
   /**
@@ -697,18 +700,6 @@ class PDFDataRangeTransport {
     for (const listener of this.#rangeListeners) {
       listener(begin, chunk);
     }
-  }
-
-  /**
-   * @param {number} loaded
-   * @param {number|undefined} total
-   */
-  onDataProgress(loaded, total) {
-    this.#capability.promise.then(() => {
-      for (const listener of this.#progressListeners) {
-        listener(loaded, total);
-      }
-    });
   }
 
   /**

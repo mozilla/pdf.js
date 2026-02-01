@@ -128,6 +128,10 @@ class BasePDFStreamReader {
     this._stream = stream;
   }
 
+  _callOnProgress() {
+    this.onProgress?.({ loaded: this._loaded, total: this._contentLength });
+  }
+
   /**
    * Gets a promise that is resolved when the headers and other metadata of
    * the PDF data stream are available.

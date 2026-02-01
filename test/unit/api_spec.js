@@ -5180,6 +5180,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
     it("should fetch document info and page using ranges", async function () {
       const initialDataLength = 4000;
       const subArrays = [];
+      let initialProgress = null;
       let fetches = 0;
 
       const data = await dataPromise;
@@ -5193,18 +5194,28 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           const chunk = new Uint8Array(data.subarray(begin, end));
           subArrays.push(chunk);
 
-          transport.onDataProgress(initialDataLength);
           transport.onDataRange(begin, chunk);
         });
       };
 
       const loadingTask = getDocument({ range: transport });
+      loadingTask.onProgress = evt => {
+        initialProgress = evt;
+        loadingTask.onProgress = null;
+      };
+
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(14);
 
       const pdfPage = await pdfDocument.getPage(10);
       expect(pdfPage.rotate).toEqual(0);
       expect(fetches).toBeGreaterThan(2);
+
+      expect(initialProgress).toEqual({
+        loaded: initialDataLength,
+        total: data.length,
+        percent: 0,
+      });
 
       // Check that the TypedArrays were transferred.
       for (const array of subArrays) {
@@ -5217,6 +5228,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
     it("should fetch document info and page using range and streaming", async function () {
       const initialDataLength = 4000;
       const subArrays = [];
+      let initialProgress = null;
       let fetches = 0;
 
       const data = await dataPromise;
@@ -5242,12 +5254,23 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       };
 
       const loadingTask = getDocument({ range: transport });
+      loadingTask.onProgress = evt => {
+        initialProgress = evt;
+        loadingTask.onProgress = null;
+      };
+
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(14);
 
       const pdfPage = await pdfDocument.getPage(10);
       expect(pdfPage.rotate).toEqual(0);
       expect(fetches).toEqual(1);
+
+      expect(initialProgress).toEqual({
+        loaded: initialDataLength,
+        total: data.length,
+        percent: 0,
+      });
 
       await new Promise(resolve => {
         waitSome(resolve);
@@ -5266,6 +5289,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         "using complete initialData",
       async function () {
         const subArrays = [];
+        let initialProgress = null;
         let fetches = 0;
 
         const data = await dataPromise;
@@ -5285,12 +5309,23 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
           disableRange: true,
           range: transport,
         });
+        loadingTask.onProgress = evt => {
+          initialProgress = evt;
+          loadingTask.onProgress = null;
+        };
+
         const pdfDocument = await loadingTask.promise;
         expect(pdfDocument.numPages).toEqual(14);
 
         const pdfPage = await pdfDocument.getPage(10);
         expect(pdfPage.rotate).toEqual(0);
         expect(fetches).toEqual(0);
+
+        expect(initialProgress).toEqual({
+          loaded: data.length,
+          total: data.length,
+          percent: 100,
+        });
 
         // Check that the TypedArrays were transferred.
         for (const array of subArrays) {

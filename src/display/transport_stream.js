@@ -53,12 +53,6 @@ class PDFDataTransportStream extends BasePDFStream {
       this.#onReceiveData(begin, chunk);
     });
 
-    pdfDataRangeTransport.addProgressListener((loaded, total) => {
-      if (total !== undefined) {
-        this._fullReader?.onProgress?.({ loaded, total });
-      }
-    });
-
     pdfDataRangeTransport.addProgressiveReadListener(chunk => {
       this.#onReceiveData(/* begin = */ undefined, chunk);
     });
@@ -144,6 +138,16 @@ class PDFDataTransportStreamReader extends BasePDFStreamReader {
       this._filename = contentDispositionFilename;
     }
     this._headersCapability.resolve();
+
+    // Report loading progress when there is `initialData`, and `_enqueue` has
+    // not been invoked, but with a small delay to give an `onProgress` callback
+    // a chance to be registered first.
+    const loaded = this._loaded;
+    Promise.resolve().then(() => {
+      if (loaded > 0 && this._loaded === loaded) {
+        this._callOnProgress();
+      }
+    });
   }
 
   _enqueue(chunk) {
@@ -157,6 +161,7 @@ class PDFDataTransportStreamReader extends BasePDFStreamReader {
       this._queuedChunks.push(chunk);
     }
     this._loaded += chunk.byteLength;
+    this._callOnProgress();
   }
 
   async read() {
