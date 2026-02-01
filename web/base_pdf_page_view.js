@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { RenderableView, RenderingStates } from "./renderable_view.js";
 import { RenderingCancelledException } from "pdfjs-lib";
-import { RenderingStates } from "./ui_utils.js";
 
-class BasePDFPageView {
+class BasePDFPageView extends RenderableView {
   #loadingId = null;
 
   #minDurationToUpdateCanvas = 0;
@@ -48,11 +48,8 @@ class BasePDFPageView {
 
   renderingQueue = null;
 
-  renderTask = null;
-
-  resume = null;
-
   constructor(options) {
+    super();
     this.eventBus = options.eventBus;
     this.id = options.id;
     this.pageColors = options.pageColors || null;

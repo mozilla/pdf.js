@@ -14,7 +14,6 @@
  */
 
 /** @typedef {import("./event_utils.js").EventBus} EventBus */
-/** @typedef {import("./interfaces.js").IL10n} IL10n */
 
 import {
   docStyle,
@@ -34,7 +33,7 @@ const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
  * @typedef {Object} PDFSidebarOptions
  * @property {PDFSidebarElements} elements - The DOM elements.
  * @property {EventBus} eventBus - The application event bus.
- * @property {IL10n} l10n - The localization service.
+ * @property {L10n} l10n - The localization service.
  */
 
 /**

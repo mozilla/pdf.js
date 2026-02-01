@@ -15,13 +15,8 @@
 
 import { BasePDFPageView } from "./base_pdf_page_view.js";
 import { OutputScale } from "pdfjs-lib";
-import { RenderingStates } from "./ui_utils.js";
+import { RenderingStates } from "./renderable_view.js";
 
-/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
-
-/**
- * @implements {IRenderableView}
- */
 class PDFPageDetailView extends BasePDFPageView {
   #detailArea = null;
 
@@ -54,9 +49,9 @@ class PDFPageDetailView extends BasePDFPageView {
     return super.renderingState;
   }
 
-  set renderingState(value) {
+  set renderingState(state) {
     this.renderingCancelled = false;
-    super.renderingState = value;
+    super.renderingState = state;
   }
 
   reset({ keepCanvas = false } = {}) {

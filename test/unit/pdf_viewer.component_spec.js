@@ -22,7 +22,6 @@ import {
 import {
   parseQueryString,
   ProgressBar,
-  RenderingStates,
   ScrollMode,
   SpreadMode,
 } from "../../web/ui_utils.js";
@@ -35,6 +34,7 @@ import { PDFPageView } from "../../web/pdf_page_view.js";
 import { PDFScriptingManager } from "../../web/pdf_scripting_manager.component.js";
 import { PDFSinglePageViewer } from "../../web/pdf_single_page_viewer.js";
 import { PDFViewer } from "../../web/pdf_viewer.js";
+import { RenderingStates } from "../../web/renderable_view.js";
 import { StructTreeLayerBuilder } from "../../web/struct_tree_layer_builder.js";
 import { TextLayerBuilder } from "../../web/text_layer_builder.js";
 import { XfaLayerBuilder } from "../../web/xfa_layer_builder.js";

@@ -25,13 +25,6 @@ const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
 const VERTICAL_PADDING = 5;
 
-const RenderingStates = {
-  INITIAL: 0,
-  RUNNING: 1,
-  PAUSED: 2,
-  FINISHED: 3,
-};
-
 const PresentationModeState = {
   UNKNOWN: 0,
   NORMAL: 1,
@@ -914,7 +907,6 @@ export {
   PresentationModeState,
   ProgressBar,
   removeNullCharacters,
-  RenderingStates,
   SCROLLBAR_PADDING,
   scrollIntoView,
   ScrollMode,

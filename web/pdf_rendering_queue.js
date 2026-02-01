@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-/** @typedef {import("./interfaces").IRenderableView} IRenderableView */
 /** @typedef {import("./pdf_viewer").PDFViewer} PDFViewer */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_thumbnail_viewer").PDFThumbnailViewer} PDFThumbnailViewer */
 
 import { RenderingCancelledException } from "pdfjs-lib";
-import { RenderingStates } from "./ui_utils.js";
+import { RenderingStates } from "./renderable_view.js";
 
 const CLEANUP_TIMEOUT = 30000;
 
@@ -59,7 +58,7 @@ class PDFRenderingQueue {
   }
 
   /**
-   * @param {IRenderableView} view
+   * @param {RenderableView} view
    * @returns {boolean}
    */
   isHighestPriority(view) {
@@ -183,7 +182,7 @@ class PDFRenderingQueue {
   }
 
   /**
-   * @param {IRenderableView} view
+   * @param {RenderableView} view
    * @returns {boolean}
    */
   isViewFinished(view) {
@@ -195,7 +194,7 @@ class PDFRenderingQueue {
    * based on the views state. If the view is already rendered it will return
    * `false`.
    *
-   * @param {IRenderableView} view
+   * @param {RenderableView} view
    */
   renderView(view) {
     switch (view.renderingState) {

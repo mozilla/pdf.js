@@ -16,7 +16,6 @@
 /** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 /** @typedef {import("./event_utils").EventBus} EventBus */
-/** @typedef {import("./interfaces").IPDFLinkService} IPDFLinkService */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
@@ -24,12 +23,12 @@ import {
   binarySearchFirstItem,
   getVisibleElements,
   isValidRotation,
-  RenderingStates,
   watchScroll,
 } from "./ui_utils.js";
 import { MathClamp, noContextMenu, PagesMapper, stopEvent } from "pdfjs-lib";
 import { Menu } from "./menu.js";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
+import { RenderingStates } from "./renderable_view.js";
 
 const SCROLL_OPTIONS = {
   behavior: "instant",
@@ -51,7 +50,7 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  * @property {HTMLDivElement} container - The container for the thumbnail
  *   elements.
  * @property {EventBus} eventBus - The application event bus.
- * @property {IPDFLinkService} linkService - The navigation/linking service.
+ * @property {PDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
