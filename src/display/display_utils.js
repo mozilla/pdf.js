@@ -799,7 +799,7 @@ class CSSConstants {
 }
 
 function applyOpacity(r, g, b, opacity) {
-  opacity = Math.min(Math.max(opacity ?? 1, 0), 1);
+  opacity = MathClamp(opacity ?? 1, 0, 1);
   const white = 255 * (1 - opacity);
   r = Math.round(r * opacity + white);
   g = Math.round(g * opacity + white);
