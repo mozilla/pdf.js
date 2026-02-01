@@ -34,6 +34,10 @@ class EditorUndoBar {
 
   #undoButton;
 
+  #autoHideTimeout = null;
+
+  #autoHideDelayMs = 6000;
+
   static #l10nMessages = Object.freeze({
     highlight: "pdfjs-editor-undo-bar-message-highlight",
     freetext: "pdfjs-editor-undo-bar-message-freetext",
@@ -108,6 +112,13 @@ class EditorUndoBar {
       this.#container.focus();
       this.#focusTimeout = null;
     }, 100);
+
+    if (this.#autoHideTimeout) {
+      clearTimeout(this.#autoHideTimeout);
+    }
+    this.#autoHideTimeout = setTimeout(() => {
+      this.hide();
+    }, this.#autoHideDelayMs);
   }
 
   hide() {
@@ -123,6 +134,11 @@ class EditorUndoBar {
     if (this.#focusTimeout) {
       clearTimeout(this.#focusTimeout);
       this.#focusTimeout = null;
+    }
+
+    if (this.#autoHideTimeout) {
+      clearTimeout(this.#autoHideTimeout);
+      this.#autoHideTimeout = null;
     }
   }
 }
