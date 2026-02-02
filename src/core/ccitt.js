@@ -465,20 +465,33 @@ const blackTable3 = [
  * @param {Object} [options] - Decoding options.
  */
 class CCITTFaxDecoder {
-  constructor(source, options = {}) {
+  constructor(
+    source,
+    options = {
+      K: 0,
+      EndOfLine: false,
+      EncodedByteAlign: false,
+      Columns: 1728,
+      Rows: 0,
+      EndOfBlock: true,
+      BlackIs1: false,
+    }
+  ) {
     if (typeof source?.next !== "function") {
       throw new Error('CCITTFaxDecoder - invalid "source" parameter.');
     }
     this.source = source;
     this.eof = false;
 
-    this.encoding = options.K || 0;
-    this.eoline = options.EndOfLine || false;
-    this.byteAlign = options.EncodedByteAlign || false;
-    this.columns = options.Columns || 1728;
-    this.rows = options.Rows || 0;
-    this.eoblock = options.EndOfBlock ?? true;
-    this.black = options.BlackIs1 || false;
+    ({
+      K: this.encoding,
+      EndOfLine: this.eoline,
+      EncodedByteAlign: this.byteAlign,
+      Columns: this.columns,
+      Rows: this.rows,
+      EndOfBlock: this.eoblock,
+      BlackIs1: this.black,
+    } = options);
 
     this.codingLine = new Uint32Array(this.columns + 1);
     this.refLine = new Uint32Array(this.columns + 2);

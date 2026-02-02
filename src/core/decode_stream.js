@@ -102,12 +102,12 @@ class DecodeStream extends BaseStream {
   async getImageData(length, decoderOptions) {
     if (!this.canAsyncDecodeImageFromBuffer) {
       if (this.isAsyncDecoder) {
-        return this.decodeImage(null, decoderOptions);
+        return this.decodeImage(null, length, decoderOptions);
       }
       return this.getBytes(length, decoderOptions);
     }
     const data = await this.stream.asyncGetBytes();
-    return this.decodeImage(data, decoderOptions);
+    return this.decodeImage(data, length, decoderOptions);
   }
 
   async asyncGetBytesFromDecompressionStream(name) {

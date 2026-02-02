@@ -23,7 +23,7 @@ class JBig2Error extends BaseException {
   }
 }
 
-class JBig2WasmImage {
+class JBig2CCITTFaxWasmImage {
   static #buffer = null;
 
   static #handler = null;
@@ -69,7 +69,7 @@ class JBig2WasmImage {
     }
   }
 
-  static async decode(bytes, width, height, globals) {
+  static async decode(bytes, width, height, globals, CCITTOptions) {
     if (!this.#modulePromise) {
       const { promise, resolve } = Promise.withResolvers();
       const promises = [promise];
@@ -95,13 +95,28 @@ class JBig2WasmImage {
       const size = bytes.length;
       ptr = module._malloc(size);
       module.writeArrayToMemory(bytes, ptr);
-      const globalsSize = globals ? globals.length : 0;
-      if (globalsSize > 0) {
-        globalsPtr = module._malloc(globalsSize);
-        module.writeArrayToMemory(globals, globalsPtr);
-      }
 
-      module._jbig2_decode(ptr, size, width, height, globalsPtr, globalsSize);
+      if (CCITTOptions) {
+        module._ccitt_decode(
+          ptr,
+          size,
+          width,
+          height,
+          CCITTOptions.K,
+          CCITTOptions.EndOfLine ? 1 : 0,
+          CCITTOptions.EncodedByteAlign ? 1 : 0,
+          CCITTOptions.BlackIs1 ? 1 : 0,
+          CCITTOptions.Columns,
+          CCITTOptions.Rows
+        );
+      } else {
+        const globalsSize = globals ? globals.length : 0;
+        if (globalsSize > 0) {
+          globalsPtr = module._malloc(globalsSize);
+          module.writeArrayToMemory(globals, globalsPtr);
+        }
+        module._jbig2_decode(ptr, size, width, height, globalsPtr, globalsSize);
+      }
       if (!module.imageData) {
         throw new JBig2Error("Unknown error");
       }
@@ -124,4 +139,4 @@ class JBig2WasmImage {
   }
 }
 
-export { JBig2Error, JBig2WasmImage };
+export { JBig2CCITTFaxWasmImage, JBig2Error };

@@ -49,7 +49,7 @@ class JpxStream extends DecodeStream {
     return true;
   }
 
-  async decodeImage(bytes, decoderOptions) {
+  async decodeImage(bytes, _length, decoderOptions) {
     if (this.eof) {
       return this.buffer;
     }
