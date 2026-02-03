@@ -1174,7 +1174,9 @@ describe("Stamp Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [, page] of pages) {
         await page.evaluate(() => {
-          window.PDFViewerApplication.mlManager.enableAltTextModelDownload = false;
+          const { mlManager } = window.PDFViewerApplication;
+          mlManager.enableGuessAltText =
+            mlManager.enableAltTextModelDownload = false;
         });
 
         await switchToStamp(page);
@@ -1197,7 +1199,9 @@ describe("Stamp Editor", () => {
       // Run sequentially to avoid clipboard issues.
       for (const [browserName, page] of pages) {
         await page.evaluate(() => {
-          window.PDFViewerApplication.mlManager.enableAltTextModelDownload = true;
+          const { mlManager } = window.PDFViewerApplication;
+          mlManager.enableGuessAltText =
+            mlManager.enableAltTextModelDownload = true;
         });
         await switchToStamp(page);
 
