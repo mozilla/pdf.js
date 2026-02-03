@@ -544,4 +544,71 @@ describe("accessibility", () => {
       );
     });
   });
+
+  describe("A TH in a TR itself in a TBody is rowheader", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("bug2014080.pdf", ".textLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the table has the right structure", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          let elementRole = await page.evaluate(() =>
+            Array.from(
+              document.querySelector(".structTree [role='table']").children
+            ).map(child => child.getAttribute("role"))
+          );
+
+          // THeader and TBody must be rowgroup.
+          expect(elementRole)
+            .withContext(`In ${browserName}`)
+            .toEqual(["rowgroup", "rowgroup"]);
+
+          elementRole = await page.evaluate(() =>
+            Array.from(
+              document.querySelector(
+                ".structTree [role='table'] > [role='rowgroup'] > [role='row']"
+              ).children
+            ).map(child => child.getAttribute("role"))
+          );
+
+          // THeader has 3 columnheader.
+          expect(elementRole)
+            .withContext(`In ${browserName}`)
+            .toEqual(["columnheader", "columnheader", "columnheader"]);
+
+          elementRole = await page.evaluate(() =>
+            Array.from(
+              document.querySelector(
+                ".structTree [role='table'] > [role='rowgroup']:nth-child(2)"
+              ).children
+            ).map(child => child.getAttribute("role"))
+          );
+
+          // TBody has 5 rows.
+          expect(elementRole)
+            .withContext(`In ${browserName}`)
+            .toEqual(["row", "row", "row", "row", "row"]);
+
+          elementRole = await page.evaluate(() =>
+            Array.from(
+              document.querySelector(
+                ".structTree [role='table'] > [role='rowgroup']:nth-child(2) > [role='row']:first-child"
+              ).children
+            ).map(child => child.getAttribute("role"))
+          );
+          // First row has a rowheader and 2 cells.
+          expect(elementRole)
+            .withContext(`In ${browserName}`)
+            .toEqual(["rowheader", "cell", "cell"]);
+        })
+      );
+    });
+  });
 });
