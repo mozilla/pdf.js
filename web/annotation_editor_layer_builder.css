@@ -1390,22 +1390,6 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-
-      button {
-        width: fit-content;
-      }
-
-      &.download {
-        #deleteModelButton {
-          display: none;
-        }
-      }
-
-      &:not(.download) {
-        #downloadModelButton {
-          display: none;
-        }
-      }
     }
 
     #automaticAltText,
