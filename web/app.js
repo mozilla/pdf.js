@@ -578,6 +578,7 @@ const PDFViewerApplication = {
       enableOptimizedPartialRendering: AppOptions.get(
         "enableOptimizedPartialRendering"
       ),
+      imagesRightClickMinSize: AppOptions.get("imagesRightClickMinSize"),
       pageColors,
       mlManager,
       abortSignal,

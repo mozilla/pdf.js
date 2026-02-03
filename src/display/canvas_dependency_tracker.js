@@ -1,4 +1,4 @@
-import { Util } from "../shared/util.js";
+import { FeatureTest, Util } from "../shared/util.js";
 
 const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
 
@@ -128,6 +128,10 @@ class CanvasDependencyTracker {
     if (recordDebugMetadata) {
       this.#debugMetadata = new Map();
     }
+  }
+
+  get clipBox() {
+    return this.#clipBox;
   }
 
   growOperationsCount(operationsCount) {
@@ -635,6 +639,10 @@ class CanvasNestedDependencyTracker {
     this.#ignoreBBoxes = !!ignoreBBoxes;
   }
 
+  get clipBox() {
+    return this.#dependencyTracker.clipBox;
+  }
+
   growOperationsCount() {
     throw new Error("Unreachable");
   }
@@ -909,4 +917,141 @@ const Dependencies = {
   transformAndFill: ["transform", "fillColor"],
 };
 
-export { CanvasDependencyTracker, CanvasNestedDependencyTracker, Dependencies };
+class CanvasImagesTracker {
+  #canvasWidth;
+
+  #canvasHeight;
+
+  #capacity = 4;
+
+  #count = 0;
+
+  // Array of [x1, y1, x2, y2, x3, y3] coordinates.
+  // We need three points to be able to represent a rectangle with a transform
+  // applied.
+  #coords = new CanvasImagesTracker.#CoordsArray(this.#capacity * 6);
+
+  static #CoordsArray =
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+    FeatureTest.isFloat16ArraySupported
+      ? Float16Array
+      : Float32Array;
+
+  constructor(canvas) {
+    this.#canvasWidth = canvas.width;
+    this.#canvasHeight = canvas.height;
+  }
+
+  record(ctx, width, height, clipBox) {
+    if (this.#count === this.#capacity) {
+      this.#capacity *= 2;
+      const newCoords = new CanvasImagesTracker.#CoordsArray(
+        this.#capacity * 6
+      );
+      newCoords.set(this.#coords);
+      this.#coords = newCoords;
+    }
+
+    const transform = Util.domMatrixToTransform(ctx.getTransform());
+
+    // We want top left, bottom left, top right.
+    // (0, 0) is the bottom left corner.
+    let coords;
+
+    if (clipBox[0] !== Infinity) {
+      const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+      Util.axialAlignedBoundingBox([0, -height, width, 0], transform, bbox);
+
+      const finalBBox = Util.intersect(clipBox, bbox);
+      if (!finalBBox) {
+        // The image is fully clipped out.
+        return;
+      }
+
+      const [minX, minY, maxX, maxY] = finalBBox;
+
+      if (
+        minX !== bbox[0] ||
+        minY !== bbox[1] ||
+        maxX !== bbox[2] ||
+        maxY !== bbox[3]
+      ) {
+        // The clip box affects the image drawing. We need to compute a
+        // transform that takes the image bbox and fits it into the final bbox,
+        // so that we can then apply it to the original image shape (the
+        // non-axially-aligned rectangle).
+        const rotationAngle = Math.atan2(transform[1], transform[0]);
+
+        // Normalize the angle to be between 0 and 90 degrees.
+        const sin = Math.abs(Math.sin(rotationAngle));
+        const cos = Math.abs(Math.cos(rotationAngle));
+
+        if (sin < 1e-6 || cos < 1e-6) {
+          coords = [minX, minY, minX, maxY, maxX, minY];
+        } else {
+          // We cannot just scale the bbox into the original bbox, because that
+          // would not preserve the 90deg corners if they have been rotated.
+          // We instead need to find the transform that maps the original
+          // rectangle into the only rectangle that is rotated by the expected
+          // angle and fits into the final bbox.
+          //
+          // This represents the final bbox, with the top-left corner having
+          // coordinates (minX, minY) and the bottom-right corner having
+          // coordinates (maxX, maxY). Alpha is the rotation angle, and a and b
+          // are helper variables used to compute the effective transform.
+          //
+          //               ------------b----------
+          //              +-----------------------*----+
+          //            | |                _ -‾    \   |
+          //            a |           _ -‾          \  |
+          //            | |alpha _ -‾                \ |
+          //            | | _ -‾                      \|
+          //              |\                       _ -‾|
+          //              | \                 _ -‾     |
+          //              |  \           _ -‾          |
+          //              |   \     _ -‾               |
+          //              +----*-----------------------+
+
+          const finalBBoxWidth = maxX - minX;
+          const finalBBoxHeight = maxY - minY;
+
+          const sin2 = sin * sin;
+          const cos2 = cos * cos;
+          const cosSin = cos * sin;
+          const denom = cos2 - sin2;
+
+          const a = (finalBBoxHeight * cos2 - finalBBoxWidth * cosSin) / denom;
+          const b = (finalBBoxHeight * cosSin - finalBBoxWidth * sin2) / denom;
+
+          coords = [minX + b, minY, minX, minY + a, maxX, maxY - a];
+        }
+      }
+    }
+
+    if (!coords) {
+      coords = [0, -height, 0, 0, width, -height];
+      Util.applyTransform(coords, transform, 0);
+      Util.applyTransform(coords, transform, 2);
+      Util.applyTransform(coords, transform, 4);
+    }
+    coords[0] /= this.#canvasWidth;
+    coords[1] /= this.#canvasHeight;
+    coords[2] /= this.#canvasWidth;
+    coords[3] /= this.#canvasHeight;
+    coords[4] /= this.#canvasWidth;
+    coords[5] /= this.#canvasHeight;
+    this.#coords.set(coords, this.#count * 6);
+    this.#count++;
+  }
+
+  take() {
+    return this.#coords.subarray(0, this.#count * 6);
+  }
+}
+
+export {
+  CanvasDependencyTracker,
+  CanvasImagesTracker,
+  CanvasNestedDependencyTracker,
+  Dependencies,
+};

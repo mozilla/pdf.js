@@ -84,6 +84,7 @@ import { HighlightOutliner } from "./display/editor/drawers/highlight.js";
 import { isValidExplicitDest } from "./display/api_utils.js";
 import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
+import { TextLayerImages } from "./display/text_layer_images.js";
 import { TouchManager } from "./display/touch_manager.js";
 import { XfaLayer } from "./display/xfa_layer.js";
 
@@ -145,6 +146,7 @@ globalThis.pdfjsLib = {
   stopEvent,
   SupportedImageMimeTypes,
   TextLayer,
+  TextLayerImages,
   TouchManager,
   updateUrlHash,
   Util,
@@ -205,6 +207,7 @@ export {
   stopEvent,
   SupportedImageMimeTypes,
   TextLayer,
+  TextLayerImages,
   TouchManager,
   updateUrlHash,
   Util,

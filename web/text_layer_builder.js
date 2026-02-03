@@ -83,7 +83,7 @@ class TextLayerBuilder {
    * @param {TextLayerBuilderRenderOptions} options
    * @returns {Promise<void>}
    */
-  async render({ viewport, textContentParams = null }) {
+  async render({ viewport, images, textContentParams = null }) {
     if (this.#renderingDone && this.#textLayer) {
       this.#textLayer.update({
         viewport,
@@ -101,6 +101,7 @@ class TextLayerBuilder {
           disableNormalization: true,
         }
       ),
+      images,
       container: this.div,
       viewport,
     });
