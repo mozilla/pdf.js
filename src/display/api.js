@@ -39,6 +39,10 @@ import {
   SerializableEmpty,
 } from "./annotation_storage.js";
 import {
+  CanvasDependencyTracker,
+  CanvasImagesTracker,
+} from "./canvas_dependency_tracker.js";
+import {
   deprecated,
   isDataScheme,
   isValidFetchUrl,
@@ -68,7 +72,6 @@ import {
   NodeStandardFontDataFactory,
   NodeWasmFactory,
 } from "display-node_utils";
-import { CanvasDependencyTracker } from "./canvas_dependency_tracker.js";
 import { CanvasGraphics } from "./canvas.js";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
@@ -1269,6 +1272,7 @@ class PDFDocumentProxy {
  *   annotation ids with canvases used to render them.
  * @property {PrintAnnotationStorage} [printAnnotationStorage]
  * @property {boolean} [isEditing] - Render the page in editing mode.
+ * @property {boolean} [recordImages] - Record the location of images in the PDF
  * @property {boolean} [recordOperations] - Record the dependencies and bounding
  *   boxes of all PDF operations that render onto the canvas.
  * @property {OperationsFilter} [operationsFilter] - If provided, only
@@ -1353,6 +1357,7 @@ class PDFPageProxy {
     this.destroyed = false;
     this.recordedBBoxes = null;
     this.#pagesMapper = pagesMapper;
+    this.imageCoordinates = null;
   }
 
   /**
@@ -1484,6 +1489,7 @@ class PDFPageProxy {
     pageColors = null,
     printAnnotationStorage = null,
     isEditing = false,
+    recordImages = false,
     recordOperations = false,
     operationsFilter = null,
   }) {
@@ -1536,6 +1542,7 @@ class PDFPageProxy {
 
     const shouldRecordOperations =
       !this.recordedBBoxes && (recordOperations || recordForDebugger);
+    const shouldRecordImages = !this.imageCoordinates && recordImages;
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
@@ -1553,6 +1560,10 @@ class PDFPageProxy {
             this.recordedBBoxes = recordedBBoxes;
           }
         }
+      }
+
+      if (shouldRecordImages && !error) {
+        this.imageCoordinates = internalRenderTask.gfx?.imagesTracker.take();
       }
 
       // Attempt to reduce memory usage during *printing*, by always running
@@ -1589,12 +1600,16 @@ class PDFPageProxy {
       params: {
         canvas,
         canvasContext,
-        dependencyTracker: shouldRecordOperations
-          ? new CanvasDependencyTracker(
-              canvas,
-              intentState.operatorList.length,
-              recordForDebugger
-            )
+        dependencyTracker:
+          shouldRecordOperations || shouldRecordImages
+            ? new CanvasDependencyTracker(
+                canvas,
+                intentState.operatorList.length,
+                recordForDebugger
+              )
+            : null,
+        imagesTracker: shouldRecordImages
+          ? new CanvasImagesTracker(canvas)
           : null,
         viewport,
         transform,
@@ -3255,6 +3270,10 @@ class RenderTask {
       (separateAnnots.canvas && annotationCanvasMap?.size > 0)
     );
   }
+
+  get imageCoordinates() {
+    return this._internalRenderTask.imageCoordinates || null;
+  }
 }
 
 /**
@@ -3312,6 +3331,7 @@ class InternalRenderTask {
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
     this._dependencyTracker = params.dependencyTracker;
+    this._imagesTracker = params.imagesTracker;
     this._operationsFilter = operationsFilter;
   }
 
@@ -3342,7 +3362,13 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const { viewport, transform, background, dependencyTracker } = this.params;
+    const {
+      viewport,
+      transform,
+      background,
+      dependencyTracker,
+      imagesTracker,
+    } = this.params;
 
     // When printing in Firefox, we get a specific context in mozPrintCallback
     // which cannot be created from the canvas itself.
@@ -3362,7 +3388,8 @@ class InternalRenderTask {
       { optionalContentConfig },
       this.annotationCanvasMap,
       this.pageColors,
-      dependencyTracker
+      dependencyTracker,
+      imagesTracker
     );
     this.gfx.beginDrawing({
       transform,

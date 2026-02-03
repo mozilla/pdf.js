@@ -114,7 +114,15 @@ describe("Text layer", () => {
         beforeEach(async () => {
           pages = await loadAndWait(
             "tracemonkey.pdf",
-            `.page[data-page-number = "1"] .endOfContent`
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            (_page, browserName) => ({
+              // Enable images in Firefox, to ensure that they do not interfere
+              // with text selection. We do not test it in Chrome because we
+              // know that they do degrate the text selection experience there.
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
           );
         });
 
@@ -224,7 +232,15 @@ describe("Text layer", () => {
         beforeEach(async () => {
           pages = await loadAndWait(
             "chrome-text-selection-markedContent.pdf",
-            `.page[data-page-number = "1"] .endOfContent`
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            (_page, browserName) => ({
+              // Enable images in Firefox, to ensure that they do not interfere
+              // with text selection. We do not test it in Chrome because we
+              // know that they do degrate the text selection experience there.
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
           );
         });
 
@@ -314,7 +330,15 @@ describe("Text layer", () => {
         beforeEach(async () => {
           pages = await loadAndWait(
             "annotation-link-text-popup.pdf",
-            `.page[data-page-number = "1"] .endOfContent`
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            (_page, browserName) => ({
+              // Enable images in Firefox, to ensure that they do not interfere
+              // with text selection. We do not test it in Chrome because we
+              // know that they do degrate the text selection experience there.
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
           );
         });
 
@@ -437,7 +461,18 @@ describe("Text layer", () => {
         let pages;
 
         beforeEach(async () => {
-          pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
+          pages = await loadAndWait(
+            "find_all.pdf",
+            ".textLayer",
+            100,
+            undefined,
+            (_page, browserName) => ({
+              // Enable images in Firefox, to ensure that they do not interfere
+              // with text selection. We do not test it in Chrome because we
+              // know that they do degrate the text selection experience there.
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
+          );
         });
 
         afterEach(async () => {

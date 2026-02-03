@@ -16,6 +16,8 @@
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+// eslint-disable-next-line max-len
+/** @typedef {import("../src/display/text_layer_images.js").TextLayerImages} TextLayerImages */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
 // eslint-disable-next-line max-len
 /** @typedef {import("./text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
@@ -36,6 +38,7 @@ import { removeNullCharacters } from "./ui_utils.js";
 /**
  * @typedef {Object} TextLayerBuilderRenderOptions
  * @property {PageViewport} viewport
+ * @property {TextLayerImages} images
  * @property {Object} [textContentParams]
  */
 
@@ -83,7 +86,7 @@ class TextLayerBuilder {
    * @param {TextLayerBuilderRenderOptions} options
    * @returns {Promise<void>}
    */
-  async render({ viewport, textContentParams = null }) {
+  async render({ viewport, images, textContentParams = null }) {
     if (this.#renderingDone && this.#textLayer) {
       this.#textLayer.update({
         viewport,
@@ -101,6 +104,7 @@ class TextLayerBuilder {
           disableNormalization: true,
         }
       ),
+      images,
       container: this.div,
       viewport,
     });
