@@ -377,6 +377,7 @@ const PDFViewerApplication = {
         enableSplitMerge: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
         highlightEditorColors: x => x,
+        imagesRightClickMinSize: x => parseInt(x),
         maxCanvasPixels: x => parseInt(x),
         maxScale: x => parseInt(x),
         minScale: x => parseInt(x),
@@ -579,6 +580,7 @@ const PDFViewerApplication = {
       enableOptimizedPartialRendering: AppOptions.get(
         "enableOptimizedPartialRendering"
       ),
+      imagesRightClickMinSize: AppOptions.get("imagesRightClickMinSize"),
       pageColors,
       mlManager,
       abortSignal,

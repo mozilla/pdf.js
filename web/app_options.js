@@ -323,6 +323,20 @@ const defaultOptions = {
         : "./images/",
     kind: OptionKind.VIEWER,
   },
+  imagesRightClickMinSize: {
+    /** @type {number} */
+    value:
+      typeof PDFJSDev !== "undefined" &&
+      // Firefox mobile does not support right-clicking on images,
+      // see https://bugzilla.mozilla.org/show_bug.cgi?id=2014081.
+      // This option is disabled by default outside of MOZCENTRAL
+      // because it degrades the text selection experience in Chrome
+      // and Safari.
+      PDFJSDev.test("MOZCENTRAL && !GECKOVIEW")
+        ? 16
+        : -1,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   maxCanvasPixels: {
     /** @type {number} */
     value: 2 ** 25,

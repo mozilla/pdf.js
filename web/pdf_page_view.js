@@ -30,6 +30,7 @@ import {
   PixelsPerInch,
   setLayerDimensions,
   shadow,
+  TextLayerImages,
 } from "pdfjs-lib";
 import {
   approximateFraction,
@@ -89,6 +90,9 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   `maxCanvasDim`, it will draw a second canvas on top of the CSS-zoomed one,
  *   that only renders the part of the page that is close to the viewport.
  *   The default value is `true`.
+ * @property {number} [imagesRightClickMinSize] - All images whose width and
+ *  height are at least this value (in pixels) will be lazily inserted in the
+ *  dom to allow right-clicking and saving them. Use `-1` to disable this.
  * @property {boolean} [enableOptimizedPartialRendering] - When enabled, PDF
  *   rendering will keep track of which areas of the page each PDF operation
  *   affects. Then, when rendering a partial page (if `enableDetailCanvas` is
@@ -522,6 +526,14 @@ class PDFPageView extends BasePDFPageView {
     try {
       await this.textLayer.render({
         viewport: this.viewport,
+        images: this.imageCoordinates
+          ? new TextLayerImages(
+              this.imagesRightClickMinSize,
+              this.imageCoordinates,
+              this.viewport,
+              () => this.canvas
+            )
+          : null,
       });
     } catch (ex) {
       if (ex instanceof AbortException) {
@@ -707,6 +719,7 @@ class PDFPageView extends BasePDFPageView {
         this.detailView ??= new PDFPageDetailView({
           pageView: this,
           enableOptimizedPartialRendering: this.enableOptimizedPartialRendering,
+          imagesRightClickMinSize: -1,
         });
         this.detailView.update({ visibleArea });
       } else if (this.detailView) {
@@ -993,7 +1006,7 @@ class PDFPageView extends BasePDFPageView {
     return canvasWrapper;
   }
 
-  _getRenderingContext(canvas, transform, recordOperations) {
+  _getRenderingContext(canvas, transform, recordOperations, recordImages) {
     return {
       canvas,
       transform,
@@ -1004,6 +1017,7 @@ class PDFPageView extends BasePDFPageView {
       pageColors: this.pageColors,
       isEditing: this.#isEditing,
       recordOperations,
+      recordImages,
     };
   }
 
@@ -1127,12 +1141,15 @@ class PDFPageView extends BasePDFPageView {
       this.#hasRestrictedScaling &&
       !this.recordedBBoxes;
 
+    const recordImages =
+      this.imagesRightClickMinSize !== -1 && !this.imageCoordinates;
+
     // Rendering area
     const transform = outputScale.scaled
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
       : null;
     const resultPromise = this._drawCanvas(
-      this._getRenderingContext(canvas, transform, recordBBoxes),
+      this._getRenderingContext(canvas, transform, recordBBoxes, recordImages),
       () => {
         prevCanvas?.remove();
         this._resetCanvas();
