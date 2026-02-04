@@ -532,15 +532,6 @@ pdfjs-editor-alt-text-settings-automatic-title = Automatic alt text
 pdfjs-editor-alt-text-settings-create-model-button-label = Create alt text automatically
 pdfjs-editor-alt-text-settings-create-model-description = Suggests descriptions to help people who can’t see the image or when the image doesn’t load.
 
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alt text AI model ({ $totalSize } MB)
-
-pdfjs-editor-alt-text-settings-ai-model-description = Runs locally on your device so your data stays private. Required for automatic alt text.
-pdfjs-editor-alt-text-settings-delete-model-button = Delete
-pdfjs-editor-alt-text-settings-download-model-button = Download
-pdfjs-editor-alt-text-settings-downloading-model-button = Downloading…
-
 pdfjs-editor-alt-text-settings-editor-title = Alt text editor
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Show alt text editor right away when adding an image
 pdfjs-editor-alt-text-settings-show-dialog-description = Helps you make sure all your images have alt text.
