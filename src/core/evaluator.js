@@ -515,6 +515,27 @@ class PartialEvaluator {
         smask.backdrop = colorSpace.getRgbHex(smask.backdrop, 0);
       }
 
+      // Parse group blend mode from ExtGState if it's in FormX Resources
+      const localResources = dict.get("Resources");
+      if (localResources instanceof Dict) {
+        const extGState = localResources.get("ExtGState");
+        if (extGState instanceof Dict) {
+          for (const val of extGState.getRawValues()) { 
+            if (val instanceof Dict && val.has("BM")) {
+              const blendMode = val.get("BM");
+              if (blendMode != null) {
+                try {
+                  groupOptions.blendMode = normalizeBlendMode(blendMode);
+                  break;
+                } catch (ex) {
+                  console.error(`Invalid blend mode in ExtGState: ${blendMode}`, ex);
+                }
+              }
+            }
+          }
+        }
+      }
+
       operatorList.addOp(OPS.beginGroup, [groupOptions]);
     }
 
