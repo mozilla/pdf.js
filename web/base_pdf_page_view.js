@@ -38,9 +38,13 @@ class BasePDFPageView extends RenderableView {
 
   enableOptimizedPartialRendering = false;
 
+  imagesRightClickMinSize = -1;
+
   eventBus = null;
 
   id = null;
+
+  imageCoordinates = null;
 
   pageColors = null;
 
@@ -56,6 +60,7 @@ class BasePDFPageView extends RenderableView {
     this.renderingQueue = options.renderingQueue;
     this.enableOptimizedPartialRendering =
       options.enableOptimizedPartialRendering ?? false;
+    this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }
 
@@ -233,6 +238,9 @@ class BasePDFPageView extends RenderableView {
         this.renderTask = null;
         if (this.enableOptimizedPartialRendering) {
           this.recordedBBoxes ??= renderTask.recordedBBoxes;
+        }
+        if (this.imagesRightClickMinSize !== -1) {
+          this.imageCoordinates ??= this.pdfPage.imageCoordinates;
         }
       }
     }

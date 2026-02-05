@@ -46,7 +46,7 @@ class WebServer {
   constructor({ root, host, port, cacheExpirationTime }) {
     const cwdURL = pathToFileURL(process.cwd()) + "/";
     this.rootURL = new URL(`${root || "."}/`, cwdURL);
-    this.host = host || "localhost";
+    this.host = host; // || "localhost";
     this.port = port || 0;
     this.server = null;
     this.verbose = false;
