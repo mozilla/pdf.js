@@ -4069,6 +4069,29 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
+    it("gets text content with some fake font changes (bug 2013793)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("bug2013793.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+      expect(text)
+        .toEqual(`This is a great deal of nothing. The purpose is to help in identifying a bug when the PDF
+is read by Firefox. I want to know whether any of the two words in this paragraph run
+together. If they do, I will file a bug report. The problem seems to occur somewhere
+between the 240th and 260th character in the paragraph. I should have written that much
+by now. So, here’s to squashing bugs.
+This is a great deal of nothing. The purpose is to help in identifying a bug when the
+PDF is read by Firefox. I want to know whether any of the two words in this
+paragraph run together. If they do, I will file a bug report. The problem seems to
+occur somewhere between the 240th and 260th character in the paragraph. I should
+have written that much by now. So, here’s to squashing bugs.`);
+
+      await loadingTask.destroy();
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 
