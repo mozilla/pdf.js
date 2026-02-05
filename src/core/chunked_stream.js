@@ -70,6 +70,12 @@ class ChunkedStream extends Stream {
       throw new Error(`Bad end offset: ${end}`);
     }
 
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        chunk instanceof ArrayBuffer,
+        "onReceiveData - expected an ArrayBuffer."
+      );
+    }
     this.bytes.set(new Uint8Array(chunk), begin);
     const beginChunk = Math.floor(begin / chunkSize);
     const endChunk = Math.floor((end - 1) / chunkSize) + 1;
@@ -85,6 +91,12 @@ class ChunkedStream extends Stream {
     let position = this.progressiveDataLength;
     const beginChunk = Math.floor(position / this.chunkSize);
 
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        data instanceof ArrayBuffer,
+        "onReceiveProgressiveData - expected an ArrayBuffer."
+      );
+    }
     this.bytes.set(new Uint8Array(data), position);
     position += data.byteLength;
     this.progressiveDataLength = position;
@@ -310,7 +322,7 @@ class ChunkedStreamManager {
       if (this.aborted) {
         return; // Ignoring any data after abort.
       }
-      this.onReceiveData({ chunk: data, begin });
+      this.onReceiveData({ chunk: data.buffer, begin });
     });
   }
 
