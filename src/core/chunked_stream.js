@@ -14,7 +14,7 @@
  */
 
 import { arrayBuffersToBytes, MissingDataException } from "./core_utils.js";
-import { assert } from "../shared/util.js";
+import { assert, MathClamp } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 class ChunkedStream extends Stream {
@@ -511,7 +511,11 @@ class ChunkedStreamManager {
     }
 
     this.msgHandler.send("DocProgress", {
-      loaded: stream.numChunksLoaded * chunkSize,
+      loaded: MathClamp(
+        stream.numChunksLoaded * chunkSize,
+        stream.progressiveDataLength,
+        length
+      ),
       total: length,
     });
   }
