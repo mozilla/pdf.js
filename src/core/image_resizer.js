@@ -22,7 +22,7 @@ const MIN_IMAGE_DIM = 2048;
 // In Chrome, there aren't max dimensions but only a max area. So an image with
 // a very large dimensions is acceptable but it probably doesn't hurt to reduce
 // it when considering that it will finally rendered on a small canvas.
-const MAX_IMAGE_DIM = 65537;
+const MAX_IMAGE_DIM = 32768;
 const MAX_ERROR = 128;
 
 // Large images are encoded in using the BMP format (it's a way faster than
