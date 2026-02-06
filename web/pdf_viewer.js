@@ -2457,10 +2457,11 @@ class PDFViewer {
   }
 
   get containerTopLeft() {
-    return (this.#containerTopLeft ||= [
-      this.container.offsetTop,
-      this.container.offsetLeft,
-    ]);
+    if (!this.#containerTopLeft) {
+      const rect = this.container.getBoundingClientRect();
+      this.#containerTopLeft = [rect.top, rect.left];
+    }
+    return this.#containerTopLeft;
   }
 
   #cleanupTimeouts() {
