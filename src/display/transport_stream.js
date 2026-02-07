@@ -187,6 +187,14 @@ class PDFDataTransportStreamReader extends BasePDFStreamReader {
 
   progressiveDone() {
     this._done ||= true;
+
+    if (this._queuedChunks.length > 0) {
+      return;
+    }
+    for (const capability of this._requests) {
+      capability.resolve({ value: undefined, done: true });
+    }
+    this._requests.length = 0;
   }
 }
 
