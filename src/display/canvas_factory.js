@@ -89,4 +89,14 @@ class DOMCanvasFactory extends BaseCanvasFactory {
   }
 }
 
-export { BaseCanvasFactory, DOMCanvasFactory };
+class OffscreenCanvasFactory extends BaseCanvasFactory {
+  constructor({ enableHWA = false }) {
+    super({ enableHWA });
+  }
+
+  _createCanvas(width, height) {
+    return new OffscreenCanvas(width, height);
+  }
+}
+
+export { BaseCanvasFactory, DOMCanvasFactory, OffscreenCanvasFactory };

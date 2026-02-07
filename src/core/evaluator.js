@@ -226,6 +226,7 @@ class PartialEvaluator {
   constructor({
     xref,
     handler,
+    rendererHandler = null,
     pageIndex,
     idFactory,
     fontCache,
@@ -238,6 +239,7 @@ class PartialEvaluator {
   }) {
     this.xref = xref;
     this.handler = handler;
+    this.rendererHandler = rendererHandler;
     this.pageIndex = pageIndex;
     this.idFactory = idFactory;
     this.fontCache = fontCache;
@@ -554,20 +556,31 @@ class PartialEvaluator {
     ) {
       assert(Number.isInteger(imgData.dataLen), "Expected dataLen to be set.");
     }
-    const transfers = imgData ? [imgData.bitmap || imgData.data.buffer] : null;
 
-    if (this.parsingType3Font || cacheGlobally) {
-      return this.handler.send(
-        "commonobj",
-        [objId, "Image", imgData],
-        transfers
+    const action = this.parsingType3Font || cacheGlobally ? "commonobj" : "obj";
+
+    const buildArgs = data =>
+      action === "commonobj"
+        ? [objId, "Image", data]
+        : [objId, this.pageIndex, "Image", data];
+
+    const getTransfers = data => {
+      if (!data) {
+        return null;
+      }
+      const transferable = data.bitmap || data.data?.buffer;
+      return transferable ? [transferable] : null;
+    };
+
+    if (this.rendererHandler) {
+      const clonedData = imgData ? structuredClone(imgData) : imgData;
+      this.rendererHandler.send(
+        action,
+        buildArgs(clonedData),
+        getTransfers(clonedData)
       );
     }
-    return this.handler.send(
-      "obj",
-      [objId, this.pageIndex, "Image", imgData],
-      transfers
-    );
+    this.handler.send(action, buildArgs(imgData), getTransfers(imgData));
   }
 
   async buildPaintImageXObject({
@@ -802,6 +815,21 @@ class PartialEvaluator {
           this.globalImageCache.addByteSize(imageRef, localLength);
           return;
         }
+
+        // ImageRef not found on main thread - check renderer worker if
+        // it exists
+        if (this.rendererHandler) {
+          const rendererLength = await this.rendererHandler.sendWithPromise(
+            "commonobj",
+            [objId, "CopyLocalImage", { imageRef }]
+          );
+
+          if (rendererLength) {
+            this.globalImageCache.setData(imageRef, globalCacheData);
+            this.globalImageCache.addByteSize(imageRef, rendererLength);
+            return;
+          }
+        }
       }
     }
 
@@ -1024,7 +1052,7 @@ class PartialEvaluator {
     }
 
     state.font = translated.font;
-    translated.send(this.handler);
+    translated.send(this.handler, this.rendererHandler);
     return translated.loadedName;
   }
 
@@ -1046,7 +1074,8 @@ class PartialEvaluator {
           font,
           glyphs,
           this.handler,
-          this.options
+          this.options,
+          this.rendererHandler
         );
       }
     }
@@ -1520,15 +1549,28 @@ class PartialEvaluator {
       id = `${this.idFactory.getDocId()}_type3_${id}`;
     }
     localShadingPatternCache.set(shading, id);
-
-    if (this.parsingType3Font) {
-      const transfers = [];
-      const patternBuffer = PatternInfo.write(patternIR);
-      transfers.push(patternBuffer);
-      this.handler.send("commonobj", [id, "Pattern", patternBuffer], transfers);
-    } else {
-      this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
+    const patternBuffer = PatternInfo.write(patternIR);
+    const action = this.parsingType3Font ? "commonobj" : "obj";
+    if (this.rendererHandler) {
+      const clonedBuffer = patternBuffer.slice(0);
+      const clonedTransfers = clonedBuffer ? [clonedBuffer] : [];
+      this.rendererHandler.send(
+        action,
+        action === "commonobj"
+          ? [id, "Pattern", clonedBuffer]
+          : [id, this.pageIndex, "Pattern", clonedBuffer],
+        clonedTransfers
+      );
     }
+
+    const transfers = patternBuffer ? [patternBuffer] : [];
+    this.handler.send(
+      action,
+      action === "commonobj"
+        ? [id, "Pattern", patternBuffer]
+        : [id, this.pageIndex, "Pattern", patternBuffer],
+      transfers
+    );
     return id;
   }
 
@@ -4736,7 +4778,13 @@ class PartialEvaluator {
     return new Font(fontName.name, fontFile, newProperties, this.options);
   }
 
-  static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
+  static buildFontPaths(
+    font,
+    glyphs,
+    handler,
+    evaluatorOptions,
+    rendererHandler = null
+  ) {
     function buildPath(fontChar) {
       const glyphName = `${font.loadedName}_path_${fontChar}`;
       try {
@@ -4744,6 +4792,14 @@ class PartialEvaluator {
           return;
         }
         const buffer = FontPathInfo.write(font.renderer.getPathJs(fontChar));
+        if (rendererHandler) {
+          const clonedBuffer = buffer.slice(0);
+          rendererHandler.send(
+            "commonobj",
+            [glyphName, "FontPath", clonedBuffer],
+            [clonedBuffer]
+          );
+        }
         handler.send("commonobj", [glyphName, "FontPath", buffer], [buffer]);
       } catch (reason) {
         if (evaluatorOptions.ignoreErrors) {
@@ -4789,7 +4845,7 @@ class TranslatedFont {
     this.type3Dependencies = font.isType3Font ? new Set() : null;
   }
 
-  send(handler) {
+  send(handler, rendererHandler = null) {
     if (this.#sent) {
       return;
     }
@@ -4803,6 +4859,18 @@ class TranslatedFont {
       fontData.data = FontInfo.write(fontData.data);
       transfer.push(fontData.data);
     }
+    if (rendererHandler) {
+      const clonedFontData = structuredClone(fontData);
+      const clonedTransfer = [];
+      if (clonedFontData.data) {
+        clonedTransfer.push(clonedFontData.data);
+      }
+      rendererHandler.send(
+        "commonobj",
+        [this.loadedName, "Font", clonedFontData],
+        clonedTransfer
+      );
+    }
     handler.send("commonobj", [this.loadedName, "Font", fontData], transfer);
     // future path: switch to a SharedArrayBuffer
     // const sab = new SharedArrayBuffer(data.byteLength);
@@ -4811,7 +4879,7 @@ class TranslatedFont {
     // handler.send("commonobj", [this.loadedName, "Font", sab]);
   }
 
-  fallback(handler, evaluatorOptions) {
+  fallback(handler, evaluatorOptions, rendererHandler = null) {
     if (!this.font.data) {
       return;
     }
@@ -4827,7 +4895,8 @@ class TranslatedFont {
       this.font,
       /* glyphs = */ this.font.glyphCacheValues,
       handler,
-      evaluatorOptions
+      evaluatorOptions,
+      rendererHandler
     );
   }
 

@@ -46,12 +46,6 @@ import {
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
-import { FontFaceObject, FontLoader } from "./font_loader.js";
-import {
-  FontInfo,
-  FontPathInfo,
-  PatternInfo,
-} from "../shared/obj-bin-transform.js";
 import {
   getDataProp,
   getFactoryUrlProp,
@@ -74,6 +68,7 @@ import { DOMCMapReaderFactory } from "display-cmap_reader_factory";
 import { DOMFilterFactory } from "./filter_factory.js";
 import { DOMStandardFontDataFactory } from "display-standard_fontdata_factory";
 import { DOMWasmFactory } from "display-wasm_factory";
+import { FontLoader } from "./font_loader.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
@@ -82,6 +77,7 @@ import { PDFFetchStream } from "display-fetch_stream";
 import { PDFNetworkStream } from "display-network";
 import { PDFNodeStream } from "display-node_stream";
 import { PDFObjects } from "./pdf_objects.js";
+import { setupHandler } from "../shared/handle_objs.js";
 import { TextLayer } from "./text_layer.js";
 import { XfaText } from "./xfa_text.js";
 
@@ -233,6 +229,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *    The default value is {DOMFilterFactory}.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `false`.
+ * @property {boolean} [disableWorkerRendering] - Disables rendering of pages in
+ *   a worker thread. The default value is `false`.
  */
 
 /**
@@ -341,6 +339,10 @@ function getDocument(src = {}) {
       ? NodeFilterFactory
       : DOMFilterFactory);
   const enableHWA = src.enableHWA === true;
+  const disableWorkerRendering =
+    src.disableWorkerRendering === true ||
+    typeof Worker === "undefined" ||
+    typeof MessageChannel === "undefined";
   const useWasm = src.useWasm !== false;
 
   // Parameters whose default values depend on other parameters.
@@ -396,6 +398,13 @@ function getDocument(src = {}) {
         : new WasmFactory({ baseUrl: wasmUrl }),
   };
 
+  let rendererHandler = null;
+  let workerChannel = null;
+
+  if (!disableWorkerRendering) {
+    workerChannel = new MessageChannel();
+  }
+
   if (!worker) {
     // Worker was not provided -- creating and owning our own. If message port
     // is specified in global worker options, using it.
@@ -404,6 +413,12 @@ function getDocument(src = {}) {
       port: GlobalWorkerOptions.workerPort,
     });
     task._worker = worker;
+  }
+
+  if (workerChannel) {
+    const renderer = new RendererWorker(workerChannel.port2, enableHWA);
+    rendererHandler = renderer.handler;
+    task.renderer = renderer;
   }
 
   const docParams = {
@@ -419,6 +434,7 @@ function getDocument(src = {}) {
     length,
     docBaseUrl,
     enableXfa,
+    channelPort: workerChannel?.port1,
     evaluatorOptions: {
       maxImageSize,
       disableFontFace,
@@ -457,10 +473,17 @@ function getDocument(src = {}) {
         throw new Error("Worker was destroyed");
       }
 
+      const transfers = [];
+      if (data) {
+        transfers.push(data.buffer);
+      }
+      if (workerChannel) {
+        transfers.push(workerChannel.port1);
+      }
       const workerIdPromise = worker.messageHandler.sendWithPromise(
         "GetDocRequest",
         docParams,
-        data ? [data.buffer] : null
+        transfers.length > 0 ? transfers : null
       );
 
       let networkStream;
@@ -511,7 +534,9 @@ function getDocument(src = {}) {
           task,
           networkStream,
           transportParams,
-          transportFactory
+          transportFactory,
+          enableHWA,
+          rendererHandler
         );
         task._transport = transport;
         messageHandler.send("Ready", null);
@@ -552,6 +577,8 @@ class PDFDocumentLoadingTask {
    * @private
    */
   _worker = null;
+
+  #renderer = null;
 
   /**
    * Unique identifier for the document loading task.
@@ -612,6 +639,8 @@ class PDFDocumentLoadingTask {
 
     this._worker?.destroy();
     this._worker = null;
+    this.#renderer?.destroy();
+    this.#renderer = null;
   }
 
   /**
@@ -622,6 +651,17 @@ class PDFDocumentLoadingTask {
    */
   async getData() {
     return this._transport.getData();
+  }
+
+  get renderer() {
+    return this.#renderer;
+  }
+
+  set renderer(renderer) {
+    if (this.#renderer) {
+      throw new Error("PDFDocumentLoadingTask.renderer: already set.");
+    }
+    this.#renderer = renderer;
   }
 }
 
@@ -1458,8 +1498,8 @@ class PDFPageProxy {
    *   resolved when the page finishes rendering.
    */
   render({
-    canvasContext,
-    canvas = canvasContext.canvas,
+    canvasContext = null,
+    canvas = canvasContext?.canvas || null,
     viewport,
     intent = "display",
     annotationMode = AnnotationMode.ENABLE,
@@ -1486,9 +1526,6 @@ class PDFPageProxy {
     // this call to render.
     this.#pendingCleanup = false;
 
-    optionalContentConfigPromise ||=
-      this._transport.getOptionalContentConfig(renderingIntent);
-
     let intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       intentState = Object.create(null);
@@ -1512,6 +1549,7 @@ class PDFPageProxy {
         argsArray: [],
         lastChunk: false,
         separateAnnots: null,
+        hasFilterOps: false,
       };
 
       this._stats?.time("Page Request");
@@ -1571,6 +1609,18 @@ class PDFPageProxy {
       }
     };
 
+    // Rendering in the worker cannot safely use the DOM/SVG `url(...)` filter
+    // path, hence we must fall back to main-thread rendering when such
+    // operations are present.
+    // Debugger rendering must also run on the main-thread.
+    const renderInWorker =
+      canvasContext === null &&
+      this._transport.rendererHandler !== null &&
+      !shouldRecordOperations &&
+      !recordForDebugger &&
+      pageColors === null &&
+      intentState.operatorList.hasFilterOps === false;
+
     const internalRenderTask = new InternalRenderTask({
       callback: complete,
       // Only include the required properties, and *not* the entire object.
@@ -1599,35 +1649,66 @@ class PDFPageProxy {
       pdfBug: this._pdfBug,
       pageColors,
       enableHWA: this._transport.enableHWA,
+      rendererHandler: this._transport.rendererHandler,
       operationsFilter,
+      renderInWorker,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
     const renderTask = internalRenderTask.task;
 
+    let optionalContentConfigDataPromise = null;
+
+    if (renderInWorker) {
+      optionalContentConfigDataPromise =
+        this._transport.getOptionalContentConfigData();
+    } else {
+      optionalContentConfigPromise ||=
+        this._transport.getOptionalContentConfig(renderingIntent);
+    }
+
     Promise.all([
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
+      optionalContentConfigDataPromise,
     ])
-      .then(([transparency, optionalContentConfig]) => {
-        if (this.destroyed) {
-          complete();
-          return;
-        }
-        this._stats?.time("Rendering");
+      .then(
+        ([transparency, optionalContentConfig, optionalContentConfigData]) => {
+          if (this.destroyed) {
+            complete();
+            return;
+          }
+          this._stats?.time("Rendering");
 
-        if (!(optionalContentConfig.renderingIntent & renderingIntent)) {
-          throw new Error(
-            "Must use the same `intent`-argument when calling the `PDFPageProxy.render` " +
-              "and `PDFDocumentProxy.getOptionalContentConfig` methods."
-          );
+          if (
+            optionalContentConfig &&
+            !(optionalContentConfig.renderingIntent & renderingIntent)
+          ) {
+            throw new Error(
+              "Must use the same `intent`-argument when calling the `PDFPageProxy.render` " +
+                "and `PDFDocumentProxy.getOptionalContentConfig` methods."
+            );
+          }
+
+          const optionalContentConfigState =
+            renderInWorker &&
+            optionalContentConfig &&
+            !optionalContentConfig.hasInitialVisibility
+              ? Array.from(optionalContentConfig, ([id, group]) => [
+                  id,
+                  group.visible,
+                ])
+              : null;
+          internalRenderTask.initializeGraphics({
+            transparency,
+            renderingIntent,
+            optionalContentConfig,
+            optionalContentConfigData,
+            optionalContentConfigState,
+          });
+          internalRenderTask.operatorListChanged();
         }
-        internalRenderTask.initializeGraphics({
-          transparency,
-          optionalContentConfig,
-        });
-        internalRenderTask.operatorListChanged();
-      })
+      )
       .catch(complete);
 
     return renderTask;
@@ -1680,6 +1761,7 @@ class PDFPageProxy {
         argsArray: [],
         lastChunk: false,
         separateAnnots: null,
+        hasFilterOps: false,
       };
 
       this._stats?.time("Page Request");
@@ -1836,12 +1918,14 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, cacheKey) {
+  _startRenderPage(transparency, cacheKey, hasFilterOps = false) {
     const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
     }
     this._stats?.timeEnd("Page Request");
+
+    intentState.operatorList.hasFilterOps ||= hasFilterOps === true;
 
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
@@ -2143,9 +2227,7 @@ class PDFWorker {
   #resolve() {
     this.#capability.resolve();
     // Send global setting, e.g. verbosity level.
-    this.#messageHandler.send("configure", {
-      verbosity: this.verbosity,
-    });
+    this.#messageHandler.send("configure", { verbosity: this.verbosity });
   }
 
   /**
@@ -2381,6 +2463,54 @@ class PDFWorker {
   }
 }
 
+class RendererWorker {
+  #worker;
+
+  #handler;
+
+  #capability = Promise.withResolvers();
+
+  constructor(channelPort, enableHWA) {
+    const src =
+      GlobalWorkerOptions.rendererSrc ||
+      // eslint-disable-next-line no-nested-ternary
+      (typeof PDFJSDev === "undefined"
+        ? new URL("../pdf.renderer.js", import.meta.url)
+        : PDFJSDev.test("MOZCENTRAL")
+          ? "resource://pdf.js/build/pdf.renderer.mjs"
+          : "../build/pdf.renderer.mjs");
+    this.#worker = new Worker(src, { type: "module" });
+    this.#handler = new MessageHandler("main", "renderer", this.#worker);
+    this.#handler.send(
+      "configure",
+      { channelPort, enableHWA },
+      channelPort ? [channelPort] : undefined
+    );
+    this.#handler.on("ready", () => {
+      this.#capability.resolve();
+    });
+  }
+
+  /**
+   * Promise for worker initialization completion.
+   * @type {Promise<void>}
+   */
+  get promise() {
+    return this.#capability.promise;
+  }
+
+  get handler() {
+    return this.#handler;
+  }
+
+  destroy() {
+    this.#worker.terminate();
+    this.#worker = null;
+    this.#handler.destroy();
+    this.#handler = null;
+  }
+}
+
 /**
  * For internal use only.
  * @ignore
@@ -2404,8 +2534,17 @@ class WorkerTransport {
 
   #pagesMapper = PagesMapper.instance;
 
-  constructor(messageHandler, loadingTask, networkStream, params, factory) {
+  constructor(
+    messageHandler,
+    loadingTask,
+    networkStream,
+    params,
+    factory,
+    enableHWA,
+    rendererHandler = null
+  ) {
     this.messageHandler = messageHandler;
+    this.rendererHandler = rendererHandler;
     this.loadingTask = loadingTask;
     this.#networkStream = networkStream;
 
@@ -2596,6 +2735,14 @@ class WorkerTransport {
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
     waitOn.push(terminated);
 
+    if (this.rendererHandler) {
+      const terminatedRenderer = this.rendererHandler.sendWithPromise(
+        "Terminate",
+        null
+      );
+      waitOn.push(terminatedRenderer);
+    }
+
     Promise.all(waitOn).then(() => {
       this.commonObjs.clear();
       this.fontLoader.clear();
@@ -2616,7 +2763,10 @@ class WorkerTransport {
   }
 
   setupMessageHandler() {
-    const { messageHandler, loadingTask } = this;
+    const { messageHandler, loadingTask, rendererHandler } = this;
+    rendererHandler?.on("continue", ({ taskID }) => {
+      InternalRenderTask.continueFnMap.get(taskID)?.();
+    });
 
     messageHandler.on("GetReader", (data, sink) => {
       assert(
@@ -2777,113 +2927,21 @@ class WorkerTransport {
       }
 
       const page = this.#pageCache.get(data.pageIndex);
-      page._startRenderPage(data.transparency, data.cacheKey);
+      page._startRenderPage(
+        data.transparency,
+        data.cacheKey,
+        data.hasFilterOps
+      );
     });
 
-    messageHandler.on("commonobj", ([id, type, exportedData]) => {
-      if (this.destroyed) {
-        return null; // Ignore any pending requests if the worker was terminated.
-      }
-
-      if (this.commonObjs.has(id)) {
-        return null;
-      }
-
-      switch (type) {
-        case "Font":
-          if ("error" in exportedData) {
-            const exportedError = exportedData.error;
-            warn(`Error during font loading: ${exportedError}`);
-            this.commonObjs.resolve(id, exportedError);
-            break;
-          }
-
-          const fontData = new FontInfo(exportedData);
-          const inspectFont =
-            this._params.pdfBug && globalThis.FontInspector?.enabled
-              ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
-              : null;
-          const font = new FontFaceObject(
-            fontData,
-            inspectFont,
-            exportedData.extra,
-            exportedData.charProcOperatorList
-          );
-
-          this.fontLoader
-            .bind(font)
-            .catch(() => messageHandler.sendWithPromise("FontFallback", { id }))
-            .finally(() => {
-              if (!font.fontExtraProperties && font.data) {
-                // Immediately release the `font.data` property once the font
-                // has been attached to the DOM, since it's no longer needed,
-                // rather than waiting for a `PDFDocumentProxy.cleanup` call.
-                // Since `font.data` could be very large, e.g. in some cases
-                // multiple megabytes, this will help reduce memory usage.
-                font.clearData();
-              }
-              this.commonObjs.resolve(id, font);
-            });
-          break;
-        case "CopyLocalImage":
-          const { imageRef } = exportedData;
-          assert(imageRef, "The imageRef must be defined.");
-
-          for (const pageProxy of this.#pageCache.values()) {
-            for (const [, data] of pageProxy.objs) {
-              if (data?.ref !== imageRef) {
-                continue;
-              }
-              if (!data.dataLen) {
-                return null;
-              }
-              this.commonObjs.resolve(id, structuredClone(data));
-              return data.dataLen;
-            }
-          }
-          break;
-        case "FontPath":
-          this.commonObjs.resolve(id, new FontPathInfo(exportedData));
-          break;
-        case "Image":
-          this.commonObjs.resolve(id, exportedData);
-          break;
-        case "Pattern":
-          const pattern = new PatternInfo(exportedData);
-          this.commonObjs.resolve(id, pattern.getIR());
-          break;
-        default:
-          throw new Error(`Got unknown common object type ${type}`);
-      }
-
-      return null;
-    });
-
-    messageHandler.on("obj", ([id, pageIndex, type, imageData]) => {
-      if (this.destroyed) {
-        // Ignore any pending requests if the worker was terminated.
-        return;
-      }
-
-      const pageProxy = this.#pageCache.get(pageIndex);
-      if (pageProxy.objs.has(id)) {
-        return;
-      }
-      // Don't store data *after* cleanup has successfully run, see bug 1854145.
-      if (pageProxy._intentStates.size === 0) {
-        imageData?.bitmap?.close(); // Release any `ImageBitmap` data.
-        return;
-      }
-
-      switch (type) {
-        case "Image":
-        case "Pattern":
-          pageProxy.objs.resolve(id, imageData);
-          break;
-        default:
-          throw new Error(`Got unknown object type ${type}`);
-      }
-    });
+    setupHandler(
+      messageHandler,
+      () => this.destroyed,
+      this.commonObjs,
+      this.#pageCache,
+      this.fontLoader,
+      { pdfBug: this._params.pdfBug }
+    );
 
     messageHandler.on("DocProgress", data => {
       if (this.destroyed) {
@@ -3083,6 +3141,10 @@ class WorkerTransport {
     );
   }
 
+  getOptionalContentConfigData() {
+    return this.#cacheSimpleMethod("GetOptionalContentConfig");
+  }
+
   getPermissions() {
     return this.messageHandler.sendWithPromise("GetPermissions", null);
   }
@@ -3215,6 +3277,22 @@ class RenderTask {
       (separateAnnots.canvas && annotationCanvasMap?.size > 0)
     );
   }
+
+  /**
+   * The unique ID for this rendering task.
+   * @type {bigint}
+   */
+  get taskID() {
+    return this._internalRenderTask.taskID;
+  }
+
+  /**
+   * Whether rendering is happening in a worker thread.
+   * @type {boolean}
+   */
+  get renderInWorker() {
+    return this._internalRenderTask._renderInWorker;
+  }
 }
 
 /**
@@ -3225,6 +3303,10 @@ class InternalRenderTask {
   #rAF = null;
 
   static #canvasInUse = new WeakSet();
+
+  static #taskCounter = 0n;
+
+  static continueFnMap = new Map();
 
   constructor({
     callback,
@@ -3240,8 +3322,11 @@ class InternalRenderTask {
     pdfBug = false,
     pageColors = null,
     enableHWA = false,
+    rendererHandler = null,
     operationsFilter = null,
+    renderInWorker = true,
   }) {
+    this.taskID = InternalRenderTask.#taskCounter++;
     this.callback = callback;
     this.params = params;
     this.objs = objs;
@@ -3254,7 +3339,7 @@ class InternalRenderTask {
     this.filterFactory = filterFactory;
     this._pdfBug = pdfBug;
     this.pageColors = pageColors;
-
+    this._enableHWA = enableHWA;
     this.running = false;
     this.graphicsReadyCallback = null;
     this.graphicsReady = false;
@@ -3269,10 +3354,16 @@ class InternalRenderTask {
     this._scheduleNextBound = this._scheduleNext.bind(this);
     this._nextBound = this._next.bind(this);
     this._canvas = params.canvas;
-    this._canvasContext = params.canvas ? null : params.canvasContext;
-    this._enableHWA = enableHWA;
+    this._canvasContext = params.canvasContext ?? null;
     this._dependencyTracker = params.dependencyTracker;
+    this._renderInWorker = renderInWorker;
+    this.rendererHandler = rendererHandler;
+    InternalRenderTask.continueFnMap.set(this.taskID, this._continueBound);
     this._operationsFilter = operationsFilter;
+    this._sentOperatorListLength = 0;
+    this._executingInWorker = false;
+    this._pendingContinue = false;
+    this._endDrawingPromise = null;
   }
 
   get completed() {
@@ -3282,7 +3373,20 @@ class InternalRenderTask {
     });
   }
 
-  initializeGraphics({ transparency = false, optionalContentConfig }) {
+  #endDrawing() {
+    this._endDrawingPromise ||= this.rendererHandler.sendWithPromise("end", {
+      taskID: this.taskID,
+    });
+    return this._endDrawingPromise;
+  }
+
+  initializeGraphics({
+    transparency = false,
+    renderingIntent,
+    optionalContentConfig = null,
+    optionalContentConfigData = null,
+    optionalContentConfigState = null,
+  }) {
     if (this.cancelled) {
       return;
     }
@@ -3297,39 +3401,123 @@ class InternalRenderTask {
       InternalRenderTask.#canvasInUse.add(this._canvas);
     }
 
-    if (this._pdfBug && globalThis.StepperManager?.enabled) {
-      this.stepper = globalThis.StepperManager.create(this._pageIndex);
-      this.stepper.init(this.operatorList);
-      this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
-    }
     const { viewport, transform, background, dependencyTracker } = this.params;
+    if (this._renderInWorker) {
+      try {
+        const offscreen = this._canvas.transferControlToOffscreen();
+        const taskID = this.taskID;
+        const rendererHandler = this.rendererHandler;
+        Object.defineProperty(this._canvas, "resetWorkerCanvas", {
+          value() {
+            try {
+              rendererHandler.send("resetCanvas", { taskID });
+            } catch {
+              // Ignore errors if the renderer worker has been destroyed.
+            }
+          },
+          configurable: true,
+        });
+        Object.defineProperty(this._canvas, "getImageData", {
+          value(x, y, width, height) {
+            return rendererHandler.sendWithPromise("getImageData", {
+              taskID,
+              x,
+              y,
+              width,
+              height,
+            });
+          },
+          configurable: true,
+        });
+        Object.defineProperty(this._canvas, "isCanvasMonochrome", {
+          value(x, y, width, height, color) {
+            return rendererHandler.sendWithPromise("isCanvasMonochrome", {
+              taskID,
+              x,
+              y,
+              width,
+              height,
+              color,
+            });
+          },
+          configurable: true,
+        });
+        this.rendererHandler.send(
+          "init",
+          {
+            pageIndex: this._pageIndex,
+            canvas: offscreen,
+            map: this.annotationCanvasMap,
+            colors: this.pageColors,
+            taskID: this.taskID,
+            transform,
+            viewport,
+            transparency,
+            background,
+            renderingIntent,
+            optionalContentConfig: optionalContentConfigData,
+            optionalContentConfigState,
+            dependencyTracker,
+          },
+          [offscreen]
+        );
+      } catch (ex) {
+        // If transferControlToOffscreen fails (e.g., canvas already
+        // has a context), fall back to main thread rendering
+        warn(
+          `Failed to transfer canvas control to worker: ${ex.message}. ` +
+            `Falling back to main thread rendering.`
+        );
+        this._renderInWorker = false;
+      }
+    }
 
-    // When printing in Firefox, we get a specific context in mozPrintCallback
-    // which cannot be created from the canvas itself.
-    const canvasContext =
-      this._canvasContext ||
-      this._canvas.getContext("2d", {
-        alpha: false,
-        willReadFrequently: !this._enableHWA,
+    if (!this._renderInWorker) {
+      let config = optionalContentConfig;
+      if (!config) {
+        config = new OptionalContentConfig(
+          optionalContentConfigData,
+          renderingIntent
+        );
+        if (optionalContentConfigState) {
+          for (const [id, visible] of optionalContentConfigState) {
+            config.setVisibility(id, visible, /* preserveRB = */ false);
+          }
+        }
+      }
+      // When printing in Firefox, we get a specific context in mozPrintCallback
+      // which cannot be created from the canvas itself. In this case, we don't
+      // render in the worker and use the context directly.
+      if (this._pdfBug && globalThis.StepperManager?.enabled) {
+        this.stepper = globalThis.StepperManager.create(this._pageIndex);
+        this.stepper.init(this.operatorList);
+        this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
+      }
+      const canvasContext =
+        this._canvasContext ||
+        this._canvas.getContext("2d", {
+          alpha: false,
+          willReadFrequently: !this._enableHWA,
+        });
+      this.gfx = new CanvasGraphics(
+        canvasContext,
+        this.commonObjs,
+        this.objs,
+        this.canvasFactory,
+        this.filterFactory,
+        { optionalContentConfig: config },
+        this.annotationCanvasMap,
+        this.pageColors,
+        dependencyTracker
+      );
+      this.gfx.beginDrawing({
+        transform,
+        viewport,
+        transparency,
+        background,
       });
+    }
 
-    this.gfx = new CanvasGraphics(
-      canvasContext,
-      this.commonObjs,
-      this.objs,
-      this.canvasFactory,
-      this.filterFactory,
-      { optionalContentConfig },
-      this.annotationCanvasMap,
-      this.pageColors,
-      dependencyTracker
-    );
-    this.gfx.beginDrawing({
-      transform,
-      viewport,
-      transparency,
-      background,
-    });
     this.operatorListIdx = 0;
     this.graphicsReady = true;
     this.graphicsReadyCallback?.();
@@ -3338,7 +3526,21 @@ class InternalRenderTask {
   cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
-    this.gfx?.endDrawing();
+
+    if (this.graphicsReady) {
+      if (this._renderInWorker) {
+        try {
+          if (!this._endDrawingPromise) {
+            this.rendererHandler?.send("end", { taskID: this.taskID });
+          }
+        } catch {
+          // Ignore errors if the renderer worker has been destroyed.
+        }
+      } else {
+        this.gfx?.endDrawing();
+      }
+    }
+    InternalRenderTask.continueFnMap.delete(this.taskID);
     if (this.#rAF) {
       window.cancelAnimationFrame(this.#rAF);
       this.#rAF = null;
@@ -3359,18 +3561,34 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
-    this.gfx.dependencyTracker?.growOperationsCount(
-      this.operatorList.fnArray.length
-    );
-    this.stepper?.updateOperatorList(this.operatorList);
-
+    if (!this._renderInWorker) {
+      this.gfx.dependencyTracker?.growOperationsCount(
+        this.operatorList.fnArray.length
+      );
+      this.stepper?.updateOperatorList(this.operatorList);
+    }
     if (this.running) {
       return;
     }
+
+    // For worker mode, only continue if there are operations to process
+    // OR if this is the last chunk (need to complete even if empty)
+    if (
+      this._renderInWorker &&
+      this.operatorListIdx >= this.operatorList.argsArray.length &&
+      !this.operatorList.lastChunk
+    ) {
+      return;
+    }
+
     this._continue();
   }
 
   _continue() {
+    if (this._renderInWorker && this._executingInWorker) {
+      this._pendingContinue = true;
+      return;
+    }
     this.running = true;
     if (this.cancelled) {
       return;
@@ -3397,18 +3615,82 @@ class InternalRenderTask {
     if (this.cancelled) {
       return;
     }
-    this.operatorListIdx = this.gfx.executeOperatorList(
-      this.operatorList,
-      this.operatorListIdx,
-      this._continueBound,
-      this.stepper,
-      this._operationsFilter
-    );
+
+    const { operatorList, operatorListIdx, taskID } = this;
+    if (this._renderInWorker) {
+      const operatorListArgsArrayLen = operatorList.argsArray.length;
+
+      const sentLength = Math.min(
+        this._sentOperatorListLength,
+        operatorListArgsArrayLen
+      );
+      const fnArray =
+        sentLength < operatorListArgsArrayLen
+          ? operatorList.fnArray.slice(sentLength, operatorListArgsArrayLen)
+          : null;
+      const argsArray =
+        sentLength < operatorListArgsArrayLen
+          ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
+          : null;
+      this._executingInWorker = true;
+      try {
+        this.operatorListIdx = await this.rendererHandler.sendWithPromise(
+          "execute",
+          {
+            fnArray,
+            argsArray,
+            operatorListIdx,
+            taskID,
+            operationsFilter: this._operationsFilter,
+          }
+        );
+        this._sentOperatorListLength = operatorListArgsArrayLen;
+      } finally {
+        this._executingInWorker = false;
+      }
+      if (this.cancelled) {
+        return;
+      }
+
+      if (this._pendingContinue) {
+        this._pendingContinue = false;
+        this._continue();
+        return;
+      }
+
+      // The operatorList can grow on the main thread while we're waiting for
+      // the renderer worker. If the worker reached the end of what it was
+      // given, make sure that rendering continues for the new operations.
+      if (
+        this.operatorListIdx === operatorListArgsArrayLen &&
+        operatorListArgsArrayLen < operatorList.argsArray.length
+      ) {
+        this._continue();
+        return;
+      }
+    } else {
+      this.operatorListIdx = this.gfx.executeOperatorList(
+        this.operatorList,
+        this.operatorListIdx,
+        this._continueBound,
+        this.stepper,
+        this._operationsFilter
+      );
+    }
+
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;
       if (this.operatorList.lastChunk) {
-        this.gfx.endDrawing();
+        if (this._renderInWorker) {
+          await this.#endDrawing();
+          if (this.cancelled) {
+            return;
+          }
+        } else {
+          this.gfx.endDrawing();
+        }
         InternalRenderTask.#canvasInUse.delete(this._canvas);
+        InternalRenderTask.continueFnMap.delete(this.taskID);
         this.callback();
       }
     }
