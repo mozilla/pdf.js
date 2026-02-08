@@ -191,7 +191,7 @@ class NetworkPdfManager extends BasePdfManager {
     try {
       const value = obj[prop];
       if (typeof value === "function") {
-        return value.apply(obj, args);
+        return await value.apply(obj, args);
       }
       return value;
     } catch (ex) {
@@ -199,6 +199,11 @@ class NetworkPdfManager extends BasePdfManager {
         throw ex;
       }
       await this.requestRange(ex.begin, ex.end);
+      if (ex.objectStreamOffset) {
+        await this.pdfDocument.xref.decompressObjectStreams(
+          ex.objectStreamOffset
+        );
+      }
       return this.ensure(obj, prop, args);
     }
   }
