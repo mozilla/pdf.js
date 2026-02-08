@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { AbortException, assert, warn } from "../shared/util.js";
+import { AbortException, assert } from "../shared/util.js";
 import {
   BasePDFStream,
   BasePDFStreamRangeReader,
@@ -58,8 +58,7 @@ function getArrayBuffer(val) {
   if (val instanceof ArrayBuffer) {
     return val;
   }
-  warn(`getArrayBuffer - unexpected data format: ${val}`);
-  return new Uint8Array(val).buffer;
+  throw new Error(`getArrayBuffer - unexpected data: ${val}`);
 }
 
 class PDFFetchStream extends BasePDFStream {
@@ -194,4 +193,4 @@ class PDFFetchStreamRangeReader extends BasePDFStreamRangeReader {
   }
 }
 
-export { PDFFetchStream };
+export { getArrayBuffer, PDFFetchStream };

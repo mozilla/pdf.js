@@ -29,6 +29,13 @@ function getArrayBuffer(val) {
     : new Uint8Array(val).buffer;
 }
 
+function endRequests() {
+  for (const capability of this._requests) {
+    capability.resolve({ value: undefined, done: true });
+  }
+  this._requests.length = 0;
+}
+
 class PDFDataTransportStream extends BasePDFStream {
   _progressiveDone = false;
 
@@ -112,6 +119,8 @@ class PDFDataTransportStream extends BasePDFStream {
 }
 
 class PDFDataTransportStreamReader extends BasePDFStreamReader {
+  #endRequests = endRequests.bind(this);
+
   _done = false;
 
   _queuedChunks = null;
@@ -179,18 +188,21 @@ class PDFDataTransportStreamReader extends BasePDFStreamReader {
 
   cancel(reason) {
     this._done = true;
-    for (const capability of this._requests) {
-      capability.resolve({ value: undefined, done: true });
-    }
-    this._requests.length = 0;
+    this.#endRequests();
   }
 
   progressiveDone() {
     this._done ||= true;
+
+    if (this._queuedChunks.length === 0) {
+      this.#endRequests();
+    }
   }
 }
 
 class PDFDataTransportStreamRangeReader extends BasePDFStreamRangeReader {
+  #endRequests = endRequests.bind(this);
+
   onDone = null;
 
   _begin = -1;
@@ -213,13 +225,10 @@ class PDFDataTransportStreamRangeReader extends BasePDFStreamRangeReader {
     if (this._requests.length === 0) {
       this._queuedChunk = chunk;
     } else {
-      const firstCapability = this._requests.shift();
-      firstCapability.resolve({ value: chunk, done: false });
+      const capability = this._requests.shift();
+      capability.resolve({ value: chunk, done: false });
 
-      for (const capability of this._requests) {
-        capability.resolve({ value: undefined, done: true });
-      }
-      this._requests.length = 0;
+      this.#endRequests();
     }
     this._done = true;
     this.onDone?.();
@@ -241,12 +250,9 @@ class PDFDataTransportStreamRangeReader extends BasePDFStreamRangeReader {
 
   cancel(reason) {
     this._done = true;
-    for (const capability of this._requests) {
-      capability.resolve({ value: undefined, done: true });
-    }
-    this._requests.length = 0;
+    this.#endRequests();
     this.onDone?.();
   }
 }
 
-export { PDFDataTransportStream };
+export { endRequests, PDFDataTransportStream };
