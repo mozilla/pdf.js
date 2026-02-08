@@ -992,7 +992,7 @@ class Font {
         nonStdFontMap = getNonStdFontMap(),
         serifFonts = getSerifFonts();
       for (const namePart of name.split("+")) {
-        let fontName = namePart.replaceAll(/[,_]/g, "-");
+        let fontName = normalizeFontName(namePart);
         fontName = stdFontMap[fontName] || nonStdFontMap[fontName] || fontName;
         fontName = fontName.split("-", 1)[0];
         if (serifFonts[fontName]) {
