@@ -1444,34 +1444,36 @@ class PDFViewer {
     this._currentScale = newScale;
 
     if (!noScroll) {
-      let page = this._currentPageNumber,
-        dest;
-      if (
-        this._location &&
-        !(this.isInPresentationMode || this.isChangingPresentationMode)
-      ) {
-        page = this._location.pageNumber;
-        dest = [
-          null,
-          { name: "XYZ" },
-          this._location.left,
-          this._location.top,
-          null,
-        ];
-      }
-      this.scrollPageIntoView({
-        pageNumber: page,
-        destArray: dest,
-        allowNegativeOffset: true,
-      });
       if (Array.isArray(origin)) {
-        // If the origin of the scaling transform is specified, preserve its
-        // location on screen. If not specified, scaling will fix the top-left
-        // corner of the visible PDF area.
-        const scaleDiff = newScale / previousScale - 1;
         const [top, left] = this.containerTopLeft;
-        this.container.scrollLeft += (origin[0] - left) * scaleDiff;
-        this.container.scrollTop += (origin[1] - top) * scaleDiff;
+        const scaleFactor = previousScale > 0 ? newScale / previousScale : 1;
+        this.container.scrollLeft =
+          (this.container.scrollLeft + origin[0] - left) * scaleFactor -
+          (origin[0] - left);
+        this.container.scrollTop =
+          (this.container.scrollTop + origin[1] - top) * scaleFactor -
+          (origin[1] - top);
+      } else {
+        let page = this._currentPageNumber,
+          dest;
+        if (
+          this._location &&
+          !(this.isInPresentationMode || this.isChangingPresentationMode)
+        ) {
+          page = this._location.pageNumber;
+          dest = [
+            null,
+            { name: "XYZ" },
+            this._location.left,
+            this._location.top,
+            null,
+          ];
+        }
+        this.scrollPageIntoView({
+          pageNumber: page,
+          destArray: dest,
+          allowNegativeOffset: true,
+        });
       }
     }
 
