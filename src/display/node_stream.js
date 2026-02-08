@@ -14,13 +14,14 @@
  */
 /* globals process */
 
-import { AbortException, assert, warn } from "../shared/util.js";
+import { AbortException, assert } from "../shared/util.js";
 import {
   BasePDFStream,
   BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 import { createResponseError } from "./network_utils.js";
+import { getArrayBuffer } from "./fetch_stream.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -42,17 +43,6 @@ function getReadableStream(readStream) {
 
   const polyfill = require("node-readable-to-web-readable-stream");
   return polyfill.makeDefaultReadableStreamFromNodeReadable(readStream);
-}
-
-function getArrayBuffer(val) {
-  if (val instanceof Uint8Array) {
-    return val.buffer;
-  }
-  if (val instanceof ArrayBuffer) {
-    return val;
-  }
-  warn(`getArrayBuffer - unexpected data format: ${val}`);
-  return new Uint8Array(val).buffer;
 }
 
 class PDFNodeStream extends BasePDFStream {
