@@ -27,6 +27,7 @@ import {
   getResponseOrigin,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
+import { endRequests } from "./transport_stream.js";
 
 if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
   throw new Error(
@@ -174,6 +175,8 @@ class PDFNetworkStream extends BasePDFStream {
 }
 
 class PDFNetworkStreamReader extends BasePDFStreamReader {
+  #endRequests = endRequests.bind(this);
+
   _cachedChunks = [];
 
   _done = false;
@@ -254,13 +257,9 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
       this._cachedChunks.push(chunk);
     }
     this._done = true;
-    if (this._cachedChunks.length > 0) {
-      return;
+    if (this._cachedChunks.length === 0) {
+      this.#endRequests();
     }
-    for (const capability of this._requests) {
-      capability.resolve({ value: undefined, done: true });
-    }
-    this._requests.length = 0;
   }
 
   #onError(status) {
@@ -301,10 +300,7 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
   cancel(reason) {
     this._done = true;
     this._headersCapability.reject(reason);
-    for (const capability of this._requests) {
-      capability.resolve({ value: undefined, done: true });
-    }
-    this._requests.length = 0;
+    this.#endRequests();
 
     this._stream._abortRequest(this._fullRequestXhr);
     this._fullRequestXhr = null;
@@ -312,6 +308,8 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
 }
 
 class PDFNetworkStreamRangeReader extends BasePDFStreamRangeReader {
+  #endRequests = endRequests.bind(this);
+
   onClosed = null;
 
   _done = false;
@@ -353,10 +351,7 @@ class PDFNetworkStreamRangeReader extends BasePDFStreamRangeReader {
       this._queuedChunk = chunk;
     }
     this._done = true;
-    for (const capability of this._requests) {
-      capability.resolve({ value: undefined, done: true });
-    }
-    this._requests.length = 0;
+    this.#endRequests();
     this.onClosed?.();
   }
 
@@ -388,10 +383,7 @@ class PDFNetworkStreamRangeReader extends BasePDFStreamRangeReader {
 
   cancel(reason) {
     this._done = true;
-    for (const capability of this._requests) {
-      capability.resolve({ value: undefined, done: true });
-    }
-    this._requests.length = 0;
+    this.#endRequests();
 
     this._stream._abortRequest(this._requestXhr);
     this.onClosed?.();
