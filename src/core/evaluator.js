@@ -4463,7 +4463,7 @@ class PartialEvaluator {
         }
 
         // Using base font name as a font name.
-        baseFontName = baseFontName.name.replaceAll(/[,_]/g, "-");
+        baseFontName = normalizeFontName(baseFontName.name);
         const metrics = this.getBaseFontMetrics(baseFontName);
 
         // Simulating descriptor flags attribute
