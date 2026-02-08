@@ -633,6 +633,77 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Ακύρωση
 pdfjs-editor-add-comment-button =
     .title = Προσθήκη σχολίου
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = (Απ)ενεργοποίηση πλαϊνής γραμμής
+pdfjs-toggle-views-manager-button-label = (Απ)ενεργοποίηση πλαϊνής γραμμής
+pdfjs-views-manager-sidebar =
+    .aria-label = Πλαϊνή γραμμή
+pdfjs-views-manager-view-selector-button =
+    .title = Προβολές
+pdfjs-views-manager-view-selector-button-label = Προβολές
+pdfjs-views-manager-pages-title = Σελίδες
+pdfjs-views-manager-outlines-title = Διάρθρωση εγγράφου
+pdfjs-views-manager-attachments-title = Συνημμένα
+pdfjs-views-manager-layers-title = Επίπεδα
+pdfjs-views-manager-pages-option-label = Σελίδες
+pdfjs-views-manager-outlines-option-label = Διάρθρωση εγγράφου
+pdfjs-views-manager-attachments-option-label = Συνημμένα
+pdfjs-views-manager-layers-option-label = Επίπεδα
+pdfjs-views-manager-add-file-button =
+    .title = Προσθήκη αρχείου
+pdfjs-views-manager-add-file-button-label = Προσθήκη αρχείου
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } επιλεγμένη
+       *[other] { $count } επιλεγμένες
+    }
+pdfjs-views-manager-pages-status-none-action-label = Επιλογή σελίδων
+pdfjs-views-manager-pages-status-action-button-label = Διαχείριση
+pdfjs-views-manager-pages-status-copy-button-label = Αντιγραφή
+pdfjs-views-manager-pages-status-cut-button-label = Αποκοπή
+pdfjs-views-manager-pages-status-delete-button-label = Διαγραφή
+pdfjs-views-manager-pages-status-save-as-button-label = Αποθήκευση ως…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] Αποκόπηκε 1 σελίδα
+       *[other] Αποκόπηκαν { $count } σελίδες
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] Αντιγράφηκε 1 σελίδα
+       *[other] Αντιγράφηκαν { $count } σελίδες
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] Διαγράφηκε 1 σελίδα
+       *[other] Διαγράφηκαν { $count } σελίδες
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Προετοιμασία αρχείου…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Μεταφόρτωση αρχείου…
+pdfjs-views-manager-status-warning-cut-label = Δεν ήταν δυνατή η αποκοπή. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.
+pdfjs-views-manager-status-warning-copy-label = Δεν ήταν δυνατή η αντιγραφή. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.
+pdfjs-views-manager-status-warning-delete-label = Δεν ήταν δυνατή η διαγραφή. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.
+pdfjs-views-manager-status-warning-save-label = Δεν ήταν δυνατή η αποθήκευση. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.
+pdfjs-views-manager-status-undo-button-label = Αναίρεση
+pdfjs-views-manager-status-close-button =
+    .title = Κλείσιμο
+pdfjs-views-manager-status-close-button-label = Κλείσιμο
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

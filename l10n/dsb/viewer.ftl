@@ -641,6 +641,87 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Pśetergnuś
 pdfjs-editor-add-comment-button =
     .title = Komentar pśidaś
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Bocnicu pśešaltowaś
+pdfjs-toggle-views-manager-notification-button =
+    .title = Bocnicu pśešaltowaś (dokument miniatury/rozrědowanje/pśipiski/warstwy wopśimujo)
+pdfjs-toggle-views-manager-button-label = Bocnicu pśešaltowaś
+pdfjs-views-manager-sidebar =
+    .aria-label = Bocnica
+pdfjs-views-manager-view-selector-button =
+    .title = Naglědy
+pdfjs-views-manager-view-selector-button-label = Naglědy
+pdfjs-views-manager-pages-title = Boki
+pdfjs-views-manager-outlines-title = Dokumentowa struktura
+pdfjs-views-manager-attachments-title = Pśidanki
+pdfjs-views-manager-layers-title = Rowniny
+pdfjs-views-manager-pages-option-label = Boki
+pdfjs-views-manager-outlines-option-label = Dokumentowa struktura
+pdfjs-views-manager-attachments-option-label = Pśidanki
+pdfjs-views-manager-layers-option-label = Rowniny
+pdfjs-views-manager-add-file-button =
+    .title = Dataju pśidaś
+pdfjs-views-manager-add-file-button-label = Dataju pśidaś
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } wubrany
+        [two] { $count } wubranej
+        [few] { $count } wubrane
+       *[other] { $count } wubrane
+    }
+pdfjs-views-manager-pages-status-none-action-label = Boki wubraś
+pdfjs-views-manager-pages-status-action-button-label = Zastojaś
+pdfjs-views-manager-pages-status-copy-button-label = Kopěrowaś
+pdfjs-views-manager-pages-status-cut-button-label = Wurězaś
+pdfjs-views-manager-pages-status-delete-button-label = Lašowaś
+pdfjs-views-manager-pages-status-save-as-button-label = Składowaś ako…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] { $count } bok wurězany
+        [two] { $count } boka wurězanej
+        [few] { $count } boki wurězane
+       *[other] { $count } bokow wurězane
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] { $count } bok kopěrowany
+        [two] { $count } boka kopěrowanej
+        [few] { $count } boki kopěrowane
+       *[other] { $count } bokow kopěrowane
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] { $count } bok wulašowany
+        [two] { $count } boka wulašowanej
+        [few] { $count } boki wulašowane
+       *[other] { $count } bokow wulašowane
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Waša dataja se pśigótujo…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Dataja se nagrawa…
+pdfjs-views-manager-status-warning-cut-label = Njedajo se wurězaś. Aktualizěrujśo bok a wopytajśo hyšći raz.
+pdfjs-views-manager-status-warning-copy-label = Njedajo se kopěrowaś. Aktualizěrujśo bok a wopytajśo hyšći raz.
+pdfjs-views-manager-status-warning-delete-label = Njedajo se lašowaś. Aktualizěrujśo bok a wopytajśo hyšći raz.
+pdfjs-views-manager-status-warning-save-label = Njedajo se składowaś. Aktualizěrujśo bok a wopytajśo hyšći raz.
+pdfjs-views-manager-status-undo-button-label = Anulěrowaś
+pdfjs-views-manager-status-close-button =
+    .title = Zacyniś
+pdfjs-views-manager-status-close-button-label = Zacyniś
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

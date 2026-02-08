@@ -481,8 +481,8 @@ pdfjs-editor-new-alt-text-error-close-button = Închide
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-pdfjs-editor-new-alt-text-ai-model-downloading-progress = Se descarcă modelul IA de text alternativ ({ $downloadedSize } de { $totalSize } MB)
-    .aria-valuetext = Se descarcă modelul IA de text alternativ ({ $downloadedSize } de { $totalSize } MB)
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Se descarcă modelul AI de text alternativ ({ $downloadedSize } de { $totalSize } MB)
+    .aria-valuetext = Se descarcă modelul AI de text alternativ ({ $downloadedSize } de { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button =
     .aria-label = Text alternativ adăugat
@@ -511,7 +511,7 @@ pdfjs-editor-alt-text-settings-create-model-button-label = Creează automat text
 pdfjs-editor-alt-text-settings-create-model-description = Sugerează descrieri ca să îi ajuți pe cei care nu pot vedea imaginea sau pentru când nu se încarcă imaginea.
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model IA de text alternativ ({ $totalSize } MB)
+pdfjs-editor-alt-text-settings-download-model-label = Model AI de text alternativ ({ $totalSize } MB)
 pdfjs-editor-alt-text-settings-ai-model-description = Rulează local pe dispozitiv, deci datele tale rămân private. Necesar pentru text alternativ automat.
 pdfjs-editor-alt-text-settings-delete-model-button = Șterge
 pdfjs-editor-alt-text-settings-download-model-button = Descarcă
@@ -635,6 +635,83 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Anulează
 
 pdfjs-editor-add-comment-button =
     .title = Adaugă un comentariu
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Comută bara laterală
+pdfjs-toggle-views-manager-notification-button =
+    .title = Comută bara laterală (documentul conține miniaturi/schițe/atașamente/straturi)
+pdfjs-toggle-views-manager-button-label = Comută bara laterală
+pdfjs-views-manager-sidebar =
+    .aria-label = Bară laterală
+pdfjs-views-manager-view-selector-button =
+    .title = Vizualizări
+pdfjs-views-manager-view-selector-button-label = Vizualizări
+pdfjs-views-manager-pages-title = Pagini
+pdfjs-views-manager-outlines-title = Schiță document
+pdfjs-views-manager-attachments-title = Atașamente
+pdfjs-views-manager-layers-title = Straturi
+pdfjs-views-manager-pages-option-label = Pagini
+pdfjs-views-manager-outlines-option-label = Schiță document
+pdfjs-views-manager-attachments-option-label = Atașamente
+pdfjs-views-manager-layers-option-label = Straturi
+pdfjs-views-manager-add-file-button =
+    .title = Adaugă un fișier
+pdfjs-views-manager-add-file-button-label = Adaugă un fișier
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } selectată
+        [few] { $count } selectate
+       *[other] { $count } selectate
+    }
+pdfjs-views-manager-pages-status-none-action-label = Selectează pagini
+pdfjs-views-manager-pages-status-action-button-label = Gestionează
+pdfjs-views-manager-pages-status-copy-button-label = Copiază
+pdfjs-views-manager-pages-status-cut-button-label = Taie
+pdfjs-views-manager-pages-status-delete-button-label = Șterge
+pdfjs-views-manager-pages-status-save-as-button-label = Salvează ca…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 pagină tăiată
+        [few] { $count } pagini tăiate
+       *[other] { $count } de pagini tăiate
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 pagină copiată
+        [few] { $count } pagini copiate
+       *[other] { $count } de pagini copiate
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 pagină ștearsă
+        [few] { $count } pagini șterse
+       *[other] { $count } de pagini șterse
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Se pregătește fișierul…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Se încarcă fișierul…
+pdfjs-views-manager-status-warning-cut-label = Nu s-a putut tăia. Reîmprospătează pagina și încearcă din nou.
+pdfjs-views-manager-status-warning-copy-label = Nu s-a putut copia. Reîmprospătează pagina și încearcă din nou.
+pdfjs-views-manager-status-warning-delete-label = Nu s-a putut șterge. Reîmprospătează pagina și încearcă din nou.
+pdfjs-views-manager-status-warning-save-label = Nu s-a putut salva. Reîmprospătează pagina și încearcă din nou.
+pdfjs-views-manager-status-undo-button-label = Anulează
+pdfjs-views-manager-status-close-button =
+    .title = Închide
+pdfjs-views-manager-status-close-button-label = Închide
 
 ## Main menu for adding/removing signatures
 

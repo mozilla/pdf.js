@@ -522,6 +522,7 @@ pdfjs-editor-undo-bar-message-freetext = Đã xóa văn bản
 pdfjs-editor-undo-bar-message-ink = Đã xóa bản vẽ
 pdfjs-editor-undo-bar-message-stamp = Đã xóa hình ảnh
 pdfjs-editor-undo-bar-message-signature = Chữ ký đã bị xoá
+pdfjs-editor-undo-bar-message-comment = Đã xoá chú thích
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = { $count } chú thích đã bị xóa
@@ -616,6 +617,63 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Hủy bỏ
 
 pdfjs-editor-add-comment-button =
     .title = Thêm chú thích
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Bật/tắt thanh lề
+pdfjs-toggle-views-manager-notification-button =
+    .title = Bật tắt thanh lề (tài liệu bao gồm hình thu nhỏ/phác thảo/tập tin đính kèm/lớp)
+pdfjs-toggle-views-manager-button-label = Bật/tắt thanh lề
+pdfjs-views-manager-sidebar =
+    .aria-label = Thanh lề
+pdfjs-views-manager-view-selector-button =
+    .title = Chế độ hiển thị
+pdfjs-views-manager-view-selector-button-label = Chế độ hiển thị
+pdfjs-views-manager-pages-title = Trang
+pdfjs-views-manager-outlines-title = Bản phác thảo tài liệu
+pdfjs-views-manager-attachments-title = Đính kèm
+pdfjs-views-manager-layers-title = Lớp
+pdfjs-views-manager-pages-option-label = Trang
+pdfjs-views-manager-outlines-option-label = Bản phác thảo tài liệu
+pdfjs-views-manager-attachments-option-label = Đính kèm
+pdfjs-views-manager-layers-option-label = Lớp
+pdfjs-views-manager-add-file-button =
+    .title = Thêm tập tin
+pdfjs-views-manager-add-file-button-label = Thêm tập tin
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label = { $count } đã chọn
+pdfjs-views-manager-pages-status-none-action-label = Chọn trang
+pdfjs-views-manager-pages-status-action-button-label = Quản lý
+pdfjs-views-manager-pages-status-copy-button-label = Sao chép
+pdfjs-views-manager-pages-status-cut-button-label = Cắt
+pdfjs-views-manager-pages-status-delete-button-label = Dán
+pdfjs-views-manager-pages-status-save-as-button-label = Lưu thành…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label = Đã cắt { $count } trang
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label = Đã sao chép { $count } trang
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label = Đã xoá { $count } trang
+pdfjs-views-manager-pages-status-waiting-ready-label = Đang chuẩn bị tập tin của bạn…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Đang tải lên tập tin…
+pdfjs-views-manager-status-warning-cut-label = Không thể cắt. Vui lòng làm mới trang và thử lại.
+pdfjs-views-manager-status-warning-copy-label = Không thể sao chép. Vui lòng làm mới trang và thử lại.
+pdfjs-views-manager-status-warning-delete-label = Không thể xoá. Vui lòng làm mới trang và thử lại.
+pdfjs-views-manager-status-warning-save-label = Không thể lưu. Vui lòng làm mới trang và thử lại.
+pdfjs-views-manager-status-undo-button-label = Hoàn tác
+pdfjs-views-manager-status-close-button =
+    .title = Đóng
+pdfjs-views-manager-status-close-button-label = Đóng
 
 ## Main menu for adding/removing signatures
 

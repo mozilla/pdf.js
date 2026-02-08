@@ -540,6 +540,7 @@ pdfjs-editor-undo-bar-message-freetext = Text bol odstránený
 pdfjs-editor-undo-bar-message-ink = Kreslenie bolo odstránené
 pdfjs-editor-undo-bar-message-stamp = Obrázok bol odstránený
 pdfjs-editor-undo-bar-message-signature = Podpis bol odstránený
+pdfjs-editor-undo-bar-message-comment = Komentár odstránený
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -640,6 +641,87 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Zrušiť
 
 pdfjs-editor-add-comment-button =
     .title = Pridať komentár
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Prepnúť bočný panel
+pdfjs-toggle-views-manager-notification-button =
+    .title = Prepnúť bočný panel (dokument obsahuje miniatúry/prehľad/prílohy/vrstvy)
+pdfjs-toggle-views-manager-button-label = Prepnúť bočný panel
+pdfjs-views-manager-sidebar =
+    .aria-label = Bočný panel
+pdfjs-views-manager-view-selector-button =
+    .title = Zobrazenia
+pdfjs-views-manager-view-selector-button-label = Zobrazenia
+pdfjs-views-manager-pages-title = Strany
+pdfjs-views-manager-outlines-title = Prehľad dokumentu
+pdfjs-views-manager-attachments-title = Prílohy
+pdfjs-views-manager-layers-title = Vrstvy
+pdfjs-views-manager-pages-option-label = Strany
+pdfjs-views-manager-outlines-option-label = Prehľad dokumentu
+pdfjs-views-manager-attachments-option-label = Prílohy
+pdfjs-views-manager-layers-option-label = Vrstvy
+pdfjs-views-manager-add-file-button =
+    .title = Pridať súbor
+pdfjs-views-manager-add-file-button-label = Pridať súbor
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } označená
+        [few] { $count } označené
+        [many] { $count } označených
+       *[other] { $count } označených
+    }
+pdfjs-views-manager-pages-status-none-action-label = Vybrať strany
+pdfjs-views-manager-pages-status-action-button-label = Spravovať
+pdfjs-views-manager-pages-status-copy-button-label = Kopírovať
+pdfjs-views-manager-pages-status-cut-button-label = Vystrihnúť
+pdfjs-views-manager-pages-status-delete-button-label = Odstrániť
+pdfjs-views-manager-pages-status-save-as-button-label = Uložiť ako…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] Vystrihnutá 1 strana
+        [few] Vystrihnuté { $count } strany
+        [many] Vystrihnutých { $count } strán
+       *[other] Vystrihnutých { $count } strán
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] Skopírovaná 1 strana
+        [few] Skopírované { $count } strany
+        [many] Skopírovaných { $count } strán
+       *[other] Skopírovaných { $count } strán
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] Odstránená 1 strana
+        [few] Odstránené { $count } strany
+        [many] Odstránených { $count } strán
+       *[other] Odstránených { $count } strán
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Váš súbor sa pripravuje…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Nahráva sa súbor…
+pdfjs-views-manager-status-warning-cut-label = Vystrihnutie sa nepodarilo. Obnovte stránku a skúste to znova.
+pdfjs-views-manager-status-warning-copy-label = Skopírovanie sa nepodarilo. Obnovte stránku a skúste to znova.
+pdfjs-views-manager-status-warning-delete-label = Odstránenie sa nepodarilo. Obnovte stránku a skúste to znova.
+pdfjs-views-manager-status-warning-save-label = Uloženie sa nepodarilo. Obnovte stránku a skúste to znova.
+pdfjs-views-manager-status-undo-button-label = Späť
+pdfjs-views-manager-status-close-button =
+    .title = Zavrieť
+pdfjs-views-manager-status-close-button-label = Zavrieť
 
 ## Main menu for adding/removing signatures
 

@@ -633,6 +633,21 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Nuligi
 pdfjs-editor-add-comment-button =
     .title = Aldoni komenton
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Montri/kaŝi flankan strion
+pdfjs-toggle-views-manager-notification-button =
+    .title = Montri/kaŝi flankan strion (la dokumento enhavas miniaturojn/konturon/kunsendaĵojn/tavolojn)
+pdfjs-toggle-views-manager-button-label = Montri/kaŝi flankan strion
+pdfjs-views-manager-sidebar =
+    .aria-label = Flanka strio
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

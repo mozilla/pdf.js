@@ -637,6 +637,29 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Скасаваць
 pdfjs-editor-add-comment-button =
     .title = Дадаць каментарый
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-views-manager-pages-title = Старонкі
+pdfjs-views-manager-pages-option-label = Старонкі
+pdfjs-views-manager-add-file-button =
+    .title = Дадаць файл
+pdfjs-views-manager-add-file-button-label = Дадаць файл
+pdfjs-views-manager-pages-status-none-action-label = Выбраць старонкі
+pdfjs-views-manager-pages-status-action-button-label = Кіраваць
+pdfjs-views-manager-pages-status-copy-button-label = Капіяваць
+pdfjs-views-manager-pages-status-cut-button-label = Выразаць
+pdfjs-views-manager-pages-status-delete-button-label = Выдаліць
+pdfjs-views-manager-pages-status-save-as-button-label = Захаваць як…
+pdfjs-views-manager-status-undo-button-label = Адмяніць
+pdfjs-views-manager-status-close-button =
+    .title = Закрыць
+pdfjs-views-manager-status-close-button-label = Закрыць
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =
