@@ -167,10 +167,10 @@ pdfjs-printing-not-ready = 警告：此 PDF 未完成加载，无法打印。
 ## Tooltips and alt text for side panel toolbar buttons
 
 pdfjs-toggle-sidebar-button =
-    .title = 切换侧栏
+    .title = 打开/关闭侧栏
 pdfjs-toggle-sidebar-notification-button =
-    .title = 切换侧栏（文档所含的大纲/附件/图层）
-pdfjs-toggle-sidebar-button-label = 切换侧栏
+    .title = 打开/关闭侧栏（文档所含的大纲/附件/图层）
+pdfjs-toggle-sidebar-button-label = 打开/关闭侧栏
 pdfjs-document-outline-button =
     .title = 显示文档大纲（双击展开/折叠所有项）
 pdfjs-document-outline-button-label = 文档大纲
@@ -522,6 +522,7 @@ pdfjs-editor-undo-bar-message-freetext = 已移除文本
 pdfjs-editor-undo-bar-message-ink = 已移除绘图
 pdfjs-editor-undo-bar-message-stamp = 已移除图像
 pdfjs-editor-undo-bar-message-signature = 签名已移除
+pdfjs-editor-undo-bar-message-comment = 已移除批注
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple = 已移除 { $count } 条注释
@@ -616,6 +617,63 @@ pdfjs-editor-edit-comment-dialog-cancel-button = 取消
 
 pdfjs-editor-add-comment-button =
     .title = 添加批注
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = 打开/关闭侧栏
+pdfjs-toggle-views-manager-notification-button =
+    .title = 打开/关闭侧栏（文档所含的缩略图/大纲/附件/图层）
+pdfjs-toggle-views-manager-button-label = 打开/关闭侧栏
+pdfjs-views-manager-sidebar =
+    .aria-label = 侧栏
+pdfjs-views-manager-view-selector-button =
+    .title = 视图
+pdfjs-views-manager-view-selector-button-label = 视图
+pdfjs-views-manager-pages-title = 页面
+pdfjs-views-manager-outlines-title = 文档大纲
+pdfjs-views-manager-attachments-title = 附件
+pdfjs-views-manager-layers-title = 图层
+pdfjs-views-manager-pages-option-label = 页面
+pdfjs-views-manager-outlines-option-label = 文档大纲
+pdfjs-views-manager-attachments-option-label = 附件
+pdfjs-views-manager-layers-option-label = 图层
+pdfjs-views-manager-add-file-button =
+    .title = 添加文件
+pdfjs-views-manager-add-file-button-label = 添加文件
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label = 已选择 { $count } 页
+pdfjs-views-manager-pages-status-none-action-label = 选择页面
+pdfjs-views-manager-pages-status-action-button-label = 管理
+pdfjs-views-manager-pages-status-copy-button-label = 复制
+pdfjs-views-manager-pages-status-cut-button-label = 剪切
+pdfjs-views-manager-pages-status-delete-button-label = 删除
+pdfjs-views-manager-pages-status-save-as-button-label = 另存为…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label = 已剪切 { $count } 页
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label = 已复制 { $count } 页
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label = 已删除 { $count } 页
+pdfjs-views-manager-pages-status-waiting-ready-label = 正在准备文件…
+pdfjs-views-manager-pages-status-waiting-uploading-label = 正在上传文件…
+pdfjs-views-manager-status-warning-cut-label = 无法剪切，请刷新页面并重试。
+pdfjs-views-manager-status-warning-copy-label = 无法复制，请刷新页面并重试。
+pdfjs-views-manager-status-warning-delete-label = 无法删除，请刷新页面并重试。
+pdfjs-views-manager-status-warning-save-label = 无法保存，请刷新页面并重试。
+pdfjs-views-manager-status-undo-button-label = 撤销
+pdfjs-views-manager-status-close-button =
+    .title = 关闭
+pdfjs-views-manager-status-close-button-label = 关闭
 
 ## Main menu for adding/removing signatures
 

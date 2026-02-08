@@ -617,6 +617,63 @@ pdfjs-editor-edit-comment-dialog-cancel-button = キャンセル
 pdfjs-editor-add-comment-button =
     .title = コメントを追加します
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = サイドバーを切り替えます
+pdfjs-toggle-views-manager-notification-button =
+    .title = サイドバーを切り替えます (文書に含まれるサムネイル、アウトライン、添付データ、レイヤー)
+pdfjs-toggle-views-manager-button-label = サイドバーを切り替え
+pdfjs-views-manager-sidebar =
+    .aria-label = サイドバー
+pdfjs-views-manager-view-selector-button =
+    .title = ビュー
+pdfjs-views-manager-view-selector-button-label = ビュー
+pdfjs-views-manager-pages-title = ページ
+pdfjs-views-manager-outlines-title = 文書のアウトライン
+pdfjs-views-manager-attachments-title = 添付データ
+pdfjs-views-manager-layers-title = レイヤー
+pdfjs-views-manager-pages-option-label = ページ
+pdfjs-views-manager-outlines-option-label = 文書のアウトライン
+pdfjs-views-manager-attachments-option-label = 添付データ
+pdfjs-views-manager-layers-option-label = レイヤー
+pdfjs-views-manager-add-file-button =
+    .title = ファイルを追加します
+pdfjs-views-manager-add-file-button-label = ファイルを追加
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label = { $count } ページ選択中
+pdfjs-views-manager-pages-status-none-action-label = ページを選択
+pdfjs-views-manager-pages-status-action-button-label = 管理
+pdfjs-views-manager-pages-status-copy-button-label = コピー
+pdfjs-views-manager-pages-status-cut-button-label = 切り取り
+pdfjs-views-manager-pages-status-delete-button-label = 削除
+pdfjs-views-manager-pages-status-save-as-button-label = 名前を付けて保存...
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label = { $count } ページを切り取りしました
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label = { $count } ページをコピーしました
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label = { $count } ページを削除しました
+pdfjs-views-manager-pages-status-waiting-ready-label = ファイルを準備しています...
+pdfjs-views-manager-pages-status-waiting-uploading-label = ファイルをアップロードしています...
+pdfjs-views-manager-status-warning-cut-label = 切り取りできませんでした。ページを更新してもう一度試してください。
+pdfjs-views-manager-status-warning-copy-label = コピーできませんでした。ページを更新してもう一度試してください。
+pdfjs-views-manager-status-warning-delete-label = 削除できませんでした。ページを更新してもう一度試してください。
+pdfjs-views-manager-status-warning-save-label = 保存できませんでした。ページを更新してもう一度試してください。
+pdfjs-views-manager-status-undo-button-label = 元に戻す
+pdfjs-views-manager-status-close-button =
+    .title = 閉じる
+pdfjs-views-manager-status-close-button-label = 閉じる
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

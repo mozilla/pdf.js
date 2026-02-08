@@ -633,6 +633,24 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Mégse
 pdfjs-editor-add-comment-button =
     .title = Megjegyzés hozzáadása
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-views-manager-pages-status-waiting-ready-label = A fájl előkészítése…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Fájl feltöltése…
+pdfjs-views-manager-status-warning-cut-label = Nem sikerült kivágni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-warning-copy-label = Nem sikerült másolni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-warning-delete-label = Nem sikerült törölni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-warning-save-label = Nem sikerült menteni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-undo-button-label = Visszavonás
+pdfjs-views-manager-status-close-button =
+    .title = Bezárás
+pdfjs-views-manager-status-close-button-label = Bezárás
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

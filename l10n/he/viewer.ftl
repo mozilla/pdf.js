@@ -534,6 +534,7 @@ pdfjs-editor-undo-bar-message-freetext = הטקסט הוסר
 pdfjs-editor-undo-bar-message-ink = הציור הוסר
 pdfjs-editor-undo-bar-message-stamp = התמונה הוסרה
 pdfjs-editor-undo-bar-message-signature = החתימה הוסרה
+pdfjs-editor-undo-bar-message-comment = ההערה הוסרה
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +633,79 @@ pdfjs-editor-edit-comment-dialog-cancel-button = ביטול
 
 pdfjs-editor-add-comment-button =
     .title = הוספת הערה
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = החלפת תצוגת סרגל צד
+pdfjs-toggle-views-manager-notification-button =
+    .title = החלפת תצוגת סרגל צד (מסמך שמכיל תמונות ממוזערות/תוכן עניינים/קבצים מצורפים/שכבות)
+pdfjs-toggle-views-manager-button-label = החלפת תצוגת סרגל צד
+pdfjs-views-manager-sidebar =
+    .aria-label = סרגל צד
+pdfjs-views-manager-view-selector-button =
+    .title = תצוגות
+pdfjs-views-manager-view-selector-button-label = תצוגות
+pdfjs-views-manager-pages-title = עמודים
+pdfjs-views-manager-outlines-title = תוכן העניינים של המסמך
+pdfjs-views-manager-attachments-title = קבצים מצורפים
+pdfjs-views-manager-layers-title = שכבות
+pdfjs-views-manager-pages-option-label = עמודים
+pdfjs-views-manager-outlines-option-label = תוכן העניינים של המסמך
+pdfjs-views-manager-attachments-option-label = קבצים מצורפים
+pdfjs-views-manager-layers-option-label = שכבות
+pdfjs-views-manager-add-file-button =
+    .title = הוספת קובץ
+pdfjs-views-manager-add-file-button-label = הוספת קובץ
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] אחד נבחר
+       *[other] { $count } נבחרו
+    }
+pdfjs-views-manager-pages-status-none-action-label = בחירת עמודים
+pdfjs-views-manager-pages-status-action-button-label = ניהול
+pdfjs-views-manager-pages-status-copy-button-label = העתקה
+pdfjs-views-manager-pages-status-cut-button-label = גזירה
+pdfjs-views-manager-pages-status-delete-button-label = מחיקה
+pdfjs-views-manager-pages-status-save-as-button-label = שמירה בשם…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] עמוד אחד נגזר
+       *[other] { $count } עמודים נגזרו
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] עמוד אחד הועתק
+       *[other] { $count } עמודים הועתקו
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] עמוד אחד נמחק
+       *[other] { $count } עמודים נמחקו
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = בתהליך הכנת הקובץ שלך…
+pdfjs-views-manager-pages-status-waiting-uploading-label = בתהליך העלאת הקובץ…
+pdfjs-views-manager-status-warning-cut-label = לא ניתן היה לגזור. נא לרענן את הדף ולנסות שוב.
+pdfjs-views-manager-status-warning-copy-label = לא ניתן היה להעתיק. נא לרענן את הדף ולנסות שוב.
+pdfjs-views-manager-status-warning-delete-label = לא ניתן היה למחוק. נא לרענן את הדף ולנסות שוב.
+pdfjs-views-manager-status-warning-save-label = לא ניתן היה לשמור. נא לרענן את הדף ולנסות שוב.
+pdfjs-views-manager-status-undo-button-label = ביטול פעולה
+pdfjs-views-manager-status-close-button =
+    .title = סגירה
+pdfjs-views-manager-status-close-button-label = סגירה
 
 ## Main menu for adding/removing signatures
 

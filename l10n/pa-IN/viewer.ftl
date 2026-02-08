@@ -633,6 +633,79 @@ pdfjs-editor-edit-comment-dialog-cancel-button = ਰੱਦ ਕਰੋ
 pdfjs-editor-add-comment-button =
     .title = ਟਿੱਪਣੀ ਜੋੜੋ
 
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = ਬਾਹੀ ਬਦਲੋ
+pdfjs-toggle-views-manager-notification-button =
+    .title = ਬਾਹੀ ਨੂੰ ਬਦਲੋ (ਦਸਤਾਵੇਜ਼ ਥੰਮਨੇਲ/ਆਨਲਾਈਨਅਟੈਚਮੈਂਟ/ਪਰਤਾਂ ਰੱਖਦਾ ਹੈ)
+pdfjs-toggle-views-manager-button-label = ਬਾਹੀ ਨੂੰ ਬਦਲੋ
+pdfjs-views-manager-sidebar =
+    .aria-label = ਬਾਹੀ
+pdfjs-views-manager-view-selector-button =
+    .title = ਵੇਖੋ
+pdfjs-views-manager-view-selector-button-label = ਵੇਖੋ
+pdfjs-views-manager-pages-title = ਸਫ਼ੇ
+pdfjs-views-manager-outlines-title = ਦਸਤਾਵੇਜ਼ ਆਉਟਲਾਈਨ
+pdfjs-views-manager-attachments-title = ਅਟੈਚਮੈਂਟਾਂ
+pdfjs-views-manager-layers-title = ਪਰਤਾਂ
+pdfjs-views-manager-pages-option-label = ਸਫ਼ੇ
+pdfjs-views-manager-outlines-option-label = ਦਸਤਾਵੇਜ਼ ਆਉਟਲਾਈਨ
+pdfjs-views-manager-attachments-option-label = ਅਟੈਚਮੈਂਟਾਂ
+pdfjs-views-manager-layers-option-label = ਪਰਤਾਂ
+pdfjs-views-manager-add-file-button =
+    .title = ਫ਼ਾਇਲ ਨੂੰ ਜੋੜੋ
+pdfjs-views-manager-add-file-button-label = ਫ਼ਾਇਲ ਨੂੰ ਜੋੜੋ
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } ਚੁਣਿਆ
+       *[other] { $count } ਚੁਣੇ
+    }
+pdfjs-views-manager-pages-status-none-action-label = ਸਫ਼ੇ ਚੁਣੋ
+pdfjs-views-manager-pages-status-action-button-label = ਬੰਦੋਬਸਤ
+pdfjs-views-manager-pages-status-copy-button-label = ਕਾਪੀ ਕਰੋ
+pdfjs-views-manager-pages-status-cut-button-label = ਕੱਟੋ
+pdfjs-views-manager-pages-status-delete-button-label = ਹਟਾਓ
+pdfjs-views-manager-pages-status-save-as-button-label = …ਵਜੋਂ ਸੰਭਾਲੋ
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 ਸਫ਼ੇ ਨੂੰ ਕੱਟਿਆਂ
+       *[other] { $count } ਸਫ਼ਿਆਂ ਨੂੰ ਕੱਟਿਆਂ
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 ਸਫ਼ੇ ਨੂੰ ਕਾਪੀ ਕੀਤਾ
+       *[other] { $count } ਸਫ਼ਿਆਂ ਨੂੰ ਕਾਪੀ ਕੀਤਾ
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 ਸਫ਼ੇ ਨੂੰ ਹਟਾਇਆ
+       *[other] { $count } ਸਫ਼ਿਆਂ ਨੂੰ ਹਟਾਇਆ
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = …ਤੁਹਾਡੀ ਫ਼ਾਇਲ ਨੂੰ ਤਿਆਰ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
+pdfjs-views-manager-pages-status-waiting-uploading-label = …ਫ਼ਾਇਲ ਨੂੰ ਅੱਪਲੋਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
+pdfjs-views-manager-status-warning-cut-label = ਕੱਟਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ। ਸਫ਼ੇ ਨੂੰ ਤਾਜ਼ਾ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
+pdfjs-views-manager-status-warning-copy-label = ਕਾਪੀ ਨਹੀਂ ਕੀਤਾ ਜਾ ਸਕਿਆ। ਸਫ਼ੇ ਨੂੰ ਤਾਜ਼ਾ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
+pdfjs-views-manager-status-warning-delete-label = ਹਟਾਇਆ ਨਹੀਂ ਜਾ ਸਕਿਆ। ਸਫ਼ੇ ਨੂੰ ਤਾਜ਼ਾ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
+pdfjs-views-manager-status-warning-save-label = ਸੰਭਾਲਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ। ਸਫ਼ੇ ਨੂੰ ਤਾਜ਼ਾ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
+pdfjs-views-manager-status-undo-button-label = ਵਾਪਸ
+pdfjs-views-manager-status-close-button =
+    .title = ਬੰਦ ਕਰੋ
+pdfjs-views-manager-status-close-button-label = ਬੰਦ ਕਰੋ
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

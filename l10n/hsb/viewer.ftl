@@ -540,6 +540,7 @@ pdfjs-editor-undo-bar-message-freetext = Tekst je so wotstronił
 pdfjs-editor-undo-bar-message-ink = Rysowanka je so wotstroniła
 pdfjs-editor-undo-bar-message-stamp = Wobraz je so wotstronił
 pdfjs-editor-undo-bar-message-signature = Signatura je so wotstroniła
+pdfjs-editor-undo-bar-message-comment = Komentar je so wotstronił
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -640,6 +641,87 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Přetorhnyć
 
 pdfjs-editor-add-comment-button =
     .title = Komentar přidać
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Bóčnicu přepinać
+pdfjs-toggle-views-manager-notification-button =
+    .title = Bóčnicu přepinać (dokument miniatury/rozrjad/přiwěški/woršty wobsahuje)
+pdfjs-toggle-views-manager-button-label = Bóčnicu přepinać
+pdfjs-views-manager-sidebar =
+    .aria-label = Bóčnica
+pdfjs-views-manager-view-selector-button =
+    .title = Napohlady
+pdfjs-views-manager-view-selector-button-label = Napohlady
+pdfjs-views-manager-pages-title = Strony
+pdfjs-views-manager-outlines-title = Dokumentowa struktura
+pdfjs-views-manager-attachments-title = Přiwěški
+pdfjs-views-manager-layers-title = Runiny
+pdfjs-views-manager-pages-option-label = Strony
+pdfjs-views-manager-outlines-option-label = Dokumentowa struktura
+pdfjs-views-manager-attachments-option-label = Přiwěški
+pdfjs-views-manager-layers-option-label = Runiny
+pdfjs-views-manager-add-file-button =
+    .title = Dataju přidać
+pdfjs-views-manager-add-file-button-label = Dataju přidać
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } wubrany
+        [two] { $count } wubranej
+        [few] { $count } wubrane
+       *[other] { $count } wubranych
+    }
+pdfjs-views-manager-pages-status-none-action-label = Strony wubrać
+pdfjs-views-manager-pages-status-action-button-label = Rjadować
+pdfjs-views-manager-pages-status-copy-button-label = Kopěrować
+pdfjs-views-manager-pages-status-cut-button-label = Wutřihać
+pdfjs-views-manager-pages-status-delete-button-label = Zhašeć
+pdfjs-views-manager-pages-status-save-as-button-label = Składować jako…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] { $count } strona wutřihana
+        [two] { $count } stronje wutřihanej
+        [few] { $count } strony wutřihane
+       *[other] { $count } stronow wutřihane
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] { $count } strona kopěrowana
+        [two] { $count } strona kopěrowanej
+        [few] { $count } strona kopěrowane
+       *[other] { $count } strona kopěrowane
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] { $count } strona zhašana
+        [two] { $count } strona zhašanej
+        [few] { $count } strona zhašane
+       *[other] { $count } strona zhašane
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Waša dataja so přihotuje…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Dataja so nahrawa…
+pdfjs-views-manager-status-warning-cut-label = Njeda so wutřihać. Aktualizujće stronu a spytajće hišće raz.
+pdfjs-views-manager-status-warning-copy-label = Njeda so kopěrować. Aktualizujće stronu a spytajće hišće raz.
+pdfjs-views-manager-status-warning-delete-label = Njeda so zhašeć. Aktualizujće stronu a spytajće hišće raz.
+pdfjs-views-manager-status-warning-save-label = Njeda so składować. Aktualizujće stronu a spytajće hišće raz.
+pdfjs-views-manager-status-undo-button-label = Cofnyć
+pdfjs-views-manager-status-close-button =
+    .title = Začinić
+pdfjs-views-manager-status-close-button-label = Začinić
 
 ## Main menu for adding/removing signatures
 

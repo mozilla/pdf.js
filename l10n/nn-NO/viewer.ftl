@@ -534,6 +534,7 @@ pdfjs-editor-undo-bar-message-freetext = Tekst fjerna
 pdfjs-editor-undo-bar-message-ink = Teikning fjerna
 pdfjs-editor-undo-bar-message-stamp = Bilde fjerna
 pdfjs-editor-undo-bar-message-signature = Signatur fjerna
+pdfjs-editor-undo-bar-message-comment = Kommentar fjerna
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +633,79 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Avbryt
 
 pdfjs-editor-add-comment-button =
     .title = Legg til kommentar
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Vis/skjul sidestolpe
+pdfjs-toggle-views-manager-notification-button =
+    .title = Vis/skjul sidestolpe (dokumentet inneheld miniatyrbilde/disposisjon/vedlegg/lag)
+pdfjs-toggle-views-manager-button-label = Vis/skjul sidestolpe
+pdfjs-views-manager-sidebar =
+    .aria-label = Sidestolpe
+pdfjs-views-manager-view-selector-button =
+    .title = Vis
+pdfjs-views-manager-view-selector-button-label = Visningar
+pdfjs-views-manager-pages-title = Sider
+pdfjs-views-manager-outlines-title = Dokumentdisposisjon
+pdfjs-views-manager-attachments-title = Vedlegg
+pdfjs-views-manager-layers-title = Lag
+pdfjs-views-manager-pages-option-label = Sider
+pdfjs-views-manager-outlines-option-label = Dokumentdisposisjon
+pdfjs-views-manager-attachments-option-label = Vedlegg
+pdfjs-views-manager-layers-option-label = Lag
+pdfjs-views-manager-add-file-button =
+    .title = Legg til fil
+pdfjs-views-manager-add-file-button-label = Legg til fil
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } vald
+       *[other] { $count } valde
+    }
+pdfjs-views-manager-pages-status-none-action-label = Vel sider
+pdfjs-views-manager-pages-status-action-button-label = Handsam
+pdfjs-views-manager-pages-status-copy-button-label = Kopier
+pdfjs-views-manager-pages-status-cut-button-label = Klipp ut
+pdfjs-views-manager-pages-status-delete-button-label = Slett
+pdfjs-views-manager-pages-status-save-as-button-label = Lagre som…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 side klipt ut
+       *[other] { $count } sider klipte ut
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 side kopiert
+       *[other] { $count } sider kopierte
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 side sletta
+       *[other] { $count } sider sletta
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Klargjer fila di…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Lastar opp fila…
+pdfjs-views-manager-status-warning-cut-label = Klarte ikkje å klippe ut. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-warning-copy-label = Klarte ikkje å kopiere. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-warning-delete-label = Klarte ikkje å slette. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-warning-save-label = Klarte ikkje å lagre. Oppdater sida og prøv på nytt.
+pdfjs-views-manager-status-undo-button-label = Angre
+pdfjs-views-manager-status-close-button =
+    .title = Lat att
+pdfjs-views-manager-status-close-button-label = Lat att
 
 ## Main menu for adding/removing signatures
 
