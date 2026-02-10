@@ -2166,6 +2166,11 @@ const PDFViewerApplication = {
       onUpdateFindControlState.bind(this),
       opts
     );
+    eventBus._on(
+      "pagesselectionchanged",
+      onPagesSelectionChanged.bind(this),
+      opts
+    );
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus._on("fileinputchange", onFileInputChange.bind(this), opts);
@@ -2725,6 +2730,29 @@ function onUpdateFindControlState({
     });
   } else {
     this.findBar?.updateUIState(state, previous, matchesCount);
+  }
+}
+
+function onPagesSelectionChanged({ count }) {
+  const label = document.getElementById("viewsManagerStatusActionLabel");
+  if (!label) {
+    return;
+  }
+
+  if (count === 0) {
+    // No pages selected - show "Select pages"
+    label.setAttribute(
+      "data-l10n-id",
+      "pdfjs-views-manager-pages-status-none-action-label"
+    );
+    label.removeAttribute("data-l10n-args");
+  } else {
+    // Pages selected - show count "X selected"
+    label.setAttribute(
+      "data-l10n-id",
+      "pdfjs-views-manager-pages-status-action-label"
+    );
+    label.setAttribute("data-l10n-args", JSON.stringify({ count }));
   }
 }
 

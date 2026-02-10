@@ -110,6 +110,13 @@ function getSearchResults(page) {
   });
 }
 
+function waitForStatusLabelBySelector(page, id, args = null) {
+  let selector = `#viewsManagerStatusActionLabel[data-l10n-id="${id}"]`;
+  selector +=
+    args === null ? ":not([data-l10n-args])" : `[data-l10n-args='${args}']`;
+  return page.waitForSelector(selector, { visible: true });
+}
+
 function movePages(page, selectedPages, atIndex) {
   return page.evaluate(
     (selected, index) => {
@@ -878,6 +885,212 @@ describe("Reorganize Pages View", () => {
     });
   });
 
+  describe("Dynamic status label", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "page-fit",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should update the status label based on page selection", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          const initialLabel = await page.evaluate(() => {
+            const label = document.getElementById(
+              "viewsManagerStatusActionLabel"
+            );
+            return {
+              l10nId: label.getAttribute("data-l10n-id"),
+              l10nArgs: label.getAttribute("data-l10n-args"),
+            };
+          });
+
+          expect(initialLabel.l10nId)
+            .withContext(`In ${browserName}`)
+            .toBe("pdfjs-views-manager-pages-status-none-action-label");
+          expect(initialLabel.l10nArgs)
+            .withContext(`In ${browserName}`)
+            .toBeNull();
+
+          await page.evaluate(() => {
+            const checkbox = document.querySelector(
+              '#thumbnailsView input[type="checkbox"]'
+            );
+            checkbox.click();
+          });
+
+          const oneSelectedLabel = await page.evaluate(() => {
+            const label = document.getElementById(
+              "viewsManagerStatusActionLabel"
+            );
+            return {
+              l10nId: label.getAttribute("data-l10n-id"),
+              l10nArgs: label.getAttribute("data-l10n-args"),
+            };
+          });
+
+          expect(oneSelectedLabel.l10nId)
+            .withContext(`In ${browserName}`)
+            .toBe("pdfjs-views-manager-pages-status-action-label");
+          expect(oneSelectedLabel.l10nArgs)
+            .withContext(`In ${browserName}`)
+            .toBe('{"count":1}');
+
+          await page.evaluate(() => {
+            const checkboxes = document.querySelectorAll(
+              '#thumbnailsView input[type="checkbox"]'
+            );
+            checkboxes[1].click();
+            checkboxes[2].click();
+          });
+
+          const threeSelectedLabel = await page.evaluate(() => {
+            const label = document.getElementById(
+              "viewsManagerStatusActionLabel"
+            );
+            return {
+              l10nId: label.getAttribute("data-l10n-id"),
+              l10nArgs: label.getAttribute("data-l10n-args"),
+            };
+          });
+
+          expect(threeSelectedLabel.l10nId)
+            .withContext(`In ${browserName}`)
+            .toBe("pdfjs-views-manager-pages-status-action-label");
+          expect(threeSelectedLabel.l10nArgs)
+            .withContext(`In ${browserName}`)
+            .toBe('{"count":3}');
+
+          await page.evaluate(() => {
+            const checkboxes = document.querySelectorAll(
+              '#thumbnailsView input[type="checkbox"]'
+            );
+            checkboxes[0].click();
+            checkboxes[1].click();
+            checkboxes[2].click();
+          });
+
+          const finalLabel = await page.evaluate(() => {
+            const label = document.getElementById(
+              "viewsManagerStatusActionLabel"
+            );
+            return {
+              l10nId: label.getAttribute("data-l10n-id"),
+              l10nArgs: label.getAttribute("data-l10n-args"),
+            };
+          });
+
+          expect(finalLabel.l10nId)
+            .withContext(`In ${browserName}`)
+            .toBe("pdfjs-views-manager-pages-status-none-action-label");
+          expect(finalLabel.l10nArgs)
+            .withContext(`In ${browserName}`)
+            .toBeNull();
+        })
+      );
+    });
+
+    it("should clear the selected-pages count after paste", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+          await waitForStatusLabelBySelector(
+            page,
+            "pdfjs-views-manager-pages-status-action-label",
+            '{"count":2}'
+          );
+
+          let handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          handlePagesEdited = await waitForPagesEdited(page, "paste");
+          await waitAndClick(page, `${getThumbnailSelector(2)}+button`);
+          await awaitPromise(handlePagesEdited);
+          await waitForStatusLabelBySelector(
+            page,
+            "pdfjs-views-manager-pages-status-none-action-label"
+          );
+        })
+      );
+    });
+
+    it("should clear the selected-pages count after saving", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          const rect1 = await getRect(page, getThumbnailSelector(1));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            10
+          );
+
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+          await waitForStatusLabelBySelector(
+            page,
+            "pdfjs-views-manager-pages-status-action-label",
+            '{"count":2}'
+          );
+
+          const handleSaveAs = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "savepageseditedpdf",
+              () => resolve(),
+              { once: true }
+            );
+          });
+
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionSaveAs");
+          await awaitPromise(handleSaveAs);
+          await waitForStatusLabelBySelector(
+            page,
+            "pdfjs-views-manager-pages-status-none-action-label"
+          );
+        })
+      );
+    });
+  });
+
   describe("Keyboard shortcuts for cut and copy (bug 2018139)", () => {
     let pages;
 
@@ -967,6 +1180,10 @@ describe("Reorganize Pages View", () => {
             .withContext(`In ${browserName}`)
             .toEqual(expected);
           await waitForHavingContents(page, expected);
+          await waitForStatusLabelBySelector(
+            page,
+            "pdfjs-views-manager-pages-status-none-action-label"
+          );
         })
       );
     });

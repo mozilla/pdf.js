@@ -630,8 +630,8 @@ class PDFThumbnailViewer {
       currentPageNumber = this.#updateThumbnails(currentPageNumber);
       this.#computeThumbnailsPosition();
 
-      selectedPages.clear();
       this.#pageNumberToRemove = NaN;
+      this.#clearSelection();
       this.#updateMenuEntries();
 
       this.eventBus.dispatch("pagesedited", {
@@ -657,6 +657,10 @@ class PDFThumbnailViewer {
       this._thumbnails[pageNumber - 1].toggleSelected(false);
     }
     this.#selectedPages.clear();
+    this.eventBus.dispatch("pagesselectionchanged", {
+      source: this,
+      count: 0,
+    });
   }
 
   #saveExtractedPages() {
@@ -747,7 +751,7 @@ class PDFThumbnailViewer {
 
     pagesMapper.deletePages(pagesToDelete);
     currentPageNumber = this.#updateThumbnails(currentPageNumber);
-    selectedPages.clear();
+    this.#clearSelection();
     this.#updateMenuEntries();
 
     this.eventBus.dispatch("pagesedited", {
@@ -1036,6 +1040,11 @@ class PDFThumbnailViewer {
       set.delete(pageNumber);
     }
     this.#updateMenuEntries();
+
+    this.eventBus.dispatch("pagesselectionchanged", {
+      source: this,
+      count: set.size,
+    });
   }
 
   #addDragListeners() {
