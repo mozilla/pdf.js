@@ -1912,6 +1912,16 @@ class PDFPageProxy {
     this._intentStates.clear();
     this.objs.clear();
     this.#pendingCleanup = false;
+
+    if (this._transport.rendererHandler) {
+      try {
+        this._transport.rendererHandler.send("cleanupPage", {
+          pageIndex: this._pageIndex,
+        });
+      } catch {
+        // Ignore errors if the renderer worker has been destroyed.
+      }
+    }
     return true;
   }
 
@@ -3442,25 +3452,43 @@ class InternalRenderTask {
           },
           configurable: true,
         });
-        this.rendererHandler.send(
-          "init",
-          {
-            pageIndex: this._pageIndex,
-            canvas: offscreen,
-            map: this.annotationCanvasMap,
-            colors: this.pageColors,
-            taskID: this.taskID,
-            transform,
-            viewport,
-            transparency,
-            background,
-            renderingIntent,
-            optionalContentConfig: optionalContentConfigData,
-            optionalContentConfigState,
-            dependencyTracker,
-          },
-          [offscreen]
-        );
+        const initTransfers = [offscreen];
+        const initParams = {
+          pageIndex: this._pageIndex,
+          canvas: offscreen,
+          colors: this.pageColors,
+          taskID: this.taskID,
+          transform,
+          viewport,
+          transparency,
+          background,
+          renderingIntent,
+          optionalContentConfig: optionalContentConfigData,
+          optionalContentConfigState,
+          dependencyTracker,
+        };
+
+        if (this.annotationCanvasMap) {
+          const annotationCanvases = [];
+          for (const [id, canvas] of this.annotationCanvasMap) {
+            try {
+              const annotationCanvas = canvas.transferControlToOffscreen();
+              annotationCanvases.push([id, annotationCanvas]);
+              initTransfers.push(annotationCanvas);
+            } catch (ex) {
+              warn(
+                `Failed to transfer annotation canvas to worker: ${ex.message}. `
+              );
+            }
+          }
+          if (annotationCanvases.length > 0) {
+            initParams.annotationCanvases = annotationCanvases;
+          } else {
+            initParams.map = new Map();
+          }
+        }
+
+        this.rendererHandler.send("init", initParams, initTransfers);
       } catch (ex) {
         // If transferControlToOffscreen fails (e.g., canvas already
         // has a context), fall back to main thread rendering

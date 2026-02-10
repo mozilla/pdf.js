@@ -1267,6 +1267,9 @@ class TextAnnotationElement extends AnnotationElement {
       "data-l10n-args",
       JSON.stringify({ type: this.data.name })
     );
+    if (this.data.name !== "NoIcon" || this.data.hasOwnCanvas) {
+      this.hasOwnCommentButton = true;
+    }
 
     if (!this.data.popupRef && this.hasPopupData) {
       this.hasOwnCommentButton = true;

@@ -69,7 +69,7 @@ class RendererMessageHandler {
       ({
         pageIndex,
         canvas,
-        map,
+        annotationCanvasMap,
         colors,
         taskID,
         transform,
@@ -102,7 +102,7 @@ class RendererMessageHandler {
           this.#canvasFactory,
           this.#filterFactory,
           { optionalContentConfig },
-          map,
+          annotationCanvasMap,
           colors
         );
         gfx.beginDrawing({ transform, viewport, transparency, background });
@@ -188,6 +188,19 @@ class RendererMessageHandler {
         return newOperatorListIdx;
       }
     );
+
+    mainHandler.on("cleanupPage", ({ pageIndex }) => {
+      if (terminated) {
+        throw new Error("Renderer worker has been terminated.");
+      }
+
+      const objs = this.#objsMap.get(pageIndex);
+      if (!objs) {
+        return;
+      }
+      objs.clear();
+      this.#objsMap.delete(pageIndex);
+    });
 
     mainHandler.on("end", ({ taskID }) => {
       if (terminated) {
