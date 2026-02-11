@@ -1636,6 +1636,8 @@ class PartialEvaluator {
             localShadingPatternCache,
           });
           if (objId) {
+            // Ensure that the Pattern is resolved before it's used
+            operatorList.addDependency(objId);
             const matrix = lookupMatrix(dict.getArray("Matrix"), null);
             operatorList.addOp(fn, ["Shading", objId, matrix]);
           }
@@ -2190,6 +2192,7 @@ class PartialEvaluator {
             if (!patternId) {
               continue;
             }
+            operatorList.addDependency(patternId);
             args = [patternId];
             fn = OPS.shadingFill;
             break;
