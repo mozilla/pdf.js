@@ -1529,14 +1529,17 @@ class PartialEvaluator {
       id = `${this.idFactory.getDocId()}_type3_${id}`;
     }
     localShadingPatternCache.set(shading, id);
-
+    const transfers = [];
+    const patternBuffer = PatternInfo.write(patternIR);
+    transfers.push(patternBuffer);
     if (this.parsingType3Font) {
-      const transfers = [];
-      const patternBuffer = PatternInfo.write(patternIR);
-      transfers.push(patternBuffer);
       this.handler.send("commonobj", [id, "Pattern", patternBuffer], transfers);
     } else {
-      this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
+      this.handler.send(
+        "obj",
+        [id, this.pageIndex, "Pattern", patternBuffer],
+        transfers
+      );
     }
     return id;
   }

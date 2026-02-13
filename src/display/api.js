@@ -2940,8 +2940,11 @@ class WorkerTransport {
 
       switch (type) {
         case "Image":
-        case "Pattern":
           pageProxy.objs.resolve(id, imageData);
+          break;
+        case "Pattern":
+          const pattern = new PatternInfo(imageData);
+          pageProxy.objs.resolve(id, pattern.getIR());
           break;
         default:
           throw new Error(`Got unknown object type ${type}`);
