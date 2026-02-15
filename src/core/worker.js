@@ -222,13 +222,13 @@ class WorkerMessageHandler {
       const pdfStream = new PDFWorkerStream({ msgHandler: handler }),
         fullReader = pdfStream.getFullReader();
 
-      const pdfManagerCapability = Promise.withResolvers();
+      const { promise, resolve, reject } = Promise.withResolvers();
       let newPdfManager,
-        cachedChunks = [],
-        loaded = 0;
+        cachedChunks = [];
+      cancelXHRs = reason => pdfStream.cancelAllRequests(reason);
 
       fullReader.headersReady
-        .then(function () {
+        .then(() => {
           if (!fullReader.isRangeSupported) {
             return;
           }
@@ -239,77 +239,73 @@ class WorkerMessageHandler {
 
           newPdfManager = new NetworkPdfManager(pdfManagerArgs);
           // There may be a chance that `newPdfManager` is not initialized for
-          // the first few runs of `readchunk` block of code. Be sure to send
+          // the first few iterations of the `readData` code. Be sure to send
           // all cached chunks, if any, to chunked_stream via pdf_manager.
           for (const chunk of cachedChunks) {
             newPdfManager.sendProgressiveData(chunk);
           }
+          cachedChunks = null;
 
-          cachedChunks = [];
-          pdfManagerCapability.resolve(newPdfManager);
+          resolve(newPdfManager);
           cancelXHRs = null;
         })
-        .catch(function (reason) {
-          pdfManagerCapability.reject(reason);
+        .catch(reason => {
+          reject(reason);
           cancelXHRs = null;
         });
 
-      new Promise(function (resolve, reject) {
-        const readChunk = function ({ value, done }) {
-          try {
-            ensureNotTerminated();
-            if (done) {
-              if (!newPdfManager) {
-                const pdfFile = arrayBuffersToBytes(cachedChunks);
-                cachedChunks = [];
+      async function readData() {
+        let loaded = 0;
 
-                if (length && pdfFile.length !== length) {
-                  warn("reported HTTP length is different from actual");
-                }
-                pdfManagerArgs.source = pdfFile;
+        while (true) {
+          const { value, done } = await fullReader.read();
+          ensureNotTerminated();
 
-                newPdfManager = new LocalPdfManager(pdfManagerArgs);
-                pdfManagerCapability.resolve(newPdfManager);
-              }
-              cancelXHRs = null;
-              return;
-            }
-            if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-              assert(
-                value instanceof ArrayBuffer,
-                "readChunk (getPdfManager) - expected an ArrayBuffer."
-              );
-            }
-            loaded += value.byteLength;
-
-            if (!fullReader.isStreamingSupported) {
-              handler.send("DocProgress", {
-                loaded,
-                total: Math.max(loaded, fullReader.contentLength || 0),
-              });
-            }
-
-            if (newPdfManager) {
-              newPdfManager.sendProgressiveData(value);
-            } else {
-              cachedChunks.push(value);
-            }
-            fullReader.read().then(readChunk, reject);
-          } catch (e) {
-            reject(e);
+          if (done) {
+            break;
           }
-        };
-        fullReader.read().then(readChunk, reject);
-      }).catch(function (e) {
-        pdfManagerCapability.reject(e);
+          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+            assert(
+              value instanceof ArrayBuffer,
+              "readData (getPdfManager) - expected an ArrayBuffer."
+            );
+          }
+          loaded += value.byteLength;
+
+          if (!fullReader.isStreamingSupported) {
+            handler.send("DocProgress", {
+              loaded,
+              total: Math.max(loaded, fullReader.contentLength || 0),
+            });
+          }
+
+          if (newPdfManager) {
+            newPdfManager.sendProgressiveData(value);
+          } else {
+            cachedChunks.push(value);
+          }
+        }
+
+        if (!newPdfManager) {
+          const pdfFile = arrayBuffersToBytes(cachedChunks);
+          cachedChunks = null;
+
+          if (length && pdfFile.length !== length) {
+            warn("reported HTTP length is different from actual");
+          }
+          pdfManagerArgs.source = pdfFile;
+
+          newPdfManager = new LocalPdfManager(pdfManagerArgs);
+          resolve(newPdfManager);
+        }
+        cancelXHRs = null;
+      }
+      readData().catch(reason => {
+        reject(reason);
         cancelXHRs = null;
       });
 
-      cancelXHRs = reason => {
-        pdfStream.cancelAllRequests(reason);
-      };
-
-      return pdfManagerCapability.promise;
+      return promise;
     }
 
     function setupDoc(data) {
