@@ -534,7 +534,10 @@ function getDocument(src = {}) {
           messageHandler,
           task,
           networkStream,
-          transportParams,
+          {
+            ...transportParams,
+            rendererHandler: rendererWorker?.rendererHandler || null,
+          },
           transportFactory,
           pagesMapper
         );
@@ -548,6 +551,7 @@ function getDocument(src = {}) {
                   "Unable to connect renderer worker with the PDF worker: " +
                     reason.message
                 );
+                transport.rendererHandler = null;
               })
           : Promise.resolve();
 
@@ -1548,6 +1552,12 @@ class PDFPageProxy {
       cacheKey,
       makeObj
     );
+    // When rendererHandler is used, the OptionalContentConfig needs to be
+    // transferred to the renderer
+    const optionalContentConfigDataPromise = this._transport.rendererHandler
+      ? this._transport.getOptionalContentConfigData()
+      : null;
+
     // Ensure that a pending `streamReader` cancel timeout is always aborted.
     if (intentState.streamReaderCancelTimeout) {
       clearTimeout(intentState.streamReaderCancelTimeout);
@@ -1653,34 +1663,44 @@ class PDFPageProxy {
       pageColors,
       enableHWA: this._transport.enableHWA,
       operationsFilter,
+      rendererHandler: this._transport.rendererHandler,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
     const renderTask = internalRenderTask.task;
 
-    Promise.all([
+    const initializationPromises = [
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
-    ])
-      .then(([transparency, optionalContentConfig]) => {
-        if (this.destroyed) {
-          complete();
-          return;
-        }
-        this._stats?.time("Rendering");
+    ];
 
-        if (!(optionalContentConfig.renderingIntent & renderingIntent)) {
-          throw new Error(
-            "Must use the same `intent`-argument when calling the `PDFPageProxy.render` " +
-              "and `PDFDocumentProxy.getOptionalContentConfig` methods."
-          );
+    if (optionalContentConfigDataPromise) {
+      initializationPromises.push(optionalContentConfigDataPromise);
+    }
+
+    Promise.all(initializationPromises)
+      .then(
+        ([transparency, optionalContentConfig, optionalContentConfigData]) => {
+          if (this.destroyed) {
+            complete();
+            return;
+          }
+          this._stats?.time("Rendering");
+
+          if (!(optionalContentConfig.renderingIntent & renderingIntent)) {
+            throw new Error(
+              "Must use the same `intent`-argument when calling the `PDFPageProxy.render` " +
+                "and `PDFDocumentProxy.getOptionalContentConfig` methods."
+            );
+          }
+          internalRenderTask.initializeGraphics({
+            transparency,
+            optionalContentConfig,
+            optionalContentConfigData,
+          });
+          internalRenderTask.operatorListChanged();
         }
-        internalRenderTask.initializeGraphics({
-          transparency,
-          optionalContentConfig,
-        });
-        internalRenderTask.operatorListChanged();
-      })
+      )
       .catch(complete);
 
     return renderTask;
@@ -2104,6 +2124,14 @@ class RendererWorker {
    */
   get promise() {
     return this.#capability.promise;
+  }
+
+  /**
+   * The current MessageHandler-instance.
+   * @type {MessageHandler | null}
+   */
+  get rendererHandler() {
+    return this.#rendererHandler;
   }
 
   #resolve() {
@@ -2648,6 +2676,7 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this.enableHWA = params.enableHWA;
+    this.rendererHandler = params.rendererHandler || null;
     this.loadingParams = params.loadingParams;
     this._params = params;
 
@@ -3296,6 +3325,10 @@ class WorkerTransport {
     );
   }
 
+  getOptionalContentConfigData() {
+    return this.#cacheSimpleMethod("GetOptionalContentConfig");
+  }
+
   getPermissions() {
     return this.messageHandler.sendWithPromise("GetPermissions", null);
   }
@@ -3453,6 +3486,7 @@ class InternalRenderTask {
     pageColors = null,
     enableHWA = false,
     operationsFilter = null,
+    rendererHandler = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3485,6 +3519,7 @@ class InternalRenderTask {
     this._enableHWA = enableHWA;
     this._dependencyTracker = params.dependencyTracker;
     this._operationsFilter = operationsFilter;
+    this._rendererHandler = rendererHandler;
   }
 
   get completed() {
@@ -3494,7 +3529,11 @@ class InternalRenderTask {
     });
   }
 
-  initializeGraphics({ transparency = false, optionalContentConfig }) {
+  initializeGraphics({
+    transparency = false,
+    optionalContentConfig,
+    optionalContentConfigData = null,
+  }) {
     if (this.cancelled) {
       return;
     }
@@ -3515,6 +3554,61 @@ class InternalRenderTask {
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
     const { viewport, transform, background, dependencyTracker } = this.params;
+
+    if (this._rendererHandler) {
+      const offscreen = this._canvas.transferControlToOffscreen();
+      const optionalContentConfigState = optionalContentConfig
+        ? optionalContentConfig.getState()
+        : null;
+      const annotationCanvases = [];
+      const initTransfers = [offscreen];
+      if (this.annotationCanvasMap) {
+        for (const [id, canvas] of this.annotationCanvasMap) {
+          try {
+            const annotationCanvas = canvas.transferControlToOffscreen();
+            annotationCanvases.push([id, annotationCanvas]);
+            initTransfers.push(annotationCanvas);
+          } catch (ex) {
+            warn(
+              `Failed to transfer annotation canvas to worker: ${ex.message}. `
+            );
+          }
+        }
+      }
+      // TODO: Remove dependencyTracker and pageColors maybe?
+      // No filter-factory, we disable the rendering in worker for PDFs where
+      // filters are present.
+      const initParams = {
+        canvas: offscreen,
+        // commonObjs: this.commonObjs,
+        // objs: this.objs,
+        enableHWA: this._enableHWA,
+        optionalContentConfigData,
+        optionalContentConfigState,
+        optionalContentConfigRenderingIntent:
+          optionalContentConfig?.renderingIntent ?? null,
+        annotationCanvasMap: annotationCanvases,
+        // pageColors: this.pageColors,
+        // dependencyTracker,
+      };
+
+      console.log(
+        this._canvas,
+        this.commonObjs,
+        this.objs,
+        this.canvasFactory,
+        this.filterFactory,
+        { optionalContentConfig },
+        this.annotationCanvasMap,
+        this.pageColors,
+        dependencyTracker
+      );
+      this._rendererHandler.send(
+        "InitializeGraphics",
+        initParams,
+        initTransfers
+      );
+    }
 
     // When printing in Firefox, we get a specific context in mozPrintCallback
     // which cannot be created from the canvas itself.

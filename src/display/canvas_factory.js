@@ -89,4 +89,16 @@ class DOMCanvasFactory extends BaseCanvasFactory {
   }
 }
 
-export { BaseCanvasFactory, DOMCanvasFactory };
+class OffscreenCanvasFactory extends BaseCanvasFactory {
+  /**
+   * @ignore
+   */
+  _createCanvas(width, height) {
+    if (typeof OffscreenCanvas === "undefined") {
+      throw new Error("OffscreenCanvas is not supported");
+    }
+    return new OffscreenCanvas(width, height);
+  }
+}
+
+export { BaseCanvasFactory, DOMCanvasFactory, OffscreenCanvasFactory };
