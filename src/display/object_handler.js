@@ -6,6 +6,7 @@ import {
 } from "../shared/obj-bin-transform.js";
 
 import { FontFaceObject } from "./font_loader.js";
+import { PDFObjects } from "./pdf_objects.js";
 
 function getPatternIR(exportedData) {
   return exportedData instanceof ArrayBuffer
@@ -20,12 +21,14 @@ class ObjectHandler {
     fontLoader,
     pageCache,
     pdfBug = null,
+    renderInWorker = false,
   }) {
     this.messageHandler = messageHandler;
     this.commonObjs = commonObjs;
     this.fontLoader = fontLoader;
     this.pageCache = pageCache;
     this.pdfBug = pdfBug;
+    this.renderInWorker = renderInWorker;
   }
 
   resolveCommonObject(id, type, exportedData) {
@@ -71,8 +74,10 @@ class ObjectHandler {
         const { imageRef } = exportedData;
         assert(imageRef, "The imageRef must be defined.");
 
-        for (const pageProxy of this.pageCache.values()) {
-          for (const [, data] of pageProxy.objs) {
+        for (const pageOrObjs of this.pageCache.values()) {
+          const objs = pageOrObjs.objs || pageOrObjs;
+
+          for (const [, data] of objs) {
             if (data?.ref !== imageRef) {
               continue;
             }
@@ -100,22 +105,31 @@ class ObjectHandler {
   }
 
   resolveObject(id, pageIndex, type, exportedData) {
-    const pageProxy = this.pageCache.get(pageIndex);
-    if (!pageProxy || pageProxy.objs.has(id)) {
+    let pageOrObjs = this.pageCache.get(pageIndex);
+    if (!pageOrObjs) {
+      if (!this.renderInWorker) {
+        return;
+      }
+      pageOrObjs = new PDFObjects();
+      this.pageCache.set(pageIndex, pageOrObjs);
+    }
+
+    const objs = pageOrObjs.objs || pageOrObjs;
+    if (objs.has(id)) {
       return;
     }
     // Don't store data *after* cleanup has successfully run, see bug 1854145.
-    if (pageProxy._intentStates.size === 0) {
+    if (pageOrObjs._intentStates?.size === 0) {
       exportedData?.bitmap?.close(); // Release any `ImageBitmap` data.
       return;
     }
 
     switch (type) {
       case "Image":
-        pageProxy.objs.resolve(id, exportedData);
+        objs.resolve(id, exportedData);
         break;
       case "Pattern":
-        pageProxy.objs.resolve(id, getPatternIR(exportedData));
+        objs.resolve(id, getPatternIR(exportedData));
         break;
       default:
         throw new Error(`Got unknown object type ${type}`);

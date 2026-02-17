@@ -16,6 +16,18 @@
 import { RenderableView, RenderingStates } from "./renderable_view.js";
 import { RenderingCancelledException } from "pdfjs-lib";
 
+function releaseCanvas(canvas) {
+  if (!canvas) {
+    return;
+  }
+  try {
+    canvas.width = canvas.height = 0;
+  } catch {
+    // TODO: Implement resetting canvas.
+    // Can happen after transferControlToOffscreen();
+  }
+}
+
 class BasePDFPageView extends RenderableView {
   #loadingId = null;
 
@@ -157,7 +169,7 @@ class BasePDFPageView extends RenderableView {
 
       if (prevCanvas) {
         prevCanvas.replaceWith(canvas);
-        prevCanvas.width = prevCanvas.height = 0;
+        releaseCanvas(prevCanvas);
       } else {
         onShow(canvas);
       }
@@ -185,14 +197,14 @@ class BasePDFPageView extends RenderableView {
       return;
     }
     canvas.remove();
-    canvas.width = canvas.height = 0;
+    releaseCanvas(canvas);
     this.canvas = null;
     this.#resetTempCanvas();
   }
 
   #resetTempCanvas() {
     if (this.#tempCanvas) {
-      this.#tempCanvas.width = this.#tempCanvas.height = 0;
+      releaseCanvas(this.#tempCanvas);
       this.#tempCanvas = null;
     }
   }
