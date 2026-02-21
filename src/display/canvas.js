@@ -2748,12 +2748,25 @@ class CanvasGraphics {
           height * this.outputScaleY * viewportScale
         );
 
-        this.annotationCanvas = this.canvasFactory.create(
-          canvasWidth,
-          canvasHeight
-        );
-        const { canvas, context } = this.annotationCanvas;
-        this.annotationCanvasMap.set(id, canvas);
+        let canvas = this.annotationCanvasMap.get(id);
+        let context = null;
+        if (canvas) {
+          canvas.width = canvasWidth;
+          canvas.height = canvasHeight;
+          context = canvas.getContext("2d");
+          if (!context) {
+            throw new Error("Unable to initialize annotation canvas.");
+          }
+          this.annotationCanvas = { canvas, context };
+        } else {
+          this.annotationCanvas = this.canvasFactory.create(
+            canvasWidth,
+            canvasHeight
+          );
+          ({ canvas, context } = this.annotationCanvas);
+          this.annotationCanvasMap.set(id, canvas);
+        }
+
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
         this.ctx.save();

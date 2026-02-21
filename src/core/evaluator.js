@@ -395,6 +395,182 @@ class PartialEvaluator {
     return false;
   }
 
+  _hasTransferMaps(transferObj) {
+    let transferArray;
+    if (Array.isArray(transferObj)) {
+      transferArray = transferObj;
+    } else if (isPDFFunction(transferObj)) {
+      transferArray = [transferObj];
+    } else {
+      return false;
+    }
+
+    const numFns = transferArray.length;
+    if (!(numFns === 1 || numFns === 4)) {
+      return false;
+    }
+
+    let numEffectfulFns = 0;
+    for (const entry of transferArray) {
+      const transfer = this.xref.fetchIfRef(entry);
+      if (isName(transfer, "Identity")) {
+        continue;
+      }
+      if (!isPDFFunction(transfer)) {
+        return false;
+      }
+      numEffectfulFns++;
+    }
+    return numEffectfulFns > 0;
+  }
+
+  _hasCanvasFiltersInGState(graphicState) {
+    if (this._hasTransferMaps(graphicState.get("TR"))) {
+      return true;
+    }
+
+    const smask = graphicState.get("SMask");
+    if (!(smask instanceof Dict)) {
+      return false;
+    }
+    const subtype = smask.get("S");
+    return (
+      isName(subtype, "Luminosity") ||
+      (isName(subtype, "Alpha") && isPDFFunction(smask.get("TR")))
+    );
+  }
+
+  hasCanvasFilters(resources) {
+    if (!(resources instanceof Dict)) {
+      return false;
+    }
+
+    const processed = new RefSet();
+    if (resources.objId) {
+      processed.put(resources.objId);
+    }
+
+    const nodes = [resources],
+      xref = this.xref;
+    while (nodes.length) {
+      const node = nodes.shift();
+      const graphicStates = node.get("ExtGState");
+      if (graphicStates instanceof Dict) {
+        for (let graphicState of graphicStates.getRawValues()) {
+          if (graphicState instanceof Ref) {
+            if (processed.has(graphicState)) {
+              continue;
+            }
+            try {
+              graphicState = xref.fetch(graphicState);
+            } catch (ex) {
+              info(`hasCanvasFilters - failed to fetch ExtGState: "${ex}".`);
+              return true;
+            }
+          }
+          if (!(graphicState instanceof Dict)) {
+            continue;
+          }
+          if (graphicState.objId) {
+            processed.put(graphicState.objId);
+          }
+          try {
+            if (this._hasCanvasFiltersInGState(graphicState)) {
+              return true;
+            }
+          } catch (ex) {
+            info(`hasCanvasFilters - failed to inspect filter data: "${ex}".`);
+            return true;
+          }
+        }
+      }
+
+      const xObjects = node.get("XObject");
+      if (xObjects instanceof Dict) {
+        for (let xObject of xObjects.getRawValues()) {
+          if (xObject instanceof Ref) {
+            if (processed.has(xObject)) {
+              continue;
+            }
+            try {
+              xObject = xref.fetch(xObject);
+            } catch (ex) {
+              info(`hasCanvasFilters - failed to fetch XObject: "${ex}".`);
+              return true;
+            }
+          }
+          if (!(xObject instanceof BaseStream)) {
+            continue;
+          }
+          if (xObject.dict.objId) {
+            processed.put(xObject.dict.objId);
+          }
+          const xResources = xObject.dict.get("Resources");
+          if (!(xResources instanceof Dict)) {
+            continue;
+          }
+          if (xResources.objId && processed.has(xResources.objId)) {
+            continue;
+          }
+
+          nodes.push(xResources);
+          if (xResources.objId) {
+            processed.put(xResources.objId);
+          }
+        }
+      }
+
+      const patterns = node.get("Pattern");
+      if (!(patterns instanceof Dict)) {
+        continue;
+      }
+      for (let pattern of patterns.getRawValues()) {
+        if (pattern instanceof Ref) {
+          if (processed.has(pattern)) {
+            continue;
+          }
+          try {
+            pattern = xref.fetch(pattern);
+          } catch (ex) {
+            info(`hasCanvasFilters - failed to fetch Pattern: "${ex}".`);
+            return true;
+          }
+        }
+        if (pattern instanceof BaseStream) {
+          if (pattern.dict.objId) {
+            processed.put(pattern.dict.objId);
+          }
+          const patternResources = pattern.dict.get("Resources");
+          if (!(patternResources instanceof Dict)) {
+            continue;
+          }
+          if (patternResources.objId && processed.has(patternResources.objId)) {
+            continue;
+          }
+
+          nodes.push(patternResources);
+          if (patternResources.objId) {
+            processed.put(patternResources.objId);
+          }
+          continue;
+        }
+        if (!(pattern instanceof Dict)) {
+          continue;
+        }
+        if (pattern.objId && processed.has(pattern.objId)) {
+          continue;
+        }
+
+        nodes.push(pattern);
+        if (pattern.objId) {
+          processed.put(pattern.objId);
+        }
+      }
+    }
+
+    return false;
+  }
+
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {

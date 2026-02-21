@@ -42,7 +42,7 @@ class RendererMessageHandler {
   });
 
   static {
-    // TODO: Is this necessary?
+    // TODO(Aditi): Is this necessary?
     // Worker thread (and not Node.js)?
     if (
       typeof window === "undefined" &&
@@ -257,6 +257,24 @@ class RendererMessageHandler {
         waitCapability: null,
         aborted: false,
       });
+    });
+
+    handler.on("UpdateAnnotationCanvases", data => {
+      const { renderTaskId, annotationCanvasMap } = data;
+      if (!annotationCanvasMap) {
+        return;
+      }
+      const renderTaskState = this.#renderTaskStates.get(renderTaskId);
+      if (!renderTaskState || !renderTaskState.gfx.annotationCanvasMap) {
+        return;
+      }
+      const map =
+        annotationCanvasMap instanceof Map
+          ? annotationCanvasMap
+          : new Map(annotationCanvasMap);
+      for (const [id, canvas] of map) {
+        renderTaskState.gfx.annotationCanvasMap.set(id, canvas);
+      }
     });
 
     handler.on("ExecuteOperatorList", async data => {

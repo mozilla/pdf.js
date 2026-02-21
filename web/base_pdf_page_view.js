@@ -23,7 +23,7 @@ function releaseCanvas(canvas) {
   try {
     canvas.width = canvas.height = 0;
   } catch {
-    // TODO: Implement resetting canvas.
+    // TODO(Aditi): Implement resetting canvas.
     // Can happen after transferControlToOffscreen();
   }
 }

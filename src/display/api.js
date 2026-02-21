@@ -27,6 +27,7 @@ import {
   isNodeJS,
   makeObj,
   MathClamp,
+  OPS,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -83,6 +84,37 @@ import { TextLayer } from "./text_layer.js";
 import { XfaText } from "./xfa_text.js";
 
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
+
+function operatorListHasDOMFilters({ fnArray, argsArray }) {
+  for (let i = 0, ii = fnArray.length; i < ii; i++) {
+    switch (fnArray[i]) {
+      case OPS.setGState: {
+        const [gStateObj] = argsArray[i];
+        if (!Array.isArray(gStateObj)) {
+          break;
+        }
+        for (const [key, value] of gStateObj) {
+          if (key === "TR" && value) {
+            return true;
+          }
+        }
+        break;
+      }
+      case OPS.beginGroup: {
+        const [groupOptions] = argsArray[i];
+        const smask = groupOptions?.smask;
+        if (
+          smask?.subtype === "Luminosity" ||
+          (smask?.subtype === "Alpha" && smask.transferMap)
+        ) {
+          return true;
+        }
+        break;
+      }
+    }
+  }
+  return false;
+}
 
 /**
  * @typedef { Int8Array | Uint8Array | Uint8ClampedArray |
@@ -1680,7 +1712,11 @@ class PDFPageProxy {
 
     Promise.all(initializationPromises)
       .then(
-        ([transparency, optionalContentConfig, optionalContentConfigData]) => {
+        ([
+          renderPageData,
+          optionalContentConfig,
+          optionalContentConfigData,
+        ]) => {
           if (this.destroyed) {
             complete();
             return;
@@ -1693,8 +1729,13 @@ class PDFPageProxy {
                 "and `PDFDocumentProxy.getOptionalContentConfig` methods."
             );
           }
+          const { transparency, hasCanvasFilters = false } =
+            typeof renderPageData === "object" && renderPageData !== null
+              ? renderPageData
+              : { transparency: renderPageData };
           internalRenderTask.initializeGraphics({
             transparency,
+            hasCanvasFilters: hasCanvasFilters || intentState.hasCanvasFilters,
             optionalContentConfig,
             optionalContentConfigData,
           });
@@ -1916,16 +1957,20 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, cacheKey) {
+  _startRenderPage(transparency, cacheKey, hasCanvasFilters = false) {
     const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
     }
     this._stats?.timeEnd("Page Request");
+    intentState.hasCanvasFilters ||= hasCanvasFilters;
 
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
-    intentState.displayReadyCapability?.resolve(transparency);
+    intentState.displayReadyCapability?.resolve({
+      transparency,
+      hasCanvasFilters,
+    });
   }
 
   /**
@@ -1937,6 +1982,8 @@ class PDFPageProxy {
       intentState.operatorList.fnArray.push(operatorListChunk.fnArray[i]);
       intentState.operatorList.argsArray.push(operatorListChunk.argsArray[i]);
     }
+    intentState.hasCanvasFilters ||=
+      operatorListHasDOMFilters(operatorListChunk);
     intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
     intentState.operatorList.separateAnnots = operatorListChunk.separateAnnots;
 
@@ -2114,7 +2161,7 @@ class PDFPageProxy {
  *   parameters.
  */
 class RendererWorker {
-  #rendererWorker = null;
+  #worker = null;
 
   #rendererHandler = null;
 
@@ -2222,7 +2269,8 @@ class RendererWorker {
           new Error(
             `Renderer worker failed to initialize: "${reason?.message ?? reason}".`
           )
-          // TODO: Add a fallback, initialise worker rendering flag to false.
+          // TODO(Aditi): Add a fallback, initialise worker rendering flag to
+          // false.
         );
       };
 
@@ -2230,7 +2278,7 @@ class RendererWorker {
       worker.addEventListener(
         "error",
         event => {
-          if (!this.#rendererWorker) {
+          if (!this.#worker) {
             // Worker failed to initialize due to an error.
             terminateEarly(event.error || event.message);
           }
@@ -2245,7 +2293,7 @@ class RendererWorker {
           return;
         }
         this.#rendererHandler = rendererHandler;
-        this.#rendererWorker = worker;
+        this.#worker = worker;
 
         this.#resolve();
       });
@@ -2272,8 +2320,8 @@ class RendererWorker {
     this.destroyed = true;
 
     // We need to terminate only web worker created resource.
-    this.#rendererWorker?.terminate();
-    this.#rendererWorker = null;
+    this.#worker?.terminate();
+    this.#worker = null;
 
     this.#rendererHandler?.destroy();
     this.#rendererHandler = null;
@@ -2956,7 +3004,7 @@ class WorkerTransport {
         return null;
       }
 
-      // TODO: Fix this
+      // TODO(Aditi): Fix this
       return messageHandler.sendWithPromise("FontFallback", data);
     });
 
@@ -3119,7 +3167,11 @@ class WorkerTransport {
       }
 
       const page = this.#pageCache.get(data.pageIndex);
-      page._startRenderPage(data.transparency, data.cacheKey);
+      page._startRenderPage(
+        data.transparency,
+        data.cacheKey,
+        data.hasCanvasFilters
+      );
     });
 
     const objectHandler = new ObjectHandler({
@@ -3130,7 +3182,7 @@ class WorkerTransport {
       pdfBug: this._params.pdfBug,
     });
 
-    // TODO: remove this forwarding.
+    // TODO(Aditi): remove this forwarding.
     const forwardToRenderer = (action, data) => {
       if (!rendererHandler) {
         return;
@@ -3568,6 +3620,7 @@ class InternalRenderTask {
     this._renderTaskId = InternalRenderTask.#renderTaskId++;
     this._executingInWorker = false;
     this._sentOperatorListLength = 0;
+    this._transferredAnnotationCanvasIds = new Set();
   }
 
   get completed() {
@@ -3577,8 +3630,49 @@ class InternalRenderTask {
     });
   }
 
+  _collectAnnotationCanvasesForWorker(startIdx, endIdx) {
+    const annotationCanvases = [];
+    const transfers = [];
+    if (
+      !this.annotationCanvasMap ||
+      !this._canvas?.ownerDocument ||
+      typeof this._canvas.ownerDocument.createElement !== "function"
+    ) {
+      return { annotationCanvases, transfers };
+    }
+    const { fnArray, argsArray } = this.operatorList;
+    for (let i = startIdx; i < endIdx; i++) {
+      if (fnArray[i] !== OPS.beginAnnotation) {
+        continue;
+      }
+      const [id, , , , hasOwnCanvas] = argsArray[i];
+      if (!hasOwnCanvas || this._transferredAnnotationCanvasIds.has(id)) {
+        continue;
+      }
+
+      let canvas = this.annotationCanvasMap.get(id);
+      if (!canvas) {
+        canvas = this._canvas.ownerDocument.createElement("canvas");
+        this.annotationCanvasMap.set(id, canvas);
+      }
+      if (typeof canvas.transferControlToOffscreen !== "function") {
+        continue;
+      }
+      try {
+        const offscreen = canvas.transferControlToOffscreen();
+        annotationCanvases.push([id, offscreen]);
+        transfers.push(offscreen);
+        this._transferredAnnotationCanvasIds.add(id);
+      } catch (ex) {
+        warn(`Failed to transfer annotation canvas to worker: ${ex.message}.`);
+      }
+    }
+    return { annotationCanvases, transfers };
+  }
+
   initializeGraphics({
     transparency = false,
+    hasCanvasFilters = false,
     optionalContentConfig,
     optionalContentConfigData = null,
   }) {
@@ -3601,32 +3695,29 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
+
     const { viewport, transform, background, dependencyTracker } = this.params;
 
     // TODO(Aditi): Should we disable worker rendering when pdfBug is enabled?
     let useWorkerRendering =
-      this._rendererHandler && this._canvasContext === null;
+      this._rendererHandler &&
+      this._canvasContext === null &&
+      !hasCanvasFilters;
+    if (!useWorkerRendering) {
+      this._rendererHandler = null;
+    }
     if (useWorkerRendering) {
       try {
         const offscreen = this._canvas.transferControlToOffscreen();
         const optionalContentConfigState = optionalContentConfig
           ? optionalContentConfig.getState()
           : null;
-        const annotationCanvases = [];
-        const initTransfers = [offscreen];
-        if (this.annotationCanvasMap) {
-          for (const [id, canvas] of this.annotationCanvasMap) {
-            try {
-              const annotationCanvas = canvas.transferControlToOffscreen();
-              annotationCanvases.push([id, annotationCanvas]);
-              initTransfers.push(annotationCanvas);
-            } catch (ex) {
-              warn(
-                `Failed to transfer annotation canvas to worker: ${ex.message}. `
-              );
-            }
-          }
-        }
+        const { annotationCanvases, transfers } =
+          this._collectAnnotationCanvasesForWorker(
+            0,
+            this.operatorList.argsArray.length
+          );
+        const initTransfers = [offscreen, ...transfers];
         Object.defineProperty(this._canvas, "resetWorkerCanvas", {
           value() {
             try {
@@ -3639,7 +3730,8 @@ class InternalRenderTask {
           },
           configurable: true,
         });
-        // TODO: Add isCanvasMonochrome and other helpers for detailCanvas tests
+        // TODO(Aditi): Add isCanvasMonochrome and other helpers for
+        // detailCanvas tests
         const initParams = {
           canvas: offscreen,
           pageIndex: this._pageIndex,
@@ -3781,11 +3873,27 @@ class InternalRenderTask {
     }
     const { operatorList, operatorListIdx } = this;
     if (this._rendererHandler) {
+      // TODO(Aditi): add a global flag.
       const operatorListArgsArrayLen = operatorList.argsArray.length;
       const sentLength = Math.min(
         this._sentOperatorListLength,
         operatorListArgsArrayLen
       );
+      const { annotationCanvases, transfers } =
+        this._collectAnnotationCanvasesForWorker(
+          sentLength,
+          operatorListArgsArrayLen
+        );
+      if (annotationCanvases.length > 0) {
+        this._rendererHandler.send(
+          "UpdateAnnotationCanvases",
+          {
+            renderTaskId: this._renderTaskId,
+            annotationCanvasMap: annotationCanvases,
+          },
+          transfers
+        );
+      }
       const fnArray =
         sentLength < operatorListArgsArrayLen
           ? operatorList.fnArray.slice(sentLength, operatorListArgsArrayLen)
