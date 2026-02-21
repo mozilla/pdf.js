@@ -213,26 +213,15 @@ class Doc extends PDFObject {
     const pc = field.obj._actions.get("PageClose");
     if (po || pc) {
       this._otherPageActions ||= new Map();
-      let actions = this._otherPageActions.get(field.obj._page + 1);
-      if (!actions) {
-        actions = new Map();
-        this._otherPageActions.set(field.obj._page + 1, actions);
-      }
+      const actions = this._otherPageActions.getOrInsertComputed(
+        field.obj._page + 1,
+        () => new Map()
+      );
       if (po) {
-        let poActions = actions.get("PageOpen");
-        if (!poActions) {
-          poActions = [];
-          actions.set("PageOpen", poActions);
-        }
-        poActions.push(...po);
+        actions.getOrInsert("PageOpen", []).push(...po);
       }
       if (pc) {
-        let pcActions = actions.get("PageClose");
-        if (!pcActions) {
-          pcActions = [];
-          actions.set("PageClose", pcActions);
-        }
-        pcActions.push(...pc);
+        actions.getOrInsert("PageClose", []).push(...pc);
       }
     }
   }
