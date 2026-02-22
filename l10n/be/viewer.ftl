@@ -537,6 +537,7 @@ pdfjs-editor-undo-bar-message-freetext = Тэкст выдалены
 pdfjs-editor-undo-bar-message-ink = Малюнак выдалены
 pdfjs-editor-undo-bar-message-stamp = Відарыс выдалены
 pdfjs-editor-undo-bar-message-signature = Подпіс выдалены
+pdfjs-editor-undo-bar-message-comment = Каментарый выдалены
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -644,24 +645,71 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
+pdfjs-toggle-views-manager-button =
+    .title = Паказаць/схаваць бакавую панэль
+pdfjs-toggle-views-manager-notification-button =
+    .title = Паказаць/схаваць бакавую панэль (дакумент мае мініяцюры/змест/далучэнні/пласты)
+pdfjs-toggle-views-manager-button-label = Паказаць/схаваць бакавую панэль
+pdfjs-views-manager-sidebar =
+    .aria-label = Бакавая панэль
 pdfjs-views-manager-view-selector-button =
     .title = Выгляд
 pdfjs-views-manager-view-selector-button-label = Выгляд
 pdfjs-views-manager-pages-title = Старонкі
+pdfjs-views-manager-outlines-title = Структура дакумента
 pdfjs-views-manager-attachments-title = Далучэнні
 pdfjs-views-manager-layers-title = Пласты
 pdfjs-views-manager-pages-option-label = Старонкі
+pdfjs-views-manager-outlines-option-label = Структура дакумента
 pdfjs-views-manager-attachments-option-label = Далучэнні
 pdfjs-views-manager-layers-option-label = Пласты
 pdfjs-views-manager-add-file-button =
     .title = Дадаць файл
 pdfjs-views-manager-add-file-button-label = Дадаць файл
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] Вылучана { $count }
+        [few] Вылучаны { $count }
+       *[many] Вылучана { $count }
+    }
 pdfjs-views-manager-pages-status-none-action-label = Выбраць старонкі
 pdfjs-views-manager-pages-status-action-button-label = Кіраваць
 pdfjs-views-manager-pages-status-copy-button-label = Капіяваць
 pdfjs-views-manager-pages-status-cut-button-label = Выразаць
 pdfjs-views-manager-pages-status-delete-button-label = Выдаліць
 pdfjs-views-manager-pages-status-save-as-button-label = Захаваць як…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] Выразана { $count } старонка
+        [few] Выразана { $count } старонкі
+       *[many] Выразана { $count } старонак
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] Скапіравана { $count } старонка
+        [few] Скапіравана { $count } старонкі
+       *[many] Скапіравана { $count } старонак
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] Выдалена { $count } старонка
+        [few] Выдалена { $count } старонкі
+       *[many] Выдалена { $count } старонак
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Рыхтуецца ваш файл…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Зацягваецца файл…
+pdfjs-views-manager-status-warning-cut-label = Не ўдалося выразаць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-warning-copy-label = Не ўдалося скапіяваць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-warning-delete-label = Не ўдалося выдаліць. Абнавіце старонку і паспрабуйце зноў.
+pdfjs-views-manager-status-warning-save-label = Не ўдалося захаваць. Абнавіце старонку і паспрабуйце зноў.
 pdfjs-views-manager-status-undo-button-label = Адмяніць
 pdfjs-views-manager-status-close-button =
     .title = Закрыць

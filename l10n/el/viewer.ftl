@@ -534,6 +534,7 @@ pdfjs-editor-undo-bar-message-freetext = Το κείμενο αφαιρέθηκ�
 pdfjs-editor-undo-bar-message-ink = Το σχέδιο αφαιρέθηκε
 pdfjs-editor-undo-bar-message-stamp = Η εικόνα αφαιρέθηκε
 pdfjs-editor-undo-bar-message-signature = Η υπογραφή αφαιρέθηκε
+pdfjs-editor-undo-bar-message-comment = Το σχόλιο αφαιρέθηκε
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -642,6 +643,8 @@ pdfjs-editor-add-comment-button =
 
 pdfjs-toggle-views-manager-button =
     .title = (Απ)ενεργοποίηση πλαϊνής γραμμής
+pdfjs-toggle-views-manager-notification-button =
+    .title = (Απ)ενεργοποίηση πλαϊνής γραμμής (το έγγραφο περιέχει μικρογραφίες/περίγραμμα/συνημμένα/επίπεδα)
 pdfjs-toggle-views-manager-button-label = (Απ)ενεργοποίηση πλαϊνής γραμμής
 pdfjs-views-manager-sidebar =
     .aria-label = Πλαϊνή γραμμή
