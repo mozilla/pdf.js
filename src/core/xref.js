@@ -430,7 +430,8 @@ class XRef {
       if (offset - startOffset > MAX_TOKEN_LENGTH) {
         offset = startOffset + MAX_TOKEN_LENGTH;
       }
-      return data.subarray(startOffset, offset).toString("ascii");
+      const asciiDecoder = new TextDecoder("ascii");
+      return asciiDecoder.decode(data.subarray(startOffset, offset));
     }
     function skipUntil(data, offset, what) {
       const length = what.length,
