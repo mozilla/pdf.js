@@ -192,11 +192,13 @@ class RendererMessageHandler {
         optionalContentConfigData,
         optionalContentConfigState,
         optionalContentConfigRenderingIntent,
+        annotationCanvasMap,
         transform,
         viewport,
         transparency,
         background,
       } = data;
+      // TODO(Aditi): Verify if dependencyTracker can be used.
       const objs = this.#getPageObjs(pageIndex);
       const optionalContentConfig = new OptionalContentConfig(
         optionalContentConfigData,
@@ -218,13 +220,6 @@ class RendererMessageHandler {
       });
       const canvasFactory = createCanvasFactory({ enableHWA });
       const filterFactory = new WorkerFilterFactory();
-      let annotationCanvasMap = null;
-      if (data.annotationCanvasMap) {
-        annotationCanvasMap =
-          data.annotationCanvasMap instanceof Map
-            ? data.annotationCanvasMap
-            : new Map(data.annotationCanvasMap);
-      }
       const gfx = new CanvasGraphics(
         ctx,
         this.#commonObjs,

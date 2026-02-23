@@ -3699,15 +3699,23 @@ class InternalRenderTask {
     const { viewport, transform, background, dependencyTracker } = this.params;
 
     // TODO(Aditi): Should we disable worker rendering when pdfBug is enabled?
+
+    // Worker Rendering is disabled when canvas filters are present because
+    // OffscreenCanvas's OffscreenCanvasRenderingContext2D completely ignores
+    // the value of .filter defined with a data url.
+    // See bug 2011237
+
     let useWorkerRendering =
       this._rendererHandler &&
       this._canvasContext === null &&
-      !hasCanvasFilters;
+      !hasCanvasFilters
     if (!useWorkerRendering) {
       this._rendererHandler = null;
     }
     if (useWorkerRendering) {
       try {
+        // Serialize the optional content config, if it exists, so that it can
+        // be sent to the renderer worker.
         const offscreen = this._canvas.transferControlToOffscreen();
         const optionalContentConfigState = optionalContentConfig
           ? optionalContentConfig.getState()
@@ -3741,7 +3749,9 @@ class InternalRenderTask {
           optionalContentConfigState,
           optionalContentConfigRenderingIntent:
             optionalContentConfig?.renderingIntent ?? null,
-          annotationCanvasMap: annotationCanvases,
+          annotationCanvasMap: this.annotationCanvasMap
+            ? annotationCanvases
+            : null,
           transform,
           viewport,
           transparency,
