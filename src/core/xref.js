@@ -417,6 +417,10 @@ class XRef {
       LT = 0x3c;
 
     function readToken(data, offset) {
+      // The maximum length of a PDF token.
+      // For now it is set to max string length according to
+      // Node.js buffer.constants.MAX_STRING_LENGTH,
+      // but seems to be working for browsers as well.
       const MAX_TOKEN_LENGTH = 0x1fffffe8;
       const dataLen = data.length;
       const startOffset = offset;
