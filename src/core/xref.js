@@ -417,16 +417,20 @@ class XRef {
       LT = 0x3c;
 
     function readToken(data, offset) {
-      let token = "",
-        ch = data[offset];
-      while (ch !== LF && ch !== CR && ch !== LT) {
-        if (++offset >= data.length) {
+      const MAX_TOKEN_LENGTH = 0x1fffffe8;
+      const dataLen = data.length;
+      const startOffset = offset;
+      while (offset < dataLen) {
+        const ch = data[offset];
+        if (ch === LF || ch === CR || ch === LT) {
           break;
         }
-        token += String.fromCharCode(ch);
-        ch = data[offset];
+        offset++;
       }
-      return token;
+      if (offset - startOffset > MAX_TOKEN_LENGTH) {
+        offset = startOffset + MAX_TOKEN_LENGTH;
+      }
+      return data.subarray(startOffset, offset).toString("ascii");
     }
     function skipUntil(data, offset, what) {
       const length = what.length,
