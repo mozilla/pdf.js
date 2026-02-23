@@ -448,6 +448,18 @@ function webpack2Stream(webpackConfig) {
   return webpackStream(webpackConfig, webpack2);
 }
 
+// Rename webpack runtime variables in the output to avoid conflicts when the
+// bundle is consumed by another webpack/rspack build using eval-based devtools.
+// See https://github.com/mozilla/pdf.js/issues/20236
+function renameWebpackRuntimeVars() {
+  return transform("utf8", content =>
+    content
+      .toString()
+      .replaceAll("__webpack_require__", "__pdfjs_require__")
+      .replaceAll("__webpack_exports__", "__pdfjs_exports__")
+  );
+}
+
 function getVersionJSON() {
   return JSON.parse(fs.readFileSync(BUILD_DIR + "version.json").toString());
 }
@@ -461,7 +473,8 @@ function createMainBundle(defines) {
   });
   return gulp
     .src("./src/pdf.js", { encoding: false })
-    .pipe(webpack2Stream(mainFileConfig));
+    .pipe(webpack2Stream(mainFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createScriptingBundle(defines, extraOptions = undefined) {
@@ -477,7 +490,8 @@ function createScriptingBundle(defines, extraOptions = undefined) {
   );
   return gulp
     .src("./src/pdf.scripting.js", { encoding: false })
-    .pipe(webpack2Stream(scriptingFileConfig));
+    .pipe(webpack2Stream(scriptingFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createSandboxExternal(defines) {
@@ -529,7 +543,8 @@ function createSandboxBundle(defines, extraOptions = undefined) {
 
   return gulp
     .src("./src/pdf.sandbox.js", { encoding: false })
-    .pipe(webpack2Stream(sandboxFileConfig));
+    .pipe(webpack2Stream(sandboxFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createWorkerBundle(defines) {
@@ -541,7 +556,8 @@ function createWorkerBundle(defines) {
   });
   return gulp
     .src("./src/pdf.worker.js", { encoding: false })
-    .pipe(webpack2Stream(workerFileConfig));
+    .pipe(webpack2Stream(workerFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createWebBundle(defines, options) {
@@ -553,7 +569,8 @@ function createWebBundle(defines, options) {
   });
   return gulp
     .src("./web/viewer.js", { encoding: false })
-    .pipe(webpack2Stream(viewerFileConfig));
+    .pipe(webpack2Stream(viewerFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createGVWebBundle(defines, options) {
@@ -565,7 +582,8 @@ function createGVWebBundle(defines, options) {
   });
   return gulp
     .src("./web/viewer-geckoview.js", { encoding: false })
-    .pipe(webpack2Stream(viewerFileConfig));
+    .pipe(webpack2Stream(viewerFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createComponentsBundle(defines) {
@@ -577,7 +595,8 @@ function createComponentsBundle(defines) {
   });
   return gulp
     .src("./web/pdf_viewer.component.js", { encoding: false })
-    .pipe(webpack2Stream(componentsFileConfig));
+    .pipe(webpack2Stream(componentsFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createImageDecodersBundle(defines) {
@@ -591,7 +610,8 @@ function createImageDecodersBundle(defines) {
   });
   return gulp
     .src("./src/pdf.image_decoders.js", { encoding: false })
-    .pipe(webpack2Stream(componentsFileConfig));
+    .pipe(webpack2Stream(componentsFileConfig))
+    .pipe(renameWebpackRuntimeVars());
 }
 
 function createCMapBundle() {
@@ -915,6 +935,7 @@ function buildDefaultPreferences(defines, dir) {
   return gulp
     .src("web/app_options.js", { encoding: false })
     .pipe(webpack2Stream(defaultPreferencesConfig))
+    .pipe(renameWebpackRuntimeVars())
     .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + dir));
 }
 
