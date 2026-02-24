@@ -239,7 +239,8 @@ function operatorListHasDOMFilters({ fnArray, argsArray }) {
  *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
  *   context to create elements with and to load resources, such as fonts,
- *   into. Defaults to the current document.
+ *   into. Defaults to the current document. Renderer-worker rendering is
+ *   disabled when this is set to a custom document.
  * @property {boolean} [disableRange] - Disable range request loading of PDF
  *   files. When enabled, and if the server supports partial content requests,
  *   then the PDF will be fetched in chunks. The default value is `false`.
@@ -377,10 +378,22 @@ function getDocument(src = {}) {
   const enableHWA = src.enableHWA === true;
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
+  const styleElement =
+    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
+      ? src.styleElement
+      : null;
+  // Custom DOM contexts are main-thread only and cannot be transferred to
+  // the renderer worker.
+  const hasCustomOwnerDocument =
+    src.ownerDocument !== undefined &&
+    src.ownerDocument !== globalThis.document;
+  const hasCustomStyleElement = !!styleElement;
   const disableWorkerRendering =
     src.disableWorkerRendering === true ||
     typeof Worker === "undefined" ||
-    typeof MessageChannel === "undefined";
+    typeof MessageChannel === "undefined" ||
+    hasCustomOwnerDocument ||
+    hasCustomStyleElement;
 
   // Parameters whose default values depend on other parameters.
   const length = rangeTransport ? rangeTransport.length : (src.length ?? NaN);
@@ -403,13 +416,6 @@ function getDocument(src = {}) {
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
         );
-
-  // Parameters only intended for development/testing purposes.
-  const styleElement =
-    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
-      ? src.styleElement
-      : null;
-
   // Set the main-thread verbosity level.
   setVerbosityLevel(verbosity);
 
@@ -3708,7 +3714,10 @@ class InternalRenderTask {
     let useWorkerRendering =
       this._rendererHandler &&
       this._canvasContext === null &&
-      !hasCanvasFilters
+      !hasCanvasFilters &&
+      !this.pageColors;
+
+    // TODO(Aditi): Should we disable worker rendering when pdfBug is enabled?
     if (!useWorkerRendering) {
       this._rendererHandler = null;
     }

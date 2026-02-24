@@ -220,6 +220,13 @@ class RendererMessageHandler {
       });
       const canvasFactory = createCanvasFactory({ enableHWA });
       const filterFactory = new WorkerFilterFactory();
+      let annotationCanvases = null;
+      if (annotationCanvasMap) {
+        annotationCanvases =
+          annotationCanvasMap instanceof Map
+            ? annotationCanvasMap
+            : new Map(annotationCanvasMap);
+      }
       const gfx = new CanvasGraphics(
         ctx,
         this.#commonObjs,
@@ -227,7 +234,7 @@ class RendererMessageHandler {
         canvasFactory,
         filterFactory,
         { optionalContentConfig },
-        annotationCanvasMap
+        annotationCanvases
         /** Renderer worker doesn't support pageColors and dependencyTracker */
       );
 
@@ -304,7 +311,7 @@ class RendererMessageHandler {
       return currentOperatorListIdx;
     });
 
-    handler.on("resetCanvas", ({ renderTaskId }) => {
+    handler.on("ResetCanvas", ({ renderTaskId }) => {
       const task = this.#renderTaskStates.get(renderTaskId);
       if (!task) {
         return;
@@ -331,6 +338,8 @@ class RendererMessageHandler {
 
     const pdfWorkerHandler = new MessageHandler(sourceName, targetName, port);
     this.#pdfWorkerHandlers.set(bridgeId, pdfWorkerHandler);
+    // TODO(Aditi): To be used when we stop forwarding and start
+    // transferring to worker directly.
     this.#setupObjectHandler(pdfWorkerHandler);
 
     pdfWorkerHandler.send("ready", null);

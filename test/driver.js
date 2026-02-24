@@ -512,8 +512,8 @@ class Driver {
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
-    // Used as the render-target when testing `renderInWorker`, since a canvas
-    // can only be transferred once using `transferControlToOffscreen`.
+    // Used as the render-target when testing rendering in worker, since a
+    // canvas can only be transferred once using `transferControlToOffscreen`.
     this.renderCanvas = null;
   }
 
