@@ -1054,7 +1054,16 @@ class Catalog {
     const obj = this.#catDict.get("Names");
     let attachments = null;
 
-    if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
+    if (
+      obj instanceof Dict &&
+      obj.has("EmbeddedFiles") &&
+      // Note: decrypting attachments is not supported regardless.
+      // If it was, then `decryptOnAttachmentOpen` would signal whether to do
+      // so lazily.
+      // As it stands, we can at least avoid users getting to an infinite loader
+      // in the case of `decryptOnAttachmentOpen`.
+      !this.xref.decryptOnAttachmentOpen
+    ) {
       const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
         const fs = new FileSpec(value);
