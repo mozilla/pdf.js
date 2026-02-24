@@ -126,13 +126,18 @@ class BasePDFPageView extends RenderableView {
     this.#showCanvas = isLastShow => {
       if (updateOnFirstShow) {
         let tempCanvas = this.#tempCanvas;
-        if (!isLastShow && this.minDurationToUpdateCanvas > 0) {
+        if (
+          !isLastShow &&
+          this.minDurationToUpdateCanvas > 0 &&
+          !this.renderTask?.rendererHandler
+        ) {
           // We draw on the canvas at 60fps (in using `requestAnimationFrame`),
           // so if the canvas is large, updating it at 60fps can be a way too
           // much and can cause some serious performance issues.
           // To avoid that we only update the canvas every
           // `this.#minDurationToUpdateCanvas` ms.
-
+          // When rendering in worker, we don't need this optimization because
+          // the rendering is already happening off the main thread.
           if (Date.now() - this.#startTime < this.minDurationToUpdateCanvas) {
             return;
           }

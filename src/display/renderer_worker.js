@@ -85,6 +85,8 @@ class RendererMessageHandler {
   }
 
   static #cleanupPage(pageIndex) {
+    // TODO(Aditi): Investigate why the canvas doesn't render when scrolling
+    // back up, after scroll down.
     const objs = this.#objsMap.get(pageIndex);
     if (objs) {
       objs.clear();
@@ -179,7 +181,7 @@ class RendererMessageHandler {
       this.#cleanupPage(pageIndex);
     });
 
-    handler.on("cleanupRenderTask", ({ renderTaskId }) => {
+    handler.on("CleanupRenderTask", ({ renderTaskId }) => {
       this.#cleanupRenderTask(renderTaskId);
     });
 
@@ -312,16 +314,7 @@ class RendererMessageHandler {
     });
 
     handler.on("ResetCanvas", ({ renderTaskId }) => {
-      const task = this.#renderTaskStates.get(renderTaskId);
-      if (!task) {
-        return;
-      }
-      task.cleanupRequested = true;
-
-      if (task.ended) {
-        task.canvas.width = task.canvas.height = 0;
-        this.#renderTaskStates.delete(renderTaskId);
-      }
+      this.#cleanupRenderTask(renderTaskId);
     });
   }
 

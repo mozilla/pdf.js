@@ -283,6 +283,99 @@ class PartialEvaluator {
     return newEvaluator;
   }
 
+  _traverseExtGState(
+    resources,
+    processed,
+    {
+      checkGraphicState,
+      onExtGStateFetchError = null,
+      onXObjectFetchError = null,
+      onResourceNode = null,
+    }
+  ) {
+    const nodes = [resources],
+      xref = this.xref;
+    while (nodes.length) {
+      const node = nodes.shift();
+      const graphicStates = node.get("ExtGState");
+      if (graphicStates instanceof Dict) {
+        for (let graphicState of graphicStates.getRawValues()) {
+          if (graphicState instanceof Ref) {
+            if (processed.has(graphicState)) {
+              continue; // The ExtGState has already been processed.
+            }
+            try {
+              graphicState = xref.fetch(graphicState);
+            } catch (ex) {
+              if (onExtGStateFetchError?.(ex)) {
+                return true;
+              }
+              // Avoid parsing a corrupt ExtGState more than once.
+              processed.put(graphicState);
+              continue;
+            }
+          }
+          if (!(graphicState instanceof Dict)) {
+            continue;
+          }
+          if (graphicState.objId) {
+            processed.put(graphicState.objId);
+          }
+          if (checkGraphicState(graphicState)) {
+            return true;
+          }
+        }
+      }
+
+      const xObjects = node.get("XObject");
+      if (xObjects instanceof Dict) {
+        for (let xObject of xObjects.getRawValues()) {
+          if (xObject instanceof Ref) {
+            if (processed.has(xObject)) {
+              // The XObject has already been processed, and by avoiding a
+              // redundant `xref.fetch` we can *significantly* reduce the load
+              // time for badly generated PDF files (fixes issue6961.pdf).
+              continue;
+            }
+            try {
+              xObject = xref.fetch(xObject);
+            } catch (ex) {
+              if (onXObjectFetchError?.(ex)) {
+                return true;
+              }
+              // Avoid parsing a corrupt XObject more than once.
+              processed.put(xObject);
+              continue;
+            }
+          }
+          if (!(xObject instanceof BaseStream)) {
+            continue;
+          }
+          if (xObject.dict.objId) {
+            processed.put(xObject.dict.objId);
+          }
+          const xResources = xObject.dict.get("Resources");
+          if (!(xResources instanceof Dict)) {
+            continue;
+          }
+          // Checking objId to detect an infinite loop.
+          if (xResources.objId && processed.has(xResources.objId)) {
+            continue;
+          }
+
+          nodes.push(xResources);
+          if (xResources.objId) {
+            processed.put(xResources.objId);
+          }
+        }
+      }
+      if (onResourceNode?.(node, nodes)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   hasBlendModes(resources, nonBlendModesSet) {
     if (!(resources instanceof Dict)) {
       return false;
@@ -295,42 +388,12 @@ class PartialEvaluator {
     if (resources.objId) {
       processed.put(resources.objId);
     }
-
-    const nodes = [resources],
-      xref = this.xref;
-    while (nodes.length) {
-      const node = nodes.shift();
-      // First check the current resources for blend modes.
-      const graphicStates = node.get("ExtGState");
-      if (graphicStates instanceof Dict) {
-        for (let graphicState of graphicStates.getRawValues()) {
-          if (graphicState instanceof Ref) {
-            if (processed.has(graphicState)) {
-              continue; // The ExtGState has already been processed.
-            }
-            try {
-              graphicState = xref.fetch(graphicState);
-            } catch (ex) {
-              // Avoid parsing a corrupt ExtGState more than once.
-              processed.put(graphicState);
-
-              info(`hasBlendModes - ignoring ExtGState: "${ex}".`);
-              continue;
-            }
-          }
-          if (!(graphicState instanceof Dict)) {
-            continue;
-          }
-          if (graphicState.objId) {
-            processed.put(graphicState.objId);
-          }
-
+    if (
+      this._traverseExtGState(resources, processed, {
+        checkGraphicState(graphicState) {
           const bm = graphicState.get("BM");
           if (bm instanceof Name) {
-            if (bm.name !== "Normal") {
-              return true;
-            }
-            continue;
+            return bm.name !== "Normal";
           }
           if (bm !== undefined && Array.isArray(bm)) {
             for (const element of bm) {
@@ -339,51 +402,19 @@ class PartialEvaluator {
               }
             }
           }
-        }
-      }
-      // Descend into the XObjects to look for more resources and blend modes.
-      const xObjects = node.get("XObject");
-      if (!(xObjects instanceof Dict)) {
-        continue;
-      }
-      for (let xObject of xObjects.getRawValues()) {
-        if (xObject instanceof Ref) {
-          if (processed.has(xObject)) {
-            // The XObject has already been processed, and by avoiding a
-            // redundant `xref.fetch` we can *significantly* reduce the load
-            // time for badly generated PDF files (fixes issue6961.pdf).
-            continue;
-          }
-          try {
-            xObject = xref.fetch(xObject);
-          } catch (ex) {
-            // Avoid parsing a corrupt XObject more than once.
-            processed.put(xObject);
-
-            info(`hasBlendModes - ignoring XObject: "${ex}".`);
-            continue;
-          }
-        }
-        if (!(xObject instanceof BaseStream)) {
-          continue;
-        }
-        if (xObject.dict.objId) {
-          processed.put(xObject.dict.objId);
-        }
-        const xResources = xObject.dict.get("Resources");
-        if (!(xResources instanceof Dict)) {
-          continue;
-        }
-        // Checking objId to detect an infinite loop.
-        if (xResources.objId && processed.has(xResources.objId)) {
-          continue;
-        }
-
-        nodes.push(xResources);
-        if (xResources.objId) {
-          processed.put(xResources.objId);
-        }
-      }
+          return false;
+        },
+        onExtGStateFetchError(ex) {
+          info(`hasBlendModes - ignoring ExtGState: "${ex}".`);
+          return false;
+        },
+        onXObjectFetchError(ex) {
+          info(`hasBlendModes - ignoring XObject: "${ex}".`);
+          return false;
+        },
+      })
+    ) {
+      return true;
     }
 
     // When no blend modes exist, there's no need re-fetch/re-parse any of the
@@ -449,126 +480,77 @@ class PartialEvaluator {
     if (resources.objId) {
       processed.put(resources.objId);
     }
-
-    const nodes = [resources],
-      xref = this.xref;
-    while (nodes.length) {
-      const node = nodes.shift();
-      const graphicStates = node.get("ExtGState");
-      if (graphicStates instanceof Dict) {
-        for (let graphicState of graphicStates.getRawValues()) {
-          if (graphicState instanceof Ref) {
-            if (processed.has(graphicState)) {
+    const xref = this.xref;
+    return this._traverseExtGState(resources, processed, {
+      checkGraphicState: graphicState => {
+        try {
+          return this._hasCanvasFiltersInGState(graphicState);
+        } catch (ex) {
+          info(`hasCanvasFilters - failed to inspect filter data: "${ex}".`);
+          return true;
+        }
+      },
+      onExtGStateFetchError(ex) {
+        info(`hasCanvasFilters - failed to fetch ExtGState: "${ex}".`);
+        return true;
+      },
+      onXObjectFetchError(ex) {
+        info(`hasCanvasFilters - failed to fetch XObject: "${ex}".`);
+        return true;
+      },
+      onResourceNode(node, nodes) {
+        const patterns = node.get("Pattern");
+        if (!(patterns instanceof Dict)) {
+          return false;
+        }
+        for (let pattern of patterns.getRawValues()) {
+          if (pattern instanceof Ref) {
+            if (processed.has(pattern)) {
               continue;
             }
             try {
-              graphicState = xref.fetch(graphicState);
+              pattern = xref.fetch(pattern);
             } catch (ex) {
-              info(`hasCanvasFilters - failed to fetch ExtGState: "${ex}".`);
+              info(`hasCanvasFilters - failed to fetch Pattern: "${ex}".`);
               return true;
             }
           }
-          if (!(graphicState instanceof Dict)) {
-            continue;
-          }
-          if (graphicState.objId) {
-            processed.put(graphicState.objId);
-          }
-          try {
-            if (this._hasCanvasFiltersInGState(graphicState)) {
-              return true;
+          if (pattern instanceof BaseStream) {
+            if (pattern.dict.objId) {
+              processed.put(pattern.dict.objId);
             }
-          } catch (ex) {
-            info(`hasCanvasFilters - failed to inspect filter data: "${ex}".`);
-            return true;
-          }
-        }
-      }
-
-      const xObjects = node.get("XObject");
-      if (xObjects instanceof Dict) {
-        for (let xObject of xObjects.getRawValues()) {
-          if (xObject instanceof Ref) {
-            if (processed.has(xObject)) {
+            const patternResources = pattern.dict.get("Resources");
+            if (!(patternResources instanceof Dict)) {
               continue;
             }
-            try {
-              xObject = xref.fetch(xObject);
-            } catch (ex) {
-              info(`hasCanvasFilters - failed to fetch XObject: "${ex}".`);
-              return true;
+            if (
+              patternResources.objId &&
+              processed.has(patternResources.objId)
+            ) {
+              continue;
             }
-          }
-          if (!(xObject instanceof BaseStream)) {
+
+            nodes.push(patternResources);
+            if (patternResources.objId) {
+              processed.put(patternResources.objId);
+            }
             continue;
           }
-          if (xObject.dict.objId) {
-            processed.put(xObject.dict.objId);
-          }
-          const xResources = xObject.dict.get("Resources");
-          if (!(xResources instanceof Dict)) {
+          if (!(pattern instanceof Dict)) {
             continue;
           }
-          if (xResources.objId && processed.has(xResources.objId)) {
+          if (pattern.objId && processed.has(pattern.objId)) {
             continue;
           }
 
-          nodes.push(xResources);
-          if (xResources.objId) {
-            processed.put(xResources.objId);
+          nodes.push(pattern);
+          if (pattern.objId) {
+            processed.put(pattern.objId);
           }
         }
-      }
-
-      const patterns = node.get("Pattern");
-      if (!(patterns instanceof Dict)) {
-        continue;
-      }
-      for (let pattern of patterns.getRawValues()) {
-        if (pattern instanceof Ref) {
-          if (processed.has(pattern)) {
-            continue;
-          }
-          try {
-            pattern = xref.fetch(pattern);
-          } catch (ex) {
-            info(`hasCanvasFilters - failed to fetch Pattern: "${ex}".`);
-            return true;
-          }
-        }
-        if (pattern instanceof BaseStream) {
-          if (pattern.dict.objId) {
-            processed.put(pattern.dict.objId);
-          }
-          const patternResources = pattern.dict.get("Resources");
-          if (!(patternResources instanceof Dict)) {
-            continue;
-          }
-          if (patternResources.objId && processed.has(patternResources.objId)) {
-            continue;
-          }
-
-          nodes.push(patternResources);
-          if (patternResources.objId) {
-            processed.put(patternResources.objId);
-          }
-          continue;
-        }
-        if (!(pattern instanceof Dict)) {
-          continue;
-        }
-        if (pattern.objId && processed.has(pattern.objId)) {
-          continue;
-        }
-
-        nodes.push(pattern);
-        if (pattern.objId) {
-          processed.put(pattern.objId);
-        }
-      }
-    }
-
-    return false;
+        return false;
+      },
+    });
   }
 
   async fetchBuiltInCMap(name) {

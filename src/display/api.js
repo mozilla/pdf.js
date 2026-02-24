@@ -85,6 +85,7 @@ import { XfaText } from "./xfa_text.js";
 
 const RENDERING_CANCELLED_TIMEOUT = 100; // ms
 
+// The final operator list can still gain filter-using ops later
 function operatorListHasDOMFilters({ fnArray, argsArray }) {
   for (let i = 0, ii = fnArray.length; i < ii; i++) {
     switch (fnArray[i]) {
@@ -3561,6 +3562,13 @@ class RenderTask {
       (separateAnnots.canvas && annotationCanvasMap?.size > 0)
     );
   }
+
+  /**
+   * @type {MessageHandler | null}
+   */
+  get rendererHandler() {
+    return this._internalRenderTask.rendererHandler;
+  }
 }
 
 /**
@@ -3636,7 +3644,13 @@ class InternalRenderTask {
     });
   }
 
-  _collectAnnotationCanvasesForWorker(startIdx, endIdx) {
+  get rendererHandler() {
+    return this._rendererHandler;
+  }
+
+  // Transfer annotation canvases to the renderer worker which show up in the
+  // operator list later when it is updated.
+  _getAnnotationCanvasFromOpList(startIdx, endIdx) {
     const annotationCanvases = [];
     const transfers = [];
     if (
@@ -3730,16 +3744,20 @@ class InternalRenderTask {
           ? optionalContentConfig.getState()
           : null;
         const { annotationCanvases, transfers } =
-          this._collectAnnotationCanvasesForWorker(
+          this._getAnnotationCanvasFromOpList(
             0,
             this.operatorList.argsArray.length
           );
         const initTransfers = [offscreen, ...transfers];
+        const {
+          _rendererHandler: rendererHandler,
+          _renderTaskId: renderTaskId,
+        } = this;
         Object.defineProperty(this._canvas, "resetWorkerCanvas", {
           value() {
             try {
-              this._rendererHandler.send("ResetCanvas", {
-                renderTaskId: this._renderTaskId,
+              rendererHandler.send("ResetCanvas", {
+                renderTaskId,
               });
             } catch {
               // Ignore errors if the renderer worker has been destroyed.
@@ -3819,7 +3837,7 @@ class InternalRenderTask {
     this.cancelled = true;
     if (this._rendererHandler) {
       try {
-        this._rendererHandler.send("cleanupRenderTask", {
+        this._rendererHandler.send("CleanupRenderTask", {
           renderTaskId: this._renderTaskId,
         });
       } catch {
@@ -3899,7 +3917,7 @@ class InternalRenderTask {
         operatorListArgsArrayLen
       );
       const { annotationCanvases, transfers } =
-        this._collectAnnotationCanvasesForWorker(
+        this._getAnnotationCanvasFromOpList(
           sentLength,
           operatorListArgsArrayLen
         );
