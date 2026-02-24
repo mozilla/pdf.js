@@ -1079,6 +1079,8 @@ class Driver {
             } else if (renderPrint) {
               if (task.annotationStorage) {
                 renderContext.annotationMode = AnnotationMode.ENABLE_STORAGE;
+                renderContext.printAnnotationStorage =
+                  task.pdfDoc.annotationStorage.print;
               }
               renderContext.intent = "print";
             }

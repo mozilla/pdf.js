@@ -330,15 +330,21 @@ class AnnotationStorage {
  * contents. (Necessary since printing is triggered synchronously in browsers.)
  */
 class PrintAnnotationStorage extends AnnotationStorage {
-  #serializable;
+  #serializable = SerializableEmpty;
 
   constructor(parent) {
     super();
-    const { map, hash, transfer } = parent.serializable;
+
+    const { serializable } = parent;
+    if (serializable === SerializableEmpty) {
+      return;
+    }
+    const { map, hash, transfer } = serializable;
     // Create a *copy* of the data, since Objects are passed by reference in JS.
     const clone = structuredClone(map, transfer ? { transfer } : null);
-
-    this.#serializable = { map: clone, hash, transfer };
+    // The `PrintAnnotationStorage` instance is re-used for all pages,
+    // hence we cannot transfer the data since that breaks printing.
+    this.#serializable = { map: clone, hash, transfer: [] };
   }
 
   /**
