@@ -39,6 +39,7 @@ import {
   SerializableEmpty,
 } from "./annotation_storage.js";
 import {
+  CanvasBBoxTracker,
   CanvasDependencyTracker,
   CanvasImagesTracker,
 } from "./canvas_dependency_tracker.js";
@@ -1594,20 +1595,28 @@ class PDFPageProxy {
       }
     };
 
+    let dependencyTracker = null;
+    let bboxTracker = null;
+    if (shouldRecordOperations || shouldRecordImages) {
+      bboxTracker = new CanvasBBoxTracker(
+        canvas,
+        intentState.operatorList.length
+      );
+    }
+    if (shouldRecordOperations) {
+      dependencyTracker = new CanvasDependencyTracker(
+        bboxTracker,
+        recordForDebugger
+      );
+    }
+
     const internalRenderTask = new InternalRenderTask({
       callback: complete,
       // Only include the required properties, and *not* the entire object.
       params: {
         canvas,
         canvasContext,
-        dependencyTracker:
-          shouldRecordOperations || shouldRecordImages
-            ? new CanvasDependencyTracker(
-                canvas,
-                intentState.operatorList.length,
-                recordForDebugger
-              )
-            : null,
+        dependencyTracker: dependencyTracker ?? bboxTracker,
         imagesTracker: shouldRecordImages
           ? new CanvasImagesTracker(canvas)
           : null,
