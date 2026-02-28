@@ -1,6 +1,6 @@
 import globals from "globals";
 
-import import_ from "eslint-plugin-import";
+import import_ from "eslint-plugin-import-x";
 import jasmine from "eslint-plugin-jasmine";
 import json from "@eslint/json";
 import noUnsanitized from "eslint-plugin-no-unsanitized";
@@ -70,11 +70,15 @@ export default [
     files: jsFiles("."),
 
     plugins: {
-      import: import_.flatConfigs.recommended.plugins.import,
+      import: import_.flatConfigs.recommended.plugins["import-x"],
       json,
       "no-unsanitized": noUnsanitized,
       perfectionist,
       unicorn,
+    },
+
+    settings: {
+      "import-x/resolver-next": [import_.createNodeResolver()],
     },
 
     languageOptions: {

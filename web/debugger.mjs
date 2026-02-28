@@ -672,7 +672,7 @@ class Stepper {
   }
 }
 
-const Stats = (function Stats() {
+const Stats = (function () {
   let stats = [];
   function clear(node) {
     node.textContent = ""; // Remove any `node` contents from the DOM.
