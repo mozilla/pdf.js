@@ -15,6 +15,7 @@
 
 import {
   babelPluginPDFJSPreprocessor,
+  babelPluginStripSrcPath,
   preprocessPDFJSCode,
 } from "./external/builder/babel-plugin-pdfjs-preprocessor.mjs";
 import { exec, execSync, spawn, spawnSync } from "child_process";
@@ -1592,6 +1593,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
             ],
         plugins: [
           [babelPluginPDFJSPreprocessor, ctx],
+          [babelPluginStripSrcPath],
           [
             "add-header-comment",
             {
@@ -1604,13 +1606,7 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
         sourceFileName: relativeSourcePath,
       });
 
-      let code = result.code;
-      code = code.replaceAll(
-        /(\sfrom\s".*?)(?:\/src)(\/[^"]*"?;)$/gm,
-        (all, prefix, suffix) => prefix + suffix
-      );
-
-      file.contents = Buffer.from(code);
+      file.contents = Buffer.from(result.code);
       // Attach the source map to the file for gulp-sourcemaps
       if (result.map) {
         file.sourceMap = result.map;
