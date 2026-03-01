@@ -4905,15 +4905,10 @@ have written that much by now. So, here’s to squashing bugs.`);
       }
       const { NUM_PAGES_THRESHOLD } = GlobalImageCache;
 
-      const loadingTask = getDocument(
-        buildGetDocumentParams("issue11518.pdf", {
-          pdfBug: true,
-        })
-      );
+      const loadingTask = getDocument(buildGetDocumentParams("issue11518.pdf"));
       const pdfDoc = await loadingTask.promise;
       const { canvasFactory } = pdfDoc;
-      let checkedCopyLocalImage = false,
-        firstStatsOverall = null;
+      let checkedCopyLocalImage = false;
 
       for (let i = 1; i <= pdfDoc.numPages; i++) {
         const pdfPage = await pdfDoc.getPage(i);
@@ -4929,29 +4924,32 @@ have written that much by now. So, here’s to squashing bugs.`);
         });
 
         await renderTask.promise;
+        const opList = renderTask.getOperatorList();
         // The canvas is no longer necessary, since we only care about
-        // the stats below.
+        // the operator list below.
         canvasFactory.destroy(canvasAndCtx);
 
-        const [statsOverall] = pdfPage.stats.times
-          .filter(time => time.name === "Overall")
-          .map(time => time.end - time.start);
+        const { commonObjs, objs } = pdfPage;
+        const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+        const [objId] = opList.argsArray[imgIndex];
 
-        if (i === 1) {
-          firstStatsOverall = statsOverall;
+        if (i < NUM_PAGES_THRESHOLD) {
+          // Image decoded in the worker-thread; stored as a page-level object.
+          expect(objs.has(objId)).toEqual(true);
+          expect(commonObjs.has(objId)).toEqual(false);
         } else if (i === NUM_PAGES_THRESHOLD) {
           checkedCopyLocalImage = true;
-          // Ensure that the images were copied in the main-thread, rather
-          // than being re-parsed in the worker-thread (which is slower).
-          expect(statsOverall).toBeLessThan(firstStatsOverall / 2);
-        } else if (i > NUM_PAGES_THRESHOLD) {
+          // Ensure that the image was copied in the main-thread (into
+          // commonObjs), rather than being re-parsed in the worker-thread.
+          expect(objs.has(objId)).toEqual(false);
+          expect(commonObjs.has(objId)).toEqual(true);
+        } else {
           break;
         }
       }
       expect(checkedCopyLocalImage).toBeTruthy();
 
       await loadingTask.destroy();
-      firstStatsOverall = null;
     });
 
     it("caches image resources at the document/page level, with corrupt images (issue 18042)", async function () {
