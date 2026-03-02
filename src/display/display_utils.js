@@ -17,6 +17,7 @@ import {
   BaseException,
   DrawOPS,
   FeatureTest,
+  makeArr,
   MathClamp,
   shadow,
   stripPath,
@@ -1360,9 +1361,7 @@ class PagesMapper {
    * Gets the current page mapping suitable for saving.
    * @returns {Object} An object containing the page indices.
    */
-  getPageMappingForSaving() {
-    const idToPageNumber = this.#idToPageNumber;
-
+  getPageMappingForSaving(idToPageNumber = this.#idToPageNumber) {
     // idToPageNumber maps used 1-based IDs to 1-based page numbers.
     // For example if the final pdf contains page 3 twice and they are moved at
     // page 1 and 4, then it contains:
@@ -1411,6 +1410,19 @@ class PagesMapper {
     }
 
     return extractParams;
+  }
+
+  extractPages(extractedPageNumbers) {
+    extractedPageNumbers = Array.from(extractedPageNumbers).sort(
+      (a, b) => a - b
+    );
+    const usedIds = new Map();
+    for (let i = 0, ii = extractedPageNumbers.length; i < ii; i++) {
+      const id = this.getPageId(extractedPageNumbers[i]);
+      const usedPageNumbers = usedIds.getOrInsertComputed(id, makeArr);
+      usedPageNumbers.push(i + 1);
+    }
+    return this.getPageMappingForSaving(usedIds);
   }
 
   /**

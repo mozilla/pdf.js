@@ -614,24 +614,14 @@ describe("Reorganize Pages View", () => {
             10
           );
 
-          const handleSaveAs = await createPromise(page, resolve => {
-            window.PDFViewerApplication.eventBus.on(
-              "savepageseditedpdf",
-              ({ data }) => {
-                resolve(Array.from(data[0].pageIndices));
-              },
-              {
-                once: true,
-              }
-            );
+          const handleSave = await createPromise(page, resolve => {
+            window.PDFViewerApplication.onSavePages = async ({ data }) => {
+              resolve(Array.from(data[0].pageIndices));
+            };
           });
 
-          await page.click("#viewsManagerStatusActionButton");
-          await page.waitForSelector("#viewsManagerStatusActionSaveAs", {
-            visible: true,
-          });
-          await page.click("#viewsManagerStatusActionSaveAs");
-          const pageIndices = await awaitPromise(handleSaveAs);
+          await waitAndClick(page, "#downloadButton");
+          const pageIndices = await awaitPromise(handleSave);
           expect(pageIndices)
             .withContext(`In ${browserName}`)
             .toEqual([
@@ -1037,6 +1027,61 @@ describe("Reorganize Pages View", () => {
               { visible: true }
             );
           }
+        })
+      );
+    });
+  });
+
+  describe("Extract some pages from a pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "page-fit",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check that the pages are correctly extracted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+
+          const handleSaveAs = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "saveextractedpages",
+              ({ data }) => {
+                resolve(data);
+              },
+              {
+                once: true,
+              }
+            );
+          });
+
+          await page.click("#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionSaveAs");
+          const pagesData = await awaitPromise(handleSaveAs);
+          expect(pagesData)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              { document: null, pageIndices: [0, 1], includePages: [0, 2] },
+            ]);
         })
       );
     });

@@ -1072,9 +1072,9 @@ const PDFViewerApplication = {
       // Embedded PDF viewers should not be changing their parent page's title.
       return;
     }
-    const editorIndicator =
-      this._hasAnnotationEditors && !this.pdfRenderingQueue.printing;
-    document.title = `${editorIndicator ? "* " : ""}${title}`;
+    const hasChangesIndicator =
+      this._hasChanges() && !this.pdfRenderingQueue.printing;
+    document.title = `${hasChangesIndicator ? "* " : ""}${title}`;
   },
 
   get _docFilename() {
@@ -1129,12 +1129,12 @@ const PDFViewerApplication = {
     if (
       (typeof PDFJSDev === "undefined" ||
         PDFJSDev.test("GENERIC && !TESTING")) &&
-      this.pdfDocument?.annotationStorage.size > 0 &&
+      this._hasChanges() &&
       this._annotationStorageModified
     ) {
       try {
         // Trigger saving, to prevent data loss in forms; see issue 12257.
-        await this.save();
+        await this.downloadOrSave();
       } catch {
         // Ignoring errors, to ensure that document closing won't break.
       }
@@ -1315,9 +1315,15 @@ const PDFViewerApplication = {
     // a message and change PdfjsChild.sys.mjs to take it into account.
     const { classList } = this.appConfig.appContainer;
     classList.add("wait");
-    await (this.pdfDocument?.annotationStorage.size > 0
-      ? this.save()
-      : this.download());
+
+    const structuralChanges = this.pdfThumbnailViewer?.getStructuralChanges();
+    if (structuralChanges) {
+      await this.onSavePages({ data: structuralChanges });
+    } else {
+      await (this.pdfDocument?.annotationStorage.size > 0
+        ? this.save()
+        : this.download());
+    }
     classList.remove("wait");
   },
 
@@ -1862,6 +1868,13 @@ const PDFViewerApplication = {
     }
   },
 
+  _hasChanges() {
+    return (
+      this.pdfDocument?.annotationStorage.size > 0 ||
+      this.pdfThumbnailViewer?.hasStructuralChanges()
+    );
+  },
+
   /**
    * @private
    */
@@ -1872,15 +1885,11 @@ const PDFViewerApplication = {
     const { annotationStorage } = pdfDocument;
 
     annotationStorage.onSetModified = () => {
-      window.addEventListener("beforeunload", beforeUnload);
-
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         this._annotationStorageModified = true;
       }
     };
     annotationStorage.onResetModified = () => {
-      window.removeEventListener("beforeunload", beforeUnload);
-
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
         delete this._annotationStorageModified;
       }
@@ -2185,11 +2194,7 @@ const PDFViewerApplication = {
       );
     }
     eventBus._on("pagesedited", this.onPagesEdited.bind(this), opts);
-    eventBus._on(
-      "savepageseditedpdf",
-      this.onSavePagesEditedPDF.bind(this),
-      opts
-    );
+    eventBus._on("saveextractedpages", this.onSavePages.bind(this), opts);
   },
 
   bindWindowEvents() {
@@ -2270,6 +2275,9 @@ const PDFViewerApplication = {
       },
       { signal }
     );
+    window.addEventListener("beforeunload", onBeforeUnload.bind(this), {
+      signal,
+    });
 
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
@@ -2368,7 +2376,7 @@ const PDFViewerApplication = {
     this.pdfViewer.onPagesEdited(data);
   },
 
-  async onSavePagesEditedPDF({ data: extractParams }) {
+  async onSavePages({ data: extractParams }) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       return;
     }
@@ -2876,6 +2884,15 @@ function closeEditorUndoBar(evt) {
   }
 }
 
+function onBeforeUnload(evt) {
+  if (this._hasChanges()) {
+    evt.preventDefault();
+    evt.returnValue = "";
+    return false;
+  }
+  return true;
+}
+
 function onClick(evt) {
   closeSecondaryToolbar.call(this, evt);
   closeEditorUndoBar.call(this, evt);
@@ -3228,12 +3245,6 @@ function onKeyDown(evt) {
   if (handled) {
     evt.preventDefault();
   }
-}
-
-function beforeUnload(evt) {
-  evt.preventDefault();
-  evt.returnValue = "";
-  return false;
 }
 
 export { PDFViewerApplication };
