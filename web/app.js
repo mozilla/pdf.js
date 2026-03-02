@@ -461,6 +461,7 @@ const PDFViewerApplication = {
           foreground: AppOptions.get("pageColorsForeground"),
         }
       : null;
+    const enableSplitMerge = AppOptions.get("enableSplitMerge");
 
     let altTextManager;
     if (AppOptions.get("enableUpdatedAddImage")) {
@@ -599,7 +600,7 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableHWA,
-        enableSplitMerge: AppOptions.get("enableSplitMerge"),
+        enableSplitMerge,
         manageMenu: appConfig.viewsManager.manageMenu,
         addFileButton: appConfig.viewsManager.viewsManagerAddFileButton,
       });
@@ -761,6 +762,7 @@ const PDFViewerApplication = {
         elements: appConfig.viewsManager,
         eventBus,
         l10n,
+        enableSplitMerge,
       });
       this.viewsManager.onToggled = this.forceRendering.bind(this);
       this.viewsManager.onUpdateThumbnails = () => {
