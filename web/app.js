@@ -500,9 +500,6 @@ const PDFViewerApplication = {
           )
         : null;
 
-    const ltr = appConfig.viewerContainer
-      ? getComputedStyle(appConfig.viewerContainer).direction === "ltr"
-      : true;
     const commentManager =
       AppOptions.get("enableComment") && appConfig.editCommentDialog
         ? new CommentManager(
@@ -532,7 +529,7 @@ const PDFViewerApplication = {
             eventBus,
             linkService,
             overlayManager,
-            ltr,
+            /* ltr = */ l10n.getDirection() === "ltr",
             hasForcedColors
           )
         : null;
