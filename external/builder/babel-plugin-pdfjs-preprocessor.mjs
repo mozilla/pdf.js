@@ -292,6 +292,20 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
   };
 }
 
+function babelPluginStripSrcPath() {
+  return {
+    name: "babel-plugin-strip-src-path",
+    visitor: {
+      "ImportDeclaration|ExportNamedDeclaration|ExportAllDeclaration":
+        function ({ node }) {
+          if (node.source?.value.includes("/src/")) {
+            node.source.value = node.source.value.replace("/src/", "/");
+          }
+        },
+    },
+  };
+}
+
 function preprocessPDFJSCode(ctx, content) {
   return transformSync(content, {
     configFile: false,
@@ -299,4 +313,8 @@ function preprocessPDFJSCode(ctx, content) {
   }).code;
 }
 
-export { babelPluginPDFJSPreprocessor, preprocessPDFJSCode };
+export {
+  babelPluginPDFJSPreprocessor,
+  babelPluginStripSrcPath,
+  preprocessPDFJSCode,
+};
