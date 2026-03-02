@@ -98,6 +98,7 @@ class ViewsManager extends Sidebar {
     },
     eventBus,
     l10n,
+    enableSplitMerge = false,
   }) {
     super(
       {
@@ -141,6 +142,11 @@ class ViewsManager extends Sidebar {
     this.viewsManagerStatus = viewsManagerStatus;
 
     this.eventBus = eventBus;
+
+    if (!enableSplitMerge) {
+      viewsManagerStatus.hidden = true;
+    }
+    this._enableSplitMerge = enableSplitMerge;
 
     this.menu = new Menu(
       viewsManagerSelectorOptions,
@@ -252,7 +258,9 @@ class ViewsManager extends Sidebar {
         return;
     }
 
-    this.viewsManagerStatus.hidden = view !== SidebarView.THUMBS;
+    if (this._enableSplitMerge) {
+      this.viewsManagerStatus.hidden = view !== SidebarView.THUMBS;
+    }
     this.viewsManagerAddFileButton.hidden = view !== SidebarView.THUMBS;
     this.viewsManagerCurrentOutlineButton.hidden = view !== SidebarView.OUTLINE;
     this.viewsManagerHeaderLabel.setAttribute(
