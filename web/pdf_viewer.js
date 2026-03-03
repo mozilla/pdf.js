@@ -268,7 +268,7 @@ class PDFViewer {
 
   #switchAnnotationEditorModeTimeoutId = null;
 
-  #getAllTextInProgress = false;
+  #copyAllInProgress = false;
 
   #hiddenCopyElement = null;
 
@@ -816,13 +816,13 @@ class PDFViewer {
       //    has been selected.
 
       if (
-        this.#getAllTextInProgress ||
+        this.#copyAllInProgress ||
         textLayerMode === TextLayerMode.ENABLE_PERMISSIONS
       ) {
         stopEvent(event);
         return;
       }
-      this.#getAllTextInProgress = true;
+      this.#copyAllInProgress = true;
 
       // TODO: if all the pages are rendered we don't need to wait for
       // getAllText and we could just get text from the Selection object.
@@ -855,7 +855,7 @@ class PDFViewer {
           );
         })
         .finally(() => {
-          this.#getAllTextInProgress = false;
+          this.#copyAllInProgress = false;
           keydownAC.abort();
           classList.remove("copyAll");
         });
