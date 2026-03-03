@@ -651,6 +651,9 @@ class PDFThumbnailViewer {
 
   #pastePages(index) {
     this.container.classList.remove("pasteMode");
+    for (const thumbnail of this._thumbnails) {
+      thumbnail.removePasteButton();
+    }
     this.#toggleMenuEntries(true);
 
     const pagesMapper = this.#pagesMapper;

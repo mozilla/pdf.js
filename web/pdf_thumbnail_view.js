@@ -188,8 +188,23 @@ class PDFThumbnailView extends RenderableView {
     pasteButton.addEventListener("click", () => {
       pasteCallback(this.id);
     });
+    if (this.id === 1) {
+      const prevPasteButton = (this.prevPasteButton =
+        pasteButton.cloneNode(true));
+      prevPasteButton.addEventListener("click", () => {
+        pasteCallback(0);
+      });
+      this.imageContainer.before(prevPasteButton);
+    }
 
     this.imageContainer.after(pasteButton);
+  }
+
+  removePasteButton() {
+    this.pasteButton?.remove();
+    this.pasteButton = null;
+    this.prevPasteButton?.remove();
+    this.prevPasteButton = null;
   }
 
   toggleSelected(isSelected) {
