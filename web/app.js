@@ -2173,7 +2173,7 @@ const PDFViewerApplication = {
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus._on(
-        "annotationeditorstateschanged",
+        "editingstateschanged",
         evt => externalServices.updateEditorStates(evt),
         opts
       );
