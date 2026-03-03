@@ -613,12 +613,20 @@
         --input-dim: 16px;
         --gap-between-input-and-thumbnail: 16px;
 
+        &:not(&:has(input)) {
+          --input-dim: 0px;
+          --gap-between-input-and-thumbnail: 0px;
+        }
+
         display: inline-flex;
         justify-content: flex-end;
         align-items: center;
         flex-direction: row-reverse;
         gap: var(--gap-between-input-and-thumbnail);
-        width: 190px;
+        width: calc(
+          var(--thumbnail-width) + 2 *
+            (var(--input-dim) + var(--gap-between-input-and-thumbnail))
+        );
         height: auto;
         position: relative;
         scroll-margin-top: 20px;
