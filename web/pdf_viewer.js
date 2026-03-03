@@ -268,7 +268,7 @@ class PDFViewer {
 
   #switchAnnotationEditorModeTimeoutId = null;
 
-  #getAllTextInProgress = false;
+  #copyAllInProgress = false;
 
   #hiddenCopyElement = null;
 
@@ -769,7 +769,12 @@ class PDFViewer {
     ac.abort(); // Remove the "visibilitychange" listener immediately.
   }
 
-  async getAllText(interruptSignal = null) {
+  async getAllText() {
+    await this.firstPagePromise;
+    return this.#getAllText();
+  }
+
+  async #getAllText(interruptSignal = null) {
     const texts = [];
     const buffer = [];
     for (
@@ -816,16 +821,16 @@ class PDFViewer {
       //    has been selected.
 
       if (
-        this.#getAllTextInProgress ||
+        this.#copyAllInProgress ||
         textLayerMode === TextLayerMode.ENABLE_PERMISSIONS
       ) {
         stopEvent(event);
         return;
       }
-      this.#getAllTextInProgress = true;
+      this.#copyAllInProgress = true;
 
       // TODO: if all the pages are rendered we don't need to wait for
-      // getAllText and we could just get text from the Selection object.
+      // #getAllText and we could just get text from the Selection object.
 
       // Select all the document.
       const { classList } = this.viewer;
@@ -843,7 +848,7 @@ class PDFViewer {
         { signal: keydownAC.signal }
       );
 
-      this.getAllText(interruptAC.signal)
+      this.#getAllText(interruptAC.signal)
         .then(async text => {
           if (text !== null) {
             await navigator.clipboard.writeText(text);
@@ -855,7 +860,7 @@ class PDFViewer {
           );
         })
         .finally(() => {
-          this.#getAllTextInProgress = false;
+          this.#copyAllInProgress = false;
           keydownAC.abort();
           classList.remove("copyAll");
         });

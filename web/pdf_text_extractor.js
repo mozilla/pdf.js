@@ -21,16 +21,14 @@ class PdfTextExtractor {
   /** @type {PDFViewer} */
   #pdfViewer;
 
+  /** @type {BaseExternalServices} */
   #externalServices;
 
-  /**
-   * @type {?Promise<string>}
-   */
+  /** @type {?Promise<string>} */
   #textPromise;
 
-  #pendingRequests = new Set();
-
-  constructor(externalServices) {
+  constructor(pdfViewer, externalServices) {
+    this.#pdfViewer = pdfViewer;
     this.#externalServices = externalServices;
 
     window.addEventListener("requestTextContent", ({ detail }) => {
@@ -38,20 +36,8 @@ class PdfTextExtractor {
     });
   }
 
-  /**
-   * The PDF viewer is required to get the page text.
-   *
-   * @param {PDFViewer | null}
-   */
-  setViewer(pdfViewer) {
-    this.#pdfViewer = pdfViewer;
-    if (this.#pdfViewer && this.#pendingRequests.size) {
-      // Handle any pending requests that came in while things were loading.
-      for (const pendingRequest of this.#pendingRequests) {
-        this.extractTextContent(pendingRequest);
-      }
-      this.#pendingRequests.clear();
-    }
+  reset() {
+    this.#textPromise = null;
   }
 
   /**
@@ -60,11 +46,6 @@ class PdfTextExtractor {
    * @param {number} requestId
    */
   async extractTextContent(requestId) {
-    if (!this.#pdfViewer) {
-      this.#pendingRequests.add(requestId);
-      return;
-    }
-
     if (!this.#textPromise) {
       const textPromise = (this.#textPromise = this.#pdfViewer.getAllText());
 
