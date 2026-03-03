@@ -3723,6 +3723,8 @@ class PartialEvaluator {
         "\xB7\xC2\xCB\xCE_GB2312", // SimFang
         "\xC1\xA5\xCA\xE9", // SimLi
         "\xD0\xC2\xCB\xCE", // SimSun
+        "\xB7\xC2\xCB\xCE\xCC\xE5", // SimFang variant
+        "\xD0\xA1\xB1\xEA\xCB\xCE", // XiaoBiaoSong
       ];
 
       // Check for common Chinese font names and their GBK-encoded equivalents
