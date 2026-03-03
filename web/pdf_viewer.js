@@ -272,8 +272,6 @@ class PDFViewer {
 
   #hiddenCopyElement = null;
 
-  #interruptCopyCondition = false;
-
   #previousContainerHeight = 0;
 
   #resizeObserver = new ResizeObserver(this.#resizeObserverCallback.bind(this));
@@ -771,7 +769,7 @@ class PDFViewer {
     ac.abort(); // Remove the "visibilitychange" listener immediately.
   }
 
-  async getAllText() {
+  async getAllText(interruptSignal = null) {
     const texts = [];
     const buffer = [];
     for (
@@ -779,7 +777,7 @@ class PDFViewer {
       pageNum <= pagesCount;
       ++pageNum
     ) {
-      if (this.#interruptCopyCondition) {
+      if (interruptSignal?.aborted) {
         return null;
       }
       buffer.length = 0;
@@ -833,14 +831,19 @@ class PDFViewer {
       const { classList } = this.viewer;
       classList.add("copyAll");
 
-      const ac = new AbortController();
+      const keydownAC = new AbortController(),
+        interruptAC = new AbortController();
       window.addEventListener(
         "keydown",
-        ev => (this.#interruptCopyCondition = ev.key === "Escape"),
-        { signal: ac.signal }
+        ev => {
+          if (ev.key === "Escape") {
+            interruptAC.abort();
+          }
+        },
+        { signal: keydownAC.signal }
       );
 
-      this.getAllText()
+      this.getAllText(interruptAC.signal)
         .then(async text => {
           if (text !== null) {
             await navigator.clipboard.writeText(text);
@@ -853,8 +856,7 @@ class PDFViewer {
         })
         .finally(() => {
           this.#getAllTextInProgress = false;
-          this.#interruptCopyCondition = false;
-          ac.abort();
+          keydownAC.abort();
           classList.remove("copyAll");
         });
 
