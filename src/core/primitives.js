@@ -312,8 +312,8 @@ class Dict {
 
   clone() {
     const dict = new Dict(this.xref);
-    for (const key of this.getKeys()) {
-      dict.set(key, this.getRaw(key));
+    for (const [key, rawVal] of this.getRawEntries()) {
+      dict.set(key, rawVal);
     }
     return dict;
   }

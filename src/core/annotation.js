@@ -2228,9 +2228,9 @@ class WidgetAnnotation extends Annotation {
     }
 
     const dict = new Dict(xref);
-    for (const key of originalDict.getKeys()) {
+    for (const [key, rawVal] of originalDict.getRawEntries()) {
       if (key !== "AP") {
-        dict.set(key, originalDict.getRaw(key));
+        dict.set(key, rawVal);
       }
     }
     if (flags !== undefined) {
@@ -2442,8 +2442,8 @@ class WidgetAnnotation extends Annotation {
 
       if (this._fieldResources.mergedResources.has("Font")) {
         const oldFont = this._fieldResources.mergedResources.get("Font");
-        for (const key of newFont.getKeys()) {
-          oldFont.set(key, newFont.getRaw(key));
+        for (const [key, rawVal] of newFont.getRawEntries()) {
+          oldFont.set(key, rawVal);
         }
       } else {
         this._fieldResources.mergedResources.set("Font", newFont);

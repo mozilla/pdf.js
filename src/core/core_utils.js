@@ -459,15 +459,14 @@ function collectActions(xref, dict, eventType) {
       if (!(additionalActions instanceof Dict)) {
         continue;
       }
-      for (const key of additionalActions.getKeys()) {
+      for (const [key, rawActionDict] of additionalActions.getRawEntries()) {
         const action = eventType[key];
         if (!action) {
           continue;
         }
-        const actionDict = additionalActions.getRaw(key);
         const parents = new RefSet();
         const list = [];
-        _collectJS(actionDict, xref, list, parents);
+        _collectJS(rawActionDict, xref, list, parents);
         if (list.length > 0) {
           actions[action] = list;
         }
