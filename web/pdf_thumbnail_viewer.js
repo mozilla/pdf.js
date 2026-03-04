@@ -133,6 +133,10 @@ class PDFThumbnailViewer {
 
   #scrollableContainerHeight = 0;
 
+  #previousStates = {
+    hasSelectedPages: false,
+  };
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -185,6 +189,23 @@ class PDFThumbnailViewer {
 
       this.#toggleMenuEntries(false);
       button.disabled = true;
+
+      this.eventBus.on("editingaction", ({ name }) => {
+        switch (name) {
+          case "copyPage":
+            this.#copyPages();
+            break;
+          case "cutPage":
+            this.#cutPages();
+            break;
+          case "deletePage":
+            this.#deletePages();
+            break;
+          case "savePage":
+            this.#saveExtractedPages();
+            break;
+        }
+      });
     } else {
       manageMenu.button.hidden = true;
     }
@@ -196,6 +217,24 @@ class PDFThumbnailViewer {
     );
     this.#resetView();
     this.#addEventListeners();
+  }
+
+  /**
+   * Update the different possible states of this manager, e.g. is there
+   * something to copy, paste, ...
+   * @param {Object} details
+   */
+  #dispatchUpdateStates(details) {
+    const hasChanged = Object.entries(details).some(
+      ([key, value]) => this.#previousStates[key] !== value
+    );
+
+    if (hasChanged) {
+      this.eventBus.dispatch("editingstateschanged", {
+        source: this,
+        details: Object.assign(this.#previousStates, details),
+      });
+    }
   }
 
   #scrollUpdated() {
@@ -730,6 +769,9 @@ class PDFThumbnailViewer {
       this.#manageCopyButton.disabled =
       this.#manageCutButton.disabled =
         !this.#selectedPages?.size;
+    this.#dispatchUpdateStates({
+      hasSelectedPages: !!this.#selectedPages?.size,
+    });
   }
 
   #toggleMenuEntries(enable) {
@@ -894,6 +936,16 @@ class PDFThumbnailViewer {
       if (source.thumbnailsView === this.container) {
         this.#computeThumbnailsPosition();
       }
+    });
+    this.container.addEventListener("focusout", () => {
+      this.#dispatchUpdateStates({
+        hasSelectedPages: false,
+      });
+    });
+    this.container.addEventListener("focusin", () => {
+      this.#dispatchUpdateStates({
+        hasSelectedPages: !!this.#selectedPages?.size,
+      });
     });
     this.container.addEventListener("keydown", e => {
       const { target } = e;

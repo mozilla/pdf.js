@@ -1852,7 +1852,7 @@ class AnnotationEditorUIManager {
     );
 
     if (hasChanged) {
-      this._eventBus.dispatch("annotationeditorstateschanged", {
+      this._eventBus.dispatch("editingstateschanged", {
         source: this,
         details: Object.assign(this.#previousStates, details),
       });
