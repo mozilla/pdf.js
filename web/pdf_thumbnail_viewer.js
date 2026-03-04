@@ -175,12 +175,7 @@ class PDFThumbnailViewer {
 
       this._manageMenu = new Menu(menu, button, [copy, cut, del, saveAs]);
       this.#manageSaveAsButton = saveAs;
-      saveAs.addEventListener("click", () => {
-        this.eventBus.dispatch("savepageseditedpdf", {
-          source: this,
-          data: this.#pagesMapper.getPageMappingForSaving(),
-        });
-      });
+      saveAs.addEventListener("click", this.#saveExtractedPages.bind(this));
       this.#manageDeleteButton = del;
       del.addEventListener("click", this.#deletePages.bind(this));
       this.#manageCopyButton = copy;
@@ -432,6 +427,14 @@ class PDFThumbnailViewer {
     return false;
   }
 
+  hasStructuralChanges() {
+    return this.#pagesMapper?.hasBeenAltered() || false;
+  }
+
+  getStructuralChanges() {
+    return this.#pagesMapper?.getPageMappingForSaving() || null;
+  }
+
   static #getScaleFactor(image) {
     return (PDFThumbnailViewer.#draggingScaleFactor ||= parseFloat(
       getComputedStyle(image).getPropertyValue("--thumbnail-dragging-scale")
@@ -617,6 +620,15 @@ class PDFThumbnailViewer {
     this.#selectedPages.clear();
   }
 
+  #saveExtractedPages() {
+    this.eventBus.dispatch("saveextractedpages", {
+      source: this,
+      data: this.#pagesMapper.extractPages(this.#selectedPages),
+    });
+    this.#clearSelection();
+    this.#toggleMenuEntries(false);
+  }
+
   #copyPages(clearSelection = true) {
     const pageNumbersToCopy = (this.#copiedPageNumbers = Uint32Array.from(
       this.#selectedPages
@@ -713,8 +725,8 @@ class PDFThumbnailViewer {
   }
 
   #updateMenuEntries() {
-    this.#manageSaveAsButton.disabled = !this.#pagesMapper.hasBeenAltered();
-    this.#manageDeleteButton.disabled =
+    this.#manageSaveAsButton.disabled =
+      this.#manageDeleteButton.disabled =
       this.#manageCopyButton.disabled =
       this.#manageCutButton.disabled =
         !this.#selectedPages?.size;
