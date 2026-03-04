@@ -13971,5 +13971,19 @@
     "md5": "ead167e0328f1a1f4f8901cee501a9c4",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "SimFang-variant",
+    "file": "pdfs/SimFang-variant.pdf",
+    "md5": "d412460812cd940917091e8975620faf",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "XiaoBiaoSong",
+    "file": "pdfs/XiaoBiaoSong.pdf",
+    "md5": "7072f6763bf2f0d6df14d5fc86962c5a",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
