@@ -2255,15 +2255,11 @@ class Font {
           if (!valid) {
             break;
           }
-          const customNames = [],
-            strBuf = [];
+          const customNames = [];
           while (font.pos < end) {
-            const stringLength = font.getByte();
-            strBuf.length = stringLength;
-            for (i = 0; i < stringLength; ++i) {
-              strBuf[i] = String.fromCharCode(font.getByte());
-            }
-            customNames.push(strBuf.join(""));
+            const strLen = font.getByte(),
+              str = font.getString(strLen);
+            customNames.push(str);
           }
           glyphNames = [];
           for (i = 0; i < numGlyphs; ++i) {
