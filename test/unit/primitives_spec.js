@@ -284,7 +284,7 @@ describe("primitives", function () {
     it("should get all raw values", function () {
       // Test direct objects:
       const expectedRawValues1 = [testFontFile, testFontFile2, testFontFile3];
-      const rawValues1 = dictWithManyKeys.getRawValues();
+      const rawValues1 = [...dictWithManyKeys.getRawValues()];
 
       expect(rawValues1.sort()).toEqual(expectedRawValues1);
 
@@ -305,7 +305,7 @@ describe("primitives", function () {
       dict.set("Contents", contentsRef);
 
       const expectedRawValues2 = [contentsRef, resourcesRef, typeName];
-      const rawValues2 = dict.getRawValues();
+      const rawValues2 = [...dict.getRawValues()];
 
       expect(rawValues2.sort()).toEqual(expectedRawValues2);
     });
@@ -380,8 +380,8 @@ describe("primitives", function () {
       expect(mergedFontDictKeys).toEqual(["F1"]);
       expect(mergedSubFontDictKeys).toEqual(["F1", "F2", "F3"]);
 
-      const mergedFontDictValues = mergedFontDict.getRawValues();
-      const mergedSubFontDictValues = mergedSubFontDict.getRawValues();
+      const mergedFontDictValues = [...mergedFontDict.getRawValues()];
+      const mergedSubFontDictValues = [...mergedSubFontDict.getRawValues()];
 
       expect(mergedFontDictValues).toEqual(["Local font one"]);
       expect(mergedSubFontDictValues).toEqual([

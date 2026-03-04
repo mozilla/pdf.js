@@ -185,7 +185,7 @@ class Dict {
 
   // No dereferencing.
   getRawValues() {
-    return [...this._map.values()];
+    return this._map.values();
   }
 
   getRawEntries() {
