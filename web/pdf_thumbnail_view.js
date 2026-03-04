@@ -183,7 +183,16 @@ class PDFThumbnailView extends RenderableView {
     pasteButton.classList.add("thumbnailPasteButton", "viewsManagerButton");
     pasteButton.tabIndex = 0;
     const span = document.createElement("span");
-    span.setAttribute("data-l10n-id", "pdfjs-views-manager-paste-button-label");
+    span.setAttribute(
+      "data-l10n-id",
+      "pdfjs-views-manager-paste-button-after-label"
+    );
+    span.setAttribute(
+      "data-l10n-args",
+      JSON.stringify({
+        page: this.pageLabel ?? this.id,
+      })
+    );
     pasteButton.append(span);
     pasteButton.addEventListener("click", () => {
       pasteCallback(this.id);
@@ -191,6 +200,11 @@ class PDFThumbnailView extends RenderableView {
     if (this.id === 1) {
       const prevPasteButton = (this.prevPasteButton =
         pasteButton.cloneNode(true));
+      const prevSpan = prevPasteButton.firstElementChild;
+      prevSpan.setAttribute(
+        "data-l10n-id",
+        "pdfjs-views-manager-paste-button-before-label"
+      );
       prevPasteButton.addEventListener("click", () => {
         pasteCallback(0);
       });

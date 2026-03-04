@@ -767,4 +767,9 @@ pdfjs-views-manager-status-undo-button-label = Undo
 pdfjs-views-manager-status-close-button =
     .title = Close
 pdfjs-views-manager-status-close-button-label = Close
-pdfjs-views-manager-paste-button-label = Paste
+
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after-label = Paste after page { $page }
+
+pdfjs-views-manager-paste-button-before-label = Paste before the first page
