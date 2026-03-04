@@ -3718,8 +3718,6 @@ class InternalRenderTask {
 
     const { viewport, transform, background, dependencyTracker } = this.params;
 
-    // TODO(Aditi): Should we disable worker rendering when pdfBug is enabled?
-
     // Worker Rendering is disabled when canvas filters are present because
     // OffscreenCanvas's OffscreenCanvasRenderingContext2D completely ignores
     // the value of .filter defined with a data url.
@@ -3731,7 +3729,6 @@ class InternalRenderTask {
       !hasCanvasFilters &&
       !this.pageColors;
 
-    // TODO(Aditi): Should we disable worker rendering when pdfBug is enabled?
     if (!useWorkerRendering) {
       this._rendererHandler = null;
     }
@@ -3765,8 +3762,6 @@ class InternalRenderTask {
           },
           configurable: true,
         });
-        // TODO(Aditi): Add isCanvasMonochrome and other helpers for
-        // detailCanvas tests
         const initParams = {
           canvas: offscreen,
           pageIndex: this._pageIndex,

@@ -200,7 +200,6 @@ class RendererMessageHandler {
         transparency,
         background,
       } = data;
-      // TODO(Aditi): Verify if dependencyTracker can be used.
       const objs = this.#getPageObjs(pageIndex);
       const optionalContentConfig = new OptionalContentConfig(
         optionalContentConfigData,

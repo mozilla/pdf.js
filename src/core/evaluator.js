@@ -472,6 +472,8 @@ class PartialEvaluator {
   }
 
   hasCanvasFilters(resources) {
+    // TODO(Aditi): Investigate font resources for potential
+    // filters
     if (!(resources instanceof Dict)) {
       return false;
     }
