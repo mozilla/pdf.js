@@ -802,6 +802,48 @@ describe("Reorganize Pages View", () => {
       await closePages(pages);
     });
 
+    it("should check that a page can be copied and pasted before the first thumbnail", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(2)}) input`
+          );
+
+          let handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+
+          let pageIndices = await awaitPromise(handlePagesEdited);
+          let expected = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+          await waitForHavingContents(page, expected);
+
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(
+            page,
+            `button.thumbnailPasteButton:has(+ ${getThumbnailSelector(1)})`
+          );
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            2, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+          await waitForHavingContents(page, expected);
+        })
+      );
+    });
+
     it("should check that the pages has been copied and pasted correctly", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {

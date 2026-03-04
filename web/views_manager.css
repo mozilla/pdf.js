@@ -543,6 +543,7 @@
 
     #thumbnailsView {
       --thumbnail-width: 126px;
+      --gap-between-input-and-thumbnail: 16px;
 
       display: flex;
       flex-flow: row wrap;
@@ -581,6 +582,8 @@
       }
 
       &.pasteMode {
+        gap: var(--gap-between-input-and-thumbnail);
+
         > .thumbnail {
           flex-direction: column;
 
@@ -611,7 +614,6 @@
 
       > .thumbnail {
         --input-dim: 16px;
-        --gap-between-input-and-thumbnail: 16px;
 
         &:not(&:has(input)) {
           --input-dim: 0px;
