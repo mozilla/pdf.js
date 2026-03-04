@@ -2393,6 +2393,7 @@ class AnnotationEditorUIManager {
         ed.unselect();
       }
     }
+    this.#commentManager?.destroyPopup();
     this.#selectedEditors.clear();
 
     this.#selectedEditors.add(editor);
@@ -2582,6 +2583,8 @@ class AnnotationEditorUIManager {
     if (this.#currentDrawingSession?.commitOrRemove()) {
       return;
     }
+
+    this.#commentManager?.destroyPopup();
 
     if (!this.hasSelection) {
       return;

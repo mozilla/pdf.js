@@ -901,6 +901,7 @@ class AnnotationEditorLayer {
     const currentMode = this.#uiManager.getMode();
     if (
       currentMode === AnnotationEditorType.STAMP ||
+      currentMode === AnnotationEditorType.POPUP ||
       currentMode === AnnotationEditorType.SIGNATURE
     ) {
       this.#uiManager.unselectAll();
