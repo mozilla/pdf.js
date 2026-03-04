@@ -2083,11 +2083,16 @@ gulp.task("lint-licenses", function (done) {
         "examples/**/*.html",
         "!web/wasm/**/*",
       ],
-      {
-        base: ".",
-      }
+      { base: "." }
     )
     .on("data", function (file) {
+      if (!file.contents) {
+        console.warn(
+          `  ${file.relative} is a directory, skipping license header check.`
+        );
+        return;
+      }
+
       const relativePath = file.relative;
       const content = file.contents.toString();
       const re = relativePath.endsWith(".html") ? htmlRE : jsRE;
