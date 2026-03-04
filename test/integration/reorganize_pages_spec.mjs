@@ -1112,6 +1112,76 @@ describe("Reorganize Pages View", () => {
     });
   });
 
+  describe("Focus stays in sidebar after page operations (bug 2020731)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should keep focus on a thumbnail after deleting pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector(
+            "#thumbnailsView .thumbnailImageContainer:focus",
+            {
+              visible: true,
+            }
+          );
+        })
+      );
+    });
+
+    it("should keep focus on a thumbnail after pasting pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+
+          let handlePagesEdited = await waitForPagesEdited(page, "cut");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCut");
+          await awaitPromise(handlePagesEdited);
+
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(1)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector(
+            "#thumbnailsView .thumbnailImageContainer:focus",
+            {
+              visible: true,
+            }
+          );
+        })
+      );
+    });
+  });
+
   describe("Extract some pages from a pdf", () => {
     let pages;
 

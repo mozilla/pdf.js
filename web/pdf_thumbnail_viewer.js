@@ -125,6 +125,8 @@ class PDFThumbnailViewer {
 
   #copiedPageNumbers = null;
 
+  #boundPastePages = this.#pastePages.bind(this);
+
   #isCut = false;
 
   #isOneColumnView = false;
@@ -252,6 +254,15 @@ class PDFThumbnailViewer {
     });
   }
 
+  #resetCurrentThumbnail(newPageNumber) {
+    if (!this.pdfDocument) {
+      return;
+    }
+    const thumbnailView = this._thumbnails[this._currentPageNumber - 1];
+    thumbnailView?.toggleCurrent(/* isCurrent = */ false);
+    this._currentPageNumber = newPageNumber;
+  }
+
   scrollThumbnailIntoView(pageNumber) {
     if (!this.pdfDocument) {
       return;
@@ -263,10 +274,8 @@ class PDFThumbnailViewer {
       return;
     }
     if (pageNumber !== this._currentPageNumber) {
-      const prevThumbnailView = this._thumbnails[this._currentPageNumber - 1];
-      prevThumbnailView?.toggleCurrent(/* isCurrent = */ false);
+      this.#resetCurrentThumbnail(pageNumber);
       thumbnailView.toggleCurrent(/* isCurrent = */ true);
-      this._currentPageNumber = pageNumber;
     }
     const { first, last, views } = this.#getVisibleThumbs();
 
@@ -640,10 +649,7 @@ class PDFThumbnailViewer {
         type: "move",
       });
 
-      setTimeout(() => {
-        this.forceRendering();
-        this.linkService.goToPage(currentPageNumber);
-      }, 0);
+      this.#updateCurrentPage(currentPageNumber);
     }
 
     if (!isNaN(this.#pageNumberToRemove)) {
@@ -657,6 +663,17 @@ class PDFThumbnailViewer {
       this._thumbnails[pageNumber - 1].toggleSelected(false);
     }
     this.#selectedPages.clear();
+  }
+
+  #updateCurrentPage(currentPageNumber) {
+    setTimeout(() => {
+      this.#resetCurrentThumbnail(0);
+      this.forceRendering();
+      const newPageNumber = currentPageNumber || 1;
+      this.linkService.goToPage(newPageNumber);
+      const thumbnailView = this._thumbnails[newPageNumber - 1];
+      thumbnailView.imageContainer.focus();
+    }, 0);
   }
 
   #saveExtractedPages() {
@@ -688,7 +705,7 @@ class PDFThumbnailViewer {
       this.#clearSelection();
     }
     for (const thumbnail of this._thumbnails) {
-      thumbnail.addPasteButton(this.#pastePages.bind(this));
+      thumbnail.addPasteButton(this.#boundPastePages);
     }
     this.container.classList.add("pasteMode");
     this.#toggleMenuEntries(false);
@@ -728,10 +745,7 @@ class PDFThumbnailViewer {
     this.#isCut = false;
     this.#updateMenuEntries();
 
-    setTimeout(() => {
-      this.forceRendering();
-      this.linkService.goToPage(currentPageNumber || 1);
-    }, 0);
+    this.#updateCurrentPage(currentPageNumber);
   }
 
   #deletePages(type = "delete") {
@@ -757,10 +771,7 @@ class PDFThumbnailViewer {
       type,
     });
 
-    setTimeout(() => {
-      this.forceRendering();
-      this.linkService.goToPage(currentPageNumber || 1);
-    }, 0);
+    this.#updateCurrentPage(currentPageNumber);
   }
 
   #updateMenuEntries() {
