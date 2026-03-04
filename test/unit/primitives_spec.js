@@ -276,7 +276,7 @@ describe("primitives", function () {
 
     it("should get all key names", function () {
       const expectedKeys = ["FontFile", "FontFile2", "FontFile3"];
-      const keys = dictWithManyKeys.getKeys();
+      const keys = [...dictWithManyKeys.getKeys()];
 
       expect(keys.sort()).toEqual(expectedKeys);
     });
@@ -284,7 +284,7 @@ describe("primitives", function () {
     it("should get all raw values", function () {
       // Test direct objects:
       const expectedRawValues1 = [testFontFile, testFontFile2, testFontFile3];
-      const rawValues1 = dictWithManyKeys.getRawValues();
+      const rawValues1 = [...dictWithManyKeys.getRawValues()];
 
       expect(rawValues1.sort()).toEqual(expectedRawValues1);
 
@@ -305,7 +305,7 @@ describe("primitives", function () {
       dict.set("Contents", contentsRef);
 
       const expectedRawValues2 = [contentsRef, resourcesRef, typeName];
-      const rawValues2 = dict.getRawValues();
+      const rawValues2 = [...dict.getRawValues()];
 
       expect(rawValues2.sort()).toEqual(expectedRawValues2);
     });
@@ -337,7 +337,7 @@ describe("primitives", function () {
         xref: null,
         dictArray: [dictWithManyKeys, dictWithSizeKey, fontFileDict],
       });
-      const mergedKeys = mergedDict.getKeys();
+      const mergedKeys = [...mergedDict.getKeys()];
 
       expect(mergedKeys.sort()).toEqual(expectedKeys);
       expect(mergedDict.get("FontFile")).toEqual(testFontFile);
@@ -374,14 +374,14 @@ describe("primitives", function () {
       expect(mergedFontDict instanceof Dict).toEqual(true);
       expect(mergedSubFontDict instanceof Dict).toEqual(true);
 
-      const mergedFontDictKeys = mergedFontDict.getKeys();
-      const mergedSubFontDictKeys = mergedSubFontDict.getKeys();
+      const mergedFontDictKeys = [...mergedFontDict.getKeys()];
+      const mergedSubFontDictKeys = [...mergedSubFontDict.getKeys()];
 
       expect(mergedFontDictKeys).toEqual(["F1"]);
       expect(mergedSubFontDictKeys).toEqual(["F1", "F2", "F3"]);
 
-      const mergedFontDictValues = mergedFontDict.getRawValues();
-      const mergedSubFontDictValues = mergedSubFontDict.getRawValues();
+      const mergedFontDictValues = [...mergedFontDict.getRawValues()];
+      const mergedSubFontDictValues = [...mergedSubFontDict.getRawValues()];
 
       expect(mergedFontDictValues).toEqual(["Local font one"]);
       expect(mergedSubFontDictValues).toEqual([

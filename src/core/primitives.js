@@ -180,12 +180,12 @@ class Dict {
   }
 
   getKeys() {
-    return [...this._map.keys()];
+    return this._map.keys();
   }
 
   // No dereferencing.
   getRawValues() {
-    return [...this._map.values()];
+    return this._map.values();
   }
 
   getRawEntries() {
