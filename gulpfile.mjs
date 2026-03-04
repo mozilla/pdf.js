@@ -2041,6 +2041,82 @@ gulp.task(
   )
 );
 
+gulp.task("lint-licenses", function (done) {
+  console.log("\n### Checking license headers");
+
+  const jsRE =
+    /^(?:#[^\n]*\n)?\/\* Copyright \d{4} Mozilla Foundation\n \*\n \* Licensed under the Apache License, Version 2\.0 \(the "License"\);/;
+  const htmlRE = /^<!doctype html>\n<!--\nCopyright \d{4} Mozilla Foundation\n/;
+
+  // Files with non-standard license headers (different copyright holder,
+  // different license, or missing license).
+  const NON_STANDARD_HEADER_FILES = new Set([
+    "examples/learning/helloworld.html",
+    "examples/learning/helloworld64.html",
+    "examples/learning/prevnext.html",
+    "examples/node/getinfo.mjs",
+    "examples/text-only/index.html",
+    "examples/webpack/index.html",
+    "examples/webpack/main.mjs",
+    "examples/webpack/webpack.config.js",
+    "test/add_test.mjs",
+    "src/license_header_libre.js",
+    "src/shared/murmurhash3.js",
+    "test/font/font_core_spec.js",
+    "test/font/font_fpgm_spec.js",
+    "test/font/font_os2_spec.js",
+    "test/font/font_post_spec.js",
+    "test/reporter.js",
+    "test/resources/reftest-analyzer.css",
+    "test/resources/reftest-analyzer.js",
+    "test/stats/statcmp.js",
+    "web/grab_to_pan.js",
+    "web/toggle_button.css",
+  ]);
+
+  const errors = [];
+
+  gulp
+    .src(
+      [
+        "{src,web,test,examples}/**/*.{js,mjs,css}",
+        "examples/**/*.html",
+        "!web/wasm/**/*",
+      ],
+      {
+        base: ".",
+      }
+    )
+    .on("data", function (file) {
+      const relativePath = file.relative;
+      const content = file.contents.toString();
+      const re = relativePath.endsWith(".html") ? htmlRE : jsRE;
+
+      if (NON_STANDARD_HEADER_FILES.has(relativePath)) {
+        if (re.test(content)) {
+          console.warn(
+            `  ${relativePath} has a standard license header, but is in the list of non-standard header files list.`
+          );
+        }
+        return;
+      }
+      if (!re.test(content)) {
+        errors.push(relativePath);
+      }
+    })
+    .on("end", function () {
+      if (errors.length > 0) {
+        for (const file of errors.sort()) {
+          console.log(`  Invalid license header: ${file}`);
+        }
+        done(new Error("License header check failed."));
+        return;
+      }
+      console.log("files checked, no errors found");
+      done();
+    });
+});
+
 gulp.task("lint", function (done) {
   console.log("\n### Linting JS/CSS/JSON/SVG/HTML files");
 
@@ -2111,8 +2187,7 @@ gulp.task("lint", function (done) {
             return;
           }
 
-          console.log("files checked, no errors found");
-          done();
+          gulp.task("lint-licenses")(done);
         });
       });
     });
