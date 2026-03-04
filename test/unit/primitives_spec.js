@@ -276,7 +276,7 @@ describe("primitives", function () {
 
     it("should get all key names", function () {
       const expectedKeys = ["FontFile", "FontFile2", "FontFile3"];
-      const keys = dictWithManyKeys.getKeys();
+      const keys = [...dictWithManyKeys.getKeys()];
 
       expect(keys.sort()).toEqual(expectedKeys);
     });
@@ -337,7 +337,7 @@ describe("primitives", function () {
         xref: null,
         dictArray: [dictWithManyKeys, dictWithSizeKey, fontFileDict],
       });
-      const mergedKeys = mergedDict.getKeys();
+      const mergedKeys = [...mergedDict.getKeys()];
 
       expect(mergedKeys.sort()).toEqual(expectedKeys);
       expect(mergedDict.get("FontFile")).toEqual(testFontFile);
@@ -374,8 +374,8 @@ describe("primitives", function () {
       expect(mergedFontDict instanceof Dict).toEqual(true);
       expect(mergedSubFontDict instanceof Dict).toEqual(true);
 
-      const mergedFontDictKeys = mergedFontDict.getKeys();
-      const mergedSubFontDictKeys = mergedSubFontDict.getKeys();
+      const mergedFontDictKeys = [...mergedFontDict.getKeys()];
+      const mergedSubFontDictKeys = [...mergedSubFontDict.getKeys()];
 
       expect(mergedFontDictKeys).toEqual(["F1"]);
       expect(mergedSubFontDictKeys).toEqual(["F1", "F2", "F3"]);

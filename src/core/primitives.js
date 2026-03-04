@@ -180,7 +180,7 @@ class Dict {
   }
 
   getKeys() {
-    return [...this._map.keys()];
+    return this._map.keys();
   }
 
   // No dereferencing.
