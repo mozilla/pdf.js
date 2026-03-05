@@ -41,7 +41,6 @@ import { preprocess } from "./external/builder/builder.mjs";
 import relative from "metalsmith-html-relative";
 import rename from "gulp-rename";
 import replace from "gulp-replace";
-import sourcemaps from "gulp-sourcemaps";
 import stream from "stream";
 import TerserPlugin from "terser-webpack-plugin";
 import Vinyl from "vinyl";
@@ -1618,20 +1617,15 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
     }
   }
 
-  let pipeline = inputStream;
-  if (enableSourceMaps) {
-    pipeline = pipeline.pipe(sourcemaps.init({ loadMaps: true }));
-  }
-  pipeline = pipeline.pipe(
+  const pipeline = inputStream.pipe(
     new stream.Transform({
       objectMode: true,
       transform: preprocessLib,
     })
   );
-  if (enableSourceMaps) {
-    pipeline = pipeline.pipe(sourcemaps.write("."));
-  }
-  return pipeline.pipe(gulp.dest(outputDir));
+  return pipeline.pipe(
+    gulp.dest(outputDir, enableSourceMaps ? { sourcemaps: "." } : {})
+  );
 }
 
 function buildLib(defines, dir) {
@@ -1645,23 +1639,45 @@ function buildLib(defines, dir) {
     DEFAULT_FTL: getDefaultFtl(),
   };
 
+  const enableSourceMaps = bundleDefines.TESTING;
   const inputStream = ordered([
     gulp.src(
       [
         "src/{core,display,shared}/**/*.js",
         "src/{pdf,pdf.image_decoders,pdf.worker}.js",
       ],
-      { base: "src/", encoding: false }
+      { base: "src/", encoding: false, sourcemaps: enableSourceMaps }
     ),
     gulp.src(["web/*.js", "!web/{pdfjs,viewer}.js"], {
       base: ".",
       encoding: false,
+      sourcemaps: enableSourceMaps,
     }),
-    gulp.src("test/unit/*.js", { base: ".", encoding: false }),
-    gulp.src("external/openjpeg/*.js", { base: "openjpeg/", encoding: false }),
-    gulp.src("external/qcms/*.js", { base: "qcms/", encoding: false }),
-    gulp.src("external/jbig2/*.js", { base: "jbig2/", encoding: false }),
-    gulp.src("external/brotli/*.js", { base: "brotli/", encoding: false }),
+    gulp.src("test/unit/*.js", {
+      base: ".",
+      encoding: false,
+      sourcemaps: enableSourceMaps,
+    }),
+    gulp.src("external/openjpeg/*.js", {
+      base: "openjpeg/",
+      encoding: false,
+      sourcemaps: enableSourceMaps,
+    }),
+    gulp.src("external/qcms/*.js", {
+      base: "qcms/",
+      encoding: false,
+      sourcemaps: enableSourceMaps,
+    }),
+    gulp.src("external/jbig2/*.js", {
+      base: "jbig2/",
+      encoding: false,
+      sourcemaps: enableSourceMaps,
+    }),
+    gulp.src("external/brotli/*.js", {
+      base: "brotli/",
+      encoding: false,
+      sourcemaps: enableSourceMaps,
+    }),
   ]);
 
   return buildLibHelper(bundleDefines, inputStream, dir);
