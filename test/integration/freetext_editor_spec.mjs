@@ -2203,7 +2203,7 @@ describe("FreeText Editor", () => {
         100,
         {
           eventBusSetup: eventBus => {
-            eventBus.on("annotationeditorstateschanged", ({ details }) => {
+            eventBus.on("editingstateschanged", ({ details }) => {
               window.editingEvents?.push(details);
             });
           },
