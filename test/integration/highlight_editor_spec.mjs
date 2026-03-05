@@ -857,7 +857,7 @@ describe("Highlight Editor", () => {
         {
           eventBusSetup: eventBus => {
             window.editingEvents = [];
-            eventBus.on("annotationeditorstateschanged", ({ details }) => {
+            eventBus.on("editingstateschanged", ({ details }) => {
               window.editingEvents.push(details);
             });
           },
