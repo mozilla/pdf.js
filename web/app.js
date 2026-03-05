@@ -529,7 +529,8 @@ const PDFViewerApplication = {
             linkService,
             overlayManager,
             /* ltr = */ l10n.getDirection() === "ltr",
-            hasForcedColors
+            hasForcedColors,
+            abortSignal
           )
         : null;
 
@@ -761,6 +762,7 @@ const PDFViewerApplication = {
         eventBus,
         l10n,
         enableSplitMerge,
+        globalAbortSignal: abortSignal,
       });
       this.viewsManager.onToggled = this.forceRendering.bind(this);
       this.viewsManager.onUpdateThumbnails = () => {

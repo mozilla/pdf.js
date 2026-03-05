@@ -99,6 +99,7 @@ class ViewsManager extends Sidebar {
     eventBus,
     l10n,
     enableSplitMerge = false,
+    globalAbortSignal,
   }) {
     super(
       {
@@ -107,7 +108,8 @@ class ViewsManager extends Sidebar {
         toggleButton,
       },
       l10n.getDirection() === "ltr",
-      /* isResizerOnTheLeft = */ false
+      /* isResizerOnTheLeft = */ false,
+      globalAbortSignal
     );
     this.isOpen = false;
     this.active = SidebarView.THUMBS;

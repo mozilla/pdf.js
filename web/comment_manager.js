@@ -45,7 +45,8 @@ class CommentManager {
     linkService,
     overlayManager,
     ltr,
-    hasForcedColors
+    hasForcedColors,
+    globalAbortSignal
   ) {
     const dateFormat = new Intl.DateTimeFormat(undefined, {
       dateStyle: "long",
@@ -69,7 +70,8 @@ class CommentManager {
       linkService,
       this.#popup,
       dateFormat,
-      ltr
+      ltr,
+      globalAbortSignal
     );
     this.#popup.sidebar = this.#sidebar;
     CommentManager.#hasForcedColors = hasForcedColors;
@@ -188,12 +190,14 @@ class CommentSidebar extends Sidebar {
     linkService,
     popup,
     dateFormat,
-    ltr
+    ltr,
+    globalAbortSignal
   ) {
     super(
       { sidebar, resizer: sidebarResizer, toggleButton: commentToolbarButton },
       ltr,
-      /* isResizerOnTheLeft = */ true
+      /* isResizerOnTheLeft = */ true,
+      globalAbortSignal
     );
     this.#sidebarTitle = sidebarTitle;
     this.#commentsList = commentsList;
