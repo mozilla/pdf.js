@@ -1316,9 +1316,10 @@ const PDFViewerApplication = {
     const { classList } = this.appConfig.appContainer;
     classList.add("wait");
 
-    const structuralChanges = this.pdfThumbnailViewer?.getStructuralChanges();
-    if (structuralChanges) {
-      await this.onSavePages({ data: structuralChanges });
+    if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
+      await this.onSavePages({
+        data: this.pdfThumbnailViewer.getStructuralChanges(),
+      });
     } else {
       await (this.pdfDocument?.annotationStorage.size > 0
         ? this.save()
