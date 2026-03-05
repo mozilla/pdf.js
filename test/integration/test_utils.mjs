@@ -890,6 +890,15 @@ function waitForNoElement(page, selector) {
   );
 }
 
+function waitForTextToBe(page, selector, text) {
+  return page.waitForFunction(
+    (sel, str) => document.querySelector(sel)?.textContent.trim() === str,
+    {},
+    selector,
+    text
+  );
+}
+
 function isCanvasMonochrome(page, pageNumber, rectangle, color) {
   return page.evaluate(
     (rect, pageN, col) => {
@@ -1071,6 +1080,7 @@ export {
   waitForSelectedEditor,
   waitForSerialized,
   waitForStorageEntries,
+  waitForTextToBe,
   waitForTimeout,
   waitForUnselectedEditor,
 };

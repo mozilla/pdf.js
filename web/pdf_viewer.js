@@ -290,6 +290,10 @@ class PDFViewer {
 
   #copiedPageViews = null;
 
+  #savedPageViews = null;
+
+  #deletedPageNumbers = null;
+
   /**
    * @param {PDFViewerOptions} options
    */
@@ -1187,11 +1191,42 @@ class PDFViewer {
       return;
     }
 
+    if (type === "cancelCopy") {
+      this.#copiedPageViews = null;
+      return;
+    }
+
     const isCut = type === "cut";
     if (isCut || type === "delete") {
-      for (const pageNum of pageNumbers) {
-        this._pages[pageNum - 1].deleteMe(isCut);
+      this.#savedPageViews = this._pages;
+      this.#deletedPageNumbers = pageNumbers;
+    }
+
+    if (type === "cancelDelete") {
+      const viewerElement =
+        this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
+      if (viewerElement) {
+        const fragment = document.createDocumentFragment();
+        for (let i = 0, ii = this.#savedPageViews.length; i < ii; i++) {
+          const page = this.#savedPageViews[i];
+          page.updatePageNumber(i + 1);
+          fragment.append(page.div);
+        }
+        viewerElement.replaceChildren(fragment);
       }
+      this._pages = this.#savedPageViews;
+      this.#savedPageViews = null;
+      this.#deletedPageNumbers = null;
+      return;
+    }
+
+    if (type === "cleanSavedData") {
+      for (const pageNum of this.#deletedPageNumbers) {
+        this.#savedPageViews[pageNum - 1].deleteMe();
+      }
+      this.#savedPageViews = null;
+      this.#deletedPageNumbers = null;
+      return;
     }
 
     this._currentPageNumber = 0;
@@ -1221,14 +1256,11 @@ class PDFViewer {
     const viewerElement =
       this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
     if (viewerElement) {
-      viewerElement.replaceChildren();
       const fragment = document.createDocumentFragment();
-      for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
-        const { div } = newPages[i];
-        div.setAttribute("data-page-number", i + 1);
+      for (const { div } of newPages) {
         fragment.append(div);
       }
-      viewerElement.append(fragment);
+      viewerElement.replaceChildren(fragment);
     }
 
     setTimeout(() => {

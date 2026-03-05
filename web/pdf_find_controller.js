@@ -424,6 +424,8 @@ class PDFFindController {
 
   #copiedExtractTextPromises = null;
 
+  #savedExtractTextPromises = null;
+
   /**
    * @param {PDFFindControllerOptions} options
    */
@@ -1146,10 +1148,29 @@ class PDFFindController {
       return;
     }
 
+    if (type === "cancelCopy") {
+      this.#copiedExtractTextPromises = null;
+      return;
+    }
+
+    if (type === "delete") {
+      this.#savedExtractTextPromises = this._extractTextPromises;
+    }
+
+    if (type === "cancelDelete") {
+      this._extractTextPromises = this.#savedExtractTextPromises;
+      return;
+    }
+
+    if (type === "cleanSavedData") {
+      this.#savedExtractTextPromises = null;
+      return;
+    }
+
     this.#onFindBarClose();
     this._dirtyMatch = true;
     const prevTextPromises = this._extractTextPromises;
-    const extractTextPromises = (this._extractTextPromises.length = []);
+    const extractTextPromises = (this._extractTextPromises = []);
     for (let i = 1, ii = pagesMapper.length; i <= ii; i++) {
       const prevPageNumber = pagesMapper.getPrevPageNumber(i);
       if (prevPageNumber < 0) {

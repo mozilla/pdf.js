@@ -589,8 +589,9 @@ const PDFViewerApplication = {
     pdfScriptingManager.setViewer(pdfViewer);
 
     if (appConfig.viewsManager?.thumbnailsView) {
+      const { viewsManager } = appConfig;
       this.pdfThumbnailViewer = new PDFThumbnailViewer({
-        container: appConfig.viewsManager.thumbnailsView,
+        container: viewsManager.thumbnailsView,
         eventBus,
         renderingQueue,
         linkService,
@@ -600,8 +601,10 @@ const PDFViewerApplication = {
         abortSignal,
         enableHWA,
         enableSplitMerge,
-        manageMenu: appConfig.viewsManager.manageMenu,
-        addFileButton: appConfig.viewsManager.viewsManagerAddFileButton,
+        statusBar: viewsManager.viewsManagerStatusBar,
+        undoBar: viewsManager.viewsManagerUndoBar,
+        manageMenu: viewsManager.manageMenu,
+        addFileButton: viewsManager.viewsManagerAddFileButton,
       });
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
