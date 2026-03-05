@@ -20,6 +20,7 @@ import {
   createPromise,
   createPromiseWithArgs,
   dragAndDrop,
+  FSI,
   getAnnotationSelector,
   getRect,
   getThumbnailSelector,
@@ -27,6 +28,7 @@ import {
   kbCut,
   kbDelete,
   loadAndWait,
+  PDI,
   scrollIntoView,
   showViewsManager,
   waitAndClick,
@@ -790,6 +792,42 @@ describe("Reorganize Pages View", () => {
 
     afterEach(async () => {
       await closePages(pages);
+    });
+
+    it("should check that the paste button spans have the right l10n id depending on their position", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          const prevSpanText = await page.$eval(
+            `button.thumbnailPasteButton:has(+ ${getThumbnailSelector(1)}) > span`,
+            el => el.textContent.trim()
+          );
+          expect(prevSpanText)
+            .withContext(`In ${browserName}`)
+            .toBe("Paste before the first page");
+
+          const afterSpanText = await page.$eval(
+            `${getThumbnailSelector(1)} + button.thumbnailPasteButton > span`,
+            el => el.textContent.trim()
+          );
+          expect(afterSpanText)
+            .withContext(`In ${browserName}`)
+            .toBe(`Paste after page ${FSI}1${PDI}`);
+        })
+      );
     });
 
     it("should check that a page can be copied and pasted before the first thumbnail", async () => {
