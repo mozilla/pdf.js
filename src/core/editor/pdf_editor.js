@@ -71,6 +71,18 @@ class XRefWrapper {
   fetch(ref) {
     return ref instanceof Ref ? this.entries[ref.num] : ref;
   }
+
+  fetchIfRefAsync(ref) {
+    return Promise.resolve(this.fetch(ref));
+  }
+
+  fetchIfRef(ref) {
+    return this.fetch(ref);
+  }
+
+  fetchAsync(ref) {
+    return Promise.resolve(this.fetch(ref));
+  }
 }
 
 class PDFEditor {
