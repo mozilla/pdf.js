@@ -6,6 +6,7 @@ on:
   workflow_dispatch: # Allow manual triggering
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -47,3 +48,8 @@ jobs:
             --title "l10n: Update locale files" \
             --body "Automated weekly update of locale files from mozilla-central." \
             --label l10n || true
+          # GITHUB_TOKEN-initiated pushes/PRs don't trigger other workflows.
+          # Explicitly dispatch them so CI runs on the update-locales branch.
+          for workflow in ci.yml lint.yml codeql.yml; do
+            gh workflow run "$workflow" --ref update-locales
+          done
