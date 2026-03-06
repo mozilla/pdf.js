@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Vignette de la page { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Sélectionner la page { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Sélectionner la page { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Page { $page } sur { $total }
 
 ## Find panel button title and messages
 
@@ -645,6 +654,7 @@ pdfjs-toggle-views-manager-button =
     .title = Afficher/Masquer le panneau latéral
 pdfjs-toggle-views-manager-notification-button =
     .title = Afficher/Masquer le panneau latéral (le document contient des vignettes/plan/pièces jointes/calques)
+pdfjs-toggle-views-manager-button1-label = Gérer les pages
 pdfjs-toggle-views-manager-button-label = Afficher/Masquer le panneau latéral
 pdfjs-views-manager-sidebar =
     .aria-label = Panneau latéral
@@ -709,6 +719,8 @@ pdfjs-views-manager-status-close-button =
     .title = Fermer
 pdfjs-views-manager-status-close-button-label = Fermer
 pdfjs-views-manager-paste-button-label = Coller
+pdfjs-toggle-views-manager-button1 =
+    .title = Gérer les pages
 
 ## Main menu for adding/removing signatures
 

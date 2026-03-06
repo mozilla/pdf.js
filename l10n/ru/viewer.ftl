@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Миниатюра страницы { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Выбрать страницу { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Выбрать страницу { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Страница { $page } из { $total }
 
 ## Find panel button title and messages
 
@@ -653,6 +662,7 @@ pdfjs-toggle-views-manager-button =
     .title = Показать/скрыть боковую панель
 pdfjs-toggle-views-manager-notification-button =
     .title = Показать/скрыть боковую панель (документ содержит миниатюры/структуру/вложения/слои)
+pdfjs-toggle-views-manager-button1-label = Управление страницами
 pdfjs-toggle-views-manager-button-label = Показать/скрыть боковую панель
 pdfjs-views-manager-sidebar =
     .aria-label = Боковая панель
@@ -721,6 +731,8 @@ pdfjs-views-manager-status-close-button =
     .title = Закрыть
 pdfjs-views-manager-status-close-button-label = Закрыть
 pdfjs-views-manager-paste-button-label = Вставить
+pdfjs-toggle-views-manager-button1 =
+    .title = Управление страницами
 
 ## Main menu for adding/removing signatures
 

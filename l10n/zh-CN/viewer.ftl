@@ -674,6 +674,7 @@ pdfjs-views-manager-status-undo-button-label = 撤销
 pdfjs-views-manager-status-close-button =
     .title = 关闭
 pdfjs-views-manager-status-close-button-label = 关闭
+pdfjs-views-manager-paste-button-label = 粘贴
 
 ## Main menu for adding/removing signatures
 

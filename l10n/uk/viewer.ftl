@@ -201,6 +201,10 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Ескіз сторінки { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Вибрати сторінку { $page }
 
 ## Find panel button title and messages
 
@@ -652,6 +656,8 @@ pdfjs-toggle-views-manager-notification-button =
 pdfjs-toggle-views-manager-button-label = Перемкнути бічну панель
 pdfjs-views-manager-sidebar =
     .aria-label = Бічна панель
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Зміна розміру бічної панелі
 pdfjs-views-manager-view-selector-button =
     .title = Вигляд
 pdfjs-views-manager-view-selector-button-label = Вигляд
@@ -714,6 +720,7 @@ pdfjs-views-manager-status-undo-button-label = Повернути
 pdfjs-views-manager-status-close-button =
     .title = Закрити
 pdfjs-views-manager-status-close-button-label = Закрити
+pdfjs-views-manager-paste-button-label = Вставити
 
 ## Main menu for adding/removing signatures
 

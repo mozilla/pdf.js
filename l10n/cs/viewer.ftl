@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Náhled strany { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Vybrat stranu { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Vybrat stranu { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Strana { $page } z { $total }
 
 ## Find panel button title and messages
 
@@ -653,6 +666,7 @@ pdfjs-toggle-views-manager-button =
     .title = Přepnout postranní lištu
 pdfjs-toggle-views-manager-notification-button =
     .title = Přepnout postranní lištu (dokument obsahuje náhledy/osnovu/přílohy/vrstvy)
+pdfjs-toggle-views-manager-button1-label = Spravovat strany
 pdfjs-toggle-views-manager-button-label = Přepnout postranní lištu
 pdfjs-views-manager-sidebar =
     .aria-label = Postranní lišta
@@ -722,6 +736,9 @@ pdfjs-views-manager-status-undo-button-label = Zpět
 pdfjs-views-manager-status-close-button =
     .title = Zavřít
 pdfjs-views-manager-status-close-button-label = Zavřít
+pdfjs-views-manager-paste-button-label = Vložit
+pdfjs-toggle-views-manager-button1 =
+    .title = Spravovat strany
 
 ## Main menu for adding/removing signatures
 

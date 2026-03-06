@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Miniatura strony { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Stronu { $page } wubrać
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Stronu { $page } wubrać
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Strona { $page } z { $total }
 
 ## Find panel button title and messages
 
@@ -657,9 +666,12 @@ pdfjs-toggle-views-manager-button =
     .title = Bóčnicu přepinać
 pdfjs-toggle-views-manager-notification-button =
     .title = Bóčnicu přepinać (dokument miniatury/rozrjad/přiwěški/woršty wobsahuje)
+pdfjs-toggle-views-manager-button1-label = Strony rjadować
 pdfjs-toggle-views-manager-button-label = Bóčnicu přepinać
 pdfjs-views-manager-sidebar =
     .aria-label = Bóčnica
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Přiměrjenje wulkosće bóčnicy
 pdfjs-views-manager-view-selector-button =
     .title = Napohlady
 pdfjs-views-manager-view-selector-button-label = Napohlady
@@ -727,6 +739,8 @@ pdfjs-views-manager-status-close-button =
     .title = Začinić
 pdfjs-views-manager-status-close-button-label = Začinić
 pdfjs-views-manager-paste-button-label = Zasadźić
+pdfjs-toggle-views-manager-button1 =
+    .title = Strony rjadować
 
 ## Main menu for adding/removing signatures
 

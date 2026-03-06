@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Miniatura della pagina { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Seleziona pagina { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Seleziona pagina { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Pagina { $page } di { $total }
 
 ## Find panel button title and messages
 
@@ -649,6 +658,7 @@ pdfjs-toggle-views-manager-button =
     .title = Attiva/disattiva barra laterale
 pdfjs-toggle-views-manager-notification-button =
     .title = Attiva/disattiva barra laterale (il documento contiene miniature, struttura, allegati, livelli)
+pdfjs-toggle-views-manager-button1-label = Gestisci pagine
 pdfjs-toggle-views-manager-button-label = Attiva/disattiva barra laterale
 pdfjs-views-manager-sidebar =
     .aria-label = Barra laterale
@@ -713,6 +723,8 @@ pdfjs-views-manager-status-close-button =
     .title = Chiudi
 pdfjs-views-manager-status-close-button-label = Chiudi
 pdfjs-views-manager-paste-button-label = Incolla
+pdfjs-toggle-views-manager-button1 =
+    .title = Gestisci pagine
 
 ## Main menu for adding/removing signatures
 
@@ -727,3 +739,4 @@ pdfjs-editor-add-signature-edit-button-label = Modifica descrizione
 ## Edit signature description dialog
 
 pdfjs-editor-edit-signature-dialog-title = Modifica descrizione
+

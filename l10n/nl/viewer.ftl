@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Miniatuur van pagina { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Pagina { $page } selecteren
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Pagina { $page } selecteren
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Pagina { $page } van { $total }
 
 ## Find panel button title and messages
 
@@ -649,6 +658,7 @@ pdfjs-toggle-views-manager-button =
     .title = Zijbalk in-/uitschakelen
 pdfjs-toggle-views-manager-notification-button =
     .title = Zijbalk in-/uitschakelen (document bevat miniaturen/overzicht/bijlagen/lagen)
+pdfjs-toggle-views-manager-button1-label = Pagina’s beheren
 pdfjs-toggle-views-manager-button-label = Zijbalk in-/uitschakelen
 pdfjs-views-manager-sidebar =
     .aria-label = Zijbalk
@@ -713,6 +723,8 @@ pdfjs-views-manager-status-close-button =
     .title = Sluiten
 pdfjs-views-manager-status-close-button-label = Sluiten
 pdfjs-views-manager-paste-button-label = Plakken
+pdfjs-toggle-views-manager-button1 =
+    .title = Pagina’s beheren
 
 ## Main menu for adding/removing signatures
 
