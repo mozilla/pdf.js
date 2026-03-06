@@ -16,6 +16,7 @@
 import { clearPatternCaches } from "./pattern.js";
 import { clearPrimitiveCaches } from "./primitives.js";
 import { clearUnicodeCaches } from "./unicode.js";
+import { JBig2CCITTFaxWasmImage } from "./jbig2_ccittFax_wasm.js";
 import { JpxImage } from "./jpx.js";
 
 function clearGlobalCaches() {
@@ -23,8 +24,9 @@ function clearGlobalCaches() {
   clearPrimitiveCaches();
   clearUnicodeCaches();
 
-  // Remove the global `JpxImage` instance, since it may hold a reference to
-  // the WebAssembly module.
+  // Remove the global `JBig2CCITTFaxWasmImage`/`JpxImage` instances,
+  // since they may hold references to the WebAssembly modules.
+  JBig2CCITTFaxWasmImage.cleanup();
   JpxImage.cleanup();
 }
 
