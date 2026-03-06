@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Miniatyr av sida { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Välj sida { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Välj sida { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Sida { $page } av { $total }
 
 ## Find panel button title and messages
 
@@ -649,6 +658,7 @@ pdfjs-toggle-views-manager-button =
     .title = Visa/dölj sidofält
 pdfjs-toggle-views-manager-notification-button =
     .title = Visa/dölj sidofält (dokument innehåller miniatyrer/översikt/bilagor/lager)
+pdfjs-toggle-views-manager-button1-label = Hantera sidor
 pdfjs-toggle-views-manager-button-label = Visa/dölj sidofält
 pdfjs-views-manager-sidebar =
     .aria-label = Sidofält
@@ -713,6 +723,8 @@ pdfjs-views-manager-status-close-button =
     .title = Stäng
 pdfjs-views-manager-status-close-button-label = Stäng
 pdfjs-views-manager-paste-button-label = Klistra in
+pdfjs-toggle-views-manager-button1 =
+    .title = Hantera sidor
 
 ## Main menu for adding/removing signatures
 

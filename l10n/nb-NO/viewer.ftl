@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatyrbilde av side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Velg side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Velg side { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Side { $page } av { $total }
 
 ## Find panel button title and messages
 
@@ -645,9 +658,12 @@ pdfjs-toggle-views-manager-button =
     .title = Vis/skjul sidestolpe
 pdfjs-toggle-views-manager-notification-button =
     .title = Vis/skjul sidestolpe (dokumentet inneholder miniatyrbilder/disposisjon/vedlegg/lag)
+pdfjs-toggle-views-manager-button1-label = Behandle sider
 pdfjs-toggle-views-manager-button-label = Vis/skjul sidestolpe
 pdfjs-views-manager-sidebar =
     .aria-label = Sidestolpe
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Endre størrelse på sidestolpen
 pdfjs-views-manager-view-selector-button =
     .title = Visninger
 pdfjs-views-manager-view-selector-button-label = Visninger
@@ -706,6 +722,9 @@ pdfjs-views-manager-status-undo-button-label = Angre
 pdfjs-views-manager-status-close-button =
     .title = Lukk
 pdfjs-views-manager-status-close-button-label = Lukk
+pdfjs-views-manager-paste-button-label = Lim inn
+pdfjs-toggle-views-manager-button1 =
+    .title = Behandle sider
 
 ## Main menu for adding/removing signatures
 

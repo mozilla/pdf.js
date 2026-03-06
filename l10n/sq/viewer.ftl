@@ -192,6 +192,10 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniaturë e Faqes { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Përzgjidhni faqen { $page }
 
 ## Find panel button title and messages
 
@@ -525,6 +529,7 @@ pdfjs-editor-undo-bar-message-freetext = U hoq tekst
 pdfjs-editor-undo-bar-message-ink = U hoq vizatim
 pdfjs-editor-undo-bar-message-stamp = U hoq figurë
 pdfjs-editor-undo-bar-message-signature = Nënshkrimi u hoq
+pdfjs-editor-undo-bar-message-comment = Komenti u hoq
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -623,6 +628,69 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Anuloje
 
 pdfjs-editor-add-comment-button =
     .title = Shtoni koment
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Shfaq/Fshih Anështyllën
+pdfjs-toggle-views-manager-button-label = Shfaq/Fshih Anështyllën
+pdfjs-views-manager-sidebar =
+    .aria-label = Anështyllë
+pdfjs-views-manager-view-selector-button =
+    .title = Pamje
+pdfjs-views-manager-view-selector-button-label = Pamje
+pdfjs-views-manager-pages-title = Faqe
+pdfjs-views-manager-attachments-title = Bashkëngjitje
+pdfjs-views-manager-layers-title = Shtresa
+pdfjs-views-manager-pages-option-label = Faqe
+pdfjs-views-manager-attachments-option-label = Bashkëngjitje
+pdfjs-views-manager-layers-option-label = Shtresa
+pdfjs-views-manager-add-file-button =
+    .title = Shtoni kartelë
+pdfjs-views-manager-add-file-button-label = Shtoni kartelë
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } e përzgjedhur
+       *[other] { $count } të përzgjedhura
+    }
+pdfjs-views-manager-pages-status-none-action-label = Përzgjidhni faqe
+pdfjs-views-manager-pages-status-action-button-label = Administrojini
+pdfjs-views-manager-pages-status-copy-button-label = Kopjoje
+pdfjs-views-manager-pages-status-cut-button-label = Prije
+pdfjs-views-manager-pages-status-delete-button-label = Fshije
+pdfjs-views-manager-pages-status-save-as-button-label = Ruajeni si…
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 faqe e kopjuar
+       *[other] { $count } faqe të kopjuara
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 faqe e fshirë
+       *[other] { $count } faqe të fshira
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Po bëhet gati kartela juaj…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Po ngarkohet kartelë…
+pdfjs-views-manager-status-warning-cut-label = S’u bë dot prerja. Rifreskoni faqen dhe riprovoni.
+pdfjs-views-manager-status-warning-copy-label = S’u kopjua dot. Rifreskoni faqen dhe riprovoni.
+pdfjs-views-manager-status-warning-delete-label = S’u fshi dot. Rifreskoni faqen dhe riprovoni.
+pdfjs-views-manager-status-warning-save-label = S’u ruajt dot. Rifreskoni faqen dhe riprovoni.
+pdfjs-views-manager-status-undo-button-label = Zhbëje
+pdfjs-views-manager-status-close-button =
+    .title = Mbylle
+pdfjs-views-manager-status-close-button-label = Mbylle
+pdfjs-views-manager-paste-button-label = Ngjite
 
 ## Main menu for adding/removing signatures
 

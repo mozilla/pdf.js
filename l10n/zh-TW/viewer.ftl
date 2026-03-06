@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = 第 { $page } 頁的縮圖
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = 選擇第 { $page } 頁
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = 選擇第 { $page } 頁
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = 第 { $page } 頁，共 { $total } 頁
 
 ## Find panel button title and messages
 
@@ -633,6 +642,7 @@ pdfjs-toggle-views-manager-button =
     .title = 切換側邊欄
 pdfjs-toggle-views-manager-notification-button =
     .title = 切換側邊欄（包含縮圖、大綱、附件、圖層的文件）
+pdfjs-toggle-views-manager-button1-label = 管理頁面
 pdfjs-toggle-views-manager-button-label = 切換側邊欄
 pdfjs-views-manager-sidebar =
     .aria-label = 側邊欄
@@ -681,6 +691,8 @@ pdfjs-views-manager-status-close-button =
     .title = 關閉
 pdfjs-views-manager-status-close-button-label = 關閉
 pdfjs-views-manager-paste-button-label = 貼上
+pdfjs-toggle-views-manager-button1 =
+    .title = 管理頁面
 
 ## Main menu for adding/removing signatures
 

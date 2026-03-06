@@ -201,6 +201,10 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Llun Bach Tudalen { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Dewis tudalen { $page }
 
 ## Find panel button title and messages
 
@@ -664,6 +668,8 @@ pdfjs-toggle-views-manager-notification-button =
 pdfjs-toggle-views-manager-button-label = Togl y Bar Ochr
 pdfjs-views-manager-sidebar =
     .aria-label = Bar Ochr
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Newid maint bar ochr
 pdfjs-views-manager-view-selector-button =
     .title = Golygon
 pdfjs-views-manager-view-selector-button-label = Golygon
@@ -738,6 +744,7 @@ pdfjs-views-manager-status-undo-button-label = Dadwneud
 pdfjs-views-manager-status-close-button =
     .title = Cau
 pdfjs-views-manager-status-close-button-label = Cau
+pdfjs-views-manager-paste-button-label = Gludo
 
 ## Main menu for adding/removing signatures
 

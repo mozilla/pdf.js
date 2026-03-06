@@ -201,6 +201,10 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = { $page }. orriaren koadro txikia
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Hautatu { $page } orria
 
 ## Find panel button title and messages
 
@@ -652,6 +656,8 @@ pdfjs-toggle-views-manager-notification-button =
 pdfjs-toggle-views-manager-button-label = Txandakatu alboko barra
 pdfjs-views-manager-sidebar =
     .aria-label = Alboko barra
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Alboko barra neurriz aldatzekoa
 pdfjs-views-manager-view-selector-button =
     .title = Ikuspegiak
 pdfjs-views-manager-view-selector-button-label = Ikuspegiak
@@ -710,6 +716,7 @@ pdfjs-views-manager-status-undo-button-label = Desegin
 pdfjs-views-manager-status-close-button =
     .title = Itxi
 pdfjs-views-manager-status-close-button-label = Itxi
+pdfjs-views-manager-paste-button-label = Itsatsi
 
 ## Main menu for adding/removing signatures
 

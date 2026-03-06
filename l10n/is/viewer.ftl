@@ -102,7 +102,7 @@ pdfjs-spread-even-button-label = Jafnatöludreifing
 pdfjs-document-properties-button =
     .title = Eiginleikar skjals…
 pdfjs-document-properties-button-label = Eiginleikar skjals…
-pdfjs-document-properties-file-name = Skráarnafn:
+pdfjs-document-properties-file-name = Skráarheiti:
 pdfjs-document-properties-file-size = Skrárstærð:
 # Variables:
 #   $kb (Number) - the PDF file size in kilobytes

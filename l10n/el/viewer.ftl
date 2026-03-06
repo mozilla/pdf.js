@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Μικρογραφία σελίδας { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Επιλογή σελίδας { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Επιλογή σελίδας { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Σελίδα { $page } από { $total }
 
 ## Find panel button title and messages
 
@@ -645,9 +658,12 @@ pdfjs-toggle-views-manager-button =
     .title = (Απ)ενεργοποίηση πλαϊνής γραμμής
 pdfjs-toggle-views-manager-notification-button =
     .title = (Απ)ενεργοποίηση πλαϊνής γραμμής (το έγγραφο περιέχει μικρογραφίες/περίγραμμα/συνημμένα/επίπεδα)
+pdfjs-toggle-views-manager-button1-label = Διαχείριση σελίδων
 pdfjs-toggle-views-manager-button-label = (Απ)ενεργοποίηση πλαϊνής γραμμής
 pdfjs-views-manager-sidebar =
     .aria-label = Πλαϊνή γραμμή
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Αλλαγή μεγέθους πλαϊνής γραμμής
 pdfjs-views-manager-view-selector-button =
     .title = Προβολές
 pdfjs-views-manager-view-selector-button-label = Προβολές
@@ -706,6 +722,9 @@ pdfjs-views-manager-status-undo-button-label = Αναίρεση
 pdfjs-views-manager-status-close-button =
     .title = Κλείσιμο
 pdfjs-views-manager-status-close-button-label = Κλείσιμο
+pdfjs-views-manager-paste-button-label = Επικόλληση
+pdfjs-toggle-views-manager-button1 =
+    .title = Διαχείριση σελίδων
 
 ## Main menu for adding/removing signatures
 

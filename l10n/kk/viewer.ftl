@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = { $page } парағы үшін кіші көрінісі
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = { $page } бетін таңдау
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = { $page } бетін таңдау
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Бет { $page }/{ $total }
 
 ## Find panel button title and messages
 
@@ -649,6 +658,7 @@ pdfjs-toggle-views-manager-button =
     .title = Бүйір панелін көрсету/жасыру
 pdfjs-toggle-views-manager-notification-button =
     .title = Бүйір панелін көрсету/жасыру (құжатта кіші көріністер/құрылымы/салынымдар/қабаттар бар)
+pdfjs-toggle-views-manager-button1-label = Беттерді басқару
 pdfjs-toggle-views-manager-button-label = Бүйір панелін көрсету/жасыру
 pdfjs-views-manager-sidebar =
     .aria-label = Бүйір панелі
@@ -713,6 +723,8 @@ pdfjs-views-manager-status-close-button =
     .title = Жабу
 pdfjs-views-manager-status-close-button-label = Жабу
 pdfjs-views-manager-paste-button-label = Кірістіру
+pdfjs-toggle-views-manager-button1 =
+    .title = Беттерді басқару
 
 ## Main menu for adding/removing signatures
 
