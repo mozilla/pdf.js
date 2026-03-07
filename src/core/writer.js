@@ -85,8 +85,7 @@ async function writeStream(stream, buffer, transform) {
         .catch(() => {});
 
       // Response::text doesn't return the correct data.
-      const buf = await new Response(cs.readable).arrayBuffer();
-      bytes = new Uint8Array(buf);
+      bytes = await new Response(cs.readable).bytes();
 
       let newFilter, newParams;
       if (!filter) {
