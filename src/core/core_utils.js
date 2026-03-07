@@ -208,6 +208,38 @@ function getParentToUpdate(dict, ref, xref) {
   return result;
 }
 
+function deepCompare(a, b) {
+  if (a === b) {
+    return true;
+  }
+  if (a instanceof Dict && b instanceof Dict) {
+    if (a.size !== b.size) {
+      return false;
+    }
+    for (const [key, value1] of a.getRawEntries()) {
+      const value2 = b.getRaw(key);
+      if (value2 === undefined || !deepCompare(value1, value2)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) {
+      return false;
+    }
+    for (let i = 0, ii = a.length; i < ii; i++) {
+      if (!deepCompare(a[i], b[i])) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  return false;
+}
+
 // prettier-ignore
 const ROMAN_NUMBER_MAP = [
   "", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM",
@@ -745,6 +777,7 @@ export {
   arrayBuffersToBytes,
   codePointIter,
   collectActions,
+  deepCompare,
   encodeToXmlString,
   escapePDFName,
   escapeString,

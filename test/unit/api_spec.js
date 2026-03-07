@@ -6223,5 +6223,112 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
     });
+
+    describe("AcroForm", function () {
+      it("extract page 2 and check AcroForm Fields T entries", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("form_two_pages.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        // Collect the fieldNames (derived from T entries) of annotations on
+        // page 2 of the original document.
+        const origPage2 = await pdfDoc.getPage(2);
+        const origAnnotations = await origPage2.getAnnotations();
+        const origFieldNames = origAnnotations
+          .filter(a => a.fieldName)
+          .map(a => a.fieldName)
+          .sort();
+
+        // Extract only page 2 (0-based index = 1).
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(1);
+
+        // The AcroForm Fields in the new PDF should correspond exactly to the
+        // annotations that were on page 2 of the original document, with the
+        // same T entries (encoded in fieldName).
+        const page = await pdfDoc.getPage(1);
+        const annotations = await page.getAnnotations();
+        const fieldNames = annotations
+          .filter(a => a.fieldName)
+          .map(a => a.fieldName)
+          .sort();
+
+        expect(fieldNames).toEqual(origFieldNames);
+
+        // Also verify the AcroForm Fields via getFieldObjects, which directly
+        // reflects the T entries of the fields in the AcroForm dictionary.
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect(fieldObjects).not.toBeNull();
+        expect(Object.keys(fieldObjects).sort()).toEqual(origFieldNames);
+
+        await loadingTask.destroy();
+      });
+
+      it("merge pages 2 and 1 and check AcroForm Fields T entries", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("form_two_pages.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        // Collect fieldNames from each page of the original document.
+        const origPage1 = await pdfDoc.getPage(1);
+        const origPage1FieldNames = (await origPage1.getAnnotations())
+          .filter(a => a.fieldName)
+          .map(a => a.fieldName)
+          .sort();
+
+        const origPage2 = await pdfDoc.getPage(2);
+        const origPage2FieldNames = (await origPage2.getAnnotations())
+          .filter(a => a.fieldName)
+          .map(a => a.fieldName)
+          .sort();
+
+        // Extract page 2 first, then page 1.
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [1] },
+          { document: null, includePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(2);
+
+        // Page 1 of the new PDF should have the fields from original page 2.
+        const page1 = await pdfDoc.getPage(1);
+        const page1FieldNames = (await page1.getAnnotations())
+          .filter(a => a.fieldName)
+          .map(a => a.fieldName)
+          .sort();
+        expect(page1FieldNames).toEqual(origPage2FieldNames);
+
+        // Page 2 of the new PDF should have the fields from original page 1.
+        const page2 = await pdfDoc.getPage(2);
+        const page2FieldNames = (await page2.getAnnotations())
+          .filter(a => a.fieldName)
+          .map(a => a.fieldName)
+          .sort();
+        expect(page2FieldNames).toEqual(origPage1FieldNames);
+
+        // The AcroForm Fields should contain all fields from both pages.
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect(fieldObjects).not.toBeNull();
+        const allOrigFieldNames = [
+          ...new Set([...origPage1FieldNames, ...origPage2FieldNames]),
+        ].sort();
+        expect(Object.keys(fieldObjects).sort()).toEqual(allOrigFieldNames);
+
+        await loadingTask.destroy();
+      });
+    });
   });
 });
