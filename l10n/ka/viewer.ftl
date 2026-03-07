@@ -645,6 +645,7 @@ pdfjs-toggle-views-manager-button =
     .title = გვერდითა ზოლის გამოჩენა/დამალვა
 pdfjs-toggle-views-manager-notification-button =
     .title = გვერდითი ზოლის გამოჩენა (შეიცავს შესათვალიერებელს/სარჩევს/დანართს)
+pdfjs-toggle-views-manager-button1-label = გვერდების მართვა
 pdfjs-toggle-views-manager-button-label = გვერდითა ზოლის გამოჩენა/დამალვა
 pdfjs-views-manager-sidebar =
     .aria-label = გვერდითი ზოლი
@@ -706,6 +707,8 @@ pdfjs-views-manager-status-undo-button-label = დაბრუნება
 pdfjs-views-manager-status-close-button =
     .title = დახურვა
 pdfjs-views-manager-status-close-button-label = დახურვა
+pdfjs-toggle-views-manager-button1 =
+    .title = გვერდების მართვა
 
 ## Main menu for adding/removing signatures
 

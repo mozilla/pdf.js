@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Llun Bach Tudalen { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Dewis tudalen { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Dewis tudalen { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Tudalen { $page } o { $total }
 
 ## Find panel button title and messages
 
@@ -665,6 +674,7 @@ pdfjs-toggle-views-manager-button =
     .title = Togl y Bar Ochr
 pdfjs-toggle-views-manager-notification-button =
     .title = Togl y Bar Ochr (dogfen yn cynnwys lluniau bach/amlinelliad/atodiadau/haenau)
+pdfjs-toggle-views-manager-button1-label = Rheoli tudalennau
 pdfjs-toggle-views-manager-button-label = Togl y Bar Ochr
 pdfjs-views-manager-sidebar =
     .aria-label = Bar Ochr
@@ -745,6 +755,8 @@ pdfjs-views-manager-status-close-button =
     .title = Cau
 pdfjs-views-manager-status-close-button-label = Cau
 pdfjs-views-manager-paste-button-label = Gludo
+pdfjs-toggle-views-manager-button1 =
+    .title = Rheoli tudalennau
 
 ## Main menu for adding/removing signatures
 
