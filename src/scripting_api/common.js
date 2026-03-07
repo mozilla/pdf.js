@@ -22,13 +22,7 @@ const FieldType = {
 };
 
 function createActionsMap(actions) {
-  const actionsMap = new Map();
-  if (actions) {
-    for (const [eventType, actionsForEvent] of Object.entries(actions)) {
-      actionsMap.set(eventType, actionsForEvent);
-    }
-  }
-  return actionsMap;
+  return new Map(actions ? Object.entries(actions) : null);
 }
 
 function getFieldType(actions) {
