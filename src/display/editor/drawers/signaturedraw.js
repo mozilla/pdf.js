@@ -746,9 +746,7 @@ class SignatureExtractor {
 
     writer.close();
 
-    const buf = await new Response(cs.readable).arrayBuffer();
-    const bytes = new Uint8Array(buf);
-
+    const bytes = await new Response(cs.readable).bytes();
     return bytes.toBase64();
   }
 

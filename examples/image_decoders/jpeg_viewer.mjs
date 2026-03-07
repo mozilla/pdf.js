@@ -29,7 +29,7 @@ const response = await fetch(JPEG_IMAGE);
 if (!response.ok) {
   throw new Error(response.statusText);
 }
-const typedArrayImage = new Uint8Array(await response.arrayBuffer());
+const typedArrayImage = await response.bytes();
 
 // Parse the image data using `JpegImage`.
 //
