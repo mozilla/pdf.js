@@ -1419,6 +1419,8 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
+  #keepRendererCanvas = false;
+
   #pendingCleanup = false;
 
   #pagesMapper = null;
@@ -1921,10 +1923,13 @@ class PDFPageProxy {
    *
    * @param {boolean} [resetStats] - Reset page stats, if enabled.
    *   The default value is `false`.
+   * @param {boolean} [keepRendererCanvas] - When true, keeps the
+   *   OffscreenCanvas reference alive in the renderer worker.
    * @returns {boolean} Indicates if clean-up was successfully run.
    */
-  cleanup(resetStats = false) {
+  cleanup(resetStats = false, keepRendererCanvas = false) {
     this.#pendingCleanup = true;
+    this.#keepRendererCanvas = keepRendererCanvas;
     const success = this.#tryCleanup();
 
     if (resetStats && success) {
@@ -1952,11 +1957,13 @@ class PDFPageProxy {
       try {
         this._transport.rendererHandler.send("cleanupPage", {
           pageIndex: this._pageIndex,
+          keepCanvas: this.#keepRendererCanvas,
         });
       } catch {
         // Ignore errors if the renderer worker has been destroyed.
       }
     }
+    this.#keepRendererCanvas = false;
     this.#pendingCleanup = false;
     return true;
   }
@@ -3460,7 +3467,9 @@ class WorkerTransport {
     await this.messageHandler.sendWithPromise("Cleanup", null);
 
     for (const page of this.#pageCache.values()) {
-      const cleanupSuccessful = page.cleanup();
+      // Keep the OffscreenCanvas reference alive in the renderer worker
+      // during idle cleanup.
+      const cleanupSuccessful = page.cleanup(false, !!this.rendererHandler);
 
       if (!cleanupSuccessful) {
         throw new Error(

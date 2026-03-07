@@ -37,6 +37,8 @@ class RendererMessageHandler {
 
   static #renderTaskStates = new Map();
 
+  static #canvasMap = new Map();
+
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis,
   });
@@ -84,9 +86,7 @@ class RendererMessageHandler {
     this.#renderTaskStates.delete(renderTaskId);
   }
 
-  static #cleanupPage(pageIndex) {
-    // TODO(Aditi): Investigate why the canvas doesn't render when scrolling
-    // back up, after scroll down.
+  static #cleanupPage(pageIndex, keepCanvas = false) {
     const objs = this.#objsMap.get(pageIndex);
     if (objs) {
       objs.clear();
@@ -96,6 +96,9 @@ class RendererMessageHandler {
       if (renderTaskState.pageIndex === pageIndex) {
         this.#cleanupRenderTask(renderTaskId);
       }
+    }
+    if (!keepCanvas) {
+      this.#canvasMap.delete(pageIndex);
     }
   }
 
@@ -177,8 +180,8 @@ class RendererMessageHandler {
     handler.on("SetupWorkerChannel", data => this.setupWorkerChannel(data));
     this.#setupObjectHandler(handler);
 
-    handler.on("cleanupPage", ({ pageIndex }) => {
-      this.#cleanupPage(pageIndex);
+    handler.on("cleanupPage", ({ pageIndex, keepCanvas }) => {
+      this.#cleanupPage(pageIndex, keepCanvas);
     });
 
     handler.on("CleanupRenderTask", ({ renderTaskId }) => {
@@ -245,6 +248,9 @@ class RendererMessageHandler {
         transparency,
         background,
       });
+
+      // Store a reference to the OffscreenCanvas
+      this.#canvasMap.set(pageIndex, canvas);
 
       this.#cleanupRenderTask(renderTaskId);
       this.#renderTaskStates.set(renderTaskId, {
