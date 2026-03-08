@@ -2524,7 +2524,9 @@ class WorkerTransport {
     this.loadingTask.onProgress?.({
       loaded,
       total,
-      percent: MathClamp(Math.round((loaded / total) * 100), 0, 100),
+      percent: total
+        ? MathClamp(Math.round((loaded / total) * 100), 0, 100)
+        : NaN,
     });
   }
 

@@ -577,11 +577,9 @@ class ExternalServices extends BaseExternalServices {
           pdfDataRangeTransport?.onDataProgressiveDone();
           break;
         case "progress":
-          const percent = MathClamp(
-            Math.round((args.loaded / args.total) * 100),
-            0,
-            100
-          );
+          const percent = args.total
+            ? MathClamp(Math.round((args.loaded / args.total) * 100), 0, 100)
+            : NaN;
 
           viewerApp.progress(percent);
           break;
