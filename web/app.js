@@ -1255,6 +1255,10 @@ const PDFViewerApplication = {
         if (loadingTask !== this.pdfLoadingTask) {
           return undefined; // Ignore errors for previously opened PDF files.
         }
+        if (this.loadingBar) {
+          // Avoid the "indeterminate" loadingBar being displayed on error.
+          this.loadingBar.percent ||= 0;
+        }
 
         let key = "pdfjs-loading-error";
         if (reason instanceof InvalidPDFException) {
