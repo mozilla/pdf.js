@@ -52,10 +52,12 @@ async function runTests(results) {
     jasmineDone(suiteInfo) {},
     jasmineStarted(suiteInfo) {},
     specDone(result) {
-      // Report on the result of individual tests.
-      if (result.status === "excluded") {
+      // Ignore excluded (fit/xit) or skipped (pending) tests.
+      if (["excluded", "pending"].includes(result.status)) {
         return;
       }
+
+      // Report on passed or failed tests.
       ++results.runs;
       if (result.status === "passed") {
         console.log(`TEST-PASSED | ${result.description}`);
@@ -66,10 +68,12 @@ async function runTests(results) {
     },
     specStarted(result) {},
     suiteDone(result) {
-      if (result.status === "excluded") {
+      // Ignore excluded (fdescribe/xdescribe) or skipped (pending) suites.
+      if (["excluded", "pending"].includes(result.status)) {
         return;
       }
-      // Report on the result of `afterAll` invocations.
+
+      // Report on failed suites only (indicates problems in setup/teardown).
       if (result.status === "failed") {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
