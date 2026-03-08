@@ -275,7 +275,7 @@ class WorkerMessageHandler {
           if (!fullReader.isStreamingSupported) {
             handler.send("DocProgress", {
               loaded,
-              total: Math.max(loaded, fullReader.contentLength || 0),
+              total: fullReader.contentLength,
             });
           }
 
