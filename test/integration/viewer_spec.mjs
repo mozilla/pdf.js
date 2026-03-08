@@ -1646,4 +1646,45 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Outline with SE (Structure Element) entries", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "outlines_se.pdf",
+        `.page[data-page-number="1"] .endOfContent`
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should navigate to the correct page when clicking an outline item with an SE entry", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Open the sidebar.
+          await showViewsManager(page);
+
+          // Switch to the outline view.
+          await page.click("#viewsManagerSelectorButton");
+          await page.waitForSelector("#outlinesViewMenu", { visible: true });
+          await page.click("#outlinesViewMenu");
+
+          for (let i = 2; i >= 1; i--) {
+            await waitAndClick(
+              page,
+              `#outlinesView .treeItem .treeItem:nth-child(${i}) a`
+            );
+            await page.waitForFunction(
+              pageNum => window.PDFViewerApplication.page === pageNum,
+              {},
+              i
+            );
+          }
+        })
+      );
+    });
+  });
 });
