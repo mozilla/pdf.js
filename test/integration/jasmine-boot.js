@@ -57,7 +57,7 @@ async function runTests(results) {
         return;
       }
       ++results.runs;
-      if (result.failedExpectations.length === 0) {
+      if (result.status === "passed") {
         console.log(`TEST-PASSED | ${result.description}`);
       } else {
         ++results.failures;
@@ -70,7 +70,7 @@ async function runTests(results) {
         return;
       }
       // Report on the result of `afterAll` invocations.
-      if (result.failedExpectations.length > 0) {
+      if (result.status === "failed") {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
       }
