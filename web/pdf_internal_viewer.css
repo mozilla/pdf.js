@@ -1,0 +1,304 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:root {
+  color-scheme: light dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  font-family: "Courier New", Courier, monospace;
+  margin: 0;
+  padding: 16px;
+  background: light-dark(#fff, #1e1e1e);
+  color: light-dark(#1e1e1e, #d4d4d4);
+  font-size: 13px;
+  line-height: 1.5;
+}
+#header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  h1 {
+    color: light-dark(#0070c1, #9cdcfe);
+    font-size: 1.2em;
+    margin: 0;
+  }
+
+  #pdf-info {
+    font-family: system-ui, sans-serif;
+    font-size: 1.15em;
+    font-weight: 500;
+    color: light-dark(#1e1e1e, #d4d4d4);
+  }
+}
+#password-dialog {
+  background: light-dark(#fff, #2d2d2d);
+  color: light-dark(#1e1e1e, #d4d4d4);
+  border: 1px solid light-dark(#ccc, #555);
+  border-radius: 6px;
+  padding: 20px;
+  min-width: 320px;
+
+  &::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    background: light-dark(#fff, #3c3c3c);
+    color: light-dark(#1e1e1e, #d4d4d4);
+    border: 1px solid light-dark(#c8c8c8, #555);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  .password-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      padding: 4px 14px;
+      border-radius: 3px;
+      border: 1px solid light-dark(#c8c8c8, #555);
+      background: light-dark(#f3f3f3, #3c3c3c);
+      color: inherit;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+
+      &:hover {
+        background: light-dark(#e0e0e0, #4a4a4a);
+      }
+    }
+  }
+}
+#controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: light-dark(#f3f3f3, #252526);
+  border-radius: 4px;
+  border: 1px solid light-dark(#e0e0e0, #3c3c3c);
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: light-dark(#6e6e6e, #888);
+  }
+
+  #github-link {
+    margin-inline-start: auto;
+    display: flex;
+    align-items: center;
+    color: light-dark(#6e6e6e, #aaa);
+    text-decoration: none;
+
+    &:hover {
+      color: light-dark(#1e1e1e, #fff);
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+  }
+}
+#goto-input {
+  background: light-dark(#fff, #3c3c3c);
+  color: light-dark(#1e1e1e, #d4d4d4);
+  border: 1px solid light-dark(#c8c8c8, #555);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: inherit;
+
+  &:disabled {
+    opacity: 0.4;
+  }
+  &[aria-invalid="true"] {
+    border-color: #f66;
+  }
+}
+#status {
+  color: light-dark(#6e6e6e, #888);
+  font-style: italic;
+}
+#tree {
+  padding: 8px 12px;
+  background: light-dark(#f3f3f3, #252526);
+  border-radius: 4px;
+  border: 1px solid light-dark(#e0e0e0, #3c3c3c);
+  min-height: 60px;
+
+  .node {
+    display: block;
+    padding: 1px 0;
+  }
+  .key {
+    color: light-dark(#0070c1, #9cdcfe);
+  }
+  .separator {
+    color: light-dark(#6e6e6e, #888);
+  }
+  [role="button"] {
+    display: inline-block;
+    width: 14px;
+    font-size: 0.7em;
+    color: light-dark(#666, #aaa);
+    cursor: pointer;
+    user-select: none;
+    vertical-align: middle;
+  }
+  [role="group"] {
+    padding-left: 20px;
+    border-left: 1px dashed light-dark(#d0d0d0, #444);
+    margin-left: 2px;
+
+    &.hidden {
+      display: none;
+    }
+  }
+  .ref {
+    color: light-dark(#007b6e, #4ec9b0);
+    cursor: pointer;
+    text-decoration: underline dotted;
+
+    &:hover {
+      color: light-dark(#065, #89d9c8);
+    }
+  }
+  .str-value {
+    color: light-dark(#a31515, #ce9178);
+  }
+  .num-value {
+    color: light-dark(#098658, #b5cea8);
+  }
+  .bool-value {
+    color: light-dark(#00f, #569cd6);
+  }
+  .null-value {
+    color: light-dark(#767676, #808080);
+  }
+  .name-value {
+    color: light-dark(#795e26, #dcdcaa);
+  }
+  .bracket {
+    color: light-dark(#6e6e6e, #888);
+    cursor: pointer;
+    user-select: none;
+
+    &:hover {
+      color: light-dark(#444, #bbb);
+    }
+  }
+  .stream-label {
+    color: light-dark(#af00db, #c586c0);
+    font-style: italic;
+  }
+  [role="status"] {
+    color: light-dark(#6e6e6e, #888);
+    font-style: italic;
+  }
+  [role="alert"] {
+    color: #f66;
+  }
+  .bytes-content {
+    padding-left: 20px;
+    white-space: pre-wrap;
+    font-size: 1em;
+    opacity: 0.85;
+    color: light-dark(#a31515, #ce9178);
+  }
+  .bytes-hex {
+    font-family: monospace;
+    color: light-dark(#00f, #569cd6);
+  }
+  .image-preview {
+    display: block;
+    margin-top: 4px;
+    max-width: 40%;
+    image-rendering: pixelated;
+    border: 1px solid light-dark(#ccc, #444);
+  }
+  .content-stream-parsed {
+    display: none;
+  }
+  .content-stream-raw {
+    display: inline;
+  }
+  &.parse-cs-active {
+    .content-stream-parsed {
+      display: inline;
+    }
+    .content-stream-raw {
+      display: none;
+    }
+  }
+  .content-stream {
+    line-height: 1.8;
+  }
+  .cs-instruction {
+    display: block;
+    white-space: nowrap;
+  }
+  .token-cmd {
+    color: light-dark(#0070c1, #9cdcfe);
+    font-weight: bold;
+  }
+  .token-num {
+    color: light-dark(#098658, #b5cea8);
+  }
+  .token-str {
+    color: light-dark(#a31515, #ce9178);
+  }
+  .token-name {
+    color: light-dark(#795e26, #dcdcaa);
+  }
+  .token-bool {
+    color: light-dark(#00f, #569cd6);
+  }
+  .token-null {
+    color: light-dark(#767676, #808080);
+  }
+  .token-ref {
+    color: light-dark(#007b6e, #4ec9b0);
+  }
+  .token-array,
+  .token-dict {
+    color: light-dark(#1e1e1e, #d4d4d4);
+  }
+}

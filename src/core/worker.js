@@ -952,6 +952,22 @@ class WorkerMessageHandler {
       return pdfManager.fontFallback(data.id, handler);
     });
 
+    handler.on("GetRawData", async function ({ ref, page }) {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Not implemented: GetRawData");
+      }
+      let value = null;
+      if (page >= 1) {
+        value = (await pdfManager.ensureCatalog("getPageDict", [page - 1]))[1];
+      } else if (ref) {
+        value =
+          typeof ref === "string"
+            ? Ref.fromString(ref)
+            : Ref.get(ref.num, ref.gen);
+      }
+      return pdfManager.ensureDoc("toJSObject", [value]);
+    });
+
     handler.on("Cleanup", function (data) {
       return pdfManager.cleanup(/* manuallyTriggered = */ true);
     });

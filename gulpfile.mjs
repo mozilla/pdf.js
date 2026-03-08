@@ -65,6 +65,7 @@ const IMAGE_DECODERS_LEGACY_DIR = BUILD_DIR + "image_decoders-legacy/";
 const DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
 const MINIFIED_DIR = BUILD_DIR + "minified/";
 const MINIFIED_LEGACY_DIR = BUILD_DIR + "minified-legacy/";
+const INTERNAL_VIEWER_DIR = BUILD_DIR + "internal-viewer/";
 const JSDOC_BUILD_DIR = BUILD_DIR + "jsdoc/";
 const GH_PAGES_DIR = BUILD_DIR + "gh-pages/";
 const DIST_DIR = BUILD_DIR + "dist/";
@@ -2368,6 +2369,52 @@ gulp.task("check_l10n", function (done) {
   });
 });
 
+function createInternalViewerBundle(defines) {
+  const viewerFileConfig = createWebpackConfig(defines, {
+    filename: "pdf_internal_viewer.mjs",
+    library: {
+      type: "module",
+    },
+  });
+  return gulp
+    .src("./web/pdf_internal_viewer.js", { encoding: false })
+    .pipe(webpack2Stream(viewerFileConfig));
+}
+
+function buildInternalViewer(defines, dir) {
+  fs.rmSync(dir, { recursive: true, force: true });
+
+  return ordered([
+    createMainBundle(defines).pipe(gulp.dest(dir + "build")),
+    createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createInternalViewerBundle(defines).pipe(gulp.dest(dir + "web")),
+    preprocessHTML("web/pdf_internal_viewer.html", defines).pipe(
+      gulp.dest(dir + "web")
+    ),
+    preprocessCSS("web/pdf_internal_viewer.css", defines)
+      .pipe(
+        postcss([
+          postcssDirPseudoClass(),
+          discardCommentsCSS(),
+          postcssNesting(),
+          postcssLightDarkFunction({ preserve: true }),
+          autoprefixer(AUTOPREFIXER_CONFIG),
+        ])
+      )
+      .pipe(gulp.dest(dir + "web")),
+    createWasmBundle().pipe(gulp.dest(dir + "web/wasm")),
+  ]);
+}
+
+gulp.task(
+  "internal-viewer",
+  gulp.series(createBuildNumber, function createInternalViewer() {
+    console.log("\n### Creating internal viewer");
+    const defines = { ...DEFINES, GENERIC: true };
+    return buildInternalViewer(defines, INTERNAL_VIEWER_DIR);
+  })
+);
+
 function ghPagesPrepare() {
   console.log("\n### Creating web site");
 
@@ -2391,6 +2438,13 @@ function ghPagesPrepare() {
     gulp
       .src(JSDOC_BUILD_DIR + "**/*", { base: JSDOC_BUILD_DIR, encoding: false })
       .pipe(gulp.dest(GH_PAGES_DIR + "api/draft/")),
+    gulp
+      .src(INTERNAL_VIEWER_DIR + "**/*", {
+        base: INTERNAL_VIEWER_DIR,
+        encoding: false,
+        removeBOM: false,
+      })
+      .pipe(gulp.dest(GH_PAGES_DIR + "internal-viewer/")),
   ]);
 }
 
@@ -2442,6 +2496,7 @@ gulp.task(
   gulp.series(
     "generic",
     "generic-legacy",
+    "internal-viewer",
     "jsdoc",
     ghPagesPrepare,
     "metalsmith"

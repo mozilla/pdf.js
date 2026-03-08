@@ -1065,6 +1065,10 @@ class PDFDocumentProxy {
     return this._transport.downloadInfoCapability.promise;
   }
 
+  getRawData(data) {
+    return this._transport.getRawData(data);
+  }
+
   /**
    * Cleans up resources allocated by the document on both the main and worker
    * threads.
@@ -3169,6 +3173,10 @@ class WorkerTransport {
 
   getMarkInfo() {
     return this.messageHandler.sendWithPromise("GetMarkInfo", null);
+  }
+
+  getRawData(data) {
+    return this.messageHandler.sendWithPromise("GetRawData", data);
   }
 
   async startCleanup(keepLoadedFonts = false) {
