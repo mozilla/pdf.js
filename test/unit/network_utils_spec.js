@@ -81,13 +81,13 @@ describe("network_utils", function () {
           disableRange: true,
           isHttp: true,
           responseHeaders: new Headers({
-            "Content-Length": 8,
+            "Content-Length": 1024,
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: false,
-        suggestedLength: 8,
+        isRangeSupported: false,
+        contentLength: 1024,
       });
 
       expect(
@@ -95,13 +95,13 @@ describe("network_utils", function () {
           disableRange: false,
           isHttp: false,
           responseHeaders: new Headers({
-            "Content-Length": 8,
+            "Content-Length": 1024,
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: false,
-        suggestedLength: 8,
+        isRangeSupported: false,
+        contentLength: 1024,
       });
     });
 
@@ -112,13 +112,13 @@ describe("network_utils", function () {
           isHttp: true,
           responseHeaders: new Headers({
             "Accept-Ranges": "none",
-            "Content-Length": 8,
+            "Content-Length": 1024,
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: false,
-        suggestedLength: 8,
+        isRangeSupported: false,
+        contentLength: 1024,
       });
     });
 
@@ -130,13 +130,13 @@ describe("network_utils", function () {
           responseHeaders: new Headers({
             "Accept-Ranges": "bytes",
             "Content-Encoding": "gzip",
-            "Content-Length": 8,
+            "Content-Length": 1024,
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: false,
-        suggestedLength: 8,
+        isRangeSupported: false,
+        contentLength: 1024,
       });
     });
 
@@ -147,13 +147,13 @@ describe("network_utils", function () {
           isHttp: true,
           responseHeaders: new Headers({
             "Accept-Ranges": "bytes",
-            "Content-Length": "eight",
+            "Content-Length": "one thousand and twenty four",
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: false,
-        suggestedLength: undefined,
+        isRangeSupported: false,
+        contentLength: undefined,
       });
     });
 
@@ -164,13 +164,13 @@ describe("network_utils", function () {
           isHttp: true,
           responseHeaders: new Headers({
             "Accept-Ranges": "bytes",
-            "Content-Length": 8,
+            "Content-Length": 128,
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: false,
-        suggestedLength: 8,
+        isRangeSupported: false,
+        contentLength: 128,
       });
     });
 
@@ -181,13 +181,13 @@ describe("network_utils", function () {
           isHttp: true,
           responseHeaders: new Headers({
             "Accept-Ranges": "bytes",
-            "Content-Length": 8192,
+            "Content-Length": 1024,
           }),
           rangeChunkSize: 64,
         })
       ).toEqual({
-        allowRangeRequests: true,
-        suggestedLength: 8192,
+        isRangeSupported: true,
+        contentLength: 1024,
       });
     });
   });
