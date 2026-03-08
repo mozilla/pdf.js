@@ -57,11 +57,11 @@ async function runTests(results) {
         return;
       }
       ++results.runs;
-      if (result.failedExpectations.length > 0) {
+      if (result.failedExpectations.length === 0) {
+        console.log(`TEST-PASSED | ${result.description}`);
+      } else {
         ++results.failures;
         console.log(`TEST-UNEXPECTED-FAIL | ${result.description}`);
-      } else {
-        console.log(`TEST-PASSED | ${result.description}`);
       }
     },
     specStarted(result) {},
