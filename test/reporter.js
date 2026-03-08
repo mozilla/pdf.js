@@ -66,7 +66,7 @@ const TestReporter = function (browser) {
       return;
     }
     // Report on the result of individual tests.
-    if (result.failedExpectations.length === 0) {
+    if (result.status === "passed") {
       sendResult("TEST-PASSED", result.description);
     } else {
       let failedMessages = "";
@@ -82,7 +82,7 @@ const TestReporter = function (browser) {
       return;
     }
     // Report on the result of `afterAll` invocations.
-    if (result.failedExpectations.length > 0) {
+    if (result.status === "failed") {
       let failedMessages = "";
       for (const item of result.failedExpectations) {
         failedMessages += `${item.message} `;
