@@ -190,13 +190,12 @@ describe("Reorganize Pages View", () => {
               return false;
             }
           );
-          const dndPromise = dragAndDrop(
+          await dragAndDrop(
             page,
             getThumbnailSelector(1),
             [[0, rect2.y - rect1.y + rect2.height / 2]],
             10
           );
-          await dndPromise;
           await awaitPromise(handleAddedMarker);
           await awaitPromise(handleRemovedMarker);
         })
@@ -1635,6 +1634,68 @@ describe("Reorganize Pages View", () => {
             .toEqual([
               { document: null, pageIndices: [0, 1], includePages: [0, 2] },
             ]);
+        })
+      );
+    });
+  });
+
+  describe("Dragging mustn't be possible when pasting (bug 2021934)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "page-fit",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check that dragging is disabled when pasting", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          await Promise.all([
+            page.waitForSelector(`#thumbnailsView.isDragging`, {
+              visible: true,
+            }),
+            dragAndDrop(page, getThumbnailSelector(1), [[0, 10]], 10),
+          ]);
+
+          await page.waitForSelector(`#thumbnailsView.isDragging`, {
+            hidden: true,
+          });
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+
+          // If dragging isn't disabled, the promise will resolve with the
+          // selector. Otherwise, it will resolve with undefined (dragAndDrop
+          // has no return), which is the expected behavior.
+          const abortController = new AbortController();
+          const first = await Promise.race([
+            page.waitForSelector(`#thumbnailsView.isDragging`, {
+              visible: true,
+              signal: abortController.signal,
+            }),
+            dragAndDrop(page, getThumbnailSelector(1), [[0, 10]], 10),
+          ]);
+          abortController.abort();
+
+          expect(first)
+            .withContext(
+              `In ${browserName}, dragging should be disabled when pasting`
+            )
+            .toBeUndefined();
         })
       );
     });

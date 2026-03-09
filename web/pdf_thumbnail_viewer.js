@@ -159,6 +159,8 @@ class PDFThumbnailViewer {
 
   #undoCloseButton = null;
 
+  #isInPasteMode = false;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -525,6 +527,7 @@ class PDFThumbnailViewer {
   }
 
   #updateThumbnails(currentPageNumber) {
+    this.#resetCurrentThumbnail(0);
     let newCurrentPageNumber = 0;
     const pagesMapper = this.#pagesMapper;
     const prevThumbnails = (this.#savedThumbnails = this._thumbnails);
@@ -658,13 +661,13 @@ class PDFThumbnailViewer {
       const newIndex = lastDraggedOverIndex + 1;
       const pagesToMove = Array.from(selectedPages).sort((a, b) => a - b);
       const pagesMapper = this.#pagesMapper;
-      let currentPageNumber = isNaN(this.#pageNumberToRemove)
+      const currentPageNumber = isNaN(this.#pageNumberToRemove)
         ? pagesToMove[0]
         : this.#pageNumberToRemove;
 
       pagesMapper.movePages(selectedPages, pagesToMove, newIndex);
 
-      currentPageNumber = this.#updateThumbnails(currentPageNumber);
+      this.#updateCurrentPage(this.#updateThumbnails(currentPageNumber));
       this.#computeThumbnailsPosition();
 
       selectedPages.clear();
@@ -676,8 +679,6 @@ class PDFThumbnailViewer {
         pagesMapper,
         type: "move",
       });
-
-      this.#updateCurrentPage(currentPageNumber);
     }
 
     if (!isNaN(this.#pageNumberToRemove)) {
@@ -695,7 +696,6 @@ class PDFThumbnailViewer {
 
   #updateCurrentPage(currentPageNumber) {
     setTimeout(() => {
-      this.#resetCurrentThumbnail(0);
       this.forceRendering();
       const newPageNumber = currentPageNumber || 1;
       this.linkService.goToPage(newPageNumber);
@@ -765,6 +765,7 @@ class PDFThumbnailViewer {
   }
 
   #togglePasteMode(enable) {
+    this.#isInPasteMode = enable;
     if (enable) {
       this.container.classList.add("pasteMode");
       for (const thumbnail of this._thumbnails) {
@@ -822,14 +823,14 @@ class PDFThumbnailViewer {
     this.#toggleMenuEntries(true);
 
     const pagesMapper = this.#pagesMapper;
-    let currentPageNumber = this.#copiedPageNumbers.includes(
+    const currentPageNumber = this.#copiedPageNumbers.includes(
       this._currentPageNumber
     )
       ? 0
       : this._currentPageNumber;
 
     pagesMapper.pastePages(index);
-    currentPageNumber = this.#updateThumbnails(currentPageNumber);
+    this.#updateCurrentPage(this.#updateThumbnails(currentPageNumber));
 
     this.eventBus.dispatch("pagesedited", {
       source: this,
@@ -842,8 +843,6 @@ class PDFThumbnailViewer {
     this.#isCut = false;
     this.#updateMenuEntries();
     this.#updateStatus("select");
-
-    this.#updateCurrentPage(currentPageNumber);
   }
 
   #deletePages(type = "delete") {
@@ -855,7 +854,7 @@ class PDFThumbnailViewer {
       this.#updateStatus("delete");
     }
     const pagesMapper = this.#pagesMapper;
-    let currentPageNumber = selectedPages.has(this._currentPageNumber)
+    const currentPageNumber = selectedPages.has(this._currentPageNumber)
       ? 0
       : this._currentPageNumber;
     const pagesToDelete = (this.#deletedPageNumbers = Uint32Array.from(
@@ -863,7 +862,7 @@ class PDFThumbnailViewer {
     ).sort((a, b) => a - b));
 
     pagesMapper.deletePages(pagesToDelete);
-    currentPageNumber = this.#updateThumbnails(currentPageNumber);
+    this.#updateCurrentPage(this.#updateThumbnails(currentPageNumber));
     selectedPages.clear();
     this.#updateMenuEntries();
 
@@ -873,8 +872,6 @@ class PDFThumbnailViewer {
       pageNumbers: pagesToDelete,
       type,
     });
-
-    this.#updateCurrentPage(currentPageNumber);
   }
 
   #updateMenuEntries() {
@@ -1224,7 +1221,7 @@ class PDFThumbnailViewer {
       } = e;
       if (
         e.button !== 0 || // Skip right click.
-        this.#pagesMapper.copiedPageNumbers?.length > 0 ||
+        this.#isInPasteMode ||
         !isNaN(this.#lastDraggedOverIndex) ||
         !draggedImage.classList.contains("thumbnailImageContainer")
       ) {
