@@ -894,6 +894,9 @@ class PDFThumbnailViewer {
       this.#manageCopyButton.disabled =
       this.#manageCutButton.disabled =
         !enable;
+    this.#dispatchUpdateStates({
+      hasSelectedPages: false,
+    });
   }
 
   #updateStatus(type) {
