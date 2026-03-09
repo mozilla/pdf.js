@@ -13,3 +13,6 @@ test/tmp/
 test/pdfs/
 web/locale/
 *~/
+.claude/
+.codex/
+.cursor/
