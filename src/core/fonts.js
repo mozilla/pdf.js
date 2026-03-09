@@ -969,6 +969,10 @@ function createNameTable(name, proto) {
  * decoding logics whatever type it is (assuming the font type is supported).
  */
 class Font {
+  #charsCache = new Map();
+
+  #glyphCache = new Map();
+
   constructor(name, file, properties, evaluatorOptions) {
     this.name = name;
     this.psName = null;
@@ -980,9 +984,6 @@ class Font {
     this.isType3Font = properties.isType3Font;
     this.missingFile = false;
     this.cssFontInfo = properties.cssFontInfo;
-
-    this._charsCache = Object.create(null);
-    this._glyphCache = Object.create(null);
 
     let isSerifFont = !!(properties.flags & FontFlags.Serif);
     // Fallback to checking the font name, in order to improve text-selection,
@@ -3385,7 +3386,7 @@ class Font {
    * @private
    */
   _charToGlyph(charcode, isSpace = false) {
-    let glyph = this._glyphCache[charcode];
+    let glyph = this.#glyphCache.get(charcode);
     // All `Glyph`-properties, except `isSpace` in multi-byte strings,
     // depend indirectly on the `charcode`.
     if (glyph?.isSpace === isSpace) {
@@ -3480,12 +3481,13 @@ class Font {
       isSpace,
       isInFont
     );
-    return (this._glyphCache[charcode] = glyph);
+    this.#glyphCache.set(charcode, glyph);
+    return glyph;
   }
 
   charsToGlyphs(chars) {
     // If we translated this string before, just grab it from the cache.
-    let glyphs = this._charsCache[chars];
+    let glyphs = this.#charsCache.get(chars);
     if (glyphs) {
       return glyphs;
     }
@@ -3517,7 +3519,8 @@ class Font {
     }
 
     // Enter the translated string into the cache.
-    return (this._charsCache[chars] = glyphs);
+    this.#charsCache.set(chars, glyphs);
+    return glyphs;
   }
 
   /**
@@ -3549,7 +3552,7 @@ class Font {
   }
 
   get glyphCacheValues() {
-    return Object.values(this._glyphCache);
+    return this.#glyphCache.values();
   }
 
   /**
