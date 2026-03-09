@@ -416,8 +416,7 @@ class AnnotationEditorLayer {
       }
 
       // Show the annotations that were hidden in enable().
-      const editables = annotationLayer.getEditableAnnotations();
-      for (const editable of editables) {
+      for (const editable of annotationLayer.getEditableAnnotations()) {
         const { id } = editable.data;
         if (this.#uiManager.isDeletedAnnotationElement(id)) {
           editable.updateEdited({ deleted: true });

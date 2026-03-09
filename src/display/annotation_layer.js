@@ -4100,7 +4100,7 @@ class AnnotationLayer {
   }
 
   getEditableAnnotations() {
-    return Array.from(this.#editableAnnotations.values());
+    return this.#editableAnnotations.values();
   }
 
   getEditableAnnotation(id) {
