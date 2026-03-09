@@ -922,6 +922,52 @@ describe("Reorganize Pages View", () => {
         })
       );
     });
+
+    it("should have only one paste button next to the second thumbnail after cut, paste, and copy", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Select page 1 and cut it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "cut");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCut");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste after the new first thumbnail (originally page 2).
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(1)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          // Select the new first thumbnail and copy it.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // The second thumbnail should have only one paste button after it.
+          await page.waitForSelector(
+            `${getThumbnailSelector(2)} + button.thumbnailPasteButton`,
+            { visible: true }
+          );
+          const pasteButtons = await page.$$(
+            `${getThumbnailSelector(2)} + button.thumbnailPasteButton`
+          );
+          expect(pasteButtons.length).withContext(`In ${browserName}`).toBe(1);
+        })
+      );
+    });
   });
 
   describe("Keyboard shortcuts for cut and copy (bug 2018139)", () => {

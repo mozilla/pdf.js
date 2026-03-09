@@ -818,9 +818,6 @@ class PDFThumbnailViewer {
   }
 
   #pastePages(index) {
-    this.#togglePasteMode(false);
-    this.#toggleMenuEntries(true);
-
     const pagesMapper = this.#pagesMapper;
     let currentPageNumber = this.#copiedPageNumbers.includes(
       this._currentPageNumber
@@ -840,7 +837,8 @@ class PDFThumbnailViewer {
 
     this.#copiedThumbnails = null;
     this.#isCut = false;
-    this.#updateMenuEntries();
+    this.#togglePasteMode(false);
+    this.#toggleMenuEntries(false);
     this.#updateStatus("select");
 
     this.#updateCurrentPage(currentPageNumber);
