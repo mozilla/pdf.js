@@ -899,6 +899,15 @@ function waitForTextToBe(page, selector, text) {
   );
 }
 
+function waitForTooltipToBe(page, selector, text) {
+  return page.waitForFunction(
+    (sel, str) => document.querySelector(sel)?.title === str,
+    {},
+    selector,
+    text
+  );
+}
+
 function isCanvasMonochrome(page, pageNumber, rectangle, color) {
   return page.evaluate(
     (rect, pageN, col) => {
@@ -1082,5 +1091,6 @@ export {
   waitForStorageEntries,
   waitForTextToBe,
   waitForTimeout,
+  waitForTooltipToBe,
   waitForUnselectedEditor,
 };
