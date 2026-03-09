@@ -1082,6 +1082,8 @@ class PagesMapper {
    */
   #copiedPageNumbers = null;
 
+  #savedData = null;
+
   /**
    * Gets the total number of pages.
    * @returns {number} The number of pages.
@@ -1253,6 +1255,13 @@ class PagesMapper {
     const pageNumberToId = this.#pageNumberToId;
     const prevIdToPageNumber = this.#idToPageNumber;
 
+    this.#savedData = {
+      pageNumberToId: pageNumberToId.slice(),
+      idToPageNumber: new Map(prevIdToPageNumber),
+      pageNumber: this.#pagesNumber,
+      prevPageNumbers: this.#prevPageNumbers.slice(),
+    };
+
     this.pagesNumber -= pagesToDelete.length;
     this.#init(false);
     const newPageNumberToId = this.#pageNumberToId;
@@ -1279,6 +1288,22 @@ class PagesMapper {
     this.#updateListeners({ type: "delete", pageNumbers: pagesToDelete });
   }
 
+  cancelDelete() {
+    if (this.#savedData) {
+      this.#pageNumberToId = this.#savedData.pageNumberToId;
+      this.#idToPageNumber = this.#savedData.idToPageNumber;
+      this.pagesNumber = this.#savedData.pageNumber;
+      this.#prevPageNumbers = this.#savedData.prevPageNumbers;
+      this.#savedData = null;
+      this.#updateListeners({ type: "cancelDelete" });
+    }
+  }
+
+  cleanSavedData() {
+    this.#savedData = null;
+    this.#updateListeners({ type: "cleanSavedData" });
+  }
+
   /**
    * Copies a set of pages while keeping ID→number mappings in sync.
    * @param {Uint32Array} pagesToCopy - Page numbers to copy (1-indexed).
@@ -1290,6 +1315,12 @@ class PagesMapper {
       pageNumber => this.#pageNumberToId[pageNumber - 1]
     );
     this.#updateListeners({ type: "copy", pageNumbers: pagesToCopy });
+  }
+
+  cancelCopy() {
+    this.#copiedPageIds = null;
+    this.#copiedPageNumbers = null;
+    this.#updateListeners({ type: "cancelCopy" });
   }
 
   /**
@@ -1323,6 +1354,7 @@ class PagesMapper {
     this.#updateListeners({ type: "paste" });
 
     this.#copiedPageIds = null;
+    this.#copiedPageNumbers = null;
   }
 
   /**
@@ -1455,7 +1487,7 @@ class PagesMapper {
   }
 
   getMapping() {
-    return this.#pageNumberToId.subarray(0, this.pagesNumber);
+    return this.#pageNumberToId?.subarray(0, this.pagesNumber);
   }
 }
 

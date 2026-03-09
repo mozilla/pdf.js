@@ -68,6 +68,10 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  *   rendering. The default value is `false`.
  * @property {boolean} [enableSplitMerge] - Enables split and merge features.
  *   The default value is `false`.
+ * @property {Object} [statusBar] - The status bar elements to manage the status
+ *   label and action when editing pages.
+ * @property {Object} [undoBar] - The undo bar elements to manage the undo
+ *   action.
  * @property {Object} [manageMenu] - The menu elements to manage saving edited
  *   PDF.
  * @property {HTMLButtonElement} addFileButton - The button that opens a dialog
@@ -123,6 +127,10 @@ class PDFThumbnailViewer {
 
   #copiedThumbnails = null;
 
+  #savedThumbnails = null;
+
+  #deletedPageNumbers = null;
+
   #copiedPageNumbers = null;
 
   #boundPastePages = this.#pastePages.bind(this);
@@ -139,6 +147,18 @@ class PDFThumbnailViewer {
     hasSelectedPages: false,
   };
 
+  #statusLabel = null;
+
+  #statusBar = null;
+
+  #undoBar = null;
+
+  #undoLabel = null;
+
+  #undoButton = null;
+
+  #undoCloseButton = null;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -153,6 +173,8 @@ class PDFThumbnailViewer {
     abortSignal,
     enableHWA,
     enableSplitMerge,
+    statusBar,
+    undoBar,
     manageMenu,
     addFileButton,
   }) {
@@ -166,6 +188,13 @@ class PDFThumbnailViewer {
     this.pageColors = pageColors || null;
     this.enableHWA = enableHWA || false;
     this.#enableSplitMerge = enableSplitMerge || false;
+    this.#statusLabel = statusBar?.viewsManagerStatusActionLabel || null;
+    this.#statusBar = statusBar?.viewsManagerStatusAction || null;
+    this.#undoBar = undoBar?.viewsManagerStatusUndo || null;
+    this.#undoLabel = undoBar?.viewsManagerStatusUndoLabel || null;
+    this.#undoButton = undoBar?.viewsManagerStatusUndoButton || null;
+    this.#undoCloseButton = undoBar?.viewsManagerStatusUndoCloseButton || null;
+
     // TODO: uncomment when the "add file" feature is implemented.
     // this.#addFileButton = addFileButton;
 
@@ -183,7 +212,7 @@ class PDFThumbnailViewer {
       this.#manageSaveAsButton = saveAs;
       saveAs.addEventListener("click", this.#saveExtractedPages.bind(this));
       this.#manageDeleteButton = del;
-      del.addEventListener("click", this.#deletePages.bind(this));
+      del.addEventListener("click", this.#deletePages.bind(this, "delete"));
       this.#manageCopyButton = copy;
       copy.addEventListener("click", this.#copyPages.bind(this));
       this.#manageCutButton = cut;
@@ -201,13 +230,19 @@ class PDFThumbnailViewer {
             this.#cutPages();
             break;
           case "deletePage":
-            this.#deletePages();
+            this.#deletePages("delete");
             break;
           case "savePage":
             this.#saveExtractedPages();
             break;
         }
       });
+
+      this.#undoButton?.addEventListener("click", this.#undo.bind(this));
+      this.#undoCloseButton?.addEventListener(
+        "click",
+        this.#dismissUndo.bind(this)
+      );
     } else {
       manageMenu.button.hidden = true;
     }
@@ -492,17 +527,14 @@ class PDFThumbnailViewer {
   #updateThumbnails(currentPageNumber) {
     let newCurrentPageNumber = 0;
     const pagesMapper = this.#pagesMapper;
-    this.container.replaceChildren();
-    const prevThumbnails = this._thumbnails;
+    const prevThumbnails = (this.#savedThumbnails = this._thumbnails);
     const newThumbnails = (this._thumbnails = []);
     const fragment = document.createDocumentFragment();
     const isCut = this.#isCut;
-    const oldThumbnails = new Set(prevThumbnails);
     for (let i = 1, ii = pagesMapper.pagesNumber; i <= ii; i++) {
       const prevPageNumber = pagesMapper.getPrevPageNumber(i);
       if (prevPageNumber < 0) {
         let thumbnail = this.#copiedThumbnails.get(-prevPageNumber);
-        oldThumbnails.delete(thumbnail);
         thumbnail.checkbox.checked = false;
         if (isCut) {
           thumbnail.updateId(i);
@@ -519,14 +551,10 @@ class PDFThumbnailViewer {
       const newThumbnail = prevThumbnails[prevPageNumber - 1];
       newThumbnails.push(newThumbnail);
       newThumbnail.updateId(i);
-      oldThumbnails.delete(newThumbnail);
       newThumbnail.checkbox.checked = false;
       fragment.append(newThumbnail.div);
     }
-    this.container.append(fragment);
-    for (const oldThumbnail of oldThumbnails) {
-      oldThumbnail.destroy();
-    }
+    this.container.replaceChildren(fragment);
     return newCurrentPageNumber;
   }
 
@@ -676,6 +704,80 @@ class PDFThumbnailViewer {
     }, 0);
   }
 
+  #undo() {
+    if (this.#copiedThumbnails) {
+      // We undo a copy or a cut.
+      this.#copiedThumbnails = null;
+      this.#pagesMapper.cancelCopy();
+      this.#clearSelection();
+      this.#toggleMenuEntries(false);
+      this.#updateStatus("select");
+      this.#togglePasteMode(false);
+
+      this.eventBus.dispatch("pagesedited", {
+        source: this,
+        pagesMapper: this.#pagesMapper,
+        type: "cancelCopy",
+      });
+    }
+
+    this.#isCut = false;
+    if (this.#savedThumbnails) {
+      const fragment = document.createDocumentFragment();
+      for (let i = 1, ii = this.#savedThumbnails.length; i <= ii; i++) {
+        const thumbnail = this.#savedThumbnails[i - 1];
+        thumbnail.updateId(i);
+        thumbnail.checkbox.checked = false;
+        fragment.append(thumbnail.div);
+      }
+      this.container.replaceChildren(fragment);
+      this._thumbnails = this.#savedThumbnails;
+      this.#savedThumbnails = null;
+      this.#pagesMapper.cancelDelete();
+
+      this.eventBus.dispatch("pagesedited", {
+        source: this,
+        pagesMapper: this.#pagesMapper,
+        type: "cancelDelete",
+      });
+    }
+  }
+
+  #dismissUndo() {
+    this.#copiedThumbnails = null;
+    if (this.#deletedPageNumbers) {
+      for (const pageNumber of this.#deletedPageNumbers) {
+        this.#savedThumbnails[pageNumber - 1].destroy();
+      }
+      this.#deletedPageNumbers = null;
+      this.#savedThumbnails = null;
+    }
+    this.#isCut = false;
+    this.#updateStatus("select");
+    this.#togglePasteMode(false);
+    this.#pagesMapper.cleanSavedData();
+
+    this.eventBus.dispatch("pagesedited", {
+      source: this,
+      pagesMapper: this.#pagesMapper,
+      type: "cleanSavedData",
+    });
+  }
+
+  #togglePasteMode(enable) {
+    if (enable) {
+      this.container.classList.add("pasteMode");
+      for (const thumbnail of this._thumbnails) {
+        thumbnail.addPasteButton(this.#boundPastePages);
+      }
+    } else {
+      this.container.classList.remove("pasteMode");
+      for (const thumbnail of this._thumbnails) {
+        thumbnail.removePasteButton();
+      }
+    }
+  }
+
   #saveExtractedPages() {
     this.eventBus.dispatch("saveextractedpages", {
       source: this,
@@ -686,12 +788,13 @@ class PDFThumbnailViewer {
   }
 
   #copyPages(clearSelection = true) {
+    this.#updateStatus(this.#isCut ? "cut" : "copy");
     const pageNumbersToCopy = (this.#copiedPageNumbers = Uint32Array.from(
       this.#selectedPages
     ).sort((a, b) => a - b));
     const pagesMapper = this.#pagesMapper;
     pagesMapper.copyPages(pageNumbersToCopy);
-    this.#copiedThumbnails ||= new Map();
+    this.#copiedThumbnails = new Map();
     for (const pageNumber of pageNumbersToCopy) {
       this.#copiedThumbnails.set(pageNumber, this._thumbnails[pageNumber - 1]);
     }
@@ -704,10 +807,7 @@ class PDFThumbnailViewer {
     if (clearSelection) {
       this.#clearSelection();
     }
-    for (const thumbnail of this._thumbnails) {
-      thumbnail.addPasteButton(this.#boundPastePages);
-    }
-    this.container.classList.add("pasteMode");
+    this.#togglePasteMode(true);
     this.#toggleMenuEntries(false);
   }
 
@@ -718,10 +818,7 @@ class PDFThumbnailViewer {
   }
 
   #pastePages(index) {
-    this.container.classList.remove("pasteMode");
-    for (const thumbnail of this._thumbnails) {
-      thumbnail.removePasteButton();
-    }
+    this.#togglePasteMode(false);
     this.#toggleMenuEntries(true);
 
     const pagesMapper = this.#pagesMapper;
@@ -744,6 +841,7 @@ class PDFThumbnailViewer {
     this.#copiedThumbnails = null;
     this.#isCut = false;
     this.#updateMenuEntries();
+    this.#updateStatus("select");
 
     this.#updateCurrentPage(currentPageNumber);
   }
@@ -753,11 +851,16 @@ class PDFThumbnailViewer {
     if (selectedPages.size === 0) {
       return;
     }
+    if (type === "delete") {
+      this.#updateStatus("delete");
+    }
     const pagesMapper = this.#pagesMapper;
     let currentPageNumber = selectedPages.has(this._currentPageNumber)
       ? 0
       : this._currentPageNumber;
-    const pagesToDelete = Uint32Array.from(selectedPages).sort((a, b) => a - b);
+    const pagesToDelete = (this.#deletedPageNumbers = Uint32Array.from(
+      selectedPages
+    ).sort((a, b) => a - b));
 
     pagesMapper.deletePages(pagesToDelete);
     currentPageNumber = this.#updateThumbnails(currentPageNumber);
@@ -791,6 +894,64 @@ class PDFThumbnailViewer {
       this.#manageCopyButton.disabled =
       this.#manageCutButton.disabled =
         !enable;
+  }
+
+  #updateStatus(type) {
+    if (!this.#statusBar || !this.#undoBar) {
+      return;
+    }
+    const count = this.#selectedPages?.size || 0;
+    if (type === "select") {
+      this.#statusLabel.setAttribute(
+        "data-l10n-id",
+        count
+          ? "pdfjs-views-manager-pages-status-action-label"
+          : "pdfjs-views-manager-pages-status-none-action-label"
+      );
+      if (count) {
+        this.#statusLabel.setAttribute(
+          "data-l10n-args",
+          JSON.stringify({ count })
+        );
+      } else {
+        this.#statusLabel.removeAttribute("data-l10n-args");
+      }
+      this.#statusBar.classList.toggle("hidden", false);
+      this.#undoBar.classList.toggle("hidden", true);
+      return;
+    }
+
+    let l10nId;
+    switch (type) {
+      case "copy":
+        l10nId = "pdfjs-views-manager-pages-status-undo-copy-label";
+        break;
+      case "cut":
+        l10nId = "pdfjs-views-manager-status-undo-cut-label";
+        break;
+      case "delete":
+        l10nId = "pdfjs-views-manager-pages-status-undo-delete-label";
+        break;
+    }
+    this.#undoLabel.setAttribute("data-l10n-id", l10nId);
+    this.#undoLabel.setAttribute("data-l10n-args", JSON.stringify({ count }));
+
+    if (type === "copy") {
+      this.#undoButton.firstElementChild.setAttribute(
+        "data-l10n-id",
+        "pdfjs-views-manager-status-done-button-label"
+      );
+      this.#undoCloseButton.classList.toggle("hidden", true);
+    } else {
+      this.#undoButton.firstElementChild.setAttribute(
+        "data-l10n-id",
+        "pdfjs-views-manager-status-undo-button-label"
+      );
+      this.#undoCloseButton.classList.toggle("hidden", false);
+    }
+
+    this.#statusBar.classList.toggle("hidden", true);
+    this.#undoBar.classList.toggle("hidden", false);
   }
 
   #moveDraggedContainer(dx, dy) {
@@ -1047,6 +1208,7 @@ class PDFThumbnailViewer {
       set.delete(pageNumber);
     }
     this.#updateMenuEntries();
+    this.#updateStatus("select");
   }
 
   #addDragListeners() {

@@ -2406,6 +2406,8 @@ class WorkerTransport {
 
   #copiedPageInfo = null;
 
+  #savedPageInfo = null;
+
   constructor(
     messageHandler,
     loadingTask,
@@ -2477,11 +2479,34 @@ class WorkerTransport {
       return;
     }
 
+    if (type === "cancelCopy") {
+      this.#copiedPageInfo = null;
+      return;
+    }
+
     if (type === "delete") {
+      this.#savedPageInfo = {
+        pageCache: new Map(this.#pageCache),
+        pagePromises: new Map(this.#pagePromises),
+      };
       for (const pageNum of pageNumbers) {
         this.#pageCache.delete(pageNum - 1);
         this.#pagePromises.delete(pageNum - 1);
       }
+    }
+
+    if (type === "cancelDelete") {
+      if (this.#savedPageInfo) {
+        this.#pageCache = this.#savedPageInfo.pageCache;
+        this.#pagePromises = this.#savedPageInfo.pagePromises;
+        this.#savedPageInfo = null;
+      }
+      return;
+    }
+
+    if (type === "cleanSavedData") {
+      this.#savedPageInfo = null;
+      return;
     }
 
     const newPageCache = new Map();

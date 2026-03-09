@@ -33,6 +33,7 @@ import {
   showViewsManager,
   waitAndClick,
   waitForDOMMutation,
+  waitForTextToBe,
 } from "./test_utils.mjs";
 
 async function waitForThumbnailVisible(page, pageNums) {
@@ -63,7 +64,7 @@ function waitForPagesEdited(page, type) {
           return;
         }
         window.PDFViewerApplication.eventBus.off("pagesedited", listener);
-        resolve(Array.from(pagesMapper.getMapping()));
+        resolve(Array.from(pagesMapper.getMapping() || []));
       };
       window.PDFViewerApplication.eventBus.on("pagesedited", listener);
     },
@@ -164,7 +165,7 @@ describe("Reorganize Pages View", () => {
                   continue;
                 }
                 for (const node of mutation.addedNodes) {
-                  if (node.classList.contains("dragMarker")) {
+                  if (node.classList?.contains("dragMarker")) {
                     return true;
                   }
                 }
@@ -180,7 +181,7 @@ describe("Reorganize Pages View", () => {
                   continue;
                 }
                 for (const node of mutation.removedNodes) {
-                  if (node.classList.contains("dragMarker")) {
+                  if (node.classList?.contains("dragMarker")) {
                     return true;
                   }
                 }
@@ -559,7 +560,7 @@ describe("Reorganize Pages View", () => {
                   continue;
                 }
                 for (const node of mutation.addedNodes) {
-                  if (node.classList.contains("dragMarker")) {
+                  if (node.classList?.contains("dragMarker")) {
                     const rect = node.getBoundingClientRect();
                     return rect.width !== 0;
                   }
@@ -1177,6 +1178,401 @@ describe("Reorganize Pages View", () => {
               visible: true,
             }
           );
+        })
+      );
+    });
+  });
+
+  describe("Status label reflects number of checked thumbnails (bug 2010832)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should update the status label when thumbnails are checked or unchecked", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          const labelSelector = "#viewsManagerStatusActionLabel";
+
+          // Initially no pages are selected.
+          await waitForTextToBe(page, labelSelector, "Select pages");
+
+          // Check thumbnail 1: label should read "1 selected".
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitForTextToBe(page, labelSelector, `${FSI}1${PDI} selected`);
+
+          // Check thumbnail 2: label should read "2 selected".
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(2)}) input`
+          );
+          await waitForTextToBe(page, labelSelector, `${FSI}2${PDI} selected`);
+
+          // Uncheck thumbnail 1: label should read "1 selected".
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitForTextToBe(page, labelSelector, `${FSI}1${PDI} selected`);
+
+          // Uncheck thumbnail 2: label should revert to "Select pages".
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(2)}) input`
+          );
+          await waitForTextToBe(page, labelSelector, "Select pages");
+        })
+      );
+    });
+  });
+
+  describe("Undo label reflects number of cut/deleted pages (bug 2010832)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should show the correct undo label after cutting one or two pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          const undoLabelSelector = "#viewsManagerStatusUndoLabel";
+
+          // Cut 1 page and check the undo label.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "cut");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCut");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+          await waitForTextToBe(page, undoLabelSelector, "1 page cut");
+
+          // Undo the cut to restore the original state.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusUndoButton");
+          await awaitPromise(handlePagesEdited);
+
+          // Cut 2 pages and check the undo label.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page, "cut");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCut");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+          await waitForTextToBe(
+            page,
+            undoLabelSelector,
+            `${FSI}2${PDI} pages cut`
+          );
+        })
+      );
+    });
+
+    it("should show the correct undo label after deleting one or two pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          const undoLabelSelector = "#viewsManagerStatusUndoLabel";
+
+          // Delete 1 page and check the undo label.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+          await waitForTextToBe(page, undoLabelSelector, "1 page deleted");
+
+          // Undo the deletion to restore the original state.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusUndoButton");
+          await awaitPromise(handlePagesEdited);
+
+          // Delete 2 pages and check the undo label.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+          await waitForTextToBe(
+            page,
+            undoLabelSelector,
+            `${FSI}2${PDI} pages deleted`
+          );
+        })
+      );
+    });
+  });
+
+  describe("Closing the undo bar after a cut is equivalent to a delete (bug 2010832)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should permanently remove the cut page when the undo bar is closed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Cut page 1.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "cut");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCut");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+
+          // Close the undo bar instead of undoing.
+          handlePagesEdited = await waitForPagesEdited(page, "cleanSavedData");
+          await waitAndClick(page, "#viewsManagerStatusUndoCloseButton");
+          const pageIndices = await awaitPromise(handlePagesEdited);
+
+          // The result must equal a plain deletion of page 1.
+          const expected = [
+            2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            hidden: true,
+          });
+
+          await waitForHavingContents(page, expected);
+        })
+      );
+    });
+  });
+
+  describe("Closing the undo bar after a delete effectively deletes the page (bug 2010832)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should permanently remove the deleted page when the undo bar is closed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Delete page 1.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+
+          // Close the undo bar instead of undoing.
+          handlePagesEdited = await waitForPagesEdited(page, "cleanSavedData");
+          await waitAndClick(page, "#viewsManagerStatusUndoCloseButton");
+          const pageIndices = await awaitPromise(handlePagesEdited);
+
+          // The page must be effectively deleted.
+          const expected = [
+            2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            hidden: true,
+          });
+
+          await waitForHavingContents(page, expected);
+        })
+      );
+    });
+  });
+
+  describe("Clicking Done after copying removes paste buttons (bug 2010832)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should show a Done button after copy and remove paste buttons when clicked", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Copy page 1.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // The undo bar must appear with a "Done" label (not "Undo").
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+          await waitForTextToBe(
+            page,
+            "#viewsManagerStatusUndoLabel",
+            "1 page copied"
+          );
+          await waitForTextToBe(
+            page,
+            "#viewsManagerStatusUndoButton span[data-l10n-id]",
+            "Done"
+          );
+
+          // The close button must be hidden for copy.
+          const closeHidden = await page.$eval(
+            "#viewsManagerStatusUndoCloseButton",
+            el => el.classList.contains("hidden")
+          );
+          expect(closeHidden).withContext(`In ${browserName}`).toBeTrue();
+
+          // Paste buttons must be present.
+          await page.waitForSelector("button.thumbnailPasteButton");
+
+          // Click Done and wait for the cancelCopy pagesedited event.
+          const handleCancelCopy = await waitForPagesEdited(page, "cancelCopy");
+          await waitAndClick(page, "#viewsManagerStatusUndoButton");
+          await awaitPromise(handleCancelCopy);
+
+          // Undo bar must be hidden and paste buttons must be gone.
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            hidden: true,
+          });
+          await page.waitForSelector("button.thumbnailPasteButton", {
+            hidden: true,
+          });
+          const pasteButtons = await page.$$("button.thumbnailPasteButton");
+          expect(pasteButtons.length).withContext(`In ${browserName}`).toBe(0);
         })
       );
     });

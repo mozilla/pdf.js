@@ -226,10 +226,11 @@
     }
 
     &.viewsCloseButton {
-      width: 32px;
-      height: 32px;
+      width: 26px;
+      height: 26px;
       padding: 4px;
       border-radius: 8px;
+      background: none;
 
       &::before {
         mask-image: var(--close-button-icon);
@@ -402,7 +403,7 @@
         align-self: stretch;
         background-color: var(--status-actions-bg);
 
-        > span.selected::before {
+        > span[data-l10n-args]::before {
           content: "";
           display: inline-block;
           width: var(--icon-size);
