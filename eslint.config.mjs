@@ -45,6 +45,7 @@ export default [
       "web/locale/",
       "web/wasm/",
       "**/*~/",
+      ".{claude,codex,cursor}/",
     ],
   },
 
