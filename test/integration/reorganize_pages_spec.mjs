@@ -34,6 +34,7 @@ import {
   waitAndClick,
   waitForDOMMutation,
   waitForTextToBe,
+  waitForTooltipToBe,
 } from "./test_utils.mjs";
 
 async function waitForThumbnailVisible(page, pageNums) {
@@ -812,21 +813,27 @@ describe("Reorganize Pages View", () => {
           await waitAndClick(page, "#viewsManagerStatusActionCopy");
           await awaitPromise(handlePagesEdited);
 
-          const prevSpanText = await page.$eval(
+          await waitForTextToBe(
+            page,
             `button.thumbnailPasteButton:has(+ ${getThumbnailSelector(1)}) > span`,
-            el => el.textContent.trim()
+            "Paste"
           );
-          expect(prevSpanText)
-            .withContext(`In ${browserName}`)
-            .toBe("Paste before the first page");
+          await waitForTooltipToBe(
+            page,
+            `button.thumbnailPasteButton:has(+ ${getThumbnailSelector(1)})`,
+            "Paste before the first page"
+          );
 
-          const afterSpanText = await page.$eval(
+          await waitForTextToBe(
+            page,
             `${getThumbnailSelector(1)} + button.thumbnailPasteButton > span`,
-            el => el.textContent.trim()
+            "Paste"
           );
-          expect(afterSpanText)
-            .withContext(`In ${browserName}`)
-            .toBe(`Paste after page ${FSI}1${PDI}`);
+          await waitForTooltipToBe(
+            page,
+            `${getThumbnailSelector(1)} + button.thumbnailPasteButton`,
+            `Paste after page ${FSI}1${PDI}`
+          );
         })
       );
     });
