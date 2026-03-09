@@ -120,6 +120,7 @@
     rgb(0 98 250 / 0.08),
     rgb(0 202 219 / 0.08)
   );
+  --image-dragging-placeholder-border: var(--image-outline);
   --multiple-dragging-bg: white;
   --image-multiple-dragging-shadow:
     0 0 0 var(--image-border-width) var(--image-current-border-color),
@@ -171,6 +172,8 @@
     --multiple-dragging-bg: Canvas;
     --multiple-dragging-indicator-bg: ButtonBorder;
     --multiple-dragging-text-color: Canvas;
+    --image-dragging-placeholder-bg: Canvas;
+    --image-dragging-placeholder-border: 1px GrayText solid;
   }
 
   display: flex;
@@ -797,6 +800,7 @@
           &.placeholder {
             background-color: var(--image-dragging-placeholder-bg);
             box-shadow: none !important;
+            outline: var(--image-dragging-placeholder-border);
           }
 
           &.draggingThumbnail {
