@@ -78,6 +78,10 @@ const ensureDebugMetadata = (map, key) =>
 class CanvasBBoxTracker {
   #baseTransformStack = [[1, 0, 0, 1, 0, 0]];
 
+  #currentTransform = [1, 0, 0, 1, 0, 0];
+
+  #transformSaveStack = [];
+
   // minX, minY, maxX, maxY
   #clipBox = [-Infinity, -Infinity, Infinity, Infinity];
 
@@ -129,6 +133,7 @@ class CanvasBBoxTracker {
 
   save(opIdx) {
     this.#clipBox = { __proto__: this.#clipBox };
+    this.#transformSaveStack.push(this.#currentTransform.slice());
     this._savesStack.push(opIdx);
     return this;
   }
@@ -141,6 +146,7 @@ class CanvasBBoxTracker {
       return this;
     }
     this.#clipBox = previous;
+    this.#currentTransform = this.#transformSaveStack.pop();
 
     const lastSave = this._savesStack.pop();
     if (lastSave !== undefined) {
@@ -190,12 +196,9 @@ class CanvasBBoxTracker {
     return this;
   }
 
-  pushBaseTransform(ctx) {
+  pushBaseTransform() {
     this.#baseTransformStack.push(
-      Util.multiplyByDOMMatrix(
-        this.#baseTransformStack.at(-1),
-        ctx.getTransform()
-      )
+      Util.transform(this.#baseTransformStack.at(-1), this.#currentTransform)
     );
     return this;
   }
@@ -215,10 +218,10 @@ class CanvasBBoxTracker {
     return this;
   }
 
-  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
-    const transform = Util.multiplyByDOMMatrix(
+  recordClipBox(idx, minX, maxX, minY, maxY) {
+    const transform = Util.transform(
       this.#baseTransformStack.at(-1),
-      ctx.getTransform()
+      this.#currentTransform
     );
     const clipBox = BBOX_INIT.slice();
     Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, clipBox);
@@ -235,15 +238,15 @@ class CanvasBBoxTracker {
     return this;
   }
 
-  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+  recordBBox(idx, minX, maxX, minY, maxY) {
     const clipBox = this.#clipBox;
     if (clipBox[0] === Infinity) {
       return this;
     }
 
-    const transform = Util.multiplyByDOMMatrix(
+    const transform = Util.transform(
       this.#baseTransformStack.at(-1),
-      ctx.getTransform()
+      this.#currentTransform
     );
     if (clipBox[0] === -Infinity) {
       Util.axialAlignedBoundingBox(
@@ -355,7 +358,44 @@ class CanvasBBoxTracker {
     return this;
   }
 
-  recordCharacterBBox(idx, ctx, font, scale = 1, x = 0, y = 0, getMeasure) {
+  recordCharacterBBox(idx, font, scale = 1, x = 0, y = 0, getMeasure) {
+    return this;
+  }
+
+  getTransform() {
+    return this.#currentTransform;
+  }
+
+  setTransform(a, b, c, d, e, f) {
+    this.#currentTransform = [a, b, c, d, e, f];
+    return this;
+  }
+
+  transform(a, b, c, d, e, f) {
+    Util.transformInPlace(this.#currentTransform, [a, b, c, d, e, f]);
+    return this;
+  }
+
+  translate(tx, ty) {
+    const t = this.#currentTransform;
+    t[4] += t[0] * tx + t[2] * ty;
+    t[5] += t[1] * tx + t[3] * ty;
+    return this;
+  }
+
+  scale(sx, sy) {
+    const t = this.#currentTransform;
+    t[0] *= sx;
+    t[1] *= sx;
+    t[2] *= sy;
+    t[3] *= sy;
+    return this;
+  }
+
+  withLocalTransform(callback) {
+    const saved = this.#currentTransform.slice();
+    callback(this);
+    this.#currentTransform = saved;
     return this;
   }
 
@@ -505,13 +545,42 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  pushBaseTransform(ctx) {
-    this.#bboxTracker.pushBaseTransform(ctx);
+  pushBaseTransform() {
+    this.#bboxTracker.pushBaseTransform();
     return this;
   }
 
   popBaseTransform() {
     this.#bboxTracker.popBaseTransform();
+    return this;
+  }
+
+  getTransform() {
+    return this.#bboxTracker.getTransform();
+  }
+
+  setTransform(a, b, c, d, e, f) {
+    this.#bboxTracker.setTransform(a, b, c, d, e, f);
+    return this;
+  }
+
+  transform(a, b, c, d, e, f) {
+    this.#bboxTracker.transform(a, b, c, d, e, f);
+    return this;
+  }
+
+  translate(tx, ty) {
+    this.#bboxTracker.translate(tx, ty);
+    return this;
+  }
+
+  scale(sx, sy) {
+    this.#bboxTracker.scale(sx, sy);
+    return this;
+  }
+
+  withLocalTransform(callback) {
+    this.#bboxTracker.withLocalTransform(() => callback(this));
     return this;
   }
 
@@ -585,17 +654,17 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
-    this.#bboxTracker.recordClipBox(idx, ctx, minX, maxX, minY, maxY);
+  recordClipBox(idx, minX, maxX, minY, maxY) {
+    this.#bboxTracker.recordClipBox(idx, minX, maxX, minY, maxY);
     return this;
   }
 
-  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
-    this.#bboxTracker.recordBBox(idx, ctx, minX, maxX, minY, maxY);
+  recordBBox(idx, minX, maxX, minY, maxY) {
+    this.#bboxTracker.recordBBox(idx, minX, maxX, minY, maxY);
     return this;
   }
 
-  recordCharacterBBox(idx, ctx, font, scale = 1, x = 0, y = 0, getMeasure) {
+  recordCharacterBBox(idx, font, scale = 1, x = 0, y = 0, getMeasure) {
     const fontBBox = font.bbox;
     let isBBoxTrustworthy;
     let computedBBox;
@@ -618,7 +687,6 @@ class CanvasDependencyTracker {
         if (isBBoxTrustworthy) {
           return this.recordBBox(
             idx,
-            ctx,
             computedBBox[0],
             computedBBox[2],
             computedBBox[1],
@@ -651,7 +719,6 @@ class CanvasDependencyTracker {
       if (isBBoxTrustworthy) {
         return this.recordBBox(
           idx,
-          ctx,
           computedBBox[0],
           computedBBox[2],
           computedBBox[1],
@@ -664,7 +731,6 @@ class CanvasDependencyTracker {
     // return the bounding box based on .measureText().
     return this.recordBBox(
       idx,
-      ctx,
       x - measure.actualBoundingBoxLeft,
       x + measure.actualBoundingBoxRight,
       y - measure.actualBoundingBoxAscent,
@@ -849,13 +915,42 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
-  pushBaseTransform(ctx) {
-    this.#dependencyTracker.pushBaseTransform(ctx);
+  pushBaseTransform() {
+    this.#dependencyTracker.pushBaseTransform();
     return this;
   }
 
   popBaseTransform() {
     this.#dependencyTracker.popBaseTransform();
+    return this;
+  }
+
+  getTransform() {
+    return this.#dependencyTracker.getTransform();
+  }
+
+  setTransform(a, b, c, d, e, f) {
+    this.#dependencyTracker.setTransform(a, b, c, d, e, f);
+    return this;
+  }
+
+  transform(a, b, c, d, e, f) {
+    this.#dependencyTracker.transform(a, b, c, d, e, f);
+    return this;
+  }
+
+  translate(tx, ty) {
+    this.#dependencyTracker.translate(tx, ty);
+    return this;
+  }
+
+  scale(sx, sy) {
+    this.#dependencyTracker.scale(sx, sy);
+    return this;
+  }
+
+  withLocalTransform(callback) {
+    this.#dependencyTracker.withLocalTransform(() => callback(this));
     return this;
   }
 
@@ -930,11 +1025,10 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
-  recordClipBox(idx, ctx, minX, maxX, minY, maxY) {
+  recordClipBox(idx, minX, maxX, minY, maxY) {
     if (!this.#ignoreBBoxes) {
       this.#dependencyTracker.recordClipBox(
         this.#opIdx,
-        ctx,
         minX,
         maxX,
         minY,
@@ -944,25 +1038,17 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
-  recordBBox(idx, ctx, minX, maxX, minY, maxY) {
+  recordBBox(idx, minX, maxX, minY, maxY) {
     if (!this.#ignoreBBoxes) {
-      this.#dependencyTracker.recordBBox(
-        this.#opIdx,
-        ctx,
-        minX,
-        maxX,
-        minY,
-        maxY
-      );
+      this.#dependencyTracker.recordBBox(this.#opIdx, minX, maxX, minY, maxY);
     }
     return this;
   }
 
-  recordCharacterBBox(idx, ctx, font, scale, x, y, getMeasure) {
+  recordCharacterBBox(idx, font, scale, x, y, getMeasure) {
     if (!this.#ignoreBBoxes) {
       this.#dependencyTracker.recordCharacterBBox(
         this.#opIdx,
-        ctx,
         font,
         scale,
         x,
