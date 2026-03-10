@@ -771,6 +771,21 @@ class Util {
     ];
   }
 
+  static transformInPlace(m1, m2) {
+    const a = m1[0] * m2[0] + m1[2] * m2[1];
+    const b = m1[1] * m2[0] + m1[3] * m2[1];
+    const c = m1[0] * m2[2] + m1[2] * m2[3];
+    const d = m1[1] * m2[2] + m1[3] * m2[3];
+    const e = m1[0] * m2[4] + m1[2] * m2[5] + m1[4];
+    const f = m1[1] * m2[4] + m1[3] * m2[5] + m1[5];
+    m1[0] = a;
+    m1[1] = b;
+    m1[2] = c;
+    m1[3] = d;
+    m1[4] = e;
+    m1[5] = f;
+  }
+
   // Multiplies m (an array-based transform) by md (a DOMMatrix transform).
   static multiplyByDOMMatrix(m, md) {
     return [
