@@ -5105,9 +5105,9 @@ class StampAnnotation extends MarkupAnnotation {
       ctx.drawImage(bitmap, 0, 0);
     }
 
-    const jpegBufferPromise = canvas
+    const jpegBytesPromise = canvas
       .convertToBlob({ type: "image/jpeg", quality: 1 })
-      .then(blob => blob.arrayBuffer());
+      .then(blob => blob.bytes());
 
     const xobjectName = Name.get("XObject");
     const imageName = Name.get("Image");
@@ -5144,7 +5144,7 @@ class StampAnnotation extends MarkupAnnotation {
 
       smaskStream = new Stream(alphaBuffer, 0, 0, smask);
     }
-    const imageStream = new Stream(await jpegBufferPromise, 0, 0, image);
+    const imageStream = new Stream(await jpegBytesPromise, 0, 0, image);
 
     return {
       imageStream,

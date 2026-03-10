@@ -1259,6 +1259,17 @@ if (
   };
 }
 
+// See https://developer.mozilla.org/en-US/docs/Web/API/Blob/bytes#browser_compatibility
+if (
+  typeof PDFJSDev !== "undefined" &&
+  !PDFJSDev.test("SKIP_BABEL") &&
+  typeof Blob.prototype.bytes !== "function"
+) {
+  Blob.prototype.bytes = async function () {
+    return new Uint8Array(await this.arrayBuffer());
+  };
+}
+
 // See https://developer.mozilla.org/en-US/docs/Web/API/Response/bytes#browser_compatibility
 if (
   typeof PDFJSDev !== "undefined" &&
