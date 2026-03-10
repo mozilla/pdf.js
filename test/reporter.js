@@ -62,11 +62,13 @@ const TestReporter = function (browser) {
   this.specStarted = function (result) {};
 
   this.specDone = function (result) {
-    if (result.status === "excluded") {
+    // Ignore excluded (fit/xit) or skipped (pending) tests.
+    if (["excluded", "pending"].includes(result.status)) {
       return;
     }
-    // Report on the result of individual tests.
-    if (result.failedExpectations.length === 0) {
+
+    // Report on passed or failed tests.
+    if (result.status === "passed") {
       sendResult("TEST-PASSED", result.description);
     } else {
       let failedMessages = "";
@@ -78,11 +80,13 @@ const TestReporter = function (browser) {
   };
 
   this.suiteDone = function (result) {
-    if (result.status === "excluded") {
+    // Ignore excluded (fdescribe/xdescribe) or skipped (pending) suites.
+    if (["excluded", "pending"].includes(result.status)) {
       return;
     }
-    // Report on the result of `afterAll` invocations.
-    if (result.failedExpectations.length > 0) {
+
+    // Report on failed suites only (indicates problems in setup/teardown).
+    if (result.status === "failed") {
       let failedMessages = "";
       for (const item of result.failedExpectations) {
         failedMessages += `${item.message} `;
