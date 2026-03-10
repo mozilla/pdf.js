@@ -22,7 +22,6 @@ import {
   isArrayEqual,
   makeArr,
   objectSize,
-  OPS,
   PageActionEventType,
   RenderingIntentFlag,
   shadow,
@@ -39,17 +38,6 @@ import {
   WidgetAnnotation,
 } from "./annotation.js";
 import {
-  Cmd,
-  Dict,
-  EOF,
-  isName,
-  isRefsEqual,
-  Name,
-  Ref,
-  RefSet,
-  RefSetCache,
-} from "./primitives.js";
-import {
   collectActions,
   getInheritableProperty,
   getNewAnnotationsMap,
@@ -63,9 +51,16 @@ import {
   XRefEntryException,
   XRefParseException,
 } from "./core_utils.js";
-import { EvaluatorPreprocessor, PartialEvaluator } from "./evaluator.js";
+import {
+  Dict,
+  isName,
+  isRefsEqual,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+} from "./primitives.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
-import { Lexer, Linearization, Parser } from "./parser.js";
 import { NullStream, Stream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./calculate_md5.js";
@@ -73,9 +68,11 @@ import { Catalog } from "./catalog.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { DatasetReader } from "./dataset_reader.js";
 import { Intersector } from "./intersector.js";
+import { Linearization } from "./parser.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
+import { PartialEvaluator } from "./evaluator.js";
 import { PDFFunctionFactory } from "./function.js";
 import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
@@ -2038,9 +2035,16 @@ class PDFDocument {
   }
 
   async toJSObject(value, firstCall = true) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      !PDFJSDev.test("TESTING || INTERNAL_VIEWER")
+    ) {
       throw new Error("Not implemented: toJSObject");
     }
+    const { InternalViewerUtils } =
+      typeof PDFJSDev === "undefined"
+        ? await import("./internal_viewer_utils.js")
+        : await __eager_import__("./internal_viewer_utils.js");
 
     if (value === null && firstCall) {
       return this.toJSObject(this.xref.trailer, false);
@@ -2051,7 +2055,7 @@ class PDFDocument {
       for (const [key, val] of value.getRawEntries()) {
         obj[key] =
           isPage && key === "Contents"
-            ? _getContentTokens(val, this.xref)
+            ? InternalViewerUtils.getContentTokens(val, this.xref)
             : await this.toJSObject(val, false);
       }
       return obj;
@@ -2109,9 +2113,10 @@ class PDFDocument {
       if (isName(dict.get("Subtype"), "Form")) {
         obj.bytes = value.getString();
         value.reset();
-        const { instructions, cmdNames } = _groupIntoInstructions(
-          _tokenizeStream(value, this.xref)
-        );
+        const { instructions, cmdNames } =
+          InternalViewerUtils.groupIntoInstructions(
+            InternalViewerUtils.tokenizeStream(value, this.xref)
+          );
         obj.contentStream = true;
         obj.instructions = instructions;
         obj.cmdNames = cmdNames;
@@ -2123,132 +2128,6 @@ class PDFDocument {
     }
     return value;
   }
-}
-
-function _tokenizeStream(stream, xref) {
-  const tokens = [];
-  const parser = new Parser({
-    lexer: new Lexer(stream),
-    xref,
-    allowStreams: false,
-  });
-  while (true) {
-    let obj;
-    try {
-      obj = parser.getObj();
-    } catch {
-      break;
-    }
-    if (obj === EOF) {
-      break;
-    }
-    const token = _tokenToJSObject(obj);
-    if (token !== null) {
-      tokens.push(token);
-    }
-  }
-  return tokens;
-}
-
-function _getContentTokens(contentsVal, xref) {
-  const refs = Array.isArray(contentsVal) ? contentsVal : [contentsVal];
-  const rawContents = [];
-  const tokens = [];
-  for (const rawRef of refs) {
-    if (rawRef instanceof Ref) {
-      rawContents.push({ num: rawRef.num, gen: rawRef.gen });
-    }
-    const stream = xref.fetchIfRef(rawRef);
-    if (!(stream instanceof BaseStream)) {
-      continue;
-    }
-    tokens.push(..._tokenizeStream(stream, xref));
-  }
-  const { instructions, cmdNames } = _groupIntoInstructions(tokens);
-  return { contentStream: true, instructions, cmdNames, rawContents };
-}
-
-// Lazily-built reverse map: OPS numeric id → property name string.
-let _opsIdToName = null;
-
-function _getOpsIdToName() {
-  if (!_opsIdToName) {
-    _opsIdToName = Object.create(null);
-    for (const [name, id] of Object.entries(OPS)) {
-      _opsIdToName[id] = name;
-    }
-  }
-  return _opsIdToName;
-}
-
-function _groupIntoInstructions(tokens) {
-  const { opMap } = EvaluatorPreprocessor;
-  const opsIdToName = _getOpsIdToName();
-  const instructions = [];
-  const cmdNames = Object.create(null);
-  const argBuffer = [];
-  for (const token of tokens) {
-    if (token.type !== "cmd") {
-      argBuffer.push(token);
-      continue;
-    }
-    const op = opMap[token.value];
-    if (op && !(token.value in cmdNames)) {
-      cmdNames[token.value] = opsIdToName[op.id];
-    }
-    let args;
-    if (!op || op.variableArgs) {
-      // Unknown command or variable args: consume all pending args.
-      args = argBuffer.splice(0);
-    } else {
-      // Fixed args: consume exactly numArgs, orphan the rest.
-      const orphanCount = Math.max(0, argBuffer.length - op.numArgs);
-      for (let i = 0; i < orphanCount; i++) {
-        instructions.push({ cmd: null, args: [argBuffer.shift()] });
-      }
-      args = argBuffer.splice(0);
-    }
-    instructions.push({ cmd: token.value, args });
-  }
-  for (const t of argBuffer) {
-    instructions.push({ cmd: null, args: [t] });
-  }
-  return { instructions, cmdNames };
-}
-
-function _tokenToJSObject(obj) {
-  if (obj instanceof Cmd) {
-    return { type: "cmd", value: obj.cmd };
-  }
-  if (obj instanceof Name) {
-    return { type: "name", value: obj.name };
-  }
-  if (obj instanceof Ref) {
-    return { type: "ref", num: obj.num, gen: obj.gen };
-  }
-  if (Array.isArray(obj)) {
-    return { type: "array", value: obj.map(_tokenToJSObject) };
-  }
-  if (obj instanceof Dict) {
-    const result = Object.create(null);
-    for (const [key, val] of obj.getRawEntries()) {
-      result[key] = _tokenToJSObject(val);
-    }
-    return { type: "dict", value: result };
-  }
-  if (typeof obj === "number") {
-    return { type: "number", value: obj };
-  }
-  if (typeof obj === "string") {
-    return { type: "string", value: obj };
-  }
-  if (typeof obj === "boolean") {
-    return { type: "boolean", value: obj };
-  }
-  if (obj === null) {
-    return { type: "null" };
-  }
-  return null;
 }
 
 export { Page, PDFDocument };
