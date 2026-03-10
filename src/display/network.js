@@ -222,7 +222,7 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
         : []
     );
 
-    const { allowRangeRequests, suggestedLength } =
+    const { contentLength, isRangeSupported } =
       validateRangeRequestCapabilities({
         responseHeaders,
         isHttp: stream.isHttp,
@@ -230,11 +230,11 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
         disableRange,
       });
 
-    if (allowRangeRequests) {
+    if (isRangeSupported) {
       this._isRangeSupported = true;
     }
     // Setting right content length.
-    this._contentLength = suggestedLength || this._contentLength;
+    this._contentLength = contentLength || this._contentLength;
 
     this._filename = extractFilenameFromHeader(responseHeaders);
 

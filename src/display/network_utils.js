@@ -49,38 +49,34 @@ function validateRangeRequestCapabilities({
       "rangeChunkSize must be an integer larger than zero."
     );
   }
-  const returnValues = {
-    allowRangeRequests: false,
-    suggestedLength: undefined,
+  const rv = {
+    contentLength: undefined,
+    isRangeSupported: false,
   };
 
   const length = parseInt(responseHeaders.get("Content-Length"), 10);
   if (!Number.isInteger(length)) {
-    return returnValues;
+    return rv;
   }
-
-  returnValues.suggestedLength = length;
+  rv.contentLength = length;
 
   if (length <= 2 * rangeChunkSize) {
     // The file size is smaller than the size of two chunks, so it does not
     // make any sense to abort the request and retry with a range request.
-    return returnValues;
+    return rv;
   }
-
   if (disableRange || !isHttp) {
-    return returnValues;
+    return rv;
   }
   if (responseHeaders.get("Accept-Ranges") !== "bytes") {
-    return returnValues;
+    return rv;
   }
 
   const contentEncoding = responseHeaders.get("Content-Encoding") || "identity";
-  if (contentEncoding !== "identity") {
-    return returnValues;
+  if (contentEncoding === "identity") {
+    rv.isRangeSupported = true;
   }
-
-  returnValues.allowRangeRequests = true;
-  return returnValues;
+  return rv;
 }
 
 function extractFilenameFromHeader(responseHeaders) {
