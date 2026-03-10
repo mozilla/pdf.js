@@ -190,6 +190,19 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
             },
           ];
           path.replaceWith(t.importExpression(source));
+        } else if (t.isIdentifier(node.callee, { name: "__eager_import__" })) {
+          if (node.arguments.length !== 1) {
+            throw new Error("Invalid `__eager_import__` usage.");
+          }
+          // Replace it with a standard `import`-call and inline the module.
+          const source = node.arguments[0];
+          source.leadingComments = [
+            {
+              type: "CommentBlock",
+              value: "webpackMode: 'eager'",
+            },
+          ];
+          path.replaceWith(t.importExpression(source));
         }
       },
       "BlockStatement|StaticBlock": {

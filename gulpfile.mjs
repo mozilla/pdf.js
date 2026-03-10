@@ -119,6 +119,7 @@ const DEFINES = Object.freeze({
   COMPONENTS: false,
   LIB: false,
   IMAGE_DECODERS: false,
+  INTERNAL_VIEWER: false,
 });
 
 function transform(charEncoding, transformFunction) {
@@ -2410,7 +2411,7 @@ gulp.task(
   "internal-viewer",
   gulp.series(createBuildNumber, function createInternalViewer() {
     console.log("\n### Creating internal viewer");
-    const defines = { ...DEFINES, GENERIC: true };
+    const defines = { ...DEFINES, GENERIC: true, INTERNAL_VIEWER: true };
     return buildInternalViewer(defines, INTERNAL_VIEWER_DIR);
   })
 );
