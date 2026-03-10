@@ -187,9 +187,6 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
 
   constructor(stream) {
     super(stream);
-    const { length } = stream._source;
-
-    this._contentLength = length;
     // Note that `XMLHttpRequest` doesn't support streaming, and range requests
     // will be enabled (if supported) in `this.#onHeadersReceived` below.
 
@@ -229,12 +226,8 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
         rangeChunkSize,
         disableRange,
       });
-
-    if (isRangeSupported) {
-      this._isRangeSupported = true;
-    }
-    // Setting right content length.
-    this._contentLength = contentLength || this._contentLength;
+    this._contentLength = contentLength;
+    this._isRangeSupported = isRangeSupported;
 
     this._filename = extractFilenameFromHeader(responseHeaders);
 

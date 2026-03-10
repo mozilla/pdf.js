@@ -196,7 +196,6 @@ class WorkerMessageHandler {
       password,
       disableAutoFetch,
       rangeChunkSize,
-      length,
       docBaseUrl,
       enableXfa,
       evaluatorOptions,
@@ -209,7 +208,7 @@ class WorkerMessageHandler {
         enableXfa,
         evaluatorOptions,
         handler,
-        length,
+        length: 0,
         password,
         rangeChunkSize,
       };
@@ -287,13 +286,8 @@ class WorkerMessageHandler {
         }
 
         if (!newPdfManager) {
-          const pdfFile = arrayBuffersToBytes(cachedChunks);
+          pdfManagerArgs.source = arrayBuffersToBytes(cachedChunks);
           cachedChunks = null;
-
-          if (length && pdfFile.length !== length) {
-            warn("reported HTTP length is different from actual");
-          }
-          pdfManagerArgs.source = pdfFile;
 
           newPdfManager = new LocalPdfManager(pdfManagerArgs);
           resolve(newPdfManager);
