@@ -2109,7 +2109,7 @@ gulp.task("lint-licenses", function (done) {
         return;
       }
 
-      const relativePath = file.relative;
+      const relativePath = file.relative.replaceAll("\\", "/");
       const content = file.contents.toString();
       const re = relativePath.endsWith(".html") ? htmlRE : jsRE;
 
