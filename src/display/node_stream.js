@@ -62,12 +62,9 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
 
   constructor(stream) {
     super(stream);
-    const { disableRange, disableStream, length, rangeChunkSize, url } =
-      stream._source;
+    const { disableRange, disableStream, rangeChunkSize, url } = stream._source;
 
-    this._contentLength = length;
     this._isStreamingSupported = !disableStream;
-    this._isRangeSupported = !disableRange;
 
     const fs = process.getBuiltinModule("fs");
     fs.promises
@@ -79,13 +76,10 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
         this._reader = readableStream.getReader();
 
         const { size } = stat;
-        if (size <= 2 * rangeChunkSize) {
-          // The file size is smaller than the size of two chunks, so it doesn't
-          // make any sense to abort the request and retry with a range request.
-          this._isRangeSupported = false;
-        }
-        // Setting right content length.
         this._contentLength = size;
+        // When the file size is smaller than the size of two chunks, it doesn't
+        // make any sense to abort the request and retry with a range request.
+        this._isRangeSupported = !disableRange && size > 2 * rangeChunkSize;
 
         // We need to stop reading when range is supported and streaming is
         // disabled.

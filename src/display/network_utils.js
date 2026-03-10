@@ -50,7 +50,7 @@ function validateRangeRequestCapabilities({
     );
   }
   const rv = {
-    contentLength: undefined,
+    contentLength: 0,
     isRangeSupported: false,
   };
 

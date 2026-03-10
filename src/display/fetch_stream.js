@@ -86,15 +86,12 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
     const {
       disableRange,
       disableStream,
-      length,
       rangeChunkSize,
       url,
       withCredentials,
     } = stream._source;
 
-    this._contentLength = length;
     this._isStreamingSupported = !disableStream;
-    this._isRangeSupported = !disableRange;
     // Always create a copy of the headers.
     const headers = new Headers(stream.headers);
 
@@ -114,10 +111,8 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
             rangeChunkSize,
             disableRange,
           });
-
+        this._contentLength = contentLength;
         this._isRangeSupported = isRangeSupported;
-        // Setting right content length.
-        this._contentLength = contentLength || this._contentLength;
 
         this._filename = extractFilenameFromHeader(responseHeaders);
 

@@ -153,7 +153,7 @@ describe("network_utils", function () {
         })
       ).toEqual({
         isRangeSupported: false,
-        contentLength: undefined,
+        contentLength: 0,
       });
     });
 

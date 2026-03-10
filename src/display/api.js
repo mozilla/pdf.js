@@ -124,8 +124,6 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   cross-site Access-Control requests should be made using credentials such
  *   as cookies or authorization headers. The default is `false`.
  * @property {string} [password] - For decrypting password-protected PDFs.
- * @property {number} [length] - The PDF file length. It's used for progress
- *   reports and range requests operations.
  * @property {PDFDataRangeTransport} [range] - Allows for using a custom range
  *   transport implementation.
  * @property {number} [rangeChunkSize] - Specify maximum number of bytes fetched
@@ -353,7 +351,6 @@ function getDocument(src = {}) {
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
   // Parameters whose default values depend on other parameters.
-  const length = rangeTransport ? rangeTransport.length : (src.length ?? NaN);
   const useSystemFonts =
     typeof src.useSystemFonts === "boolean"
       ? src.useSystemFonts
@@ -425,7 +422,6 @@ function getDocument(src = {}) {
     password,
     disableAutoFetch,
     rangeChunkSize,
-    length,
     docBaseUrl,
     enableXfa,
     evaluatorOptions: {
@@ -497,7 +493,6 @@ function getDocument(src = {}) {
 
         networkStream = new NetworkStream({
           url,
-          length,
           httpHeaders,
           withCredentials,
           rangeChunkSize,
