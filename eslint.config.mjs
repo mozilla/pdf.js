@@ -480,7 +480,7 @@ export default [
                                 Other
   \* ======================================================================== */
   {
-    files: ["gulpfile.mjs", "check_l10n.mjs"],
+    files: ["gulpfile.mjs"],
     languageOptions: { globals: globals.node },
   },
 ];
