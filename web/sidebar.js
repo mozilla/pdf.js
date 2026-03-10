@@ -79,7 +79,10 @@ class Sidebar {
     toggleButton.addEventListener("click", this.toggle.bind(this));
     this._isOpen = false;
     sidebar.hidden = true;
-    globalAbortSignal?.addEventListener("abort", this.destroy.bind(this));
+    globalAbortSignal?.addEventListener("abort", this.destroy.bind(this), {
+      once: true,
+    });
+
     this.#resizeObserver = new ResizeObserver(
       ([
         {

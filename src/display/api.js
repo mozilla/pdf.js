@@ -1530,10 +1530,9 @@ class PDFPageProxy {
       this._pumpOperatorList(intentArgs);
     }
 
-    const recordForDebugger = Boolean(
+    const recordForDebugger = !!(
       this._pdfBug && globalThis.StepperManager?.enabled
     );
-
     const shouldRecordOperations =
       !this.recordedBBoxes && (recordOperations || recordForDebugger);
 
@@ -1543,12 +1542,11 @@ class PDFPageProxy {
       if (shouldRecordOperations) {
         const recordedBBoxes = internalRenderTask.gfx?.dependencyTracker.take();
         if (recordedBBoxes) {
-          if (internalRenderTask.stepper) {
-            internalRenderTask.stepper.setOperatorBBoxes(
-              recordedBBoxes,
-              internalRenderTask.gfx.dependencyTracker.takeDebugMetadata()
-            );
-          }
+          internalRenderTask.stepper?.setOperatorBBoxes(
+            recordedBBoxes,
+            internalRenderTask.gfx.dependencyTracker.takeDebugMetadata()
+          );
+
           if (recordOperations) {
             this.recordedBBoxes = recordedBBoxes;
           }
