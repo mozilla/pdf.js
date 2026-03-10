@@ -56,6 +56,7 @@ const InternalViewerUtils = {
     const refs = Array.isArray(contentsVal) ? contentsVal : [contentsVal];
     const rawContents = [];
     const tokens = [];
+    const rawBytesArr = [];
     for (const rawRef of refs) {
       if (rawRef instanceof Ref) {
         rawContents.push({ num: rawRef.num, gen: rawRef.gen });
@@ -64,10 +65,21 @@ const InternalViewerUtils = {
       if (!(stream instanceof BaseStream)) {
         continue;
       }
-      tokens.push(...this.tokenizeStream(stream, xref));
+      rawBytesArr.push(stream.getString());
+      stream.reset();
+      for (const token of this.tokenizeStream(stream, xref)) {
+        tokens.push(token);
+      }
     }
+    const rawBytes = rawBytesArr.join("\n");
     const { instructions, cmdNames } = this.groupIntoInstructions(tokens);
-    return { contentStream: true, instructions, cmdNames, rawContents };
+    return {
+      contentStream: true,
+      instructions,
+      cmdNames,
+      rawContents,
+      rawBytes,
+    };
   },
 
   // Lazily-built reverse map: OPS numeric id → property name string.
