@@ -82,6 +82,7 @@ export default [
         ...globals.worker,
         PDFJSDev: "readonly",
         __raw_import__: "readonly",
+        __eager_import__: "readonly",
       },
 
       ecmaVersion: 2025,
