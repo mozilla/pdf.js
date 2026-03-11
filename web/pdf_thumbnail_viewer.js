@@ -143,10 +143,6 @@ class PDFThumbnailViewer {
 
   #scrollableContainerHeight = 0;
 
-  #previousStates = {
-    hasSelectedPages: false,
-  };
-
   #statusLabel = null;
 
   #statusBar = null;
@@ -240,6 +236,29 @@ class PDFThumbnailViewer {
         }
       });
 
+      this.container.addEventListener(
+        "contextmenu",
+        e => {
+          this.eventBus.dispatch("editingstateschanged", {
+            source: this,
+            details: {
+              thumbnailId:
+                parseInt(
+                  e.target
+                    .closest(".thumbnailImageContainer")
+                    ?.parentElement.getAttribute("page-number")
+                ) ?? -1,
+              hasSelectedPages: !!this.#selectedPages?.size,
+              canDeletePages: this.#canDelete(),
+            },
+          });
+        },
+        {
+          signal: abortSignal,
+          passive: true,
+        }
+      );
+
       this.#undoButton?.addEventListener("click", this.#undo.bind(this));
       this.#undoCloseButton?.addEventListener(
         "click",
@@ -256,24 +275,6 @@ class PDFThumbnailViewer {
     );
     this.#resetView();
     this.#addEventListeners();
-  }
-
-  /**
-   * Update the different possible states of this manager, e.g. is there
-   * something to copy, paste, ...
-   * @param {Object} details
-   */
-  #dispatchUpdateStates(details) {
-    const hasChanged = Object.entries(details).some(
-      ([key, value]) => this.#previousStates[key] !== value
-    );
-
-    if (hasChanged) {
-      this.eventBus.dispatch("editingstateschanged", {
-        source: this,
-        details: Object.assign(this.#previousStates, details),
-      });
-    }
   }
 
   #scrollUpdated() {
@@ -764,6 +765,11 @@ class PDFThumbnailViewer {
     });
   }
 
+  #canDelete() {
+    const size = this.#selectedPages?.size || 0;
+    return size > 0 && size < this._thumbnails.length;
+  }
+
   #togglePasteMode(enable) {
     this.#isInPasteMode = enable;
     if (enable) {
@@ -813,6 +819,10 @@ class PDFThumbnailViewer {
   }
 
   #cutPages() {
+    if (!this.#canDelete()) {
+      return;
+    }
+
     this.#isCut = true;
     this.#copyPages(false);
     this.#deletePages(/* type = */ "cut");
@@ -844,10 +854,11 @@ class PDFThumbnailViewer {
   }
 
   #deletePages(type = "delete") {
-    const selectedPages = this.#selectedPages;
-    if (selectedPages.size === 0) {
+    if (!this.#canDelete()) {
       return;
     }
+
+    const selectedPages = this.#selectedPages;
     if (type === "delete") {
       this.#updateStatus("delete");
     }
@@ -873,14 +884,10 @@ class PDFThumbnailViewer {
   }
 
   #updateMenuEntries() {
-    this.#manageSaveAsButton.disabled =
-      this.#manageDeleteButton.disabled =
-      this.#manageCopyButton.disabled =
-      this.#manageCutButton.disabled =
-        !this.#selectedPages?.size;
-    this.#dispatchUpdateStates({
-      hasSelectedPages: !!this.#selectedPages?.size,
-    });
+    const size = this.#selectedPages?.size || 0;
+    this.#manageSaveAsButton.disabled = this.#manageCopyButton.disabled = !size;
+    this.#manageDeleteButton.disabled = this.#manageCutButton.disabled =
+      !this.#canDelete();
   }
 
   #toggleMenuEntries(enable) {
@@ -889,9 +896,6 @@ class PDFThumbnailViewer {
       this.#manageCopyButton.disabled =
       this.#manageCutButton.disabled =
         !enable;
-    this.#dispatchUpdateStates({
-      hasSelectedPages: false,
-    });
   }
 
   #updateStatus(type) {
@@ -1107,16 +1111,6 @@ class PDFThumbnailViewer {
         this.#computeThumbnailsPosition();
       }
     });
-    this.container.addEventListener("focusout", () => {
-      this.#dispatchUpdateStates({
-        hasSelectedPages: false,
-      });
-    });
-    this.container.addEventListener("focusin", () => {
-      this.#dispatchUpdateStates({
-        hasSelectedPages: !!this.#selectedPages?.size,
-      });
-    });
     this.container.addEventListener("keydown", e => {
       const { target } = e;
       const isCheckbox =
@@ -1223,6 +1217,7 @@ class PDFThumbnailViewer {
       if (
         e.button !== 0 || // Skip right click.
         this.#isInPasteMode ||
+        this._thumbnails.length === 1 ||
         !isNaN(this.#lastDraggedOverIndex) ||
         !draggedImage.classList.contains("thumbnailImageContainer")
       ) {
