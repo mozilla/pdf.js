@@ -705,9 +705,11 @@ pdfjs-views-manager-view-selector-button =
     .title = Views
 pdfjs-views-manager-view-selector-button-label = Views
 pdfjs-views-manager-pages-title = Pages
-pdfjs-views-manager-outlines-title = Document outline
+pdfjs-views-manager-outlines-title1 = Document outline
+    .title = Document outline (double-click to expand/collapse all items)
 pdfjs-views-manager-attachments-title = Attachments
-pdfjs-views-manager-layers-title = Layers
+pdfjs-views-manager-layers-title1 = Layers
+    .title = Layers (double-click to reset all layers to the default state)
 
 pdfjs-views-manager-pages-option-label = Pages
 pdfjs-views-manager-outlines-option-label = Document outline

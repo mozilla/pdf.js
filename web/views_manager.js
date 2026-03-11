@@ -158,9 +158,9 @@ class ViewsManager extends Sidebar {
 
     ViewsManager.#l10nDescription ||= Object.freeze({
       pagesTitle: "pdfjs-views-manager-pages-title",
-      outlinesTitle: "pdfjs-views-manager-outlines-title",
+      outlinesTitle: "pdfjs-views-manager-outlines-title1",
       attachmentsTitle: "pdfjs-views-manager-attachments-title",
-      layersTitle: "pdfjs-views-manager-layers-title",
+      layersTitle: "pdfjs-views-manager-layers-title1",
       notificationButton: "pdfjs-toggle-views-manager-notification-button",
       toggleButton: "pdfjs-toggle-views-manager-button",
     });
@@ -424,6 +424,16 @@ class ViewsManager extends Sidebar {
       });
     }
 
+    this.viewsManagerHeaderLabel.addEventListener("dblclick", e => {
+      if (this.active === SidebarView.OUTLINE) {
+        eventBus.dispatch("toggleoutlinetree", { source: this });
+        return;
+      }
+      if (this.active === SidebarView.LAYERS) {
+        eventBus.dispatch("resetlayers", { source: this });
+      }
+    });
+
     // Buttons for switching views.
     this.thumbnailButton.addEventListener("click", () => {
       this.switchView(SidebarView.THUMBS);
@@ -432,9 +442,6 @@ class ViewsManager extends Sidebar {
     this.outlineButton.addEventListener("click", () => {
       this.switchView(SidebarView.OUTLINE);
     });
-    this.outlineButton.addEventListener("dblclick", () => {
-      eventBus.dispatch("toggleoutlinetree", { source: this });
-    });
 
     this.attachmentsButton.addEventListener("click", () => {
       this.switchView(SidebarView.ATTACHMENTS);
@@ -442,9 +449,6 @@ class ViewsManager extends Sidebar {
 
     this.layersButton.addEventListener("click", () => {
       this.switchView(SidebarView.LAYERS);
-    });
-    this.layersButton.addEventListener("dblclick", () => {
-      eventBus.dispatch("resetlayers", { source: this });
     });
 
     // Buttons for view-specific options.
