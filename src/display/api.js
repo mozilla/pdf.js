@@ -47,7 +47,6 @@ import {
   deprecated,
   isDataScheme,
   isValidFetchUrl,
-  PagesMapper,
   PageViewport,
   RenderingCancelledException,
   StatTimer,
@@ -82,6 +81,7 @@ import { DOMWasmFactory } from "display-wasm_factory";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
+import { PagesMapper } from "./pages_mapper.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
 import { PDFFetchStream } from "display-fetch_stream";
 import { PDFNetworkStream } from "display-network";
