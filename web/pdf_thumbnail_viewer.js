@@ -64,8 +64,6 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  *   mode.
  * @property {AbortSignal} [abortSignal] - The AbortSignal for the window
  *   events.
- * @property {boolean} [enableHWA] - Enables hardware acceleration for
- *   rendering. The default value is `false`.
  * @property {boolean} [enableSplitMerge] - Enables split and merge features.
  *   The default value is `false`.
  * @property {Object} [statusBar] - The status bar elements to manage the status
@@ -173,7 +171,6 @@ class PDFThumbnailViewer {
     maxCanvasDim,
     pageColors,
     abortSignal,
-    enableHWA,
     enableSplitMerge,
     statusBar,
     undoBar,
@@ -188,7 +185,6 @@ class PDFThumbnailViewer {
     this.maxCanvasPixels = maxCanvasPixels;
     this.maxCanvasDim = maxCanvasDim;
     this.pageColors = pageColors || null;
-    this.enableHWA = enableHWA || false;
     this.#enableSplitMerge = enableSplitMerge || false;
     this.#statusLabel = statusBar?.viewsManagerStatusActionLabel || null;
     this.#statusBar = statusBar?.viewsManagerStatusAction || null;
@@ -415,7 +411,6 @@ class PDFThumbnailViewer {
             maxCanvasPixels: this.maxCanvasPixels,
             maxCanvasDim: this.maxCanvasDim,
             pageColors: this.pageColors,
-            enableHWA: this.enableHWA,
             enableSplitMerge: this.#enableSplitMerge,
           });
           this._thumbnails.push(thumbnail);
