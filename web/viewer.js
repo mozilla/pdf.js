@@ -130,6 +130,7 @@ function getViewerConfiguration() {
       viewsManagerCurrentOutlineButton: document.getElementById(
         "viewsManagerCurrentOutlineButton"
       ),
+      viewsManagerTitle: document.getElementById("viewsManagerTitle"),
       viewsManagerHeaderLabel: document.getElementById(
         "viewsManagerHeaderLabel"
       ),
