@@ -486,11 +486,56 @@ describe("PDF viewer", () => {
       const pageOne = document.querySelector(
         `.page[data-page-number='${pageNumber}']`
       );
+      function getContextFromCanvas(canvas) {
+        try {
+          return canvas.getContext("2d", { willReadFrequently: true });
+        } catch {
+          // Can happen when the canvas has been transferred to OffscreenCanvas.
+        }
+
+        let tempCanvas;
+        if (typeof OffscreenCanvas === "function") {
+          tempCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        } else {
+          tempCanvas = document.createElement("canvas");
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = canvas.height;
+        }
+        const tempCtx = tempCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+        tempCtx.drawImage(canvas, 0, 0);
+        return tempCtx;
+      }
+
+      if (!pageOne) {
+        return [];
+      }
+
       return Array.from(pageOne.querySelectorAll("canvas"), canvas => {
         const { width, height } = canvas;
-        const ctx = canvas.getContext("2d");
-        const topLeft = ctx.getImageData(2, 2, 1, 1).data;
-        const bottomRight = ctx.getImageData(width - 3, height - 3, 1, 1).data;
+        if (width === 0 || height === 0) {
+          return {
+            size: 0,
+            width,
+            height,
+            topLeft: null,
+            bottomRight: null,
+          };
+        }
+        const ctx = getContextFromCanvas(canvas);
+        const topLeft = ctx.getImageData(
+          Math.min(2, width - 1),
+          Math.min(2, height - 1),
+          1,
+          1
+        ).data;
+        const bottomRight = ctx.getImageData(
+          Math.max(0, width - 3),
+          Math.max(0, height - 3),
+          1,
+          1
+        ).data;
         return {
           size: width * height,
           width,

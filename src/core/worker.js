@@ -141,11 +141,36 @@ class WorkerMessageHandler {
     }
     const workerHandlerName = docId + "_worker";
     let handler = new MessageHandler(workerHandlerName, docId, port);
+    let rendererWorkerHandler = null;
 
     function ensureNotTerminated() {
       if (terminated) {
         throw new Error("Worker was terminated");
       }
+    }
+
+    function setupRendererWorkerChannel({
+      bridgeDocId = docId,
+      port: rendererPort,
+    } = {}) {
+      ensureNotTerminated();
+
+      if (!rendererPort) {
+        throw new Error("SetupRendererChannel - expected a MessagePort.");
+      }
+
+      rendererWorkerHandler?.destroy();
+
+      const bridgeId = bridgeDocId || "default";
+      const rendererHandler = new MessageHandler(
+        `pdf_worker_${bridgeId}`,
+        `renderer_worker_${bridgeId}`,
+        rendererPort
+      );
+      rendererWorkerHandler = rendererHandler;
+
+      rendererWorkerHandler.on("ready", () => {});
+      return { ok: true, docId: bridgeId };
     }
 
     function startWorkerTask(task) {
@@ -379,6 +404,13 @@ class WorkerMessageHandler {
         })
         .then(pdfManagerReady, onFailure);
     }
+
+    handler.on("SetupRendererChannel", data =>
+      setupRendererWorkerChannel({
+        bridgeDocId: data?.docId || docId,
+        port: data?.port || null,
+      })
+    );
 
     handler.on("GetPage", function (data) {
       return pdfManager.getPage(data.pageIndex).then(function (page) {
@@ -994,6 +1026,9 @@ class WorkerMessageHandler {
       }
 
       await Promise.all(waitOn);
+      rendererWorkerHandler?.destroy();
+      rendererWorkerHandler = null;
+
       // Notice that even if we destroying handler, resolved response promise
       // must be sent back.
       handler.destroy();

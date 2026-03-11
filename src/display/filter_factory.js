@@ -49,6 +49,8 @@ class BaseFilterFactory {
   destroy(keepHCM = false) {}
 }
 
+class WorkerFilterFactory extends BaseFilterFactory {}
+
 /**
  * FilterFactory aims to create some SVG filters we can use when drawing an
  * image (or whatever) on a canvas.
@@ -506,4 +508,4 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 }
 
-export { BaseFilterFactory, DOMFilterFactory };
+export { BaseFilterFactory, DOMFilterFactory, WorkerFilterFactory };

@@ -319,6 +319,14 @@ class OptionalContentConfig {
   [Symbol.iterator]() {
     return this.#groups.entries();
   }
+
+  getState() {
+    const state = [];
+    for (const [id, group] of this) {
+      state.push([id, group.visible]);
+    }
+    return state;
+  }
 }
 
 export { OptionalContentConfig };

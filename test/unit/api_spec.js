@@ -197,11 +197,14 @@ describe("api", function () {
       expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
       // This can be somewhat random -- we cannot guarantee perfect
       // 'Terminate' message to the worker before/after setting up pdfManager.
+      const loadingTaskPromise = loadingTask.promise.catch(() => {
+        // Shouldn't get here.
+      });
       const destroyed = loadingTask._worker.promise.then(() =>
         loadingTask.destroy()
       );
 
-      await destroyed;
+      await Promise.all([destroyed, loadingTaskPromise]);
       expect(true).toEqual(true);
     });
 

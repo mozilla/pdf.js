@@ -914,8 +914,28 @@ function isCanvasMonochrome(page, pageNumber, rectangle, color) {
       const canvas = document.querySelector(
         `.page[data-page-number = "${pageN}"] .canvasWrapper canvas`
       );
+      if (!canvas) {
+        return false;
+      }
       const canvasRect = canvas.getBoundingClientRect();
-      const ctx = canvas.getContext("2d");
+      let ctx;
+      try {
+        ctx = canvas.getContext("2d", { willReadFrequently: true });
+      } catch {
+        // Happens when the canvas has been transferred to OffscreenCanvas.
+      }
+      if (!ctx) {
+        let tempCanvas;
+        if (typeof OffscreenCanvas === "function") {
+          tempCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        } else {
+          tempCanvas = document.createElement("canvas");
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = canvas.height;
+        }
+        ctx = tempCanvas.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(canvas, 0, 0);
+      }
       rect ||= canvasRect;
       const { data } = ctx.getImageData(
         rect.x - canvasRect.x,

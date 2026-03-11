@@ -85,6 +85,7 @@ class PDFRenderingQueue {
       return;
     }
     // No pages needed rendering, so check thumbnails.
+    // TODO(Aditi): Check thumbnail rendering.
     if (
       this.isThumbnailViewEnabled &&
       this.#pdfThumbnailViewer?.forceRendering()
