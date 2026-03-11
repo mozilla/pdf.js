@@ -145,8 +145,6 @@ function isValidAnnotationEditorMode(mode) {
  * @property {Object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
- * @property {boolean} [enableHWA] - Enables hardware acceleration for
- *   rendering. The default value is `false`.
  * @property {boolean} [supportsPinchToZoom] - Enable zooming on pinch gesture.
  *   The default value is `true`.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
@@ -244,8 +242,6 @@ class PDFViewer {
   #containerTopLeft = null;
 
   #editorUndoBar = null;
-
-  #enableHWA = false;
 
   #enableHighlightFloatingButton = false;
 
@@ -372,7 +368,6 @@ class PDFViewer {
     this.#enablePermissions = options.enablePermissions || false;
     this.pageColors = options.pageColors || null;
     this.#mlManager = options.mlManager || null;
-    this.#enableHWA = options.enableHWA || false;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
@@ -1070,7 +1065,6 @@ class PDFViewer {
             pageColors,
             l10n: this.l10n,
             layerProperties: this._layerProperties,
-            enableHWA: this.#enableHWA,
             enableAutoLinking: this.#enableAutoLinking,
             minDurationToUpdateCanvas: this.#minDurationToUpdateCanvas,
             commentManager: this.#commentManager,

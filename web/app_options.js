@@ -453,7 +453,7 @@ const defaultOptions = {
   enableHWA: {
     /** @type {boolean} */
     value: typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL"),
-    kind: OptionKind.API + OptionKind.VIEWER + OptionKind.PREFERENCE,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
   },
   enableXfa: {
     /** @type {boolean} */

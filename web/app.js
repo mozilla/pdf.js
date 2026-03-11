@@ -535,8 +535,7 @@ const PDFViewerApplication = {
           )
         : null;
 
-    const enableHWA = AppOptions.get("enableHWA"),
-      maxCanvasPixels = AppOptions.get("maxCanvasPixels"),
+    const maxCanvasPixels = AppOptions.get("maxCanvasPixels"),
       maxCanvasDim = AppOptions.get("maxCanvasDim"),
       capCanvasAreaFactor = AppOptions.get("capCanvasAreaFactor");
     const pdfViewer = (this.pdfViewer = new PDFViewer({
@@ -580,7 +579,6 @@ const PDFViewerApplication = {
       pageColors,
       mlManager,
       abortSignal,
-      enableHWA,
       supportsPinchToZoom: this.supportsPinchToZoom,
       enableAutoLinking: AppOptions.get("enableAutoLinking"),
       minDurationToUpdateCanvas: AppOptions.get("minDurationToUpdateCanvas"),
@@ -601,7 +599,6 @@ const PDFViewerApplication = {
         maxCanvasDim,
         pageColors,
         abortSignal,
-        enableHWA,
         enableSplitMerge,
         statusBar: viewsManager.viewsManagerStatusBar,
         undoBar: viewsManager.viewsManagerUndoBar,
