@@ -15,6 +15,7 @@
 
 /** @typedef {import("./display_utils").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
+/** @typedef {import("./text_layer_images").TextLayerImages} TextLayerImages */
 
 import {
   AbortException,
@@ -34,6 +35,8 @@ import { OutputScale, setLayerDimensions } from "./display_utils.js";
  *   runs.
  * @property {PageViewport} viewport - The target viewport to properly layout
  *   the text runs.
+ * @property {TextLayerImages} [images] - An optional TextLayerImages instance
+ *  that handles right clicking on images.
  */
 
 /**
@@ -55,6 +58,8 @@ class TextLayer {
   #disableProcessItems = false;
 
   #fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
+
+  #imagesHandler = null;
 
   #lang = null;
 
@@ -97,7 +102,7 @@ class TextLayer {
   /**
    * @param {TextLayerParameters} options
    */
-  constructor({ textContentSource, container, viewport }) {
+  constructor({ textContentSource, images, container, viewport }) {
     if (textContentSource instanceof ReadableStream) {
       this.#textContentSource = textContentSource;
     } else if (
@@ -114,6 +119,8 @@ class TextLayer {
       throw new Error('No "textContentSource" parameter specified.');
     }
     this.#container = this.#rootContainer = container;
+
+    this.#imagesHandler = images;
 
     this.#scale = viewport.scale * OutputScale.pixelRatio;
     this.#rotation = viewport.rotation;
@@ -181,6 +188,10 @@ class TextLayer {
    * @returns {Promise}
    */
   render() {
+    if (this.#imagesHandler) {
+      this.#container.append(this.#imagesHandler.render());
+    }
+
     const pump = () => {
       this.#reader.read().then(({ value, done }) => {
         if (done) {
