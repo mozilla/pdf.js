@@ -2578,6 +2578,11 @@ gulp.task(
           })
           .pipe(gulp.dest(DIST_DIR)),
         gulp
+          .src("external/dist/webpack.mjs", {
+            encoding: false,
+          })
+          .pipe(gulp.dest(DIST_DIR + "legacy/")),
+        gulp
           .src(GENERIC_DIR + "LICENSE", { encoding: false })
           .pipe(gulp.dest(DIST_DIR)),
         gulp
