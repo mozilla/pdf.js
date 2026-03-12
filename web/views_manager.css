@@ -406,15 +406,16 @@
         align-self: stretch;
         background-color: var(--status-actions-bg);
 
-        > span[data-l10n-args]::before {
-          content: "";
-          display: inline-block;
+        #viewsManagerStatusActionLabelContainer > button {
           width: var(--icon-size);
           height: var(--icon-size);
           mask-repeat: no-repeat;
           mask-position: center;
           background-color: var(--indicator-color);
           mask-image: var(--pages-selected-icon);
+          border: none;
+          padding: 0;
+          flex: 0 0 auto;
         }
 
         #actionSelector {
