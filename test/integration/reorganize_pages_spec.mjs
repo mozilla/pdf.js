@@ -996,7 +996,7 @@ describe("Reorganize Pages View", () => {
             "#viewsManagerStatusActionCopy:not(:disabled)"
           );
           await page.waitForSelector(
-            "#viewsManagerStatusActionSaveAs:not(:disabled)"
+            "#viewsManagerStatusActionExport:not(:disabled)"
           );
 
           await page.keyboard.press("Escape");
@@ -1739,7 +1739,7 @@ describe("Reorganize Pages View", () => {
             `.thumbnail:has(${getThumbnailSelector(3)}) input`
           );
 
-          const handleSaveAs = await createPromise(page, resolve => {
+          const handleExport = await createPromise(page, resolve => {
             window.PDFViewerApplication.eventBus.on(
               "saveextractedpages",
               ({ data }) => {
@@ -1752,8 +1752,8 @@ describe("Reorganize Pages View", () => {
           });
 
           await page.click("#viewsManagerStatusActionButton");
-          await waitAndClick(page, "#viewsManagerStatusActionSaveAs");
-          const pagesData = await awaitPromise(handleSaveAs);
+          await waitAndClick(page, "#viewsManagerStatusActionExport");
+          const pagesData = await awaitPromise(handleExport);
           expect(pagesData)
             .withContext(`In ${browserName}`)
             .toEqual([
