@@ -14,15 +14,22 @@
  */
 
 import {
+  compileCssFontInfo,
+  compileFontInfo,
+  compileFontPathInfo,
+  compilePatternInfo,
+  compileSystemFontInfo,
+} from "../../src/core/obj_bin_transform_core.js";
+import {
   CssFontInfo,
   FontInfo,
   FontPathInfo,
   PatternInfo,
   SystemFontInfo,
-} from "../../src/shared/obj-bin-transform.js";
+} from "../../src/display/obj_bin_transform_display.js";
 import { FeatureTest, MeshFigureType } from "../../src/shared/util.js";
 
-describe("obj-bin-transform", function () {
+describe("obj_bin_transform", function () {
   describe("Font data", function () {
     const cssFontInfo = {
       fontFamily: "Sample Family",
@@ -78,7 +85,7 @@ describe("obj-bin-transform", function () {
           for (const string of ["Sample Family", "not a number", "angle"]) {
             sizeEstimate += 4 + encoder.encode(string).length;
           }
-          const buffer = CssFontInfo.write(cssFontInfo);
+          const buffer = compileCssFontInfo(cssFontInfo);
           expect(buffer.byteLength).toEqual(sizeEstimate);
           const deserialized = new CssFontInfo(buffer);
           expect(deserialized.fontFamily).toEqual("Sample Family");
@@ -102,7 +109,7 @@ describe("obj-bin-transform", function () {
           ]) {
             sizeEstimate += 4 + encoder.encode(string).length;
           }
-          const buffer = SystemFontInfo.write(systemFontInfo);
+          const buffer = compileSystemFontInfo(systemFontInfo);
           expect(buffer.byteLength).toEqual(sizeEstimate);
           const deserialized = new SystemFontInfo(buffer);
           expect(deserialized.guessFallback).toEqual(false);
@@ -124,7 +131,7 @@ describe("obj-bin-transform", function () {
           sizeEstimate += 4 + 4 * (4 + encoder.encode("string").length);
           sizeEstimate += 4 + 4; // cssFontInfo and systemFontInfo
           sizeEstimate += 4 + fontInfo.data.length;
-          const buffer = FontInfo.write(fontInfo);
+          const buffer = compileFontInfo(fontInfo);
           expect(buffer.byteLength).toEqual(sizeEstimate);
           const deserialized = new FontInfo({ data: buffer });
           expect(deserialized.black).toEqual(true);
@@ -156,7 +163,7 @@ describe("obj-bin-transform", function () {
         });
 
         it("nesting should work as expected", function () {
-          const buffer = FontInfo.write({
+          const buffer = compileFontInfo({
             ...fontInfo,
             cssFontInfo,
             systemFontInfo,
@@ -231,7 +238,7 @@ describe("obj-bin-transform", function () {
 
     describe("Pattern serialization and deserialization", function () {
       it("must serialize and deserialize axial gradients correctly", function () {
-        const buffer = PatternInfo.write(axialPatternIR);
+        const buffer = compilePatternInfo(axialPatternIR);
         expect(buffer).toBeInstanceOf(ArrayBuffer);
         expect(buffer.byteLength).toBeGreaterThan(0);
 
@@ -253,7 +260,7 @@ describe("obj-bin-transform", function () {
       });
 
       it("must serialize and deserialize radial gradients correctly", function () {
-        const buffer = PatternInfo.write(radialPatternIR);
+        const buffer = compilePatternInfo(radialPatternIR);
         expect(buffer).toBeInstanceOf(ArrayBuffer);
         expect(buffer.byteLength).toBeGreaterThan(0);
 
@@ -276,7 +283,7 @@ describe("obj-bin-transform", function () {
       });
 
       it("must serialize and deserialize mesh patterns with figures correctly", function () {
-        const buffer = PatternInfo.write(meshPatternIR);
+        const buffer = compilePatternInfo(meshPatternIR);
         expect(buffer).toBeInstanceOf(ArrayBuffer);
         expect(buffer.byteLength).toBeGreaterThan(0);
 
@@ -335,7 +342,7 @@ describe("obj-bin-transform", function () {
           null,
         ];
 
-        const buffer = PatternInfo.write(noFiguresIR);
+        const buffer = compilePatternInfo(noFiguresIR);
         const patternInfo = new PatternInfo(buffer);
         const reconstructedIR = patternInfo.getIR();
 
@@ -344,7 +351,7 @@ describe("obj-bin-transform", function () {
       });
 
       it("must preserve figure data integrity across serialization", function () {
-        const buffer = PatternInfo.write(meshPatternIR);
+        const buffer = compilePatternInfo(meshPatternIR);
         const patternInfo = new PatternInfo(buffer);
         const reconstructedIR = patternInfo.getIR();
 
@@ -362,9 +369,9 @@ describe("obj-bin-transform", function () {
       });
 
       it("must calculate correct buffer sizes for different pattern types", function () {
-        const axialBuffer = PatternInfo.write(axialPatternIR);
-        const radialBuffer = PatternInfo.write(radialPatternIR);
-        const meshBuffer = PatternInfo.write(meshPatternIR);
+        const axialBuffer = compilePatternInfo(axialPatternIR);
+        const radialBuffer = compilePatternInfo(radialPatternIR);
+        const meshBuffer = compilePatternInfo(meshPatternIR);
 
         expect(axialBuffer.byteLength).toBeLessThan(radialBuffer.byteLength);
         expect(meshBuffer.byteLength).toBeGreaterThan(axialBuffer.byteLength);
@@ -394,7 +401,7 @@ describe("obj-bin-transform", function () {
           null,
         ];
 
-        const buffer = PatternInfo.write(customFiguresIR);
+        const buffer = compilePatternInfo(customFiguresIR);
         const patternInfo = new PatternInfo(buffer);
         const reconstructedIR = patternInfo.getIR();
 
@@ -415,7 +422,7 @@ describe("obj-bin-transform", function () {
           new Uint8Array([255, 128, 64]),
         ];
 
-        const buffer = PatternInfo.write(meshWithBgIR);
+        const buffer = compilePatternInfo(meshWithBgIR);
         const patternInfo = new PatternInfo(buffer);
         const reconstructedIR = patternInfo.getIR();
 
@@ -432,7 +439,7 @@ describe("obj-bin-transform", function () {
           null,
         ];
 
-        const buffer2 = PatternInfo.write(meshNoBgIR);
+        const buffer2 = compilePatternInfo(meshNoBgIR);
         const patternInfo2 = new PatternInfo(buffer2);
         const reconstructedIR2 = patternInfo2.getIR();
 
@@ -451,7 +458,7 @@ describe("obj-bin-transform", function () {
           null,
         ];
 
-        const buffer = PatternInfo.write(customMeshIR);
+        const buffer = compilePatternInfo(customMeshIR);
         const patternInfo = new PatternInfo(buffer);
         const reconstructedIR = patternInfo.getIR();
 
@@ -477,7 +484,7 @@ describe("obj-bin-transform", function () {
         ]);
 
     it("should create a FontPathInfo instance from an array of path commands", function () {
-      const buffer = FontPathInfo.write(path);
+      const buffer = compileFontPathInfo(path);
       const fontPathInfo = new FontPathInfo(buffer);
       expect(fontPathInfo.path).toEqual(path);
     });
