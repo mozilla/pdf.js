@@ -138,6 +138,9 @@ function getViewerConfiguration() {
         viewsManagerStatusAction: document.getElementById(
           "viewsManagerStatusAction"
         ),
+        viewsManagerStatusActionDeselectButton: document.getElementById(
+          "viewsManagerStatusActionDeselectButton"
+        ),
         viewsManagerStatusActionLabel: document.getElementById(
           "viewsManagerStatusActionLabel"
         ),

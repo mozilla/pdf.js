@@ -145,6 +145,8 @@ class PDFThumbnailViewer {
 
   #statusBar = null;
 
+  #deselectButton = null;
+
   #undoBar = null;
 
   #undoLabel = null;
@@ -183,6 +185,8 @@ class PDFThumbnailViewer {
     this.pageColors = pageColors || null;
     this.#enableSplitMerge = enableSplitMerge || false;
     this.#statusLabel = statusBar?.viewsManagerStatusActionLabel || null;
+    this.#deselectButton =
+      statusBar?.viewsManagerStatusActionDeselectButton || null;
     this.#statusBar = statusBar?.viewsManagerStatusAction || null;
     this.#undoBar = undoBar?.viewsManagerStatusUndo || null;
     this.#undoLabel = undoBar?.viewsManagerStatusUndoLabel || null;
@@ -260,6 +264,12 @@ class PDFThumbnailViewer {
         "click",
         this.#dismissUndo.bind(this)
       );
+      this.#deselectButton?.addEventListener("click", () => {
+        this.#clearSelection();
+        this.#toggleMenuEntries(false);
+        this.#updateStatus("select");
+      });
+      this.#deselectButton.classList.toggle("hidden", true);
     } else {
       manageMenu.button.hidden = true;
     }
@@ -910,8 +920,10 @@ class PDFThumbnailViewer {
           "data-l10n-args",
           JSON.stringify({ count })
         );
+        this.#deselectButton.classList.toggle("hidden", false);
       } else {
         this.#statusLabel.removeAttribute("data-l10n-args");
+        this.#deselectButton.classList.toggle("hidden", true);
       }
       this.#statusBar.classList.toggle("hidden", false);
       this.#undoBar.classList.toggle("hidden", true);

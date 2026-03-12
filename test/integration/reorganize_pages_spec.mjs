@@ -1331,6 +1331,49 @@ describe("Reorganize Pages View", () => {
         })
       );
     });
+
+    it("should deselect all thumbnails when the deselect button is clicked", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          const labelSelector = "#viewsManagerStatusActionLabel";
+          const deselectButtonSelector =
+            "#viewsManagerStatusActionDeselectButton";
+
+          // Check thumbnails 1 and 2.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(2)}) input`
+          );
+          await waitForTextToBe(page, labelSelector, `${FSI}2${PDI} selected`);
+
+          // Click the deselect button: all thumbnails should be unchecked.
+          await waitAndClick(page, deselectButtonSelector);
+
+          // Label should revert to "Select pages".
+          await waitForTextToBe(page, labelSelector, "Select pages");
+
+          // The deselect button should be hidden again.
+          await page.waitForSelector(deselectButtonSelector, { hidden: true });
+
+          // All checkboxes should be unchecked.
+          await page.waitForSelector(
+            "#thumbnailsView:not(:has(input:checked))",
+            {
+              visible: true,
+            }
+          );
+        })
+      );
+    });
   });
 
   describe("Undo label reflects number of cut/deleted pages (bug 2010832)", () => {
