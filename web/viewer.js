@@ -165,7 +165,9 @@ function getViewerConfiguration() {
         copy: document.getElementById("viewsManagerStatusActionCopy"),
         cut: document.getElementById("viewsManagerStatusActionCut"),
         delete: document.getElementById("viewsManagerStatusActionDelete"),
-        saveAs: document.getElementById("viewsManagerStatusActionSaveAs"),
+        exportSelected: document.getElementById(
+          "viewsManagerStatusActionExport"
+        ),
       },
     },
     findBar: {
