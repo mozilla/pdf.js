@@ -18,12 +18,12 @@ limitations under the License.
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>PDF Internal Structure Viewer</title>
+    <title>PDF.js — Debugging tools</title>
     <link rel="stylesheet" href="pdf_internal_viewer.css" />
   </head>
   <body>
     <div id="header">
-      <h1>PDF Internal Structure Viewer</h1>
+      <h1>PDF.js — Debugging tools</h1>
       <span id="pdf-info" aria-live="polite"></span>
     </div>
     <div id="controls" role="toolbar" aria-label="PDF viewer controls">
@@ -31,8 +31,11 @@ limitations under the License.
       <input type="file" id="file-input" accept=".pdf" />
       <label for="goto-input">Go to:</label>
       <input type="text" id="goto-input" placeholder="num, numR, numRgen" size="18" disabled aria-describedby="goto-input-hint" aria-invalid="false" />
-      <span id="goto-input-hint" hidden> Enter a page number (e.g. 5), a reference as numR (e.g. 10R) or numRgen (e.g. 10R2). Press Enter to navigate. </span>
-      <label><input type="checkbox" id="parse-content-stream" checked /> Parse content stream</label>
+      <span id="goto-input-hint" class="sr-only">
+        Enter a page number (e.g. 5), a reference as numR (e.g. 10R) or numRgen (e.g. 10R2). Press Enter to navigate.
+      </span>
+      <button id="debug-btn" hidden>Debug page</button>
+      <button id="debug-back-btn" hidden>← Back to tree</button>
       <span id="status" role="status" aria-live="polite"> Select a PDF file to explore its internal structure. </span>
       <a id="github-link" href="https://github.com/mozilla/pdf.js" target="_blank" rel="noopener noreferrer" aria-label="PDF.js on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -43,6 +46,38 @@ limitations under the License.
       </a>
     </div>
     <div id="tree" role="tree" aria-label="PDF internal structure"></div>
+    <div id="debug-view" hidden>
+      <div id="render-panels">
+        <div id="op-left-col">
+          <div id="op-top-row">
+            <div id="op-list-panel">
+              <div id="op-list" role="listbox" aria-label="Operator list"></div>
+            </div>
+            <div id="op-gfx-state-resizer" role="separator" aria-orientation="vertical" tabindex="0" hidden></div>
+            <div id="gfx-state-panel" aria-label="Graphics state" hidden></div>
+          </div>
+          <div id="op-resizer" role="separator" aria-orientation="horizontal" tabindex="0"></div>
+          <div id="op-detail-panel"></div>
+        </div>
+        <div id="render-resizer" role="separator" aria-orientation="vertical" tabindex="0"></div>
+        <div id="canvas-panel">
+          <div id="canvas-toolbar" role="toolbar" aria-label="Zoom controls">
+            <button id="zoom-out-btn" aria-label="Zoom out">−</button>
+            <span id="zoom-level" aria-live="polite"></span>
+            <button id="zoom-in-btn" aria-label="Zoom in">+</button>
+            <button id="redraw-btn" aria-label="Redraw page">Redraw</button>
+            <button id="step-btn" aria-label="Step one instruction" disabled><u>S</u>tep</button>
+            <button id="continue-btn" aria-label="Continue to next breakpoint" disabled><u>C</u>ontinue</button>
+          </div>
+          <div id="canvas-scroll">
+            <div id="canvas-wrapper">
+              <canvas id="render-canvas"></canvas>
+              <canvas id="highlight-canvas" aria-hidden="true"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <dialog id="password-dialog" aria-labelledby="password-dialog-title">
       <form method="dialog">
