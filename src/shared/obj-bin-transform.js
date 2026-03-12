@@ -18,9 +18,9 @@ import { assert, FeatureTest, MeshFigureType } from "./util.js";
 class CssFontInfo {
   #buffer;
 
-  #view;
+  #decoder = new TextDecoder();
 
-  #decoder;
+  #view;
 
   static strings = ["fontFamily", "fontWeight", "italicAngle"];
 
@@ -53,7 +53,6 @@ class CssFontInfo {
   constructor(buffer) {
     this.#buffer = buffer;
     this.#view = new DataView(this.#buffer);
-    this.#decoder = new TextDecoder();
   }
 
   #readString(index) {
@@ -84,9 +83,9 @@ class CssFontInfo {
 class SystemFontInfo {
   #buffer;
 
-  #view;
+  #decoder = new TextDecoder();
 
-  #decoder;
+  #view;
 
   static strings = ["css", "loadedName", "baseFontName", "src"];
 
@@ -147,7 +146,6 @@ class SystemFontInfo {
   constructor(buffer) {
     this.#buffer = buffer;
     this.#view = new DataView(this.#buffer);
-    this.#decoder = new TextDecoder();
   }
 
   get guessFallback() {
@@ -228,13 +226,12 @@ class FontInfo {
 
   #buffer;
 
-  #decoder;
+  #decoder = new TextDecoder();
 
   #view;
 
   constructor({ data, extra }) {
     this.#buffer = data;
-    this.#decoder = new TextDecoder();
     this.#view = new DataView(this.#buffer);
     if (extra) {
       Object.assign(this, extra);
@@ -379,7 +376,7 @@ class FontInfo {
     return this.#readString(3);
   }
 
-  get data() {
+  #getDataOffsets() {
     let offset = FontInfo.#OFFSET_STRINGS;
     const stringsLength = this.#view.getUint32(offset);
     offset += 4 + stringsLength;
@@ -388,25 +385,27 @@ class FontInfo {
     const cssFontInfoLength = this.#view.getUint32(offset);
     offset += 4 + cssFontInfoLength;
     const length = this.#view.getUint32(offset);
-    if (length === 0) {
-      return undefined;
-    }
-    return new Uint8Array(this.#buffer, offset + 4, length);
+
+    return { offset, length };
+  }
+
+  get data() {
+    const { offset, length } = this.#getDataOffsets();
+    return length === 0
+      ? undefined
+      : new Uint8Array(this.#buffer, offset + 4, length);
   }
 
   clearData() {
-    let offset = FontInfo.#OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + cssFontInfoLength;
-    const length = this.#view.getUint32(offset);
-    const data = new Uint8Array(this.#buffer, offset + 4, length);
-    data.fill(0);
-    this.#view.setUint32(offset, 0);
-    // this.#buffer.resize(offset);
+    const { offset, length } = this.#getDataOffsets();
+    if (length === 0) {
+      return; // The data is either not present, or it was previously cleared.
+    }
+    this.#view.setUint32(offset, 0); // Zero the data-length.
+
+    // Replace the buffer/view with only its contents *before* the data-block.
+    this.#buffer = new Uint8Array(this.#buffer, 0, offset + 4).slice().buffer;
+    this.#view = new DataView(this.#buffer);
   }
 
   get cssFontInfo() {
@@ -462,11 +461,11 @@ class FontInfo {
       4 +
       stringsLength +
       4 +
-      (systemFontInfoBuffer ? systemFontInfoBuffer.byteLength : 0) +
+      (systemFontInfoBuffer?.byteLength ?? 0) +
       4 +
-      (cssFontInfoBuffer ? cssFontInfoBuffer.byteLength : 0) +
+      (cssFontInfoBuffer?.byteLength ?? 0) +
       4 +
-      (font.data ? font.data.length : 0);
+      (font.data?.length ?? 0);
 
     const buffer = new ArrayBuffer(lengthEstimate);
     const data = new Uint8Array(buffer);
