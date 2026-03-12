@@ -56,7 +56,7 @@ import {
   FontInfo,
   FontPathInfo,
   PatternInfo,
-} from "../shared/obj-bin-transform.js";
+} from "./obj_bin_transform_display.js";
 import {
   getDataProp,
   getFactoryUrlProp,
