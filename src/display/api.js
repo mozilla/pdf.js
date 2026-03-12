@@ -2903,7 +2903,7 @@ class WorkerTransport {
             .bind(font)
             .catch(() => messageHandler.sendWithPromise("FontFallback", { id }))
             .finally(() => {
-              if (!font.fontExtraProperties && font.data) {
+              if (!font.fontExtraProperties) {
                 // Immediately release the `font.data` property once the font
                 // has been attached to the DOM, since it's no longer needed,
                 // rather than waiting for a `PDFDocumentProxy.cleanup` call.
