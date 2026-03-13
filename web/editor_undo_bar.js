@@ -105,7 +105,9 @@ class EditorUndoBar {
     // Without the setTimeout, VoiceOver will read out the document title
     // instead of the popup label.
     this.#focusTimeout = setTimeout(() => {
-      this.#container.focus();
+      if (!this.#container.contains(document.activeElement)) {
+        this.#container.focus();
+      }
       this.#focusTimeout = null;
     }, 100);
   }
