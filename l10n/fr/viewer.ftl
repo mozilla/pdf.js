@@ -715,10 +715,17 @@ pdfjs-views-manager-status-warning-copy-label = Copie impossible. Actualisez la 
 pdfjs-views-manager-status-warning-delete-label = Suppression impossible. Actualisez la page et essayez à nouveau.
 pdfjs-views-manager-status-warning-save-label = Enregistrement impossible. Actualisez la page et essayez à nouveau.
 pdfjs-views-manager-status-undo-button-label = Annuler
+pdfjs-views-manager-status-done-button-label = Terminé
 pdfjs-views-manager-status-close-button =
     .title = Fermer
 pdfjs-views-manager-status-close-button-label = Fermer
 pdfjs-views-manager-paste-button-label = Coller
+pdfjs-views-manager-paste-button-before =
+    .title = Coller avant la première page
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Coller après la page { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Gérer les pages
 

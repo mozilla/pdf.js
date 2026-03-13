@@ -370,6 +370,17 @@ pdfjs-editor-add-saved-signature-button =
 pdfjs-free-text2 =
     .aria-label = Գրվածքի խմբագիր
     .default-content = Սկսեք մուտքագրել...
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Մեկնաբանություն
+       *[other] Մեկնաբանություններ
+    }
+# Instructional copy to add a comment by selecting text or an annotations.
+pdfjs-editor-comments-sidebar-no-comments1 = Տեսնո՞ւմ եք ինչ-որ ուշագրավ բան։ Գունանշեք այն և թողեք մեկնաբանություն։
+pdfjs-editor-comments-sidebar-no-comments-link = Իմանալ ավելին
 
 ## Alt-text dialog
 
@@ -548,8 +559,8 @@ pdfjs-editor-add-signature-image-button = Պատկեր
 ## Tab panels
 
 pdfjs-editor-add-signature-type-input =
-    .aria-label = Մուտքագրեք ձեր ստորագրությունը
-    .placeholder = Մուտքագրեք ձեր ստորագրությունը
+    .aria-label = Մուտքագրել ստորագրություն
+    .placeholder = Մուտքագրել ստորագրություն
 pdfjs-editor-add-signature-draw-placeholder = Նկարեք ձեր ստորագրությունը
 pdfjs-editor-add-signature-draw-thickness-range-label = Հաստություն
 # Variables:
@@ -585,6 +596,31 @@ pdfjs-editor-add-signature-error-close-button = Փակել
 pdfjs-editor-add-signature-cancel-button = Չեղարկել
 pdfjs-editor-add-signature-add-button = Ավելացնել
 pdfjs-editor-edit-signature-update-button = Թարմացնել
+
+##  Edit a comment dialog
+
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Ավելացնել մեկնաբանություն
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Ավելացնել
+pdfjs-editor-edit-comment-dialog-text-input =
+    .placeholder = Մուտքագրեք այստեղ…
+pdfjs-editor-edit-comment-dialog-cancel-button = Չեղարկել
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-add-comment-button =
+    .title = Ավելացնել մեկնաբանություն
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-views-manager-add-file-button =
+    .title = Ավելացնել ֆայլ
+pdfjs-views-manager-add-file-button-label = Ավելացնել ֆայլ
 
 ## Main menu for adding/removing signatures
 

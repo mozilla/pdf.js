@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Copia non riuscita. Ricarica la 
 pdfjs-views-manager-status-warning-delete-label = Eliminazione non riuscita. Ricarica la pagina e riprova.
 pdfjs-views-manager-status-warning-save-label = Salvataggio non riuscito. Ricarica la pagina e prova di nuovo.
 pdfjs-views-manager-status-undo-button-label = Annulla
+pdfjs-views-manager-status-done-button-label = Fatto
 pdfjs-views-manager-status-close-button =
     .title = Chiudi
 pdfjs-views-manager-status-close-button-label = Chiudi
 pdfjs-views-manager-paste-button-label = Incolla
+pdfjs-views-manager-paste-button-before =
+    .title = Incolla dopo la prima pagina
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Incolla dopo pagina { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Gestisci pagine
 
@@ -739,4 +746,3 @@ pdfjs-editor-add-signature-edit-button-label = Modifica descrizione
 ## Edit signature description dialog
 
 pdfjs-editor-edit-signature-dialog-title = Modifica descrizione
-

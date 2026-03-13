@@ -645,6 +645,7 @@ pdfjs-toggle-views-manager-button =
     .title = Фаъол кардани навори ҷонибӣ
 pdfjs-toggle-views-manager-notification-button =
     .title = Фаъол кардани навори ҷонибӣ (ҳуҷҷат дорои тасвирчаҳо/сохтор/замимаҳо/қабатҳо мебошад)
+pdfjs-toggle-views-manager-button1-label = Идоракунии саҳифаҳо
 pdfjs-toggle-views-manager-button-label = Фаъол кардани навори ҷонибӣ
 pdfjs-views-manager-sidebar =
     .aria-label = Навори ҷонибӣ
@@ -706,6 +707,9 @@ pdfjs-views-manager-status-undo-button-label = Бекор кардан
 pdfjs-views-manager-status-close-button =
     .title = Пӯшидан
 pdfjs-views-manager-status-close-button-label = Пӯшидан
+pdfjs-views-manager-paste-button-label = Гузоштан
+pdfjs-toggle-views-manager-button1 =
+    .title = Идоракунии саҳифаҳо
 
 ## Main menu for adding/removing signatures
 
