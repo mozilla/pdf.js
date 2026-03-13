@@ -188,11 +188,22 @@ See https://github.com/adobe-type-tools/cmap-resources
                     </div>
                     <div id="viewsManagerStatus">
                       <div id="viewsManagerStatusAction">
-                        <span
-                          id="viewsManagerStatusActionLabel"
-                          class="viewsManagerStatusLabel"
-                          data-l10n-id="pdfjs-views-manager-pages-status-none-action-label"
-                        ></span>
+                        <span id="viewsManagerStatusActionLabelContainer" class="viewsManagerStatusLabel">
+                          <button
+                            id="viewsManagerStatusActionDeselectButton"
+                            class="hiddden"
+                            type="button"
+                            tabindex="0"
+                            role="checkbox"
+                            aria-checked="true"
+                            aria-labelledby="viewsManagerStatusActionLabel"
+                          ></button>
+                          <span
+                            id="viewsManagerStatusActionLabel"
+                            class="viewsManagerStatusLabel"
+                            data-l10n-id="pdfjs-views-manager-pages-status-none-action-label"
+                          ></span>
+                        </span>
                         <div id="actionSelector">
                           <button
                             id="viewsManagerStatusActionButton"
