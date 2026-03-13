@@ -31,6 +31,7 @@
     "message_handler_spec.js",
     "metadata_spec.js",
     "murmurhash3_spec.js",
+    "name_number_tree_spec.js",
     "network_utils_spec.js",
     "node_stream_spec.js",
     "obj_bin_transform_spec.js",
