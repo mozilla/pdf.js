@@ -2878,7 +2878,7 @@ function renderValue(value, doc) {
 
   // Content stream (Page Contents) → expandable with Parsed/Raw toggle
   if (isContentStream(value)) {
-    return renderContentStream(value, doc);
+    return renderContentStream(value);
   }
 
   // Stream → expandable showing dict entries + byte count or image preview
