@@ -650,13 +650,50 @@ async function scrollIntoView(page, selector) {
     sel => [
       new Promise(resolve => {
         const container = document.getElementById("viewerContainer");
-        if (container.scrollHeight <= container.clientHeight) {
+        const element = document.querySelector(sel);
+        if (!container || !element) {
           resolve();
           return;
         }
-        container.addEventListener("scrollend", resolve, { once: true });
-        const element = document.querySelector(sel);
+        if (
+          container.scrollHeight <= container.clientHeight &&
+          container.scrollWidth <= container.clientWidth
+        ) {
+          resolve();
+          return;
+        }
+
+        const beforeTop = container.scrollTop;
+        const beforeLeft = container.scrollLeft;
+        let settled = false;
+        let timeoutId = null;
+
+        const finish = () => {
+          if (settled) {
+            return;
+          }
+          settled = true;
+          if (timeoutId !== null) {
+            clearTimeout(timeoutId);
+          }
+          container.removeEventListener("scrollend", finish);
+          resolve();
+        };
+
+        container.addEventListener("scrollend", finish, { once: true });
         element.scrollIntoView({ behavior: "instant", block: "start" });
+
+        if (
+          container.scrollTop === beforeTop &&
+          container.scrollLeft === beforeLeft
+        ) {
+          finish();
+          return;
+        }
+
+        // Some browsers occasionally miss `scrollend`, so keep a short
+        // fallback to avoid hanging.
+        timeoutId = setTimeout(finish, 250);
       }),
     ],
     selector

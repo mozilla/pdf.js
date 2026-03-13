@@ -260,7 +260,10 @@ describe("Reorganize Pages View", () => {
           await waitForThumbnailVisible(page, 1);
           const rect2 = await getRect(page, getThumbnailSelector(2));
           const rect4 = await getRect(page, getThumbnailSelector(4));
-          await page.click(`.thumbnail:has(${getThumbnailSelector(1)}) input`);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
 
           const handlePagesEdited = await waitForPagesEdited(page);
           await dragAndDrop(
@@ -288,10 +291,11 @@ describe("Reorganize Pages View", () => {
           const rect1 = await getRect(page, getThumbnailSelector(1));
           const rect2 = await getRect(page, getThumbnailSelector(2));
           await (await page.$(".thumbnail[page-number='14'")).scrollIntoView();
-          await page.waitForSelector(getThumbnailSelector(14), {
-            visible: true,
-          });
-          await page.click(`.thumbnail:has(${getThumbnailSelector(14)}) input`);
+
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(14)}) input`
+          );
           await (await page.$(".thumbnail[page-number='1'")).scrollIntoView();
           await page.waitForSelector(getThumbnailSelector(1), {
             visible: true,
@@ -323,7 +327,7 @@ describe("Reorganize Pages View", () => {
           const rect1 = await getRect(page, getThumbnailSelector(1));
           const rect2 = await getRect(page, getThumbnailSelector(2));
 
-          await page.click(getThumbnailSelector(2));
+          await waitAndClick(page, getThumbnailSelector(2));
           await page.waitForSelector(
             `${getThumbnailSelector(2)}[aria-current="page"]`
           );
@@ -367,11 +371,8 @@ describe("Reorganize Pages View", () => {
     it("should check if the search is working after moving pages", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#viewFindButton");
-          await page.waitForSelector(":has(> #findHighlightAll)", {
-            visible: true,
-          });
-          await page.click(":has(> #findHighlightAll)");
+          await waitAndClick(page, "#viewFindButton");
+          await waitAndClick(page, ":has(> #findHighlightAll)");
 
           await page.waitForSelector("#findInput", { visible: true });
           await page.type("#findInput", "1");
@@ -482,7 +483,7 @@ describe("Reorganize Pages View", () => {
           await waitForThumbnailVisible(page, 1);
           await movePages(page, [2], 10);
           await scrollIntoView(page, getAnnotationSelector("107R"));
-          await page.click(getAnnotationSelector("107R"));
+          await waitAndClick(page, getAnnotationSelector("107R"));
           const currentPage = await page.$eval(
             "#pageNumber",
             el => el.valueAsNumber
@@ -498,11 +499,11 @@ describe("Reorganize Pages View", () => {
           await waitForThumbnailVisible(page, 1);
           await movePages(page, [2, 4], 10);
 
-          await page.click("#viewsManagerSelectorButton");
-          await page.click("#outlinesViewMenu");
+          await waitAndClick(page, "#viewsManagerSelectorButton");
+          await waitAndClick(page, "#outlinesViewMenu");
           await page.waitForSelector("#outlinesView", { visible: true });
 
-          await page.click("#outlinesView .treeItem:nth-child(2)");
+          await waitAndClick(page, "#outlinesView .treeItem:nth-child(2)");
 
           const currentPage = await page.$eval(
             "#pageNumber",
@@ -539,12 +540,8 @@ describe("Reorganize Pages View", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await page.waitForSelector("#outlinesView", { visible: true });
-          await page.waitForSelector("#viewsManagerSelectorButton", {
-            visible: true,
-          });
-          await page.click("#viewsManagerSelectorButton");
-          await page.waitForSelector("#thumbnailsViewMenu", { visible: true });
-          await page.click("#thumbnailsViewMenu");
+          await waitAndClick(page, "#viewsManagerSelectorButton");
+          await waitAndClick(page, "#thumbnailsViewMenu");
 
           const thumbSelector =
             "#thumbnailsView .thumbnailImageContainer > img";
@@ -1659,8 +1656,9 @@ describe("Reorganize Pages View", () => {
           await page.waitForSelector("button.thumbnailPasteButton", {
             hidden: true,
           });
-          const pasteButtons = await page.$$("button.thumbnailPasteButton");
-          expect(pasteButtons.length).withContext(`In ${browserName}`).toBe(0);
+          await page.waitForFunction(
+            () => !document.querySelector("button.thumbnailPasteButton")
+          );
         })
       );
     });
@@ -1708,7 +1706,7 @@ describe("Reorganize Pages View", () => {
             );
           });
 
-          await page.click("#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
           await waitAndClick(page, "#viewsManagerStatusActionSaveAs");
           const pagesData = await awaitPromise(handleSaveAs);
           expect(pagesData)
