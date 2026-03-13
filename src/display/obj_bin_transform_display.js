@@ -198,49 +198,46 @@ class FontInfo {
     return this.#readNumber(2);
   }
 
-  get bbox() {
-    let offset = FONT_INFO.OFFSET_BBOX;
-    const numCoords = this.#view.getUint8(offset);
-    if (numCoords === 0) {
+  #readArray(offset, arrLen, lookupName, increment) {
+    const len = this.#view.getUint8(offset);
+    if (len === 0) {
       return undefined;
     }
+    assert(len === arrLen, "Invalid array length.");
     offset += 1;
-    const bbox = [];
-    for (let i = 0; i < 4; i++) {
-      bbox.push(this.#view.getInt16(offset, true));
-      offset += 2;
+    const arr = new Array(len);
+    for (let i = 0; i < len; i++) {
+      arr[i] = this.#view[lookupName](offset, true);
+      offset += increment;
     }
-    return bbox;
+    return arr;
+  }
+
+  get bbox() {
+    return this.#readArray(
+      /* offset = */ FONT_INFO.OFFSET_BBOX,
+      /* arrLen = */ 4,
+      /* lookup = */ "getInt16",
+      /* increment = */ 2
+    );
   }
 
   get fontMatrix() {
-    let offset = FONT_INFO.OFFSET_FONT_MATRIX;
-    const numPoints = this.#view.getUint8(offset);
-    if (numPoints === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const fontMatrix = [];
-    for (let i = 0; i < 6; i++) {
-      fontMatrix.push(this.#view.getFloat64(offset, true));
-      offset += 8;
-    }
-    return fontMatrix;
+    return this.#readArray(
+      /* offset = */ FONT_INFO.OFFSET_FONT_MATRIX,
+      /* arrLen = */ 6,
+      /* lookup = */ "getFloat64",
+      /* increment = */ 8
+    );
   }
 
   get defaultVMetrics() {
-    let offset = FONT_INFO.OFFSET_DEFAULT_VMETRICS;
-    const numMetrics = this.#view.getUint8(offset);
-    if (numMetrics === 0) {
-      return undefined;
-    }
-    offset += 1;
-    const defaultVMetrics = [];
-    for (let i = 0; i < 3; i++) {
-      defaultVMetrics.push(this.#view.getInt16(offset, true));
-      offset += 2;
-    }
-    return defaultVMetrics;
+    return this.#readArray(
+      /* offset = */ FONT_INFO.OFFSET_DEFAULT_VMETRICS,
+      /* arrLen = */ 3,
+      /* lookup = */ "getInt16",
+      /* increment = */ 2
+    );
   }
 
   #readString(index) {

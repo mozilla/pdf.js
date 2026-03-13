@@ -192,7 +192,7 @@ function compileFontInfo(font) {
   );
 
   if (font.defaultVMetrics) {
-    view.setUint8(offset++, 1);
+    view.setUint8(offset++, 3);
     for (const metric of font.defaultVMetrics) {
       view.setInt16(offset, metric, true);
       offset += 2;
