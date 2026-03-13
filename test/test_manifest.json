@@ -13079,7 +13079,11 @@
     "rounds": 1,
     "type": "extract",
     "includePages": [0, 2, 12],
-    "pageMapping": { "1": 1, "3": 2, "13": 3 }
+    "pageMapping": {
+      "1": 1,
+      "3": 2,
+      "13": 3
+    }
   },
   {
     "id": "bug900822-encrypted-extract_0",
@@ -13088,7 +13092,9 @@
     "rounds": 1,
     "type": "extract",
     "includePages": [0],
-    "pageMapping": { "1": 1 }
+    "pageMapping": {
+      "1": 1
+    }
   },
   {
     "id": "xfa_bug1998843",
@@ -13983,6 +13989,13 @@
     "id": "XiaoBiaoSong",
     "file": "pdfs/XiaoBiaoSong.pdf",
     "md5": "7072f6763bf2f0d6df14d5fc86962c5a",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "radial_gradients",
+    "file": "pdfs/radial_gradients.pdf",
+    "md5": "80e8bed66b83928698f008c33de47edd",
     "rounds": 1,
     "type": "eq"
   }
