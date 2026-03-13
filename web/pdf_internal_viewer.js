@@ -851,10 +851,15 @@ async function openDocument(source, name) {
 
   const loadingTask = getDocument({
     ...source,
-    cMapUrl: "../external/bcmaps/",
+    cMapUrl:
+      typeof PDFJSDev === "undefined" ? "../external/bcmaps/" : "../web/cmaps/",
+    iccUrl:
+      typeof PDFJSDev === "undefined" ? "../external/iccs/" : "../web/iccs/",
+    standardFontDataUrl:
+      typeof PDFJSDev === "undefined"
+        ? "../external/standard_fonts/"
+        : "../web/standard_fonts/",
     wasmUrl: "../web/wasm/",
-    iccUrl: "../external/iccs/",
-    standardFontDataUrl: "../external/standard_fonts/",
     useWorkerFetch: true,
     pdfBug: true,
     CanvasFactory: DebugCanvasFactory,
