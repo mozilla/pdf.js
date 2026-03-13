@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Det gick inte att kopiera. Uppda
 pdfjs-views-manager-status-warning-delete-label = Det gick inte att ta bort. Uppdatera sidan och försök igen.
 pdfjs-views-manager-status-warning-save-label = Det gick inte att spara. Uppdatera sidan och försök igen.
 pdfjs-views-manager-status-undo-button-label = Ångra
+pdfjs-views-manager-status-done-button-label = Klar
 pdfjs-views-manager-status-close-button =
     .title = Stäng
 pdfjs-views-manager-status-close-button-label = Stäng
 pdfjs-views-manager-paste-button-label = Klistra in
+pdfjs-views-manager-paste-button-before =
+    .title = Klistra in före den första sidan
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Klistra in efter sida { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Hantera sidor
 

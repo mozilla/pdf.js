@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = გვერდის შეთვალიერება { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = მონიშნეთ { $page } გვერდი
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = მონიშნეთ { $page } გვერდი
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = გვერდი { $page }, სულ { $total }
 
 ## Find panel button title and messages
 
@@ -649,6 +662,8 @@ pdfjs-toggle-views-manager-button1-label = გვერდების მარ
 pdfjs-toggle-views-manager-button-label = გვერდითა ზოლის გამოჩენა/დამალვა
 pdfjs-views-manager-sidebar =
     .aria-label = გვერდითი ზოლი
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = გვერდითი ზოლის ზომაცვლა
 pdfjs-views-manager-view-selector-button =
     .title = ხედები
 pdfjs-views-manager-view-selector-button-label = ხედები
@@ -707,6 +722,7 @@ pdfjs-views-manager-status-undo-button-label = დაბრუნება
 pdfjs-views-manager-status-close-button =
     .title = დახურვა
 pdfjs-views-manager-status-close-button-label = დახურვა
+pdfjs-views-manager-paste-button-label = ჩასმა
 pdfjs-toggle-views-manager-button1 =
     .title = გვერდების მართვა
 
