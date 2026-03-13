@@ -32,6 +32,11 @@ import {
 import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import {
+  compileFontInfo,
+  compileFontPathInfo,
+  compilePatternInfo,
+} from "./obj_bin_transform_core.js";
+import {
   compileType3Glyph,
   FontFlags,
   normalizeFontName,
@@ -44,11 +49,6 @@ import {
   lookupMatrix,
   lookupNormalRect,
 } from "./core_utils.js";
-import {
-  FontInfo,
-  FontPathInfo,
-  PatternInfo,
-} from "../shared/obj-bin-transform.js";
 import {
   getEncoding,
   MacRomanEncoding,
@@ -1531,10 +1531,8 @@ class PartialEvaluator {
     localShadingPatternCache.set(shading, id);
 
     if (this.parsingType3Font) {
-      const transfers = [];
-      const patternBuffer = PatternInfo.write(patternIR);
-      transfers.push(patternBuffer);
-      this.handler.send("commonobj", [id, "Pattern", patternBuffer], transfers);
+      const buffer = compilePatternInfo(patternIR);
+      this.handler.send("commonobj", [id, "Pattern", buffer], [buffer]);
     } else {
       this.handler.send("obj", [id, this.pageIndex, "Pattern", patternIR]);
     }
@@ -4755,7 +4753,7 @@ class PartialEvaluator {
         if (font.renderer.hasBuiltPath(fontChar)) {
           return;
         }
-        const buffer = FontPathInfo.write(font.renderer.getPathJs(fontChar));
+        const buffer = compileFontPathInfo(font.renderer.getPathJs(fontChar));
         handler.send("commonobj", [glyphName, "FontPath", buffer], [buffer]);
       } catch (reason) {
         if (evaluatorOptions.ignoreErrors) {
@@ -4812,7 +4810,7 @@ class TranslatedFont {
       if (fontData.data.charProcOperatorList) {
         fontData.charProcOperatorList = fontData.data.charProcOperatorList;
       }
-      fontData.data = FontInfo.write(fontData.data);
+      fontData.data = compileFontInfo(fontData.data);
       transfer.push(fontData.data);
     }
     handler.send("commonobj", [this.loadedName, "Font", fontData], transfer);
