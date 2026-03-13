@@ -967,6 +967,42 @@ describe("Reorganize Pages View", () => {
         })
       );
     });
+
+    it("should disable delete and cut entries when all pages are selected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          // Select all pages.
+          const totalPages = await page.evaluate(
+            () =>
+              document.querySelectorAll("#thumbnailsView .thumbnail input")
+                .length
+          );
+          for (let i = 1; i <= totalPages; i++) {
+            await waitAndClick(
+              page,
+              `.thumbnail:has(${getThumbnailSelector(i)}) input`
+            );
+          }
+
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+
+          await page.waitForSelector(
+            "#viewsManagerStatusActionDelete:disabled"
+          );
+          await page.waitForSelector("#viewsManagerStatusActionCut:disabled");
+          await page.waitForSelector(
+            "#viewsManagerStatusActionCopy:not(:disabled)"
+          );
+          await page.waitForSelector(
+            "#viewsManagerStatusActionSaveAs:not(:disabled)"
+          );
+
+          await page.keyboard.press("Escape");
+        })
+      );
+    });
   });
 
   describe("Keyboard shortcuts for cut and copy (bug 2018139)", () => {
@@ -1742,6 +1778,150 @@ describe("Reorganize Pages View", () => {
               `In ${browserName}, dragging should be disabled when pasting`
             )
             .toBeUndefined();
+        })
+      );
+    });
+  });
+
+  describe("Context menu triggers editingstateschanged event (bug 2021828)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    function getContextMenuPromise(page) {
+      return createPromise(page, resolve => {
+        window.addEventListener(
+          "contextmenu",
+          e => {
+            e.preventDefault();
+            resolve();
+          },
+          { once: true }
+        );
+      });
+    }
+
+    it("should dispatch editingstateschanged with correct payload on right-click with no selection", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          const handleEditingStatesChanged = await createPromise(
+            page,
+            resolve => {
+              window.PDFViewerApplication.eventBus.on(
+                "editingstateschanged",
+                ({ details }) => resolve(details),
+                { once: true }
+              );
+            }
+          );
+
+          const contextMenuPromise = await getContextMenuPromise(page);
+          await page.click(getThumbnailSelector(1), { button: "right" });
+          await awaitPromise(contextMenuPromise);
+
+          const details = await awaitPromise(handleEditingStatesChanged);
+          expect(details.thumbnailId).withContext(`In ${browserName}`).toBe(1);
+          expect(details.hasSelectedPages)
+            .withContext(`In ${browserName}`)
+            .toBeFalse();
+          expect(details.canDeletePages)
+            .withContext(`In ${browserName}`)
+            .toBeFalse();
+        })
+      );
+    });
+
+    it("should dispatch editingstateschanged with correct payload on right-click with some pages selected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+
+          const handleEditingStatesChanged = await createPromise(
+            page,
+            resolve => {
+              window.PDFViewerApplication.eventBus.on(
+                "editingstateschanged",
+                ({ details }) => resolve(details),
+                { once: true }
+              );
+            }
+          );
+
+          const contextMenuPromise = await getContextMenuPromise(page);
+          await page.click(getThumbnailSelector(1), { button: "right" });
+          await awaitPromise(contextMenuPromise);
+
+          const details = await awaitPromise(handleEditingStatesChanged);
+          expect(details.thumbnailId).withContext(`In ${browserName}`).toBe(1);
+          expect(details.hasSelectedPages)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+          expect(details.canDeletePages)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+        })
+      );
+    });
+
+    it("should dispatch editingstateschanged with canDeletePages false when all pages are selected", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          // Select all 17 pages.
+          const totalPages = await page.evaluate(
+            () =>
+              document.querySelectorAll("#thumbnailsView .thumbnail input")
+                .length
+          );
+          for (let i = 1; i <= totalPages; i++) {
+            await waitAndClick(
+              page,
+              `.thumbnail:has(${getThumbnailSelector(i)}) input`
+            );
+          }
+
+          const handleEditingStatesChanged = await createPromise(
+            page,
+            resolve => {
+              window.PDFViewerApplication.eventBus.on(
+                "editingstateschanged",
+                ({ details }) => resolve(details),
+                { once: true }
+              );
+            }
+          );
+
+          const contextMenuPromise = await getContextMenuPromise(page);
+          await page.click(getThumbnailSelector(1), { button: "right" });
+          await awaitPromise(contextMenuPromise);
+
+          const details = await awaitPromise(handleEditingStatesChanged);
+          expect(details.thumbnailId).withContext(`In ${browserName}`).toBe(1);
+          expect(details.hasSelectedPages)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+          expect(details.canDeletePages)
+            .withContext(`In ${browserName}`)
+            .toBeFalse();
         })
       );
     });
