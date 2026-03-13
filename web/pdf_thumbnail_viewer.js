@@ -721,7 +721,9 @@ class PDFThumbnailViewer {
       const newPageNumber = currentPageNumber || 1;
       this.linkService.goToPage(newPageNumber);
       const thumbnailView = this._thumbnails[newPageNumber - 1];
-      thumbnailView.imageContainer.focus();
+      if (!this.container.contains(document.activeElement)) {
+        thumbnailView.imageContainer.focus();
+      }
     }, 0);
   }
 
