@@ -115,7 +115,7 @@ class PDFThumbnailViewer {
 
   #pagesMapper = null;
 
-  #manageSaveAsButton = null;
+  #manageExportButton = null;
 
   #manageDeleteButton = null;
 
@@ -197,7 +197,14 @@ class PDFThumbnailViewer {
     // this.#addFileButton = addFileButton;
 
     if (this.#enableSplitMerge && manageMenu) {
-      const { button, menu, copy, cut, delete: del, saveAs } = manageMenu;
+      const {
+        button,
+        menu,
+        copy,
+        cut,
+        delete: del,
+        exportSelected,
+      } = manageMenu;
       this.eventBus.on(
         "pagesloaded",
         () => {
@@ -206,9 +213,17 @@ class PDFThumbnailViewer {
         { once: true }
       );
 
-      this._manageMenu = new Menu(menu, button, [copy, cut, del, saveAs]);
-      this.#manageSaveAsButton = saveAs;
-      saveAs.addEventListener("click", this.#saveExtractedPages.bind(this));
+      this._manageMenu = new Menu(menu, button, [
+        copy,
+        cut,
+        del,
+        exportSelected,
+      ]);
+      this.#manageExportButton = exportSelected;
+      exportSelected.addEventListener(
+        "click",
+        this.#saveExtractedPages.bind(this)
+      );
       this.#manageDeleteButton = del;
       del.addEventListener("click", this.#deletePages.bind(this, "delete"));
       this.#manageCopyButton = copy;
@@ -890,13 +905,13 @@ class PDFThumbnailViewer {
 
   #updateMenuEntries() {
     const size = this.#selectedPages?.size || 0;
-    this.#manageSaveAsButton.disabled = this.#manageCopyButton.disabled = !size;
+    this.#manageExportButton.disabled = this.#manageCopyButton.disabled = !size;
     this.#manageDeleteButton.disabled = this.#manageCutButton.disabled =
       !this.#canDelete();
   }
 
   #toggleMenuEntries(enable) {
-    this.#manageSaveAsButton.disabled =
+    this.#manageExportButton.disabled =
       this.#manageDeleteButton.disabled =
       this.#manageCopyButton.disabled =
       this.#manageCutButton.disabled =
