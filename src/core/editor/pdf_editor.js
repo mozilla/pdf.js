@@ -1390,13 +1390,16 @@ class PDFEditor {
       let parent = parentRef;
       let lastNonNullParent = parentRef;
       while (true) {
-        parent = xref.fetchIfRef(parent)?.get("Parent") || null;
+        parent = xref.fetchIfRef(parent)?.getRaw("Parent") || null;
         if (!parent) {
           break;
         }
         lastNonNullParent = parent;
       }
-      if (!processed.has(lastNonNullParent)) {
+      if (
+        lastNonNullParent instanceof Ref &&
+        !processed.has(lastNonNullParent)
+      ) {
         newFields.push(lastNonNullParent);
         processed.put(lastNonNullParent);
       }

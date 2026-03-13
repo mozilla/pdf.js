@@ -377,10 +377,24 @@ class RefSet {
   }
 
   has(ref) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      !(ref instanceof Ref) &&
+      typeof ref !== "string"
+    ) {
+      unreachable('RefSet: Invalid "ref" value in has.');
+    }
     return this._set.has(ref.toString());
   }
 
   put(ref) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+      !(ref instanceof Ref) &&
+      typeof ref !== "string"
+    ) {
+      unreachable('RefSet: Invalid "ref" value in put.');
+    }
     this._set.add(ref.toString());
   }
 
