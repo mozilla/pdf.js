@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = { $page } ページの縮小版
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = { $page } ページを選択します
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = { $page } ページを選択します
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = { $page } / { $total } ページ
 
 ## Find panel button title and messages
 
@@ -629,9 +642,12 @@ pdfjs-toggle-views-manager-button =
     .title = サイドバーを切り替えます
 pdfjs-toggle-views-manager-notification-button =
     .title = サイドバーを切り替えます (文書に含まれるサムネイル、アウトライン、添付データ、レイヤー)
+pdfjs-toggle-views-manager-button1-label = ページを管理
 pdfjs-toggle-views-manager-button-label = サイドバーを切り替え
 pdfjs-views-manager-sidebar =
     .aria-label = サイドバー
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = サイドバーの幅変更
 pdfjs-views-manager-view-selector-button =
     .title = ビュー
 pdfjs-views-manager-view-selector-button-label = ビュー
@@ -674,6 +690,9 @@ pdfjs-views-manager-status-undo-button-label = 元に戻す
 pdfjs-views-manager-status-close-button =
     .title = 閉じる
 pdfjs-views-manager-status-close-button-label = 閉じる
+pdfjs-views-manager-paste-button-label = 貼り付け
+pdfjs-toggle-views-manager-button1 =
+    .title = ページを管理
 
 ## Main menu for adding/removing signatures
 

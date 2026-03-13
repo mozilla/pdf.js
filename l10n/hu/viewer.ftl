@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = { $page }. oldal bélyegképe
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = { $page }. oldal kiválasztása
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = { $page }. oldal kiválasztása
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = { $page }. / { $total } oldal
 
 ## Find panel button title and messages
 
@@ -645,9 +658,12 @@ pdfjs-toggle-views-manager-button =
     .title = Oldalsáv be/ki
 pdfjs-toggle-views-manager-notification-button =
     .title = Oldalsáv be/ki (a dokumentum bélyegképeket/vázlatot/mellékleteket/rétegeket tartalmaz)
+pdfjs-toggle-views-manager-button1-label = Oldalak kezelése
 pdfjs-toggle-views-manager-button-label = Oldalsáv be/ki
 pdfjs-views-manager-sidebar =
     .aria-label = Oldalsáv
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Oldalsáv-átméretező
 pdfjs-views-manager-view-selector-button =
     .title = Nézetek
 pdfjs-views-manager-view-selector-button-label = Nézetek
@@ -706,6 +722,9 @@ pdfjs-views-manager-status-undo-button-label = Visszavonás
 pdfjs-views-manager-status-close-button =
     .title = Bezárás
 pdfjs-views-manager-status-close-button-label = Bezárás
+pdfjs-views-manager-paste-button-label = Beillesztés
+pdfjs-toggle-views-manager-button1 =
+    .title = Oldalak kezelése
 
 ## Main menu for adding/removing signatures
 

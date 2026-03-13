@@ -194,8 +194,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Miniaturë e Faqes { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Përzgjidhni faqen { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Përzgjidhni faqen { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Faqja { $page } nga { $total } gjithsej
 
 ## Find panel button title and messages
 
@@ -638,16 +647,21 @@ pdfjs-editor-add-comment-button =
 
 pdfjs-toggle-views-manager-button =
     .title = Shfaq/Fshih Anështyllën
+pdfjs-toggle-views-manager-button1-label = Administroni faqe
 pdfjs-toggle-views-manager-button-label = Shfaq/Fshih Anështyllën
 pdfjs-views-manager-sidebar =
     .aria-label = Anështyllë
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Ripërmasues anështylle
 pdfjs-views-manager-view-selector-button =
     .title = Pamje
 pdfjs-views-manager-view-selector-button-label = Pamje
 pdfjs-views-manager-pages-title = Faqe
+pdfjs-views-manager-outlines-title = Përvijim dokumenti
 pdfjs-views-manager-attachments-title = Bashkëngjitje
 pdfjs-views-manager-layers-title = Shtresa
 pdfjs-views-manager-pages-option-label = Faqe
+pdfjs-views-manager-outlines-option-label = Përvijim dokumenti
 pdfjs-views-manager-attachments-option-label = Bashkëngjitje
 pdfjs-views-manager-layers-option-label = Shtresa
 pdfjs-views-manager-add-file-button =
@@ -691,6 +705,8 @@ pdfjs-views-manager-status-close-button =
     .title = Mbylle
 pdfjs-views-manager-status-close-button-label = Mbylle
 pdfjs-views-manager-paste-button-label = Ngjite
+pdfjs-toggle-views-manager-button1 =
+    .title = Administroni faqe
 
 ## Main menu for adding/removing signatures
 
