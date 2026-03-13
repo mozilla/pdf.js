@@ -163,19 +163,6 @@ class RadialAxialShading extends BaseShading {
       [extendStart, extendEnd] = extendArr;
     }
 
-    if (
-      this.shadingType === ShadingType.RADIAL &&
-      (!extendStart || !extendEnd)
-    ) {
-      // Radial gradient only currently works if either circle is fully within
-      // the other circle.
-      const [x1, y1, r1, x2, y2, r2] = this.coordsArr;
-      const distance = Math.hypot(x1 - x2, y1 - y2);
-      if (r1 <= r2 + distance && r2 <= r1 + distance) {
-        warn("Unsupported radial gradient.");
-      }
-    }
-
     this.extendStart = extendStart;
     this.extendEnd = extendEnd;
 
