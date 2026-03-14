@@ -359,7 +359,7 @@ class FontFaceObject {
 
   #fontData;
 
-  constructor(translatedData, inspectFont = null, extra, charProcOperatorList) {
+  constructor(translatedData, inspectFont = null, charProcOperatorList, extra) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
         typeof translatedData.disableFontFace === "boolean",
@@ -372,11 +372,12 @@ class FontFaceObject {
     }
     this.#fontData = translatedData;
     this._inspectFont = inspectFont;
-    if (extra) {
-      Object.assign(this, extra);
-    }
+
     if (charProcOperatorList) {
       this.charProcOperatorList = charProcOperatorList;
+    }
+    if (extra) {
+      Object.assign(this, extra);
     }
   }
 

@@ -32,7 +32,6 @@ import {
 import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import {
-  compileFontInfo,
   compileFontPathInfo,
   compilePatternInfo,
 } from "./obj_bin_transform_core.js";
@@ -4804,16 +4803,11 @@ class TranslatedFont {
       return;
     }
     this.#sent = true;
-    const fontData = this.font.exportData();
-    const transfer = [];
-    if (fontData.data) {
-      if (fontData.data.charProcOperatorList) {
-        fontData.charProcOperatorList = fontData.data.charProcOperatorList;
-      }
-      fontData.data = compileFontInfo(fontData.data);
-      transfer.push(fontData.data);
-    }
-    handler.send("commonobj", [this.loadedName, "Font", fontData], transfer);
+
+    const fontData = this.font.exportData(),
+      transfers = fontData.buffer ? [fontData.buffer] : null;
+
+    handler.send("commonobj", [this.loadedName, "Font", fontData], transfers);
     // future path: switch to a SharedArrayBuffer
     // const sab = new SharedArrayBuffer(data.byteLength);
     // const view = new Uint8Array(sab);
