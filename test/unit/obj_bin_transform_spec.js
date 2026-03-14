@@ -133,7 +133,7 @@ describe("obj_bin_transform", function () {
           sizeEstimate += 4 + fontInfo.data.length;
           const buffer = compileFontInfo(fontInfo);
           expect(buffer.byteLength).toEqual(sizeEstimate);
-          const deserialized = new FontInfo({ data: buffer });
+          const deserialized = new FontInfo({ buffer });
           expect(deserialized.black).toEqual(true);
           expect(deserialized.bold).toEqual(true);
           expect(deserialized.disableFontFace).toEqual(true);
@@ -168,7 +168,7 @@ describe("obj_bin_transform", function () {
             cssFontInfo,
             systemFontInfo,
           });
-          const deserialized = new FontInfo({ data: buffer });
+          const deserialized = new FontInfo({ buffer });
           expect(deserialized.cssFontInfo.fontWeight).toEqual("not a number");
           expect(deserialized.systemFontInfo.src).toEqual("source");
         });

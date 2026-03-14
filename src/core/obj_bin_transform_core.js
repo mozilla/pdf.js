@@ -169,7 +169,6 @@ function compileFontInfo(font) {
     view.setUint8(offset++, 0);
     offset += 2 * 4; // TODO: optimize this padding away
   }
-
   assert(
     offset === FONT_INFO.OFFSET_FONT_MATRIX,
     "compileFontInfo: BBox properties offset mismatch"
@@ -185,7 +184,6 @@ function compileFontInfo(font) {
     view.setUint8(offset++, 0);
     offset += 8 * 6; // TODO: optimize this padding away
   }
-
   assert(
     offset === FONT_INFO.OFFSET_DEFAULT_VMETRICS,
     "compileFontInfo: FontMatrix properties offset mismatch"
@@ -201,7 +199,6 @@ function compileFontInfo(font) {
     view.setUint8(offset++, 0);
     offset += 3 * 2; // TODO: optimize this padding away
   }
-
   assert(
     offset === FONT_INFO.OFFSET_STRINGS,
     "compileFontInfo: DefaultVMetrics properties offset mismatch"

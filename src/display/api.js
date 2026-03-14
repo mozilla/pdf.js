@@ -2893,8 +2893,8 @@ class WorkerTransport {
           const font = new FontFaceObject(
             fontData,
             inspectFont,
-            exportedData.extra,
-            exportedData.charProcOperatorList
+            exportedData.charProcOperatorList,
+            exportedData.extra
           );
 
           this.fontLoader
