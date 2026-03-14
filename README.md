@@ -46,7 +46,7 @@ directory `build/chromium`.
 
 ### PDF debugger
 
-Browser the internal structure of a PDF document with https://mozilla.github.io/pdf.js/internal-viewer/web/pdf_internal_viewer.html
+Browser the internal structure of a PDF document with https://mozilla.github.io/pdf.js/internal-viewer/web/debugger.html
 
 ## Getting the Code
 

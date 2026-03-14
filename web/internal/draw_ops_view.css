@@ -1,0 +1,205 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Hidden color-picker input reused by all color swatches. */
+.color-picker-input {
+  position: fixed;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+/* MultilineView instance used as the op-list panel in the debug view. */
+.op-list-panel-wrapper {
+  flex: 7 1 0;
+  min-width: 0;
+  min-height: 0;
+  border-color: var(--border-color);
+  border-radius: 4px;
+
+  & > .mlc-goto-bar {
+    position: static;
+  }
+
+  & > .mlc-body > .mlc-inner {
+    padding: 8px 12px;
+    background: var(--surface-bg);
+  }
+
+  .mlc-line-nums-col {
+    padding-block: 8px;
+  }
+}
+#op-list-panel {
+  flex: 7 1 0;
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 8px 12px;
+  background: var(--surface-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+#op-list {
+  min-width: max-content;
+}
+#op-detail-panel {
+  flex: 3 1 0;
+  container-type: size;
+  overflow: auto;
+  min-height: 0;
+  padding: 8px 12px;
+  background: var(--surface-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+
+  .detail-name {
+    color: var(--accent-color);
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .detail-empty {
+    color: var(--muted-color);
+    font-style: italic;
+  }
+  .detail-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 1px 0;
+  }
+  .detail-idx {
+    color: var(--muted-color);
+    flex-shrink: 0;
+  }
+  .detail-val {
+    color: var(--number-color);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .detail-body {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .detail-args-col {
+    flex: 1;
+    min-width: 0;
+  }
+  .detail-img-col {
+    flex-shrink: 0;
+    max-width: 45%;
+    overflow: hidden;
+
+    .image-preview {
+      height: 90cqh;
+      width: auto;
+      max-width: 100%;
+      margin-top: 0;
+    }
+  }
+  .path-preview {
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle-color);
+    border-radius: 3px;
+    background: var(--bg-color);
+  }
+}
+.op-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5ch;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &.selected {
+    text-decoration: underline;
+  }
+
+  &:hover {
+    background: var(--hover-bg);
+    color: var(--hover-color);
+  }
+}
+.op-name {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+.op-arg {
+  color: var(--number-color);
+}
+.changed-value {
+  font-weight: bold;
+  background: var(--changed-bg);
+  color: var(--changed-color);
+}
+.bp-gutter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+
+  &::before {
+    content: "●";
+    color: var(--changed-color);
+    font-size: 0.75em;
+    opacity: 0;
+  }
+
+  &:hover::before {
+    opacity: 0.4;
+  }
+
+  &.active::before {
+    opacity: 1;
+  }
+}
+.op-line.paused {
+  background: var(--paused-bg);
+  color: var(--paused-color);
+  outline: 1px solid var(--paused-outline-color);
+  outline-offset: -1px;
+}
+.color-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--muted-color);
+  flex-shrink: 0;
+}
+
+@media (forced-colors: active) {
+  /* Opacity trick for breakpoint glyph visibility → use Canvas color to hide. */
+  .bp-gutter::before {
+    opacity: 1;
+    color: Canvas;
+  }
+  .bp-gutter:hover::before {
+    color: ButtonBorder;
+  }
+  .bp-gutter.active::before {
+    color: ButtonText;
+  }
+
+  /* Color swatch preserves the actual PDF color value. */
+  .color-swatch {
+    forced-color-adjust: none;
+  }
+}

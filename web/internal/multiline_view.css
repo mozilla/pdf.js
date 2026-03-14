@@ -1,0 +1,200 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+.mlc-scroll {
+  color-scheme: light dark;
+
+  --surface-bg: light-dark(#f3f3f3, #252526);
+  --input-bg: light-dark(#fff, #3c3c3c);
+  --button-bg: light-dark(#f3f3f3, #3c3c3c);
+  --button-hover-bg: light-dark(#e0e0e0, #4a4a4a);
+  --text-color: light-dark(#1e1e1e, #d4d4d4);
+  --muted-color: light-dark(#6e6e6e, #888);
+  --accent-color: light-dark(#0070c1, #9cdcfe);
+  --border-subtle-color: light-dark(#d0d0d0, #444);
+  --input-border-color: light-dark(#c8c8c8, #555);
+  --match-bg: light-dark(rgb(255 200 0 / 0.35), rgb(255 200 0 / 0.25));
+  --match-outline-color: light-dark(rgb(200 140 0 / 0.8), rgb(255 200 0 / 0.6));
+
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle-color);
+  border-radius: 3px;
+  overflow: hidden;
+
+  .mlc-load-sentinel {
+    height: 0;
+  }
+
+  /* Row wrapper that sits between the toolbar and the scrollable content.
+     Hosts the frozen line-number column and the actual scroll container. */
+  .mlc-body {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    min-height: 0;
+    line-height: 1.8em;
+  }
+
+  /* The line-number column lives *outside* the scroll container so it is
+     never affected by horizontal or vertical scroll. Its scrollTop is kept
+     in sync with the adjacent scroll container via a JS scroll listener. */
+  .mlc-line-nums-col {
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--surface-bg);
+    border-inline-end: 1px solid var(--border-subtle-color);
+  }
+
+  .mlc-inner {
+    flex: 1;
+    overflow: auto;
+    /* Disable scroll anchoring so manual scrollTop corrections aren't doubled. */
+    overflow-anchor: none;
+  }
+
+  .mlc-goto-bar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 4px;
+    background: var(--surface-bg);
+    border-bottom: 1px solid var(--border-subtle-color);
+    z-index: 1;
+
+    .mlc-search-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .mlc-search-input,
+    .mlc-goto {
+      font: inherit;
+      font-size: 0.85em;
+      padding: 2px 6px;
+      border: 1px solid var(--input-border-color);
+      border-radius: 3px;
+      background: var(--input-bg);
+      color: var(--text-color);
+
+      &:focus {
+        outline: 2px solid var(--accent-color);
+        outline-offset: 0;
+      }
+
+      &[aria-invalid="true"] {
+        border-color: red;
+      }
+    }
+
+    .mlc-search-input {
+      width: 140px;
+    }
+
+    .mlc-goto {
+      width: 110px;
+      margin-inline-start: auto;
+    }
+
+    .mlc-nav-button {
+      font: inherit;
+      font-size: 0.85em;
+      padding: 1px 6px;
+      border: 1px solid var(--input-border-color);
+      border-radius: 3px;
+      background: var(--button-bg);
+      color: var(--text-color);
+      cursor: pointer;
+      line-height: 1.4;
+
+      &:hover:not(:disabled) {
+        background: var(--button-hover-bg);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      &[aria-pressed="true"] {
+        background: var(--accent-color);
+        color: light-dark(white, black);
+        border-color: var(--accent-color);
+      }
+    }
+
+    .mlc-match-info {
+      font-size: 0.8em;
+      color: var(--muted-color);
+      white-space: nowrap;
+      min-width: 4ch;
+    }
+
+    .mlc-check-label {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.85em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+  }
+
+  .mlc-num-item {
+    display: block;
+    white-space: nowrap;
+    min-width: var(--line-num-width, 3ch);
+    padding-inline: 0.4em;
+    text-align: right;
+    font-family: monospace;
+    font-size: 0.8em;
+    color: var(--muted-color);
+    user-select: none;
+  }
+
+  .mlc-num-item.mlc-match {
+    background: var(--match-bg);
+  }
+
+  .mlc-match {
+    background: var(--match-bg);
+    outline: 1px solid var(--match-outline-color);
+  }
+}
+
+@media (forced-colors: active) {
+  .mlc-scroll {
+    --surface-bg: Canvas;
+    --input-bg: Field;
+    --button-bg: ButtonFace;
+    --button-hover-bg: Highlight;
+    --text-color: CanvasText;
+    --muted-color: GrayText;
+    --accent-color: CanvasText;
+    --border-subtle-color: ButtonBorder;
+    --input-border-color: ButtonBorder;
+    --match-bg: Mark;
+    --match-outline-color: ButtonBorder;
+
+    .mlc-search-input[aria-invalid="true"],
+    .mlc-goto[aria-invalid="true"] {
+      border-color: ButtonBorder;
+    }
+  }
+}
