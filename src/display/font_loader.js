@@ -507,10 +507,6 @@ class FontFaceObject {
     return this.#fontData.bbox;
   }
 
-  set bbox(bbox) {
-    shadow(this, "bbox", bbox);
-  }
-
   get fontMatrix() {
     return this.#fontData.fontMatrix;
   }
