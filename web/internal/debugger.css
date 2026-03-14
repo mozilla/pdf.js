@@ -1,0 +1,302 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import url(canvas_context_details_view.css);
+@import url(draw_ops_view.css);
+@import url(multiline_view.css);
+@import url(page_view.css);
+@import url(split_view.css);
+@import url(tree_view.css);
+
+:root {
+  color-scheme: light dark;
+
+  /* Backgrounds */
+  --bg-color: light-dark(#fff, #1e1e1e);
+  --surface-bg: light-dark(#f3f3f3, #252526);
+  --input-bg: light-dark(#fff, #3c3c3c);
+  --button-bg: light-dark(#f3f3f3, #3c3c3c);
+  --button-hover-bg: light-dark(#e0e0e0, #4a4a4a);
+  --clr-canvas-bg: var(--surface-bg);
+
+  /* Text */
+  --text-color: light-dark(#1e1e1e, #d4d4d4);
+  --muted-color: light-dark(#6e6e6e, #888);
+  --accent-color: light-dark(#0070c1, #9cdcfe);
+
+  /* Borders */
+  --border-color: light-dark(#e0e0e0, #3c3c3c);
+  --border-subtle-color: light-dark(#d0d0d0, #444);
+  --input-border-color: light-dark(#c8c8c8, #555);
+
+  /* Interactive states */
+  --hover-bg: light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.05));
+  --hover-color: currentColor;
+  --paused-bg: light-dark(rgb(255 165 0 / 0.15), rgb(255 165 0 / 0.2));
+  --paused-outline-color: rgb(255 140 0 / 0.6);
+  --paused-color: currentColor;
+
+  /* Semantic */
+  --ref-color: light-dark(#007b6e, #4ec9b0);
+  --ref-hover-color: light-dark(#065, #89d9c8);
+  --changed-bg: transparent;
+  --changed-color: light-dark(#c00, #f66);
+  --match-bg: light-dark(rgb(255 200 0 / 0.35), rgb(255 200 0 / 0.25));
+  --match-outline-color: light-dark(rgb(200 140 0 / 0.8), rgb(255 200 0 / 0.6));
+
+  /* Syntax highlighting */
+  --string-color: light-dark(#a31515, #ce9178);
+  --number-color: light-dark(#098658, #b5cea8);
+  --bool-color: light-dark(#00f, #569cd6);
+  --null-color: light-dark(#767676, #808080);
+  --name-color: light-dark(#795e26, #dcdcaa);
+  --stream-color: light-dark(#af00db, #c586c0);
+}
+
+@media (forced-colors: active) {
+  :root {
+    /* Backgrounds */
+    --bg-color: Canvas;
+    --surface-bg: Canvas;
+    --input-bg: Field;
+    --button-bg: ButtonFace;
+    --button-hover-bg: Highlight;
+    --clr-canvas-bg: var(--surface-bg);
+
+    /* Text */
+    --text-color: CanvasText;
+    --muted-color: GrayText;
+    --accent-color: CanvasText;
+
+    /* Borders */
+    --border-color: ButtonBorder;
+    --border-subtle-color: ButtonBorder;
+    --input-border-color: ButtonBorder;
+
+    /* Interactive states */
+    --hover-bg: Highlight;
+    --hover-color: HighlightText;
+    --paused-bg: Mark;
+    --paused-outline-color: ButtonBorder;
+    --paused-color: MarkText;
+
+    /* Semantic */
+    --ref-color: LinkText;
+    --ref-hover-color: ActiveText;
+    --changed-bg: Mark;
+    --changed-color: MarkText;
+    --match-bg: Mark;
+    --match-outline-color: ButtonBorder;
+
+    /* Syntax highlighting — replaced by plain text in HCM */
+    --string-color: CanvasText;
+    --number-color: CanvasText;
+    --bool-color: CanvasText;
+    --null-color: GrayText;
+    --name-color: CanvasText;
+    --stream-color: CanvasText;
+  }
+
+  /* Opacity-only disabled style → explicit GrayText. */
+  button:disabled,
+  input:disabled {
+    color: GrayText;
+    border-color: GrayText;
+    opacity: 1;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+body.loading {
+  cursor: wait;
+}
+html {
+  height: 100%;
+}
+body {
+  font-family: "Courier New", Courier, monospace;
+  margin: 0;
+  padding: 16px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 13px;
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+}
+
+/* In debug mode the body must be viewport-height so #debug-view can fill it.
+   In tree mode body is auto-height so the tree can grow and the page scrolls. */
+body:has(#debug-view:not([hidden])) {
+  height: 100%;
+  overflow: hidden;
+}
+#header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+
+  h1 {
+    color: var(--accent-color);
+    font-size: 1.2em;
+    margin: 0;
+  }
+
+  #pdf-info {
+    font-family: system-ui, sans-serif;
+    font-size: 1.15em;
+    font-weight: 500;
+    color: var(--text-color);
+  }
+}
+#password-dialog {
+  background: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--input-border-color);
+  border-radius: 6px;
+  padding: 20px;
+  min-width: 320px;
+
+  &::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  p {
+    margin: 0 0 12px;
+  }
+
+  input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--input-border-color);
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-family: inherit;
+    font-size: inherit;
+  }
+
+  .password-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+
+    button {
+      padding: 4px 14px;
+      border-radius: 3px;
+      border: 1px solid var(--input-border-color);
+      background: var(--button-bg);
+      color: inherit;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: inherit;
+
+      &:hover {
+        background: var(--button-hover-bg);
+      }
+    }
+  }
+}
+#controls {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  background: var(--surface-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--muted-color);
+  }
+
+  #github-link {
+    margin-inline-start: auto;
+    display: flex;
+    align-items: center;
+    color: var(--muted-color);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--text-color);
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+  }
+}
+#goto-input {
+  background: var(--input-bg);
+  color: var(--text-color);
+  border: 1px solid var(--input-border-color);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: inherit;
+
+  &:disabled {
+    opacity: 0.4;
+  }
+  &[aria-invalid="true"] {
+    border-color: var(--changed-color);
+  }
+}
+#status {
+  color: var(--muted-color);
+  font-style: italic;
+}
+#debug-button,
+#debug-back-button {
+  padding: 4px 12px;
+  border-radius: 3px;
+  border: 1px solid var(--input-border-color);
+  background: var(--button-bg);
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+
+  &:hover {
+    background: var(--button-hover-bg);
+  }
+}

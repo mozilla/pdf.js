@@ -1,0 +1,139 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#debug-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &[hidden] {
+    display: none;
+  }
+}
+#render-panels {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  align-items: stretch;
+  --spc-resizer-color: var(--border-color);
+  --spc-resizer-hover-color: var(--accent-color);
+}
+#render-panels {
+  /* instructionsSplit (spc-column) takes 70% of the width next to canvas. */
+  > .spc-column {
+    flex: 1 1 0;
+  }
+
+  /* opTopSplit (spc-row) takes 70% of the instructions column height. */
+  > .spc-column > .spc-row {
+    flex: 7 1 0;
+  }
+}
+#gfx-state-panel {
+  flex: 3 1 0;
+  min-width: 20ch;
+  overflow: auto;
+  min-height: 0;
+  padding-block: 8px;
+  background: var(--surface-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+#canvas-panel {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface-bg);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+#canvas-toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border-color);
+
+  button {
+    padding: 1px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--input-border-color);
+    background: var(--button-bg);
+    color: inherit;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1.1em;
+    line-height: 1.4;
+
+    &:hover {
+      background: var(--button-hover-bg);
+    }
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  #zoom-level {
+    min-width: 4ch;
+    text-align: center;
+  }
+}
+#canvas-scroll {
+  flex: 1;
+  overflow: auto;
+  padding: 8px 12px;
+  min-height: 0;
+  background: var(--clr-canvas-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: safe center;
+  gap: 12px;
+}
+#canvas-wrapper {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.temp-canvas-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  cursor: pointer;
+}
+.temp-canvas-label {
+  font-size: 0.85em;
+  color: var(--muted-color);
+  font-style: italic;
+}
+.temp-canvas-wrapper canvas {
+  border: 1px solid var(--border-subtle-color);
+  zoom: calc(1 / var(--dpr, 1));
+}
+#render-canvas {
+  cursor: pointer;
+}
+#highlight-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
