@@ -1687,4 +1687,101 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Double-click on title collapses/expands all outline items", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "nested_outline.pdf",
+        "#viewsManagerToggleButton"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should collapse all outline items on first double-click and expand them on second", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await showViewsManager(page);
+
+          await page.click("#viewsManagerSelectorButton");
+          await page.waitForSelector("#outlinesViewMenu", { visible: true });
+          await page.click("#outlinesViewMenu");
+          await page.waitForSelector("#outlinesView.withNesting");
+
+          // Initially all togglers must be expanded (none hidden).
+          const initialHiddenCount = await page.$$eval(
+            "#outlinesView .treeItemToggler",
+            togglers =>
+              togglers.filter(t => t.classList.contains("treeItemsHidden"))
+                .length
+          );
+          expect(initialHiddenCount).withContext(`In ${browserName}`).toBe(0);
+
+          // Double-click the title label (not on a button) to collapse all.
+          await page.click("#viewsManagerHeaderLabel", { count: 2 });
+          await page.waitForFunction(
+            () =>
+              document.querySelectorAll(
+                "#outlinesView .treeItemToggler:not(.treeItemsHidden)"
+              ).length === 0
+          );
+
+          // Double-click again to expand all.
+          await page.click("#viewsManagerHeaderLabel", { count: 2 });
+          await page.waitForFunction(
+            () =>
+              document.querySelectorAll(
+                "#outlinesView .treeItemToggler.treeItemsHidden"
+              ).length === 0
+          );
+        })
+      );
+    });
+  });
+
+  describe("Double-click on title resets all layer checkboxes", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("issue17679.pdf", "#viewsManagerToggleButton");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should restore all layer checkboxes to checked after unchecking them", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await showViewsManager(page);
+
+          await page.click("#viewsManagerSelectorButton");
+          await page.waitForSelector("#layersViewMenu", { visible: true });
+          await page.click("#layersViewMenu");
+          await page.waitForSelector("#layersView input[type='checkbox']");
+
+          // Uncheck all checkboxes.
+          const checkboxes = await page.$$(
+            "#layersView input[type='checkbox']"
+          );
+          for (const checkbox of checkboxes) {
+            await checkbox.click();
+          }
+          await page.waitForSelector("#layersView:not(:has(:checked))");
+
+          // Double-click the title label to reset layers to their default
+          // state.
+          await page.click("#viewsManagerHeaderLabel", { count: 2 });
+
+          await page.waitForSelector(
+            `#layersView:not(:has(input[type="checkbox"]:not(:checked)))`
+          );
+        })
+      );
+    });
+  });
 });

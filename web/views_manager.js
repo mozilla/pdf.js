@@ -93,6 +93,7 @@ class ViewsManager extends Sidebar {
       viewsManagerCurrentOutlineButton,
       viewsManagerSelectorButton,
       viewsManagerSelectorOptions,
+      viewsManagerTitle,
       viewsManagerHeaderLabel,
       viewsManagerStatus,
     },
@@ -140,6 +141,7 @@ class ViewsManager extends Sidebar {
 
     this.viewsManagerAddFileButton = viewsManagerAddFileButton;
     this.viewsManagerCurrentOutlineButton = viewsManagerCurrentOutlineButton;
+    this.viewsManagerTitle = viewsManagerTitle;
     this.viewsManagerHeaderLabel = viewsManagerHeaderLabel;
     this.viewsManagerStatus = viewsManagerStatus;
 
@@ -424,6 +426,19 @@ class ViewsManager extends Sidebar {
       });
     }
 
+    this.viewsManagerTitle.addEventListener("dblclick", e => {
+      if (e.target.closest("button, menu")) {
+        return;
+      }
+      if (this.active === SidebarView.OUTLINE) {
+        eventBus.dispatch("toggleoutlinetree", { source: this });
+        return;
+      }
+      if (this.active === SidebarView.LAYERS) {
+        eventBus.dispatch("resetlayers", { source: this });
+      }
+    });
+
     // Buttons for switching views.
     this.thumbnailButton.addEventListener("click", () => {
       this.switchView(SidebarView.THUMBS);
@@ -432,9 +447,6 @@ class ViewsManager extends Sidebar {
     this.outlineButton.addEventListener("click", () => {
       this.switchView(SidebarView.OUTLINE);
     });
-    this.outlineButton.addEventListener("dblclick", () => {
-      eventBus.dispatch("toggleoutlinetree", { source: this });
-    });
 
     this.attachmentsButton.addEventListener("click", () => {
       this.switchView(SidebarView.ATTACHMENTS);
@@ -442,9 +454,6 @@ class ViewsManager extends Sidebar {
 
     this.layersButton.addEventListener("click", () => {
       this.switchView(SidebarView.LAYERS);
-    });
-    this.layersButton.addEventListener("dblclick", () => {
-      eventBus.dispatch("resetlayers", { source: this });
     });
 
     // Buttons for view-specific options.
