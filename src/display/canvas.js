@@ -787,9 +787,15 @@ class CanvasGraphics {
     let fnId, fnArgs;
 
     while (true) {
-      if (stepper !== undefined && i === stepper.nextBreakPoint) {
-        stepper.breakIt(i, continueCallback);
-        return i;
+      if (stepper !== undefined) {
+        if (i === stepper.nextBreakPoint) {
+          stepper.breakIt(i, continueCallback);
+          return i;
+        }
+        if (stepper.shouldSkip(i)) {
+          i++;
+          continue;
+        }
       }
 
       if (!operationsFilter || operationsFilter(i)) {
