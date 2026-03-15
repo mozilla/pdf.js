@@ -554,6 +554,10 @@ describe("Comment", () => {
     it("must check that the comment sidebar is resizable with the keyboard", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          if (navigator.platform.includes("Win")) {
+            pending("Fails intermittently on Windows (issue #20886).");
+          }
+
           await switchToComment(page);
 
           const sidebarSelector = "#editorCommentParamsToolbar";
