@@ -32,6 +32,13 @@
     "type": "other"
   },
   {
+    "id": "issue20872",
+    "file": "pdfs/issue20872.pdf",
+    "md5": "2394eea595990d0148b209fe49f035e5",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "filled-background-range",
     "file": "pdfs/filled-background.pdf",
     "md5": "2e3120255d9c3e79b96d2543b12d2589",
