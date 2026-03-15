@@ -23,6 +23,11 @@ for (const [name, id] of Object.entries(OPS)) {
   OPS_TO_NAME[id] = name;
 }
 
+const BreakpointType = {
+  PAUSE: 0,
+  SKIP: 1,
+};
+
 // Single hidden color input reused for all swatch pickers.
 const colorPickerInput = document.createElement("input");
 colorPickerInput.type = "color";
@@ -408,7 +413,8 @@ class DrawOpsView {
 
   #selectedLine = null;
 
-  #breakpoints = new Set();
+  // Map<opIndex, BreakpointType>
+  #breakpoints = new Map();
 
   #originalColors = new Map();
 
@@ -553,27 +559,40 @@ class DrawOpsView {
     line.ariaSelected = "false";
     line.tabIndex = i === 0 ? 0 : -1;
 
-    // Breakpoint gutter — click to toggle a red-bullet breakpoint.
+    // Breakpoint gutter — click cycles: none → pause (●) → skip (✕) → none.
     const gutter = document.createElement("span");
     gutter.className = "bp-gutter";
     gutter.role = "checkbox";
     gutter.tabIndex = 0;
     gutter.ariaLabel = "Breakpoint";
-    const isInitiallyActive = this.#breakpoints.has(i);
-    gutter.ariaChecked = String(isInitiallyActive);
-    if (isInitiallyActive) {
-      gutter.classList.add("active");
+    const initBpType = this.#breakpoints.get(i);
+    if (initBpType === BreakpointType.PAUSE) {
+      gutter.dataset.bp = "pause";
+      gutter.ariaChecked = "true";
+    } else if (initBpType === BreakpointType.SKIP) {
+      gutter.dataset.bp = "skip";
+      gutter.ariaChecked = "mixed";
+      line.classList.add("op-skipped");
+    } else {
+      gutter.ariaChecked = "false";
     }
     gutter.addEventListener("click", e => {
       e.stopPropagation();
-      if (this.#breakpoints.has(i)) {
-        this.#breakpoints.delete(i);
-        gutter.classList.remove("active");
-        gutter.ariaChecked = "false";
-      } else {
-        this.#breakpoints.add(i);
-        gutter.classList.add("active");
+      const current = this.#breakpoints.get(i);
+      if (current === undefined) {
+        this.#breakpoints.set(i, BreakpointType.PAUSE);
+        gutter.dataset.bp = "pause";
         gutter.ariaChecked = "true";
+      } else if (current === BreakpointType.PAUSE) {
+        this.#breakpoints.set(i, BreakpointType.SKIP);
+        gutter.dataset.bp = "skip";
+        gutter.ariaChecked = "mixed";
+        line.classList.add("op-skipped");
+      } else {
+        this.#breakpoints.delete(i);
+        delete gutter.dataset.bp;
+        gutter.ariaChecked = "false";
+        line.classList.remove("op-skipped");
       }
     });
     gutter.addEventListener("keydown", e => {
@@ -656,4 +675,4 @@ class DrawOpsView {
   }
 }
 
-export { DrawOpsView };
+export { BreakpointType, DrawOpsView };
