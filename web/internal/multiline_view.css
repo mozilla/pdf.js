@@ -145,15 +145,6 @@
       white-space: nowrap;
       min-width: 4ch;
     }
-
-    .mlc-check-label {
-      display: flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 0.85em;
-      cursor: pointer;
-      white-space: nowrap;
-    }
   }
 
   .mlc-num-item {
