@@ -743,6 +743,7 @@ function onAllSessionsClosedAfterTests(name) {
     }
     var runtime = (Date.now() - startTime) / 1000;
     console.log(name + " tests runtime was " + runtime.toFixed(1) + " seconds");
+    process.exit(numErrors > 0 ? 1 : 0);
   };
 }
 
