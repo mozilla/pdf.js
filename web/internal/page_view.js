@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { BreakpointType, DrawOpsView } from "./draw_ops_view.js";
 import { CanvasContextDetailsView } from "./canvas_context_details_view.js";
 import { DOMCanvasFactory } from "pdfjs/display/canvas_factory.js";
-import { DrawOpsView } from "./draw_ops_view.js";
 import { SplitView } from "./split_view.js";
 
 // Stepper for pausing/stepping through op list rendering.
@@ -61,10 +61,20 @@ class ViewerStepper {
     cb();
   }
 
+  shouldSkip(i) {
+    return (
+      globalThis.StepperManager._breakpoints.get(i) === BreakpointType.SKIP
+    );
+  }
+
   #findNextAfter(idx) {
     let next = null;
-    for (const bp of globalThis.StepperManager._breakpoints) {
-      if (bp > idx && (next === null || bp < next)) {
+    for (const [bp, type] of globalThis.StepperManager._breakpoints) {
+      if (
+        type === BreakpointType.PAUSE &&
+        bp > idx &&
+        (next === null || bp < next)
+      ) {
         next = bp;
       }
     }

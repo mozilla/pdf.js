@@ -159,7 +159,7 @@
   &::before {
     content: "●";
     color: var(--changed-color);
-    font-size: 0.75em;
+    font-size: 0.9em;
     opacity: 0;
   }
 
@@ -167,9 +167,17 @@
     opacity: 0.4;
   }
 
-  &.active::before {
+  &[data-bp="pause"]::before {
     opacity: 1;
   }
+
+  &[data-bp="skip"]::before {
+    content: "✕";
+    opacity: 1;
+  }
+}
+.op-line.op-skipped > :not(.bp-gutter) {
+  opacity: 0.4;
 }
 .op-line.paused {
   background: var(--paused-bg);
@@ -194,8 +202,15 @@
   .bp-gutter:hover::before {
     color: ButtonBorder;
   }
-  .bp-gutter.active::before {
+  .bp-gutter[data-bp="pause"]::before {
     color: ButtonText;
+  }
+  .bp-gutter[data-bp="skip"]::before {
+    color: ButtonText;
+  }
+  .op-line.op-skipped > :not(.bp-gutter) {
+    opacity: 1;
+    color: GrayText;
   }
 
   /* Color swatch preserves the actual PDF color value. */

@@ -659,6 +659,10 @@ class Stepper {
     this.goTo(idx);
   }
 
+  shouldSkip(idx) {
+    return false;
+  }
+
   goTo(idx) {
     const allRows = this.panel.getElementsByClassName("line");
     for (const row of allRows) {
