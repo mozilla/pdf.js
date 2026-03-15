@@ -378,6 +378,8 @@ const PDFViewerApplication = {
         enableUpdatedAddImage: x => x === "true",
         highlightEditorColors: x => x,
         maxCanvasPixels: x => parseInt(x),
+        maxScale: x => parseInt(x),
+        minScale: x => parseInt(x),
         spreadModeOnLoad: x => parseInt(x),
         supportsCaretBrowsingMode: x => x === "true",
         viewerCssTheme: x => parseInt(x),
@@ -567,6 +569,8 @@ const PDFViewerApplication = {
       ),
       imageResourcesPath: AppOptions.get("imageResourcesPath"),
       enablePrintAutoRotate: AppOptions.get("enablePrintAutoRotate"),
+      minScale: AppOptions.get("minScale") / 100,
+      maxScale: AppOptions.get("maxScale") / 100,
       maxCanvasPixels,
       maxCanvasDim,
       capCanvasAreaFactor,
@@ -687,12 +691,20 @@ const PDFViewerApplication = {
         const nimbusData = JSON.parse(
           AppOptions.get("nimbusDataStr") || "null"
         );
-        this.toolbar = new Toolbar(appConfig.toolbar, eventBus, nimbusData);
+        this.toolbar = new Toolbar(
+          appConfig.toolbar,
+          eventBus,
+          nimbusData,
+          pdfViewer.minScale,
+          pdfViewer.maxScale
+        );
       } else {
         this.toolbar = new Toolbar(
           appConfig.toolbar,
           eventBus,
-          AppOptions.get("toolbarDensity")
+          AppOptions.get("toolbarDensity"),
+          pdfViewer.minScale,
+          pdfViewer.maxScale
         );
       }
     }

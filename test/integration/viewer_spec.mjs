@@ -1687,4 +1687,61 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Configurable zoom limits", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "empty.pdf",
+        ".textLayer .endOfContent",
+        100,
+        null,
+        { minScale: 50, maxScale: 200 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must apply configured minScale and maxScale", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const { minScale, maxScale } = await page.evaluate(() => ({
+            minScale: window.PDFViewerApplication.pdfViewer.minScale,
+            maxScale: window.PDFViewerApplication.pdfViewer.maxScale,
+          }));
+          expect(minScale).withContext(`In ${browserName}`).toBe(0.5);
+          expect(maxScale).withContext(`In ${browserName}`).toBe(2.0);
+
+          for (let i = 0; i < 20; i++) {
+            await page.evaluate(() => window.PDFViewerApplication.zoomOut());
+          }
+          const scaleAtMin = await page.evaluate(
+            () => window.PDFViewerApplication.pdfViewer.currentScale
+          );
+          expect(scaleAtMin)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThanOrEqual(0.5);
+          expect(await page.$eval("#zoomOutButton", el => el.disabled))
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+
+          for (let i = 0; i < 20; i++) {
+            await page.evaluate(() => window.PDFViewerApplication.zoomIn());
+          }
+          const scaleAtMax = await page.evaluate(
+            () => window.PDFViewerApplication.pdfViewer.currentScale
+          );
+          expect(scaleAtMax)
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(2.0);
+          expect(await page.$eval("#zoomInButton", el => el.disabled))
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+        })
+      );
+    });
+  });
 });
