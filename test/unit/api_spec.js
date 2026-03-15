@@ -888,6 +888,20 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("should not prompt for password if `/AuthEvent /EFOpen`", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue20049.pdf"));
+      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      let called = false;
+
+      loadingTask.onPassword = function () {
+        called = true;
+      };
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toBeGreaterThan(0);
+      expect(called).toBe(false);
+    });
+
     it("Doesn't iterate over all empty slots in the xref entries (bug 1980958)", async function () {
       if (isNodeJS) {
         pending("Worker is not supported in Node.js.");

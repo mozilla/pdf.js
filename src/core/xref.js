@@ -43,6 +43,7 @@ class XRef {
     this._newPersistentRefNum = null;
     this._newTemporaryRefNum = null;
     this._persistentRefsCache = null;
+    this.decryptOnAttachmentOpen = false;
   }
 
   getNewPersistentRef(obj) {
@@ -117,18 +118,26 @@ class XRef {
       warn(`XRef.parse - Invalid "Encrypt" reference: "${ex}".`);
     }
     if (encrypt instanceof Dict) {
-      const ids = trailerDict.get("ID");
-      const fileId = ids?.length ? ids[0] : "";
-      // The 'Encrypt' dictionary itself should not be encrypted, and by
-      // setting `suppressEncryption` we can prevent an infinite loop inside
-      // of `XRef_fetchUncompressed` if the dictionary contains indirect
-      // objects (fixes issue7665.pdf).
-      encrypt.suppressEncryption = true;
-      this.encrypt = new CipherTransformFactory(
-        encrypt,
-        fileId,
-        this.pdfManager.password
-      );
+      // Note: decrypting attachments is not supported regardless.
+      // But it is at least possible to honour `/AuthEvent /EFOpen` by not
+      // asking for a password on document open.
+      this.decryptOnAttachmentOpen =
+        encrypt.get("CF")?.get("StdCF")?.get("AuthEvent")?.name === "EFOpen";
+
+      if (!this.decryptOnAttachmentOpen) {
+        const ids = trailerDict.get("ID");
+        const fileId = ids?.length ? ids[0] : "";
+        // The 'Encrypt' dictionary itself should not be encrypted, and by
+        // setting `suppressEncryption` we can prevent an infinite loop inside
+        // of `XRef_fetchUncompressed` if the dictionary contains indirect
+        // objects (fixes issue7665.pdf).
+        encrypt.suppressEncryption = true;
+        this.encrypt = new CipherTransformFactory(
+          encrypt,
+          fileId,
+          this.pdfManager.password
+        );
+      }
     }
 
     // Get the root dictionary (catalog) object, and do some basic validation.
