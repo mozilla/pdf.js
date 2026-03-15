@@ -297,7 +297,10 @@ class PageView {
         const labelEl = document.createElement("div");
         labelEl.className = "temp-canvas-label";
         labelEl.textContent = `${ctxLabel} — ${width}×${height}`;
-        wrapper.append(labelEl, canvasAndCtx.canvas);
+        const checker = document.createElement("div");
+        checker.className = "canvas-checker";
+        checker.append(canvasAndCtx.canvas);
+        wrapper.append(labelEl, checker);
         const entry = { canvasAndCtx, wrapper, labelEl };
         this.#alive.push(entry);
         this.#attachWrapper(entry);

@@ -62,56 +62,6 @@ const COLOR_CTX_PROPS = new Set(["fillStyle", "shadowColor", "strokeStyle"]);
 
 const MATHML_NS = "http://www.w3.org/1998/Math/MathML";
 
-// Cached media queries used by drawCheckerboard.
-const _prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
-const _prefersHCM = window.matchMedia("(forced-colors: active)");
-
-/**
- * Draw a checkerboard pattern filling the canvas, to reveal transparency.
- * Mirrors the pattern used in src/display/editor/stamp.js.
- */
-function drawCheckerboard(ctx, width, height) {
-  const isHCM = _prefersHCM.matches;
-  const isDark = _prefersDark.matches;
-  let light, dark;
-  if (isHCM) {
-    light = "white";
-    dark = "black";
-  } else if (isDark) {
-    light = "#8f8f9d";
-    dark = "#42414d";
-  } else {
-    light = "white";
-    dark = "#cfcfd8";
-  }
-  const boxDim = 15;
-  const pattern =
-    typeof OffscreenCanvas !== "undefined"
-      ? new OffscreenCanvas(boxDim * 2, boxDim * 2)
-      : Object.assign(document.createElement("canvas"), {
-          width: boxDim * 2,
-          height: boxDim * 2,
-        });
-  const patternCtx = pattern.getContext("2d");
-  if (!patternCtx) {
-    return;
-  }
-  patternCtx.fillStyle = light;
-  patternCtx.fillRect(0, 0, boxDim * 2, boxDim * 2);
-  patternCtx.fillStyle = dark;
-  patternCtx.fillRect(0, 0, boxDim, boxDim);
-  patternCtx.fillRect(boxDim, boxDim, boxDim, boxDim);
-  ctx.save();
-  const fillPattern = ctx.createPattern(pattern, "repeat");
-  if (!fillPattern) {
-    ctx.restore();
-    return;
-  }
-  ctx.fillStyle = fillPattern;
-  ctx.fillRect(0, 0, width, height);
-  ctx.restore();
-}
-
 /**
  * Tracks and displays the CanvasRenderingContext2D graphics state for all
  * contexts created during a stepped render.
@@ -240,12 +190,6 @@ class CanvasContextDetailsView {
         return ctx;
       }
       if (!wrappedCtx) {
-        if (
-          globalThis.StepperManager._active !== null &&
-          args[0]?.alpha !== false
-        ) {
-          drawCheckerboard(ctx, canvas.width, canvas.height);
-        }
         wrappedCtx = this.wrapContext(ctx, label);
       }
       return wrappedCtx;

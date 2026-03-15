@@ -124,7 +124,18 @@
   color: var(--muted-color);
   font-style: italic;
 }
-.temp-canvas-wrapper canvas {
+.canvas-checker {
+  display: inline-block;
+  line-height: 0;
+  background-image: conic-gradient(
+    light-dark(#cfcfd8, #42414d) 25%,
+    light-dark(white, #8f8f9d) 25% 50%,
+    light-dark(#cfcfd8, #42414d) 50% 75%,
+    light-dark(white, #8f8f9d) 75%
+  );
+  background-size: 30px 30px;
+}
+.temp-canvas-wrapper .canvas-checker {
   border: 1px solid var(--border-subtle-color);
   zoom: calc(1 / var(--dpr, 1));
 }
