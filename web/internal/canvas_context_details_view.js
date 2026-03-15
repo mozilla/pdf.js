@@ -284,7 +284,7 @@ class CanvasContextDetailsView {
 
       const prevBtn = document.createElement("button");
       prevBtn.className = "gfx-state-stack-button";
-      prevBtn.ariaLabel = "View older saved state";
+      prevBtn.title = "View older saved state";
       prevBtn.textContent = "←";
 
       const pos = document.createElement("span");
@@ -292,7 +292,7 @@ class CanvasContextDetailsView {
 
       const nextBtn = document.createElement("button");
       nextBtn.className = "gfx-state-stack-button";
-      nextBtn.ariaLabel = "View newer saved state";
+      nextBtn.title = "View newer saved state";
       nextBtn.textContent = "→";
 
       navContainer.append(prevBtn, pos, nextBtn);

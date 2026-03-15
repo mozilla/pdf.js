@@ -75,9 +75,9 @@ class MultilineView {
 
   #matchInfo;
 
-  #ignoreCaseCb;
+  #ignoreCaseBtn;
 
-  #regexCb;
+  #regexBtn;
 
   /**
    * @param {object}      opts
@@ -362,32 +362,32 @@ class MultilineView {
     const prevButton = (this.#prevButton = document.createElement("button"));
     prevButton.className = "mlc-nav-button";
     prevButton.textContent = "↑";
-    prevButton.ariaLabel = "Previous match";
+    prevButton.title = "Previous match";
     prevButton.disabled = true;
 
     const nextButton = (this.#nextButton = document.createElement("button"));
     nextButton.className = "mlc-nav-button";
     nextButton.textContent = "↓";
-    nextButton.ariaLabel = "Next match";
+    nextButton.title = "Next match";
     nextButton.disabled = true;
 
     const matchInfo = (this.#matchInfo = document.createElement("span"));
     matchInfo.className = "mlc-match-info";
 
-    const { label: ignoreCaseLabel, cb: ignoreCaseCb } =
-      this.#makeCheckboxLabel("Ignore case");
-    const { label: regexLabel, cb: regexCb } = this.#makeCheckboxLabel("Regex");
-    this.#ignoreCaseCb = ignoreCaseCb;
-    this.#regexCb = regexCb;
+    const ignoreCaseBtn = (this.#ignoreCaseBtn = this.#makeToggleButton(
+      "Aa",
+      "Ignore case"
+    ));
+    const regexBtn = (this.#regexBtn = this.#makeToggleButton(".*", "Regex"));
 
     searchGroup.append(
       searchInput,
       searchError,
       prevButton,
       nextButton,
-      matchInfo,
-      ignoreCaseLabel,
-      regexLabel
+      ignoreCaseBtn,
+      regexBtn,
+      matchInfo
     );
 
     const gotoInput = document.createElement("input");
@@ -412,8 +412,16 @@ class MultilineView {
     });
     prevButton.addEventListener("click", () => this.#navigateMatch(-1));
     nextButton.addEventListener("click", () => this.#navigateMatch(1));
-    this.#ignoreCaseCb.addEventListener("change", () => this.#runSearch());
-    this.#regexCb.addEventListener("change", () => this.#runSearch());
+    this.#ignoreCaseBtn.addEventListener("click", () => {
+      this.#ignoreCaseBtn.ariaPressed =
+        this.#ignoreCaseBtn.ariaPressed === "true" ? "false" : "true";
+      this.#runSearch();
+    });
+    this.#regexBtn.addEventListener("click", () => {
+      this.#regexBtn.ariaPressed =
+        this.#regexBtn.ariaPressed === "true" ? "false" : "true";
+      this.#runSearch();
+    });
 
     gotoInput.addEventListener("keydown", ({ key }) => {
       if (key !== "Enter") {
@@ -432,13 +440,13 @@ class MultilineView {
     return bar;
   }
 
-  #makeCheckboxLabel(text) {
-    const label = document.createElement("label");
-    label.className = "mlc-check-label";
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    label.append(cb, ` ${text}`);
-    return { label, cb };
+  #makeToggleButton(text, title) {
+    const btn = document.createElement("button");
+    btn.className = "mlc-nav-button";
+    btn.textContent = text;
+    btn.title = title;
+    btn.ariaPressed = "false";
+    return btn;
   }
 
   #updateMatchInfo() {
@@ -466,9 +474,12 @@ class MultilineView {
     }
 
     let test;
-    if (this.#regexCb.checked) {
+    if (this.#regexBtn.ariaPressed === "true") {
       try {
-        const re = new RegExp(query, this.#ignoreCaseCb.checked ? "i" : "");
+        const re = new RegExp(
+          query,
+          this.#ignoreCaseBtn.ariaPressed === "true" ? "i" : ""
+        );
         test = str => re.test(str);
         this.#searchInput.removeAttribute("aria-invalid");
         this.#searchError.textContent = "";
@@ -479,7 +490,7 @@ class MultilineView {
         return false;
       }
     } else {
-      const ignoreCase = this.#ignoreCaseCb.checked;
+      const ignoreCase = this.#ignoreCaseBtn.ariaPressed === "true";
       const needle = ignoreCase ? query.toLowerCase() : query;
       test = str => (ignoreCase ? str.toLowerCase() : str).includes(needle);
     }
