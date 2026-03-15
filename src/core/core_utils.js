@@ -63,10 +63,11 @@ function getLookupTableFactory(initializer) {
 }
 
 class MissingDataException extends BaseException {
-  constructor(begin, end) {
+  constructor(begin, end, objStreamRefNum = 0) {
     super(`Missing data [${begin}, ${end})`, "MissingDataException");
     this.begin = begin;
     this.end = end;
+    this.objStreamRefNum = objStreamRefNum;
   }
 }
 
