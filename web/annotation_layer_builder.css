@@ -82,9 +82,11 @@
   &[data-main-rotation="90"] .norotate {
     transform: rotate(270deg) translateX(-100%);
   }
+
   &[data-main-rotation="180"] .norotate {
     transform: rotate(180deg) translate(-100%, -100%);
   }
+
   &[data-main-rotation="270"] .norotate {
     transform: rotate(90deg) translateY(-100%);
   }
@@ -174,6 +176,14 @@
     left: 0;
   }
 
+  .highlightAnnotation,
+  .underlineAnnotation,
+  .squigglyAnnotation,
+  .strikeoutAnnotation {
+    cursor: pointer;
+    pointer-events: none;
+  }
+
   .textWidgetAnnotation :is(input, textarea),
   .choiceWidgetAnnotation select,
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input {
@@ -218,6 +228,7 @@
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:hover {
     border: 2px solid var(--input-hover-border-color);
   }
+
   .textWidgetAnnotation :is(input, textarea):hover,
   .choiceWidgetAnnotation select:hover,
   .buttonWidgetAnnotation.checkBox input:hover {
