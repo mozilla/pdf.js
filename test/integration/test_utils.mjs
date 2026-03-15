@@ -1006,6 +1006,15 @@ async function showViewsManager(page) {
   });
 }
 
+async function waitForBrowserTrip(page) {
+  const handle = await page.evaluateHandle(() => [
+    new Promise(resolve => {
+      window.requestAnimationFrame(resolve);
+    }),
+  ]);
+  await awaitPromise(handle);
+}
+
 // Unicode bidi isolation characters, Fluent adds these markers to the text.
 const FSI = "\u2068";
 const PDI = "\u2069";
@@ -1078,6 +1087,7 @@ export {
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
+  waitForBrowserTrip,
   waitForDOMMutation,
   waitForEntryInStorage,
   waitForEvent,
