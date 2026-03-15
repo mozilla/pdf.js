@@ -17,10 +17,10 @@
 
 import { AnnotationEditorType, ColorPicker, noContextMenu } from "pdfjs-lib";
 import {
+  DEFAULT_MAX_SCALE,
+  DEFAULT_MIN_SCALE,
   DEFAULT_SCALE,
   DEFAULT_SCALE_VALUE,
-  MAX_SCALE,
-  MIN_SCALE,
   toggleExpandedBtn,
 } from "./ui_utils.js";
 
@@ -56,10 +56,20 @@ class Toolbar {
    *    - 0 (default) - The regular toolbar size.
    *    - 1 (compact) - The small toolbar size.
    *    - 2 (touch) - The large toolbar size.
+   * @param {number} minScale - The minimum allowed zoom scale.
+   * @param {number} maxScale - The maximum allowed zoom scale.
    */
-  constructor(options, eventBus, toolbarDensity = 0) {
+  constructor(
+    options,
+    eventBus,
+    toolbarDensity = 0,
+    minScale = DEFAULT_MIN_SCALE,
+    maxScale = DEFAULT_MAX_SCALE
+  ) {
     this.#opts = options;
     this.eventBus = eventBus;
+    this.minScale = minScale;
+    this.maxScale = maxScale;
     const buttons = [
       { element: options.previous, eventName: "previouspage" },
       { element: options.next, eventName: "nextpage" },
@@ -385,8 +395,8 @@ class Toolbar {
     opts.previous.disabled = pageNumber <= 1;
     opts.next.disabled = pageNumber >= pagesCount;
 
-    opts.zoomOut.disabled = pageScale <= MIN_SCALE;
-    opts.zoomIn.disabled = pageScale >= MAX_SCALE;
+    opts.zoomOut.disabled = pageScale <= this.minScale;
+    opts.zoomIn.disabled = pageScale >= this.maxScale;
 
     let predefinedValueFound = false;
     for (const option of opts.scaleSelect.options) {

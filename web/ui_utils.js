@@ -18,8 +18,8 @@ import { MathClamp } from "pdfjs-lib";
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const DEFAULT_SCALE_DELTA = 1.1;
-const MIN_SCALE = 0.1;
-const MAX_SCALE = 10.0;
+const DEFAULT_MIN_SCALE = 0.1;
+const DEFAULT_MAX_SCALE = 10.0;
 const UNKNOWN_SCALE = 0;
 const MAX_AUTO_SCALE = 1.25;
 const SCROLLBAR_PADDING = 40;
@@ -886,6 +886,8 @@ export {
   binarySearchFirstItem,
   calcRound,
   CursorTool,
+  DEFAULT_MAX_SCALE,
+  DEFAULT_MIN_SCALE,
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
@@ -899,8 +901,6 @@ export {
   isValidScrollMode,
   isValidSpreadMode,
   MAX_AUTO_SCALE,
-  MAX_SCALE,
-  MIN_SCALE,
   normalizeWheelEventDelta,
   normalizeWheelEventDirection,
   parseQueryString,

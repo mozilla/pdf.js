@@ -42,6 +42,8 @@ import {
   version,
 } from "pdfjs-lib";
 import {
+  DEFAULT_MAX_SCALE,
+  DEFAULT_MIN_SCALE,
   DEFAULT_SCALE,
   DEFAULT_SCALE_DELTA,
   DEFAULT_SCALE_VALUE,
@@ -52,8 +54,6 @@ import {
   isValidScrollMode,
   isValidSpreadMode,
   MAX_AUTO_SCALE,
-  MAX_SCALE,
-  MIN_SCALE,
   PresentationModeState,
   removeNullCharacters,
   SCROLLBAR_PADDING,
@@ -255,7 +255,11 @@ class PDFViewer {
 
   #eventAbortController = null;
 
+  #maxScale = null;
+
   #minDurationToUpdateCanvas = 0;
+
+  #minScale = null;
 
   #mlManager = null;
 
@@ -371,7 +375,16 @@ class PDFViewer {
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
-
+    if (options.minScale <= 0 || options.maxScale < options.minScale) {
+      console.warn(
+        `Invalid scale options (minScale: ${options.minScale * 100}, maxScale: ${options.maxScale * 100}), using defaults (minScale: ${DEFAULT_MIN_SCALE * 100}, maxScale: ${DEFAULT_MAX_SCALE * 100}). Requirement: maxScale >= minScale > 0`
+      );
+      this.#minScale = DEFAULT_MIN_SCALE;
+      this.#maxScale = DEFAULT_MAX_SCALE;
+    } else {
+      this.#minScale = options.minScale;
+      this.#maxScale = options.maxScale;
+    }
     this.defaultRenderingQueue = !options.renderingQueue;
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
@@ -587,6 +600,20 @@ class PDFViewer {
       return;
     }
     this.#setScale(val, { noScroll: false });
+  }
+
+  /**
+   * @type {number}
+   */
+  get minScale() {
+    return this.#minScale;
+  }
+
+  /**
+   * @type {number}
+   */
+  get maxScale() {
+    return this.#maxScale;
   }
 
   /**
@@ -2462,7 +2489,7 @@ class PDFViewer {
         newScale = round((newScale * delta).toFixed(2) * 10) / 10;
       } while (--steps > 0);
     }
-    newScale = MathClamp(newScale, MIN_SCALE, MAX_SCALE);
+    newScale = MathClamp(newScale, this.#minScale, this.#maxScale);
     this.#setScale(newScale, { noScroll: false, drawingDelay, origin });
   }
 

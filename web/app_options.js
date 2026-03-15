@@ -342,10 +342,20 @@ const defaultOptions = {
     value: 2 ** 25,
     kind: OptionKind.VIEWER,
   },
+  maxScale: {
+    /** @type {number} */
+    value: 1000,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   minDurationToUpdateCanvas: {
     /** @type {number} */
     value: 500, // ms
     kind: OptionKind.VIEWER,
+  },
+  minScale: {
+    /** @type {number} */
+    value: 10,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   forcePageColors: {
     /** @type {boolean} */
