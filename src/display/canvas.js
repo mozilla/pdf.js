@@ -648,6 +648,47 @@ const LINE_JOIN_STYLES = ["miter", "round", "bevel"];
 const NORMAL_CLIP = {};
 const EO_CLIP = {};
 
+/**
+ * Build a clip Path2D from device-space bounds, converting back to user space
+ * via the inverse of the given transform.
+ *
+ * PDF bbox values can be astronomically large (e.g. ±8.988e307 produced by
+ * macOS Quartz PDFContext to mean "no clipping"). Passing such values directly
+ * to Path2D.rect() triggers a Chromium/Skia bug: Skia stores path coordinates
+ * as Float32, so values exceeding Float32.MAX (~3.4e38) overflow to ±Infinity,
+ * silently invalidating the clip path and clearing the entire canvas.
+ *
+ * The caller must already have clamped `deviceBounds` to the canvas extents
+ * (via Util.intersect), so this function only needs to invert the transform.
+ *
+ * @param {number[]} deviceBounds - Safe [x0,y0,x1,y1] in device (canvas) space.
+ * @param {number[]} transform    - The CTM used to go from user→device space.
+ * @returns {Path2D}
+ */
+function buildClipFromDeviceBounds(deviceBounds, transform) {
+  // Compute the inverse CTM so we can map device-space coords back to
+  // the user-space coordinate system expected by Path2D / ctx.clip().
+  const inv = Util.inverseTransform(transform);
+
+  // Map the two diagonal corners of the device-space rectangle into
+  // user space.  Each point is transformed in-place.
+  const p0 = [deviceBounds[0], deviceBounds[1]];
+  Util.applyTransform(p0, inv);
+  const p1 = [deviceBounds[2], deviceBounds[3]];
+  Util.applyTransform(p1, inv);
+
+  // The inverse transform may mirror or rotate the axes, so re-derive
+  // the axis-aligned bounding box from the transformed corners.
+  const x0 = Math.min(p0[0], p1[0]);
+  const y0 = Math.min(p0[1], p1[1]);
+  const x1 = Math.max(p0[0], p1[0]);
+  const y1 = Math.max(p0[1], p1[1]);
+
+  const clip = new Path2D();
+  clip.rect(x0, y0, x1 - x0, y1 - y0);
+  return clip;
+}
+
 class CanvasGraphics {
   constructor(
     canvasCtx,
@@ -2506,16 +2547,32 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (bbox) {
+      // Clamp the BBox to canvas extents in device space, then build a
+      // user-space clip path (see buildClipFromDeviceBounds for details).
+      let bounds = MIN_MAX_INIT.slice();
+      Util.axialAlignedBoundingBox(bbox, this.baseTransform, bounds);
       Util.axialAlignedBoundingBox(
         bbox,
         this.baseTransform,
         this.current.minMax
       );
-      const [x0, y0, x1, y1] = bbox;
-      const clip = new Path2D();
-      clip.rect(x0, y0, x1 - x0, y1 - y0);
+      const canvasBounds = [
+        0,
+        0,
+        this.ctx.canvas.width,
+        this.ctx.canvas.height,
+      ];
+      bounds = Util.intersect(bounds, canvasBounds) || canvasBounds;
+      const clip = buildClipFromDeviceBounds(bounds, this.baseTransform);
       this.ctx.clip(clip);
-      this.dependencyTracker?.recordClipBox(opIdx, this.ctx, x0, x1, y0, y1);
+      this.dependencyTracker?.recordClipBox(
+        opIdx,
+        this.ctx,
+        bounds[0],
+        bounds[2],
+        bounds[1],
+        bounds[3]
+      );
       this.endPath(opIdx);
     }
   }
@@ -2617,15 +2674,9 @@ class CanvasGraphics {
     groupCtx.transform(...currentTransform);
 
     // Apply the bbox to the group context.
-    let clip = new Path2D();
-    const [x0, y0, x1, y1] = group.bbox;
-    clip.rect(x0, y0, x1 - x0, y1 - y0);
-    if (group.matrix) {
-      const path = new Path2D();
-      path.addPath(clip, new DOMMatrix(group.matrix));
-      clip = path;
-    }
-    groupCtx.clip(clip);
+    // buildClipFromDeviceBounds converts the already-clamped device-space
+    // bounds back to user space, avoiding extreme raw bbox values.
+    groupCtx.clip(buildClipFromDeviceBounds(bounds, currentTransform));
 
     if (group.smask) {
       // Saving state and cached mask to be used in setGState.
