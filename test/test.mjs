@@ -57,7 +57,6 @@ function parseOptions() {
       strictVerify: { type: "boolean", default: false },
       testfilter: { type: "string", short: "t", multiple: true, default: [] },
       unitTest: { type: "boolean", default: false },
-      xfaOnly: { type: "boolean", default: false },
     },
   });
 
@@ -83,8 +82,7 @@ function parseOptions() {
         "  --statsFile         File where to store stats.\n" +
         "  --strictVerify      Error if manifest file verification fails.\n" +
         "  --testfilter, -t    Run specific reftest(s), e.g. -t=issue5567.\n" +
-        "  --unitTest          Run the unit tests.\n" +
-        "  --xfaOnly           Only run the XFA reftest(s)."
+        "  --unitTest          Run the unit tests.\n"
     );
     process.exit(0);
   }
@@ -96,17 +94,6 @@ function parseOptions() {
     throw new Error(
       "--reftest, --unitTest, --fontTest, and --masterMode must not be specified together."
     );
-  }
-  if (
-    +values.unitTest + values.fontTest + values.integration + values.xfaOnly >
-    1
-  ) {
-    throw new Error(
-      "--unitTest, --fontTest, --integration, and --xfaOnly must not be specified together."
-    );
-  }
-  if (values.testfilter.length > 0 && values.xfaOnly) {
-    throw new Error("--testfilter and --xfaOnly cannot be used together.");
   }
   if (values.noDownload && values.downloadOnly) {
     throw new Error("--noDownload and --downloadOnly cannot be used together.");
@@ -347,16 +334,12 @@ function handleSessionTimeout(session) {
 function getTestManifest() {
   var manifest = JSON.parse(fs.readFileSync(options.manifestFile));
 
-  const testFilter = options.testfilter.slice(0),
-    xfaOnly = options.xfaOnly;
-  if (testFilter.length || xfaOnly) {
+  const testFilter = options.testfilter.slice(0);
+  if (testFilter.length) {
     manifest = manifest.filter(function (item) {
       var i = testFilter.indexOf(item.id);
       if (i !== -1) {
         testFilter.splice(i, 1);
-        return true;
-      }
-      if (xfaOnly && item.enableXfa) {
         return true;
       }
       return false;
@@ -968,7 +951,6 @@ async function startBrowsers({ baseUrl, initializeSession }) {
         `?browser=${encodeURIComponent(browserName)}` +
         `&manifestFile=${encodeURIComponent("/test/" + options.manifestFile)}` +
         `&testFilter=${JSON.stringify(options.testfilter)}` +
-        `&xfaOnly=${options.xfaOnly}` +
         `&delay=${options.statsDelay}` +
         `&masterMode=${options.masterMode}`;
       startUrl = baseUrl + queryParameters;

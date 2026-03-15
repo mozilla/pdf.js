@@ -505,7 +505,6 @@ class Driver {
     this.delay = params.get("delay") | 0;
     this.inFlightRequests = 0;
     this.testFilter = JSON.parse(params.get("testfilter") || "[]");
-    this.xfaOnly = params.get("xfaonly") === "true";
     this.masterMode = params.get("mastermode") === "true";
 
     // Create a working canvas
@@ -544,12 +543,9 @@ class Driver {
       this._log("done\n");
       this.manifest = await response.json();
 
-      if (this.testFilter?.length || this.xfaOnly) {
+      if (this.testFilter?.length) {
         this.manifest = this.manifest.filter(item => {
           if (this.testFilter.includes(item.id)) {
-            return true;
-          }
-          if (this.xfaOnly && item.enableXfa) {
             return true;
           }
           return false;
