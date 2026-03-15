@@ -21,7 +21,10 @@ class MetadataParser {
     data = this._repair(data);
 
     // Convert the string to an XML document.
-    const parser = new SimpleXMLParser({ lowerCaseName: true });
+    const parser = new SimpleXMLParser({
+      lowerCaseName: true,
+      hasAttributes: true,
+    });
     const xmlDocument = parser.parseFromString(data);
 
     this._metadataMap = new Map();
@@ -100,6 +103,31 @@ class MetadataParser {
     );
   }
 
+  _parseLangAlt(entry) {
+    if (!entry.hasChildNodes()) {
+      return;
+    }
+    const [altNode] = entry.childNodes;
+    const list = this._getSequence(altNode);
+    if (!list || list.length === 0) {
+      // Fallback: no rdf:Alt container, use textContent directly
+      this._metadataMap.set(entry.nodeName, entry.textContent.trim());
+      return;
+    }
+    // Find x-default entry, otherwise use first entry
+    let selectedEntry = list[0];
+    for (const node of list) {
+      const langAttr = node.attributes?.find(
+        attr => attr.name.toLowerCase() === "xml:lang"
+      );
+      if (langAttr?.value === "x-default") {
+        selectedEntry = node;
+        break;
+      }
+    }
+    this._metadataMap.set(entry.nodeName, selectedEntry.textContent.trim());
+  }
+
   _parse(xmlDocument) {
     let rdf = xmlDocument.documentElement;
 
@@ -128,6 +156,10 @@ class MetadataParser {
           case "dc:creator":
           case "dc:subject":
             this._parseArray(entry);
+            continue;
+          case "dc:title":
+          case "dc:description":
+            this._parseLangAlt(entry);
             continue;
         }
         this._metadataMap.set(name, entry.textContent.trim());

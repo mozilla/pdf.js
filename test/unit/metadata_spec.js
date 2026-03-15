@@ -215,6 +215,36 @@ describe("metadata", function () {
     expect([...metadata]).toEqual([]);
   });
 
+  it("should handle multiple language titles in dc:title (issue 20801)", function () {
+    const data =
+      "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
+      "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>" +
+      "<rdf:Description xmlns:dc='http://purl.org/dc/elements/1.1/'>" +
+      "<dc:title><rdf:Alt>" +
+      '<rdf:li xml:lang="x-default">Hello World</rdf:li>' +
+      '<rdf:li xml:lang="en">Hello World</rdf:li>' +
+      "</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>";
+    const metadata = createMetadata(data);
+
+    // Should return just one title, not concatenated "Hello WorldHello World"
+    expect(metadata.get("dc:title")).toEqual("Hello World");
+  });
+
+  it("should handle multiple language descriptions without x-default (issue 20801)", function () {
+    const data =
+      "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
+      "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>" +
+      "<rdf:Description xmlns:dc='http://purl.org/dc/elements/1.1/'>" +
+      "<dc:description><rdf:Alt>" +
+      '<rdf:li xml:lang="en">English Desc</rdf:li>' +
+      '<rdf:li xml:lang="fr">French Desc</rdf:li>' +
+      "</rdf:Alt></dc:description></rdf:Description></rdf:RDF></x:xmpmeta>";
+    const metadata = createMetadata(data);
+
+    // Should return first entry when no x-default
+    expect(metadata.get("dc:description")).toEqual("English Desc");
+  });
+
   it("should not be vulnerable to the billion laughs attack", function () {
     const data =
       '<?xml version="1.0"?>' +
