@@ -1584,6 +1584,20 @@ class SimpleSegmentVisitor {
     this.buffer = buffer;
   }
 
+  getRetainedBitmapContexts(segmentNumber) {
+    if (!this.retainedBitmapContexts) {
+      return null;
+    }
+    return this.retainedBitmapContexts[segmentNumber] || null;
+  }
+
+  setRetainedBitmapContexts(segmentNumber, contexts) {
+    if (!this.retainedBitmapContexts) {
+      this.retainedBitmapContexts = {};
+    }
+    this.retainedBitmapContexts[segmentNumber] = contexts;
+  }
+
   drawBitmap(regionInfo, bitmap) {
     const pageInfo = this.currentPageInfo;
     const width = regionInfo.width,
@@ -1683,16 +1697,64 @@ class SimpleSegmentVisitor {
     }
 
     const inputSymbols = [];
+    let lastReferredToSymbolDictionary = null;
     for (const referredSegment of referredSegments) {
       const referredSymbols = symbols[referredSegment];
       // referredSymbols is undefined when we have a reference to a Tables
       // segment instead of a SymbolDictionary.
       if (referredSymbols) {
         inputSymbols.push(...referredSymbols);
+        lastReferredToSymbolDictionary = referredSegment;
       }
     }
 
     const decodingContext = new DecodingContext(data, start, end);
+
+    // Handle bitmap coding context reuse (7.4.2.2 step 3)
+    if (dictionary.bitmapCodingContextUsed) {
+      if (lastReferredToSymbolDictionary === null) {
+        throw new Jbig2Error(
+          "symbol dictionary uses bitmap coding context, but has no referred-to symbol dictionary"
+        );
+      }
+
+      const retainedContexts = this.getRetainedBitmapContexts(
+        lastReferredToSymbolDictionary
+      );
+      if (!retainedContexts) {
+        throw new Jbig2Error(
+          "symbol dictionary uses bitmap coding context, but referred-to dictionary did not retain contexts"
+        );
+      }
+
+      // Validate that parameters match (7.4.2.2 step 3)
+      if (retainedContexts.huffman !== dictionary.huffman) {
+        throw new Jbig2Error(
+          "symbol dictionary bitmap coding context: SDHUFF values do not match"
+        );
+      }
+      if (retainedContexts.refinement !== dictionary.refinement) {
+        throw new Jbig2Error(
+          "symbol dictionary bitmap coding context: SDREFAGG values do not match"
+        );
+      }
+      if (retainedContexts.template !== dictionary.template) {
+        throw new Jbig2Error(
+          "symbol dictionary bitmap coding context: SDTEMPLATE values do not match"
+        );
+      }
+      if (
+        retainedContexts.refinementTemplate !== dictionary.refinementTemplate
+      ) {
+        throw new Jbig2Error(
+          "symbol dictionary bitmap coding context: SDRTEMPLATE values do not match"
+        );
+      }
+
+      // Reuse the arithmetic coding contexts
+      decodingContext.contextCache = retainedContexts.contextCache;
+    }
+
     symbols[currentSegment] = decodeSymbolDictionary(
       dictionary.huffman,
       dictionary.refinement,
@@ -1707,6 +1769,17 @@ class SimpleSegmentVisitor {
       decodingContext,
       huffmanInput
     );
+
+    // Handle bitmap coding context retention (7.4.2.2 step 7)
+    if (dictionary.bitmapCodingContextRetained) {
+      this.setRetainedBitmapContexts(currentSegment, {
+        huffman: dictionary.huffman,
+        refinement: dictionary.refinement,
+        template: dictionary.template,
+        refinementTemplate: dictionary.refinementTemplate,
+        contextCache: decodingContext.contextCache,
+      });
+    }
   }
 
   onImmediateTextRegion(region, referredSegments, data, start, end) {
