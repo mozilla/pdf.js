@@ -73,6 +73,7 @@ import { ColorPicker } from "../../src/display/editor/color_picker.js";
 import { DOMSVGFactory } from "../../src/display/svg_factory.js";
 import { DrawLayer } from "../../src/display/draw_layer.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
+import { initWebGPUMesh } from "../../src/display/webgpu_mesh.js";
 import { isValidExplicitDest } from "../../src/display/api_utils.js";
 import { SignatureExtractor } from "../../src/display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "../../src/display/text_layer.js";
@@ -107,6 +108,7 @@ const expectedAPI = Object.freeze({
   getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
+  initWebGPUMesh,
   InvalidPDFException,
   isDataScheme,
   isPdfFile,

@@ -288,6 +288,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableWebGPU: {
+    /** @type {boolean} */
+    value: typeof PDFJSDev === "undefined",
+    kind: OptionKind.VIEWER,
+  },
   externalLinkRel: {
     /** @type {string} */
     value: "noopener noreferrer nofollow",

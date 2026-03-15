@@ -83,6 +83,7 @@ import { DOMSVGFactory } from "./display/svg_factory.js";
 import { DrawLayer } from "./display/draw_layer.js";
 import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { HighlightOutliner } from "./display/editor/drawers/highlight.js";
+import { initWebGPUMesh } from "./display/webgpu_mesh.js";
 import { isValidExplicitDest } from "./display/api_utils.js";
 import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
@@ -123,6 +124,7 @@ globalThis.pdfjsLib = {
   getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
+  initWebGPUMesh,
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
@@ -186,6 +188,7 @@ export {
   getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
+  initWebGPUMesh,
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
