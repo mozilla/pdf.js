@@ -2506,12 +2506,29 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (bbox) {
+      // Compute the axis-aligned bounding box in canvas (device) space, then
+      // intersect it with the canvas bounds. This mirrors the approach used in
+      // `beginGroup` and guards against extreme BBox values (e.g. ±8.988e76
+      // produced by macOS Quartz PDFContext to express "no clipping").
+      // Passing such values directly to Path2D.rect() triggers a Chromium/Skia
+      // bug: Skia uses Float32 for path coordinates, so values exceeding
+      // Float32.MAX (~3.4e38) overflow to ±Infinity, silently invalidating the
+      // clip path and clearing the entire canvas (blank white page).
+      let bounds = MIN_MAX_INIT.slice();
+      Util.axialAlignedBoundingBox(bbox, this.baseTransform, bounds);
       Util.axialAlignedBoundingBox(
         bbox,
         this.baseTransform,
         this.current.minMax
       );
-      const [x0, y0, x1, y1] = bbox;
+      const canvasBounds = [
+        0,
+        0,
+        this.ctx.canvas.width,
+        this.ctx.canvas.height,
+      ];
+      bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
+      const [x0, y0, x1, y1] = bounds;
       const clip = new Path2D();
       clip.rect(x0, y0, x1 - x0, y1 - y0);
       this.ctx.clip(clip);
