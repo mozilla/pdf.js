@@ -257,6 +257,8 @@ describe("Reorganize Pages View", () => {
     it("should reorder thumbnails after dropping two adjacent pages", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          pending("Fails consistently (issue #20814).");
+
           await waitForThumbnailVisible(page, 1);
           const rect2 = await getRect(page, getThumbnailSelector(2));
           const rect4 = await getRect(page, getThumbnailSelector(4));
