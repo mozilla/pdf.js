@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { drawMeshWithGPU, isWebGPUMeshReady } from "./webgpu_mesh.js";
 import {
   FormatError,
   info,
@@ -282,7 +283,7 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
   const bytes = data.data,
     rowSize = data.width * 4;
   let tmp;
-  if (coords[p1 + 1] > coords[p2 + 1]) {
+  if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
     tmp = p1;
     p1 = p2;
     p2 = tmp;
@@ -290,7 +291,7 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c1 = c2;
     c2 = tmp;
   }
-  if (coords[p2 + 1] > coords[p3 + 1]) {
+  if (coords[p2 * 2 + 1] > coords[p3 * 2 + 1]) {
     tmp = p2;
     p2 = p3;
     p3 = tmp;
@@ -298,7 +299,7 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c2 = c3;
     c3 = tmp;
   }
-  if (coords[p1 + 1] > coords[p2 + 1]) {
+  if (coords[p1 * 2 + 1] > coords[p2 * 2 + 1]) {
     tmp = p1;
     p1 = p2;
     p2 = tmp;
@@ -306,24 +307,24 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c1 = c2;
     c2 = tmp;
   }
-  const x1 = (coords[p1] + context.offsetX) * context.scaleX;
-  const y1 = (coords[p1 + 1] + context.offsetY) * context.scaleY;
-  const x2 = (coords[p2] + context.offsetX) * context.scaleX;
-  const y2 = (coords[p2 + 1] + context.offsetY) * context.scaleY;
-  const x3 = (coords[p3] + context.offsetX) * context.scaleX;
-  const y3 = (coords[p3 + 1] + context.offsetY) * context.scaleY;
+  const x1 = (coords[p1 * 2] + context.offsetX) * context.scaleX;
+  const y1 = (coords[p1 * 2 + 1] + context.offsetY) * context.scaleY;
+  const x2 = (coords[p2 * 2] + context.offsetX) * context.scaleX;
+  const y2 = (coords[p2 * 2 + 1] + context.offsetY) * context.scaleY;
+  const x3 = (coords[p3 * 2] + context.offsetX) * context.scaleX;
+  const y3 = (coords[p3 * 2 + 1] + context.offsetY) * context.scaleY;
   if (y1 >= y3) {
     return;
   }
-  const c1r = colors[c1],
-    c1g = colors[c1 + 1],
-    c1b = colors[c1 + 2];
-  const c2r = colors[c2],
-    c2g = colors[c2 + 1],
-    c2b = colors[c2 + 2];
-  const c3r = colors[c3],
-    c3g = colors[c3 + 1],
-    c3b = colors[c3 + 2];
+  const c1r = colors[c1 * 4],
+    c1g = colors[c1 * 4 + 1],
+    c1b = colors[c1 * 4 + 2];
+  const c2r = colors[c2 * 4],
+    c2g = colors[c2 * 4 + 1],
+    c2b = colors[c2 * 4 + 2];
+  const c3r = colors[c3 * 4],
+    c3g = colors[c3 * 4 + 1],
+    c3b = colors[c3 * 4 + 2];
 
   const minY = Math.round(y1),
     maxY = Math.round(y3);
@@ -490,26 +491,39 @@ class MeshShadingPattern extends BaseShadingPattern {
       paddedWidth,
       paddedHeight
     );
-    const tmpCtx = tmpCanvas.context;
 
-    const data = tmpCtx.createImageData(width, height);
-    if (backgroundColor) {
-      const bytes = data.data;
-      for (let i = 0, ii = bytes.length; i < ii; i += 4) {
-        bytes[i] = backgroundColor[0];
-        bytes[i + 1] = backgroundColor[1];
-        bytes[i + 2] = backgroundColor[2];
-        bytes[i + 3] = 255;
+    if (isWebGPUMeshReady()) {
+      tmpCanvas.context.drawImage(
+        drawMeshWithGPU(
+          this._figures,
+          context,
+          backgroundColor,
+          paddedWidth,
+          paddedHeight,
+          BORDER_SIZE
+        ),
+        0,
+        0
+      );
+    } else {
+      const data = tmpCanvas.context.createImageData(width, height);
+      if (backgroundColor) {
+        const bytes = data.data;
+        for (let i = 0, ii = bytes.length; i < ii; i += 4) {
+          bytes[i] = backgroundColor[0];
+          bytes[i + 1] = backgroundColor[1];
+          bytes[i + 2] = backgroundColor[2];
+          bytes[i + 3] = 255;
+        }
       }
+      for (const figure of this._figures) {
+        drawFigure(data, figure, context);
+      }
+      tmpCanvas.context.putImageData(data, BORDER_SIZE, BORDER_SIZE);
     }
-    for (const figure of this._figures) {
-      drawFigure(data, figure, context);
-    }
-    tmpCtx.putImageData(data, BORDER_SIZE, BORDER_SIZE);
-    const canvas = tmpCanvas.canvas;
 
     return {
-      canvas,
+      canvas: tmpCanvas.canvas,
       offsetX: offsetX - BORDER_SIZE * scaleX,
       offsetY: offsetY - BORDER_SIZE * scaleY,
       scaleX,

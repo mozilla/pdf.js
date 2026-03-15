@@ -46,6 +46,7 @@ import {
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
   GlobalWorkerOptions,
+  initWebGPUMesh,
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
@@ -204,6 +205,9 @@ const PDFViewerApplication = {
       await this.preferences.initializedPromise;
     } catch (ex) {
       console.error("initialize:", ex);
+    }
+    if (AppOptions.get("enableWebGPU")) {
+      initWebGPUMesh();
     }
     if (AppOptions.get("pdfBugEnabled")) {
       await this._parseHashParams();
