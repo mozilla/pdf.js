@@ -470,6 +470,11 @@ const defaultOptions = {
     value: typeof PDFJSDev !== "undefined" && !PDFJSDev.test("MOZCENTRAL"),
     kind: OptionKind.API + OptionKind.PREFERENCE,
   },
+  enableWebGPU: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
+  },
   enableXfa: {
     /** @type {boolean} */
     value: true,

@@ -79,6 +79,7 @@ import { DOMFilterFactory } from "./filter_factory.js";
 import { DOMStandardFontDataFactory } from "display-standard_fontdata_factory";
 import { DOMWasmFactory } from "display-wasm_factory";
 import { GlobalWorkerOptions } from "./worker_options.js";
+import { initWebGPUMesh } from "./webgpu_mesh.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PagesMapper } from "./pages_mapper.js";
@@ -347,6 +348,7 @@ function getDocument(src = {}) {
       ? NodeFilterFactory
       : DOMFilterFactory);
   const enableHWA = src.enableHWA === true;
+  const enableWebGPU = src.enableWebGPU === true;
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
@@ -440,6 +442,7 @@ function getDocument(src = {}) {
       iccUrl,
       standardFontDataUrl,
       wasmUrl,
+      enableWebGPU,
     },
   };
   const transportParams = {
@@ -2924,6 +2927,13 @@ class WorkerTransport {
         return; // Ignore any pending requests if the worker was terminated.
       }
       this.#onProgress(data);
+    });
+
+    messageHandler.on("PrepareWebGPU", () => {
+      if (this.destroyed) {
+        return;
+      }
+      initWebGPUMesh();
     });
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {

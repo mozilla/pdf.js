@@ -55,7 +55,8 @@ class Pattern {
     res,
     pdfFunctionFactory,
     globalColorSpaceCache,
-    localColorSpaceCache
+    localColorSpaceCache,
+    prepareWebGPU = null
   ) {
     const dict = shading instanceof BaseStream ? shading.dict : shading;
     const type = dict.get("ShadingType");
@@ -76,6 +77,7 @@ class Pattern {
         case ShadingType.LATTICE_FORM_MESH:
         case ShadingType.COONS_PATCH_MESH:
         case ShadingType.TENSOR_PATCH_MESH:
+          prepareWebGPU?.();
           return new MeshShading(
             shading,
             xref,
@@ -934,7 +936,7 @@ class MeshShading extends BaseShading {
   }
 
   _packData() {
-    let i, ii, j, jj;
+    let i, ii, j;
 
     const coords = this.coords;
     const coordsPacked = new Float32Array(coords.length * 2);
@@ -945,25 +947,27 @@ class MeshShading extends BaseShading {
     }
     this.coords = coordsPacked;
 
+    // Stride 4 (RGBA layout, alpha unused) so the buffer maps directly to
+    // array<u32> in the WebGPU vertex shader without any repacking.
     const colors = this.colors;
-    const colorsPacked = new Uint8Array(colors.length * 3);
+    const colorsPacked = new Uint8Array(colors.length * 4);
     for (i = 0, j = 0, ii = colors.length; i < ii; i++) {
       const c = colors[i];
       colorsPacked[j++] = c[0];
       colorsPacked[j++] = c[1];
       colorsPacked[j++] = c[2];
+      j++; // alpha — unused, stays 0
     }
     this.colors = colorsPacked;
 
+    // Store raw vertex indices (not byte offsets) so the GPU shader can
+    // address coords / colors without knowing their strides, and so the
+    // arrays are transferable Uint32Arrays.
     const figures = this.figures;
     for (i = 0, ii = figures.length; i < ii; i++) {
-      const figure = figures[i],
-        ps = figure.coords,
-        cs = figure.colors;
-      for (j = 0, jj = ps.length; j < jj; j++) {
-        ps[j] *= 2;
-        cs[j] *= 3;
-      }
+      const figure = figures[i];
+      figure.coords = new Uint32Array(figure.coords);
+      figure.colors = new Uint32Array(figure.colors);
     }
   }
 

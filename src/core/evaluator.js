@@ -105,6 +105,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   iccUrl: null,
   standardFontDataUrl: null,
   wasmUrl: null,
+  prepareWebGPU: null,
 });
 
 const PatternType = {
@@ -1513,7 +1514,8 @@ class PartialEvaluator {
         resources,
         this._pdfFunctionFactory,
         this.globalColorSpaceCache,
-        localColorSpaceCache
+        localColorSpaceCache,
+        this.options.prepareWebGPU
       );
       patternIR = shadingFill.getIR();
     } catch (reason) {
