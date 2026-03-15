@@ -1207,6 +1207,25 @@ class Caption extends XFAObject {
       return HTMLResult.EMPTY;
     }
 
+    // For checkButton captions, add a non-breaking space at the beginning
+    // and replace all spaces with non-breaking spaces to prevent word wrapping
+    const parent = this[$getParent]();
+    if (
+      parent?.ui?.checkButton &&
+      typeof value === "object" &&
+      value.children
+    ) {
+      for (const child of value.children) {
+        if (child.value && typeof child.value === "string") {
+          // Replace all regular spaces with non-breaking spaces
+          child.value = child.value.startsWith(" ")
+            ? child.value.replaceAll(" ", "\u00A0")
+            : "\u00A0" + child.value.replaceAll(" ", "\u00A0");
+          child.value = child.value.replaceAll("/", "\u2044");
+        }
+      }
+    }
+
     const savedReserve = this.reserve;
     if (this.reserve <= 0) {
       const { w, h } = this[$getExtra](availableSpace);
