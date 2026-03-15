@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, FeatureTest, MeshFigureType } from "../shared/util.js";
+import { assert, FeatureTest, MeshFigureType, Util } from "../shared/util.js";
 import {
   CSS_FONT_INFO,
   FONT_INFO,
@@ -438,19 +438,11 @@ class PatternInfo {
       const shadingType = this.data[PATTERN_INFO.SHADING_TYPE];
       let bounds = null;
       if (coords.length > 0) {
-        let minX = coords[0],
-          maxX = coords[0];
-        let minY = coords[1],
-          maxY = coords[1];
-        for (let i = 0; i < coords.length; i += 2) {
-          const x = coords[i],
-            y = coords[i + 1];
-          minX = minX > x ? x : minX;
-          minY = minY > y ? y : minY;
-          maxX = maxX < x ? x : maxX;
-          maxY = maxY < y ? y : maxY;
+        bounds = [Infinity, Infinity, -Infinity, -Infinity];
+
+        for (let i = 0, ii = coords.length; i < ii; i += 2) {
+          Util.pointBoundingBox(coords[i], coords[i + 1], bounds);
         }
-        bounds = [minX, minY, maxX, maxY];
       }
       return [
         "Mesh",
