@@ -52,6 +52,10 @@
 }
 
 .textLayer {
+  @media screen and (forced-colors: active) {
+    opacity: 1;
+  }
+
   &.highlighting {
     cursor: var(--editorFreeHighlight-editing-cursor);
 
@@ -230,14 +234,7 @@
   }
 }
 
-.annotationEditorLayer
-  :is(
-    .freeTextEditor,
-    .inkEditor,
-    .stampEditor,
-    .highlightEditor,
-    .signatureEditor
-  ),
+.annotationEditorLayer,
 .textLayer {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
@@ -273,6 +270,7 @@
       --alt-text-warning-color: var(--editor-toolbar-fg-color);
       --alt-text-hover-done-color: var(--editor-toolbar-hover-fg-color);
       --alt-text-hover-warning-color: var(--editor-toolbar-hover-fg-color);
+      opacity: 1;
     }
 
     display: flex;
@@ -282,8 +280,9 @@
     justify-content: center;
     align-items: center;
     cursor: default;
-    pointer-events: auto;
+    pointer-events: auto !important;
     box-sizing: content-box;
+    z-index: 100001;
     padding: var(--editor-toolbar-padding);
 
     position: absolute;
