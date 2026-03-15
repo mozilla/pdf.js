@@ -2372,13 +2372,13 @@ gulp.task("check_l10n", function (done) {
 
 function createInternalViewerBundle(defines) {
   const viewerFileConfig = createWebpackConfig(defines, {
-    filename: "pdf_internal_viewer.mjs",
+    filename: "debugger.mjs",
     library: {
       type: "module",
     },
   });
   return gulp
-    .src("./web/pdf_internal_viewer.js", { encoding: false })
+    .src("./web/internal/debugger.js", { encoding: false })
     .pipe(webpack2Stream(viewerFileConfig));
 }
 
@@ -2389,10 +2389,10 @@ function buildInternalViewer(defines, dir) {
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createInternalViewerBundle(defines).pipe(gulp.dest(dir + "web")),
-    preprocessHTML("web/pdf_internal_viewer.html", defines).pipe(
+    preprocessHTML("web/internal/debugger.html", defines).pipe(
       gulp.dest(dir + "web")
     ),
-    preprocessCSS("web/pdf_internal_viewer.css", defines)
+    preprocessCSS("web/internal/debugger.css", defines)
       .pipe(
         postcss([
           postcssDirPseudoClass(),
