@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { Dict, RefSet } from "./primitives.js";
+import { Dict, Ref, RefSet } from "./primitives.js";
 import { FormatError, unreachable, warn } from "../shared/util.js";
 
 /**
@@ -42,7 +42,9 @@ class NameOrNumberTree {
     const xref = this.xref;
     // Reading Name/Number tree.
     const processed = new RefSet();
-    processed.put(this.root);
+    if (this.root instanceof Ref) {
+      processed.put(this.root);
+    }
     const queue = [this.root];
     while (queue.length > 0) {
       const obj = xref.fetchIfRef(queue.shift());
@@ -55,11 +57,13 @@ class NameOrNumberTree {
           continue;
         }
         for (const kid of kids) {
-          if (processed.has(kid)) {
-            throw new FormatError(`Duplicate entry in "${this._type}" tree.`);
+          if (kid instanceof Ref) {
+            if (processed.has(kid)) {
+              throw new FormatError(`Duplicate entry in "${this._type}" tree.`);
+            }
+            processed.put(kid);
           }
           queue.push(kid);
-          processed.put(kid);
         }
         continue;
       }
