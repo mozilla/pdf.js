@@ -30,7 +30,7 @@ class CssFontInfo {
 
   constructor(buffer) {
     this.#buffer = buffer;
-    this.#view = new DataView(this.#buffer);
+    this.#view = new DataView(buffer);
   }
 
   #readString(index) {
@@ -67,7 +67,7 @@ class SystemFontInfo {
 
   constructor(buffer) {
     this.#buffer = buffer;
-    this.#view = new DataView(this.#buffer);
+    this.#view = new DataView(buffer);
   }
 
   get guessFallback() {
@@ -125,9 +125,9 @@ class FontInfo {
 
   #view;
 
-  constructor({ data, extra }) {
-    this.#buffer = data;
-    this.#view = new DataView(this.#buffer);
+  constructor({ buffer, extra }) {
+    this.#buffer = buffer;
+    this.#view = new DataView(buffer);
     if (extra) {
       Object.assign(this, extra);
     }

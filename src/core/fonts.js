@@ -57,6 +57,7 @@ import {
 } from "./standard_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { CFFFont } from "./cff_font.js";
+import { compileFontInfo } from "./obj_bin_transform_core.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { getFontBasicMetrics } from "./metrics.js";
 import { GlyfTable } from "./glyf.js";
@@ -80,7 +81,7 @@ const EXPORT_DATA_PROPERTIES = [
   "bbox",
   "black",
   "bold",
-  "charProcOperatorList",
+  // "charProcOperatorList" is handled separately, since it's not compiled.
   "cssFontInfo",
   "data",
   "defaultVMetrics",
@@ -973,6 +974,8 @@ class Font {
 
   #glyphCache = new Map();
 
+  charProcOperatorList;
+
   constructor(name, file, properties, evaluatorOptions) {
     this.name = name;
     this.psName = null;
@@ -1147,28 +1150,26 @@ class Font {
     return shadow(this, "renderer", renderer);
   }
 
-  exportData() {
+  #getExportData(props) {
     const data = Object.create(null);
-    for (const prop of EXPORT_DATA_PROPERTIES) {
+    for (const prop of props) {
       const value = this[prop];
       // Ignore properties that haven't been explicitly set.
       if (value !== undefined) {
         data[prop] = value;
       }
     }
+    return data;
+  }
 
-    if (!this.fontExtraProperties) {
-      return { data };
-    }
-
-    const extra = Object.create(null);
-    for (const prop of EXPORT_DATA_EXTRA_PROPERTIES) {
-      const value = this[prop];
-      if (value !== undefined) {
-        extra[prop] = value;
-      }
-    }
-    return { data, extra };
+  exportData() {
+    return {
+      buffer: compileFontInfo(this.#getExportData(EXPORT_DATA_PROPERTIES)),
+      charProcOperatorList: this.charProcOperatorList,
+      extra: this.fontExtraProperties
+        ? this.#getExportData(EXPORT_DATA_EXTRA_PROPERTIES)
+        : undefined,
+    };
   }
 
   fallbackToSystemFont(properties) {
