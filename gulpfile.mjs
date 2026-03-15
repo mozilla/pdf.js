@@ -680,7 +680,7 @@ function getTempFile(prefix, suffix) {
   return filePath;
 }
 
-function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
+function runTests(testsName, { bot = false } = {}) {
   return new Promise((resolve, reject) => {
     console.log("\n### Running " + testsName + " tests");
 
@@ -695,9 +695,6 @@ function runTests(testsName, { bot = false, xfaOnly = false } = {}) {
           // The browser-tests are too slow in Google Chrome on the bots,
           // causing a timeout, hence disabling them for now.
           forceNoChrome = true;
-        }
-        if (xfaOnly) {
-          args.push("--xfaOnly");
         }
         args.push("--manifestFile=" + PDF_TEST);
         collectArgs(
@@ -1809,29 +1806,6 @@ gulp.task(
     await runTests("browser", { bot: true });
     await runTests("integration");
   })
-);
-
-gulp.task(
-  "xfatest",
-  gulp.series(setTestEnv, "generic", "components", async function runXfaTest() {
-    await runTests("unit");
-    await runTests("browser", { xfaOnly: true });
-    await runTests("integration");
-  })
-);
-
-gulp.task(
-  "botxfatest",
-  gulp.series(
-    setTestEnv,
-    "generic",
-    "components",
-    async function runBotXfaTest() {
-      await runTests("unit", { bot: true });
-      await runTests("browser", { bot: true, xfaOnly: true });
-      await runTests("integration");
-    }
-  )
 );
 
 gulp.task(
