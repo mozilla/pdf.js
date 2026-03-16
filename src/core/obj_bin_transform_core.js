@@ -389,20 +389,15 @@ function compilePatternInfo(ir) {
 }
 
 function compileFontPathInfo(path) {
-  let data;
-  let buffer;
-  if (
-    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-    FeatureTest.isFloat16ArraySupported
-  ) {
-    buffer = new ArrayBuffer(path.length * 2);
-    data = new Float16Array(buffer);
-  } else {
-    buffer = new ArrayBuffer(path.length * 4);
-    data = new Float32Array(buffer);
+  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+    assert(
+      FeatureTest.isFloat16ArraySupported
+        ? path instanceof Float16Array
+        : path instanceof Float32Array,
+      "compileFontPathInfo: Unexpected path format."
+    );
   }
-  data.set(path);
-  return buffer;
+  return path.slice().buffer;
 }
 
 export {
