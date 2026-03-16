@@ -26,8 +26,6 @@
 /* Ignored in GECKOVIEW: end */
 
 :root {
-  color-scheme: light dark;
-
   --viewer-container-height: 0;
   --pdfViewer-padding-bottom: 0;
   --page-margin: 1px auto -8px;
