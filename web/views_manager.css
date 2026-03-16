@@ -252,7 +252,7 @@
     background-color: var(--header-bg);
 
     .viewsManagerLabel {
-      flex: 0;
+      flex: 1 1 auto;
       color: var(--text-color);
       text-align: center;
       height: fit-content;
@@ -274,6 +274,17 @@
       justify-content: space-between;
       width: auto;
       padding: 12px 16px 12px 8px;
+
+      &:not(:has(#viewsManagerHeaderLabel ~ button:not([hidden])))::after {
+        /* If one of the following buttons is visible, hide the placeholder
+             button to avoid unnecessary space in the header. */
+
+        content: "";
+        flex: 0 0 auto;
+        width: 32px;
+        height: 32px;
+        pointer-events: none;
+      }
 
       #viewsManagerSelector {
         width: 48px;
