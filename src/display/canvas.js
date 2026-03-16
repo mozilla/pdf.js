@@ -205,33 +205,32 @@ function mirrorContextOperations(ctx, destCtx) {
 }
 
 class CachedCanvases {
+  #cache = new Map();
+
   constructor(canvasFactory) {
     this.canvasFactory = canvasFactory;
-    this.cache = Object.create(null);
   }
 
   getCanvas(id, width, height) {
-    let canvasEntry;
-    if (this.cache[id] !== undefined) {
-      canvasEntry = this.cache[id];
+    let canvasEntry = this.#cache.get(id);
+    if (canvasEntry) {
       this.canvasFactory.reset(canvasEntry, width, height);
     } else {
       canvasEntry = this.canvasFactory.create(width, height);
-      this.cache[id] = canvasEntry;
+      this.#cache.set(id, canvasEntry);
     }
     return canvasEntry;
   }
 
   delete(id) {
-    delete this.cache[id];
+    this.#cache.delete(id);
   }
 
   clear() {
-    for (const id in this.cache) {
-      const canvasEntry = this.cache[id];
+    for (const canvasEntry of this.#cache.values()) {
       this.canvasFactory.destroy(canvasEntry);
-      delete this.cache[id];
     }
+    this.#cache.clear();
   }
 }
 
