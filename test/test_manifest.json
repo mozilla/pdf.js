@@ -13998,5 +13998,12 @@
     "md5": "80e8bed66b83928698f008c33de47edd",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "mesh_shading_empty",
+    "file": "pdfs/mesh_shading_empty.pdf",
+    "md5": "5a1bf9cb73010d84b47d91bb66bae27d",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

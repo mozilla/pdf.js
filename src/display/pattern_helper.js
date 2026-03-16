@@ -462,16 +462,20 @@ class MeshShadingPattern extends BaseShadingPattern {
     const boundsWidth = Math.ceil(this._bounds[2]) - offsetX;
     const boundsHeight = Math.ceil(this._bounds[3]) - offsetY;
 
-    const width = Math.min(
-      Math.ceil(Math.abs(boundsWidth * combinedScale[0] * EXPECTED_SCALE)),
-      MAX_PATTERN_SIZE
-    );
-    const height = Math.min(
-      Math.ceil(Math.abs(boundsHeight * combinedScale[1] * EXPECTED_SCALE)),
-      MAX_PATTERN_SIZE
-    );
-    const scaleX = boundsWidth / width;
-    const scaleY = boundsHeight / height;
+    // Ensure that the shading has non-zero width and height, to prevent errors
+    // in `pattern_helper.js` (fixes issue17848.pdf).
+    const width =
+      Math.min(
+        Math.ceil(Math.abs(boundsWidth * combinedScale[0] * EXPECTED_SCALE)),
+        MAX_PATTERN_SIZE
+      ) || 1;
+    const height =
+      Math.min(
+        Math.ceil(Math.abs(boundsHeight * combinedScale[1] * EXPECTED_SCALE)),
+        MAX_PATTERN_SIZE
+      ) || 1;
+    const scaleX = boundsWidth ? boundsWidth / width : 1;
+    const scaleY = boundsHeight ? boundsHeight / height : 1;
 
     const context = {
       coords: this._coords,

@@ -968,20 +968,13 @@ class MeshShading extends BaseShading {
   }
 
   getIR() {
-    const { bounds } = this;
-    // Ensure that the shading has non-zero width and height, to prevent errors
-    // in `pattern_helper.js` (fixes issue17848.pdf).
-    if (bounds[2] - bounds[0] === 0 || bounds[3] - bounds[1] === 0) {
-      throw new FormatError(`Invalid MeshShading bounds: [${bounds}].`);
-    }
-
     return [
       "Mesh",
       this.shadingType,
       this.coords,
       this.colors,
       this.figures,
-      bounds,
+      this.bounds,
       this.bbox,
       this.background,
     ];
