@@ -1540,8 +1540,11 @@ class PDFPageProxy {
       this._pdfBug && globalThis.StepperManager?.enabled
     );
     const shouldRecordOperations =
-      !this.recordedBBoxes && (recordOperations || recordForDebugger);
-    const shouldRecordImages = !this.imageCoordinates && recordImages;
+      !!canvas &&
+      !this.recordedBBoxes &&
+      (recordOperations || recordForDebugger);
+    const shouldRecordImages =
+      !!canvas && !this.imageCoordinates && recordImages;
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
