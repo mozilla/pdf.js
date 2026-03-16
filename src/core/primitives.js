@@ -84,15 +84,14 @@ class Dict {
     return this._map.size;
   }
 
-  // Automatically dereferences Ref objects.
-  get(key1, key2, key3) {
+  #getValue(isAsync, key1, key2, key3) {
     let value = this._map.get(key1);
     if (value === undefined && key2 !== undefined) {
       if (
         (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
         key2.length < key1.length
       ) {
-        unreachable("Dict.get: Expected keys to be ordered by length.");
+        unreachable("Dict.#getValue: Expected keys to be ordered by length.");
       }
       value = this._map.get(key2);
       if (value === undefined && key3 !== undefined) {
@@ -100,68 +99,32 @@ class Dict {
           (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
           key3.length < key2.length
         ) {
-          unreachable("Dict.get: Expected keys to be ordered by length.");
+          unreachable("Dict.#getValue: Expected keys to be ordered by length.");
         }
         value = this._map.get(key3);
       }
     }
     if (value instanceof Ref && this.xref) {
-      return this.xref.fetch(value, this.suppressEncryption);
+      return isAsync
+        ? this.xref.fetchAsync(value, this.suppressEncryption)
+        : this.xref.fetch(value, this.suppressEncryption);
     }
     return value;
+  }
+
+  // Automatically dereferences Ref objects.
+  get(key1, key2, key3) {
+    return this.#getValue(/* isAsync = */ false, key1, key2, key3);
   }
 
   // Same as get(), but returns a promise and uses fetchIfRefAsync().
   async getAsync(key1, key2, key3) {
-    let value = this._map.get(key1);
-    if (value === undefined && key2 !== undefined) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-        key2.length < key1.length
-      ) {
-        unreachable("Dict.getAsync: Expected keys to be ordered by length.");
-      }
-      value = this._map.get(key2);
-      if (value === undefined && key3 !== undefined) {
-        if (
-          (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-          key3.length < key2.length
-        ) {
-          unreachable("Dict.getAsync: Expected keys to be ordered by length.");
-        }
-        value = this._map.get(key3);
-      }
-    }
-    if (value instanceof Ref && this.xref) {
-      return this.xref.fetchAsync(value, this.suppressEncryption);
-    }
-    return value;
+    return this.#getValue(/* isAsync = */ true, key1, key2, key3);
   }
 
   // Same as get(), but dereferences all elements if the result is an Array.
   getArray(key1, key2, key3) {
-    let value = this._map.get(key1);
-    if (value === undefined && key2 !== undefined) {
-      if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-        key2.length < key1.length
-      ) {
-        unreachable("Dict.getArray: Expected keys to be ordered by length.");
-      }
-      value = this._map.get(key2);
-      if (value === undefined && key3 !== undefined) {
-        if (
-          (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-          key3.length < key2.length
-        ) {
-          unreachable("Dict.getArray: Expected keys to be ordered by length.");
-        }
-        value = this._map.get(key3);
-      }
-    }
-    if (value instanceof Ref && this.xref) {
-      value = this.xref.fetch(value, this.suppressEncryption);
-    }
+    let value = this.#getValue(/* isAsync = */ false, key1, key2, key3);
 
     if (Array.isArray(value)) {
       value = value.slice(); // Ensure that we don't modify the Dict data.
