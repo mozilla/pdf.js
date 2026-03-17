@@ -6330,5 +6330,341 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
     });
+
+    describe("Outlines", function () {
+      // outlines_for_editor.pdf has 5 pages and the following outline tree:
+      //
+      //  [0] "Page 1 - explicit dest"  dest=[page1 /XYZ 0 0 0]
+      //  [1] "Page 2 - named dest"     dest=(page2dest)
+      //  [2] "External URL"            /A /URI https://mozilla.org
+      //  [3] "Next Page action"        /A /Named /NextPage
+      //  [4] "Remote PDF link"         /A /GoToR other.pdf
+      //  [5] "Chapter"                 dest=(page1dest)
+      //       [5.0] "Section 1"        dest=[page2 /FitH 100]
+      //       [5.1] "Section 2"        dest=(page3dest)  bold+italic, red
+      //       [5.2] "Subsection"       dest=(page5dest)
+      //              [5.2.0] "Deep item"  dest=(page4dest)
+      //  [6] "No dest parent"          (no dest / action)
+      //       [6.0] "Child with dest"  dest=(page5dest)
+
+      it("should preserve the full outline when all pages are kept", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("outlines_for_editor.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const originalOutline = await pdfDoc.getOutline();
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        const outline = await newPdfDoc.getOutline();
+
+        expect(Array.isArray(outline)).toEqual(true);
+        expect(outline.length).toEqual(7);
+
+        // Item [0]: explicit array dest
+        expect(outline[0].title).toEqual("Page 1 - explicit dest");
+        expect(Array.isArray(outline[0].dest)).toEqual(true);
+        expect(outline[0].dest[1].name).toEqual("XYZ");
+
+        // Item [1]: named string dest
+        expect(outline[1].title).toEqual("Page 2 - named dest");
+        expect(typeof outline[1].dest).toEqual("string");
+
+        // Item [2]: URI action
+        expect(outline[2].title).toEqual("External URL");
+        expect(outline[2].dest).toEqual(null);
+        expect(outline[2].url).toEqual("https://mozilla.org/");
+
+        // Item [3]: built-in named action
+        expect(outline[3].title).toEqual("Next Page action");
+        expect(outline[3].dest).toEqual(null);
+        expect(outline[3].action).toEqual("NextPage");
+
+        // Item [4]: GoToR (remote PDF) – relative path, so url is null but
+        // unsafeUrl holds the raw file path (with dest hash appended).
+        expect(outline[4].title).toEqual("Remote PDF link");
+        expect(outline[4].dest).toEqual(null);
+        expect(outline[4].unsafeUrl).toContain("other.pdf");
+
+        // Item [5]: "Chapter" – parent with named dest and 3 children
+        const chapter = outline[5];
+        expect(chapter.title).toEqual("Chapter");
+        expect(typeof chapter.dest).toEqual("string");
+        expect(chapter.items.length).toEqual(3);
+        expect(chapter.count).toEqual(originalOutline[5].count);
+
+        // Section 1: explicit FitH dest
+        expect(chapter.items[0].title).toEqual("Section 1");
+        expect(Array.isArray(chapter.items[0].dest)).toEqual(true);
+        expect(chapter.items[0].dest[1].name).toEqual("FitH");
+
+        // Section 2: named dest + bold + italic + red color
+        const section2 = chapter.items[1];
+        expect(section2.title).toEqual("Section 2");
+        expect(typeof section2.dest).toEqual("string");
+        expect(section2.bold).toEqual(true);
+        expect(section2.italic).toEqual(true);
+        expect(section2.color).toEqual(new Uint8ClampedArray([255, 0, 0]));
+
+        // Subsection: parent with own dest + one child
+        const subsection = chapter.items[2];
+        expect(subsection.title).toEqual("Subsection");
+        expect(subsection.items.length).toEqual(1);
+        expect(subsection.items[0].title).toEqual("Deep item");
+
+        // Item [6]: "No dest parent" – no dest, but has a child
+        const noDestParent = outline[6];
+        expect(noDestParent.title).toEqual("No dest parent");
+        expect(noDestParent.dest).toEqual(null);
+        expect(noDestParent.items.length).toEqual(1);
+        expect(noDestParent.count).toEqual(originalOutline[6].count);
+        expect(noDestParent.items[0].title).toEqual("Child with dest");
+
+        await newLoadingTask.destroy();
+      });
+
+      it("should filter outline items pointing to deleted pages", async function () {
+        // Keep only pages 0 and 1 (page 1 and page 2).
+        const loadingTask = getDocument(
+          buildGetDocumentParams("outlines_for_editor.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0, 1] },
+        ]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        const outline = await newPdfDoc.getOutline();
+
+        expect(Array.isArray(outline)).toEqual(true);
+        // 6 items: all except "No dest parent" (its child dest was on page 5).
+        expect(outline.length).toEqual(6);
+
+        const titles = outline.map(i => i.title);
+        expect(titles).not.toContain("No dest parent");
+
+        // "Chapter" is kept (own dest=page1dest points to kept page 1);
+        // it should have only "Section 1" – "Section 2" (page3) and
+        // "Subsection" (page5 / page4) are gone.
+        const chapter = outline.find(i => i.title === "Chapter");
+        expect(chapter).not.toBeUndefined();
+        expect(chapter.items.length).toEqual(1);
+        expect(chapter.items[0].title).toEqual("Section 1");
+
+        // External links are always preserved.
+        expect(titles).toContain("External URL");
+        expect(titles).toContain("Next Page action");
+        expect(titles).toContain("Remote PDF link");
+
+        await newLoadingTask.destroy();
+      });
+
+      it("should keep parent items that have no dest but still have valid children", async function () {
+        // Keep only pages 2-4 (page 3, 4, 5).
+        const loadingTask = getDocument(
+          buildGetDocumentParams("outlines_for_editor.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [2, 3, 4] },
+        ]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        const outline = await newPdfDoc.getOutline();
+
+        expect(Array.isArray(outline)).toEqual(true);
+        // 5 items: explicit dest (page1) and named dest (page2dest) are gone;
+        // the 3 external-link items + "Chapter" + "No dest parent" remain.
+        expect(outline.length).toEqual(5);
+
+        const titles = outline.map(i => i.title);
+        expect(titles).not.toContain("Page 1 - explicit dest");
+        expect(titles).not.toContain("Page 2 - named dest");
+
+        // "Chapter" has no valid own dest (page1dest deleted) but has
+        // surviving children, so it must be kept.
+        const chapter = outline.find(i => i.title === "Chapter");
+        expect(chapter).not.toBeUndefined();
+        expect(chapter.dest).toEqual(null);
+        expect(chapter.items.length).toEqual(2);
+
+        const childTitles = chapter.items.map(i => i.title);
+        expect(childTitles).toContain("Section 2");
+        expect(childTitles).toContain("Subsection");
+        expect(childTitles).not.toContain("Section 1");
+
+        const subsection = chapter.items.find(i => i.title === "Subsection");
+        expect(subsection.items.length).toEqual(1);
+        expect(subsection.items[0].title).toEqual("Deep item");
+
+        // "No dest parent" has a surviving child (page5dest on kept page 5).
+        const noDestParent = outline.find(i => i.title === "No dest parent");
+        expect(noDestParent).not.toBeUndefined();
+        expect(noDestParent.items.length).toEqual(1);
+
+        await newLoadingTask.destroy();
+      });
+
+      it("should merge outlines from two copies, cross-linking surviving dests", async function () {
+        // Merge: page 1 (index 0) from copy A, page 3 (index 2) from copy B.
+        // Named dests in the output: "page1dest" → merged page 1 (copy A p1),
+        //                            "page3dest" → merged page 2 (copy B p3).
+        //
+        // Copy A contributes (page 1 kept):
+        //   "Page 1 - explicit dest"  – explicit dest to kept page
+        //   "External URL" / "Next Page action" / "Remote PDF link" – external
+        //   "Chapter" (dest=page1dest) with only child "Section 2"
+        //     Section 2 (dest=page3dest) survives because page3dest is valid
+        //     (points to copy B's page 3 in the merged doc).
+        //
+        // Copy B contributes (page 3 kept):
+        //   "External URL" / "Next Page action" / "Remote PDF link" – external
+        //   "Chapter" (dest=page1dest) with only child "Section 2"
+        //     Copy B's "Chapter" has dest=page1dest which happens to be valid
+        //     in the merged doc (copy A's page 1), so it cross-links there.
+        const loadingTask = getDocument(
+          buildGetDocumentParams("outlines_for_editor.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfDataB = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "outlines_for_editor.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+          { document: pdfDataB, includePages: [2] },
+        ]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(2);
+
+        const outline = await newPdfDoc.getOutline();
+        expect(Array.isArray(outline)).toEqual(true);
+        // 5 items from copy A + 4 items from copy B = 9 total.
+        expect(outline.length).toEqual(9);
+
+        // ---- Copy A items ----
+        expect(outline[0].title).toEqual("Page 1 - explicit dest");
+        expect(Array.isArray(outline[0].dest)).toEqual(true);
+        expect(outline[1].title).toEqual("External URL");
+        expect(outline[2].title).toEqual("Next Page action");
+        expect(outline[3].title).toEqual("Remote PDF link");
+
+        // "Chapter" from copy A: own dest (page1dest) is valid; the only
+        // surviving child is "Section 2" whose dest (page3dest) cross-links
+        // to copy B's page (merged page 2).
+        const chapterA = outline[4];
+        expect(chapterA.title).toEqual("Chapter");
+        expect(typeof chapterA.dest).toEqual("string"); // page1dest
+        expect(chapterA.items.length).toEqual(1);
+        expect(chapterA.items[0].title).toEqual("Section 2");
+        expect(typeof chapterA.items[0].dest).toEqual("string"); // page3dest
+
+        // ---- Copy B items ----
+        expect(outline[5].title).toEqual("External URL");
+        expect(outline[6].title).toEqual("Next Page action");
+        expect(outline[7].title).toEqual("Remote PDF link");
+
+        // "Chapter" from copy B: its original dest (page1dest) resolves to
+        // copy A's page 1 after merging, so it is kept (cross-document link).
+        const chapterB = outline[8];
+        expect(chapterB.title).toEqual("Chapter");
+        expect(typeof chapterB.dest).toEqual("string"); // page1dest → copy A p1
+        expect(chapterB.items.length).toEqual(1);
+        expect(chapterB.items[0].title).toEqual("Section 2");
+        expect(typeof chapterB.items[0].dest).toEqual("string"); // page3dest
+
+        // "Page 1 - explicit dest" from copy B should be absent (copy B's
+        // page 1 was not kept).
+        const titles = outline.map(i => i.title);
+        expect(titles.indexOf("Page 1 - explicit dest")).toEqual(0);
+        expect(titles.lastIndexOf("Page 1 - explicit dest")).toEqual(0);
+
+        // Neither copy contributes "Page 2 - named dest" or "No dest parent".
+        expect(titles).not.toContain("Page 2 - named dest");
+        expect(titles).not.toContain("No dest parent");
+
+        await newLoadingTask.destroy();
+      });
+
+      it("should produce no outline when the source PDF has none", async function () {
+        // tracemonkey.pdf has no outline at all.
+        const loadingTask = getDocument(tracemonkeyGetDocumentParams);
+        const pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        const outline = await newPdfDoc.getOutline();
+
+        expect(outline).toEqual(null);
+
+        await newLoadingTask.destroy();
+      });
+
+      it("should rename conflicting named dests when both copies keep the page", async function () {
+        // Merge page 1 (index 0) from copy A with page 1 (index 0) from copy B
+        // (same PDF). Both copies have "page1dest" pointing to their page 1,
+        // and both pages are kept. The deduplication logic must rename the
+        // second occurrence so both named dests survive in the output.
+        const loadingTask = getDocument(
+          buildGetDocumentParams("outlines_for_editor.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfDataB = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "outlines_for_editor.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+          { document: pdfDataB, includePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(2);
+
+        const outline = await newPdfDoc.getOutline();
+        expect(Array.isArray(outline)).toEqual(true);
+        // Copy A: "Page 1 - explicit dest", "External URL", "Next Page
+        //   action", "Remote PDF link", "Chapter" (dest=page1dest)
+        // Copy B: same 5 items but "Chapter" dest is renamed.
+        expect(outline.length).toEqual(10);
+
+        // The "Chapter" items from the two copies must have different dest
+        // strings: one with the original "page1dest" and one with the renamed
+        // version (contains a suffix to avoid collisions).
+        const chapterItems = outline.filter(i => i.title === "Chapter");
+        expect(chapterItems.length).toEqual(2);
+        const chapterDests = chapterItems.map(i => i.dest);
+        expect(chapterDests[0]).not.toEqual(chapterDests[1]);
+        // One of them is the original name.
+        expect(chapterDests.includes("page1dest")).toEqual(true);
+        // The other is a renamed version that still exists in the doc.
+        const renamedDest = chapterDests.find(d => d !== "page1dest");
+        expect(typeof renamedDest).toEqual("string");
+
+        // Verify the "Page 1 - explicit dest" items: copy A uses an array dest
+        // pointing to its page, copy B uses its renamed page ref.
+        const page1Items = outline.filter(
+          i => i.title === "Page 1 - explicit dest"
+        );
+        expect(page1Items.length).toEqual(2);
+        expect(Array.isArray(page1Items[0].dest)).toEqual(true);
+        expect(Array.isArray(page1Items[1].dest)).toEqual(true);
+
+        await newLoadingTask.destroy();
+      });
+    });
   });
 });

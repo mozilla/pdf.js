@@ -70,6 +70,7 @@ class DocumentData {
     this.acroFormQ = 0;
     this.hasSignatureAnnotations = false;
     this.fieldToParent = new RefSetCache();
+    this.outline = null;
   }
 }
 
@@ -147,6 +148,8 @@ class PDFEditor {
   acroFormCalculationOrder = null;
 
   acroFormQ = 0;
+
+  outlineItems = null;
 
   constructor({ useObjectStreams = true, title = "", author = "" } = {}) {
     [this.rootRef, this.rootDict] = this.newDict;
@@ -633,6 +636,7 @@ class PDFEditor {
     promises.length = 0;
 
     this.#collectValidDestinations(allDocumentData);
+    this.#collectOutlineDestinations(allDocumentData);
     this.#collectPageLabels();
 
     for (const page of this.oldPages) {
@@ -650,6 +654,7 @@ class PDFEditor {
     this.#fixPostponedRefCopies(allDocumentData);
     await this.#mergeStructTrees(allDocumentData);
     await this.#mergeAcroForms(allDocumentData);
+    this.#buildOutline(allDocumentData);
 
     return this.writePDF();
   }
@@ -676,6 +681,9 @@ class PDFEditor {
       pdfManager
         .ensureCatalog("acroForm")
         .then(acroForm => (documentData.acroForm = acroForm)),
+      pdfManager
+        .ensureCatalog("documentOutlineForEditor")
+        .then(outline => (documentData.outline = outline)),
     ]);
     const structTreeRoot = documentData.structTreeRoot;
     if (structTreeRoot) {
@@ -1212,6 +1220,224 @@ class PDFEditor {
       const dest = annotDict.get("Dest");
       fixDestination(annotDict, "Dest", dest);
     }
+  }
+
+  /**
+   * Collect named destinations referenced in the outlines so they are kept
+   * when filtering duplicate named destinations.
+   * @param {Array<DocumentData>} allDocumentData
+   */
+  #collectOutlineDestinations(allDocumentData) {
+    const collect = (items, destinations, usedNamedDestinations) => {
+      for (const item of items) {
+        if (typeof item.dest === "string" && destinations?.has(item.dest)) {
+          usedNamedDestinations.add(item.dest);
+        }
+        if (item.items.length > 0) {
+          collect(item.items, destinations, usedNamedDestinations);
+        }
+      }
+    };
+    for (const documentData of allDocumentData) {
+      const { outline, destinations, usedNamedDestinations } = documentData;
+      if (outline?.length) {
+        collect(outline, destinations, usedNamedDestinations);
+      }
+    }
+  }
+
+  /**
+   * Check whether an outline item has a valid destination in the output doc.
+   * @param {Object} item
+   * @param {DocumentData} documentData
+   * @returns {boolean}
+   */
+  #isValidOutlineDest(item, documentData) {
+    const { dest, action, url, unsafeUrl, attachment, setOCGState } = item;
+    // External links (including relative URLs that can't be made absolute),
+    // named actions, attachments and OCG state changes are always kept.
+    if (action || url || unsafeUrl || attachment || setOCGState) {
+      return true;
+    }
+    if (!dest) {
+      return false;
+    }
+    if (typeof dest === "string") {
+      const name = documentData.dedupNamedDestinations.get(dest) || dest;
+      return this.namedDestinations.has(name);
+    }
+    if (Array.isArray(dest) && dest[0] instanceof Ref) {
+      return !!documentData.oldRefMapping.get(dest[0]);
+    }
+    return false;
+  }
+
+  /**
+   * Recursively filter outline items, removing those with no valid destination
+   * and no remaining children.
+   * @param {Array} items
+   * @param {DocumentData} documentData
+   * @returns {Array}
+   */
+  #filterOutlineItems(items, documentData) {
+    const result = [];
+    for (const item of items) {
+      const filteredChildren = this.#filterOutlineItems(
+        item.items,
+        documentData
+      );
+      const hasValidOwnDest = this.#isValidOutlineDest(item, documentData);
+      if (hasValidOwnDest || filteredChildren.length > 0) {
+        result.push({
+          ...item,
+          // When the item's own destination is invalid (but it has surviving
+          // children), clear the destination so the output item is a plain
+          // container rather than a broken link.
+          dest: hasValidOwnDest ? item.dest : null,
+          items: filteredChildren,
+          _documentData: documentData,
+        });
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Filter outline trees and collect the result into this.outlineItems.
+   * Must be called after page copies are made (oldRefMapping is populated).
+   * @param {Array<DocumentData>} allDocumentData
+   */
+  #buildOutline(allDocumentData) {
+    const outlineItems = [];
+    for (const documentData of allDocumentData) {
+      const { outline } = documentData;
+      if (!outline?.length) {
+        continue;
+      }
+      outlineItems.push(...this.#filterOutlineItems(outline, documentData));
+    }
+    this.outlineItems = outlineItems.length > 0 ? outlineItems : null;
+  }
+
+  /**
+   * Write the destination or action of an outline item into the given dict.
+   * @param {Dict} itemDict
+   * @param {Object} item
+   * @returns {Promise<void>}
+   */
+  async #setOutlineItemDest(itemDict, item) {
+    const { dest, rawDict } = item;
+    const documentData = item._documentData;
+    if (dest) {
+      if (typeof dest === "string") {
+        const name = documentData.dedupNamedDestinations.get(dest) || dest;
+        itemDict.set("Dest", stringToAsciiOrUTF16BE(name));
+      } else if (Array.isArray(dest)) {
+        const newDest = dest.slice();
+        if (newDest[0] instanceof Ref) {
+          newDest[0] = documentData.oldRefMapping.get(newDest[0]) || newDest[0];
+        }
+        itemDict.set("Dest", newDest);
+      }
+      return;
+    }
+    // For all other action types (URI, GoToR, Named, SetOCGState, ...) clone
+    // the raw action dict from the original document.
+    const actionDict = rawDict?.get("A");
+    if (actionDict instanceof Dict) {
+      this.currentDocument = documentData;
+      const actionRef = await this.#cloneObject(
+        actionDict,
+        documentData.document.xref
+      );
+      this.currentDocument = null;
+      itemDict.set("A", actionRef);
+    }
+  }
+
+  /**
+   * Build and write the document outline (bookmarks) into the output PDF.
+   * @returns {Promise<void>}
+   */
+  async #makeOutline() {
+    const { outlineItems } = this;
+    if (!outlineItems?.length) {
+      return;
+    }
+
+    const [outlineRootRef, outlineRootDict] = this.newDict;
+    outlineRootDict.setIfName("Type", "Outlines");
+
+    // First pass: allocate a new Ref for every item in the tree.
+    const assignRefs = items => {
+      for (const item of items) {
+        [item._ref] = this.newDict;
+        if (item.items.length > 0) {
+          assignRefs(item.items);
+        }
+      }
+    };
+    assignRefs(outlineItems);
+
+    // Second pass: fill each Dict and return the total visible item count.
+    const fillItems = async (items, parentRef) => {
+      let totalCount = 0;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const dict = this.xref[item._ref.num];
+
+        dict.set("Title", stringToAsciiOrUTF16BE(item.title));
+        dict.set("Parent", parentRef);
+        if (i > 0) {
+          dict.set("Prev", items[i - 1]._ref);
+        }
+        if (i < items.length - 1) {
+          dict.set("Next", items[i + 1]._ref);
+        }
+
+        if (item.items.length > 0) {
+          dict.set("First", item.items[0]._ref);
+          dict.set("Last", item.items.at(-1)._ref);
+          const childCount = await fillItems(item.items, item._ref);
+          if (item.count !== undefined) {
+            // Preserve the original expanded/collapsed state while updating
+            // the number of visible descendants after filtering.
+            dict.set("Count", item.count < 0 ? -childCount : childCount);
+          }
+          // A closed item (count < 0) hides its descendants, so it only
+          // contributes 1 to the parent's visible-item tally.
+          totalCount +=
+            item.count !== undefined && item.count < 0 ? 1 : childCount + 1;
+        } else {
+          totalCount += 1;
+        }
+
+        await this.#setOutlineItemDest(dict, item);
+
+        const flags = (item.bold ? 2 : 0) | (item.italic ? 1 : 0);
+        if (flags !== 0) {
+          dict.set("F", flags);
+        }
+        if (
+          item.color &&
+          (item.color[0] !== 0 || item.color[1] !== 0 || item.color[2] !== 0)
+        ) {
+          dict.set("C", [
+            item.color[0] / 255,
+            item.color[1] / 255,
+            item.color[2] / 255,
+          ]);
+        }
+      }
+      return totalCount;
+    };
+
+    const totalCount = await fillItems(outlineItems, outlineRootRef);
+    outlineRootDict.set("First", outlineItems[0]._ref);
+    outlineRootDict.set("Last", outlineItems.at(-1)._ref);
+    outlineRootDict.set("Count", totalCount);
+
+    this.rootDict.set("Outlines", outlineRootRef);
   }
 
   async #mergeAcroForms(allDocumentData) {
@@ -1937,6 +2163,7 @@ class PDFEditor {
     this.#makePageLabelsTree();
     this.#makeDestinationsTree();
     this.#makeStructTree();
+    await this.#makeOutline();
   }
 
   /**

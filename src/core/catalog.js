@@ -317,7 +317,7 @@ class Catalog {
     return shadow(this, "documentOutline", obj);
   }
 
-  #readDocumentOutline() {
+  #readDocumentOutline(options = {}) {
     let obj = this.#catDict.get("Outlines");
     if (!(obj instanceof Dict)) {
       return null;
@@ -382,6 +382,10 @@ class Catalog {
         items: [],
       };
 
+      if (options.keepRawDict) {
+        outlineItem.rawDict = outlineDict;
+      }
+
       i.parent.items.push(outlineItem);
       obj = outlineDict.getRaw("First");
       if (obj instanceof Ref && !processed.has(obj)) {
@@ -395,6 +399,19 @@ class Catalog {
       }
     }
     return root.items.length > 0 ? root.items : null;
+  }
+
+  get documentOutlineForEditor() {
+    let obj = null;
+    try {
+      obj = this.#readDocumentOutline({ keepRawDict: true });
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      warn("Unable to read document outline.");
+    }
+    return shadow(this, "documentOutlineForEditor", obj);
   }
 
   get permissions() {

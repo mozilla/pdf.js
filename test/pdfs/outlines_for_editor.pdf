@@ -1,0 +1,110 @@
+%PDF-1.7
+%����
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] >>
+endobj
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names 3 0 R /Outlines 4 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [10 0 R 11 0 R 12 0 R 13 0 R 14 0 R] /Count 5 >>
+endobj
+3 0 obj
+<< /Dests 5 0 R >>
+endobj
+5 0 obj
+<< /Names [(page1dest) [10 0 R /XYZ 0 0 0] (page2dest) [11 0 R /XYZ 0 0 0] (page3dest) [12 0 R /XYZ 0 0 0] (page4dest) [13 0 R /XYZ 0 0 0] (page5dest) [14 0 R /XYZ 0 0 0]] >>
+endobj
+4 0 obj
+<< /Type /Outlines /First 20 0 R /Last 26 0 R /Count 7 >>
+endobj
+20 0 obj
+<< /Title (Page 1 - explicit dest) /Parent 4 0 R /Next 21 0 R /Dest [10 0 R /XYZ 0 0 0] >>
+endobj
+21 0 obj
+<< /Title (Page 2 - named dest) /Parent 4 0 R /Prev 20 0 R /Next 22 0 R /Dest (page2dest) >>
+endobj
+22 0 obj
+<< /Title (External URL) /Parent 4 0 R /Prev 21 0 R /Next 23 0 R /A << /Type /Action /S /URI /URI (https://mozilla.org) >> >>
+endobj
+23 0 obj
+<< /Title (Next Page action) /Parent 4 0 R /Prev 22 0 R /Next 24 0 R /A << /Type /Action /S /Named /N /NextPage >> >>
+endobj
+24 0 obj
+<< /Title (Remote PDF link) /Parent 4 0 R /Prev 23 0 R /Next 25 0 R /A << /Type /Action /S /GoToR /F (other.pdf) /D [0 /Fit] >> >>
+endobj
+25 0 obj
+<< /Title (Chapter) /Parent 4 0 R /Prev 24 0 R /Next 26 0 R /Dest (page1dest) /First 30 0 R /Last 32 0 R /Count -3 >>
+endobj
+26 0 obj
+<< /Title (No dest parent) /Parent 4 0 R /Prev 25 0 R /First 33 0 R /Last 33 0 R /Count -1 >>
+endobj
+30 0 obj
+<< /Title (Section 1) /Parent 25 0 R /Next 31 0 R /Dest [11 0 R /FitH 100] >>
+endobj
+31 0 obj
+<< /Title (Section 2) /Parent 25 0 R /Prev 30 0 R /Next 32 0 R /Dest (page3dest) /F 3 /C [1 0 0] >>
+endobj
+32 0 obj
+<< /Title (Subsection) /Parent 25 0 R /Prev 31 0 R /Dest (page5dest) /First 34 0 R /Last 34 0 R /Count -1 >>
+endobj
+33 0 obj
+<< /Title (Child with dest) /Parent 26 0 R /Dest (page5dest) >>
+endobj
+34 0 obj
+<< /Title (Deep item) /Parent 32 0 R /Dest (page4dest) >>
+endobj
+xref
+0 35
+0000000000 65535 f 
+0000000375 00000 n 
+0000000453 00000 n 
+0000000539 00000 n 
+0000000763 00000 n 
+0000000573 00000 n 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000015 00000 n 
+0000000087 00000 n 
+0000000159 00000 n 
+0000000231 00000 n 
+0000000303 00000 n 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000836 00000 n 
+0000000943 00000 n 
+0000001052 00000 n 
+0000001194 00000 n 
+0000001328 00000 n 
+0000001475 00000 n 
+0000001609 00000 n 
+0000000000 65535 f 
+0000000000 65535 f 
+0000000000 65535 f 
+0000001719 00000 n 
+0000001813 00000 n 
+0000001929 00000 n 
+0000002054 00000 n 
+0000002134 00000 n 
+trailer
+<< /Size 35 /Root 1 0 R >>
+startxref
+2208
+%%EOF
