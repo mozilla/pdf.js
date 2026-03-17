@@ -1363,6 +1363,19 @@ class PDFPageProxy {
     this.imageCoordinates = null;
   }
 
+  clone(id) {
+    const clone = new PDFPageProxy(
+      id,
+      this._pageInfo,
+      this._transport,
+      this.#pagesMapper,
+      this._pdfBug
+    );
+    clone.clonedFromIndex = this.clonedFromIndex ?? this._pageIndex;
+    this._transport.updatePage(clone);
+    return clone;
+  }
+
   /**
    * @type {number} Page number of the page. First page is 1.
    */
@@ -1375,6 +1388,7 @@ class PDFPageProxy {
    */
   set pageNumber(value) {
     this._pageIndex = value - 1;
+    this._transport.updatePage(this);
   }
 
   /**
@@ -2431,10 +2445,6 @@ class WorkerTransport {
 
   #passwordCapability = null;
 
-  #copiedPageInfo = null;
-
-  #savedPageInfo = null;
-
   constructor(
     messageHandler,
     loadingTask,
@@ -2468,7 +2478,6 @@ class WorkerTransport {
     this.setupMessageHandler();
 
     this.pagesMapper = pagesMapper;
-    this.pagesMapper.addListener(this.#updateCaches.bind(this));
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
@@ -2494,76 +2503,10 @@ class WorkerTransport {
     }
   }
 
-  #updateCaches({ type, pageNumbers }) {
-    if (type === "copy") {
-      this.#copiedPageInfo = new Map();
-      for (const pageNum of pageNumbers) {
-        this.#copiedPageInfo.set(pageNum, {
-          proxy: this.#pageCache.get(pageNum - 1) || null,
-          promise: this.#pagePromises.get(pageNum - 1) || null,
-        });
-      }
-      return;
-    }
-
-    if (type === "cancelCopy") {
-      this.#copiedPageInfo = null;
-      return;
-    }
-
-    if (type === "delete") {
-      this.#savedPageInfo = {
-        pageCache: new Map(this.#pageCache),
-        pagePromises: new Map(this.#pagePromises),
-      };
-      for (const pageNum of pageNumbers) {
-        this.#pageCache.delete(pageNum - 1);
-        this.#pagePromises.delete(pageNum - 1);
-      }
-    }
-
-    if (type === "cancelDelete") {
-      if (this.#savedPageInfo) {
-        this.#pageCache = this.#savedPageInfo.pageCache;
-        this.#pagePromises = this.#savedPageInfo.pagePromises;
-        this.#savedPageInfo = null;
-      }
-      return;
-    }
-
-    if (type === "cleanSavedData") {
-      this.#savedPageInfo = null;
-      return;
-    }
-
-    const newPageCache = new Map();
-    const newPromiseCache = new Map();
-    const { pagesMapper } = this;
-    for (let i = 0, ii = pagesMapper.pagesNumber; i < ii; i++) {
-      const prevPageNumber = pagesMapper.getPrevPageNumber(i + 1);
-      if (prevPageNumber < 0) {
-        const { proxy, promise } =
-          this.#copiedPageInfo?.get(-prevPageNumber) || {};
-        if (proxy) {
-          newPageCache.set(i, proxy);
-        }
-        if (promise) {
-          newPromiseCache.set(i, promise);
-        }
-        continue;
-      }
-      const prevPageIndex = prevPageNumber - 1;
-      const page = this.#pageCache.get(prevPageIndex);
-      if (page) {
-        newPageCache.set(i, page);
-      }
-      const promise = this.#pagePromises.get(prevPageIndex);
-      if (promise) {
-        newPromiseCache.set(i, promise);
-      }
-    }
-    this.#pageCache = newPageCache;
-    this.#pagePromises = newPromiseCache;
+  updatePage(page) {
+    const { _pageIndex } = page;
+    this.#pageCache.set(_pageIndex, page);
+    this.#pagePromises.set(_pageIndex, Promise.resolve(page));
   }
 
   #cacheSimpleMethod(name, data = null) {

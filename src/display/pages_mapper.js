@@ -19,146 +19,75 @@ import { makeArr, MathClamp } from "../shared/util.js";
  * Maps between page IDs and page numbers, allowing bidirectional conversion
  * between the two representations. This is useful when the page numbering
  * in the PDF document doesn't match the default sequential ordering.
+ *
+ * When #pageNumberToId is null the mapping is the identity (page N has ID N).
  */
 class PagesMapper {
   /**
-   * Maps page IDs to their corresponding page numbers.
-   * @type {Map<number, Array<number>>|null}
-   */
-  #idToPageNumber = null;
-
-  /**
-   * Maps page numbers to their corresponding page IDs.
+   * Maps page positions (0-indexed) to their page IDs (1-indexed).
+   * Null when the mapping is the identity.
    * @type {Uint32Array|null}
    */
   #pageNumberToId = null;
 
   /**
-   * Previous mapping of page IDs to page numbers.
+   * Previous page number for each position, used to track what happened to
+   * each page after a mutation. Negative values indicate copied pages.
    * @type {Int32Array|null}
    */
   #prevPageNumbers = null;
 
-  /**
-   * The total number of pages.
-   * @type {number}
-   */
+  /** @type {number} */
   #pagesNumber = 0;
 
   /**
-   * Listeners for page changes.
-   * @type {Array<function>}
+   * Clipboard state for copy/paste operations.
+   * @type {{pageNumbers: Uint32Array, pageIds: Uint32Array}|null}
    */
-  #listeners = [];
+  #clipboard = null;
 
-  /**
-   * Maps page numbers to their corresponding page IDs (used in copy
-   * operations).
-   * @type {Uint32Array|null}
-   */
-  #copiedPageIds = null;
-
-  /**
-   * Maps page IDs to their corresponding page numbers, used in copy operations.
-   * @type {Uint32Array|null}
-   */
-  #copiedPageNumbers = null;
-
+  /** Saved state for undoing a delete. */
   #savedData = null;
 
-  /**
-   * Gets the total number of pages.
-   * @returns {number} The number of pages.
-   */
   get pagesNumber() {
     return this.#pagesNumber;
   }
 
-  /**
-   * Sets the total number of pages and initializes default mappings
-   * where page IDs equal page numbers (1-indexed).
-   * @param {number} n - The total number of pages.
-   */
   set pagesNumber(n) {
     if (this.#pagesNumber === n) {
       return;
     }
     this.#pagesNumber = n;
-    this.#reset();
-  }
-
-  /**
-   * Resets the page mappings to their default state, where page IDs equal page
-   * numbers (1-indexed). This is called when the number of pages changes, or
-   * when the current mapping matches the default mapping after a move
-   * operation.
-   */
-  #reset() {
     this.#pageNumberToId = null;
-    this.#idToPageNumber = null;
+    this.#prevPageNumbers = null;
   }
 
   /**
-   * Adds a listener function that will be called whenever the page mappings
-   * are updated.
-   * @param {function} listener
+   * Ensures the identity mapping is initialized.
+   * Must be called before any mutation or before reading #pageNumberToId.
    */
-  addListener(listener) {
-    this.#listeners.push(listener);
-  }
-
-  /**
-   * Removes a previously added listener function.
-   * @param {function} listener
-   */
-  removeListener(listener) {
-    const index = this.#listeners.indexOf(listener);
-    if (index >= 0) {
-      this.#listeners.splice(index, 1);
-    }
-  }
-
-  /**
-   * Calls all registered listener functions to notify them of changes to the
-   * page mappings.
-   * @param {Object} data - An object containing information about the update.
-   */
-  #updateListeners(data) {
-    for (const listener of this.#listeners) {
-      listener(data);
-    }
-  }
-
-  /**
-   * Initializes the page mappings if they haven't been initialized yet.
-   * @param {boolean} mustInit
-   */
-  #init(mustInit) {
+  #ensureInit() {
     if (this.#pageNumberToId) {
       return;
     }
     const n = this.#pagesNumber;
-
     const pageNumberToId = (this.#pageNumberToId = new Uint32Array(n));
-    this.#prevPageNumbers = new Int32Array(pageNumberToId);
-    const idToPageNumber = (this.#idToPageNumber = new Map());
-    if (mustInit) {
-      for (let i = 1; i <= n; i++) {
-        pageNumberToId[i - 1] = i;
-        idToPageNumber.set(i, [i]);
-      }
+    for (let i = 0; i < n; i++) {
+      pageNumberToId[i] = i + 1;
     }
+    this.#prevPageNumbers = new Int32Array(pageNumberToId);
   }
 
   /**
-   * Updates the mapping from page IDs to page numbers based on the current
-   * mapping from page numbers to page IDs. This should be called after any
-   * changes to the page-number-to-ID mapping to keep the two mappings in sync.
+   * Builds and returns the inverse map (id to page numbers) from
+   * #pageNumberToId.
+   * Since a page ID can appear multiple times (after a copy), the value is an
+   * array of all page numbers that share that ID.
+   * @returns {Map<number, Array<number>>}
    */
-  #updateIdToPageNumber() {
-    const idToPageNumber = this.#idToPageNumber;
+  #buildIdToPageNumber() {
+    const idToPageNumber = new Map();
     const pageNumberToId = this.#pageNumberToId;
-    idToPageNumber.clear();
     for (let i = 0, ii = this.#pagesNumber; i < ii; i++) {
       const id = pageNumberToId[i];
       const pageNumbers = idToPageNumber.get(id);
@@ -168,20 +97,20 @@ class PagesMapper {
         idToPageNumber.set(id, [i + 1]);
       }
     }
+    return idToPageNumber;
   }
 
   /**
-   * Move a set of pages to a new position while keeping ID→number mappings in
-   * sync.
+   * Move a set of pages to a new position.
    *
    * @param {Set<number>} selectedPages - Page numbers being moved (1-indexed).
    * @param {number[]} pagesToMove - Ordered list of page numbers to move.
    * @param {number} index - Zero-based insertion index in the page-number list.
    */
   movePages(selectedPages, pagesToMove, index) {
-    this.#init(true);
+    this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
-    const idToPageNumber = this.#idToPageNumber;
+    const prevIdToPageNumber = this.#buildIdToPageNumber();
     const movedCount = pagesToMove.length;
     const mappedPagesToMove = new Uint32Array(movedCount);
     let removedBeforeTarget = 0;
@@ -190,63 +119,60 @@ class PagesMapper {
       const pageIndex = pagesToMove[i] - 1;
       mappedPagesToMove[i] = pageNumberToId[pageIndex];
       if (pageIndex < index) {
-        removedBeforeTarget += 1;
+        removedBeforeTarget++;
       }
     }
 
     const pagesNumber = this.#pagesNumber;
-    // target index after removing elements that were before it
-    let adjustedTarget = index - removedBeforeTarget;
     const remainingLen = pagesNumber - movedCount;
-    adjustedTarget = MathClamp(adjustedTarget, 0, remainingLen);
+    const adjustedTarget = MathClamp(
+      index - removedBeforeTarget,
+      0,
+      remainingLen
+    );
 
-    // Create the new mapping.
-    // First copy over the pages that are not being moved.
-    // Then insert the moved pages at the target position.
+    // Compact: keep only non-moved pages.
     for (let i = 0, r = 0; i < pagesNumber; i++) {
       if (!selectedPages.has(i + 1)) {
         pageNumberToId[r++] = pageNumberToId[i];
       }
     }
 
-    // Shift the pages after the target position.
+    // Make room at the target and insert.
     pageNumberToId.copyWithin(
       adjustedTarget + movedCount,
       adjustedTarget,
       remainingLen
     );
-    // Finally insert the moved pages.
     pageNumberToId.set(mappedPagesToMove, adjustedTarget);
 
-    this.#setPrevPageNumbers(idToPageNumber, null);
-    this.#updateIdToPageNumber();
-    this.#updateListeners({ type: "move" });
+    this.#updatePrevPageNumbers(prevIdToPageNumber);
 
     if (pageNumberToId.every((id, i) => id === i + 1)) {
-      this.#reset();
+      this.#pageNumberToId = null;
     }
   }
 
   /**
-   * Deletes a set of pages while keeping ID→number mappings in sync.
-   * @param {Array<number>} pagesToDelete - Page numbers to delete (1-indexed).
-   *  These must be unique and sorted in ascending order.
+   * Deletes a set of pages.
+   * @param {Array<number>} pagesToDelete - Page numbers to delete (1-indexed),
+   *   unique and sorted ascending.
    */
   deletePages(pagesToDelete) {
-    this.#init(true);
+    this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
-    const prevIdToPageNumber = this.#idToPageNumber;
+    const prevIdToPageNumber = this.#buildIdToPageNumber();
 
     this.#savedData = {
       pageNumberToId: pageNumberToId.slice(),
-      idToPageNumber: new Map(prevIdToPageNumber),
-      pageNumber: this.#pagesNumber,
+      pagesNumber: this.#pagesNumber,
       prevPageNumbers: this.#prevPageNumbers.slice(),
     };
 
-    this.pagesNumber -= pagesToDelete.length;
-    this.#init(false);
-    const newPageNumberToId = this.#pageNumberToId;
+    const newN = this.#pagesNumber - pagesToDelete.length;
+    this.#pagesNumber = newN;
+    const newPageNumberToId = (this.#pageNumberToId = new Uint32Array(newN));
+    this.#prevPageNumbers = new Int32Array(newN);
 
     let sourceIndex = 0;
     let destIndex = 0;
@@ -265,107 +191,119 @@ class PagesMapper {
       newPageNumberToId.set(pageNumberToId.subarray(sourceIndex), destIndex);
     }
 
-    this.#setPrevPageNumbers(prevIdToPageNumber, null);
-    this.#updateIdToPageNumber();
-    this.#updateListeners({ type: "delete", pageNumbers: pagesToDelete });
+    this.#updatePrevPageNumbers(prevIdToPageNumber, new Set(pagesToDelete));
   }
 
   cancelDelete() {
     if (this.#savedData) {
       this.#pageNumberToId = this.#savedData.pageNumberToId;
-      this.#idToPageNumber = this.#savedData.idToPageNumber;
-      this.pagesNumber = this.#savedData.pageNumber;
+      this.#pagesNumber = this.#savedData.pagesNumber;
       this.#prevPageNumbers = this.#savedData.prevPageNumbers;
       this.#savedData = null;
-      this.#updateListeners({ type: "cancelDelete" });
     }
   }
 
   cleanSavedData() {
     this.#savedData = null;
-    this.#updateListeners({ type: "cleanSavedData" });
   }
 
   /**
-   * Copies a set of pages while keeping ID→number mappings in sync.
+   * Records which pages are being copied so that pastePages can insert them.
    * @param {Uint32Array} pagesToCopy - Page numbers to copy (1-indexed).
    */
   copyPages(pagesToCopy) {
-    this.#init(true);
-    this.#copiedPageNumbers = pagesToCopy;
-    this.#copiedPageIds = pagesToCopy.map(
-      pageNumber => this.#pageNumberToId[pageNumber - 1]
-    );
-    this.#updateListeners({ type: "copy", pageNumbers: pagesToCopy });
+    this.#ensureInit();
+    this.#clipboard = {
+      pageNumbers: pagesToCopy,
+      pageIds: pagesToCopy.map(n => this.#pageNumberToId[n - 1]),
+    };
   }
 
   cancelCopy() {
-    this.#copiedPageIds = null;
-    this.#copiedPageNumbers = null;
-    this.#updateListeners({ type: "cancelCopy" });
+    this.#clipboard = null;
   }
 
   /**
-   * Pastes a set of pages while keeping ID→number mappings in sync.
+   * Inserts the previously copied pages at the given position.
    * @param {number} index - Zero-based insertion index in the page-number list.
    */
   pastePages(index) {
-    this.#init(true);
+    this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
-    const prevIdToPageNumber = this.#idToPageNumber;
-    const copiedPageNumbers = this.#copiedPageNumbers;
+    const prevIdToPageNumber = this.#buildIdToPageNumber();
+    const { pageNumbers: copiedPageNumbers, pageIds: copiedPageIds } =
+      this.#clipboard;
 
-    const copiedPageMapping = new Map();
-    let base = index;
-    for (const pageNumber of copiedPageNumbers) {
-      copiedPageMapping.set(++base, pageNumber);
-    }
-    this.pagesNumber += copiedPageNumbers.length;
-    this.#init(false);
-    const newPageNumberToId = this.#pageNumberToId;
+    const newN = this.#pagesNumber + copiedPageNumbers.length;
+    this.#pagesNumber = newN;
+    const newPageNumberToId = (this.#pageNumberToId = new Uint32Array(newN));
+    this.#prevPageNumbers = new Int32Array(newN);
 
     newPageNumberToId.set(pageNumberToId.subarray(0, index), 0);
-    newPageNumberToId.set(this.#copiedPageIds, index);
+    newPageNumberToId.set(copiedPageIds, index);
     newPageNumberToId.set(
       pageNumberToId.subarray(index),
       index + copiedPageNumbers.length
     );
 
-    this.#setPrevPageNumbers(prevIdToPageNumber, copiedPageMapping);
-    this.#updateIdToPageNumber();
-    this.#updateListeners({ type: "paste" });
-
-    this.#copiedPageIds = null;
-    this.#copiedPageNumbers = null;
+    this.#updatePrevPageNumbers(
+      prevIdToPageNumber,
+      null,
+      index,
+      copiedPageNumbers
+    );
+    this.#clipboard = null;
   }
 
   /**
-   * Updates the previous page numbers based on the current page-number-to-ID
-   * mapping and the provided previous ID-to-page-number mapping.
-   * This is used to keep track of the original page numbers for each page ID.
-   * @param {Map<number, Array<number>} prevIdToPageNumber
-   * @param {Map<number, number>|null} copiedPageMapping
+   * Recomputes #prevPageNumbers after a mutation, using the pre-mutation
+   * id to pageNumbers map to track where each page came from.
+   *
+   * @param {Map<number, Array<number>>} prevIdToPageNumber - Id to pageNumbers
+   *   before the mutation.
+   * @param {Set<number>|null} [deletedPageNumbers] - Page numbers that were
+   *   deleted (so their old positions are skipped).
+   * @param {number} [pasteIndex] - If this is a paste, the zero-based
+   *   insertion index; paired with copiedPageNumbers.
+   * @param {Uint32Array} [copiedPageNumbers] - Source page numbers of the
+   *   pasted pages; paired with pasteIndex.
    */
-  #setPrevPageNumbers(prevIdToPageNumber, copiedPageMapping) {
+  #updatePrevPageNumbers(
+    prevIdToPageNumber,
+    deletedPageNumbers = null,
+    pasteIndex = -1,
+    copiedPageNumbers = null
+  ) {
     const prevPageNumbers = this.#prevPageNumbers;
     const newPageNumberToId = this.#pageNumberToId;
+    const pasteEnd = pasteIndex + (copiedPageNumbers?.length ?? 0);
     const idsIndices = new Map();
+
     for (let i = 0, ii = this.#pagesNumber; i < ii; i++) {
-      const oldPageNumber = copiedPageMapping?.get(i + 1);
-      if (oldPageNumber) {
-        prevPageNumbers[i] = -oldPageNumber;
+      if (i >= pasteIndex && i < pasteEnd) {
+        // Negative value signals this page is a copy; encodes its source.
+        prevPageNumbers[i] = -copiedPageNumbers[i - pasteIndex];
         continue;
       }
       const id = newPageNumberToId[i];
-      const j = idsIndices.get(id) || 0;
-      prevPageNumbers[i] = prevIdToPageNumber.get(id)?.[j];
+      const oldPositions = prevIdToPageNumber.get(id);
+      let j = idsIndices.get(id) || 0;
+      if (deletedPageNumbers && oldPositions) {
+        while (
+          j < oldPositions.length &&
+          deletedPageNumbers.has(oldPositions[j])
+        ) {
+          j++;
+        }
+      }
+      prevPageNumbers[i] = oldPositions?.[j];
       idsIndices.set(id, j + 1);
     }
   }
 
   /**
    * Checks if the page mappings have been altered from their initial state.
-   * @returns {boolean} True if the mappings have been altered, false otherwise.
+   * @returns {boolean}
    */
   hasBeenAltered() {
     return this.#pageNumberToId !== null;
@@ -373,9 +311,11 @@ class PagesMapper {
 
   /**
    * Gets the current page mapping suitable for saving.
-   * @returns {Object} An object containing the page indices.
+   * @param {Map<number, Array<number>>} [idToPageNumber]
+   * @returns {Array<Object>}
    */
-  getPageMappingForSaving(idToPageNumber = this.#idToPageNumber) {
+  getPageMappingForSaving(idToPageNumber = null) {
+    idToPageNumber ??= this.#buildIdToPageNumber();
     // idToPageNumber maps used 1-based IDs to 1-based page numbers.
     // For example if the final pdf contains page 3 twice and they are moved at
     // page 1 and 4, then it contains:
@@ -441,28 +381,37 @@ class PagesMapper {
 
   /**
    * Gets the previous page number for a given page number.
+   * Negative values indicate a copied page (the absolute value is the source).
    * @param {number} pageNumber
-   * @returns {number} The previous page number for the given page number, or 0
-   *   if no mapping exists.
+   * @returns {number}
    */
   getPrevPageNumber(pageNumber) {
-    return this.#prevPageNumbers[pageNumber - 1] ?? 0;
+    return this.#prevPageNumbers?.[pageNumber - 1] ?? 0;
   }
 
   /**
-   * Gets the page number for a given page ID.
+   * Gets the first page number that currently maps to the given page ID.
    * @param {number} id - The page ID (1-indexed).
-   * @returns {number} The page number, or 0 if no mapping exists.
+   * @returns {number} The page number, or 0 if not found.
    */
   getPageNumber(id) {
-    return this.#idToPageNumber ? (this.#idToPageNumber.get(id)?.[0] ?? 0) : id;
+    if (!this.#pageNumberToId) {
+      return id; // identity mapping
+    }
+    const pageNumberToId = this.#pageNumberToId;
+    for (let i = 0, ii = this.#pagesNumber; i < ii; i++) {
+      if (pageNumberToId[i] === id) {
+        return i + 1;
+      }
+    }
+    return 0;
   }
 
   /**
    * Gets the page ID for a given page number.
    * @param {number} pageNumber - The page number (1-indexed).
    * @returns {number} The page ID, or the page number itself if no mapping
-   * exists.
+   *   exists.
    */
   getPageId(pageNumber) {
     return this.#pageNumberToId?.[pageNumber - 1] ?? pageNumber;

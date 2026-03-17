@@ -157,6 +157,8 @@ class PDFThumbnailViewer {
 
   #isInPasteMode = false;
 
+  #hasUndoBarVisible = false;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -277,7 +279,7 @@ class PDFThumbnailViewer {
       this.#undoButton?.addEventListener("click", this.#undo.bind(this));
       this.#undoCloseButton?.addEventListener(
         "click",
-        this.#dismissUndo.bind(this)
+        this.#dismissUndo.bind(this, /* mustUpdateStatus = */ true)
       );
       this.#deselectButton?.addEventListener("click", () => {
         this.#clearSelection();
@@ -693,7 +695,8 @@ class PDFThumbnailViewer {
 
       selectedPages.clear();
       this.#pageNumberToRemove = NaN;
-      this.#updateMenuEntries();
+      this.#toggleMenuEntries(false);
+      this.#updateStatus("select");
 
       this.eventBus.dispatch("pagesedited", {
         source: this,
@@ -728,13 +731,13 @@ class PDFThumbnailViewer {
   }
 
   #undo() {
+    this.#clearSelection();
+    this.#toggleMenuEntries(false);
+    this.#updateStatus("select");
     if (this.#copiedThumbnails) {
       // We undo a copy or a cut.
       this.#copiedThumbnails = null;
       this.#pagesMapper.cancelCopy();
-      this.#clearSelection();
-      this.#toggleMenuEntries(false);
-      this.#updateStatus("select");
       this.#togglePasteMode(false);
 
       this.eventBus.dispatch("pagesedited", {
@@ -766,17 +769,21 @@ class PDFThumbnailViewer {
     }
   }
 
-  #dismissUndo() {
+  #dismissUndo(mustUpdateStatus) {
     this.#copiedThumbnails = null;
     if (this.#deletedPageNumbers) {
-      for (const pageNumber of this.#deletedPageNumbers) {
-        this.#savedThumbnails[pageNumber - 1].destroy();
+      if (this.#savedThumbnails) {
+        for (const pageNumber of this.#deletedPageNumbers) {
+          this.#savedThumbnails[pageNumber - 1].destroy();
+        }
+        this.#savedThumbnails = null;
       }
       this.#deletedPageNumbers = null;
-      this.#savedThumbnails = null;
     }
     this.#isCut = false;
-    this.#updateStatus("select");
+    if (mustUpdateStatus) {
+      this.#updateStatus("select");
+    }
     this.#togglePasteMode(false);
     this.#pagesMapper.cleanSavedData();
 
@@ -817,6 +824,12 @@ class PDFThumbnailViewer {
   }
 
   #copyPages(clearSelection = true) {
+    if (!this.#isCut) {
+      // Entering pure copy mode "commits" any pending paste/delete state so
+      // that clicking the "Done" button later only cancels the copy and does
+      // not accidentally restore a previous paste or delete.
+      this.#savedThumbnails = null;
+    }
     this.#updateStatus(this.#isCut ? "cut" : "copy");
     const pageNumbersToCopy = (this.#copiedPageNumbers = Uint32Array.from(
       this.#selectedPages
@@ -860,6 +873,7 @@ class PDFThumbnailViewer {
 
     pagesMapper.pastePages(index);
     this.#updateCurrentPage(this.#updateThumbnails(currentPageNumber));
+    this.#computeThumbnailsPosition();
 
     this.eventBus.dispatch("pagesedited", {
       source: this,
@@ -944,6 +958,7 @@ class PDFThumbnailViewer {
       }
       this.#statusBar.classList.toggle("hidden", false);
       this.#undoBar.classList.toggle("hidden", true);
+      this.#hasUndoBarVisible = false;
       return;
     }
 
@@ -978,6 +993,7 @@ class PDFThumbnailViewer {
 
     this.#statusBar.classList.toggle("hidden", true);
     this.#undoBar.classList.toggle("hidden", false);
+    this.#hasUndoBarVisible = true;
   }
 
   #moveDraggedContainer(dx, dy) {
@@ -1194,7 +1210,11 @@ class PDFThumbnailViewer {
           break;
         case "Delete":
         case "Backspace":
-          if (this.#enableSplitMerge && this.#selectedPages?.size) {
+          if (
+            this.#enableSplitMerge &&
+            !this.#isInPasteMode &&
+            this.#selectedPages?.size
+          ) {
             this.#deletePages();
             stopEvent(e);
           }
@@ -1217,12 +1237,16 @@ class PDFThumbnailViewer {
   }
 
   #selectPage(pageNumber, checked) {
+    if (this.#hasUndoBarVisible) {
+      this.#dismissUndo(/* mustUpdateStatus = */ false);
+    }
     const set = (this.#selectedPages ??= new Set());
     if (checked) {
       set.add(pageNumber);
     } else {
       set.delete(pageNumber);
     }
+
     this.#updateMenuEntries();
     this.#updateStatus("select");
   }

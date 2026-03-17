@@ -32,6 +32,7 @@ import {
   scrollIntoView,
   showViewsManager,
   waitAndClick,
+  waitForBrowserTrip,
   waitForDOMMutation,
   waitForTextToBe,
   waitForTooltipToBe,
@@ -1819,6 +1820,122 @@ describe("Reorganize Pages View", () => {
               `In ${browserName}, dragging should be disabled when pasting`
             )
             .toBeUndefined();
+
+          // Wait a tick to ensure that the controller.abort() has taken effect
+          // before leaving.
+          await waitForBrowserTrip(page);
+        })
+      );
+    });
+  });
+
+  describe("Copy, paste and delete pages with keyboard shortcuts", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "page-width",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should copy, paste and delete pages correctly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          // Check thumbnail 1 and copy it with Ctrl+C.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await kbCopy(page);
+          let pageIndices = await awaitPromise(handlePagesEdited);
+          let expected = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          // Paste after page 3.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(3)}+button`);
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            1, 2, 3, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          // Check thumbnail 1 and delete it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page);
+          await kbDelete(page);
+
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            2, 3, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          // Check thumbnail 4 and copy it with Ctrl+C.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await kbCopy(page);
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            2, 3, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          // Paste before page 1.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(
+            page,
+            `button.thumbnailPasteButton:has(+ ${getThumbnailSelector(1)})`
+          );
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            1, 2, 3, 1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          // Check thumbnail 5 and delete it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(4)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page);
+          await kbDelete(page);
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
         })
       );
     });
@@ -1963,6 +2080,485 @@ describe("Reorganize Pages View", () => {
           expect(details.canDeletePages)
             .withContext(`In ${browserName}`)
             .toBeFalse();
+        })
+      );
+    });
+  });
+
+  describe("Dismissing undo after copy, paste and delete doesn't destroy the visible thumbnail", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "two_pages.pdf",
+        "#viewsManagerToggleButton",
+        "page-fit",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should keep the pasted thumbnail visible after dismissing the undo bar", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Wait for both thumbnails to be fully rendered.
+          for (let i = 1; i <= 2; i++) {
+            await page.waitForSelector(
+              `${getThumbnailSelector(i)} > img[src^="blob:http:"]`,
+              { visible: true }
+            );
+          }
+
+          // Copy page 1.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste after page 1 (the pasted copy lands at position 2).
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(1)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          // Select the original page 1 (still at position 1) and delete it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+
+          // Dismiss the undo bar. Without the fix, this would destroy the
+          // thumbnail at position 1 (the pasted copy) because both the saved
+          // state and the current _thumbnails array pointed to the same object.
+          handlePagesEdited = await waitForPagesEdited(page, "cleanSavedData");
+          await waitAndClick(page, "#viewsManagerStatusUndoCloseButton");
+          await awaitPromise(handlePagesEdited);
+
+          // The thumbnail at position 1 (the pasted copy) must still be
+          // rendered and visible with a valid image source.
+          await page.waitForSelector(
+            `${getThumbnailSelector(1)} > img[src^="blob:http:"]`,
+            { visible: true }
+          );
+        })
+      );
+    });
+  });
+
+  describe("Undo after drag-and-drop move followed by delete restores correct page mapping", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should restore the post-move mapping when undoing a delete", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          const rect1 = await getRect(page, getThumbnailSelector(1));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+
+          // Move page 1 after page 2: mapping becomes [2, 1, 3, …, 17].
+          let handlePagesEdited = await waitForPagesEdited(page);
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            10
+          );
+          let pageIndices = await awaitPromise(handlePagesEdited);
+          let expected = [
+            2, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          // Select the new first thumbnail (originally page 2) and delete it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+
+          // Undo the delete. Without the fix, cancelDelete() would call the
+          // pagesNumber setter which triggers #reset(), wiping out the
+          // just-restored pageNumberToId and idToPageNumber mappings, leaving
+          // the mapper in identity state despite the prior move.
+          handlePagesEdited = await waitForPagesEdited(page, "cancelDelete");
+          await waitAndClick(page, "#viewsManagerStatusUndoButton");
+          pageIndices = await awaitPromise(handlePagesEdited);
+          expected = [
+            2, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+          ];
+          expect(pageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual(expected);
+
+          await waitForHavingContents(page, expected);
+        })
+      );
+    });
+  });
+
+  describe("Keyboard Delete is ignored while in paste mode", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should not delete pages when pressing Delete while in paste mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Copy page 1 to enter paste mode.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste mode must be active (paste buttons visible).
+          await page.waitForSelector("button.thumbnailPasteButton", {
+            visible: true,
+          });
+
+          // Focus an element inside the thumbnail container so that the
+          // keydown handler can fire. Checkboxes are hidden in paste mode
+          // (CSS: pasteMode > .thumbnail > input { display: none }), so we
+          // click the imageContainer itself instead.
+          await waitAndClick(page, getThumbnailSelector(1));
+
+          // Press Delete: must be a no-op while in paste mode.
+          await kbDelete(page);
+          await waitForBrowserTrip(page);
+
+          // The page count must remain at 17.
+          const pageCount = await page.$eval("#pageNumber", el => el.max);
+          expect(parseInt(pageCount, 10))
+            .withContext(`In ${browserName}`)
+            .toBe(17);
+
+          // Paste buttons must still be present (paste mode not disrupted).
+          const pasteButtons = await page.$$("button.thumbnailPasteButton");
+          expect(pasteButtons.length)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThan(0);
+        })
+      );
+    });
+  });
+
+  describe("Clicking Done after two copy+paste rounds must not remove the pasted pages (bug 2023934)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should keep all pasted pages after clicking Done without pasting", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Helper: copy page 1, click a paste button, await the paste event.
+          async function copyAndPaste() {
+            await waitAndClick(
+              page,
+              `.thumbnail:has(${getThumbnailSelector(1)}) input`
+            );
+            let handlePagesEdited = await waitForPagesEdited(page, "copy");
+            await waitAndClick(page, "#viewsManagerStatusActionButton");
+            await waitAndClick(page, "#viewsManagerStatusActionCopy");
+            await awaitPromise(handlePagesEdited);
+
+            handlePagesEdited = await waitForPagesEdited(page);
+            // Click the paste button that appears after thumbnail 1.
+            await waitAndClick(page, `${getThumbnailSelector(1)}+button`);
+            await awaitPromise(handlePagesEdited);
+          }
+
+          // Round 1: copy page 1 and paste → 18 pages.
+          await copyAndPaste();
+          let pageCount = await page.$eval("#pageNumber", el => el.max);
+          expect(parseInt(pageCount, 10))
+            .withContext(`In ${browserName} after 1st paste`)
+            .toBe(18);
+
+          // Round 2: copy page 1 and paste → 19 pages.
+          await copyAndPaste();
+          pageCount = await page.$eval("#pageNumber", el => el.max);
+          expect(parseInt(pageCount, 10))
+            .withContext(`In ${browserName} after 2nd paste`)
+            .toBe(19);
+
+          // STR step 4: select page 1, copy (enter paste mode), then click
+          // "Done" without pasting.  Without the fix, clicking Done also
+          // triggers a restore of the saved pre-paste thumbnails, which removes
+          // one of the pasted pages and corrupts the state.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          const handleCancelCopy = await waitForPagesEdited(page, "cancelCopy");
+          await waitAndClick(page, "#viewsManagerStatusUndoButton");
+          await awaitPromise(handleCancelCopy);
+
+          // Page count must still be 19 – Done should not have removed a page.
+          pageCount = await page.$eval("#pageNumber", el => el.max);
+          expect(parseInt(pageCount, 10))
+            .withContext(`In ${browserName} after Done`)
+            .toBe(19);
+
+          // STR step 5: copy page 1 and paste → must reach 20 without crash.
+          await copyAndPaste();
+          pageCount = await page.$eval("#pageNumber", el => el.max);
+          expect(parseInt(pageCount, 10))
+            .withContext(`In ${browserName} after 3rd paste`)
+            .toBe(20);
+
+          // Sidebar must still show all 20 thumbnails.
+          const thumbnails = await page.$$(
+            ".thumbnail .thumbnailImageContainer"
+          );
+          expect(thumbnails.length)
+            .withContext(`In ${browserName} thumbnail count`)
+            .toBe(20);
+        })
+      );
+    });
+  });
+
+  describe("Selection counter must be cleared after drag-and-drop (bug 2022884)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should hide the selection counter after dropping selected pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          // Select page 1 via its checkbox.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+
+          // The deselect button must now be visible ("1 page selected").
+          await page.waitForSelector(
+            "#viewsManagerStatusActionDeselectButton:not(.hidden)",
+            { visible: true }
+          );
+
+          // Capture rects after the status-bar layout has settled so the
+          // drag displacement accounts for the correct positions.
+          const rect1 = await getRect(page, getThumbnailSelector(1));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+
+          // Drag page 1 to after page 2 (short displacement, stays in
+          // viewport).
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            10
+          );
+          await awaitPromise(handlePagesEdited);
+
+          // After the drop the selection must be cleared: the deselect button
+          // must be hidden and the label must show the "no selection" state.
+          // Without the fix, the "2 selected" counter persists.
+          const deselectHidden = await page.$eval(
+            "#viewsManagerStatusActionDeselectButton",
+            el => el.classList.contains("hidden")
+          );
+          expect(deselectHidden)
+            .withContext(`In ${browserName}: deselect button hidden`)
+            .toBeTrue();
+
+          const labelId = await page.$eval(
+            "#viewsManagerStatusActionLabel",
+            el => el.getAttribute("data-l10n-id")
+          );
+          expect(labelId)
+            .withContext(`In ${browserName}: label l10n-id`)
+            .toBe("pdfjs-views-manager-pages-status-none-action-label");
+        })
+      );
+    });
+  });
+
+  describe("Undo bar must disappear and UI must recover after delete+undo (bug 2022824)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        "#viewsManagerToggleButton",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should hide the undo bar and restore the action bar after undoing a delete", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Select page 1 and delete it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          // Undo bar must be visible with the "Undo" button.
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            visible: true,
+          });
+
+          // Click Undo.
+          handlePagesEdited = await waitForPagesEdited(page, "cancelDelete");
+          await waitAndClick(page, "#viewsManagerStatusUndoButton");
+          await awaitPromise(handlePagesEdited);
+
+          // Without the fix, the undo bar stays visible and buttons are
+          // unclickable.  With the fix, the undo bar must be gone and the
+          // normal action bar must be back.
+          await page.waitForSelector("#viewsManagerStatusUndo", {
+            hidden: true,
+          });
+          await page.waitForSelector("#viewsManagerStatusAction", {
+            visible: true,
+          });
+
+          // The page count must be back to 17.
+          const pageCount = await page.$eval("#pageNumber", el => el.max);
+          expect(parseInt(pageCount, 10))
+            .withContext(`In ${browserName}`)
+            .toBe(17);
+
+          // The action button must be interactable: select a page and delete
+          // it again to confirm the full state is restored.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          const pageCountAfterSecondDelete = await page.$eval(
+            "#pageNumber",
+            el => el.max
+          );
+          expect(parseInt(pageCountAfterSecondDelete, 10))
+            .withContext(`In ${browserName} after second delete`)
+            .toBe(16);
         })
       );
     });

@@ -1229,6 +1229,10 @@ class PDFViewer {
     }
 
     if (type === "cancelDelete") {
+      this.#deletedPageNumbers = null;
+      if (!this.#savedPageViews) {
+        return;
+      }
       const viewerElement =
         this._scrollMode === ScrollMode.PAGE ? null : this.viewer;
       if (viewerElement) {
@@ -1242,16 +1246,19 @@ class PDFViewer {
       }
       this._pages = this.#savedPageViews;
       this.#savedPageViews = null;
-      this.#deletedPageNumbers = null;
       return;
     }
 
     if (type === "cleanSavedData") {
-      for (const pageNum of this.#deletedPageNumbers) {
-        this.#savedPageViews[pageNum - 1].deleteMe();
+      if (this.#deletedPageNumbers) {
+        if (this.#savedPageViews) {
+          for (const pageNum of this.#deletedPageNumbers) {
+            this.#savedPageViews[pageNum - 1].deleteMe();
+          }
+          this.#savedPageViews = null;
+        }
+        this.#deletedPageNumbers = null;
       }
-      this.#savedPageViews = null;
-      this.#deletedPageNumbers = null;
       return;
     }
 
@@ -1275,7 +1282,7 @@ class PDFViewer {
       page.updatePageNumber(i);
     }
 
-    if (!isCut) {
+    if (type === "paste") {
       this.#copiedPageViews = null;
     }
 

@@ -303,7 +303,7 @@ class PDFPageView extends BasePDFPageView {
       l10n: this.l10n,
       clonedFrom: this,
     });
-    clone.setPdfPage(this.pdfPage);
+    clone.setPdfPage(this.pdfPage.clone(id - 1));
     return clone;
   }
 
