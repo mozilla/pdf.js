@@ -13,10 +13,24 @@
  * limitations under the License.
  */
 
-import { BreakpointType, DrawOpsView } from "./draw_ops_view.js";
+import {
+  BreakpointType,
+  DrawOpsView,
+  TEXT_EXEC_OP_IDS,
+  TEXT_OP_IDS,
+} from "./draw_ops_view.js";
+import { OPS, TextLayer } from "pdfjs-lib";
 import { CanvasContextDetailsView } from "./canvas_context_details_view.js";
 import { DOMCanvasFactory } from "pdfjs/display/canvas_factory.js";
+import { FontView } from "./font_view.js";
 import { SplitView } from "./split_view.js";
+
+// Enable font inspection so TextLayer sets data-font-name on each span.
+// fontAdded is called by FontFaceObject when loading fonts (via the pdfBug
+// inspectFont callback in api.js) — we don't need it here, but it must exist
+// to avoid a TypeError that would disrupt font loading and break canvas
+// rendering.
+globalThis.FontInspector = { enabled: true, fontAdded() {} };
 
 // Stepper for pausing/stepping through op list rendering.
 // Implements the interface expected by InternalRenderTask (pdfBug mode).
@@ -40,11 +54,22 @@ class ViewerStepper {
   }
 
   // Advance one instruction then pause again.
+  // In text-only mode, skip forward to the next text op.
   stepNext() {
     if (!this.#continueCallback) {
       return;
     }
-    this.nextBreakPoint = this.currentIdx + 1;
+    let next = this.currentIdx + 1;
+    if (globalThis.StepperManager._textOnly) {
+      const count = globalThis.StepperManager._opCount();
+      while (next < count && !globalThis.StepperManager._isTextOp(next)) {
+        next++;
+      }
+      if (next >= count) {
+        next = null; // no more text ops; let rendering run to completion
+      }
+    }
+    this.nextBreakPoint = next;
     const cb = this.#continueCallback;
     this.#continueCallback = null;
     cb();
@@ -63,7 +88,9 @@ class ViewerStepper {
 
   shouldSkip(i) {
     return (
-      globalThis.StepperManager._breakpoints.get(i) === BreakpointType.SKIP
+      globalThis.StepperManager._breakpoints.get(i) === BreakpointType.SKIP ||
+      (globalThis.StepperManager._textOnly &&
+        !globalThis.StepperManager._isTextExecOp(i))
     );
   }
 
@@ -136,9 +163,25 @@ class PageView {
 
   #redrawButton;
 
+  #textFilterButton;
+
+  #textLayerColorInput;
+
+  #textSpanBorderButton;
+
+  #textFilter = false;
+
   #highlightCanvas;
 
   #canvasScrollEl;
+
+  #textLayerEl = null;
+
+  #textLayerInstance = null;
+
+  #fontView;
+
+  #fontViewButton;
 
   constructor({ onMarkLoading }) {
     this.#onMarkLoading = onMarkLoading;
@@ -161,6 +204,28 @@ class PageView {
       }
     );
 
+    this.#fontView = new FontView(document.getElementById("font-panel"), {
+      onSelect: loadedName => {
+        if (!this.#textLayerEl) {
+          return;
+        }
+        for (const span of this.#textLayerEl.querySelectorAll(
+          ".font-highlighted"
+        )) {
+          span.classList.remove("font-highlighted");
+        }
+        if (loadedName) {
+          for (const span of this.#textLayerEl.querySelectorAll(
+            `[data-font-name="${CSS.escape(loadedName)}"]`
+          )) {
+            span.classList.add("font-highlighted");
+          }
+        }
+      },
+    });
+    this.#fontViewButton = document.getElementById("font-view-button");
+    globalThis.FontInspector.fontAdded = font => this.#fontView.fontAdded(font);
+
     // Install a StepperManager so InternalRenderTask (pdfBug mode) picks it up.
     // A new instance is set on each redraw; null means no stepping.
     globalThis.StepperManager = {
@@ -169,6 +234,14 @@ class PageView {
       },
       _active: null,
       _breakpoints: this.#opsView.breakpoints,
+      _textOnly: false,
+      // Returns true when op index i is a text op shown in the filtered list.
+      _isTextOp: i => TEXT_OP_IDS.has(this.#currentOpList?.fnArray[i]),
+      // Returns true when op index i must be executed (not skipped) in text
+      // mode.
+      _isTextExecOp: i => TEXT_EXEC_OP_IDS.has(this.#currentOpList?.fnArray[i]),
+      // Returns the total number of ops in the current op list.
+      _opCount: () => this.#currentOpList?.fnArray.length ?? 0,
       create() {
         return globalThis.StepperManager._active;
       },
@@ -187,6 +260,13 @@ class PageView {
     this.#zoomOutButton = document.getElementById("zoom-out-button");
     this.#zoomInButton = document.getElementById("zoom-in-button");
     this.#redrawButton = document.getElementById("redraw-button");
+    this.#textFilterButton = document.getElementById("text-filter-button");
+    this.#textLayerColorInput = document.getElementById(
+      "text-layer-color-input"
+    );
+    this.#textSpanBorderButton = document.getElementById(
+      "text-span-border-button"
+    );
     this.#highlightCanvas = document.getElementById("highlight-canvas");
     this.#canvasScrollEl = document.getElementById("canvas-scroll");
 
@@ -209,12 +289,14 @@ class PageView {
   // Reset all debug state (call when navigating to tree or loading new doc).
   reset() {
     this.#debugViewGeneration++;
+    this.#cancelTextLayer();
     this.#currentRenderTask?.cancel();
     this.#currentRenderTask = null;
     this.#renderedPage?.cleanup();
     this.#renderedPage = this.#renderScale = this.#currentOpList = null;
     this.#clearPausedState();
     this.#opsView.clear();
+    this.#fontView.clear();
     this.#gfxStateComp.clear();
     this.#pdfDoc?.canvasFactory.clear();
 
@@ -344,11 +426,20 @@ class PageView {
       { direction: "column", minSize: 40 }
     );
 
-    // Outer row split: instructions column on the left, canvas on the right.
+    // Row split: canvas on the left, font panel on the right (hidden by
+    // default).
+    const canvasFontSplit = new SplitView(
+      document.getElementById("canvas-panel"),
+      document.getElementById("font-panel"),
+      { direction: "row", minSize: 150, onResize: () => this.#rerenderCanvas() }
+    );
+
+    // Outer row split: instructions column on the left, canvas+font on the
+    // right.
     const renderSplit = new SplitView(
       instructionsSplit.element,
-      document.getElementById("canvas-panel"),
-      { direction: "row", minSize: 100, onResize: () => this.#renderCanvas() }
+      canvasFontSplit.element,
+      { direction: "row", minSize: 100, onResize: () => this.#rerenderCanvas() }
     );
 
     const renderPanels = document.getElementById("render-panels");
@@ -382,7 +473,7 @@ class PageView {
       // Reset recorded bboxes so they get re-recorded for the modified op
       // list.
       this.#renderedPage.recordedBBoxes = null;
-      if (this.#opsView.breakpoints.size > 0) {
+      if (this.#textFilter || this.#opsView.breakpoints.size > 0) {
         globalThis.StepperManager._active = new ViewerStepper(i =>
           this.#onStepped(i)
         );
@@ -395,7 +486,83 @@ class PageView {
     });
 
     this.#continueButton.addEventListener("click", () => {
-      globalThis.StepperManager._active?.continueToBreakpoint();
+      if (globalThis.StepperManager._active) {
+        this.#gfxStateComp.freeze();
+        globalThis.StepperManager._active.continueToBreakpoint();
+      }
+    });
+
+    const TEXT_LAYER_COLOR_KEY = "debugger.textLayerColor";
+    const DEFAULT_TEXT_LAYER_COLOR = "#c03030";
+    const applyColor = color => {
+      this.#textLayerColorInput.value = color;
+      document.documentElement.style.setProperty("--text-layer-color", color);
+    };
+
+    applyColor(
+      localStorage.getItem(TEXT_LAYER_COLOR_KEY) ?? DEFAULT_TEXT_LAYER_COLOR
+    );
+
+    document
+      .getElementById("text-layer-color-button")
+      .addEventListener("click", () => this.#textLayerColorInput.click());
+
+    this.#textLayerColorInput.addEventListener("input", () => {
+      const color = this.#textLayerColorInput.value;
+      applyColor(color);
+      localStorage.setItem(TEXT_LAYER_COLOR_KEY, color);
+    });
+
+    const SPAN_BORDERS_KEY = "debugger.spanBorders";
+    const applySpanBorders = enabled => {
+      this.#textSpanBorderButton.setAttribute("aria-pressed", String(enabled));
+      document
+        .getElementById("canvas-wrapper")
+        .classList.toggle("show-span-borders", enabled);
+    };
+
+    applySpanBorders(localStorage.getItem(SPAN_BORDERS_KEY) === "true");
+
+    this.#textSpanBorderButton.addEventListener("click", () => {
+      const next =
+        this.#textSpanBorderButton.getAttribute("aria-pressed") !== "true";
+      applySpanBorders(next);
+      localStorage.setItem(SPAN_BORDERS_KEY, String(next));
+    });
+
+    this.#fontViewButton.addEventListener("click", () => {
+      const next = this.#fontViewButton.getAttribute("aria-pressed") !== "true";
+      this.#fontViewButton.setAttribute("aria-pressed", String(next));
+      const fontPanelEl = this.#fontView.element;
+      if (next && !fontPanelEl.style.flexGrow) {
+        // On first reveal, size the font panel to its SplitView minSize (150px)
+        // and give the canvas panel the remaining space.
+        // Both panels need flex-basis:0 for SplitView's pixel-weight math, so
+        // we must set both flexGrow values explicitly here.
+        const FONT_PANEL_MIN = 150;
+        const RESIZER_SIZE = 6;
+        const available =
+          fontPanelEl.parentElement.getBoundingClientRect().width -
+          RESIZER_SIZE;
+        fontPanelEl.style.flexGrow = FONT_PANEL_MIN;
+        document.getElementById("canvas-panel").style.flexGrow = Math.max(
+          100,
+          available - FONT_PANEL_MIN
+        );
+      }
+      fontPanelEl.hidden = !next;
+      this.#rerenderCanvas();
+    });
+
+    this.#textFilterButton.addEventListener("click", () => {
+      const pressed =
+        this.#textFilterButton.getAttribute("aria-pressed") === "true";
+      const next = !pressed;
+      this.#textFilterButton.setAttribute("aria-pressed", String(next));
+      this.#textFilter = next;
+      globalThis.StepperManager._textOnly = next;
+      this.#opsView.setTextFilter(next);
+      this.#redrawButton.click();
     });
 
     document.addEventListener("keydown", e => {
@@ -441,9 +608,9 @@ class PageView {
     );
   }
 
-  #zoomRenderCanvas(newScale) {
-    // If zoomed again while a re-render is already running (not yet re-paused),
-    // pausedAtIdx is null but the active stepper still knows the target index.
+  // Re-render preserving any current pause position and text-only state.
+  // Used by both zoom and resize so neither loses stepper or filter state.
+  #rerenderCanvas() {
     const stepper = globalThis.StepperManager._active;
     let resumeAt = null;
     if (stepper !== null) {
@@ -451,8 +618,7 @@ class PageView {
         stepper.currentIdx >= 0 ? stepper.currentIdx : stepper.nextBreakPoint;
     }
     this.#clearPausedState();
-    this.#renderScale = newScale;
-    if (resumeAt !== null) {
+    if (resumeAt !== null || this.#textFilter) {
       globalThis.StepperManager._active = new ViewerStepper(
         i => this.#onStepped(i),
         resumeAt
@@ -461,12 +627,58 @@ class PageView {
     return this.#renderCanvas();
   }
 
+  #zoomRenderCanvas(newScale) {
+    this.#renderScale = newScale;
+    return this.#rerenderCanvas();
+  }
+
+  #cancelTextLayer() {
+    this.#textLayerInstance?.cancel();
+    this.#textLayerEl?.remove();
+    this.#textLayerInstance = null;
+    this.#textLayerEl = null;
+  }
+
+  async #buildTextLayer(scale) {
+    const container = document.createElement("div");
+    container.className = "textLayer";
+    // --total-scale-factor is required by text_layer_builder.css to compute
+    // font sizes. setLayerDimensions (called inside TextLayer) consumes it but
+    // never sets it, so we must provide it here.
+    container.style.setProperty("--total-scale-factor", scale);
+    container.style.setProperty("--scale-round-x", "1px");
+    container.style.setProperty("--scale-round-y", "1px");
+    document.getElementById("canvas-wrapper").append(container);
+    this.#textLayerEl = container;
+
+    const viewport = this.#renderedPage.getViewport({ scale });
+    const textLayer = new TextLayer({
+      textContentSource: this.#renderedPage.streamTextContent(),
+      container,
+      viewport,
+    });
+    this.#textLayerInstance = textLayer;
+
+    try {
+      await textLayer.render();
+    } catch (err) {
+      if (err?.name !== "AbortException") {
+        throw err;
+      }
+    }
+  }
+
   async #renderCanvas() {
     if (!this.#renderedPage) {
       return null;
     }
 
     // Cancel any in-progress render before starting a new one.
+    // Hide the text layer immediately so it isn't visible at the wrong scale
+    // during the render; it is shown again once the canvas is ready.
+    if (this.#textLayerEl) {
+      this.#textLayerEl.style.visibility = "hidden";
+    }
     this.#currentRenderTask?.cancel();
     this.#currentRenderTask = null;
 
@@ -549,6 +761,24 @@ class PageView {
       oldCanvas.replaceWith(newCanvas);
     }
 
+    // In text-only mode, overlay the text layer on the finished canvas.
+    // If a layer already exists (e.g. after a zoom/resize), rescale it in place
+    // by updating the CSS variable and calling update() — no rebuild needed.
+    // If the filter is now off, discard any existing layer.
+    if (this.#textFilter) {
+      if (this.#textLayerInstance) {
+        this.#textLayerEl.style.setProperty("--total-scale-factor", scale);
+        this.#textLayerInstance.update({
+          viewport: this.#renderedPage.getViewport({ scale }),
+        });
+        this.#textLayerEl.style.visibility = "";
+      } else {
+        await this.#buildTextLayer(scale);
+      }
+    } else {
+      this.#cancelTextLayer();
+    }
+
     // Return the task on first render so the caller can extract the operator
     // list without a separate getOperatorList() call (dev/testing builds only).
     return firstRender ? renderTask : null;
@@ -624,6 +854,19 @@ class PageView {
         return;
       }
       this.#opsView.load(this.#currentOpList, this.#renderedPage);
+      this.#fontView.showForOpList(this.#currentOpList, OPS);
+      // If text-only filter is active, re-render immediately using only text
+      // ops so the canvas matches the filtered op list.
+      if (this.#textFilter) {
+        if (this.#debugViewGeneration !== generation) {
+          return;
+        }
+        this.#renderedPage.recordedBBoxes = null;
+        globalThis.StepperManager._active = new ViewerStepper(i =>
+          this.#onStepped(i)
+        );
+        await this.#renderCanvas();
+      }
     } catch (err) {
       const errEl = document.createElement("div");
       errEl.role = "alert";

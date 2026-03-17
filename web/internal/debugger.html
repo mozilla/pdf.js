@@ -20,6 +20,7 @@ limitations under the License.
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PDF.js — Debugging tools</title>
     <link rel="stylesheet" href="debugger.css" />
+    <link rel="stylesheet" href="../text_layer_builder.css" />
   </head>
   <body>
     <div id="header">
@@ -34,8 +35,8 @@ limitations under the License.
       <span id="goto-input-hint" class="sr-only">
         Enter a page number (e.g. 5), a reference as numR (e.g. 10R) or numRgen (e.g. 10R2). Press Enter to navigate.
       </span>
-      <button id="debug-button" hidden>Debug page</button>
-      <button id="debug-back-button" hidden>← Back to tree</button>
+      <button id="tree-button">Tree</button>
+      <button id="debug-button" disabled>Debug</button>
       <span id="status" role="status" aria-live="polite"> Select a PDF file to explore its internal structure. </span>
       <a id="github-link" href="https://github.com/mozilla/pdf.js" target="_blank" rel="noopener noreferrer" aria-label="PDF.js on GitHub">
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
@@ -55,14 +56,41 @@ limitations under the License.
           <div id="op-detail-panel"></div>
           <div id="gfx-state-panel" aria-label="Graphics state" hidden></div>
         </div>
+        <div id="font-panel" hidden></div>
         <div id="canvas-panel">
           <div id="canvas-toolbar" role="toolbar" aria-label="Zoom controls">
-            <button id="zoom-out-button" title="Zoom out">−</button>
-            <span id="zoom-level" aria-live="polite"></span>
-            <button id="zoom-in-button" title="Zoom in">+</button>
-            <button id="redraw-button" title="Redraw page">Redraw</button>
-            <button id="step-button" title="Step one instruction" disabled><u>S</u>tep</button>
-            <button id="continue-button" title="Continue to next breakpoint" disabled><u>C</u>ontinue</button>
+            <div class="toolbar-left">
+              <button id="text-filter-button" title="Show only text drawing operations" aria-pressed="false">T</button>
+              <button id="text-layer-color-button" title="Text layer color">
+                <span id="text-layer-color-swatch"></span>
+              </button>
+              <input type="color" id="text-layer-color-input" hidden />
+              <button id="text-span-border-button" title="Show span borders" aria-pressed="false">
+                <svg
+                  width="18"
+                  height="14"
+                  viewBox="0 0 18 14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-dasharray="2 1.5"
+                  aria-hidden="true"
+                >
+                  <rect x="0.75" y="0.75" width="16.5" height="12.5" />
+                </svg>
+              </button>
+              <button id="font-view-button" title="Show fonts used on page" aria-pressed="false">F</button>
+            </div>
+            <div class="toolbar-center">
+              <button id="zoom-out-button" title="Zoom out">−</button>
+              <span id="zoom-level" aria-live="polite"></span>
+              <button id="zoom-in-button" title="Zoom in">+</button>
+            </div>
+            <div class="toolbar-right">
+              <button id="redraw-button" title="Redraw page">Redraw</button>
+              <button id="step-button" title="Step one instruction" disabled><u>S</u>tep</button>
+              <button id="continue-button" title="Continue to next breakpoint" disabled><u>C</u>ontinue</button>
+            </div>
           </div>
           <div id="canvas-scroll">
             <div id="canvas-wrapper">

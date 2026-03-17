@@ -33,8 +33,13 @@
   --spc-resizer-hover-color: var(--accent-color);
 }
 #render-panels {
-  /* instructionsSplit (spc-column) takes 70% of the width next to canvas. */
+  /* instructionsSplit (spc-column) takes half the width next to canvas. */
   > .spc-column {
+    flex: 1 1 0;
+  }
+
+  /* canvasFontSplit (spc-row) takes the other half. */
+  > .spc-row {
     flex: 1 1 0;
   }
 
@@ -63,16 +68,22 @@
   border: 1px solid var(--border-color);
 }
 #canvas-toolbar {
+  --btn-h: calc(
+    1.1em * 1.4 + 4px
+  ); /* font-size * line-height + 2×(padding+border) */
+
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   gap: 6px;
   padding: 4px 8px;
   border-bottom: 1px solid var(--border-color);
 
   button {
-    padding: 1px 8px;
+    box-sizing: border-box;
+    height: var(--btn-h);
+    padding: 0 8px;
     border-radius: 3px;
     border: 1px solid var(--input-border-color);
     background: var(--button-bg);
@@ -89,6 +100,66 @@
       opacity: 0.4;
       cursor: default;
     }
+    &[aria-pressed="true"] {
+      background: var(--accent-color);
+      color: var(--accent-fg, white);
+      border-color: var(--accent-color);
+
+      &:hover {
+        background: color-mix(
+          in srgb,
+          var(--accent-color),
+          var(--accent-fg, white) 15%
+        );
+      }
+    }
+  }
+
+  .toolbar-left:not(:has(#text-filter-button[aria-pressed="true"])) {
+    #text-layer-color-button,
+    #text-span-border-button,
+    #font-view-button {
+      display: none;
+    }
+  }
+
+  #text-span-border-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: var(--btn-h);
+  }
+
+  #text-layer-color-button {
+    padding: 3px;
+    width: var(--btn-h);
+
+    #text-layer-color-swatch {
+      display: block;
+      width: 100%;
+      height: 100%;
+      border-radius: 2px;
+      background: var(--text-layer-color, #c03030);
+    }
+  }
+
+  .toolbar-left,
+  .toolbar-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .toolbar-right {
+    justify-content: flex-end;
+  }
+
+  .toolbar-center {
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
 
   #zoom-level {
@@ -111,6 +182,28 @@
   position: relative;
   display: inline-block;
   line-height: 0;
+
+  /* Make text-layer spans visible in the debugger (normally transparent). */
+  .textLayer :is(span, br) {
+    color: color-mix(
+      in srgb,
+      var(--text-layer-color, #c03030) 70%,
+      transparent
+    );
+  }
+
+  .textLayer .font-highlighted {
+    background: color-mix(
+      in srgb,
+      var(--font-highlight-color, #0070c1) 25%,
+      transparent
+    );
+  }
+
+  &.show-span-borders .textLayer :is(span, br) {
+    outline: 1px solid
+      color-mix(in srgb, var(--text-layer-color, #c03030) 60%, black);
+  }
 }
 .temp-canvas-wrapper {
   display: flex;

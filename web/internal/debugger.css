@@ -15,6 +15,7 @@
 
 @import url(canvas_context_details_view.css);
 @import url(draw_ops_view.css);
+@import url(font_view.css);
 @import url(multiline_view.css);
 @import url(page_view.css);
 @import url(split_view.css);
@@ -35,6 +36,7 @@
   --text-color: light-dark(#1e1e1e, #d4d4d4);
   --muted-color: light-dark(#6e6e6e, #888);
   --accent-color: light-dark(#0070c1, #9cdcfe);
+  --accent-fg: light-dark(white, #1e1e1e);
 
   /* Borders */
   --border-color: light-dark(#e0e0e0, #3c3c3c);
@@ -285,8 +287,8 @@ body:has(#debug-view:not([hidden])) {
   color: var(--muted-color);
   font-style: italic;
 }
-#debug-button,
-#debug-back-button {
+#tree-button,
+#debug-button {
   padding: 4px 12px;
   border-radius: 3px;
   border: 1px solid var(--input-border-color);
@@ -298,5 +300,10 @@ body:has(#debug-view:not([hidden])) {
 
   &:hover {
     background: var(--button-hover-bg);
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
   }
 }

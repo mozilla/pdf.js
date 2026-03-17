@@ -86,8 +86,16 @@ class CanvasContextDetailsView {
   // Map<label, {container, prevBtn, pos, nextBtn}> — stack-nav DOM elements.
   #gfxStateNavElements = new Map();
 
+  // When true, suppress live DOM updates; build() re-reads state and resets it.
+  #frozen = false;
+
   constructor(panelEl) {
     this.#panel = panelEl;
+  }
+
+  /** Suppress live DOM updates until the next build() call. */
+  freeze() {
+    this.#frozen = true;
   }
 
   /**
@@ -202,6 +210,7 @@ class CanvasContextDetailsView {
    * Shows the panel if it was hidden.
    */
   build() {
+    this.#frozen = false;
     this.#panel.hidden = false;
     this.#panel.replaceChildren();
     this.#gfxStateValueElements.clear();
@@ -361,10 +370,10 @@ class CanvasContextDetailsView {
     }
   }
 
-  // Update DOM for a live setter — skipped when the user is browsing a saved
-  // state so that live updates don't overwrite the frozen view.
+  // Update DOM for a live setter — skipped when frozen (continuous execution)
+  // or when the user is browsing a saved state.
   #updatePropEl(label, prop, value) {
-    if (this.#ctxStackViewIdx.get(label) !== null) {
+    if (this.#frozen || this.#ctxStackViewIdx.get(label) !== null) {
       return;
     }
     this.#applyPropEl(label, prop, value);
@@ -388,6 +397,9 @@ class CanvasContextDetailsView {
 
   // Sync the stack-nav button states and position counter for a context.
   #updateStackNav(label) {
+    if (this.#frozen) {
+      return;
+    }
     const nav = this.#gfxStateNavElements.get(label);
     if (!nav) {
       return;

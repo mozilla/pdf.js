@@ -289,6 +289,39 @@ class MultilineView {
     observer.observe(this.#bottomSentinel);
   }
 
+  // Remove `count` children from `parent` starting at `firstChild`, in one
+  // Range operation instead of N individual remove() calls.
+  #removeChildren(parent, firstChild, count, fromEnd = false) {
+    if (count <= 0 || !firstChild) {
+      return;
+    }
+    const range = document.createRange();
+    if (fromEnd) {
+      // Remove the last `count` children ending at firstChild
+      // (=lastChild here).
+      let startChild = firstChild;
+      for (let i = 1; i < count; i++) {
+        startChild = startChild.previousElementSibling;
+        if (!startChild) {
+          return;
+        }
+      }
+      range.setStartBefore(startChild);
+      range.setEndAfter(firstChild);
+    } else {
+      let endChild = firstChild;
+      for (let i = 1; i < count; i++) {
+        endChild = endChild.nextElementSibling;
+        if (!endChild) {
+          return;
+        }
+      }
+      range.setStartBefore(firstChild);
+      range.setEndAfter(endChild);
+    }
+    range.deleteContents();
+  }
+
   #loadBottom() {
     const newEnd = Math.min(this.#endIndex + BATCH_SIZE, this.#total);
     if (newEnd === this.#endIndex) {
@@ -302,10 +335,16 @@ class MultilineView {
     if (this.#endIndex - this.#startIndex > MAX_RENDERED) {
       const removeCount = this.#endIndex - this.#startIndex - MAX_RENDERED;
       const heightBefore = this.#pre.scrollHeight;
-      for (let i = 0; i < removeCount; i++) {
-        this.#topSentinel.nextElementSibling?.remove();
-        this.#numCol.firstElementChild?.remove();
-      }
+      this.#removeChildren(
+        this.#pre,
+        this.#topSentinel.nextElementSibling,
+        removeCount
+      );
+      this.#removeChildren(
+        this.#numCol,
+        this.#numCol.firstElementChild,
+        removeCount
+      );
       this.#startIndex += removeCount;
       // Compensate so visible content doesn't jump upward.
       this.#innerEl.scrollTop -= heightBefore - this.#pre.scrollHeight;
@@ -329,10 +368,18 @@ class MultilineView {
     // Trim from bottom if the window exceeds MAX_RENDERED.
     if (this.#endIndex - this.#startIndex > MAX_RENDERED) {
       const removeCount = this.#endIndex - this.#startIndex - MAX_RENDERED;
-      for (let i = 0; i < removeCount; i++) {
-        this.#bottomSentinel.previousElementSibling?.remove();
-        this.#numCol.lastElementChild?.remove();
-      }
+      this.#removeChildren(
+        this.#pre,
+        this.#bottomSentinel.previousElementSibling,
+        removeCount,
+        true
+      );
+      this.#removeChildren(
+        this.#numCol,
+        this.#numCol.lastElementChild,
+        removeCount,
+        true
+      );
       this.#endIndex -= removeCount;
     }
   }

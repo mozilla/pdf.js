@@ -792,7 +792,9 @@ class CanvasGraphics {
           return i;
         }
         if (stepper.shouldSkip(i)) {
-          i++;
+          if (++i === argsArrayLen) {
+            return i;
+          }
           continue;
         }
       }

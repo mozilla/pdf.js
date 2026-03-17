@@ -23,6 +23,47 @@ for (const [name, id] of Object.entries(OPS)) {
   OPS_TO_NAME[id] = name;
 }
 
+// Ops from the getTextContent() switch in evaluator.js — shown in the draw ops
+// view when text-only filter is active, and used to determine step targets.
+const TEXT_OP_IDS = new Set([
+  OPS.setFont,
+  OPS.setTextRise,
+  OPS.setHScale,
+  OPS.setLeading,
+  OPS.moveText,
+  OPS.setLeadingMoveText,
+  OPS.nextLine,
+  OPS.setTextMatrix,
+  OPS.setCharSpacing,
+  OPS.setWordSpacing,
+  OPS.beginText,
+  OPS.endText,
+  OPS.showSpacedText,
+  OPS.showText,
+  OPS.nextLineShowText,
+  OPS.nextLineSetSpacingShowText,
+  OPS.beginMarkedContent,
+  OPS.beginMarkedContentProps,
+  OPS.endMarkedContent,
+]);
+
+// Superset of TEXT_OP_IDS — all ops that must be executed (not skipped) during
+// text-only rendering. The extra ops here are infrastructure (save/restore,
+// transforms, XObject wrappers) that affect the graphics state but are not
+// shown in the filtered op list.
+const TEXT_EXEC_OP_IDS = new Set([
+  ...TEXT_OP_IDS,
+  OPS.restore,
+  OPS.save,
+  OPS.dependency,
+  OPS.transform,
+  OPS.paintFormXObjectBegin,
+  OPS.paintFormXObjectEnd,
+  OPS.beginGroup,
+  OPS.endGroup,
+  OPS.setGState,
+]);
+
 const BreakpointType = {
   PAUSE: 0,
   SKIP: 1,
@@ -409,7 +450,16 @@ class DrawOpsView {
 
   #multilineView = null;
 
+  // All op lines indexed by original op index.
   #opLines = [];
+
+  // Plain-text representations for search, parallel to #opLines.
+  #opTexts = [];
+
+  // Currently visible lines (all lines, or text-only subset when filtering).
+  #visibleLines = [];
+
+  #textFilter = false;
 
   #selectedLine = null;
 
@@ -444,22 +494,50 @@ class DrawOpsView {
   load(opList, renderedPage) {
     this.#renderedPage = renderedPage;
     this.#opLines = [];
-    const opTexts = [];
+    this.#opTexts = [];
 
     for (let i = 0; i < opList.fnArray.length; i++) {
       const name = OPS_TO_NAME[opList.fnArray[i]] ?? `op${opList.fnArray[i]}`;
       const args = opList.argsArray[i] ?? [];
       const { line, text } = this.#buildLine(i, name, args);
       this.#opLines.push(line);
-      opTexts.push(text);
+      this.#opTexts.push(text);
+    }
+
+    this.#rebuildMultilineView();
+  }
+
+  // Enable or disable the text-ops-only filter. Can be called at any time;
+  // rebuilds the list view in place when ops are already loaded.
+  setTextFilter(enabled) {
+    if (this.#textFilter === enabled) {
+      return;
+    }
+    this.#textFilter = enabled;
+    if (this.#opLines.length > 0) {
+      this.#rebuildMultilineView();
+    }
+  }
+
+  #rebuildMultilineView() {
+    // Compute the visible (possibly filtered) subset.
+    this.#visibleLines = this.#textFilter
+      ? this.#opLines.filter(line => TEXT_OP_IDS.has(OPS[line.dataset.opName]))
+      : this.#opLines;
+
+    // Tear down the existing MultilineView (if any), keeping the placeholder.
+    const anchor = this.#multilineView?.element ?? this.#listPanelEl;
+    if (this.#multilineView) {
+      this.#multilineView.destroy();
+      this.#multilineView = null;
     }
 
     const multilineView = new MultilineView({
-      total: opList.fnArray.length,
-      getText: i => opTexts[i],
+      total: this.#visibleLines.length,
+      getText: i => this.#opTexts[+this.#visibleLines[i].dataset.opIdx],
       makeLineEl: (i, isHighlighted) => {
-        this.#opLines[i].classList.toggle("mlc-match", isHighlighted);
-        return this.#opLines[i];
+        this.#visibleLines[i].classList.toggle("mlc-match", isHighlighted);
+        return this.#visibleLines[i];
       },
     });
     multilineView.element.classList.add("op-list-panel-wrapper");
@@ -469,7 +547,7 @@ class DrawOpsView {
 
     multilineView.inner.addEventListener("keydown", e => {
       const { key } = e;
-      const lines = this.#opLines;
+      const lines = this.#visibleLines;
       if (!lines.length) {
         return;
       }
@@ -504,7 +582,7 @@ class DrawOpsView {
       }
     });
 
-    this.#listPanelEl.replaceWith(multilineView.element);
+    anchor.replaceWith(multilineView.element);
     this.#multilineView = multilineView;
   }
 
@@ -517,6 +595,8 @@ class DrawOpsView {
     document.getElementById("op-list").replaceChildren();
     this.#detailView.clear();
     this.#opLines = [];
+    this.#opTexts = [];
+    this.#visibleLines = [];
     this.#selectedLine = null;
     this.#originalColors.clear();
     this.#breakpoints.clear();
@@ -529,7 +609,11 @@ class DrawOpsView {
     }
     this.#pausedAtIdx = i;
     this.#opLines[i]?.classList.add("paused");
-    this.#multilineView?.scrollToLine(i);
+    // Scroll to the position of this op within the currently visible list.
+    const visibleIdx = this.#visibleLines.indexOf(this.#opLines[i]);
+    if (visibleIdx >= 0) {
+      this.#multilineView?.scrollToLine(visibleIdx);
+    }
   }
 
   clearPaused() {
@@ -558,6 +642,8 @@ class DrawOpsView {
     line.role = "option";
     line.ariaSelected = "false";
     line.tabIndex = i === 0 ? 0 : -1;
+    line.dataset.opName = name;
+    line.dataset.opIdx = i;
 
     // Breakpoint gutter — click cycles: none → pause (●) → skip (✕) → none.
     const gutter = document.createElement("span");
@@ -675,4 +761,4 @@ class DrawOpsView {
   }
 }
 
-export { BreakpointType, DrawOpsView };
+export { BreakpointType, DrawOpsView, TEXT_EXEC_OP_IDS, TEXT_OP_IDS };

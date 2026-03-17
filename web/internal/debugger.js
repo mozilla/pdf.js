@@ -67,8 +67,8 @@ function markLoading(delta) {
 }
 
 // Cache frequently accessed elements.
+const treeButton = document.getElementById("tree-button");
 const debugButton = document.getElementById("debug-button");
-const debugBackButton = document.getElementById("debug-back-button");
 const debugViewEl = document.getElementById("debug-view");
 const treeEl = document.getElementById("tree");
 const statusEl = document.getElementById("status");
@@ -81,8 +81,7 @@ const treeView = new TreeView(treeEl, { onMarkLoading: markLoading });
 
 async function loadTree(data, rootLabel = null) {
   currentPage = typeof data.page === "number" ? data.page : null;
-  debugButton.hidden = currentPage === null;
-  debugBackButton.hidden = true;
+  debugButton.disabled = currentPage === null;
   pageView.reset();
   debugViewEl.hidden = true;
   treeEl.hidden = false;
@@ -113,6 +112,7 @@ async function openDocument(source, name) {
     wasmUrl: "../web/wasm/",
     useWorkerFetch: true,
     pdfBug: true,
+    fontExtraProperties: true,
     CanvasFactory: pageView.DebugCanvasFactory,
   });
   loadingTask.onPassword = (updateCallback, reason) => {
@@ -230,9 +230,17 @@ gotoInput.addEventListener("keydown", async ({ key, target }) => {
     return;
   }
   target.removeAttribute("aria-invalid");
-  await (result.page !== undefined
-    ? loadTree({ page: result.page })
-    : loadTree({ ref: result.ref }));
+  // If we're in debug view and navigating to a page, stay in debug view
+  // without switching to the tree at all.
+  if (!debugViewEl.hidden && result.page !== undefined) {
+    currentPage = result.page;
+    pageView.reset();
+    await pageView.show(pdfDoc, currentPage);
+  } else {
+    await (result.page !== undefined
+      ? loadTree({ page: result.page })
+      : loadTree({ ref: result.ref }));
+  }
 });
 
 gotoInput.addEventListener("input", ({ target }) => {
@@ -242,14 +250,14 @@ gotoInput.addEventListener("input", ({ target }) => {
 });
 
 debugButton.addEventListener("click", async () => {
-  debugButton.hidden = treeEl.hidden = true;
-  debugBackButton.hidden = debugViewEl.hidden = false;
+  treeEl.hidden = true;
+  debugViewEl.hidden = false;
   // Only render if not already loaded for this page; re-entering from the
-  // back button keeps the existing debug state (op-list, canvas, breakpoints).
+  // tree button keeps the existing debug state (op-list, canvas, breakpoints).
   await pageView.show(pdfDoc, currentPage);
 });
 
-debugBackButton.addEventListener("click", () => {
-  debugBackButton.hidden = debugViewEl.hidden = true;
-  debugButton.hidden = treeEl.hidden = false;
+treeButton.addEventListener("click", () => {
+  debugViewEl.hidden = true;
+  treeEl.hidden = false;
 });
