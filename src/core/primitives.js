@@ -67,13 +67,18 @@ const nonSerializable = function nonSerializableClosure() {
 };
 
 class Dict {
+  __nonSerializable__ = nonSerializable; // Disable cloning of the Dict.
+
+  #map = new Map();
+
+  objId = null;
+
+  suppressEncryption = false;
+
+  xref;
+
   constructor(xref = null) {
-    // Map should only be used internally, use functions below to access.
-    this._map = new Map();
     this.xref = xref;
-    this.objId = null;
-    this.suppressEncryption = false;
-    this.__nonSerializable__ = nonSerializable; // Disable cloning of the Dict.
   }
 
   assignXref(newXref) {
@@ -81,11 +86,11 @@ class Dict {
   }
 
   get size() {
-    return this._map.size;
+    return this.#map.size;
   }
 
   #getValue(isAsync, key1, key2, key3) {
-    let value = this._map.get(key1);
+    let value = this.#map.get(key1);
     if (value === undefined && key2 !== undefined) {
       if (
         (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
@@ -93,7 +98,7 @@ class Dict {
       ) {
         unreachable("Dict.#getValue: Expected keys to be ordered by length.");
       }
-      value = this._map.get(key2);
+      value = this.#map.get(key2);
       if (value === undefined && key3 !== undefined) {
         if (
           (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
@@ -101,7 +106,7 @@ class Dict {
         ) {
           unreachable("Dict.#getValue: Expected keys to be ordered by length.");
         }
-        value = this._map.get(key3);
+        value = this.#map.get(key3);
       }
     }
     if (value instanceof Ref && this.xref) {
@@ -139,20 +144,20 @@ class Dict {
 
   // No dereferencing.
   getRaw(key) {
-    return this._map.get(key);
+    return this.#map.get(key);
   }
 
   getKeys() {
-    return this._map.keys();
+    return this.#map.keys();
   }
 
   // No dereferencing.
   getRawValues() {
-    return this._map.values();
+    return this.#map.values();
   }
 
   getRawEntries() {
-    return this._map.entries();
+    return this.#map.entries();
   }
 
   set(key, value) {
@@ -163,7 +168,7 @@ class Dict {
         unreachable('Dict.set: The "value" cannot be undefined.');
       }
     }
-    this._map.set(key, value);
+    this.#map.set(key, value);
   }
 
   setIfNotExists(key, value) {
@@ -205,11 +210,11 @@ class Dict {
   }
 
   has(key) {
-    return this._map.has(key);
+    return this.#map.has(key);
   }
 
   *[Symbol.iterator]() {
-    for (const [key, value] of this._map) {
+    for (const [key, value] of this.#map) {
       yield [
         key,
         value instanceof Ref && this.xref
@@ -273,14 +278,14 @@ class Dict {
 
   clone() {
     const dict = new Dict(this.xref);
-    for (const [key, rawVal] of this.getRawEntries()) {
-      dict.set(key, rawVal);
+    for (const [key, value] of this.#map) {
+      dict.set(key, value);
     }
     return dict;
   }
 
   delete(key) {
-    this._map.delete(key);
+    this.#map.delete(key);
   }
 }
 
