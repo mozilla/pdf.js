@@ -717,6 +717,10 @@ async function firstPageOnTop(page) {
 }
 
 async function setCaretAt(page, pageNumber, text, position) {
+  // Wait for the text layer to finish rendering before trying to find the span.
+  await page.waitForSelector(
+    `.page[data-page-number="${pageNumber}"] .textLayer .endOfContent`
+  );
   await page.evaluate(
     (pageN, string, pos) => {
       for (const el of document.querySelectorAll(
