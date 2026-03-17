@@ -3197,6 +3197,9 @@ class PartialEvaluator {
           break;
         }
 
+        // preprocessor.read() already handles save, restore and transform
+        // operations, so we don't need to worry about them here.
+
         textState = stateManager.state;
         currentTextState ||= textState.clone();
         const fn = operation.fn;
@@ -3569,12 +3572,6 @@ class PartialEvaluator {
                 type: "endMarkedContent",
               });
             }
-            break;
-          case OPS.restore:
-            stateManager.restore();
-            break;
-          case OPS.save:
-            stateManager.save();
             break;
         } // switch
         if (textContent.items.length >= (sink?.desiredSize ?? 1)) {
