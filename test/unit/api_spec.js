@@ -6254,6 +6254,79 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("save an ink annotation on a cloned page", async function () {
+        let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+        let pdfDoc = await loadingTask.promise;
+
+        // Simulate what clonePage() puts in annotationStorage when a page is
+        // copied: the original annotation stays on pageIndex 0 and the clone
+        // is placed on pageIndex 1 (the new position of the pasted copy).
+        const inkAnnotation = {
+          annotationType: AnnotationEditorType.INK,
+          rect: [50, 50, 200, 200],
+          rotation: 0,
+          structTreeParentId: null,
+          popupRef: "",
+          color: [0, 0, 255],
+          opacity: 1,
+          thickness: 2,
+          paths: {
+            lines: [
+              new Float32Array([
+                0,
+                0,
+                0,
+                0,
+                50,
+                200,
+                NaN,
+                NaN,
+                NaN,
+                NaN,
+                200,
+                50,
+              ]),
+            ],
+            points: [[50, 200, 100, 100, 200, 50]],
+          },
+          isCopy: true,
+        };
+
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          ...inkAnnotation,
+          pageIndex: 0,
+        });
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_1", {
+          ...inkAnnotation,
+          pageIndex: 1,
+        });
+
+        // Extract page 0 twice: once at output position 0 (original) and once
+        // at output position 1 (clone), mirroring copy+paste in the UI.
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0], pageIndices: [0] },
+          { document: null, includePages: [0], pageIndices: [1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(2);
+
+        // Both pages should carry the ink annotation.
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annotations = await pdfPage.getAnnotations();
+          expect(annotations.length).withContext(`Page ${i}`).toEqual(1);
+          expect(annotations[0].annotationType)
+            .withContext(`Page ${i}`)
+            .toEqual(AnnotationType.INK);
+        }
+
+        await loadingTask.destroy();
+      });
+
       it("fills missing pageIndices with the first free slots", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("tracemonkey.pdf")

@@ -4203,6 +4203,7 @@ describe("annotation", function () {
       const changes = new RefSetCache();
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -4320,6 +4321,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test FreeText update");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -4435,6 +4437,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test Ink creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -4532,6 +4535,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test Ink creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -4764,6 +4768,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test Highlight creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -4857,6 +4862,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test free Highlight creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -4988,6 +4994,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test Highlight update");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -5051,6 +5058,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test Highlight update");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {
@@ -5215,6 +5223,7 @@ describe("annotation", function () {
       const task = new WorkerTask("test Stamp creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
+        xref,
         task,
         [
           {

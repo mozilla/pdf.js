@@ -959,7 +959,7 @@ class HighlightEditor extends AnnotationEditor {
       };
     }
 
-    const { color, quadPoints, inkLists, opacity } = data;
+    const { color, quadPoints, inkLists, outlines, opacity } = data;
     const editor = await super.deserialize(data, parent, uiManager);
 
     editor.color = Util.makeHexColor(...color);
@@ -988,9 +988,9 @@ class HighlightEditor extends AnnotationEditor {
       editor.#createOutlines();
       editor.#addToDrawLayer();
       editor.rotate(editor.rotation);
-    } else if (inkLists) {
+    } else if (inkLists || outlines) {
       editor.#isFreeHighlight = true;
-      const points = inkLists[0];
+      const points = (inkLists || outlines.points)[0];
       const point = {
         x: points[0] - pageX,
         y: pageHeight - (points[1] - pageY),

@@ -80,8 +80,6 @@ class TempImageFactory {
 class PDFThumbnailView extends RenderableView {
   #renderingState = RenderingStates.INITIAL;
 
-  static foo = 0;
-
   /**
    * @param {PDFThumbnailViewOptions} options
    */
@@ -99,7 +97,6 @@ class PDFThumbnailView extends RenderableView {
     enableSplitMerge = false,
   }) {
     super();
-    this.foo = PDFThumbnailView.foo++;
     this.id = id;
     this.renderingId = `thumbnail${id}`;
     this.pageLabel = null;

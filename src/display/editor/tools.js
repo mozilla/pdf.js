@@ -675,6 +675,8 @@ class AnnotationEditorUIManager {
 
   #allLayers = new Map();
 
+  #savedAllLayers = null;
+
   #altTextManager = null;
 
   #annotationStorage = null;
@@ -1839,6 +1841,66 @@ class AnnotationEditorUIManager {
         this.commentSelection("context_menu");
         break;
     }
+  }
+
+  updatePageIndex(oldPageIndex, newPageIndex) {
+    for (const editor of this.getEditors(oldPageIndex)) {
+      editor.pageIndex = newPageIndex;
+    }
+    const layer = this.#savedAllLayers.get(oldPageIndex);
+    if (layer) {
+      layer.pageIndex = newPageIndex;
+      this.#allLayers.set(newPageIndex, layer);
+      if (this.#isEnabled) {
+        layer.enable();
+      } else {
+        layer.disable();
+      }
+    }
+  }
+
+  startUpdatePages() {
+    this.#savedAllLayers = new Map(this.#allLayers);
+    this.#allLayers.clear();
+  }
+
+  endUpdatePages() {
+    this.#savedAllLayers = null;
+  }
+
+  clonePage(pageIndex, newPageIndex) {
+    for (const editor of this.getEditors(pageIndex)) {
+      const serialized = editor.serialize(
+        editor.mode !== AnnotationEditorType.HIGHLIGHT
+      );
+      if (!serialized) {
+        continue;
+      }
+      serialized.pageIndex = newPageIndex;
+      serialized.id = this.getId();
+      serialized.isClone = true;
+      delete serialized.popupRef;
+      this.#annotationStorage.setValue(serialized.id, serialized);
+    }
+  }
+
+  findClonesForPage(layer) {
+    const promises = [];
+    const { pageIndex } = layer;
+    for (const [id, editor] of this.#annotationStorage) {
+      if (editor.pageIndex === pageIndex && editor.isClone) {
+        this.#annotationStorage.remove(id);
+        promises.push(
+          layer.deserialize(editor).then(deserializedEditor => {
+            if (deserializedEditor) {
+              deserializedEditor.isClone = true;
+              layer.addOrRebuild(deserializedEditor);
+            }
+          })
+        );
+      }
+    }
+    return Promise.all(promises);
   }
 
   /**

@@ -151,6 +151,10 @@ class Page {
     });
   }
 
+  createAnnotationEvaluator(handler) {
+    return this.#createPartialEvaluator(handler);
+  }
+
   #getInheritableProperty(key, getArray = false) {
     const value = getInheritableProperty({
       dict: this.pageDict,
@@ -386,6 +390,7 @@ class Page {
     );
     const newData = await AnnotationFactory.saveNewAnnotations(
       partialEvaluator,
+      this.xref,
       task,
       annotations,
       imagePromises,

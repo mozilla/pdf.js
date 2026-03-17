@@ -31,9 +31,13 @@ import {
   PDI,
   scrollIntoView,
   showViewsManager,
+  switchToEditor,
   waitAndClick,
   waitForBrowserTrip,
   waitForDOMMutation,
+  waitForPointerUp,
+  waitForSerialized,
+  waitForStorageEntries,
   waitForTextToBe,
   waitForTooltipToBe,
 } from "./test_utils.mjs";
@@ -2559,6 +2563,89 @@ describe("Reorganize Pages View", () => {
           expect(parseInt(pageCountAfterSecondDelete, 10))
             .withContext(`In ${browserName} after second delete`)
             .toBe(16);
+        })
+      );
+    });
+  });
+
+  describe("Copy page with an ink annotation and paste it", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        ".annotationEditorLayer",
+        "50",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should check that the pasted page has an ink annotation in the DOM", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Enable ink editor mode and draw a line on page 1.
+          await switchToEditor("Ink", page);
+          const rect = await getRect(
+            page,
+            ".page[data-page-number='1'] .annotationEditorLayer"
+          );
+          const x = rect.x + rect.width * 0.3;
+          const y = rect.y + rect.height * 0.3;
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          // Commit the drawing and wait for it to be serialized.
+          await page.keyboard.press("Escape");
+          await waitForSerialized(page, 1);
+
+          await waitForThumbnailVisible(page, 1);
+
+          // Select page 1 and copy it.
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste after page 2 so the copy lands at position 3.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(2)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          // Both the original and the cloned annotation must now be in storage.
+          await waitForStorageEntries(page, 2);
+
+          // Close the reorganize view and navigate to page 3 (the pasted copy)
+          // to trigger rendering of its annotation editor layer.
+          await page.click("#viewsManagerToggleButton");
+          await page.waitForSelector("#viewsManager", { hidden: true });
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = 3;
+          });
+
+          // The cloned ink annotation must appear in the DOM of page 3.
+          await page.waitForSelector(`.page[data-page-number="3"] .inkEditor`, {
+            visible: true,
+          });
+          const inkEditors = await page.$$(
+            `.page[data-page-number="3"] .inkEditor`
+          );
+          expect(inkEditors.length).withContext(`In ${browserName}`).toBe(1);
         })
       );
     });

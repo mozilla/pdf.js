@@ -354,12 +354,12 @@ class AnnotationFactory {
 
   static async saveNewAnnotations(
     evaluator,
+    xref,
     task,
     annotations,
     imagePromises,
     changes
   ) {
-    const xref = evaluator.xref;
     let baseFontRef;
     const promises = [];
     const { isOffscreenCanvasSupported } = evaluator.options;

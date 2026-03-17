@@ -2973,7 +2973,20 @@ class WorkerTransport {
   }
 
   extractPages(pageInfos) {
-    return this.messageHandler.sendWithPromise("ExtractPages", { pageInfos });
+    const params = {
+      pageInfos,
+    };
+    let transfer;
+    if (this.annotationStorage.size > 0) {
+      const { map, transfer: t } = this.annotationStorage.serializable;
+      params.annotationStorage = map;
+      transfer = t;
+    }
+    return this.messageHandler
+      .sendWithPromise("ExtractPages", params, transfer)
+      .finally(() => {
+        this.annotationStorage.resetModified();
+      });
   }
 
   getPage(pageNumber) {
