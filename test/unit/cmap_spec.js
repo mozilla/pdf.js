@@ -14,7 +14,7 @@
  */
 
 import { CMap, CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
-import { CMAP_URL, DefaultCMapReaderFactory } from "./test_utils.js";
+import { CMAP_URL, DefaultBinaryDataFactory } from "./test_utils.js";
 import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
@@ -23,14 +23,12 @@ describe("cmap", function () {
 
   beforeAll(function () {
     // Allow CMap testing in Node.js, e.g. for Travis.
-    const CMapReaderFactory = new DefaultCMapReaderFactory({
-      baseUrl: CMAP_URL,
+    const binaryDataFactory = new DefaultBinaryDataFactory({
+      cMapUrl: CMAP_URL,
     });
 
     fetchBuiltInCMap = function (name) {
-      return CMapReaderFactory.fetch({
-        name,
-      });
+      return binaryDataFactory.fetch({ kind: "cMap", name });
     };
   });
 
@@ -205,8 +203,8 @@ describe("cmap", function () {
 
   it("attempts to load a built-in CMap without the necessary API parameters", async function () {
     function tmpFetchBuiltInCMap(name) {
-      const CMapReaderFactory = new DefaultCMapReaderFactory({});
-      return CMapReaderFactory.fetch({ name });
+      const binaryDataFactory = new DefaultBinaryDataFactory({});
+      return binaryDataFactory.fetch({ kind: "cMap", name });
     }
 
     try {
@@ -228,11 +226,11 @@ describe("cmap", function () {
 
   it("attempts to load a built-in CMap with inconsistent API parameters", async function () {
     function tmpFetchBuiltInCMap(name) {
-      const CMapReaderFactory = new DefaultCMapReaderFactory({
-        baseUrl: CMAP_URL,
-        isCompressed: false,
+      const binaryDataFactory = new DefaultBinaryDataFactory({
+        cMapUrl: CMAP_URL,
+        cMapPacked: false,
       });
-      return CMapReaderFactory.fetch({ name });
+      return binaryDataFactory.fetch({ kind: "cMap", name });
     }
 
     try {

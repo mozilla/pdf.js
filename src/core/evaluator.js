@@ -410,7 +410,7 @@ class PartialEvaluator {
     } else {
       // Get the data on the main-thread instead.
       data = await this.handler.sendWithPromise("FetchBinaryData", {
-        type: "cMapReaderFactory",
+        kind: "cMap",
         name,
       });
     }
@@ -448,7 +448,7 @@ class PartialEvaluator {
       } else {
         // Get the data on the main-thread instead.
         data = await this.handler.sendWithPromise("FetchBinaryData", {
-          type: "standardFontDataFactory",
+          kind: "standardFontData",
           filename,
         });
       }

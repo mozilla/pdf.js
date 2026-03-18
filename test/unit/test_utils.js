@@ -16,13 +16,11 @@
 import { assert, isNodeJS } from "../../src/shared/util.js";
 import {
   fetchData as fetchDataNode,
-  NodeCMapReaderFactory,
-  NodeStandardFontDataFactory,
+  NodeBinaryDataFactory,
 } from "../../src/display/node_utils.js";
 import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
-import { DOMCMapReaderFactory } from "../../src/display/cmap_reader_factory.js";
-import { DOMStandardFontDataFactory } from "../../src/display/standard_fontdata_factory.js";
+import { DOMBinaryDataFactory } from "../../src/display/binary_data_factory.js";
 import { fetchData as fetchDataDOM } from "../../src/display/display_utils.js";
 import { Ref } from "../../src/core/primitives.js";
 
@@ -45,15 +43,10 @@ class DefaultFileReaderFactory {
   }
 }
 
-const DefaultCMapReaderFactory =
+const DefaultBinaryDataFactory =
   typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeCMapReaderFactory
-    : DOMCMapReaderFactory;
-
-const DefaultStandardFontDataFactory =
-  typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
-    ? NodeStandardFontDataFactory
-    : DOMStandardFontDataFactory;
+    ? NodeBinaryDataFactory
+    : DOMBinaryDataFactory;
 
 function buildGetDocumentParams(filename, options) {
   const params = Object.create(null);
@@ -249,9 +242,8 @@ export {
   buildGetDocumentParams,
   CMAP_URL,
   createIdFactory,
-  DefaultCMapReaderFactory,
+  DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
-  DefaultStandardFontDataFactory,
   getCrossOriginHostname,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,

@@ -74,7 +74,7 @@ class JpxImage {
         } else {
           this.#buffer = await this.#handler.sendWithPromise(
             "FetchBinaryData",
-            { type: "wasmFactory", filename }
+            { kind: "wasm", filename }
           );
         }
       }
