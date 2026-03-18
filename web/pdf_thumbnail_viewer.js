@@ -64,6 +64,8 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  *   mode.
  * @property {AbortSignal} [abortSignal] - The AbortSignal for the window
  *   events.
+ * @property {boolean} [enableNewBadge] - Enables the "new" badge for the split
+ *   and merge features.
  * @property {boolean} [enableSplitMerge] - Enables split and merge features.
  *   The default value is `false`.
  * @property {Object} [statusBar] - The status bar elements to manage the status
@@ -172,6 +174,7 @@ class PDFThumbnailViewer {
     pageColors,
     abortSignal,
     enableSplitMerge,
+    enableNewBadge,
     statusBar,
     undoBar,
     manageMenu,
@@ -207,6 +210,14 @@ class PDFThumbnailViewer {
         delete: del,
         exportSelected,
       } = manageMenu;
+
+      if (enableNewBadge) {
+        const newSpan = document.createElement("span");
+        newSpan.setAttribute("data-l10n-id", "pdfjs-new-badge-content");
+        newSpan.classList.add("newBadge");
+        button.parentElement.before(newSpan);
+      }
+
       this.eventBus.on(
         "pagesloaded",
         () => {

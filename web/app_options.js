@@ -250,6 +250,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableNewBadge: {
+    /** @type {boolean} */
+    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("MOZCENTRAL"),
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableOptimizedPartialRendering: {
     /** @type {boolean} */
     value: false,

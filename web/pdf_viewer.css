@@ -36,6 +36,9 @@
   --loading-icon-delay: 400ms;
   --focus-ring-color: light-dark(#0060df, #0df);
   --focus-ring-outline: 2px solid var(--focus-ring-color);
+  --new-badge-bg: light-dark(#070, #37b847);
+  --new-badge-color: light-dark(#fff, #15141a);
+  --new-badge-border-color: light-dark(#fbfbfe / 40%, #15141a / 40%);
 
   @media screen and (forced-colors: active) {
     --pdfViewer-padding-bottom: 9px;
@@ -43,7 +46,26 @@
     --page-border: 1px solid CanvasText;
     --spreadHorizontalWrapped-margin-LR: 3.5px;
     --focus-ring-color: CanvasText;
+    --new-badge-bg: AccentColor;
+    --new-badge-color: ButtonFace;
+    --new-badge-border-color: CanvasText;
   }
+}
+
+.newBadge {
+  background-color: var(--new-badge-bg);
+  color: var(--new-badge-color);
+  border-radius: 4px;
+  border: 1px solid var(--new-badge-border-color);
+  padding-inline: 4px;
+  margin-inline: 4px;
+  font: menu;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  flex: 0 0 fit-content;
+  user-select: none;
 }
 
 [data-main-rotation="90"] {
