@@ -20,6 +20,7 @@ import {
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   FormatError,
+  shadow,
   unreachable,
   Util,
   warn,
@@ -736,8 +737,6 @@ function compileCharString(charStringCode, cmds, font, glyphId) {
   parse(charStringCode);
 }
 
-const NOOP = "";
-
 class Commands {
   cmds = [];
 
@@ -774,12 +773,13 @@ class Commands {
   }
 
   getPath() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+      FeatureTest.isFloat16ArraySupported
+    ) {
       return new Float16Array(this.cmds);
     }
-    return new (
-      FeatureTest.isFloat16ArraySupported ? Float16Array : Float32Array
-    )(this.cmds);
+    return new Float32Array(this.cmds);
   }
 }
 
@@ -797,6 +797,17 @@ class CompiledFont {
     this.compiledCharCodeToGlyphId = Object.create(null);
   }
 
+  static get NOOP() {
+    return shadow(
+      this,
+      "NOOP",
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+        FeatureTest.isFloat16ArraySupported
+        ? new Float16Array(0)
+        : new Float32Array(0)
+    );
+  }
+
   getPathJs(unicode) {
     const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
     let fn = this.compiledGlyphs[glyphId],
@@ -805,7 +816,7 @@ class CompiledFont {
       try {
         fn = this.compileGlyph(this.glyphs[glyphId], glyphId);
       } catch (ex) {
-        fn = NOOP; // Avoid attempting to re-compile a corrupt glyph.
+        fn = CompiledFont.NOOP; // Avoid attempting to re-compile a corrupt glyph.
 
         compileEx = ex;
       }
@@ -821,7 +832,7 @@ class CompiledFont {
 
   compileGlyph(code, glyphId) {
     if (!code?.length || code[0] === 14) {
-      return NOOP;
+      return CompiledFont.NOOP;
     }
 
     let fontMatrix = this.fontMatrix;
