@@ -469,18 +469,17 @@ function getDocument(src = {}) {
       );
 
       let networkStream;
-      if (rangeTransport) {
+      if (data) {
+        // The entire PDF was provided, no `networkStream` necessary.
+      } else if (rangeTransport) {
         networkStream = new PDFDataTransportStream({
           pdfDataRangeTransport: rangeTransport,
           disableRange,
           disableStream,
         });
-      } else if (!data) {
+      } else if (url) {
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
           throw new Error("Not implemented: NetworkStream");
-        }
-        if (!url) {
-          throw new Error("getDocument - no `url` parameter provided.");
         }
         // eslint-disable-next-line no-nested-ternary
         const NetworkStream = isValidFetchUrl(url)
@@ -499,6 +498,10 @@ function getDocument(src = {}) {
           disableRange,
           disableStream,
         });
+      } else {
+        throw new Error(
+          "getDocument - expected either `data`, `range`, or `url` parameter."
+        );
       }
 
       return workerIdPromise.then(workerId => {
