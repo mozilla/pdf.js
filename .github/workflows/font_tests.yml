@@ -33,15 +33,17 @@ jobs:
         os: [windows-latest, ubuntu-latest]
 
     runs-on: ${{ matrix.os }}
+    environment: code-coverage
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: ${{ matrix.node-version }}
 
@@ -49,7 +51,7 @@ jobs:
         run: npm ci
 
       - name: Use Python 3.14
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.14'
           cache: 'pip'
@@ -64,7 +66,7 @@ jobs:
         run: npx gulp fonttest --headless --coverage --coverage-output build/coverage/font
 
       - name: Upload results to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
