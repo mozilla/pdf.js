@@ -418,15 +418,29 @@
         background-color: var(--status-actions-bg);
 
         #viewsManagerStatusActionLabelContainer > button {
+          position: relative;
           width: var(--icon-size);
           height: var(--icon-size);
-          mask-repeat: no-repeat;
-          mask-position: center;
-          background-color: var(--indicator-color);
-          mask-image: var(--pages-selected-icon);
           border: none;
           padding: 0;
           flex: 0 0 auto;
+
+          &::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            mask-repeat: no-repeat;
+            mask-position: center;
+            background-color: var(--indicator-color);
+            mask-image: var(--pages-selected-icon);
+          }
+
+          &#viewsManagerStatusActionDeselectButton:focus-visible {
+            outline: 2px solid var(--button-focus-outline-color);
+            border: 1px solid var(--button-focus-border-color);
+            border-radius: 2px;
+            outline-offset: 1px;
+          }
         }
 
         #actionSelector {
