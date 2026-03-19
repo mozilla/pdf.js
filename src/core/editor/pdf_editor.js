@@ -616,15 +616,20 @@ class PDFEditor {
           if (newIndex !== -1) {
             newPageIndex = newIndex++;
           } else {
+            // Find the first available index in the newPages array.
+            // This is needed when the pageIndices option is used since the
+            // pages can be added in any order.
             for (
               newPageIndex = 0;
-              this.oldPages[newPageIndex] === undefined;
+              this.oldPages[newPageIndex] !== undefined;
               newPageIndex++
             ) {
               /* empty */
             }
           }
         }
+        // Reserve the slot immediately because the page fetch is async.
+        this.oldPages[newPageIndex] = null;
         promises.push(
           document.getPage(i).then(page => {
             this.oldPages[newPageIndex] = new PageData(page, documentData);

@@ -6253,6 +6253,44 @@ small scripts as well as for`);
 
         await loadingTask.destroy();
       });
+
+      it("fills missing pageIndices with the first free slots", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("tracemonkey.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [1, 3, 5], pageIndices: [1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        expect(pdfDoc.numPages).toEqual(3);
+
+        // Page 4 in the original document should occupy the first free slot.
+        let pdfPage = await pdfDoc.getPage(1);
+        let { items: textItems } = await pdfPage.getTextContent();
+        expect(mergeText(textItems).includes("3. Trace Trees")).toBeTrue();
+
+        // Page 2 in the original document keeps its explicit destination slot.
+        pdfPage = await pdfDoc.getPage(2);
+        ({ items: textItems } = await pdfPage.getTextContent());
+        expect(
+          mergeText(textItems).includes("2. Overview: Example Tracing Run")
+        ).toBeTrue();
+
+        // Page 6 in the original document should occupy the remaining free
+        // slot.
+        pdfPage = await pdfDoc.getPage(3);
+        ({ items: textItems } = await pdfPage.getTextContent());
+        expect(
+          mergeText(textItems).includes("4. Nested Trace Tree Formation")
+        ).toBeTrue();
+
+        await loadingTask.destroy();
+      });
     });
 
     describe("AcroForm", function () {
