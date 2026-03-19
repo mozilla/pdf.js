@@ -5800,6 +5800,41 @@ small scripts as well as for`);
     });
 
     describe("Named destinations", function () {
+      it("keeps colliding deduplicated destination names unique", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("named_dest_collision_for_editor.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        let destinations = await pdfDoc.getDestinations();
+        expect(Object.keys(destinations).sort()).toEqual(["foo", "foo_p2"]);
+
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        destinations = await pdfDoc.getDestinations();
+        expect(Object.keys(destinations).sort()).toEqual([
+          "foo",
+          "foo_p2",
+          "foo_p2_1",
+          "foo_p2_p2",
+        ]);
+
+        const secondPage = await pdfDoc.getPage(2);
+        const annots = await secondPage.getAnnotations();
+        expect(annots.length).toEqual(2);
+        expect(annots[0].dest).toEqual("foo_p2_1");
+        expect(annots[1].dest).toEqual("foo_p2_p2");
+
+        await loadingTask.destroy();
+      });
+
       it("extract page and check destinations", async function () {
         let loadingTask = getDocument(buildGetDocumentParams("issue6204.pdf"));
         let pdfDoc = await loadingTask.promise;

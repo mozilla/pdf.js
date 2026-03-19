@@ -1,0 +1,40 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names << /Dests 6 0 R >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << >> /Contents 7 0 R /Annots [4 0 R 5 0 R] >>
+endobj
+4 0 obj
+<< /Type /Annot /Subtype /Link /Rect [10 150 90 170] /Border [0 0 0] /Dest (foo) >>
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Link /Rect [10 120 90 140] /Border [0 0 0] /Dest (foo_p2) >>
+endobj
+6 0 obj
+<< /Names [(foo) [3 0 R /Fit] (foo_p2) [3 0 R /Fit]] >>
+endobj
+7 0 obj
+<< /Length 0 >>
+stream
+
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000081 00000 n 
+0000000138 00000 n 
+0000000264 00000 n 
+0000000361 00000 n 
+0000000461 00000 n 
+0000000532 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+581
+%%EOF
