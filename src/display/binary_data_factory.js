@@ -102,9 +102,6 @@ class BaseBinaryDataFactory {
         "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
       );
     }
-    if (!name) {
-      throw new Error("CMap name must be specified.");
-    }
     const url = this.cMapUrl + name + (this.cMapPacked ? ".bcmap" : "");
 
     return this._fetch(url, /* type = */ this.cMapPacked ? "bytes" : "text")
@@ -122,9 +119,6 @@ class BaseBinaryDataFactory {
         "Ensure that the `standardFontDataUrl` API parameter is provided."
       );
     }
-    if (!filename) {
-      throw new Error("Font filename must be specified.");
-    }
     const url = `${this.standardFontDataUrl}${filename}`;
 
     return this._fetch(url, /* type = */ "bytes").catch(reason => {
@@ -135,9 +129,6 @@ class BaseBinaryDataFactory {
   async #fetchWasm({ filename }) {
     if (!this.wasmUrl) {
       throw new Error("Ensure that the `wasmUrl` API parameter is provided.");
-    }
-    if (!filename) {
-      throw new Error("Wasm filename must be specified.");
     }
     const url = `${this.wasmUrl}${filename}`;
 
