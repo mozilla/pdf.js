@@ -6398,6 +6398,34 @@ small scripts as well as for`);
 
         await loadingTask.destroy();
       });
+
+      it("preserves calculation order when it points to parent fields", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("acroform_calculation_order.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        expect(await pdfDoc.getCalculationOrderIds()).toEqual(["6R"]);
+        expect(Object.keys((await pdfDoc.getFieldObjects()) || {})).toEqual([
+          "group",
+        ]);
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+
+        const calculationOrder = await pdfDoc.getCalculationOrderIds();
+        expect(Array.isArray(calculationOrder)).toEqual(true);
+        expect(calculationOrder.length).toEqual(1);
+        expect(calculationOrder[0]).not.toEqual("6R");
+        expect(Object.keys((await pdfDoc.getFieldObjects()) || {})).toEqual([
+          "group",
+        ]);
+
+        await loadingTask.destroy();
+      });
     });
 
     describe("Outlines", function () {

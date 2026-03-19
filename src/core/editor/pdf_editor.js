@@ -1476,6 +1476,7 @@ class PDFEditor {
         this.currentDocument = null;
       }
     }
+    this.#setAcroFormCalculationOrder(allDocumentData);
   }
 
   #setAcroFormQ(allDocumentData) {
@@ -1511,7 +1512,6 @@ class PDFEditor {
   #setAcroFormDefaultBasicValues(allDocumentData) {
     let sigFlags = 0;
     let needAppearances = false;
-    const calculationOrder = [];
     for (const documentData of allDocumentData) {
       if (!documentData.acroForm) {
         continue;
@@ -1523,7 +1523,15 @@ class PDFEditor {
       if (documentData.acroForm.get("NeedAppearances") === true) {
         needAppearances = true;
       }
-      const co = documentData.acroForm.get("CO") || null;
+    }
+    this.acroFormSigFlags = sigFlags;
+    this.acroFormNeedAppearances = needAppearances;
+  }
+
+  #setAcroFormCalculationOrder(allDocumentData) {
+    const calculationOrder = [];
+    for (const documentData of allDocumentData) {
+      const co = documentData.acroForm?.get("CO") || null;
       if (!Array.isArray(co)) {
         continue;
       }
@@ -1535,8 +1543,6 @@ class PDFEditor {
         }
       }
     }
-    this.acroFormSigFlags = sigFlags;
-    this.acroFormNeedAppearances = needAppearances;
     this.acroFormCalculationOrder =
       calculationOrder.length > 0 ? calculationOrder : null;
   }
