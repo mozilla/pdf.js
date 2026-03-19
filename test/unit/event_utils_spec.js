@@ -243,7 +243,7 @@ describe("event_utils", function () {
           expect(false).toEqual(true);
         },
         function (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
         }
       );
 
@@ -256,7 +256,7 @@ describe("event_utils", function () {
           expect(false).toEqual(true);
         },
         function (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
         }
       );
 
@@ -270,7 +270,7 @@ describe("event_utils", function () {
           expect(false).toEqual(true);
         },
         function (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
         }
       );
 

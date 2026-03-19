@@ -371,8 +371,8 @@ describe("primitives", function () {
       const mergedFontDict = mergedDict.get("Font");
       const mergedSubFontDict = mergedSubDict.get("Font");
 
-      expect(mergedFontDict instanceof Dict).toEqual(true);
-      expect(mergedSubFontDict instanceof Dict).toEqual(true);
+      expect(mergedFontDict).toBeInstanceOf(Dict);
+      expect(mergedSubFontDict).toBeInstanceOf(Dict);
 
       const mergedFontDictKeys = [...mergedFontDict.getKeys()];
       const mergedSubFontDictKeys = [...mergedSubFontDict.getKeys()];

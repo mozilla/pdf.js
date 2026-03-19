@@ -46,8 +46,8 @@ describe("canvas_factory", function () {
       }
 
       const { canvas, context } = canvasFactory.create(20, 40);
-      expect(canvas instanceof HTMLCanvasElement).toBe(true);
-      expect(context instanceof CanvasRenderingContext2D).toBe(true);
+      expect(canvas).toBeInstanceOf(HTMLCanvasElement);
+      expect(context).toBeInstanceOf(CanvasRenderingContext2D);
       expect(canvas.width).toBe(20);
       expect(canvas.height).toBe(40);
     });
@@ -83,8 +83,8 @@ describe("canvas_factory", function () {
       canvasFactory.reset(canvasAndContext, 60, 80);
 
       const { canvas, context } = canvasAndContext;
-      expect(canvas instanceof HTMLCanvasElement).toBe(true);
-      expect(context instanceof CanvasRenderingContext2D).toBe(true);
+      expect(canvas).toBeInstanceOf(HTMLCanvasElement);
+      expect(context).toBeInstanceOf(CanvasRenderingContext2D);
       expect(canvas.width).toBe(60);
       expect(canvas.height).toBe(80);
     });

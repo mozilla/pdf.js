@@ -194,7 +194,7 @@ describe("message_handler", function () {
         expect(false).toEqual(true);
       } catch (reason) {
         expect(log).toEqual("01pe");
-        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("should not read when errored");
       }
     });

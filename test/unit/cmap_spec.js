@@ -139,7 +139,7 @@ describe("cmap", function () {
       fetchBuiltInCMap,
       useCMap: null,
     });
-    expect(cmap instanceof CMap).toEqual(true);
+    expect(cmap).toBeInstanceOf(CMap);
     expect(cmap.useCMap).not.toBeNull();
     expect(cmap.builtInCMap).toBeFalsy();
     expect(cmap.length).toEqual(0x20a7);
@@ -166,7 +166,7 @@ describe("cmap", function () {
       fetchBuiltInCMap,
       useCMap: null,
     });
-    expect(cmap instanceof CMap).toEqual(true);
+    expect(cmap).toBeInstanceOf(CMap);
     expect(cmap.useCMap).toBeNull();
     expect(cmap.builtInCMap).toBeTruthy();
     expect(cmap.length).toEqual(0x20a7);
@@ -179,7 +179,7 @@ describe("cmap", function () {
       fetchBuiltInCMap,
       useCMap: null,
     });
-    expect(cmap instanceof IdentityCMap).toEqual(true);
+    expect(cmap).toBeInstanceOf(IdentityCMap);
     expect(cmap.vertical).toEqual(false);
     expect(cmap.length).toEqual(0x10000);
     expect(function () {
@@ -198,7 +198,7 @@ describe("cmap", function () {
       // Shouldn't get here.
       expect(false).toEqual(true);
     } catch (reason) {
-      expect(reason instanceof Error).toEqual(true);
+      expect(reason).toBeInstanceOf(Error);
       expect(reason.message).toEqual("Unknown CMap name: null");
     }
   });
@@ -219,7 +219,7 @@ describe("cmap", function () {
       // Shouldn't get here.
       expect(false).toEqual(true);
     } catch (reason) {
-      expect(reason instanceof Error).toEqual(true);
+      expect(reason).toBeInstanceOf(Error);
       expect(reason.message).toEqual(
         "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
       );
@@ -245,7 +245,7 @@ describe("cmap", function () {
       // Shouldn't get here.
       expect(false).toEqual(true);
     } catch (reason) {
-      expect(reason instanceof Error).toEqual(true);
+      expect(reason).toBeInstanceOf(Error);
       const message = reason.message;
       expect(message.startsWith("Unable to load CMap at: ")).toEqual(true);
       expect(message.endsWith("/external/bcmaps/Adobe-Japan1-1")).toEqual(true);

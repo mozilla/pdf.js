@@ -46,7 +46,7 @@ describe("svg_factory", function () {
       }
 
       const svg = svgFactory.create(20, 40);
-      expect(svg instanceof SVGSVGElement).toBe(true);
+      expect(svg).toBeInstanceOf(SVGSVGElement);
       expect(svg.getAttribute("version")).toBe("1.1");
       expect(svg.getAttribute("width")).toBe("20px");
       expect(svg.getAttribute("height")).toBe("40px");
@@ -66,7 +66,7 @@ describe("svg_factory", function () {
       }
 
       const svg = svgFactory.createElement("svg:rect");
-      expect(svg instanceof SVGRectElement).toBe(true);
+      expect(svg).toBeInstanceOf(SVGRectElement);
     });
   });
 });

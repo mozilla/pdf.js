@@ -296,7 +296,7 @@ describe("evaluator", function () {
           // Shouldn't get here.
           expect(false).toEqual(true);
         } catch (reason) {
-          expect(reason instanceof FormatError).toEqual(true);
+          expect(reason).toBeInstanceOf(FormatError);
           expect(reason.message).toEqual(
             "Invalid command l: expected 2 args, but received 1 args."
           );
@@ -332,7 +332,7 @@ describe("evaluator", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof FormatError).toEqual(true);
+        expect(reason).toBeInstanceOf(FormatError);
         expect(reason.message).toEqual("XObject should be a stream");
       }
     });

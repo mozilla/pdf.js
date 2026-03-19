@@ -370,7 +370,7 @@ describe("network_utils", function () {
     function testCreateResponseError(url, status, missing) {
       const error = createResponseError(status, url);
 
-      expect(error instanceof ResponseException).toEqual(true);
+      expect(error).toBeInstanceOf(ResponseException);
       expect(error.message).toEqual(
         `Unexpected server response (${status}) while retrieving PDF "${url.href}".`
       );

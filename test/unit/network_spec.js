@@ -155,7 +155,7 @@ describe("network", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (ex) {
-        expect(ex instanceof ResponseException).toEqual(true);
+        expect(ex).toBeInstanceOf(ResponseException);
         expect(ex.status).toEqual(0);
         expect(ex.missing).toEqual(false);
       }

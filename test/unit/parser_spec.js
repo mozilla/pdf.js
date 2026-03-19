@@ -240,15 +240,15 @@ describe("parser", function () {
           const lexer = new Lexer(input);
 
           let obj = lexer.getObj();
-          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj).toBeInstanceOf(Cmd);
           expect(obj.cmd).toEqual("\x14");
 
           obj = lexer.getObj();
-          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj).toBeInstanceOf(Cmd);
           expect(obj.cmd).toEqual("q");
 
           obj = lexer.getObj();
-          expect(obj instanceof Cmd).toEqual(true);
+          expect(obj).toBeInstanceOf(Cmd);
           expect(obj.cmd).toEqual("Q");
 
           obj = lexer.getObj();

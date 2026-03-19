@@ -122,11 +122,11 @@ describe("api", function () {
     it("creates pdf doc from URL-string", async function () {
       const urlStr = TEST_PDFS_PATH + basicApiFileName;
       const loadingTask = getDocument(urlStr);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
       const pdfDocument = await loadingTask.promise;
 
       expect(typeof urlStr).toEqual("string");
-      expect(pdfDocument instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDocument).toBeInstanceOf(PDFDocumentProxy);
       expect(pdfDocument.numPages).toEqual(3);
 
       await loadingTask.destroy();
@@ -136,11 +136,11 @@ describe("api", function () {
       const urlObj = TestPdfsServer.resolveURL(basicApiFileName);
 
       const loadingTask = getDocument(urlObj);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
       const pdfDocument = await loadingTask.promise;
 
-      expect(urlObj instanceof URL).toEqual(true);
-      expect(pdfDocument instanceof PDFDocumentProxy).toEqual(true);
+      expect(urlObj).toBeInstanceOf(URL);
+      expect(pdfDocument).toBeInstanceOf(PDFDocumentProxy);
       expect(pdfDocument.numPages).toEqual(3);
 
       // Ensure that the Fetch API was used to load the PDF document.
@@ -151,7 +151,7 @@ describe("api", function () {
 
     it("creates pdf doc from URL", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const progressReportedCapability = Promise.withResolvers();
       // Attach the callback that is used to report loading progress;
@@ -165,7 +165,7 @@ describe("api", function () {
         progressReportedCapability.promise,
       ]);
 
-      expect(pdfDoc instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDoc).toBeInstanceOf(PDFDocumentProxy);
       expect(pdfDoc.loadingTask).toBe(loadingTask);
 
       expect(progress.loaded).toBeGreaterThanOrEqual(0);
@@ -178,7 +178,7 @@ describe("api", function () {
 
     it("creates pdf doc from URL and aborts before worker initialized", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
       const destroyed = loadingTask.destroy();
 
       try {
@@ -194,7 +194,7 @@ describe("api", function () {
 
     it("creates pdf doc from URL and aborts loading after worker initialized", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
       // This can be somewhat random -- we cannot guarantee perfect
       // 'Terminate' message to the worker before/after setting up pdfManager.
       const destroyed = loadingTask._worker.promise.then(() =>
@@ -211,11 +211,11 @@ describe("api", function () {
       });
 
       // Sanity check to make sure that we fetched the entire PDF file.
-      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
+      expect(typedArrayPdf).toBeInstanceOf(Uint8Array);
       expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
       const loadingTask = getDocument(typedArrayPdf);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const progressReportedCapability = Promise.withResolvers();
       loadingTask.onProgress = function (data) {
@@ -227,7 +227,7 @@ describe("api", function () {
         progressReportedCapability.promise,
       ]);
 
-      expect(pdfDoc instanceof PDFDocumentProxy).toEqual(true);
+      expect(pdfDoc).toBeInstanceOf(PDFDocumentProxy);
       expect(pdfDoc.loadingTask).toBe(loadingTask);
 
       expect(progress.loaded).toEqual(basicApiFileLength);
@@ -246,11 +246,11 @@ describe("api", function () {
       });
 
       // Sanity check to make sure that we fetched the entire PDF file.
-      expect(arrayBufferPdf instanceof ArrayBuffer).toEqual(true);
+      expect(arrayBufferPdf).toBeInstanceOf(ArrayBuffer);
       expect(arrayBufferPdf.byteLength).toEqual(basicApiFileLength);
 
       const loadingTask = getDocument(arrayBufferPdf);
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const progressReportedCapability = Promise.withResolvers();
       loadingTask.onProgress = function (data) {
@@ -261,7 +261,7 @@ describe("api", function () {
         loadingTask.promise,
         progressReportedCapability.promise,
       ]);
-      expect(data[0] instanceof PDFDocumentProxy).toEqual(true);
+      expect(data[0]).toBeInstanceOf(PDFDocumentProxy);
       expect(data[1].loaded / data[1].total).toEqual(1);
 
       // Check that the ArrayBuffer was transferred.
@@ -273,7 +273,7 @@ describe("api", function () {
     it("creates pdf doc from invalid PDF file", async function () {
       // A severely corrupt PDF file (even Adobe Reader fails to open it).
       const loadingTask = getDocument(buildGetDocumentParams("bug1020226.pdf"));
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       try {
         await loadingTask.promise;
@@ -281,7 +281,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof InvalidPDFException).toEqual(true);
+        expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual("Invalid PDF structure.");
       }
 
@@ -292,7 +292,7 @@ describe("api", function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("non-existent.pdf")
       );
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       try {
         await loadingTask.promise;
@@ -300,7 +300,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof ResponseException).toEqual(true);
+        expect(reason).toBeInstanceOf(ResponseException);
         expect(reason.status).toEqual(isNodeJS ? 0 : 404);
         expect(reason.missing).toEqual(true);
       }
@@ -310,7 +310,7 @@ describe("api", function () {
 
     it("creates pdf doc from PDF file protected with user and owner password", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("pr6531_1.pdf"));
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const passwordNeededCapability = {
         ...Promise.withResolvers(),
@@ -352,7 +352,7 @@ describe("api", function () {
         passwordIncorrectCapability.promise,
         loadingTask.promise,
       ]);
-      expect(data[2] instanceof PDFDocumentProxy).toEqual(true);
+      expect(data[2]).toBeInstanceOf(PDFDocumentProxy);
 
       await loadingTask.destroy();
     });
@@ -365,9 +365,7 @@ describe("api", function () {
           password: "",
         })
       );
-      expect(
-        passwordNeededLoadingTask instanceof PDFDocumentLoadingTask
-      ).toEqual(true);
+      expect(passwordNeededLoadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const result1 = passwordNeededLoadingTask.promise.then(
         function () {
@@ -376,7 +374,7 @@ describe("api", function () {
           throw new Error("loadingTask should be rejected");
         },
         function (data) {
-          expect(data instanceof PasswordException).toEqual(true);
+          expect(data).toBeInstanceOf(PasswordException);
           expect(data.code).toEqual(PasswordResponses.NEED_PASSWORD);
           return passwordNeededLoadingTask.destroy();
         }
@@ -387,9 +385,9 @@ describe("api", function () {
           password: "qwerty",
         })
       );
-      expect(
-        passwordIncorrectLoadingTask instanceof PDFDocumentLoadingTask
-      ).toEqual(true);
+      expect(passwordIncorrectLoadingTask).toBeInstanceOf(
+        PDFDocumentLoadingTask
+      );
 
       const result2 = passwordIncorrectLoadingTask.promise.then(
         function () {
@@ -398,7 +396,7 @@ describe("api", function () {
           throw new Error("loadingTask should be rejected");
         },
         function (data) {
-          expect(data instanceof PasswordException).toEqual(true);
+          expect(data).toBeInstanceOf(PasswordException);
           expect(data.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
           return passwordIncorrectLoadingTask.destroy();
         }
@@ -409,12 +407,12 @@ describe("api", function () {
           password: "asdfasdf",
         })
       );
-      expect(
-        passwordAcceptedLoadingTask instanceof PDFDocumentLoadingTask
-      ).toEqual(true);
+      expect(passwordAcceptedLoadingTask).toBeInstanceOf(
+        PDFDocumentLoadingTask
+      );
 
       const result3 = passwordAcceptedLoadingTask.promise.then(function (data) {
-        expect(data instanceof PDFDocumentProxy).toEqual(true);
+        expect(data).toBeInstanceOf(PDFDocumentProxy);
         return passwordAcceptedLoadingTask.destroy();
       });
 
@@ -430,18 +428,18 @@ describe("api", function () {
         const passwordNeededLoadingTask = getDocument(
           buildGetDocumentParams(filename)
         );
-        expect(
-          passwordNeededLoadingTask instanceof PDFDocumentLoadingTask
-        ).toEqual(true);
+        expect(passwordNeededLoadingTask).toBeInstanceOf(
+          PDFDocumentLoadingTask
+        );
 
         const passwordIncorrectLoadingTask = getDocument(
           buildGetDocumentParams(filename, {
             password: "qwerty",
           })
         );
-        expect(
-          passwordIncorrectLoadingTask instanceof PDFDocumentLoadingTask
-        ).toEqual(true);
+        expect(passwordIncorrectLoadingTask).toBeInstanceOf(
+          PDFDocumentLoadingTask
+        );
 
         let passwordNeededDestroyed;
         passwordNeededLoadingTask.onPassword = function (callback, reason) {
@@ -459,7 +457,7 @@ describe("api", function () {
             throw new Error("loadingTask should be rejected");
           },
           function (reason) {
-            expect(reason instanceof PasswordException).toEqual(true);
+            expect(reason).toBeInstanceOf(PasswordException);
             expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
             return passwordNeededDestroyed;
           }
@@ -479,7 +477,7 @@ describe("api", function () {
             throw new Error("loadingTask should be rejected");
           },
           function (reason) {
-            expect(reason instanceof PasswordException).toEqual(true);
+            expect(reason).toBeInstanceOf(PasswordException);
             expect(reason.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
             return passwordIncorrectLoadingTask.destroy();
           }
@@ -496,7 +494,7 @@ describe("api", function () {
         const loadingTask = getDocument(
           buildGetDocumentParams("issue3371.pdf")
         );
-        expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+        expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
         // Attach the callback that is used to request a password;
         // similarly to how the default viewer handles passwords.
@@ -512,7 +510,7 @@ describe("api", function () {
             expect(false).toEqual(true);
           },
           function (reason) {
-            expect(reason instanceof PasswordException).toEqual(true);
+            expect(reason).toBeInstanceOf(PasswordException);
             expect(reason.code).toEqual(PasswordResponses.NEED_PASSWORD);
           }
         );
@@ -523,7 +521,7 @@ describe("api", function () {
 
     it("creates pdf doc from empty TypedArray", async function () {
       const loadingTask = getDocument(new Uint8Array(0));
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       try {
         await loadingTask.promise;
@@ -531,7 +529,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof InvalidPDFException).toEqual(true);
+        expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual(
           "The PDF file is empty, i.e. its size is zero bytes."
         );
@@ -542,7 +540,7 @@ describe("api", function () {
 
     it("checks the `startxref` position of a linearized pdf doc (issue 17665)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument = await loadingTask.promise;
 
@@ -554,12 +552,12 @@ describe("api", function () {
 
     it("checks that `docId`s are unique and increasing", async function () {
       const loadingTask1 = getDocument(basicApiGetDocumentParams);
-      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask1).toBeInstanceOf(PDFDocumentLoadingTask);
       await loadingTask1.promise;
       const docId1 = loadingTask1.docId;
 
       const loadingTask2 = getDocument(basicApiGetDocumentParams);
-      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask2).toBeInstanceOf(PDFDocumentLoadingTask);
       await loadingTask2.promise;
       const docId2 = loadingTask2.docId;
 
@@ -581,13 +579,13 @@ describe("api", function () {
           rangeChunkSize: 100,
         })
       );
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(1);
 
       const page = await pdfDocument.getPage(1);
-      expect(page instanceof PDFPageProxy).toEqual(true);
+      expect(page).toBeInstanceOf(PDFPageProxy);
 
       const opList = await page.getOperatorList();
       expect(opList.fnArray.length).toEqual(0);
@@ -602,13 +600,13 @@ describe("api", function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("GHOSTSCRIPT-698804-1-fuzzed.pdf")
       );
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(1);
 
       const page = await pdfDocument.getPage(1);
-      expect(page instanceof PDFPageProxy).toEqual(true);
+      expect(page).toBeInstanceOf(PDFPageProxy);
 
       const opList = await page.getOperatorList();
       expect(opList.fnArray.length).toEqual(0);
@@ -624,7 +622,7 @@ describe("api", function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("REDHAT-1531897-0.pdf")
       );
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       try {
         await loadingTask.promise;
@@ -632,7 +630,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof InvalidPDFException).toEqual(true);
+        expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual("Invalid Root reference.");
       }
 
@@ -643,7 +641,7 @@ describe("api", function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("poppler-395-0-fuzzed.pdf")
       );
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       try {
         await loadingTask.promise;
@@ -651,7 +649,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof InvalidPDFException).toEqual(true);
+        expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual("Invalid Root reference.");
       }
 
@@ -669,9 +667,9 @@ describe("api", function () {
         buildGetDocumentParams("poppler-85140-0.pdf", { stopAtErrors: true })
       );
 
-      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
-      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
-      expect(loadingTask3 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask1).toBeInstanceOf(PDFDocumentLoadingTask);
+      expect(loadingTask2).toBeInstanceOf(PDFDocumentLoadingTask);
+      expect(loadingTask3).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument1 = await loadingTask1.promise;
       const pdfDocument2 = await loadingTask2.promise;
@@ -682,7 +680,7 @@ describe("api", function () {
       expect(pdfDocument3.numPages).toEqual(1);
 
       const pageA = await pdfDocument1.getPage(1);
-      expect(pageA instanceof PDFPageProxy).toEqual(true);
+      expect(pageA).toBeInstanceOf(PDFPageProxy);
 
       const opListA = await pageA.getOperatorList();
       expect(opListA.fnArray.length).toBeGreaterThan(5);
@@ -691,7 +689,7 @@ describe("api", function () {
       expect(opListA.separateAnnots).toEqual(null);
 
       const pageB = await pdfDocument2.getPage(1);
-      expect(pageB instanceof PDFPageProxy).toEqual(true);
+      expect(pageB).toBeInstanceOf(PDFPageProxy);
 
       const opListB = await pageB.getOperatorList();
       expect(opListB.fnArray.length).toBe(0);
@@ -705,7 +703,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("Bad (uncompressed) XRef entry: 3R");
       }
 
@@ -723,8 +721,8 @@ describe("api", function () {
       const loadingTask2 = getDocument(
         buildGetDocumentParams("poppler-91414-0-54.pdf")
       );
-      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
-      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask1).toBeInstanceOf(PDFDocumentLoadingTask);
+      expect(loadingTask2).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument1 = await loadingTask1.promise;
       const pdfDocument2 = await loadingTask2.promise;
@@ -735,8 +733,8 @@ describe("api", function () {
       const pageA = await pdfDocument1.getPage(1);
       const pageB = await pdfDocument2.getPage(1);
 
-      expect(pageA instanceof PDFPageProxy).toEqual(true);
-      expect(pageB instanceof PDFPageProxy).toEqual(true);
+      expect(pageA).toBeInstanceOf(PDFPageProxy);
+      expect(pageB).toBeInstanceOf(PDFPageProxy);
 
       for (const opList of [
         await pageA.getOperatorList(),
@@ -758,8 +756,8 @@ describe("api", function () {
       const loadingTask2 = getDocument(
         buildGetDocumentParams("poppler-937-0-fuzzed.pdf")
       );
-      expect(loadingTask1 instanceof PDFDocumentLoadingTask).toEqual(true);
-      expect(loadingTask2 instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask1).toBeInstanceOf(PDFDocumentLoadingTask);
+      expect(loadingTask2).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument1 = await loadingTask1.promise;
       const pdfDocument2 = await loadingTask2.promise;
@@ -773,7 +771,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("Illegal character: 41");
       }
       try {
@@ -782,7 +780,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof UnknownErrorException).toEqual(true);
+        expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("End of file inside array.");
       }
 
@@ -791,13 +789,13 @@ describe("api", function () {
 
     it("creates pdf doc from PDF file with bad /Resources entry", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue15150.pdf"));
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(1);
 
       const page = await pdfDocument.getPage(1);
-      expect(page instanceof PDFPageProxy).toEqual(true);
+      expect(page).toBeInstanceOf(PDFPageProxy);
 
       const opList = await page.getOperatorList();
       expect(opList.fnArray).toEqual([
@@ -831,7 +829,7 @@ describe("api", function () {
 
     it("creates pdf doc from PDF file, with incomplete trailer", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue15590.pdf"));
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(1);
@@ -842,7 +840,7 @@ describe("api", function () {
       });
 
       const page = await pdfDocument.getPage(1);
-      expect(page instanceof PDFPageProxy).toEqual(true);
+      expect(page).toBeInstanceOf(PDFPageProxy);
 
       await loadingTask.destroy();
     });
@@ -853,11 +851,11 @@ describe("api", function () {
       });
 
       // Sanity check to make sure that we fetched the entire PDF file.
-      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
+      expect(typedArrayPdf).toBeInstanceOf(Uint8Array);
       expect(typedArrayPdf.length).toEqual(1116);
 
       const loadingTask = getDocument(typedArrayPdf.slice());
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       let passwordData = null;
       // Attach the callback that is used to request a password;
@@ -874,7 +872,7 @@ describe("api", function () {
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (ex) {
-        expect(ex instanceof PasswordException).toEqual(true);
+        expect(ex).toBeInstanceOf(PasswordException);
         expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
       }
 
@@ -1185,7 +1183,7 @@ describe("api", function () {
 
     it("gets page", async function () {
       const data = await pdfDocument.getPage(1);
-      expect(data instanceof PDFPageProxy).toEqual(true);
+      expect(data).toBeInstanceOf(PDFPageProxy);
       expect(data.pageNumber).toEqual(1);
     });
 
@@ -1203,7 +1201,7 @@ describe("api", function () {
           // Shouldn't get here.
           expect(false).toEqual(true);
         } catch (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
           expect(reason.message).toEqual("Invalid page request.");
         }
       }
@@ -1217,7 +1215,7 @@ describe("api", function () {
       const page1 = loadingTask.promise.then(pdfDoc =>
         pdfDoc.getPage(1).then(
           function (pdfPage) {
-            expect(pdfPage instanceof PDFPageProxy).toEqual(true);
+            expect(pdfPage).toBeInstanceOf(PDFPageProxy);
             expect(pdfPage.ref).toEqual({ num: 6, gen: 0 });
           },
           function (reason) {
@@ -1232,7 +1230,7 @@ describe("api", function () {
             throw new Error("shall fail for invalid page");
           },
           function (reason) {
-            expect(reason instanceof UnknownErrorException).toEqual(true);
+            expect(reason).toBeInstanceOf(UnknownErrorException);
             expect(reason.message).toEqual(
               "Pages tree contains circular reference."
             );
@@ -1248,13 +1246,13 @@ describe("api", function () {
       const promiseA = pdfDocument.getPage(1);
       const promiseB = pdfDocument.getPage(1);
 
-      expect(promiseA instanceof Promise).toEqual(true);
+      expect(promiseA).toBeInstanceOf(Promise);
       expect(promiseA).toBe(promiseB);
 
       const pageA = await promiseA;
       const pageB = await promiseB;
 
-      expect(pageA instanceof PDFPageProxy).toEqual(true);
+      expect(pageA).toBeInstanceOf(PDFPageProxy);
       expect(pageA).toBe(pageB);
     });
 
@@ -1291,7 +1289,7 @@ describe("api", function () {
         } catch (reason) {
           const { exception, message } = expectedErrors[i];
 
-          expect(reason instanceof exception).toEqual(true);
+          expect(reason).toBeInstanceOf(exception);
           expect(reason.message).toEqual(message);
         }
       }
@@ -1482,7 +1480,7 @@ describe("api", function () {
           throw new Error("shall fail for non-string destination.");
         },
         function (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
         }
       );
       booleanPromise = booleanPromise.then(
@@ -1490,7 +1488,7 @@ describe("api", function () {
           throw new Error("shall fail for non-string destination.");
         },
         function (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
         }
       );
       arrayPromise = arrayPromise.then(
@@ -1498,7 +1496,7 @@ describe("api", function () {
           throw new Error("shall fail for non-string destination.");
         },
         function (reason) {
-          expect(reason instanceof Error).toEqual(true);
+          expect(reason).toBeInstanceOf(Error);
         }
       );
 
@@ -1677,7 +1675,7 @@ describe("api", function () {
         attachments["empty.pdf"];
       expect(rawFilename).toEqual("Empty page.pdf");
       expect(filename).toEqual("Empty page.pdf");
-      expect(content instanceof Uint8Array).toEqual(true);
+      expect(content).toBeInstanceOf(Uint8Array);
       expect(content.length).toEqual(2357);
       expect(description).toEqual(
         "SHA512: 06bec56808f93846f1d41ff0be4e54079c1291b860378c801c0f35f1d127a8680923ff6de59bd5a9692f01f0d97ca4f26da178ed03635fa4813d86c58a6c981a"
@@ -2240,7 +2238,7 @@ describe("api", function () {
       expect(info.IsCollectionPresent).toEqual(false);
       expect(info.IsSignaturesPresent).toEqual(false);
 
-      expect(metadata instanceof Metadata).toEqual(true);
+      expect(metadata).toBeInstanceOf(Metadata);
       expect(metadata.get("dc:title")).toEqual("Basic API Test");
 
       expect(contentDispositionFilename).toEqual(null);
@@ -2346,7 +2344,7 @@ describe("api", function () {
 
     it("gets data", async function () {
       const data = await pdfDocument.getData();
-      expect(data instanceof Uint8Array).toEqual(true);
+      expect(data).toBeInstanceOf(Uint8Array);
       expect(data.length).toEqual(basicApiFileLength);
     });
 
@@ -2356,7 +2354,7 @@ describe("api", function () {
       });
 
       // Sanity check to make sure that we fetched the entire PDF file.
-      expect(typedArrayPdf instanceof Uint8Array).toEqual(true);
+      expect(typedArrayPdf).toBeInstanceOf(Uint8Array);
       expect(typedArrayPdf.length).toEqual(10719);
 
       const loadingTask = getDocument(typedArrayPdf.slice());
@@ -2366,7 +2364,7 @@ describe("api", function () {
       await page.getOperatorList();
 
       const data = await pdfDoc.getData();
-      expect(data instanceof Uint8Array).toEqual(true);
+      expect(data).toBeInstanceOf(Uint8Array);
       // Ensure that the EXIF-block wasn't modified.
       expect(typedArrayPdf).toEqual(data);
 
@@ -3388,7 +3386,7 @@ describe("api", function () {
 
     it("gets viewport", function () {
       const viewport = page.getViewport({ scale: 1.5, rotation: 90 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       expect(viewport.viewBox).toEqual(page.view);
       expect(viewport.userUnit).toEqual(page.userUnit);
@@ -3406,7 +3404,7 @@ describe("api", function () {
       const pdfPage = await pdfDoc.getPage(1);
 
       const viewport = pdfPage.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       expect(viewport.viewBox).toEqual(pdfPage.view);
       expect(viewport.userUnit).toEqual(pdfPage.userUnit);
@@ -3426,7 +3424,7 @@ describe("api", function () {
         offsetX: 100,
         offsetY: -100,
       });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       expect(viewport.transform).toEqual([1, 0, 0, -1, 100, 741.89]);
     });
@@ -3435,14 +3433,14 @@ describe("api", function () {
       const scale = 1,
         rotation = 0;
       const viewport = page.getViewport({ scale, rotation });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const dontFlipViewport = page.getViewport({
         scale,
         rotation,
         dontFlip: true,
       });
-      expect(dontFlipViewport instanceof PageViewport).toEqual(true);
+      expect(dontFlipViewport).toBeInstanceOf(PageViewport);
 
       expect(dontFlipViewport).not.toEqual(viewport);
       expect(dontFlipViewport).toEqual(viewport.clone({ dontFlip: true }));
@@ -3569,7 +3567,7 @@ describe("api", function () {
 
       const { filename, content } = annotations[0].attachment;
       expect(filename).toEqual("man.pdf");
-      expect(content instanceof Uint8Array).toEqual(true);
+      expect(content).toBeInstanceOf(Uint8Array);
       expect(content.length).toEqual(4508);
 
       expect(annotations[0].attachmentDest).toEqual('[-1,{"name":"Fit"}]');
@@ -3590,7 +3588,7 @@ describe("api", function () {
 
       const { filename, content } = attachment;
       expect(filename).toEqual("destination-doc.pdf");
-      expect(content instanceof Uint8Array).toEqual(true);
+      expect(content).toBeInstanceOf(Uint8Array);
       expect(content.length).toEqual(10305);
 
       expect(attachmentDest).toEqual('[0,{"name":"Fit"}]');
@@ -4366,7 +4364,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const imgArgs = operatorList.argsArray[imgIndex];
       const { data } = pdfPage.objs.get(imgArgs[0]);
 
-      expect(data instanceof Uint8ClampedArray).toEqual(true);
+      expect(data).toBeInstanceOf(Uint8ClampedArray);
       expect(data.length).toEqual(90000);
 
       await loadingTask.destroy();
@@ -4524,13 +4522,13 @@ have written that much by now. So, here’s to squashing bugs.`);
       const loadingTask = getDocument(
         buildGetDocumentParams("poppler-90-0-fuzzed.pdf")
       );
-      expect(loadingTask instanceof PDFDocumentLoadingTask).toEqual(true);
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const pdfDoc = await loadingTask.promise;
       expect(pdfDoc.numPages).toEqual(16);
 
       const pdfPage = await pdfDoc.getPage(6);
-      expect(pdfPage instanceof PDFPageProxy).toEqual(true);
+      expect(pdfPage).toBeInstanceOf(PDFPageProxy);
 
       const opList = await pdfPage.getOperatorList();
       expect(opList.fnArray.length).toBeGreaterThan(25);
@@ -4554,7 +4552,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       await pdfPage.getOperatorList();
       const stats = pdfPage.stats;
 
-      expect(stats instanceof StatTimer).toEqual(true);
+      expect(stats).toBeInstanceOf(StatTimer);
       expect(stats.times.length).toEqual(1);
 
       const [statEntry] = stats.times;
@@ -4571,7 +4569,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const viewport = pdfPage.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdfDoc;
       const canvasAndCtx = canvasFactory.create(
@@ -4582,13 +4580,13 @@ have written that much by now. So, here’s to squashing bugs.`);
         canvas: canvasAndCtx.canvas,
         viewport,
       });
-      expect(renderTask instanceof RenderTask).toEqual(true);
+      expect(renderTask).toBeInstanceOf(RenderTask);
 
       await renderTask.promise;
       expect(renderTask.separateAnnots).toEqual(false);
 
       const { stats } = pdfPage;
-      expect(stats instanceof StatTimer).toEqual(true);
+      expect(stats).toBeInstanceOf(StatTimer);
       expect(stats.times.length).toEqual(3);
 
       const [statEntryOne, statEntryTwo, statEntryThree] = stats.times;
@@ -4607,7 +4605,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
     it("cancels rendering of page", async function () {
       const viewport = page.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdfDocument;
       const canvasAndCtx = canvasFactory.create(
@@ -4618,7 +4616,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         canvas: canvasAndCtx.canvas,
         viewport,
       });
-      expect(renderTask instanceof RenderTask).toEqual(true);
+      expect(renderTask).toBeInstanceOf(RenderTask);
 
       renderTask.cancel();
 
@@ -4628,7 +4626,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof RenderingCancelledException).toEqual(true);
+        expect(reason).toBeInstanceOf(RenderingCancelledException);
         expect(reason.message).toEqual("Rendering cancelled, page 1");
         expect(reason.extraDelay).toEqual(0);
       }
@@ -4638,7 +4636,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
     it("re-render page, using the same canvas, after cancelling rendering", async function () {
       const viewport = page.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdfDocument;
       const canvasAndCtx = canvasFactory.create(
@@ -4649,7 +4647,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         canvas: canvasAndCtx.canvas,
         viewport,
       });
-      expect(renderTask instanceof RenderTask).toEqual(true);
+      expect(renderTask).toBeInstanceOf(RenderTask);
 
       renderTask.cancel();
 
@@ -4659,14 +4657,14 @@ have written that much by now. So, here’s to squashing bugs.`);
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof RenderingCancelledException).toEqual(true);
+        expect(reason).toBeInstanceOf(RenderingCancelledException);
       }
 
       const reRenderTask = page.render({
         canvas: canvasAndCtx.canvas,
         viewport,
       });
-      expect(reRenderTask instanceof RenderTask).toEqual(true);
+      expect(reRenderTask).toBeInstanceOf(RenderTask);
 
       await reRenderTask.promise;
       expect(reRenderTask.separateAnnots).toEqual(false);
@@ -4679,7 +4677,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         pdfDocument.getOptionalContentConfig();
 
       const viewport = page.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdfDocument;
       const canvasAndCtx = canvasFactory.create(
@@ -4691,14 +4689,14 @@ have written that much by now. So, here’s to squashing bugs.`);
         viewport,
         optionalContentConfigPromise,
       });
-      expect(renderTask1 instanceof RenderTask).toEqual(true);
+      expect(renderTask1).toBeInstanceOf(RenderTask);
 
       const renderTask2 = page.render({
         canvas: canvasAndCtx.canvas,
         viewport,
         optionalContentConfigPromise,
       });
-      expect(renderTask2 instanceof RenderTask).toEqual(true);
+      expect(renderTask2).toBeInstanceOf(RenderTask);
 
       await Promise.all([
         renderTask1.promise,
@@ -4723,7 +4721,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfPage = await pdfDoc.getPage(1);
 
       const viewport = pdfPage.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdfDoc;
       const canvasAndCtx = canvasFactory.create(
@@ -4734,7 +4732,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         canvas: canvasAndCtx.canvas,
         viewport,
       });
-      expect(renderTask instanceof RenderTask).toEqual(true);
+      expect(renderTask).toBeInstanceOf(RenderTask);
 
       await renderTask.promise;
       expect(renderTask.separateAnnots).toEqual(false);
@@ -4752,7 +4750,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfPage = await pdfDoc.getPage(1);
 
       const viewport = pdfPage.getViewport({ scale: 1 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdfDoc;
       const canvasAndCtx = canvasFactory.create(
@@ -4764,7 +4762,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         viewport,
         background: "#FF0000", // See comment below.
       });
-      expect(renderTask instanceof RenderTask).toEqual(true);
+      expect(renderTask).toBeInstanceOf(RenderTask);
 
       // Ensure that clean-up runs during rendering.
       renderTask.onContinue = function (cont) {
@@ -4777,7 +4775,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         // Shouldn't get here.
         expect(false).toEqual(true);
       } catch (reason) {
-        expect(reason instanceof Error).toEqual(true);
+        expect(reason).toBeInstanceOf(Error);
         expect(reason.message).toEqual(
           "startCleanup: Page 1 is currently rendering."
         );
@@ -4863,7 +4861,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(firstImgData.height).toEqual(EXPECTED_HEIGHT);
 
           expect(firstImgData.kind).toEqual(ImageKind.RGB_24BPP);
-          expect(firstImgData.data instanceof Uint8ClampedArray).toEqual(true);
+          expect(firstImgData.data).toBeInstanceOf(Uint8ClampedArray);
           expect(firstImgData.data.length).toEqual(25245000);
         } else {
           const objsPool = i >= NUM_PAGES_THRESHOLD ? commonObjs : objs;
@@ -4875,9 +4873,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(currentImgData.height).toEqual(firstImgData.height);
 
           expect(currentImgData.kind).toEqual(firstImgData.kind);
-          expect(currentImgData.data instanceof Uint8ClampedArray).toEqual(
-            true
-          );
+          expect(currentImgData.data).toBeInstanceOf(Uint8ClampedArray);
           expect(
             currentImgData.data.every(
               (value, index) => value === firstImgData.data[index]
@@ -5094,7 +5090,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         canvasContext: canvasAndCtx.context,
         viewport,
       });
-      expect(renderTask instanceof RenderTask).toEqual(true);
+      expect(renderTask).toBeInstanceOf(RenderTask);
 
       await renderTask.promise;
       expect(
@@ -5126,7 +5122,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
       const viewport = page.getViewport({ scale: 1.2 });
-      expect(viewport instanceof PageViewport).toEqual(true);
+      expect(viewport).toBeInstanceOf(PageViewport);
 
       const { canvasFactory } = pdf;
       const canvasAndCtx = canvasFactory.create(

@@ -35,8 +35,8 @@ describe("util", function () {
       }
 
       const exception = new DerivedException("Something went wrong");
-      expect(exception instanceof DerivedException).toEqual(true);
-      expect(exception instanceof BaseException).toEqual(true);
+      expect(exception).toBeInstanceOf(DerivedException);
+      expect(exception).toBeInstanceOf(BaseException);
       expect(exception.message).toEqual("Something went wrong");
       expect(exception.name).toEqual("DerivedException");
       expect(exception.foo).toEqual("bar");

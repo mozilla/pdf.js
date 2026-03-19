@@ -565,7 +565,7 @@ describe("CipherTransformFactory", function () {
       // Shouldn't get here.
       expect(false).toEqual(true);
     } catch (ex) {
-      expect(ex instanceof PasswordException).toEqual(true);
+      expect(ex).toBeInstanceOf(PasswordException);
       expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
     }
   }
@@ -578,7 +578,7 @@ describe("CipherTransformFactory", function () {
       // Shouldn't get here.
       expect(false).toEqual(true);
     } catch (ex) {
-      expect(ex instanceof PasswordException).toEqual(true);
+      expect(ex).toBeInstanceOf(PasswordException);
       expect(ex.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);
     }
   }
