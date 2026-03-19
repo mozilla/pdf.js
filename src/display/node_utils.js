@@ -100,7 +100,7 @@ class NodeBinaryDataFactory extends BaseBinaryDataFactory {
   /**
    * @ignore
    */
-  async _fetch(url, type) {
+  async _fetch(url) {
     return fetchData(url);
   }
 }

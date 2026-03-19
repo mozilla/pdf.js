@@ -14,7 +14,7 @@
  */
 
 import { deprecated, fetchData } from "./display_utils.js";
-import { stringToBytes, unreachable } from "../shared/util.js";
+import { unreachable } from "../shared/util.js";
 
 class BaseBinaryDataFactory {
   constructor({
@@ -92,7 +92,7 @@ class BaseBinaryDataFactory {
    * @ignore
    * @returns {Promise<Uint8Array>}
    */
-  async _fetch(url, type) {
+  async _fetch(url) {
     unreachable("Abstract method `_fetch` called.");
   }
 
@@ -104,12 +104,10 @@ class BaseBinaryDataFactory {
     }
     const url = this.cMapUrl + name + (this.cMapPacked ? ".bcmap" : "");
 
-    return this._fetch(url, /* type = */ this.cMapPacked ? "bytes" : "text")
+    return this._fetch(url)
       .then(cMapData => ({ cMapData, isCompressed: this.cMapPacked }))
       .catch(reason => {
-        throw new Error(
-          `Unable to load ${this.cMapPacked ? "binary " : ""}CMap at: ${url}`
-        );
+        throw new Error(`Unable to load CMap data at: ${url}`);
       });
   }
 
@@ -121,7 +119,7 @@ class BaseBinaryDataFactory {
     }
     const url = `${this.standardFontDataUrl}${filename}`;
 
-    return this._fetch(url, /* type = */ "bytes").catch(reason => {
+    return this._fetch(url).catch(reason => {
       throw new Error(`Unable to load font data at: ${url}`);
     });
   }
@@ -132,7 +130,7 @@ class BaseBinaryDataFactory {
     }
     const url = `${this.wasmUrl}${filename}`;
 
-    return this._fetch(url, /* type = */ "bytes").catch(reason => {
+    return this._fetch(url).catch(reason => {
       throw new Error(`Unable to load wasm data at: ${url}`);
     });
   }
@@ -142,9 +140,8 @@ class DOMBinaryDataFactory extends BaseBinaryDataFactory {
   /**
    * @ignore
    */
-  async _fetch(url, type) {
-    const data = await fetchData(url, type);
-    return data instanceof Uint8Array ? data : stringToBytes(data);
+  async _fetch(url) {
+    return fetchData(url, /* type = */ "bytes");
   }
 }
 
