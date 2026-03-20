@@ -337,7 +337,7 @@
           min-width: 182px;
           z-index: 1;
 
-          > li > button {
+          > button {
             &#thumbnailsViewMenu::before {
               mask-image: var(--menuitem-thumbnailsView-icon);
             }
