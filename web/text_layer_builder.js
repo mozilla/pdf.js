@@ -33,6 +33,7 @@ import { removeNullCharacters } from "./ui_utils.js";
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {boolean} [enablePermissions]
  * @property {function} [onAppend]
+ * @property {AbortSignal} [abortSignal]
  */
 
 /**
@@ -48,6 +49,8 @@ import { removeNullCharacters } from "./ui_utils.js";
  * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
+  #abortSignal = null;
+
   #enablePermissions = false;
 
   #onAppend = null;
@@ -69,12 +72,14 @@ class TextLayerBuilder {
     accessibilityManager = null,
     enablePermissions = false,
     onAppend = null,
+    abortSignal = null,
   }) {
     this.pdfPage = pdfPage;
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
     this.#onAppend = onAppend;
+    this.#abortSignal = abortSignal;
 
     this.div = document.createElement("div");
     this.div.tabIndex = 0;
@@ -163,24 +168,33 @@ class TextLayerBuilder {
    */
   #bindMouse(end) {
     const { div } = this;
+    const abortSignal = this.#abortSignal;
 
-    div.addEventListener("mousedown", () => {
-      div.classList.add("selecting");
-    });
+    div.addEventListener(
+      "mousedown",
+      () => {
+        div.classList.add("selecting");
+      },
+      { signal: abortSignal }
+    );
 
-    div.addEventListener("copy", event => {
-      if (!this.#enablePermissions) {
-        const selection = document.getSelection();
-        event.clipboardData.setData(
-          "text/plain",
-          removeNullCharacters(normalizeUnicode(selection.toString()))
-        );
-      }
-      stopEvent(event);
-    });
+    div.addEventListener(
+      "copy",
+      event => {
+        if (!this.#enablePermissions) {
+          const selection = document.getSelection();
+          event.clipboardData.setData(
+            "text/plain",
+            removeNullCharacters(normalizeUnicode(selection.toString()))
+          );
+        }
+        stopEvent(event);
+      },
+      { signal: abortSignal }
+    );
 
     TextLayerBuilder.#textLayers.set(div, end);
-    TextLayerBuilder.#enableGlobalSelectionListener();
+    TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
   }
 
   static #removeGlobalSelectionListener(textLayerDiv) {
@@ -192,13 +206,18 @@ class TextLayerBuilder {
     }
   }
 
-  static #enableGlobalSelectionListener() {
+  static #enableGlobalSelectionListener(globalAbortSignal) {
     if (this.#selectionChangeAbortController) {
       // document-level event listeners already installed
       return;
     }
     this.#selectionChangeAbortController = new AbortController();
-    const { signal } = this.#selectionChangeAbortController;
+    const signal = globalAbortSignal
+      ? AbortSignal.any([
+          this.#selectionChangeAbortController.signal,
+          globalAbortSignal,
+        ])
+      : this.#selectionChangeAbortController.signal;
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {

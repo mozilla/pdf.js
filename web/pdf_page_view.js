@@ -108,6 +108,7 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   text that look like URLs. The default value is `true`.
  * @property {CommentManager} [commentManager] - The comment manager instance.
  *   to.
+ * @property {AbortSignal} [abortSignal]
  */
 
 const DEFAULT_LAYER_PROPERTIES =
@@ -135,6 +136,8 @@ const LAYERS_ORDER = new Map([
 ]);
 
 class PDFPageView extends BasePDFPageView {
+  #abortSignal = null;
+
   #annotationMode = AnnotationMode.ENABLE_FORMS;
 
   #canvasWrapper = null;
@@ -181,6 +184,7 @@ class PDFPageView extends BasePDFPageView {
 
     this.renderingId = "page" + this.id;
     this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
+    this.#abortSignal = options.abortSignal || null;
 
     this.pdfPage = null;
     this.pageLabel = null;
@@ -285,6 +289,7 @@ class PDFPageView extends BasePDFPageView {
       defaultViewport: this.viewport,
       id,
       layerProperties: this.#layerProperties,
+      abortSignal: this.#abortSignal,
       scale: this.scale,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       textLayerMode: this.#textLayerMode,
@@ -1056,6 +1061,7 @@ class PDFPageView extends BasePDFPageView {
           this.#addLayer(textLayerDiv, "textLayer");
           this.l10n.resume();
         },
+        abortSignal: this.#abortSignal,
       });
     }
 
