@@ -169,13 +169,14 @@ class TextLayerBuilder {
   #bindMouse(end) {
     const { div } = this;
     const abortSignal = this.#abortSignal;
+    const opts = abortSignal ? { signal: abortSignal } : null;
 
     div.addEventListener(
       "mousedown",
       () => {
         div.classList.add("selecting");
       },
-      { signal: abortSignal }
+      opts
     );
 
     div.addEventListener(
@@ -190,7 +191,7 @@ class TextLayerBuilder {
         }
         stopEvent(event);
       },
-      { signal: abortSignal }
+      opts
     );
 
     TextLayerBuilder.#textLayers.set(div, end);
