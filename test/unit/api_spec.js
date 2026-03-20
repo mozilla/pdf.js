@@ -6763,5 +6763,21 @@ small scripts as well as for`);
         await newLoadingTask.destroy();
       });
     });
+
+    describe("extract pages with null values in arrays", function () {
+      it("should not crash when a page resource contains an array with null entries", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("extractPages_null_in_array.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(1);
+        await newLoadingTask.destroy();
+      });
+    });
   });
 });

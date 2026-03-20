@@ -249,7 +249,8 @@ class PDFEditor {
         obj = obj.slice();
       }
       for (let i = 0, ii = obj.length; i < ii; i++) {
-        const postponedActions = postponedRefCopies.get(obj[i]);
+        const postponedActions =
+          obj[i] instanceof Ref && postponedRefCopies.get(obj[i]);
         if (postponedActions) {
           // The object is a reference that needs to be copied later.
           postponedActions.push(ref => (obj[i] = ref));
@@ -277,7 +278,8 @@ class PDFEditor {
     }
     if (dict) {
       for (const [key, rawObj] of dict.getRawEntries()) {
-        const postponedActions = postponedRefCopies.get(rawObj);
+        const postponedActions =
+          rawObj instanceof Ref && postponedRefCopies.get(rawObj);
         if (postponedActions) {
           // The object is a reference that needs to be copied later.
           postponedActions.push(ref => dict.set(key, ref));
@@ -1083,7 +1085,7 @@ class PDFEditor {
 
       // Fix the ID tree.
       for (const [id, nodeRef] of idTree || []) {
-        const newNodeRef = oldRefMapping.get(nodeRef);
+        const newNodeRef = nodeRef instanceof Ref && oldRefMapping.get(nodeRef);
         const newId = dedupIDs.get(id) || id;
         if (newNodeRef) {
           newIdTree.set(newId, newNodeRef);
@@ -1137,7 +1139,7 @@ class PDFEditor {
       const newDestinations = (documentData.destinations = new Map());
       for (const [key, dest] of Object.entries(destinations)) {
         const pageRef = dest[0];
-        const pageData = pagesMap.get(pageRef);
+        const pageData = pageRef instanceof Ref && pagesMap.get(pageRef);
         if (!pageData) {
           continue;
         }
@@ -1537,7 +1539,7 @@ class PDFEditor {
       }
       const { oldRefMapping } = documentData;
       for (const coRef of co) {
-        const newCoRef = oldRefMapping.get(coRef);
+        const newCoRef = coRef instanceof Ref && oldRefMapping.get(coRef);
         if (newCoRef) {
           calculationOrder.push(newCoRef);
         }
