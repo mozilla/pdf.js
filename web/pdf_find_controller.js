@@ -422,9 +422,9 @@ class PDFFindController {
 
   #visitedPagesCount = 0;
 
-  #copiedExtractTextPromises = null;
+  #copiedPageData = null;
 
-  #savedExtractTextPromises = null;
+  #savedPageData = null;
 
   /**
    * @param {PDFFindControllerOptions} options
@@ -613,7 +613,7 @@ class PDFFindController {
     this._dirtyMatch = false;
     clearTimeout(this._findTimeout);
     this._findTimeout = null;
-    this.#copiedExtractTextPromises = null;
+    this.#copiedPageData = null;
 
     this._firstPageCapability = Promise.withResolvers();
   }
@@ -1138,51 +1138,82 @@ class PDFFindController {
     }
 
     if (type === "copy") {
-      this.#copiedExtractTextPromises = new Map();
+      const promises = new Map();
+      const contents = new Map();
+      const diffs = new Map();
+      const diacritics = new Map();
       for (const pageNum of pageNumbers) {
-        this.#copiedExtractTextPromises.set(
-          pageNum,
-          this._extractTextPromises[pageNum - 1]
-        );
+        promises.set(pageNum, this._extractTextPromises[pageNum - 1]);
+        contents.set(pageNum, this._pageContents[pageNum - 1]);
+        diffs.set(pageNum, this._pageDiffs[pageNum - 1]);
+        diacritics.set(pageNum, this._hasDiacritics[pageNum - 1]);
       }
+      this.#copiedPageData = { promises, contents, diffs, diacritics };
       return;
     }
 
     if (type === "cancelCopy") {
-      this.#copiedExtractTextPromises = null;
+      this.#copiedPageData = null;
       return;
     }
 
     if (type === "delete") {
-      this.#savedExtractTextPromises = this._extractTextPromises;
+      this.#savedPageData = {
+        promises: this._extractTextPromises,
+        contents: this._pageContents,
+        diffs: this._pageDiffs,
+        diacritics: this._hasDiacritics,
+      };
     }
 
     if (type === "cancelDelete") {
-      this._extractTextPromises = this.#savedExtractTextPromises;
+      this._extractTextPromises = this.#savedPageData.promises;
+      this._pageContents = this.#savedPageData.contents;
+      this._pageDiffs = this.#savedPageData.diffs;
+      this._hasDiacritics = this.#savedPageData.diacritics;
       return;
     }
 
     if (type === "cleanSavedData") {
-      this.#savedExtractTextPromises = null;
+      this.#savedPageData = null;
       return;
     }
 
     this.#onFindBarClose();
     this._dirtyMatch = true;
-    const prevTextPromises = this._extractTextPromises;
+    const prevPromises = this._extractTextPromises;
+    const prevContents = this._pageContents;
+    const prevDiffs = this._pageDiffs;
+    const prevDiacritics = this._hasDiacritics;
     const extractTextPromises = (this._extractTextPromises = []);
-    for (let i = 1, ii = pagesMapper.length; i <= ii; i++) {
+    const pageContents = (this._pageContents = []);
+    const pageDiffs = (this._pageDiffs = []);
+    const hasDiacritics = (this._hasDiacritics = []);
+    for (let i = 1, ii = pagesMapper.pagesNumber; i <= ii; i++) {
       const prevPageNumber = pagesMapper.getPrevPageNumber(i);
       if (prevPageNumber < 0) {
+        const src = -prevPageNumber;
         extractTextPromises.push(
-          this.#copiedExtractTextPromises?.get(-prevPageNumber) ||
-            Promise.resolve()
+          this.#copiedPageData?.promises.get(src) || Promise.resolve()
         );
+        pageContents.push(this.#copiedPageData?.contents.get(src) ?? "");
+        pageDiffs.push(this.#copiedPageData?.diffs.get(src) ?? null);
+        hasDiacritics.push(this.#copiedPageData?.diacritics.get(src) ?? false);
         continue;
       }
       extractTextPromises.push(
-        prevTextPromises[prevPageNumber - 1] || Promise.resolve()
+        prevPromises[prevPageNumber - 1] || Promise.resolve()
       );
+      pageContents.push(prevContents[prevPageNumber - 1] ?? "");
+      pageDiffs.push(prevDiffs[prevPageNumber - 1] ?? null);
+      hasDiacritics.push(prevDiacritics[prevPageNumber - 1] ?? false);
+    }
+    if (this.#state) {
+      this._eventBus.dispatch("find", {
+        source: this,
+        type: "",
+        ...this.#state,
+      });
     }
   }
 

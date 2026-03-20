@@ -15,7 +15,6 @@
 
 import {
   awaitPromise,
-  clearInput,
   closePages,
   createPromise,
   createPromiseWithArgs,
@@ -405,14 +404,6 @@ describe("Reorganize Pages View", () => {
 
           await movePages(page, [11, 2], 3);
           await page.waitForFunction(
-            () => document.querySelectorAll("span.highlight").length === 0
-          );
-
-          await clearInput(page, "#findInput", true);
-          await page.type("#findInput", "1");
-          await page.keyboard.press("Enter");
-
-          await page.waitForFunction(
             () => document.querySelectorAll("span.highlight").length === 10
           );
 
@@ -433,13 +424,6 @@ describe("Reorganize Pages View", () => {
             ]);
 
           await movePages(page, [13], 0);
-          await page.waitForFunction(
-            () => document.querySelectorAll("span.highlight").length === 0
-          );
-
-          await clearInput(page, "#findInput", true);
-          await page.type("#findInput", "1");
-          await page.keyboard.press("Enter");
 
           await page.waitForFunction(
             () => document.querySelectorAll("span.highlight").length === 10
@@ -459,6 +443,115 @@ describe("Reorganize Pages View", () => {
               [15, ["1"]],
               [16, ["1"]],
               [17, ["1"]],
+            ]);
+        })
+      );
+    });
+
+    it("should check if the search is working after copy and paste (bug 2023150)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          await waitAndClick(page, "#viewFindButton");
+          await waitAndClick(page, ":has(> #findHighlightAll)");
+
+          await page.waitForSelector("#findInput", { visible: true });
+          await page.type("#findInput", "1");
+          await page.keyboard.press("Enter");
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 10
+          );
+
+          // Select page 1 and copy it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste after page 3.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(3)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 11
+          );
+
+          const results = await getSearchResults(page);
+          expect(results)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              // Page number, [matches]; copy of page 1 inserted at position 4
+              [1, ["1"]],
+              [4, ["1"]],
+              [11, ["1"]],
+              [12, ["1", "1"]],
+              [13, ["1"]],
+              [14, ["1"]],
+              [15, ["1"]],
+              [16, ["1"]],
+              [17, ["1"]],
+              [18, ["1"]],
+            ]);
+        })
+      );
+    });
+
+    it("should check if the search is working after deleting pages (bug 2023150)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          await waitAndClick(page, "#viewFindButton");
+          await waitAndClick(page, ":has(> #findHighlightAll)");
+
+          await page.waitForSelector("#findInput", { visible: true });
+          await page.type("#findInput", "1");
+          await page.keyboard.press("Enter");
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 10
+          );
+
+          // Select page 1 and delete it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForFunction(
+            () => document.querySelectorAll("span.highlight").length === 9
+          );
+
+          const results = await getSearchResults(page);
+          expect(results)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              // Page number, [matches]; page 1 removed, all positions shifted
+              [9, ["1"]],
+              [10, ["1", "1"]],
+              [11, ["1"]],
+              [12, ["1"]],
+              [13, ["1"]],
+              [14, ["1"]],
+              [15, ["1"]],
+              [16, ["1"]],
             ]);
         })
       );
