@@ -709,6 +709,7 @@ class PDFThumbnailViewer {
       this.#toggleMenuEntries(false);
       this.#updateStatus("select");
 
+      this.#reportTelemetry({ action: "move" });
       this.eventBus.dispatch("pagesedited", {
         source: this,
         pagesMapper,
@@ -825,7 +826,18 @@ class PDFThumbnailViewer {
     }
   }
 
+  #reportTelemetry(data) {
+    this.eventBus.dispatch("reporttelemetry", {
+      source: this,
+      details: {
+        type: "pageOrganization",
+        data,
+      },
+    });
+  }
+
   #saveExtractedPages() {
+    this.#reportTelemetry({ action: "exportSelected" });
     this.eventBus.dispatch("saveextractedpages", {
       source: this,
       data: this.#pagesMapper.extractPages(this.#selectedPages),
@@ -840,6 +852,7 @@ class PDFThumbnailViewer {
       // that clicking the "Done" button later only cancels the copy and does
       // not accidentally restore a previous paste or delete.
       this.#savedThumbnails = null;
+      this.#reportTelemetry({ action: "copy" });
     }
     this.#updateStatus(this.#isCut ? "cut" : "copy");
     const pageNumbersToCopy = (this.#copiedPageNumbers = Uint32Array.from(
@@ -869,12 +882,14 @@ class PDFThumbnailViewer {
       return;
     }
 
+    this.#reportTelemetry({ action: "cut" });
     this.#isCut = true;
     this.#copyPages(false);
     this.#deletePages(/* type = */ "cut");
   }
 
   #pastePages(index) {
+    this.#reportTelemetry({ action: "paste" });
     const pagesMapper = this.#pagesMapper;
     const currentPageNumber = this.#copiedPageNumbers.includes(
       this._currentPageNumber
@@ -907,6 +922,7 @@ class PDFThumbnailViewer {
 
     const selectedPages = this.#selectedPages;
     if (type === "delete") {
+      this.#reportTelemetry({ action: "delete" });
       this.#updateStatus("delete");
     }
     const pagesMapper = this.#pagesMapper;
