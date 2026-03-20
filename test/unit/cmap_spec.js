@@ -14,7 +14,7 @@
  */
 
 import { CMap, CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
-import { CMAP_URL, DefaultBinaryDataFactory } from "./test_utils.js";
+import { CMAP_URL, DefaultBinaryDataFactory, fetchCMap } from "./test_utils.js";
 import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
@@ -22,14 +22,12 @@ describe("cmap", function () {
   let fetchBuiltInCMap;
 
   beforeAll(function () {
-    // Allow CMap testing in Node.js, e.g. for Travis.
+    const cMapPacked = true;
     const binaryDataFactory = new DefaultBinaryDataFactory({
       cMapUrl: CMAP_URL,
     });
 
-    fetchBuiltInCMap = function (name) {
-      return binaryDataFactory.fetch({ kind: "cMap", name });
-    };
+    fetchBuiltInCMap = fetchCMap.bind(null, binaryDataFactory, cMapPacked);
   });
 
   afterAll(function () {
@@ -204,7 +202,7 @@ describe("cmap", function () {
   it("attempts to load a built-in CMap without the necessary API parameters", async function () {
     function tmpFetchBuiltInCMap(name) {
       const binaryDataFactory = new DefaultBinaryDataFactory({});
-      return binaryDataFactory.fetch({ kind: "cMap", name });
+      return fetchCMap(binaryDataFactory, /* cMapPacked = */ true, name);
     }
 
     try {
@@ -219,7 +217,7 @@ describe("cmap", function () {
     } catch (reason) {
       expect(reason).toBeInstanceOf(Error);
       expect(reason.message).toEqual(
-        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
+        "Ensure that the `cMapUrl` API parameter is provided."
       );
     }
   });
@@ -228,9 +226,8 @@ describe("cmap", function () {
     function tmpFetchBuiltInCMap(name) {
       const binaryDataFactory = new DefaultBinaryDataFactory({
         cMapUrl: CMAP_URL,
-        cMapPacked: false,
       });
-      return binaryDataFactory.fetch({ kind: "cMap", name });
+      return fetchCMap(binaryDataFactory, /* cMapPacked = */ false, name);
     }
 
     try {

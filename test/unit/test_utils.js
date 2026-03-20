@@ -48,6 +48,14 @@ const DefaultBinaryDataFactory =
     ? NodeBinaryDataFactory
     : DOMBinaryDataFactory;
 
+async function fetchCMap(binaryDataFactory, cMapPacked, name) {
+  const filename = `${name}${cMapPacked ? ".bcmap" : ""}`;
+  return {
+    cMapData: await binaryDataFactory.fetch({ kind: "cMap", filename }),
+    cMapPacked,
+  };
+}
+
 function buildGetDocumentParams(filename, options) {
   const params = Object.create(null);
   params.url = isNodeJS
@@ -244,6 +252,7 @@ export {
   createIdFactory,
   DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
+  fetchCMap,
   getCrossOriginHostname,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,

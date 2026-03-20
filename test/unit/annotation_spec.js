@@ -36,6 +36,7 @@ import {
   CMAP_URL,
   createIdFactory,
   DefaultBinaryDataFactory,
+  fetchCMap,
   STANDARD_FONT_DATA_URL,
   XRefMock,
 } from "./test_utils.js";
@@ -81,6 +82,7 @@ describe("annotation", function () {
     }
   }
 
+  const cMapPacked = true;
   const binaryDataFactory = new DefaultBinaryDataFactory({
     cMapUrl: CMAP_URL,
     standardFontDataUrl: STANDARD_FONT_DATA_URL,
@@ -116,11 +118,11 @@ describe("annotation", function () {
     const builtInCMapCache = new Map();
     builtInCMapCache.set(
       "UniJIS-UTF16-H",
-      await binaryDataFactory.fetch({ kind: "cMap", name: "UniJIS-UTF16-H" })
+      await fetchCMap(binaryDataFactory, cMapPacked, "UniJIS-UTF16-H")
     );
     builtInCMapCache.set(
       "Adobe-Japan1-UCS2",
-      await binaryDataFactory.fetch({ kind: "cMap", name: "Adobe-Japan1-UCS2" })
+      await fetchCMap(binaryDataFactory, cMapPacked, "Adobe-Japan1-UCS2")
     );
 
     idFactoryMock = createIdFactory(/* pageIndex = */ 0);

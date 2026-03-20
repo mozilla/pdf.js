@@ -346,7 +346,6 @@ function getDocument(src = {}) {
           !src.WasmFactory &&
           // TODO end: Remove after a suitable number of releases.
           cMapUrl &&
-          cMapPacked &&
           standardFontDataUrl &&
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
@@ -374,7 +373,6 @@ function getDocument(src = {}) {
         ? null
         : new BinaryDataFactory({
             cMapUrl,
-            cMapPacked,
             standardFontDataUrl,
             wasmUrl,
             src, // TODO: Remove after a suitable number of releases.
@@ -416,6 +414,7 @@ function getDocument(src = {}) {
       useWasm,
       useWorkerFetch,
       cMapUrl,
+      cMapPacked,
       iccUrl,
       standardFontDataUrl,
       wasmUrl,

@@ -19,7 +19,6 @@ import { unreachable } from "../shared/util.js";
 class BaseBinaryDataFactory {
   constructor({
     cMapUrl = null,
-    cMapPacked = true,
     standardFontDataUrl = null,
     wasmUrl = null,
     src = null, // TODO: Remove after a suitable number of releases.
@@ -31,7 +30,6 @@ class BaseBinaryDataFactory {
       unreachable("Cannot initialize BaseBinaryDataFactory.");
     }
     this.cMapUrl = cMapUrl;
-    this.cMapPacked = cMapPacked;
     this.standardFontDataUrl = standardFontDataUrl;
     this.wasmUrl = wasmUrl;
 
@@ -47,7 +45,7 @@ class BaseBinaryDataFactory {
       );
       this._cMapReaderFactory = new src.CMapReaderFactory({
         baseUrl: cMapUrl,
-        isCompressed: cMapPacked,
+        isCompressed: src.cMapPacked !== false,
       });
     }
     if (src.StandardFontDataFactory) {
@@ -96,19 +94,15 @@ class BaseBinaryDataFactory {
     unreachable("Abstract method `_fetch` called.");
   }
 
-  async #fetchCMap({ name }) {
+  async #fetchCMap({ filename }) {
     if (!this.cMapUrl) {
-      throw new Error(
-        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
-      );
+      throw new Error("Ensure that the `cMapUrl` API parameter is provided.");
     }
-    const url = this.cMapUrl + name + (this.cMapPacked ? ".bcmap" : "");
+    const url = `${this.cMapUrl}${filename}`;
 
-    return this._fetch(url)
-      .then(cMapData => ({ cMapData, isCompressed: this.cMapPacked }))
-      .catch(reason => {
-        throw new Error(`Unable to load CMap data at: ${url}`);
-      });
+    return this._fetch(url).catch(reason => {
+      throw new Error(`Unable to load CMap data at: ${url}`);
+    });
   }
 
   async #fetchStandardFontData({ filename }) {

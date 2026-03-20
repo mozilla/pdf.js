@@ -102,6 +102,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   useWasm: true,
   useWorkerFetch: true,
   cMapUrl: null,
+  cMapPacked: true,
   iccUrl: null,
   standardFontDataUrl: null,
   wasmUrl: null,
@@ -399,20 +400,24 @@ class PartialEvaluator {
     if (cachedData) {
       return cachedData;
     }
+    const { cMapUrl, cMapPacked } = this.options,
+      filename = `${name}${cMapPacked ? ".bcmap" : ""}`;
     let data;
 
     if (this.options.useWorkerFetch) {
-      // Only compressed CMaps are (currently) supported here.
       data = {
-        cMapData: await fetchBinaryData(`${this.options.cMapUrl}${name}.bcmap`),
-        isCompressed: true,
+        cMapData: await fetchBinaryData(`${cMapUrl}${filename}`),
+        cMapPacked,
       };
     } else {
       // Get the data on the main-thread instead.
-      data = await this.handler.sendWithPromise("FetchBinaryData", {
-        kind: "cMap",
-        name,
-      });
+      data = {
+        cMapData: await this.handler.sendWithPromise("FetchBinaryData", {
+          kind: "cMap",
+          filename,
+        }),
+        cMapPacked,
+      };
     }
     // Cache the CMap data, to avoid fetching it repeatedly.
     this.builtInCMapCache.set(name, data);
