@@ -2948,9 +2948,12 @@ class PartialEvaluator {
       }
 
       const font = textState.font;
+      const baseCharSpacing = font.vertical
+        ? -textState.charSpacing
+        : textState.charSpacing;
       if (!chars) {
         // Just move according to the space we have.
-        const charSpacing = textState.charSpacing + extraSpacing;
+        const charSpacing = baseCharSpacing + extraSpacing;
         if (charSpacing) {
           if (!font.vertical) {
             textState.translateTextMatrix(
@@ -2979,8 +2982,7 @@ class PartialEvaluator {
         if (category.isInvisibleFormatMark) {
           continue;
         }
-        let charSpacing =
-          textState.charSpacing + (i + 1 === ii ? extraSpacing : 0);
+        let charSpacing = baseCharSpacing + (i + 1 === ii ? extraSpacing : 0);
 
         let glyphWidth = glyph.width;
         if (font.vertical) {

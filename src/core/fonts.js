@@ -3407,7 +3407,7 @@ class Font {
     if (typeof width !== "number") {
       width = this.defaultWidth;
     }
-    const vmetric = this.vmetrics?.[widthCode];
+    const vmetric = this.vmetrics?.[widthCode] || this.defaultVMetrics;
 
     let unicode = this.toUnicode.get(charcode) || charcode;
     if (typeof unicode === "number") {

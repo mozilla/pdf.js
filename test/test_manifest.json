@@ -14005,5 +14005,12 @@
     "md5": "5a1bf9cb73010d84b47d91bb66bae27d",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue20930-text",
+    "file": "pdfs/issue20930.pdf",
+    "md5": "321f0901af604a6052baa7b2855a7e3e",
+    "rounds": 1,
+    "type": "text"
   }
 ]
