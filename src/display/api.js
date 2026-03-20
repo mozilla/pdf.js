@@ -2468,16 +2468,17 @@ class WorkerTransport {
 
     this.canvasFactory = factory.canvasFactory;
     this.filterFactory = factory.filterFactory;
-    this.cMapReaderFactory = factory.cMapReaderFactory;
-    this.standardFontDataFactory = factory.standardFontDataFactory;
-    this.wasmFactory = factory.wasmFactory;
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      this.cMapReaderFactory = factory.cMapReaderFactory;
+      this.standardFontDataFactory = factory.standardFontDataFactory;
+      this.wasmFactory = factory.wasmFactory;
+    }
+    this.pagesMapper = pagesMapper;
 
     this.destroyed = false;
     this.destroyCapability = null;
 
     this.setupMessageHandler();
-
-    this.pagesMapper = pagesMapper;
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
@@ -2925,22 +2926,21 @@ class WorkerTransport {
       this.#onProgress(data);
     });
 
-    messageHandler.on("FetchBinaryData", async data => {
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        throw new Error("Not implemented: FetchBinaryData");
-      }
-      if (this.destroyed) {
-        throw new Error("Worker was destroyed.");
-      }
-      const factory = this[data.type];
+    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+      messageHandler.on("FetchBinaryData", async data => {
+        if (this.destroyed) {
+          throw new Error("Worker was destroyed.");
+        }
+        const factory = this[data.type];
 
-      if (!factory) {
-        throw new Error(
-          `${data.type} not initialized, see the \`useWorkerFetch\` parameter.`
-        );
-      }
-      return factory.fetch(data);
-    });
+        if (!factory) {
+          throw new Error(
+            `${data.type} not initialized, see the \`useWorkerFetch\` parameter.`
+          );
+        }
+        return factory.fetch(data);
+      });
+    }
   }
 
   getData() {

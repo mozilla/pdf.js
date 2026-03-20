@@ -48,6 +48,9 @@ class JBig2CCITTFaxWasmImage {
         if (this.#useWorkerFetch) {
           this.#buffer = await fetchBinaryData(`${this.#wasmUrl}${filename}`);
         } else {
+          if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+            throw new Error("Only worker-thread fetching supported.");
+          }
           this.#buffer = await this.#handler.sendWithPromise(
             "FetchBinaryData",
             { type: "wasmFactory", filename }

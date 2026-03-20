@@ -408,6 +408,9 @@ class PartialEvaluator {
         isCompressed: true,
       };
     } else {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+        throw new Error("Only worker-thread fetching supported.");
+      }
       // Get the data on the main-thread instead.
       data = await this.handler.sendWithPromise("FetchBinaryData", {
         type: "cMapReaderFactory",
@@ -446,6 +449,9 @@ class PartialEvaluator {
           `${this.options.standardFontDataUrl}${filename}`
         );
       } else {
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+          throw new Error("Only worker-thread fetching supported.");
+        }
         // Get the data on the main-thread instead.
         data = await this.handler.sendWithPromise("FetchBinaryData", {
           type: "standardFontDataFactory",
