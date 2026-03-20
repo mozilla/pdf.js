@@ -730,13 +730,13 @@ class PDFThumbnailViewer {
     this.#selectedPages.clear();
   }
 
-  #updateCurrentPage(currentPageNumber) {
+  #updateCurrentPage(currentPageNumber, forceFocus = false) {
     setTimeout(() => {
       this.forceRendering();
       const newPageNumber = currentPageNumber || 1;
       this.linkService.goToPage(newPageNumber);
       const thumbnailView = this._thumbnails[newPageNumber - 1];
-      if (!this.container.contains(document.activeElement)) {
+      if (forceFocus || !this.container.contains(document.activeElement)) {
         thumbnailView.imageContainer.focus();
       }
     }, 0);
@@ -898,7 +898,8 @@ class PDFThumbnailViewer {
       : this._currentPageNumber;
 
     pagesMapper.pastePages(index);
-    this.#updateCurrentPage(this.#updateThumbnails(currentPageNumber));
+    this.#updateThumbnails(currentPageNumber);
+    this.#updateCurrentPage(index + 1, /* forceFocus = */ true);
     this.#computeThumbnailsPosition();
 
     this.eventBus.dispatch("pagesedited", {

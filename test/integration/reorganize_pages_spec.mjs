@@ -1271,6 +1271,68 @@ describe("Reorganize Pages View", () => {
         })
       );
     });
+
+    it("should focus the newly pasted page after copy and paste (bug 2022516)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Select page 1 and copy it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "copy");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCopy");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste after page 3: the pasted page lands at position 4.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(3)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          // Focus must be on the newly pasted page (position 4), not page 1.
+          await page.waitForSelector(`${getThumbnailSelector(4)}:focus`, {
+            visible: true,
+          });
+        })
+      );
+    });
+
+    it("should focus the newly pasted page after cut and paste (bug 2022516)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await page.waitForSelector("#viewsManagerStatusActionButton", {
+            visible: true,
+          });
+
+          // Select page 3 and cut it.
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(3)}) input`
+          );
+          let handlePagesEdited = await waitForPagesEdited(page, "cut");
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionCut");
+          await awaitPromise(handlePagesEdited);
+
+          // Paste after page 1: the pasted page lands at position 2.
+          handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, `${getThumbnailSelector(1)}+button`);
+          await awaitPromise(handlePagesEdited);
+
+          // Focus must be on the newly pasted page (position 2), not page 1.
+          await page.waitForSelector(`${getThumbnailSelector(2)}:focus`, {
+            visible: true,
+          });
+        })
+      );
+    });
   });
 
   describe("Status label reflects number of checked thumbnails (bug 2010832)", () => {
