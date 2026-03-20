@@ -31,9 +31,6 @@ class BaseWasmFactory {
     if (!this.baseUrl) {
       throw new Error("Ensure that the `wasmUrl` API parameter is provided.");
     }
-    if (!filename) {
-      throw new Error("Wasm filename must be specified.");
-    }
     const url = `${this.baseUrl}${filename}`;
 
     return this._fetch(url).catch(reason => {

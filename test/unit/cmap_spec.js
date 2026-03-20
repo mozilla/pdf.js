@@ -247,7 +247,7 @@ describe("cmap", function () {
     } catch (reason) {
       expect(reason).toBeInstanceOf(Error);
       const message = reason.message;
-      expect(message.startsWith("Unable to load CMap at: ")).toEqual(true);
+      expect(message.startsWith("Unable to load CMap data at: ")).toEqual(true);
       expect(message.endsWith("/external/bcmaps/Adobe-Japan1-1")).toEqual(true);
     }
   });

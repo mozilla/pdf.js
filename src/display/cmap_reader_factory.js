@@ -34,17 +34,12 @@ class BaseCMapReaderFactory {
         "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
       );
     }
-    if (!name) {
-      throw new Error("CMap name must be specified.");
-    }
     const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
 
     return this._fetch(url)
       .then(cMapData => ({ cMapData, isCompressed: this.isCompressed }))
       .catch(reason => {
-        throw new Error(
-          `Unable to load ${this.isCompressed ? "binary " : ""}CMap at: ${url}`
-        );
+        throw new Error(`Unable to load CMap data at: ${url}`);
       });
   }
 

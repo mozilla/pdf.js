@@ -33,9 +33,6 @@ class BaseStandardFontDataFactory {
         "Ensure that the `standardFontDataUrl` API parameter is provided."
       );
     }
-    if (!filename) {
-      throw new Error("Font filename must be specified.");
-    }
     const url = `${this.baseUrl}${filename}`;
 
     return this._fetch(url).catch(reason => {
