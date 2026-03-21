@@ -487,6 +487,10 @@ class PartialEvaluator {
     const { dict } = xobj;
     const matrix = lookupMatrix(dict.getArray("Matrix"), null);
     const bbox = lookupNormalRect(dict.getArray("BBox"), null);
+    let f32bbox = bbox && new Float32Array(bbox);
+    if (f32bbox?.some(x => !isFinite(x))) {
+      f32bbox = null;
+    }
 
     let optionalContent, groupOptions;
     if (dict.has("OC")) {
@@ -502,7 +506,7 @@ class PartialEvaluator {
     if (group) {
       groupOptions = {
         matrix,
-        bbox,
+        bbox: f32bbox,
         smask,
         isolated: false,
         knockout: false,
@@ -536,8 +540,7 @@ class PartialEvaluator {
     // bounding box and translated to the correct position so we don't need to
     // apply the bounding box to it.
     const f32matrix = matrix && new Float32Array(matrix);
-    const f32bbox = (!group && bbox && new Float32Array(bbox)) || null;
-    const args = [f32matrix, f32bbox];
+    const args = [f32matrix, (!group && f32bbox) || null];
     operatorList.addOp(OPS.paintFormXObjectBegin, args);
 
     const localResources = dict.get("Resources");

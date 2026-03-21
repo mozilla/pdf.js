@@ -2576,18 +2576,6 @@ class CanvasGraphics {
     if (group.matrix) {
       currentCtx.transform(...group.matrix);
     }
-    if (!group.bbox) {
-      throw new Error("Bounding box is required.");
-    }
-
-    // Based on the current transform figure out how big the bounding box
-    // will actually be.
-    let bounds = MIN_MAX_INIT.slice();
-    Util.axialAlignedBoundingBox(
-      group.bbox,
-      getCurrentTransform(currentCtx),
-      bounds
-    );
 
     // Clip the bounding box to the current canvas.
     const canvasBounds = [
@@ -2596,7 +2584,23 @@ class CanvasGraphics {
       currentCtx.canvas.width,
       currentCtx.canvas.height,
     ];
-    bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
+
+    let bounds;
+    if (group.bbox) {
+      bounds = MIN_MAX_INIT.slice();
+      Util.axialAlignedBoundingBox(
+        group.bbox,
+        getCurrentTransform(currentCtx),
+        bounds
+      );
+
+      bounds = Util.intersect(bounds, canvasBounds) || [0, 0, 0, 0];
+    } else {
+      bounds = canvasBounds;
+    }
+
+    // Based on the current transform figure out how big the bounding box
+    // will actually be.
     // Use ceil in case we're between sizes so we don't create canvas that is
     // too small and make the canvas at least 1x1 pixels.
     const offsetX = Math.floor(bounds[0]);
@@ -2624,15 +2628,17 @@ class CanvasGraphics {
     groupCtx.transform(...currentTransform);
 
     // Apply the bbox to the group context.
-    let clip = new Path2D();
-    const [x0, y0, x1, y1] = group.bbox;
-    clip.rect(x0, y0, x1 - x0, y1 - y0);
-    if (group.matrix) {
-      const path = new Path2D();
-      path.addPath(clip, new DOMMatrix(group.matrix));
-      clip = path;
+    if (group.bbox) {
+      let clip = new Path2D();
+      const [x0, y0, x1, y1] = group.bbox;
+      clip.rect(x0, y0, x1 - x0, y1 - y0);
+      if (group.matrix) {
+        const path = new Path2D();
+        path.addPath(clip, new DOMMatrix(group.matrix));
+        clip = path;
+      }
+      groupCtx.clip(clip);
     }
-    groupCtx.clip(clip);
 
     if (group.smask) {
       // Saving state and cached mask to be used in setGState.
