@@ -40,6 +40,7 @@ async function runTests(results) {
       "reorganize_pages_spec.mjs",
       "scripting_spec.mjs",
       "signature_editor_spec.mjs",
+      "simple_viewer_spec.mjs",
       "stamp_editor_spec.mjs",
       "text_field_spec.mjs",
       "text_layer_spec.mjs",
