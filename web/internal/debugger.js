@@ -230,6 +230,15 @@ gotoInput.addEventListener("keydown", async ({ key, target }) => {
     return;
   }
   target.removeAttribute("aria-invalid");
+
+  // Allow debugging via references, as well as page numbers.
+  if (result.page === undefined) {
+    try {
+      result.page =
+        pdfDoc.cachedPageNumber(result.ref) ??
+        (await pdfDoc.getPageIndex(result.ref)) + 1;
+    } catch {}
+  }
   // If we're in debug view and navigating to a page, stay in debug view
   // without switching to the tree at all.
   if (!debugViewEl.hidden && result.page !== undefined) {
