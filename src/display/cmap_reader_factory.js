@@ -17,7 +17,7 @@ import { stringToBytes, unreachable } from "../shared/util.js";
 import { fetchData } from "./display_utils.js";
 
 class BaseCMapReaderFactory {
-  constructor({ baseUrl = null, isCompressed = true }) {
+  constructor({ baseUrl = null }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BaseCMapReaderFactory
@@ -25,22 +25,17 @@ class BaseCMapReaderFactory {
       unreachable("Cannot initialize BaseCMapReaderFactory.");
     }
     this.baseUrl = baseUrl;
-    this.isCompressed = isCompressed;
   }
 
-  async fetch({ name }) {
+  async fetch({ filename }) {
     if (!this.baseUrl) {
-      throw new Error(
-        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
-      );
+      throw new Error("Ensure that the `cMapUrl` API parameter is provided.");
     }
-    const url = this.baseUrl + name + (this.isCompressed ? ".bcmap" : "");
+    const url = `${this.baseUrl}${filename}`;
 
-    return this._fetch(url)
-      .then(cMapData => ({ cMapData, isCompressed: this.isCompressed }))
-      .catch(reason => {
-        throw new Error(`Unable to load CMap data at: ${url}`);
-      });
+    return this._fetch(url).catch(reason => {
+      throw new Error(`Unable to load CMap data at: ${url}`);
+    });
   }
 
   /**
@@ -59,7 +54,7 @@ class DOMCMapReaderFactory extends BaseCMapReaderFactory {
   async _fetch(url) {
     const data = await fetchData(
       url,
-      /* type = */ this.isCompressed ? "bytes" : "text"
+      /* type = */ url.endsWith(".bcmap") ? "bytes" : "text"
     );
     return data instanceof Uint8Array ? data : stringToBytes(data);
   }

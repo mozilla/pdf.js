@@ -366,6 +366,7 @@ function getDocument(src = {}) {
           StandardFontDataFactory === DOMStandardFontDataFactory &&
           WasmFactory === DOMWasmFactory &&
           cMapUrl &&
+          cMapPacked &&
           standardFontDataUrl &&
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
@@ -391,7 +392,7 @@ function getDocument(src = {}) {
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       useWorkerFetch
         ? null
-        : new CMapReaderFactory({ baseUrl: cMapUrl, isCompressed: cMapPacked }),
+        : new CMapReaderFactory({ baseUrl: cMapUrl }),
     standardFontDataFactory:
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       useWorkerFetch
@@ -439,6 +440,7 @@ function getDocument(src = {}) {
       useWasm,
       useWorkerFetch,
       cMapUrl,
+      cMapPacked,
       iccUrl,
       standardFontDataUrl,
       wasmUrl,

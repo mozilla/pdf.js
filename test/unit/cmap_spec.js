@@ -14,7 +14,11 @@
  */
 
 import { CMap, CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
-import { CMAP_URL, DefaultCMapReaderFactory } from "./test_utils.js";
+import {
+  CMAP_URL,
+  DefaultCMapReaderFactory,
+  fetchBuiltInCMapHelper,
+} from "./test_utils.js";
 import { Name } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 
@@ -22,16 +26,12 @@ describe("cmap", function () {
   let fetchBuiltInCMap;
 
   beforeAll(function () {
-    // Allow CMap testing in Node.js, e.g. for Travis.
     const CMapReaderFactory = new DefaultCMapReaderFactory({
       baseUrl: CMAP_URL,
     });
 
-    fetchBuiltInCMap = function (name) {
-      return CMapReaderFactory.fetch({
-        name,
-      });
-    };
+    fetchBuiltInCMap = name =>
+      fetchBuiltInCMapHelper(CMapReaderFactory, /* cMapPacked = */ true, name);
   });
 
   afterAll(function () {
@@ -206,7 +206,11 @@ describe("cmap", function () {
   it("attempts to load a built-in CMap without the necessary API parameters", async function () {
     function tmpFetchBuiltInCMap(name) {
       const CMapReaderFactory = new DefaultCMapReaderFactory({});
-      return CMapReaderFactory.fetch({ name });
+      return fetchBuiltInCMapHelper(
+        CMapReaderFactory,
+        /* cMapPacked = */ true,
+        name
+      );
     }
 
     try {
@@ -221,7 +225,7 @@ describe("cmap", function () {
     } catch (reason) {
       expect(reason).toBeInstanceOf(Error);
       expect(reason.message).toEqual(
-        "Ensure that the `cMapUrl` and `cMapPacked` API parameters are provided."
+        "Ensure that the `cMapUrl` API parameter is provided."
       );
     }
   });
@@ -230,9 +234,12 @@ describe("cmap", function () {
     function tmpFetchBuiltInCMap(name) {
       const CMapReaderFactory = new DefaultCMapReaderFactory({
         baseUrl: CMAP_URL,
-        isCompressed: false,
       });
-      return CMapReaderFactory.fetch({ name });
+      return fetchBuiltInCMapHelper(
+        CMapReaderFactory,
+        /* cMapPacked = */ false,
+        name
+      );
     }
 
     try {

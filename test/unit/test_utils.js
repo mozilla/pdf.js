@@ -55,6 +55,15 @@ const DefaultStandardFontDataFactory =
     ? NodeStandardFontDataFactory
     : DOMStandardFontDataFactory;
 
+async function fetchBuiltInCMapHelper(cMapReaderFactory, cMapPacked, name) {
+  return {
+    cMapData: await cMapReaderFactory.fetch({
+      filename: `${name}${cMapPacked ? ".bcmap" : ""}`,
+    }),
+    isCompressed: cMapPacked,
+  };
+}
+
 function buildGetDocumentParams(filename, options) {
   const params = Object.create(null);
   params.url = isNodeJS
@@ -252,6 +261,7 @@ export {
   DefaultCMapReaderFactory,
   DefaultFileReaderFactory,
   DefaultStandardFontDataFactory,
+  fetchBuiltInCMapHelper,
   getCrossOriginHostname,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,

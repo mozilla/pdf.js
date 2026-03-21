@@ -102,6 +102,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   useWasm: true,
   useWorkerFetch: true,
   cMapUrl: null,
+  cMapPacked: true,
   iccUrl: null,
   standardFontDataUrl: null,
   wasmUrl: null,
@@ -413,10 +414,13 @@ class PartialEvaluator {
         throw new Error("Only worker-thread fetching supported.");
       }
       // Get the data on the main-thread instead.
-      data = await this.handler.sendWithPromise("FetchBinaryData", {
-        type: "cMapReaderFactory",
-        name,
-      });
+      data = {
+        cMapData: await this.handler.sendWithPromise("FetchBinaryData", {
+          type: "cMapReaderFactory",
+          filename: `${name}${this.options.cMapPacked ? ".bcmap" : ""}`,
+        }),
+        isCompressed: this.options.cMapPacked,
+      };
     }
     // Cache the CMap data, to avoid fetching it repeatedly.
     this.builtInCMapCache.set(name, data);
