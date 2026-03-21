@@ -19,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Use Node.js LTS
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
