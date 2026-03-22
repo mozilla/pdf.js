@@ -668,8 +668,12 @@ pdfjs-views-manager-view-selector-button =
     .title = ხედები
 pdfjs-views-manager-view-selector-button-label = ხედები
 pdfjs-views-manager-pages-title = გვერდები
+pdfjs-views-manager-outlines-title1 = დოკუმენტის სარჩევი
+    .title = დოკუმენტის სარჩევი (ორმაგი წკაპით ყველა ჩანაწერის ჩამოშლა/აკეცვა)
 pdfjs-views-manager-outlines-title = დოკუმენტის სარჩევი
 pdfjs-views-manager-attachments-title = დანართები
+pdfjs-views-manager-layers-title1 = შრეები
+    .title = შრეები (ორმაგი წკაპით ყველა შრის ნაგულისხმევზე დაბრუნება)
 pdfjs-views-manager-layers-title = შრეები
 pdfjs-views-manager-pages-option-label = გვერდები
 pdfjs-views-manager-outlines-option-label = დოკუმენტის სარჩევი
@@ -690,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = მართვა
 pdfjs-views-manager-pages-status-copy-button-label = ასლი
 pdfjs-views-manager-pages-status-cut-button-label = ამოჭრა
 pdfjs-views-manager-pages-status-delete-button-label = წაშლა
+pdfjs-views-manager-pages-status-export-selected-button-label = შერჩეულის გატანა…
 pdfjs-views-manager-pages-status-save-as-button-label = შენახვა როგორც…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -719,10 +724,20 @@ pdfjs-views-manager-status-warning-copy-label = ასლი ვერ აიღ
 pdfjs-views-manager-status-warning-delete-label = ვერ წაიშალა. განაახლეთ გვერდი და კვლავ სცადეთ.
 pdfjs-views-manager-status-warning-save-label = ვერ შეინახა. განაახლეთ გვერდი და კვლავ სცადეთ.
 pdfjs-views-manager-status-undo-button-label = დაბრუნება
+pdfjs-views-manager-status-done-button-label = მზადაა
 pdfjs-views-manager-status-close-button =
     .title = დახურვა
 pdfjs-views-manager-status-close-button-label = დახურვა
 pdfjs-views-manager-paste-button-label = ჩასმა
+pdfjs-views-manager-paste-button-before =
+    .title = ჩასმა პირველი გვერდის წინ
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = ჩასმა { $page } გვერდის შემდეგ
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = ᲡᲘᲐᲮᲚᲔ
 pdfjs-toggle-views-manager-button1 =
     .title = გვერდების მართვა
 

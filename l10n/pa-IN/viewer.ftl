@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = { $page } ਸਫ਼ੇ ਦਾ ਥੰਮਨੇਲ
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = { $page } ਸਫ਼ੇ ਨੂੰ ਚੁਣੋ
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = { $page } ਸਫ਼ੇ ਨੂੰ ਚੁਣੋ
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = { $total } ਵਿੱਚੋਂ { $page } ਸਫ਼ਾ
 
 ## Find panel button title and messages
 
@@ -645,9 +658,12 @@ pdfjs-toggle-views-manager-button =
     .title = ਬਾਹੀ ਬਦਲੋ
 pdfjs-toggle-views-manager-notification-button =
     .title = ਬਾਹੀ ਨੂੰ ਬਦਲੋ (ਦਸਤਾਵੇਜ਼ ਥੰਮਨੇਲ/ਆਨਲਾਈਨਅਟੈਚਮੈਂਟ/ਪਰਤਾਂ ਰੱਖਦਾ ਹੈ)
+pdfjs-toggle-views-manager-button1-label = ਸਫ਼ਿਆਂ ਦਾ ਇੰਤਜ਼ਾਮ
 pdfjs-toggle-views-manager-button-label = ਬਾਹੀ ਨੂੰ ਬਦਲੋ
 pdfjs-views-manager-sidebar =
     .aria-label = ਬਾਹੀ
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = ਬਾਹੀ ਦਾ ਆਕਾਰ-ਬਦਲ
 pdfjs-views-manager-view-selector-button =
     .title = ਵੇਖੋ
 pdfjs-views-manager-view-selector-button-label = ਵੇਖੋ
@@ -703,9 +719,19 @@ pdfjs-views-manager-status-warning-copy-label = ਕਾਪੀ ਨਹੀਂ ਕੀ
 pdfjs-views-manager-status-warning-delete-label = ਹਟਾਇਆ ਨਹੀਂ ਜਾ ਸਕਿਆ। ਸਫ਼ੇ ਨੂੰ ਤਾਜ਼ਾ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
 pdfjs-views-manager-status-warning-save-label = ਸੰਭਾਲਿਆ ਨਹੀਂ ਜਾ ਸਕਿਆ। ਸਫ਼ੇ ਨੂੰ ਤਾਜ਼ਾ ਕਰਕੇ ਫੇਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।
 pdfjs-views-manager-status-undo-button-label = ਵਾਪਸ
+pdfjs-views-manager-status-done-button-label = ਮੁਕੰਮਲ
 pdfjs-views-manager-status-close-button =
     .title = ਬੰਦ ਕਰੋ
 pdfjs-views-manager-status-close-button-label = ਬੰਦ ਕਰੋ
+pdfjs-views-manager-paste-button-label = ਚੇਪੋ
+pdfjs-views-manager-paste-button-before =
+    .title = ਪਹਿਲੇ ਸਫ਼ੇ ਦੇ ਬਾਅਦ ਚੇਪੋ
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = { $page } ਸਫ਼ੇ ਦੇ ਬਾਅਦ ਚੇਪੋ
+pdfjs-toggle-views-manager-button1 =
+    .title = ਸਫ਼ਿਆਂ ਦਾ ਇੰਤਜ਼ਾਮ
 
 ## Main menu for adding/removing signatures
 

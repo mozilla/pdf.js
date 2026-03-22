@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Мініяцюра старонкі { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Выбраць старонку { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Выбраць старонку { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Старонка { $page } з { $total }
 
 ## Find panel button title and messages
 
@@ -649,9 +662,12 @@ pdfjs-toggle-views-manager-button =
     .title = Паказаць/схаваць бакавую панэль
 pdfjs-toggle-views-manager-notification-button =
     .title = Паказаць/схаваць бакавую панэль (дакумент мае мініяцюры/змест/далучэнні/пласты)
+pdfjs-toggle-views-manager-button1-label = Кіраванне старонкамі
 pdfjs-toggle-views-manager-button-label = Паказаць/схаваць бакавую панэль
 pdfjs-views-manager-sidebar =
     .aria-label = Бакавая панэль
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Змена памеру бакавой панэлі
 pdfjs-views-manager-view-selector-button =
     .title = Выгляд
 pdfjs-views-manager-view-selector-button-label = Выгляд
@@ -711,9 +727,19 @@ pdfjs-views-manager-status-warning-copy-label = Не ўдалося скапія
 pdfjs-views-manager-status-warning-delete-label = Не ўдалося выдаліць. Абнавіце старонку і паспрабуйце зноў.
 pdfjs-views-manager-status-warning-save-label = Не ўдалося захаваць. Абнавіце старонку і паспрабуйце зноў.
 pdfjs-views-manager-status-undo-button-label = Адмяніць
+pdfjs-views-manager-status-done-button-label = Гатова
 pdfjs-views-manager-status-close-button =
     .title = Закрыць
 pdfjs-views-manager-status-close-button-label = Закрыць
+pdfjs-views-manager-paste-button-label = Уставіць
+pdfjs-views-manager-paste-button-before =
+    .title = Уставіць перад першай старонкай
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Уставіць пасля старонкі { $page }
+pdfjs-toggle-views-manager-button1 =
+    .title = Кіраванне старонкамі
 
 ## Main menu for adding/removing signatures
 

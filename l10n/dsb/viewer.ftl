@@ -676,8 +676,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Naglědy
 pdfjs-views-manager-view-selector-button-label = Naglědy
 pdfjs-views-manager-pages-title = Boki
+pdfjs-views-manager-outlines-title1 = Dokumentowa struktura
+    .title = Dokumentowa struktura (klikniśo dwójcy, aby wšykne zapiski pokazał/schował)
 pdfjs-views-manager-outlines-title = Dokumentowa struktura
 pdfjs-views-manager-attachments-title = Pśidanki
+pdfjs-views-manager-layers-title1 = Rowniny
+    .title = Rowniny (klikniśo dwójcy, aby wšykne rowniny na standardny status slědk stajił)
 pdfjs-views-manager-layers-title = Rowniny
 pdfjs-views-manager-pages-option-label = Boki
 pdfjs-views-manager-outlines-option-label = Dokumentowa struktura
@@ -700,6 +704,7 @@ pdfjs-views-manager-pages-status-action-button-label = Zastojaś
 pdfjs-views-manager-pages-status-copy-button-label = Kopěrowaś
 pdfjs-views-manager-pages-status-cut-button-label = Wurězaś
 pdfjs-views-manager-pages-status-delete-button-label = Lašowaś
+pdfjs-views-manager-pages-status-export-selected-button-label = Wubrane eksportěrowaś…
 pdfjs-views-manager-pages-status-save-as-button-label = Składowaś ako…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -735,10 +740,20 @@ pdfjs-views-manager-status-warning-copy-label = Njedajo se kopěrowaś. Aktualiz
 pdfjs-views-manager-status-warning-delete-label = Njedajo se lašowaś. Aktualizěrujśo bok a wopytajśo hyšći raz.
 pdfjs-views-manager-status-warning-save-label = Njedajo se składowaś. Aktualizěrujśo bok a wopytajśo hyšći raz.
 pdfjs-views-manager-status-undo-button-label = Anulěrowaś
+pdfjs-views-manager-status-done-button-label = Dokóńcony
 pdfjs-views-manager-status-close-button =
     .title = Zacyniś
 pdfjs-views-manager-status-close-button-label = Zacyniś
 pdfjs-views-manager-paste-button-label = Zasajźiś
+pdfjs-views-manager-paste-button-before =
+    .title = Pśed prědnym bokom zasajźiś
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Za bokom { $page } zasajźiś
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NOWY
 pdfjs-toggle-views-manager-button1 =
     .title = Boki zastojaś
 

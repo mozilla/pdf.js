@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Kin net kopiearje. Ferfarskje de
 pdfjs-views-manager-status-warning-delete-label = Kin net fuortsmite. Ferfarskje de side en probearje it opnij.
 pdfjs-views-manager-status-warning-save-label = Kin net bewarje. Ferfarskje de side en probearje it opnij.
 pdfjs-views-manager-status-undo-button-label = Ungedien meitsje
+pdfjs-views-manager-status-done-button-label = Dien
 pdfjs-views-manager-status-close-button =
     .title = Slute
 pdfjs-views-manager-status-close-button-label = Slute
 pdfjs-views-manager-paste-button-label = Plakke
+pdfjs-views-manager-paste-button-before =
+    .title = Plakke foar de earste side
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Plakke nei side { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Siden beheare
 

@@ -668,8 +668,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Vyer
 pdfjs-views-manager-view-selector-button-label = Vyer
 pdfjs-views-manager-pages-title = Sidor
+pdfjs-views-manager-outlines-title1 = Dokumentöversikt
+    .title = Dokumentöversikt (dubbelklicka för att expandera/komprimera alla objekt)
 pdfjs-views-manager-outlines-title = Dokumentöversikt
 pdfjs-views-manager-attachments-title = Bilagor
+pdfjs-views-manager-layers-title1 = Lager
+    .title = Lager (dubbelklicka för att återställa alla lager till standardläge)
 pdfjs-views-manager-layers-title = Lager
 pdfjs-views-manager-pages-option-label = Sidor
 pdfjs-views-manager-outlines-option-label = Dokumentöversikt
@@ -690,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = Hantera
 pdfjs-views-manager-pages-status-copy-button-label = Kopiera
 pdfjs-views-manager-pages-status-cut-button-label = Klipp ut
 pdfjs-views-manager-pages-status-delete-button-label = Ta bort
+pdfjs-views-manager-pages-status-export-selected-button-label = Exportera markerad…
 pdfjs-views-manager-pages-status-save-as-button-label = Spara som…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -730,6 +735,9 @@ pdfjs-views-manager-paste-button-before =
 #   $page (Number) - the page number after which the paste button is.
 pdfjs-views-manager-paste-button-after =
     .title = Klistra in efter sida { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NYTT
 pdfjs-toggle-views-manager-button1 =
     .title = Hantera sidor
 

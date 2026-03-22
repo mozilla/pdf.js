@@ -676,8 +676,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Napohlady
 pdfjs-views-manager-view-selector-button-label = Napohlady
 pdfjs-views-manager-pages-title = Strony
+pdfjs-views-manager-outlines-title1 = Dokumentowa struktura
+    .title = Dokumentowa struktura (klikńće dwójce, zo byšće wšě zapiski pokazał/schował)
 pdfjs-views-manager-outlines-title = Dokumentowa struktura
 pdfjs-views-manager-attachments-title = Přiwěški
+pdfjs-views-manager-layers-title1 = Runiny
+    .title = Runiny (klikńće dwójce, zo byšće wšě runiny na standardny status wróćo stajił)
 pdfjs-views-manager-layers-title = Runiny
 pdfjs-views-manager-pages-option-label = Strony
 pdfjs-views-manager-outlines-option-label = Dokumentowa struktura
@@ -700,6 +704,7 @@ pdfjs-views-manager-pages-status-action-button-label = Rjadować
 pdfjs-views-manager-pages-status-copy-button-label = Kopěrować
 pdfjs-views-manager-pages-status-cut-button-label = Wutřihać
 pdfjs-views-manager-pages-status-delete-button-label = Zhašeć
+pdfjs-views-manager-pages-status-export-selected-button-label = Wubrane eksportować…
 pdfjs-views-manager-pages-status-save-as-button-label = Składować jako…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -735,10 +740,20 @@ pdfjs-views-manager-status-warning-copy-label = Njeda so kopěrować. Aktualizuj
 pdfjs-views-manager-status-warning-delete-label = Njeda so zhašeć. Aktualizujće stronu a spytajće hišće raz.
 pdfjs-views-manager-status-warning-save-label = Njeda so składować. Aktualizujće stronu a spytajće hišće raz.
 pdfjs-views-manager-status-undo-button-label = Cofnyć
+pdfjs-views-manager-status-done-button-label = Dokónčeny
 pdfjs-views-manager-status-close-button =
     .title = Začinić
 pdfjs-views-manager-status-close-button-label = Začinić
 pdfjs-views-manager-paste-button-label = Zasadźić
+pdfjs-views-manager-paste-button-before =
+    .title = Před prěnjej stronu zasadźić
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Za stronu { $page } zasadźić
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NOWY
 pdfjs-toggle-views-manager-button1 =
     .title = Strony rjadować
 

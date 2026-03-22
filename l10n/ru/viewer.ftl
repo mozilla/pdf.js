@@ -672,8 +672,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Вид
 pdfjs-views-manager-view-selector-button-label = Вид
 pdfjs-views-manager-pages-title = Страницы
+pdfjs-views-manager-outlines-title1 = Структура документа
+    .title = Структура документа (щёлкните дважды, чтобы раскрыть/свернуть все элементы)
 pdfjs-views-manager-outlines-title = Структура документа
 pdfjs-views-manager-attachments-title = Вложения
+pdfjs-views-manager-layers-title1 = Слои
+    .title = Слои (щёлкните дважды, чтобы сбросить все слои в положение по умолчанию)
 pdfjs-views-manager-layers-title = Слои
 pdfjs-views-manager-pages-option-label = Страницы
 pdfjs-views-manager-outlines-option-label = Структура документа
@@ -695,6 +699,7 @@ pdfjs-views-manager-pages-status-action-button-label = Управление
 pdfjs-views-manager-pages-status-copy-button-label = Копировать
 pdfjs-views-manager-pages-status-cut-button-label = Вырезать
 pdfjs-views-manager-pages-status-delete-button-label = Удалить
+pdfjs-views-manager-pages-status-export-selected-button-label = Экспортировать выбранное…
 pdfjs-views-manager-pages-status-save-as-button-label = Сохранить как…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -727,10 +732,20 @@ pdfjs-views-manager-status-warning-copy-label = Не удалось скопир
 pdfjs-views-manager-status-warning-delete-label = Не удалось удалить. Обновить страницу и попробовать ещё раз.
 pdfjs-views-manager-status-warning-save-label = Не удалось сохранить. Обновить страницу и попробовать ещё раз.
 pdfjs-views-manager-status-undo-button-label = Отменить
+pdfjs-views-manager-status-done-button-label = Готово
 pdfjs-views-manager-status-close-button =
     .title = Закрыть
 pdfjs-views-manager-status-close-button-label = Закрыть
 pdfjs-views-manager-paste-button-label = Вставить
+pdfjs-views-manager-paste-button-before =
+    .title = Вставить перед первой страницей
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Вставить после страницы { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = НОВОЕ
 pdfjs-toggle-views-manager-button1 =
     .title = Управление страницами
 

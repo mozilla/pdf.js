@@ -735,10 +735,17 @@ pdfjs-views-manager-status-warning-copy-label = Skopírovanie sa nepodarilo. Obn
 pdfjs-views-manager-status-warning-delete-label = Odstránenie sa nepodarilo. Obnovte stránku a skúste to znova.
 pdfjs-views-manager-status-warning-save-label = Uloženie sa nepodarilo. Obnovte stránku a skúste to znova.
 pdfjs-views-manager-status-undo-button-label = Späť
+pdfjs-views-manager-status-done-button-label = Hotovo
 pdfjs-views-manager-status-close-button =
     .title = Zavrieť
 pdfjs-views-manager-status-close-button-label = Zavrieť
 pdfjs-views-manager-paste-button-label = Prilepiť
+pdfjs-views-manager-paste-button-before =
+    .title = Vložiť pred prvú stranu
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Vložiť za stranu { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Spravovať strany
 

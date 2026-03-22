@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Kan niet kopiëren. Vernieuw de 
 pdfjs-views-manager-status-warning-delete-label = Kan niet verwijderen. Vernieuw de pagina en probeer het opnieuw.
 pdfjs-views-manager-status-warning-save-label = Kan niet opslaan. Vernieuw de pagina en probeer het opnieuw.
 pdfjs-views-manager-status-undo-button-label = Ongedaan maken
+pdfjs-views-manager-status-done-button-label = Gereed
 pdfjs-views-manager-status-close-button =
     .title = Sluiten
 pdfjs-views-manager-status-close-button-label = Sluiten
 pdfjs-views-manager-paste-button-label = Plakken
+pdfjs-views-manager-paste-button-before =
+    .title = Plakken voor de eerste pagina
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Plakken na pagina { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Pagina’s beheren
 

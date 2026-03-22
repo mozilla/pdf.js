@@ -670,6 +670,8 @@ pdfjs-toggle-views-manager-button1-label = Spravovat strany
 pdfjs-toggle-views-manager-button-label = Přepnout postranní lištu
 pdfjs-views-manager-sidebar =
     .aria-label = Postranní lišta
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Změna velikosti v postranní liště
 pdfjs-views-manager-view-selector-button =
     .title = Zobrazení
 pdfjs-views-manager-view-selector-button-label = Zobrazení
@@ -688,12 +690,12 @@ pdfjs-views-manager-add-file-button-label = Přidat soubor
 #   $count (Number) - the number of selected pages.
 pdfjs-views-manager-pages-status-action-label =
     { $count ->
-        [one] { $count } vybrán
+        [one] { $count } vybrána
         [few] { $count } vybrány
         [many] { $count } vybráno
        *[other] { $count } vybráno
     }
-pdfjs-views-manager-pages-status-none-action-label = Vyberte stránky
+pdfjs-views-manager-pages-status-none-action-label = Výběr stránek
 pdfjs-views-manager-pages-status-action-button-label = Správa
 pdfjs-views-manager-pages-status-copy-button-label = Kopírovat
 pdfjs-views-manager-pages-status-cut-button-label = Vyjmout
@@ -733,10 +735,17 @@ pdfjs-views-manager-status-warning-copy-label = Kopírování se nezdařilo. Obn
 pdfjs-views-manager-status-warning-delete-label = Smazání se nezdařilo. Obnovte stránku a zkuste to znovu.
 pdfjs-views-manager-status-warning-save-label = Nepodařilo se uložit. Obnovte stránku a zkuste to znovu.
 pdfjs-views-manager-status-undo-button-label = Zpět
+pdfjs-views-manager-status-done-button-label = Hotovo
 pdfjs-views-manager-status-close-button =
     .title = Zavřít
 pdfjs-views-manager-status-close-button-label = Zavřít
 pdfjs-views-manager-paste-button-label = Vložit
+pdfjs-views-manager-paste-button-before =
+    .title = Vloží před první stránku
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Vložit za stránku { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Spravovat strany
 

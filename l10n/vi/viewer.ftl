@@ -652,8 +652,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Chế độ hiển thị
 pdfjs-views-manager-view-selector-button-label = Chế độ hiển thị
 pdfjs-views-manager-pages-title = Trang
+pdfjs-views-manager-outlines-title1 = Bản phác thảo tài liệu
+    .title = Bản phác thảo tài liệu (nhấp đúp chuột để mở rộng/thu gọn tất cả các mục)
 pdfjs-views-manager-outlines-title = Bản phác thảo tài liệu
 pdfjs-views-manager-attachments-title = Đính kèm
+pdfjs-views-manager-layers-title1 = Lớp
+    .title = Lớp (nhấp đúp chuột để đặt lại tất cả các lớp về trạng thái mặc định.)
 pdfjs-views-manager-layers-title = Lớp
 pdfjs-views-manager-pages-option-label = Trang
 pdfjs-views-manager-outlines-option-label = Bản phác thảo tài liệu
@@ -670,6 +674,7 @@ pdfjs-views-manager-pages-status-action-button-label = Quản lý
 pdfjs-views-manager-pages-status-copy-button-label = Sao chép
 pdfjs-views-manager-pages-status-cut-button-label = Cắt
 pdfjs-views-manager-pages-status-delete-button-label = Dán
+pdfjs-views-manager-pages-status-export-selected-button-label = Xuất các mục đã chọn…
 pdfjs-views-manager-pages-status-save-as-button-label = Lưu thành…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -687,10 +692,20 @@ pdfjs-views-manager-status-warning-copy-label = Không thể sao chép. Vui lòn
 pdfjs-views-manager-status-warning-delete-label = Không thể xoá. Vui lòng làm mới trang và thử lại.
 pdfjs-views-manager-status-warning-save-label = Không thể lưu. Vui lòng làm mới trang và thử lại.
 pdfjs-views-manager-status-undo-button-label = Hoàn tác
+pdfjs-views-manager-status-done-button-label = Xong
 pdfjs-views-manager-status-close-button =
     .title = Đóng
 pdfjs-views-manager-status-close-button-label = Đóng
 pdfjs-views-manager-paste-button-label = Dán
+pdfjs-views-manager-paste-button-before =
+    .title = Dán trước trang đầu
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Dán sau trang { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = MỚI
 pdfjs-toggle-views-manager-button1 =
     .title = Quản lý trang
 

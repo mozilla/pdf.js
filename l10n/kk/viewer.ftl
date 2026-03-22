@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Көшіру мүмкін бол
 pdfjs-views-manager-status-warning-delete-label = Өшіру мүмкін болмады. Бетті жаңартып, қайталап көріңіз.
 pdfjs-views-manager-status-warning-save-label = Сақтау мүмкін болмады. Бетті жаңартып, қайталап көріңіз.
 pdfjs-views-manager-status-undo-button-label = Болдырмау
+pdfjs-views-manager-status-done-button-label = Дайын
 pdfjs-views-manager-status-close-button =
     .title = Жабу
 pdfjs-views-manager-status-close-button-label = Жабу
 pdfjs-views-manager-paste-button-label = Кірістіру
+pdfjs-views-manager-paste-button-before =
+    .title = Бірінші беттің алдына кірістіру
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = { $page } бетінен кейін кірістіру
 pdfjs-toggle-views-manager-button1 =
     .title = Беттерді басқару
 

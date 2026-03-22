@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatura da página { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Selecionar página { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Selecionar página { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Página { $page } de { $total }
 
 ## Find panel button title and messages
 
@@ -645,9 +658,12 @@ pdfjs-toggle-views-manager-button =
     .title = Exibir/ocultar painel lateral
 pdfjs-toggle-views-manager-notification-button =
     .title = Exibir/ocultar painel lateral (documento contém miniaturas/estrutura/anexos/camadas)
+pdfjs-toggle-views-manager-button1-label = Gerenciar páginas
 pdfjs-toggle-views-manager-button-label = Exibir/ocultar painel lateral
 pdfjs-views-manager-sidebar =
     .aria-label = Painel lateral
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Redimensionador do painel lateral
 pdfjs-views-manager-view-selector-button =
     .title = Exibição
 pdfjs-views-manager-view-selector-button-label = Exibição
@@ -703,9 +719,19 @@ pdfjs-views-manager-status-warning-copy-label = Não foi possível copiar. Atual
 pdfjs-views-manager-status-warning-delete-label = Não foi possível excluir. Atualize a página e tente novamente.
 pdfjs-views-manager-status-warning-save-label = Não foi possível salvar. Atualize a página e tente novamente.
 pdfjs-views-manager-status-undo-button-label = Desfazer
+pdfjs-views-manager-status-done-button-label = Pronto
 pdfjs-views-manager-status-close-button =
     .title = Fechar
 pdfjs-views-manager-status-close-button-label = Fechar
+pdfjs-views-manager-paste-button-label = Colar
+pdfjs-views-manager-paste-button-before =
+    .title = Colar antes da primeira página
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Colar após a página { $page }
+pdfjs-toggle-views-manager-button1 =
+    .title = Gerenciar páginas
 
 ## Main menu for adding/removing signatures
 

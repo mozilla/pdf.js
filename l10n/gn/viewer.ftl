@@ -718,10 +718,17 @@ pdfjs-views-manager-status-warning-copy-label = Ndaikatúi oñembokuatia. Embopy
 pdfjs-views-manager-status-warning-delete-label = Ndaikatúi embogue. Embopyahu kuatiarogue ha eha’ã jey.
 pdfjs-views-manager-status-warning-save-label = Ndaikatúi eñongatu. Embopyahu kuatiarogue ha eha’ã jey.
 pdfjs-views-manager-status-undo-button-label = Mboguevi
+pdfjs-views-manager-status-done-button-label = Oĩma
 pdfjs-views-manager-status-close-button =
     .title = Mboty
 pdfjs-views-manager-status-close-button-label = Mboty
 pdfjs-views-manager-paste-button-label = Mboja
+pdfjs-views-manager-paste-button-before =
+    .title = Emboja togue peteĩha mboyve
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Emboja kuatiarogue { $page } rire
 pdfjs-toggle-views-manager-button1 =
     .title = Eñangareko kuotiarogue
 

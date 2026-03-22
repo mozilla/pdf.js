@@ -668,8 +668,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Views
 pdfjs-views-manager-view-selector-button-label = Views
 pdfjs-views-manager-pages-title = Pages
+pdfjs-views-manager-outlines-title1 = Document outline
+    .title = Document outline (double-click to expand/collapse all items)
 pdfjs-views-manager-outlines-title = Document outline
 pdfjs-views-manager-attachments-title = Attachments
+pdfjs-views-manager-layers-title1 = Layers
+    .title = Layers (double-click to reset all layers to the default state)
 pdfjs-views-manager-layers-title = Layers
 pdfjs-views-manager-pages-option-label = Pages
 pdfjs-views-manager-outlines-option-label = Document outline
@@ -690,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = Manage
 pdfjs-views-manager-pages-status-copy-button-label = Copy
 pdfjs-views-manager-pages-status-cut-button-label = Cut
 pdfjs-views-manager-pages-status-delete-button-label = Delete
+pdfjs-views-manager-pages-status-export-selected-button-label = Export selected…
 pdfjs-views-manager-pages-status-save-as-button-label = Save as…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -719,10 +724,20 @@ pdfjs-views-manager-status-warning-copy-label = Couldn’t copy. Refresh page an
 pdfjs-views-manager-status-warning-delete-label = Couldn’t delete. Refresh page and try again.
 pdfjs-views-manager-status-warning-save-label = Couldn’t save. Refresh page and try again.
 pdfjs-views-manager-status-undo-button-label = Undo
+pdfjs-views-manager-status-done-button-label = Done
 pdfjs-views-manager-status-close-button =
     .title = Close
 pdfjs-views-manager-status-close-button-label = Close
 pdfjs-views-manager-paste-button-label = Paste
+pdfjs-views-manager-paste-button-before =
+    .title = Paste before the first page
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Paste after page { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NEW
 pdfjs-toggle-views-manager-button1 =
     .title = Manage pages
 

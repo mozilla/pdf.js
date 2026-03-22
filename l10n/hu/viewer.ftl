@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Nem sikerült másolni. Frissít
 pdfjs-views-manager-status-warning-delete-label = Nem sikerült törölni. Frissítse az oldalt, és próbálja újra.
 pdfjs-views-manager-status-warning-save-label = Nem sikerült menteni. Frissítse az oldalt, és próbálja újra.
 pdfjs-views-manager-status-undo-button-label = Visszavonás
+pdfjs-views-manager-status-done-button-label = Kész
 pdfjs-views-manager-status-close-button =
     .title = Bezárás
 pdfjs-views-manager-status-close-button-label = Bezárás
 pdfjs-views-manager-paste-button-label = Beillesztés
+pdfjs-views-manager-paste-button-before =
+    .title = Beillesztés az első oldal elé
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Beillesztés a(z) { $page }. oldal után
 pdfjs-toggle-views-manager-button1 =
     .title = Oldalak kezelése
 

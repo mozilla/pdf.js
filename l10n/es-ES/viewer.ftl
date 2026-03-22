@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatura de la página { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Seleccionar página { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Seleccionar página { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Página { $page } de { $total }
 
 ## Find panel button title and messages
 
@@ -645,6 +658,7 @@ pdfjs-toggle-views-manager-button =
     .title = Cambiar barra lateral
 pdfjs-toggle-views-manager-notification-button =
     .title = Alternar barra lateral (el documento contiene miniaturas/esquemas/adjuntos/capas)
+pdfjs-toggle-views-manager-button1-label = Administrar páginas
 pdfjs-toggle-views-manager-button-label = Cambiar barra lateral
 pdfjs-views-manager-sidebar =
     .aria-label = Barra lateral
@@ -703,9 +717,19 @@ pdfjs-views-manager-status-warning-copy-label = No se pudo copiar. Refresque la 
 pdfjs-views-manager-status-warning-delete-label = No se pudo cortar. Refresque la página y pruebe de nuevo.
 pdfjs-views-manager-status-warning-save-label = No se pudo cortar. Refresque la página y pruebe de nuevo.
 pdfjs-views-manager-status-undo-button-label = Deshacer
+pdfjs-views-manager-status-done-button-label = Hecho
 pdfjs-views-manager-status-close-button =
     .title = Cerrar
 pdfjs-views-manager-status-close-button-label = Cerrar
+pdfjs-views-manager-paste-button-label = Pegar
+pdfjs-views-manager-paste-button-before =
+    .title = Pegar antes de la primera página
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Pegar después de la página { $page }
+pdfjs-toggle-views-manager-button1 =
+    .title = Administrar páginas
 
 ## Main menu for adding/removing signatures
 

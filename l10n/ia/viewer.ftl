@@ -668,8 +668,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Vistas
 pdfjs-views-manager-view-selector-button-label = Vistas
 pdfjs-views-manager-pages-title = Paginas
+pdfjs-views-manager-outlines-title1 = Structura de documento
+    .title = Structura de documento (clicca-duplemente pro expander/collaber tote elementos)
 pdfjs-views-manager-outlines-title = Schema del documento
 pdfjs-views-manager-attachments-title = Annexos
+pdfjs-views-manager-layers-title1 = Stratos
+    .title = Stratos (clicca-duplemente pro reinitialisar tote le stratos al stato predefinite)
 pdfjs-views-manager-layers-title = Stratos
 pdfjs-views-manager-pages-option-label = Paginas
 pdfjs-views-manager-outlines-option-label = Schema del documento
@@ -690,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = Gerer
 pdfjs-views-manager-pages-status-copy-button-label = Copiar
 pdfjs-views-manager-pages-status-cut-button-label = Secar
 pdfjs-views-manager-pages-status-delete-button-label = Deler
+pdfjs-views-manager-pages-status-export-selected-button-label = Exportar seligite…
 pdfjs-views-manager-pages-status-save-as-button-label = Salvar como…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -719,10 +724,20 @@ pdfjs-views-manager-status-warning-copy-label = Impossibile copiar. Refresca le 
 pdfjs-views-manager-status-warning-delete-label = Impossibile deler. Refresca le pagina e retenta.
 pdfjs-views-manager-status-warning-save-label = Impossibile salvar. Refresca le pagina e retenta.
 pdfjs-views-manager-status-undo-button-label = Disfacer
+pdfjs-views-manager-status-done-button-label = Facite
 pdfjs-views-manager-status-close-button =
     .title = Clauder
 pdfjs-views-manager-status-close-button-label = Clauder
 pdfjs-views-manager-paste-button-label = Collar
+pdfjs-views-manager-paste-button-before =
+    .title = Collar ante le prime pagina
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Colla post pagina { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NOVA
 pdfjs-toggle-views-manager-button1 =
     .title = Gerer paginas
 

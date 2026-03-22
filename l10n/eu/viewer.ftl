@@ -723,10 +723,17 @@ pdfjs-views-manager-status-warning-copy-label = Ezin da kopiatu. Berritu orria e
 pdfjs-views-manager-status-warning-delete-label = Ezin da ezabatu. Berritu orria eta saiatu berriro.
 pdfjs-views-manager-status-warning-save-label = Ezin da gorde. Berritu orria eta saiatu berriro.
 pdfjs-views-manager-status-undo-button-label = Desegin
+pdfjs-views-manager-status-done-button-label = Eginda
 pdfjs-views-manager-status-close-button =
     .title = Itxi
 pdfjs-views-manager-status-close-button-label = Itxi
 pdfjs-views-manager-paste-button-label = Itsatsi
+pdfjs-views-manager-paste-button-before =
+    .title = Itsatsi lehen orriaren aurretik
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Itsatsi { $page }. orriaren aurretik
 pdfjs-toggle-views-manager-button1 =
     .title = Kudeatu orriak
 

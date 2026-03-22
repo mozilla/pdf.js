@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniature af side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Vælg side { $page }
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Vælg side { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Side { $page } af { $total }
 
 ## Find panel button title and messages
 
@@ -534,6 +547,7 @@ pdfjs-editor-undo-bar-message-freetext = Tekst fjernet
 pdfjs-editor-undo-bar-message-ink = Tegning fjernet
 pdfjs-editor-undo-bar-message-stamp = Billede fjernet
 pdfjs-editor-undo-bar-message-signature = Signatur fjernet
+pdfjs-editor-undo-bar-message-comment = Kommentar fjernet
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +646,36 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Annuller
 
 pdfjs-editor-add-comment-button =
     .title = Tilføj kommentar
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Slå sidepanel til eller fra
+pdfjs-toggle-views-manager-notification-button =
+    .title = Slå sidepanel til eller fra (dokumentet indeholder miniaturer/disposition/vedhæftede filer/lag)
+pdfjs-toggle-views-manager-button1-label = Håndter sider
+pdfjs-toggle-views-manager-button-label = Slå sidepanel til eller fra
+pdfjs-views-manager-sidebar =
+    .aria-label = Sidepanel
+pdfjs-views-manager-view-selector-button =
+    .title = Visninger
+pdfjs-views-manager-view-selector-button-label = Visninger
+pdfjs-views-manager-pages-title = Sider
+pdfjs-views-manager-outlines-title = Dokument-disposition
+pdfjs-views-manager-attachments-title = Vedhæftede filer
+pdfjs-views-manager-layers-title = Lag
+pdfjs-views-manager-pages-option-label = Sider
+pdfjs-views-manager-paste-button-before =
+    .title = Indsæt før første side
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Indsæt efter side { $page }
 
 ## Main menu for adding/removing signatures
 

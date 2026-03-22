@@ -690,6 +690,7 @@ pdfjs-views-manager-pages-status-action-button-label = Verwalten
 pdfjs-views-manager-pages-status-copy-button-label = Kopieren
 pdfjs-views-manager-pages-status-cut-button-label = Ausschneiden
 pdfjs-views-manager-pages-status-delete-button-label = Löschen
+pdfjs-views-manager-pages-status-export-selected-button-label = Ausgewählte exportieren…
 pdfjs-views-manager-pages-status-save-as-button-label = Speichern unter…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -719,10 +720,20 @@ pdfjs-views-manager-status-warning-copy-label = Kopieren nicht möglich. Aktuali
 pdfjs-views-manager-status-warning-delete-label = Löschen war nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-warning-save-label = Speichern nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-undo-button-label = Rückgängig
+pdfjs-views-manager-status-done-button-label = Fertig
 pdfjs-views-manager-status-close-button =
     .title = Schließen
 pdfjs-views-manager-status-close-button-label = Schließen
 pdfjs-views-manager-paste-button-label = Einfügen
+pdfjs-views-manager-paste-button-before =
+    .title = Vor der ersten Seite einfügen
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Nach Seite { $page } einfügen
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NEU
 pdfjs-toggle-views-manager-button1 =
     .title = Seiten verwalten
 

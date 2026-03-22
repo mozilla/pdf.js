@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Kunne ikke kopiere. Oppdater sid
 pdfjs-views-manager-status-warning-delete-label = Kunne ikke slette. Oppdater siden og prøv på nytt.
 pdfjs-views-manager-status-warning-save-label = Kunne ikke lagre. Oppdater siden og prøv på nytt.
 pdfjs-views-manager-status-undo-button-label = Angre
+pdfjs-views-manager-status-done-button-label = Ferdig
 pdfjs-views-manager-status-close-button =
     .title = Lukk
 pdfjs-views-manager-status-close-button-label = Lukk
 pdfjs-views-manager-paste-button-label = Lim inn
+pdfjs-views-manager-paste-button-before =
+    .title = Lim inn før første side
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Lim inn etter side { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Behandle sider
 

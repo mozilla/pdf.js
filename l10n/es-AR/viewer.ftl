@@ -668,8 +668,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Vistas
 pdfjs-views-manager-view-selector-button-label = Vistas
 pdfjs-views-manager-pages-title = Páginas
+pdfjs-views-manager-outlines-title1 = Esquema del documento
+    .title = Esquema del documento (doble clic para expandir/colapsar todos los ítems)
 pdfjs-views-manager-outlines-title = Esquema del documento
 pdfjs-views-manager-attachments-title = Adjuntos
+pdfjs-views-manager-layers-title1 = Capas
+    .title = Capas (doble clic para restablecer todas las cañas al estado predeterminado)
 pdfjs-views-manager-layers-title = Capas
 pdfjs-views-manager-pages-option-label = Páginas
 pdfjs-views-manager-outlines-option-label = Esquema del documento
@@ -690,6 +694,7 @@ pdfjs-views-manager-pages-status-action-button-label = Administrar
 pdfjs-views-manager-pages-status-copy-button-label = Copiar
 pdfjs-views-manager-pages-status-cut-button-label = Cortar
 pdfjs-views-manager-pages-status-delete-button-label = Borrar
+pdfjs-views-manager-pages-status-export-selected-button-label = Exportar seleccionado…
 pdfjs-views-manager-pages-status-save-as-button-label = Guardar como…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -719,10 +724,20 @@ pdfjs-views-manager-status-warning-copy-label = No se pudo copiar. Refresque la 
 pdfjs-views-manager-status-warning-delete-label = No se pudo borrar. Refresque la página y pruebe de nuevo.
 pdfjs-views-manager-status-warning-save-label = No se pudo guardar. Refresque la página y pruebe de nuevo.
 pdfjs-views-manager-status-undo-button-label = Deshacer
+pdfjs-views-manager-status-done-button-label = Listo
 pdfjs-views-manager-status-close-button =
     .title = Cerrar
 pdfjs-views-manager-status-close-button-label = Cerrar
 pdfjs-views-manager-paste-button-label = Pegar
+pdfjs-views-manager-paste-button-before =
+    .title = Pegar antes de la primera página
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Pegar después de la página { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NUEVO
 pdfjs-toggle-views-manager-button1 =
     .title = Administrar páginas
 

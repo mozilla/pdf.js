@@ -719,10 +719,17 @@ pdfjs-views-manager-status-warning-copy-label = Δεν ήταν δυνατή η 
 pdfjs-views-manager-status-warning-delete-label = Δεν ήταν δυνατή η διαγραφή. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.
 pdfjs-views-manager-status-warning-save-label = Δεν ήταν δυνατή η αποθήκευση. Ανανεώστε τη σελίδα και δοκιμάστε ξανά.
 pdfjs-views-manager-status-undo-button-label = Αναίρεση
+pdfjs-views-manager-status-done-button-label = Τέλος
 pdfjs-views-manager-status-close-button =
     .title = Κλείσιμο
 pdfjs-views-manager-status-close-button-label = Κλείσιμο
 pdfjs-views-manager-paste-button-label = Επικόλληση
+pdfjs-views-manager-paste-button-before =
+    .title = Επικόλληση πριν από την πρώτη σελίδα
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Επικόλληση μετά τη σελίδα { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Διαχείριση σελίδων
 

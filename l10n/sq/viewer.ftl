@@ -647,6 +647,8 @@ pdfjs-editor-add-comment-button =
 
 pdfjs-toggle-views-manager-button =
     .title = Shfaq/Fshih Anështyllën
+pdfjs-toggle-views-manager-notification-button =
+    .title = Shfaqni/Fshihni Anështyllër (dokumenti përmban miniatura/përvijim/bashkëngjitje/shtresa)
 pdfjs-toggle-views-manager-button1-label = Administroni faqe
 pdfjs-toggle-views-manager-button-label = Shfaq/Fshih Anështyllën
 pdfjs-views-manager-sidebar =
@@ -681,6 +683,13 @@ pdfjs-views-manager-pages-status-cut-button-label = Prije
 pdfjs-views-manager-pages-status-delete-button-label = Fshije
 pdfjs-views-manager-pages-status-save-as-button-label = Ruajeni si…
 # Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] Prerje e 1 faqeje
+       *[other] Prerje e { $count } faqesh
+    }
+# Variables:
 #   $count (Number) - the number of selected pages to be copied.
 pdfjs-views-manager-pages-status-undo-copy-label =
     { $count ->
@@ -701,10 +710,17 @@ pdfjs-views-manager-status-warning-copy-label = S’u kopjua dot. Rifreskoni faq
 pdfjs-views-manager-status-warning-delete-label = S’u fshi dot. Rifreskoni faqen dhe riprovoni.
 pdfjs-views-manager-status-warning-save-label = S’u ruajt dot. Rifreskoni faqen dhe riprovoni.
 pdfjs-views-manager-status-undo-button-label = Zhbëje
+pdfjs-views-manager-status-done-button-label = U bë
 pdfjs-views-manager-status-close-button =
     .title = Mbylle
 pdfjs-views-manager-status-close-button-label = Mbylle
 pdfjs-views-manager-paste-button-label = Ngjite
+pdfjs-views-manager-paste-button-before =
+    .title = Ngjite para faqes së parë
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Ngjite pas faqes { $page }
 pdfjs-toggle-views-manager-button1 =
     .title = Administroni faqe
 

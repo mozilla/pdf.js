@@ -201,6 +201,19 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatura { $page }. strony
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Zaznacz { $page }. stronę
+# Variables:
+#   $page (Number) - the page number
+pdfjs-thumb-page-checkbox =
+    .aria-label = Zaznacz { $page }. stronę
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = { $page }. strona z { $total }
 
 ## Find panel button title and messages
 
@@ -648,9 +661,12 @@ pdfjs-toggle-views-manager-button =
     .title = Przełącz panel boczny
 pdfjs-toggle-views-manager-notification-button =
     .title = Przełącz panel boczny (dokument zawiera miniatury/konspekt/załączniki/warstwy)
+pdfjs-toggle-views-manager-button1-label = Zarządzaj stronami
 pdfjs-toggle-views-manager-button-label = Przełącz panel boczny
 pdfjs-views-manager-sidebar =
     .aria-label = Panel boczny
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Zmiana rozmiaru panelu bocznego
 pdfjs-views-manager-view-selector-button =
     .title = Widoki
 pdfjs-views-manager-view-selector-button-label = Widoki
@@ -710,9 +726,19 @@ pdfjs-views-manager-status-warning-copy-label = Nie udało się skopiować. Odś
 pdfjs-views-manager-status-warning-delete-label = Nie udało się usunąć. Odśwież stronę i spróbuj ponownie.
 pdfjs-views-manager-status-warning-save-label = Nie udało się zachować. Odśwież stronę i spróbuj ponownie.
 pdfjs-views-manager-status-undo-button-label = Cofnij
+pdfjs-views-manager-status-done-button-label = Gotowe
 pdfjs-views-manager-status-close-button =
     .title = Zamknij
 pdfjs-views-manager-status-close-button-label = Zamknij
+pdfjs-views-manager-paste-button-label = Wklej
+pdfjs-views-manager-paste-button-before =
+    .title = Wklej przed pierwszą stroną
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Wklej po { $page }. stronie
+pdfjs-toggle-views-manager-button1 =
+    .title = Zarządzaj stronami
 
 ## Main menu for adding/removing signatures
 
