@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+const DEFAULT_MIN_SCALE = 0.1;
+const DEFAULT_MAX_SCALE = 25.0;
+
 if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
   // eslint-disable-next-line no-var
   var compatParams = new Map();
@@ -347,10 +350,20 @@ const defaultOptions = {
     value: 2 ** 25,
     kind: OptionKind.VIEWER,
   },
+  maxScale: {
+    /** @type {number} */
+    value: Math.round(DEFAULT_MAX_SCALE * 100) | 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   minDurationToUpdateCanvas: {
     /** @type {number} */
     value: 500, // ms
     kind: OptionKind.VIEWER,
+  },
+  minScale: {
+    /** @type {number} */
+    value: Math.round(DEFAULT_MIN_SCALE * 100) | 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   forcePageColors: {
     /** @type {boolean} */
@@ -753,4 +766,4 @@ class AppOptions {
   }
 }
 
-export { AppOptions, OptionKind };
+export { AppOptions, DEFAULT_MAX_SCALE, DEFAULT_MIN_SCALE, OptionKind };
