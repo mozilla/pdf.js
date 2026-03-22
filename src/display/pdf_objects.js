@@ -29,16 +29,6 @@ class PDFObjects {
   #objs = new Map();
 
   /**
-   * Ensures there is an object defined for `objId`.
-   *
-   * @param {string} objId
-   * @returns {Object}
-   */
-  #ensureObj(objId) {
-    return this.#objs.getOrInsertComputed(objId, dataObj);
-  }
-
-  /**
    * If called *without* callback, this returns the data of `objId` but the
    * object needs to be resolved. If it isn't, this method throws.
    *
@@ -54,7 +44,7 @@ class PDFObjects {
     // If there is a callback, then the get can be async and the object is
     // not required to be resolved right now.
     if (callback) {
-      const obj = this.#ensureObj(objId);
+      const obj = this.#objs.getOrInsertComputed(objId, dataObj);
       obj.promise.then(() => callback(obj.data));
       return null;
     }
@@ -99,7 +89,7 @@ class PDFObjects {
    * @param {any} [data]
    */
   resolve(objId, data = null) {
-    const obj = this.#ensureObj(objId);
+    const obj = this.#objs.getOrInsertComputed(objId, dataObj);
     if (obj.data !== INITIAL_DATA) {
       throw new Error(`Object already resolved ${objId}.`);
     }
