@@ -100,6 +100,9 @@ class PDFObjects {
    */
   resolve(objId, data = null) {
     const obj = this.#ensureObj(objId);
+    if (obj.data !== INITIAL_DATA) {
+      throw new Error(`Object already resolved ${objId}.`);
+    }
     obj.data = data;
     obj.resolve();
   }
