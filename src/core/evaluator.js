@@ -2458,6 +2458,7 @@ class PartialEvaluator {
       height: 0,
       vertical: false,
       prevTransform: null,
+      prevTextRise: 0,
       textAdvanceScale: 0,
       spaceInFlowMin: 0,
       spaceInFlowMax: 0,
@@ -2906,7 +2907,19 @@ class PartialEvaluator {
         return true;
       }
 
-      if (Math.abs(advanceY) > textContentItem.height) {
+      // Compensate for a textRise change (e.g. superscript/subscript dropping
+      // back to baseline): textRise is baked into posY/lastPosY via tsm[5] in
+      // getCurrentTextTransform(), scaled by the Y component of the CTM×TM
+      // product, which equals currentTransform[3] / textState.fontSize.
+      // Without this correction a superscript whose textRise exceeds the line
+      // height triggers a spurious EOL when the rise returns to 0.
+      const textRiseDelta = textState.textRise - textContentItem.prevTextRise;
+      const advanceYCorrected =
+        textRiseDelta === 0
+          ? advanceY
+          : advanceY -
+            (currentTransform[3] / textState.fontSize) * textRiseDelta;
+      if (Math.abs(advanceYCorrected) > textContentItem.height) {
         appendEOL();
         return true;
       }
@@ -3068,6 +3081,7 @@ class PartialEvaluator {
         if (scaledDim) {
           // Save the position of the last visible character.
           textChunk.prevTransform = getCurrentTextTransform();
+          textChunk.prevTextRise = textState.textRise;
         }
 
         const glyphUnicode = glyph.unicode;
