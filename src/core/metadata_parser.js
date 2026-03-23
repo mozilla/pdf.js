@@ -107,7 +107,11 @@ class MetadataParser {
     if (!entry.hasChildNodes()) {
       return;
     }
-    const [altNode] = entry.childNodes;
+    const altNode = entry.childNodes.find(node => node.nodeName !== "#text");
+    if (!altNode) {
+      this._metadataMap.set(entry.nodeName, entry.textContent.trim());
+      return;
+    }
     const list = this._getSequence(altNode);
     if (!list || list.length === 0) {
       // Fallback: no rdf:Alt container, use textContent directly

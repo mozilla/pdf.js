@@ -245,6 +245,20 @@ describe("metadata", function () {
     expect(metadata.get("dc:description")).toEqual("English Desc");
   });
 
+  it("should handle whitespace before rdf:Alt in dc:title", function () {
+    const data =
+      "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
+      "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>" +
+      "<rdf:Description xmlns:dc='http://purl.org/dc/elements/1.1/'>" +
+      "<dc:title>\n  <rdf:Alt>" +
+      '<rdf:li xml:lang="x-default">Whitespace Title</rdf:li>' +
+      '<rdf:li xml:lang="en">English Title</rdf:li>' +
+      "</rdf:Alt></dc:title></rdf:Description></rdf:RDF></x:xmpmeta>";
+    const metadata = createMetadata(data);
+
+    expect(metadata.get("dc:title")).toEqual("Whitespace Title");
+  });
+
   it("should handle empty dc:creator element", function () {
     const data =
       "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
