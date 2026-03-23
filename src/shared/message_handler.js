@@ -152,7 +152,7 @@ class MessageHandler {
       this.#createStreamSink(data);
       return;
     }
-    action(data.data);
+    Promise.try(action, data.data);
   }
 
   on(actionName, handler) {

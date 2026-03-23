@@ -691,7 +691,7 @@ class PDFDataRangeTransport {
       for (const listener of this.#progressiveReadListeners) {
         listener(chunk);
       }
-    });
+    }).catch(() => {});
   }
 
   onDataProgressiveDone() {
@@ -699,7 +699,7 @@ class PDFDataRangeTransport {
       for (const listener of this.#progressiveDoneListeners) {
         listener();
       }
-    });
+    }).catch(() => {});
   }
 
   transportReady() {

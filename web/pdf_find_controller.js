@@ -1156,6 +1156,9 @@ class PDFFindController {
     }
 
     if (type === "cancelDelete") {
+      if (!this.#savedPageData) {
+        return;
+      }
       this._extractTextPromises = this.#savedPageData.promises;
       this._pageContents = this.#savedPageData.contents;
       this._pageDiffs = this.#savedPageData.diffs;
