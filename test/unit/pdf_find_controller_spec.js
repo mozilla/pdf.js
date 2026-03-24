@@ -723,10 +723,6 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text containing diacritics before -\\n", async function () {
-    if (isNodeJS) {
-      pending("Linked test-cases are not supported in Node.js.");
-    }
-
     const { eventBus, pdfFindController } =
       await initPdfFindController("issue14562.pdf");
 
@@ -858,10 +854,6 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text containing combining diacritics", async function () {
-    if (isNodeJS) {
-      pending("Linked test-cases are not supported in Node.js.");
-    }
-
     const { eventBus, pdfFindController } =
       await initPdfFindController("issue12909.pdf");
 
@@ -930,10 +922,6 @@ describe("pdf_find_controller", function () {
   });
 
   it("performs a search in a text with some UTF-32 chars", async function () {
-    if (isNodeJS) {
-      pending("Linked test-cases are not supported in Node.js.");
-    }
-
     const { eventBus, pdfFindController } =
       await initPdfFindController("bug1820909.pdf");
 

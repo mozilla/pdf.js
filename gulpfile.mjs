@@ -1981,6 +1981,23 @@ gulp.task(
     setTestEnv,
     "generic-legacy",
     "lib-legacy",
+    function downloadPDFs(done) {
+      console.log("\n### Downloading PDFs");
+
+      const PDF_TEST = process.env.PDF_TEST || "test_manifest.json";
+      const args = ["test.mjs", "--manifestFile=" + PDF_TEST, "--downloadOnly"];
+
+      const testProcess = startNode(args, {
+        cwd: TEST_DIR,
+        stdio: "inherit",
+      });
+      testProcess.on("close", function (code) {
+        if (code !== 0) {
+          done(new Error(`Downloading PDFs failed.`));
+        }
+        done();
+      });
+    },
     function runUnitTestCli(done) {
       const useCoverage = process.argv.includes("--coverage");
 
