@@ -1225,9 +1225,13 @@ class Caption extends XFAObject {
 
     const children = [];
     if (typeof value === "string") {
+      const parent = this[$getParent]();
+      const needsSpace = parent?.ui?.checkButton;
       children.push({
         name: "#text",
-        value,
+        value: needsSpace && !value.startsWith("\u00A0")
+          ? "\u00A0" + value
+          : value,
       });
     } else {
       children.push(value);
@@ -3890,26 +3894,26 @@ class Occur extends XFAObject {
     this.initial =
       attributes.initial !== ""
         ? getInteger({
-            data: attributes.initial,
-            defaultValue: "",
-            validate: x => true,
-          })
+          data: attributes.initial,
+          defaultValue: "",
+          validate: x => true,
+        })
         : "";
     this.max =
       attributes.max !== ""
         ? getInteger({
-            data: attributes.max,
-            defaultValue: -1,
-            validate: x => true,
-          })
+          data: attributes.max,
+          defaultValue: -1,
+          validate: x => true,
+        })
         : "";
     this.min =
       attributes.min !== ""
         ? getInteger({
-            data: attributes.min,
-            defaultValue: 1,
-            validate: x => true,
-          })
+          data: attributes.min,
+          defaultValue: 1,
+          validate: x => true,
+        })
         : "";
     this.use = attributes.use || "";
     this.usehref = attributes.usehref || "";
@@ -4378,9 +4382,8 @@ class Pattern extends XFAObject {
     const endColor = this.color ? this.color[$toStyle]() : "#000000";
     const width = 5;
     const cmd = "repeating-linear-gradient";
-    const colors = `${startColor},${startColor} ${width}px,${endColor} ${width}px,${endColor} ${
-      2 * width
-    }px`;
+    const colors = `${startColor},${startColor} ${width}px,${endColor} ${width}px,${endColor} ${2 * width
+      }px`;
     switch (this.type) {
       case "crossHatch":
         return `${cmd}(to top,${colors}) ${cmd}(to right,${colors})`;
