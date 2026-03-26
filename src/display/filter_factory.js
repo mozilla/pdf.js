@@ -13,14 +13,15 @@
  * limitations under the License.
  */
 
-import { getRGB, isDataScheme } from "./display_utils.js";
 import {
+  FeatureTest,
   SVG_NS,
   unreachable,
   updateUrlHash,
   Util,
   warn,
 } from "../shared/util.js";
+import { getRGB, getRGBA, isDataScheme } from "./display_utils.js";
 
 class BaseFilterFactory {
   constructor() {
@@ -54,6 +55,36 @@ class BaseFilterFactory {
 
   addHighlightHCMFilter(filterName, fgColor, bgColor, newFgColor, newBgColor) {
     return "none";
+  }
+
+  /**
+   * Create a filter for the selection of text, given colors.
+   *
+   * @param {string} fgColor
+   * @param {string} bgColor
+   * @returns {string}
+   */
+  addSelectionHCMFilter(fgColor, bgColor) {
+    return "none";
+  }
+
+  /**
+   * Create a filter for the selection of text.
+   *
+   * @returns {string}
+   */
+  addSelectionFilter() {
+    return "none";
+  }
+
+  /**
+   * @param {Object} [pageColors]
+   * @param {string} [pageColors.background]
+   * @param {string} [pageColors.foreground]
+   * @returns {Record<string, string> | null}
+   */
+  createSelectionStyle(pageColors = null) {
+    return null;
   }
 
   destroy(keepHCM = false) {}
@@ -275,6 +306,66 @@ class DOMFilterFactory extends BaseFilterFactory {
     return info.url;
   }
 
+  /**
+   * Create a filter for the selection of text, given colors.
+   *
+   * @param {string} fgColor
+   * @param {string} bgColor
+   * @returns {string}
+   */
+  addSelectionHCMFilter(fgColor, bgColor) {
+    return this.addHighlightHCMFilter(
+      "selection",
+      fgColor,
+      bgColor,
+      // Background becomes foreground so these are flipped.
+      "HighlightText",
+      "Highlight"
+    );
+  }
+
+  /**
+   * Create a filter for the selection of text.
+   *
+   * @param {string} fgColor
+   * @param {string} bgColor
+   * @returns {string}
+   */
+  addSelectionFilter() {
+    return this.addHighlightHCMFilter(
+      "selection_default",
+      "black",
+      "white",
+      "HighlightText",
+      "Highlight"
+    );
+  }
+
+  /**
+   * @param {Object} [pageColors]
+   * @param {string} [pageColors.background]
+   * @param {string} [pageColors.foreground]
+   * @returns {Record<string, string> | null}
+   */
+  createSelectionStyle(pageColors = null) {
+    const filter = pageColors
+      ? this.addSelectionHCMFilter(pageColors.foreground, pageColors.background)
+      : this.addSelectionFilter();
+
+    // Safari does not supported SVG filters in `backdrop-filter`:
+    // <https://bugs.webkit.org/show_bug.cgi?id=245510>.
+    // Chrome *and* Safari do not use the user’s preferred text selection color.
+    // So this is Firefox-specific for now.
+    if (filter === "none" || !FeatureTest.platform.isFirefox) {
+      return null;
+    }
+
+    return {
+      "backdrop-filter": filter,
+      "background-color": "transparent",
+    };
+  }
+
   addAlphaFilter(map) {
     // When a page is zoomed the page is re-drawn but the maps are likely
     // the same.
@@ -403,7 +494,7 @@ class DOMFilterFactory extends BaseFilterFactory {
       0.2126 * bgRGB[0] + 0.7152 * bgRGB[1] + 0.0722 * bgRGB[2]
     );
     let [newFgRGB, newBgRGB] = [newFgColor, newBgColor].map(
-      this.#getRGB.bind(this)
+      this.#getOpaqueTextColor.bind(this)
     );
     if (bgGray < fgGray) {
       [fgGray, bgGray, newFgRGB, newBgRGB] = [
@@ -545,6 +636,62 @@ class DOMFilterFactory extends BaseFilterFactory {
     this.#defs.style.color = color;
     return getRGB(getComputedStyle(this.#defs).getPropertyValue("color"));
   }
+
+  /**
+   * Get the RGBA channels of a color.
+   *
+   * @param {string} color
+   *   Color in any valid CSS format (such as `x` in `color: x`).
+   * @returns {[number, number, number, number]}
+   *   RGBA values of the color;
+   *   the RGB channels are in the range `[0, 255]`;
+   *   the alpha channel is in the range `[0, 1]`.
+   */
+  #getRGBA(color) {
+    this.#defs.style.color = color;
+    return getRGBA(getComputedStyle(this.#defs).getPropertyValue("color"));
+  }
+
+  /**
+   * Get the opaque text color by, if it has an alpha layer, blending it with
+   * the `Canvas` background.
+   *
+   * @param {string} color
+   *   Color in any valid CSS format (such as `x` in `color: x`).
+   * @returns {[number, number, number]}
+   *   RGB values of the opaque color.
+   */
+  #getOpaqueTextColor(color) {
+    const [r, g, b, alpha] = this.#getRGBA(color);
+
+    if (alpha === 1) {
+      return [r, g, b];
+    }
+
+    const [canvasR, canvasG, canvasB] = this.#getRGB("Canvas");
+
+    return [
+      blend(r, canvasR, alpha),
+      blend(g, canvasG, alpha),
+      blend(b, canvasB, alpha),
+    ];
+  }
+}
+
+/**
+ * Blend a foreground color with a background color using the alpha value.
+ *
+ * @param {number} fg
+ *   Foreground color channel value in the range `[0, 255]`.
+ * @param {number} bg
+ *   Background color channel value in the range `[0, 255]`.
+ * @param {number} alpha
+ *   Alpha value in the range `[0, 1]`.
+ * @returns {number}
+ *   Blended color channel value in the range `[0, 255]`.
+ */
+function blend(fg, bg, alpha) {
+  return Math.round(alpha * fg + (1 - alpha) * bg);
 }
 
 export { BaseFilterFactory, DOMFilterFactory };

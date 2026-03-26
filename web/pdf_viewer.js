@@ -132,6 +132,9 @@ function isValidAnnotationEditorMode(mode) {
  *   `maxCanvasDim`, it will draw a second canvas on top of the CSS-zoomed one,
  *   that only renders the part of the page that is close to the viewport.
  *   The default value is `true`.
+ * @property {boolean} [enableSelectionRendering] - Enables rendering of text
+ *   selections in the draw layer.
+ *   The default value is `true`.
  * @property {number} [imagesRightClickMinSize] - All images whose width and
  *  height are at least this value (in pixels) will be lazily inserted in the
  *  dom to allow right-clicking and saving them. Use `-1` to disable this.
@@ -362,6 +365,7 @@ class PDFViewer {
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.enableOptimizedPartialRendering =
       options.enableOptimizedPartialRendering ?? false;
+    this.enableSelectionRendering = options.enableSelectionRendering !== false;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
     this.l10n = options.l10n;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -458,6 +462,25 @@ class PDFViewer {
   }
 
   /**
+   * Clear text selections within the viewer.
+   */
+  clearSelection() {
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed) {
+      return;
+    }
+
+    for (let i = 0, ii = selection.rangeCount; i < ii; i++) {
+      if (selection.getRangeAt(i).intersectsNode(this.viewer)) {
+        // `empty()` is non-standard; `removeAllRanges()` is the standard API.
+        selection.removeAllRanges?.();
+        selection.empty?.();
+        return;
+      }
+    }
+  }
+
+  /**
    * @type {boolean}
    */
   get renderForms() {
@@ -487,6 +510,9 @@ class PDFViewer {
     }
     if (!this.pdfDocument) {
       return;
+    }
+    if (this._currentPageNumber !== val) {
+      this.clearSelection();
     }
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(val, /* resetCurrentPageView = */ true)) {
@@ -546,6 +572,9 @@ class PDFViewer {
       if (i >= 0) {
         page = i + 1;
       }
+    }
+    if (this._currentPageNumber !== page) {
+      this.clearSelection();
     }
     // The intent can be to just reset a scroll position and/or scale.
     if (!this._setCurrentPageNumber(page, /* resetCurrentPageView = */ true)) {
@@ -617,6 +646,7 @@ class PDFViewer {
     if (this._pagesRotation === rotation) {
       return; // The rotation didn't change.
     }
+    this.clearSelection();
     this._pagesRotation = rotation;
 
     const pageNumber = this._currentPageNumber;
@@ -1066,6 +1096,7 @@ class PDFViewer {
             enableDetailCanvas: this.enableDetailCanvas,
             enableOptimizedPartialRendering:
               this.enableOptimizedPartialRendering,
+            enableSelectionRendering: this.enableSelectionRendering,
             imagesRightClickMinSize: this.imagesRightClickMinSize,
             pageColors,
             l10n: this.l10n,
@@ -1488,6 +1519,7 @@ class PDFViewer {
     newValue,
     { noScroll = false, preset = false, drawingDelay = -1, origin = null }
   ) {
+    this.clearSelection();
     this._currentScaleValue = newValue.toString();
 
     if (this.#isSameScale(newScale)) {
@@ -2210,6 +2242,7 @@ class PDFViewer {
     }
     this._previousScrollMode = this._scrollMode;
 
+    this.clearSelection();
     this._scrollMode = mode;
     this.eventBus.dispatch("scrollmodechanged", { source: this, mode });
 
@@ -2275,6 +2308,7 @@ class PDFViewer {
     if (!isValidSpreadMode(mode)) {
       throw new Error(`Invalid spread mode: ${mode}`);
     }
+    this.clearSelection();
     this._spreadMode = mode;
     this.eventBus.dispatch("spreadmodechanged", { source: this, mode });
 

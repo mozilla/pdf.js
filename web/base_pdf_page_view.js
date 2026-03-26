@@ -36,6 +36,8 @@ class BasePDFPageView extends RenderableView {
 
   enableOptimizedPartialRendering = false;
 
+  enableSelectionRendering = true;
+
   imagesRightClickMinSize = -1;
 
   eventBus = null;
@@ -58,6 +60,7 @@ class BasePDFPageView extends RenderableView {
     this.renderingQueue = options.renderingQueue;
     this.enableOptimizedPartialRendering =
       options.enableOptimizedPartialRendering ?? false;
+    this.enableSelectionRendering = options.enableSelectionRendering !== false;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
     this.minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }

@@ -320,6 +320,11 @@ const defaultOptions = {
         : "./images/",
     kind: OptionKind.VIEWER,
   },
+  enableSelectionRendering: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   imagesRightClickMinSize: {
     /** @type {number} */
     value:
