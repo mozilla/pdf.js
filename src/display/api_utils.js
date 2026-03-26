@@ -42,7 +42,7 @@ function getUrlProp(val) {
     }
 
     // The full path is required in the 'url' field.
-    const url = URL.parse(val, window.location);
+    const url = URL.parse(val, window.location.href);
     if (url) {
       return url;
     }

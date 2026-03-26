@@ -22,6 +22,7 @@ import {
   string32,
   stringToBytes,
   stringToPDFString,
+  updateUrlHash,
 } from "../../src/shared/util.js";
 
 describe("util", function () {
@@ -216,6 +217,31 @@ describe("util", function () {
         new URL("tel:+0123456789")
       );
       expect(createValidAbsoluteUrl("/foo", "tel:0123456789")).toEqual(null);
+    });
+
+    it("handles URL objects as arguments", function () {
+      const baseUrl = new URL("http://www.mozilla.org");
+      expect(createValidAbsoluteUrl("/foo", baseUrl)).toEqual(
+        new URL("http://www.mozilla.org/foo")
+      );
+      expect(createValidAbsoluteUrl(baseUrl, null)).toEqual(baseUrl);
+    });
+  });
+
+  describe("updateUrlHash", function () {
+    it("should correctly update the hash of a URL", function () {
+      const url = "http://www.example.com/foo#bar";
+      expect(updateUrlHash(url, "baz")).toEqual(
+        "http://www.example.com/foo#baz"
+      );
+      expect(updateUrlHash(url, "")).toEqual("http://www.example.com/foo");
+    });
+
+    it("handles URL objects as arguments", function () {
+      const url = new URL("http://www.example.com/foo#bar");
+      expect(updateUrlHash(url, "baz")).toEqual(
+        "http://www.example.com/foo#baz"
+      );
     });
   });
 

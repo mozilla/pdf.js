@@ -449,7 +449,9 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
     }
   }
 
-  const absoluteUrl = baseUrl ? URL.parse(url, baseUrl) : URL.parse(url);
+  const absoluteUrl = baseUrl
+    ? URL.parse(url?.href || url, baseUrl?.href || baseUrl)
+    : URL.parse(url?.href || url);
   return _isValidProtocol(absoluteUrl) ? absoluteUrl : null;
 }
 
@@ -462,7 +464,7 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
  * @returns {string} The resulting URL string.
  */
 function updateUrlHash(url, hash, allowRel = false) {
-  const res = URL.parse(url);
+  const res = URL.parse(url?.href || url);
   if (res) {
     res.hash = hash;
     return res.href;
