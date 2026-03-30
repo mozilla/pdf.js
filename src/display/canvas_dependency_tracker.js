@@ -358,7 +358,15 @@ class CanvasBBoxTracker {
     return this;
   }
 
-  recordCharacterBBox(idx, font, scale = 1, x = 0, y = 0, getMeasure) {
+  setFont(fontString) {
+    return this;
+  }
+
+  measureText(text) {
+    return null;
+  }
+
+  recordCharacterBBox(idx, character, font, scale = 1, x = 0, y = 0) {
     return this;
   }
 
@@ -448,6 +456,12 @@ class CanvasDependencyTracker {
   #pendingDependencies = new Set();
 
   #fontBBoxTrustworthy = new Map();
+
+  // TODO: No tests are failing, but we should set the lang here as it can
+  // affect the used fallback fonts. Probably no tests are failing because we
+  // round bboxes anyway, so it's extremely unlikely that after rounding the
+  // two fonts still have different bboxes.
+  #fontMeasureCtx = new OffscreenCanvas(0, 0).getContext("2d");
 
   #debugMetadata;
 
@@ -664,7 +678,16 @@ class CanvasDependencyTracker {
     return this;
   }
 
-  recordCharacterBBox(idx, font, scale = 1, x = 0, y = 0, getMeasure) {
+  setFont(fontString) {
+    this.#fontMeasureCtx.font = fontString;
+    return this;
+  }
+
+  measureText(text) {
+    return this.#fontMeasureCtx.measureText(text);
+  }
+
+  recordCharacterBBox(idx, character, font, scale = 1, x = 0, y = 0) {
     const fontBBox = font.bbox;
     let isBBoxTrustworthy;
     let computedBBox;
@@ -696,13 +719,13 @@ class CanvasDependencyTracker {
       }
     }
 
-    if (!getMeasure) {
+    if (!character) {
       // We have no way of telling how big this character actually is, record
       // a full page bounding box.
       return this.recordFullPageBBox(idx);
     }
 
-    const measure = getMeasure();
+    const measure = this.#fontMeasureCtx.measureText(character);
 
     if (fontBBox && computedBBox && isBBoxTrustworthy === undefined) {
       // If it's the first time we can compare the font bbox with the actual
@@ -925,6 +948,15 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
+  setFont(fontString) {
+    this.#dependencyTracker.setFont(fontString);
+    return this;
+  }
+
+  measureText(text) {
+    return this.#dependencyTracker.measureText(text);
+  }
+
   getTransform() {
     return this.#dependencyTracker.getTransform();
   }
@@ -1045,15 +1077,15 @@ class CanvasNestedDependencyTracker {
     return this;
   }
 
-  recordCharacterBBox(idx, font, scale, x, y, getMeasure) {
+  recordCharacterBBox(idx, character, font, scale, x, y) {
     if (!this.#ignoreBBoxes) {
       this.#dependencyTracker.recordCharacterBBox(
         this.#opIdx,
+        character,
         font,
         scale,
         x,
-        y,
-        getMeasure
+        y
       );
     }
     return this;

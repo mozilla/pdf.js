@@ -1987,7 +1987,9 @@ class CanvasGraphics {
     }
     this.current.fontSizeScale = size / browserFontSize;
 
-    this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
+    const fontString = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
+    this.ctx.font = fontString;
+    this.dependencyTracker?.setFont(fontString);
   }
 
   setTextRenderingMode(opIdx, mode) {
@@ -2087,7 +2089,7 @@ class CanvasGraphics {
         dt
           .translate(x, y)
           .scale(fontSize, -fontSize)
-          .recordCharacterBBox(opIdx, font)
+          .recordCharacterBBox(opIdx, null, font)
       );
 
       let currentTransform;
@@ -2146,11 +2148,11 @@ class CanvasGraphics {
         ctx.fillText(character, x, y);
         this.dependencyTracker?.recordCharacterBBox(
           opIdx,
+          character,
           font,
           fontSize,
           x,
-          y,
-          () => ctx.measureText(character)
+          y
         );
       }
       if (
@@ -2159,9 +2161,7 @@ class CanvasGraphics {
       ) {
         if (this.dependencyTracker) {
           this.dependencyTracker
-            ?.recordCharacterBBox(opIdx, font, fontSize, x, y, () =>
-              ctx.measureText(character)
-            )
+            ?.recordCharacterBBox(opIdx, character, font, fontSize, x, y)
             .recordDependencies(opIdx, Dependencies.stroke);
         }
         ctx.strokeText(character, x, y);
@@ -2177,7 +2177,14 @@ class CanvasGraphics {
         fontSize,
         path,
       });
-      this.dependencyTracker?.recordCharacterBBox(opIdx, font, fontSize, x, y);
+      this.dependencyTracker?.recordCharacterBBox(
+        opIdx,
+        null,
+        font,
+        fontSize,
+        x,
+        y
+      );
     }
   }
 
@@ -2332,7 +2339,7 @@ class CanvasGraphics {
       const joinedChars = chars.join("");
       ctx.fillText(joinedChars, 0, 0);
       if (dependencyTracker !== null) {
-        const measure = ctx.measureText(joinedChars);
+        const measure = dependencyTracker.measureText(joinedChars);
         dependencyTracker
           .recordBBox(
             opIdx,
@@ -2410,12 +2417,12 @@ class CanvasGraphics {
 
           this.dependencyTracker?.recordCharacterBBox(
             opIdx,
+            character,
             // If we already measured the character, force usage of that
             measure ? { bbox: null } : font,
             fontSize / fontSizeScale,
             scaledX,
-            scaledY,
-            () => measure ?? ctx.measureText(character)
+            scaledY
           );
         } else {
           this.paintChar(
