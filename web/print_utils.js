@@ -53,8 +53,14 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
     });
     const viewport = getXfaPageViewport(xfaPage, { scale });
 
-    builder.render({ viewport, intent: "print" });
-    page.append(builder.div);
+    try {
+      builder.render({ viewport, intent: "print" });
+      page.append(builder.div);
+    } catch {
+      const fallback = document.createElement("div");
+      fallback.textContent = "Unable to render this page for printing.";
+      page.append(fallback);
+    }
   }
 }
 
