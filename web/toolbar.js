@@ -67,6 +67,7 @@ class Toolbar {
       { element: options.zoomOut, eventName: "zoomout" },
       { element: options.print, eventName: "print" },
       { element: options.download, eventName: "download" },
+      { element: options.focusModeToggle, eventName: "focusModeToggle" },
       {
         element: options.editorCommentButton,
         eventName: "switchannotationeditormode",
@@ -228,6 +229,26 @@ class Toolbar {
       });
     }
     // The non-button elements within the toolbar.
+    this.#opts.blurSlider.addEventListener("input", (e) => {
+      this.eventBus.dispatch("blurSliderModified", {
+        value: e.target.value,
+        source: this,
+      });
+    });
+
+    this.#opts.focusTextColor.addEventListener("input", (e) => {
+      this.eventBus.dispatch("focusTextColorModified", {
+        value: e.target.value,
+        source: this,
+      });
+    });
+
+    this.#opts.focusLineWidth.addEventListener("input", (e) => {
+      this.eventBus.dispatch("focusLineWidthModified", {
+        value: e.target.value,
+        source: this,
+      });
+    });
     pageNumber.addEventListener("click", function () {
       this.select();
     });

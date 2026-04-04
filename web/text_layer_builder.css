@@ -12,6 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+ 
+:root {
+  --focus-blur-radius: 3px;
+  --focus-opacity: 0.0;
+  --focus-text-color: black;
+  --focus-line-width: 40px;
+}
 
 .textLayer {
   color-scheme: only light;
@@ -153,4 +160,16 @@
     position: absolute;
     transform-origin: 0% 0%;
   }
+}
+
+.focusMode .textLayer span {
+  z-index: 5;
+  color: var(--focus-text-color) !important;
+
+}
+
+.focusMode .canvasWrapper canvas {
+  filter: blur(var(--focus-blur-radius));
+  opacity: var(--focus-opacity);
+
 }

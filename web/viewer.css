@@ -124,6 +124,7 @@
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
   --comment-edit-button-icon: url(images/comment-editButton.svg);
+  --toolbarButton-FocusMode-icon: url(images/icon-focus.svg);
 }
 
 :root:dir(rtl) {
@@ -1345,6 +1346,7 @@ dialog :link {
     width: 100%;
     height: 100%;
     justify-content: space-between;
+    background-color: var(--toolbar-bg-color);
 
     > * {
       flex: none;
@@ -1423,6 +1425,50 @@ dialog :link {
       }
     }
   }
+}
+#focusButtonContainer{
+  height: 100%;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--main-color);
+  outline: none;
+  border-radius: 2px;
+  box-sizing: border-box;
+  font: message-box;
+  flex: none;
+  position: relative;
+  padding: 0;
+  visibility: hidden;
+}
+
+#focusButtonContainer.toggled {
+  visibility: visible;
+}
+
+#focusModeToggle::before {
+  mask-image: var(--toolbarButton-FocusMode-icon);
+  transform: scaleX(var(--dir-factor));
+}
+
+#focusModeToggle.toggled {
+  background-color: #83ca26;
+}
+
+#blurSlider {
+  min-width: 100px;
+}
+
+#focusTextColor {
+  width: auto;
+  padding: 5px;
+}
+
+#focusLineWidth {
+  min-width: 100px;
 }
 
 @media all and (max-width: 840px) {

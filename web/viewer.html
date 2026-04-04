@@ -360,6 +360,15 @@ See https://github.com/adobe-type-tools/cmap-resources
                     />
                   </span>
                   <span id="numPages" class="toolbarLabel"></span>
+                  <button class="toolbarButton" type="button" id="focusModeToggle" title="FocusMode" tabindex="0">
+                  </button>
+                  <div id="focusButtonContainer">
+                    <input class="toolbarButton" type="range" id="blurSlider" min="0" max="10" title="BlurSlider" step="1"
+                    value="3">
+                    <input class="toolbarButton" type="color" id="focusTextColor" title="TextColor" value="#000000">
+                    <input class="toolbarButton" type="range" id="focusLineWidth" min="10" max="100" title="FocusLineWidth"
+                    step="1" value="40">
+                  </div>
                 </div>
               </div>
               <div id="toolbarViewerMiddle" class="toolbarHorizontalGroup">

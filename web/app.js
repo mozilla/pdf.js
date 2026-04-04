@@ -18,6 +18,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/api.js").PDFDocumentLoadingTask} PDFDocumentLoadingTask */
 
+import { FocusManager } from "../web/FocusManager.js";
 import {
   animationStarted,
   apiPageLayoutToViewerModes,
@@ -193,6 +194,7 @@ const PDFViewerApplication = {
   _isScrolling: false,
   editorUndoBar: null,
   _printPermissionPromise: null,
+  _focusModeEnabled: false,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -795,6 +797,53 @@ const PDFViewerApplication = {
       );
     }
   },
+
+
+  toggleFocusMode() {
+    this._focusModeEnabled = !this._focusModeEnabled;
+
+    this.appConfig.appContainer.classList.toggle(
+      "focusMode",
+      this._focusModeEnabled
+    );
+
+    this.appConfig.toolbar.focusModeToggle.classList.toggle(
+      "toggled",
+      this._focusModeEnabled
+    );
+    document.querySelector('#focusButtonContainer').classList.toggle(
+      "toggled",
+      this._focusModeEnabled
+    );
+    //inform other components that the focus mode has been toggled
+    //At currrent not being used by other components but may be useful in the future
+    this.eventBus.dispatch("focusmodechanged", {
+      enabled: this._focusModeEnabled,
+    });
+  },
+
+  blurSlider({ value }) {
+    if (!this._focusModeEnabled) return;
+    document.documentElement.style.setProperty(
+      "--focus-opacity",
+      value / 10
+    );
+  },
+
+  updateFocusTextColor({ value }) {
+    if (!this._focusModeEnabled) return;
+    document.documentElement.style.setProperty(
+      "--focus-text-color",
+      value
+    );
+  },
+
+  updateFocusLineWidth({ value }) {
+    FocusManager.instances.forEach(manager => {
+      manager.setFocusWidth(value);
+    });
+  },
+
 
   async run(config) {
     await this.initialize(config);
@@ -2096,7 +2145,10 @@ const PDFViewerApplication = {
       pdfViewer,
       preferences,
     } = this;
-
+    eventBus._on("focusModeToggle", this.toggleFocusMode.bind(this), opts);
+    eventBus._on("focusTextColorModified", this.updateFocusTextColor.bind(this), opts);
+    eventBus._on("focusLineWidthModified", this.updateFocusLineWidth.bind(this), opts);
+    eventBus._on("blurSliderModified", this.blurSlider.bind(this), opts);
     eventBus._on("resize", onResize.bind(this), opts);
     eventBus._on("hashchange", onHashchange.bind(this), opts);
     eventBus._on("beforeprint", this.beforePrint.bind(this), opts);

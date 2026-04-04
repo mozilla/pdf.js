@@ -24,6 +24,7 @@
 
 import { normalizeUnicode, stopEvent, TextLayer } from "pdfjs-lib";
 import { removeNullCharacters } from "./ui_utils.js";
+import { FocusManager } from "../web/FocusManager.js";
 
 /**
  * @typedef {Object} TextLayerBuilderOptions
@@ -73,6 +74,7 @@ class TextLayerBuilder {
     enablePermissions = false,
     onAppend = null,
     abortSignal = null,
+    eventBus = null,
   }) {
     this.pdfPage = pdfPage;
     this.highlighter = highlighter;
@@ -81,6 +83,8 @@ class TextLayerBuilder {
     this.#onAppend = onAppend;
     this.#abortSignal = abortSignal;
 
+    this.eventBus = eventBus;
+    this._focusEnabled = false;
     this.div = document.createElement("div");
     this.div.tabIndex = 0;
     this.div.className = "textLayer";
@@ -131,6 +135,8 @@ class TextLayerBuilder {
     this.#onAppend?.(this.div);
     this.highlighter?.enable();
     this.accessibilityManager?.enable();
+    this._focusManager = new FocusManager(this.div);
+    this._focusManager.init();
   }
 
   hide() {
