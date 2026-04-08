@@ -1718,7 +1718,9 @@ class PDFPageProxy {
       // only do this for non-foreground XFA.
       return this.getXfa().then(xfa => XfaText.textContent(xfa));
     }
+
     const readableStream = this.streamTextContent(params);
+    const reader = readableStream.getReader();
 
     const textContent = {
       items: [],
@@ -1726,11 +1728,14 @@ class PDFPageProxy {
       lang: null,
     };
 
-    for await (const value of readableStream) {
+    let chunk;
+    while (!(chunk = await reader.read()).done) {
+      const value = chunk.value;
       textContent.lang ??= value.lang;
       Object.assign(textContent.styles, value.styles);
       textContent.items.push(...value.items);
     }
+
     return textContent;
   }
 
