@@ -14,6 +14,12 @@
  */
 
 import {
+  buildExponentialWgslShader,
+  buildFunctionBasedWgslShader,
+  buildPostScriptWgslShader,
+  buildSampledWgslShader,
+} from "../../src/core/postscript/wgsl_compiler.js";
+import {
   buildPostScriptWasmFunction,
   compilePostScriptToWasm,
 } from "../../src/core/postscript/wasm_compiler.js";
@@ -35,13 +41,15 @@ import {
   PsTernaryNode,
   PsUnaryNode,
 } from "../../src/core/postscript/ast.js";
+import { Stream, StringStream } from "../../src/core/stream.js";
 import { buildPostScriptJsFunction } from "../../src/core/postscript/js_evaluator.js";
+import { Dict } from "../../src/core/primitives.js";
+import { XRefMock } from "./test_utils.js";
 
 // Precision argument for toBeCloseTo() in trigonometric tests.
 const TRIGONOMETRY_EPS = 1e-10;
 
 describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
-  // Lexer
   describe("PostScript Type 4 lexer", function () {
     /** Tokenize a string and return the sequence of token ids. */
     function tokenIds(src) {
@@ -126,7 +134,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     });
   });
 
-  // Parser
   describe("PostScript Type 4 parser", function () {
     it("parses an empty program", function () {
       const prog = parsePostScriptFunction("{ }");
@@ -188,7 +195,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     });
   });
 
-  // Wasm compiler.
   describe("PostScript Type 4 Wasm compiler", function () {
     /**
      * Compile and instantiate a PostScript Type 4 function, then call it.
@@ -280,8 +286,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       throw new Error("Wasm code section not found.");
     }
 
-    // Arithmetic.
-
     it("compiles add", async function () {
       const r = compileAndRun("{ add }", [0, 1, 0, 1], [0, 2], [0.3, 0.7]);
       expect(r).toBeCloseTo(1.0, 9);
@@ -363,8 +367,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(0.7, 9);
     });
 
-    // Math.
-
     it("compiles sqrt", async function () {
       const r = compileAndRun("{ sqrt }", [0, 100], [0, 10], [9]);
       expect(r).toBeCloseTo(3, 9);
@@ -429,8 +431,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(16, 9); // 2^4 = 16
     });
 
-    // Trigonometry (degrees).
-
     it("compiles sin (degrees)", async function () {
       const r = compileAndRun("{ sin }", [-360, 360], [-1, 1], [90]);
       expect(r).toBeCloseTo(1, TRIGONOMETRY_EPS);
@@ -467,8 +467,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       );
       expect(r).toBeCloseTo(315, 6);
     });
-
-    // Stack operators.
 
     it("compiles dup", async function () {
       const r = compileAndRun("{ dup mul }", [0, 1], [0, 1], [0.5]);
@@ -532,8 +530,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(dest[1]).toBeCloseTo(0.1, 9);
       expect(dest[2]).toBeCloseTo(0.2, 9);
     });
-
-    // Multiple inputs / outputs — exercises _makeWrapper specializations.
 
     it("compiles 3-output function", function () {
       const fn = buildPostScriptWasmFunction(
@@ -607,8 +603,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(1.0, 9);
     });
 
-    // Comparison / boolean.
-
     it("compiles eq", async function () {
       const r = compileAndRun("{ eq }", [0, 1, 0, 1], [0, 1], [0.5, 0.5]);
       expect(r).toBeCloseTo(1, 9);
@@ -645,8 +639,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(t).toBeCloseTo(1, 9);
       expect(f).toBeCloseTo(0, 9);
     });
-
-    // Conditionals.
 
     it("compiles ifelse — true branch taken", async function () {
       const r = compileAndRun(
@@ -715,15 +707,11 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r[1]).toBeCloseTo(0.7, 9);
     });
 
-    // Range clamping.
-
     it("clamps output to declared range", async function () {
       // mul exceeds range [0, 0.5] → result clamped
       const r = compileAndRun("{ add }", [0, 1, 0, 1], [0, 0.5], [0.4, 0.4]);
       expect(r).toBeCloseTo(0.5, 9);
     });
-
-    // Bitwise.
 
     it("compiles bitshift left (literal shift)", async function () {
       const r = compileAndRun("{ 3 bitshift }", [0, 256], [0, 256], [1]);
@@ -759,8 +747,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(13, 9);
     });
 
-    // Returns null for unsupported ops.
-
     it("returns null for programs with roll (non-literal args)", function () {
       const fn = buildPostScriptWasmFunction(
         "{ roll }",
@@ -778,8 +764,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       );
       expect(fn).toBeNull();
     });
-
-    // not — boolean vs integer.
 
     it("compiles boolean not (logical NOT)", async function () {
       // 0.5 0.5 eq → true (1.0); not → false (0.0)
@@ -989,8 +973,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(getWasmLocalCount(bytes)).toBe(1);
     });
 
-    // min/max fold and related runtime tests.
-
     it("compiles x^0.25 → sqrt(sqrt(x))", async function () {
       const r = compileAndRun("{ 0.25 exp }", [0, 16], [0, 2], [16]);
       expect(r).toBeCloseTo(2, 9); // 16^0.25 = 2
@@ -1051,7 +1033,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     });
   });
 
-  // PSStackToTree
   describe("PSStackToTree", function () {
     /** Parse and convert to tree, returning the output node array. */
     function toTree(src, numInputs) {
@@ -1262,9 +1243,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out).toBeNull();
     });
 
-    // Optimisations
-
-    // Constant folding
     it("constant-folds a binary op when both operands are literals", function () {
       const out = toTree("{ 3 4 add }", 0);
       expect(out.length).toBe(1);
@@ -1287,7 +1265,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].value).toBeCloseTo(12);
     });
 
-    // Identity elements
     it("x + 0 → x", function () {
       const out = toTree("{ 0 add }", 1);
       expect(out[0]).toBeInstanceOf(PsArgNode);
@@ -1325,7 +1302,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].index).toBe(0);
     });
 
-    // Absorbing elements
     it("x * 0 → 0", function () {
       const out = toTree("{ 0 mul }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
@@ -1350,7 +1326,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].value).toBe(1);
     });
 
-    // Double-negation elimination
     it("neg(neg(x)) → x", function () {
       const out = toTree("{ neg neg }", 1);
       expect(out[0]).toBeInstanceOf(PsArgNode);
@@ -1377,7 +1352,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].operand).toBeInstanceOf(PsArgNode);
     });
 
-    // Boolean identities
     it("x and true → x", function () {
       const out = toTree("{ true and }", 1);
       expect(out[0]).toBeInstanceOf(PsArgNode);
@@ -1400,7 +1374,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].value).toBe(true);
     });
 
-    // not(comparison) → negated comparison
     it("not(a eq b) → a ne b", function () {
       const out = toTree("{ eq not }", 2);
       expect(out[0]).toBeInstanceOf(PsBinaryNode);
@@ -1419,8 +1392,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0]).toBeInstanceOf(PsBinaryNode);
       expect(out[0].op).toBe(TOKEN.lt);
     });
-
-    // Value types
 
     it("PsArgNode has numeric valueType", function () {
       const out = toTree("{ }", 1);
@@ -1458,8 +1429,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       const out = toTree("{ not }", 1);
       expect(out[0].valueType).toBe(PS_VALUE_TYPE.numeric);
     });
-
-    // Reflexive simplifications (x op x)
 
     it("x - x → 0 (reflexive sub)", function () {
       const out = toTree("{ dup sub }", 1);
@@ -1712,8 +1681,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].op).toBe(TOKEN.max);
     });
 
-    // min/max identity and absorption
-
     it("neg(a − b) → b − a (sub operand swap)", function () {
       // neg(x - 1) should become (1 - x), i.e. PsBinaryNode(sub)
       // with the operands swapped — no PsUnaryNode(neg) in the tree.
@@ -1765,8 +1732,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].operand.op).toBe(TOKEN.sqrt);
     });
 
-    // Constant folding — binary ops beyond add/sub/mul
-
     it("constant-folds sub, div, idiv, mod", function () {
       expect(toTree("{ 5 3 sub }", 0)[0].value).toBeCloseTo(2); // sub const fold
       expect(toTree("{ 6 3 div }", 0)[0].value).toBeCloseTo(2);
@@ -1797,8 +1762,6 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(toTree("{ 4 2 bitshift }", 0)[0].value).toBe(16); // 4 << 2
     });
 
-    // Constant folding — unary ops
-
     it("constant-folds abs, neg, ceiling, floor, round, truncate", function () {
       expect(toTree("{ 2.5 abs }", 0)[0].value).toBeCloseTo(2.5);
       expect(toTree("{ 2.5 neg }", 0)[0].value).toBeCloseTo(-2.5);
@@ -1815,6 +1778,650 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(toTree("{ 100 log }", 0)[0].value).toBeCloseTo(2, 9);
       expect(toTree("{ 2.7 cvi }", 0)[0].value).toBe(2); // Math.trunc(2.7)
       expect(toTree("{ 2.7 cvr }", 0)[0].value).toBeCloseTo(2.7, 9);
+    });
+  });
+
+  describe("PostScript Type 4 WGSL shader compiler", function () {
+    const DOMAIN2 = [0, 1, 0, 1];
+    const RANGE_GRAY = [0, 1];
+    const RANGE_RGB = [0, 1, 0, 1, 0, 1];
+    // Mirror the compiler's _RAD_TO_DEG constant so the test stays in sync.
+    const _RAD_TO_DEG_STR = (180 / Math.PI).toPrecision(17);
+
+    // Compile src and assert non-null; returns the full shader string.
+    function compileWgsl(src, range = RANGE_GRAY) {
+      const program = parsePostScriptFunction(src);
+      const shader = buildPostScriptWgslShader(program, DOMAIN2, range);
+      expect(shader).not.toBeNull();
+      return shader;
+    }
+
+    // Extract the body of fn fs_main (everything between its outermost braces).
+    // The generated fs_main never contains nested braces (select() is used
+    // instead of if/else), so the first { after "fn fs_main" pairs with the
+    // very last } in the shader.
+    function getFsBody(shader) {
+      const start = shader.indexOf("fn fs_main");
+      const open = shader.indexOf("{", start);
+      return shader.slice(open + 1, shader.lastIndexOf("}"));
+    }
+
+    it("returns null for nIn ≠ 2", function () {
+      // domain with nIn = 1
+      const program = parsePostScriptFunction("{ 1 add }");
+      expect(buildPostScriptWgslShader(program, [0, 1], [0, 1])).toBeNull();
+    });
+
+    it("returns null when a range value is non-finite", function () {
+      const program = parsePostScriptFunction("{ add }");
+      expect(
+        buildPostScriptWgslShader(program, DOMAIN2, [0, Infinity])
+      ).toBeNull();
+    });
+
+    it("returns null for unsupported nOut (e.g. 2)", function () {
+      const program = parsePostScriptFunction("{ dup }");
+      expect(
+        buildPostScriptWgslShader(program, DOMAIN2, [0, 1, 0, 1])
+      ).toBeNull();
+    });
+
+    it("returns null when PSStackToTree cannot compile the program", function () {
+      // `if` without `else` produces variable stack depth — PSStackToTree fails
+      const program = parsePostScriptFunction("{ dup 0 gt { pop } if }");
+      expect(
+        buildPostScriptWgslShader(program, DOMAIN2, RANGE_GRAY)
+      ).toBeNull();
+    });
+
+    it("emits the correct WGSL frame (structs and vertex shader)", function () {
+      const shader = compileWgsl("{ add }");
+
+      expect(shader).toContain(
+        [
+          "struct VertexInput {",
+          "  @location(0) pos:   vec2f,",
+          "  @location(1) coord: vec2f,",
+          "};",
+        ].join("\n")
+      );
+      expect(shader).toContain(
+        [
+          "struct VertexOutput {",
+          "  @builtin(position) pos:   vec4f,",
+          "  @location(0)       coord: vec2f,",
+          "};",
+        ].join("\n")
+      );
+      expect(shader).toContain(
+        [
+          "@vertex",
+          "fn vs_main(in: VertexInput) -> VertexOutput {",
+          "  var out: VertexOutput;",
+          "  out.pos   = vec4f(in.pos, 0.0, 1.0);",
+          "  out.coord = in.coord;",
+          "  return out;",
+          "}",
+        ].join("\n")
+      );
+      expect(shader).toContain(
+        [
+          "@fragment",
+          "fn fs_main(in: VertexOutput) -> @location(0) vec4f {",
+        ].join("\n")
+      );
+    });
+
+    it("compiles a constant grey shader", function () {
+      const body = getFsBody(compileWgsl("{ pop pop 0.5 }"));
+      expect(body).toContain("let _o0 = clamp(0.5, 0.0, 1.0);");
+      expect(body).toContain("return vec4f(_o0, _o0, _o0, 1.0);");
+    });
+
+    it("compiles an identity (pass-through i) grey shader", function () {
+      // { pop } — discards j, outputs i as grey
+      const body = getFsBody(compileWgsl("{ pop }"));
+      expect(body).toContain("let _o0 = clamp(in.coord.x, 0.0, 1.0);");
+      expect(body).toContain("return vec4f(_o0, _o0, _o0, 1.0);");
+    });
+
+    it("compiles a radial gradient: sqrt(i²+j²)", function () {
+      // Stack trace: [i,j] → dup → [i,j,j] → mul → [i,j*j] → exch →
+      //   [j*j,i] → dup → [j*j,i,i] → mul → [j*j,i*i] → add → sqrt
+      // arg nodes are trivially inlined, so no CSE let-bindings are emitted.
+      const body = getFsBody(compileWgsl("{ dup mul exch dup mul add sqrt }"));
+      expect(body).toContain(
+        "sqrt(((in.coord.y * in.coord.y) + (in.coord.x * in.coord.x)))"
+      );
+    });
+
+    it("compiles an RGB shader", function () {
+      // output (i, j, i*j)
+      const body = getFsBody(
+        compileWgsl("{ 2 copy mul 3 1 roll exch }", RANGE_RGB)
+      );
+      expect(body).toContain("return vec4f(_o0, _o1, _o2, 1.0);");
+    });
+
+    it("compiles arithmetic operators correctly", function () {
+      expect(getFsBody(compileWgsl("{ add }"))).toContain(
+        "in.coord.x + in.coord.y"
+      );
+      expect(getFsBody(compileWgsl("{ sub }"))).toContain(
+        "in.coord.x - in.coord.y"
+      );
+      expect(getFsBody(compileWgsl("{ mul }"))).toContain(
+        "in.coord.x * in.coord.y"
+      );
+      // div: safe division — returns 0 when divisor is 0
+      const divBody = getFsBody(compileWgsl("{ div }"));
+      expect(divBody).toContain("select(0.0,");
+      expect(divBody).toContain("!= 0.0");
+    });
+
+    it("compiles unary operators correctly", function () {
+      expect(getFsBody(compileWgsl("{ pop abs }"))).toContain("abs(");
+      expect(getFsBody(compileWgsl("{ pop neg }"))).toContain("-(");
+      expect(getFsBody(compileWgsl("{ pop ceiling }"))).toContain("ceil(");
+      expect(getFsBody(compileWgsl("{ pop floor }"))).toContain("floor(");
+      expect(getFsBody(compileWgsl("{ pop round }"))).toContain("floor(");
+      expect(getFsBody(compileWgsl("{ pop truncate }"))).toContain("trunc(");
+      expect(getFsBody(compileWgsl("{ pop sqrt }"))).toContain("sqrt(");
+    });
+
+    it("compiles sin and cos with mod-360 and degree-to-radian conversion", function () {
+      const sinBody = getFsBody(compileWgsl("{ pop sin }"));
+      expect(sinBody).toContain(
+        "sin((in.coord.x % 360.0) * 0.017453292519943295)"
+      );
+
+      const cosBody = getFsBody(compileWgsl("{ pop cos }"));
+      expect(cosBody).toContain(
+        "cos((in.coord.x % 360.0) * 0.017453292519943295)"
+      );
+    });
+
+    it("inlines atan as atan2 + degree wrap in the fs_main body", function () {
+      const body = getFsBody(compileWgsl("{ atan }"));
+      // atan2 call with the degree-to-radian constant
+      expect(body).toContain("atan2(");
+      expect(body).toContain(_RAD_TO_DEG_STR);
+      // degree wrap: select(deg + 360.0, deg, deg >= 0.0)
+      expect(body).toContain("+ 360.0");
+      expect(body).toContain(">= 0.0");
+    });
+
+    it("inlines bitshift as i32 casts and select in the fs_main body", function () {
+      const body = getFsBody(compileWgsl("{ pop 2 bitshift }"));
+      // i32 casts for value and shift amount
+      expect(body).toContain("i32(");
+      // left-shift and right-shift operators
+      expect(body).toContain("<<");
+      expect(body).toContain(">>");
+      // select picks left vs right shift based on sign of the amount
+      expect(body).toContain("select(");
+      expect(body).toContain(">= 0");
+    });
+
+    it("compiles ternary (ifelse) with WGSL select", function () {
+      // add i+j, compare to 1.0 → single value on stack → ternary is the output
+      // The comparison is emitted as a native WGSL bool (no f32 round-trip).
+      const body = getFsBody(
+        compileWgsl("{ add 1.0 gt { 1.0 } { 0.0 } ifelse }")
+      );
+      expect(body).toContain(
+        "select(0.0, 1.0, ((in.coord.x + in.coord.y) > 1.0))"
+      );
+    });
+
+    it("compiles range clamping into the shader", function () {
+      const body = getFsBody(compileWgsl("{ add }", [0.2, 0.8]));
+      expect(body).toContain("clamp(");
+      expect(body).toContain("0.2");
+      expect(body).toContain("0.8");
+    });
+
+    it("CSE: a shared non-trivial sub-expression emits a let-binding", function () {
+      // { pop dup mul dup add }: pop j, square i (dup+mul), then dup the
+      // result → the mul node is referenced twice → CSE emits `let _t0`.
+      // Both uses of i² in the add must reference _t0, not re-compute it.
+      const body = getFsBody(compileWgsl("{ pop dup mul dup add }"));
+      expect(body).toContain("let _t0 = (in.coord.x * in.coord.x);");
+      expect(body).toContain("(_t0 + _t0)");
+    });
+  });
+
+  describe("buildExponentialWgslShader", function () {
+    it("compiles a grayscale (nOut=1) exponential function", function () {
+      const shader = buildExponentialWgslShader([0], [1], 1, [0, 1], null);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("let x = clamp(in.coord.x, 0.0, 1.0);");
+      expect(shader).toContain("let _o0 = clamp(0.0 + x * 1.0, 0.0, 1.0);");
+      expect(shader).toContain("vec4f(_o0, _o0, _o0, 1.0)");
+    });
+
+    it("compiles an RGB (nOut=3) exponential function with range", function () {
+      const shader = buildExponentialWgslShader(
+        [0, 0, 0],
+        [1, 1, 1],
+        1,
+        [0, 1],
+        [0, 1, 0, 1, 0, 1]
+      );
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("vec4f(_o0, _o1, _o2, 1.0)");
+    });
+
+    it("returns null for unsupported nOut (e.g. 2)", function () {
+      expect(
+        buildExponentialWgslShader([0, 0], [1, 1], 1, [0, 1], null)
+      ).toBeNull();
+    });
+
+    it("returns null when n is non-finite", function () {
+      expect(
+        buildExponentialWgslShader([0], [1], Infinity, [0, 1], null)
+      ).toBeNull();
+    });
+
+    it("returns null when a C0/C1 value is non-finite", function () {
+      expect(
+        buildExponentialWgslShader([Infinity], [1], 1, [0, 1], null)
+      ).toBeNull();
+    });
+
+    it("returns null when a range value is non-finite", function () {
+      expect(
+        buildExponentialWgslShader([0], [1], 1, [0, 1], [0, Infinity])
+      ).toBeNull();
+    });
+
+    it("returns null when a domain value is non-finite", function () {
+      expect(
+        buildExponentialWgslShader([0], [1], 1, [0, Infinity], null)
+      ).toBeNull();
+    });
+
+    it("compiles n=0 (constant function) using '1.0' instead of pow(x, 0)", function () {
+      // x^0 = 1; pow(x, 0.0) is NaN in WGSL, so n=0 is special-cased.
+      const shader = buildExponentialWgslShader([0.2], [0.8], 0, [0, 1], null);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("1.0");
+      expect(shader).not.toContain("pow(");
+    });
+  });
+
+  describe("buildSampledWgslShader", function () {
+    // Minimal 2×2 grayscale sample grid: 4 normalized values in [0, 1].
+    const SAMPLES_GRAY = [0, 0.5, 0.5, 1.0];
+    const SIZE_2x2 = [2, 2];
+    const ENCODE_2x2 = [0, 1, 0, 1];
+    const DECODE_GRAY = [0, 1];
+    const DOMAIN_2D = [0, 1, 0, 1];
+    const RANGE_GRAY = [0, 1];
+
+    it("compiles a grayscale 2-in 1-out sampled shader", function () {
+      const shader = buildSampledWgslShader(
+        SAMPLES_GRAY,
+        SIZE_2x2,
+        ENCODE_2x2,
+        DECODE_GRAY,
+        DOMAIN_2D,
+        RANGE_GRAY
+      );
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("_samples_0");
+      expect(shader).toContain("vec4f(_o0, _o0, _o0, 1.0)");
+    });
+
+    it("compiles an RGB 2-in 3-out sampled shader", function () {
+      // Interleaved RGB: [r0,g0,b0, r1,g1,b1, r2,g2,b2, r3,g3,b3]
+      const samplesRgb = [0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 1, 0];
+      const shader = buildSampledWgslShader(
+        samplesRgb,
+        SIZE_2x2,
+        ENCODE_2x2,
+        [0, 1, 0, 1, 0, 1],
+        DOMAIN_2D,
+        [0, 1, 0, 1, 0, 1]
+      );
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("_samples_0");
+      expect(shader).toContain("_samples_1");
+      expect(shader).toContain("_samples_2");
+      expect(shader).toContain("vec4f(_o0, _o1, _o2, 1.0)");
+    });
+
+    it("returns null when domain is not 2-input (length ≠ 4)", function () {
+      expect(
+        buildSampledWgslShader(
+          SAMPLES_GRAY,
+          SIZE_2x2,
+          ENCODE_2x2,
+          DECODE_GRAY,
+          [0, 1],
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null for unsupported nOut (e.g. 2)", function () {
+      expect(
+        buildSampledWgslShader(
+          SAMPLES_GRAY,
+          SIZE_2x2,
+          ENCODE_2x2,
+          [0, 1, 0, 1],
+          DOMAIN_2D,
+          [0, 1, 0, 1]
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when encode contains a non-finite value", function () {
+      expect(
+        buildSampledWgslShader(
+          SAMPLES_GRAY,
+          SIZE_2x2,
+          [Infinity, 1, 0, 1],
+          DECODE_GRAY,
+          DOMAIN_2D,
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when decode contains a non-finite value", function () {
+      expect(
+        buildSampledWgslShader(
+          SAMPLES_GRAY,
+          SIZE_2x2,
+          ENCODE_2x2,
+          [Infinity, 1],
+          DOMAIN_2D,
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when domain contains a non-finite value", function () {
+      expect(
+        buildSampledWgslShader(
+          SAMPLES_GRAY,
+          SIZE_2x2,
+          ENCODE_2x2,
+          DECODE_GRAY,
+          [0, Infinity, 0, 1],
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when domain is degenerate (xMin === xMax)", function () {
+      // domain[0] === domain[1] → division by zero → early null.
+      expect(
+        buildSampledWgslShader(
+          SAMPLES_GRAY,
+          SIZE_2x2,
+          ENCODE_2x2,
+          DECODE_GRAY,
+          [0.5, 0.5, 0, 1],
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when the sample grid exceeds 65536 entries", function () {
+      // 257×257 = 66049 > 65536 → null before any literal generation.
+      const bigSize = [257, 257];
+      const bigSamples = new Array(257 * 257).fill(0.5);
+      const bigEncode = [0, 256, 0, 256];
+      expect(
+        buildSampledWgslShader(
+          bigSamples,
+          bigSize,
+          bigEncode,
+          DECODE_GRAY,
+          DOMAIN_2D,
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when a sample value is non-finite", function () {
+      // A NaN sample triggers null inside the literal-generation loop.
+      const samples = [0, NaN, 0.5, 1];
+      expect(
+        buildSampledWgslShader(
+          samples,
+          SIZE_2x2,
+          ENCODE_2x2,
+          DECODE_GRAY,
+          DOMAIN_2D,
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+
+    it("returns null when a grid dimension is less than 2", function () {
+      // sx=1 → bilinear interpolation requires at least 2×2 samples.
+      expect(
+        buildSampledWgslShader(
+          [0, 1],
+          [1, 2],
+          [0, 0, 0, 1],
+          DECODE_GRAY,
+          DOMAIN_2D,
+          RANGE_GRAY
+        )
+      ).toBeNull();
+    });
+  });
+
+  describe("buildFunctionBasedWgslShader", function () {
+    /** Build an XRefMock whose fetchIfRef passes non-Refs through unchanged. */
+    function xref() {
+      return new XRefMock([]);
+    }
+
+    /** Make a Dict with FunctionType, Domain, and Range set. */
+    function makeDict(type, domain, range, extra = {}) {
+      const d = new Dict();
+      d.set("FunctionType", type);
+      d.set("Domain", domain);
+      d.set("Range", range);
+      for (const [k, v] of Object.entries(extra)) {
+        d.set(k, v);
+      }
+      return d;
+    }
+
+    /** Make a StringStream with a given dict attached. */
+    function makeStream(str, dict) {
+      const s = new StringStream(str);
+      s.dict = dict;
+      return s;
+    }
+
+    it("compiles a Type-4 (PostScript) BaseStream function", function () {
+      const dict = makeDict(4, [0, 1, 0, 1], [0, 1]);
+      const stream = makeStream("{ add }", dict);
+      const shader = buildFunctionBasedWgslShader(xref(), stream);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("vec4f(_o0, _o0, _o0, 1.0)");
+    });
+
+    it("compiles a Type-2 (Exponential) BaseStream function", function () {
+      const dict = makeDict(2, [0, 1], [0, 1], { C0: [0], C1: [1], N: 1 });
+      const stream = makeStream("", dict);
+      const shader = buildFunctionBasedWgslShader(xref(), stream);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("vec4f(_o0, _o0, _o0, 1.0)");
+    });
+
+    it("compiles a Type-2 (Exponential) inline Dict function", function () {
+      const dict = makeDict(2, [0, 1], [0, 1], { C0: [0], C1: [1], N: 1 });
+      const shader = buildFunctionBasedWgslShader(xref(), dict);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("vec4f(_o0, _o0, _o0, 1.0)");
+    });
+
+    it("compiles an array of one Type-2 component", function () {
+      const dict = makeDict(2, [0, 1], null, { C0: [0], C1: [1], N: 1 });
+      const shader = buildFunctionBasedWgslShader(xref(), [dict]);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("vec4f(_o0, _o0, _o0, 1.0)");
+    });
+
+    it("compiles an array of three Type-2 components (RGB)", function () {
+      const d = () => makeDict(2, [0, 1], null, { C0: [0], C1: [1], N: 1 });
+      const shader = buildFunctionBasedWgslShader(xref(), [d(), d(), d()]);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("vec4f(_o0, _o1, _o2, 1.0)");
+    });
+
+    it("compiles an array of one Type-4 component", function () {
+      const dict = makeDict(4, [0, 1, 0, 1], [0, 1]);
+      const stream = makeStream("{ add }", dict);
+      const shader = buildFunctionBasedWgslShader(xref(), [stream]);
+      expect(shader).not.toBeNull();
+    });
+
+    it("compiles an array of one Type-0 sampled component", function () {
+      // 2×2 grid, 8 BitsPerSample, 4 samples = 4 bytes [0, 128, 64, 255]
+      const bytes = new Uint8Array([0, 128, 64, 255]);
+      const dict = makeDict(0, [0, 1, 0, 1], [0, 1], {
+        Size: [2, 2],
+        BitsPerSample: 8,
+      });
+      const stream = new Stream(bytes.buffer, 0, 4, dict);
+      const shader = buildFunctionBasedWgslShader(xref(), [stream]);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("_samples_0");
+    });
+
+    it("returns null for an unsupported function object", function () {
+      expect(buildFunctionBasedWgslShader(xref(), "not-a-fn")).toBeNull();
+    });
+
+    it("returns null for an array with unsupported nOut (e.g. 2)", function () {
+      const d = () => makeDict(2, [0, 1], null, { C0: [0], C1: [1], N: 1 });
+      expect(buildFunctionBasedWgslShader(xref(), [d(), d()])).toBeNull();
+    });
+
+    it("returns null for Type-4 with missing Range", function () {
+      const dict = makeDict(4, [0, 1, 0, 1], null);
+      const stream = makeStream("{ add }", dict);
+      expect(buildFunctionBasedWgslShader(xref(), stream)).toBeNull();
+    });
+
+    it("returns null for an inline Dict with non-Type-2 FunctionType", function () {
+      // Only Type-2 is valid as a non-stream Dict; Type-4 requires a stream.
+      const dict = makeDict(4, [0, 1, 0, 1], [0, 1]);
+      expect(buildFunctionBasedWgslShader(xref(), dict)).toBeNull();
+    });
+
+    it("returns null when an array element is neither BaseStream nor Dict", function () {
+      // A plain number in the array can't provide a dict → early null.
+      expect(buildFunctionBasedWgslShader(xref(), [42])).toBeNull();
+    });
+
+    it("returns null when an array component compilation fails", function () {
+      // Type-4 component with missing Domain → _componentBodyPS returns null.
+      const dict = new Dict();
+      dict.set("FunctionType", 4);
+      dict.set("Range", [0, 1]);
+      // No Domain — _componentBodyPS checks for it.
+      const stream = makeStream("{ add }", dict);
+      expect(buildFunctionBasedWgslShader(xref(), [stream])).toBeNull();
+    });
+
+    it("compiles a Type-0 (Sampled) BaseStream as a single function", function () {
+      // 2×2 grid, 8 BitsPerSample, 1 output channel → 4 bytes
+      const bytes = new Uint8Array([0, 128, 64, 255]);
+      const dict = makeDict(0, [0, 1, 0, 1], [0, 1], {
+        Size: [2, 2],
+        BitsPerSample: 8,
+      });
+      const stream = new Stream(bytes.buffer, 0, 4, dict);
+      const shader = buildFunctionBasedWgslShader(xref(), stream);
+      expect(shader).not.toBeNull();
+      expect(shader).toContain("_samples_0");
+    });
+
+    it("returns null for a BaseStream with an unsupported FunctionType", function () {
+      // FunctionType 3 (Stitching) is not handled as a single BaseStream.
+      const dict = makeDict(3, [0, 1, 0, 1], [0, 1]);
+      const stream = makeStream("", dict);
+      expect(buildFunctionBasedWgslShader(xref(), stream)).toBeNull();
+    });
+
+    it("returns null for Type-2 BaseStream with missing N", function () {
+      // _buildExponentialFromDict requires N to be a number.
+      const dict = makeDict(2, [0, 1], [0, 1], { C0: [0], C1: [1] });
+      // N deliberately omitted → typeof n !== "number" → null
+      const stream = makeStream("", dict);
+      expect(buildFunctionBasedWgslShader(xref(), stream)).toBeNull();
+    });
+
+    it("returns null for Type-0 BaseStream with missing Size", function () {
+      // Validation in the SAMPLED branch requires Size and BitsPerSample.
+      const dict = makeDict(0, [0, 1, 0, 1], [0, 1]);
+      // Size and BitsPerSample omitted → validation fails → null
+      const stream = makeStream("", dict);
+      expect(buildFunctionBasedWgslShader(xref(), stream)).toBeNull();
+    });
+
+    it("returns null for array Type-2 component with missing N", function () {
+      // _componentBodyExponential returns null when Domain or N is absent.
+      const dict = makeDict(2, [0, 1], null, { C0: [0], C1: [1] });
+      // N omitted → null path in _componentBodyExponential
+      expect(buildFunctionBasedWgslShader(xref(), [dict])).toBeNull();
+    });
+
+    it("returns null for array Type-2 component with non-finite domain", function () {
+      // f32Lit returns null for Infinity, triggering the second null branch.
+      const dict = makeDict(2, [0, Infinity], null, {
+        C0: [0],
+        C1: [1],
+        N: 1,
+      });
+      expect(buildFunctionBasedWgslShader(xref(), [dict])).toBeNull();
+    });
+
+    it("returns null for array Type-0 component that is a Dict (not a stream)", function () {
+      // _componentBodySampled requires f instanceof BaseStream.
+      const dict = makeDict(0, [0, 1, 0, 1], [0, 1], {
+        Size: [2, 2],
+        BitsPerSample: 8,
+      });
+      // Dict, not a stream → first guard in _componentBodySampled fails.
+      expect(buildFunctionBasedWgslShader(xref(), [dict])).toBeNull();
+    });
+
+    it("returns null for array Type-0 component with bad Domain length", function () {
+      // Domain must be length 4 (2-in function).
+      const bytes = new Uint8Array([0, 128, 64, 255]);
+      const dict = makeDict(0, [0, 1], [0, 1], {
+        Size: [2, 2],
+        BitsPerSample: 8,
+      });
+      const stream = new Stream(bytes.buffer, 0, 4, dict);
+      expect(buildFunctionBasedWgslShader(xref(), [stream])).toBeNull();
+    });
+
+    it("returns null for array Type-0 component with missing Size", function () {
+      const bytes = new Uint8Array([0, 128, 64, 255]);
+      const dict = makeDict(0, [0, 1, 0, 1], [0, 1], { BitsPerSample: 8 });
+      // Size omitted → validation fails.
+      const stream = new Stream(bytes.buffer, 0, 4, dict);
+      expect(buildFunctionBasedWgslShader(xref(), [stream])).toBeNull();
+    });
+
+    it("returns null for array Type-4 component that is a Dict (not a stream)", function () {
+      // _componentBodyPS requires BaseStream; a Dict triggers null.
+      const dict = makeDict(4, [0, 1, 0, 1], [0, 1]);
+      expect(buildFunctionBasedWgslShader(xref(), [dict])).toBeNull();
     });
   });
 });

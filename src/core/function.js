@@ -100,34 +100,34 @@ function toNumberArray(arr) {
   return arr;
 }
 
-class PDFFunction {
-  static getSampleArray(size, outputSize, bps, stream) {
-    let length = outputSize;
-    for (const s of size) {
-      length *= s;
-    }
-
-    const array = new Array(length);
-    let codeSize = 0;
-    let codeBuf = 0;
-    // 32 is a valid bps so shifting won't work
-    const sampleMul = 1.0 / (2.0 ** bps - 1);
-
-    const strBytes = stream.getBytes((length * bps + 7) / 8);
-    let strIdx = 0;
-    for (let i = 0; i < length; i++) {
-      while (codeSize < bps) {
-        codeBuf <<= 8;
-        codeBuf |= strBytes[strIdx++];
-        codeSize += 8;
-      }
-      codeSize -= bps;
-      array[i] = (codeBuf >> codeSize) * sampleMul;
-      codeBuf &= (1 << codeSize) - 1;
-    }
-    return array;
+function getSampleArray(size, outputSize, bps, stream) {
+  let length = outputSize;
+  for (const s of size) {
+    length *= s;
   }
 
+  const array = new Array(length);
+  let codeSize = 0;
+  let codeBuf = 0;
+  // 32 is a valid bps so shifting won't work
+  const sampleMul = 1.0 / (2.0 ** bps - 1);
+
+  const strBytes = stream.getBytes((length * bps + 7) / 8);
+  let strIdx = 0;
+  for (let i = 0; i < length; i++) {
+    while (codeSize < bps) {
+      codeBuf <<= 8;
+      codeBuf |= strBytes[strIdx++];
+      codeSize += 8;
+    }
+    codeSize -= bps;
+    array[i] = (codeBuf >> codeSize) * sampleMul;
+    codeBuf &= (1 << codeSize) - 1;
+  }
+  return array;
+}
+
+class PDFFunction {
   static parse(factory, fn) {
     const dict = fn.dict || fn;
     const typeNum = dict.get("FunctionType");
@@ -194,7 +194,7 @@ class PDFFunction {
 
     const decode = toNumberArray(dict.getArray("Decode")) || range;
 
-    const samples = this.getSampleArray(size, outputSize, bps, fn);
+    const samples = getSampleArray(size, outputSize, bps, fn);
     // const mask = 2 ** bps - 1;
 
     return function constructSampledFn(src, srcOffset, dest, destOffset) {
@@ -271,6 +271,8 @@ class PDFFunction {
     const c0 = toNumberArray(dict.getArray("C0")) || [0];
     const c1 = toNumberArray(dict.getArray("C1")) || [1];
     const n = dict.get("N");
+    const domain = toNumberArray(dict.getArray("Domain")) || [0, 1];
+    const range = toNumberArray(dict.getArray("Range"));
 
     const diff = [];
     for (let i = 0, ii = c0.length; i < ii; ++i) {
@@ -279,10 +281,15 @@ class PDFFunction {
     const length = diff.length;
 
     return function constructInterpolatedFn(src, srcOffset, dest, destOffset) {
-      const x = n === 1 ? src[srcOffset] : src[srcOffset] ** n;
+      const clampedX = MathClamp(src[srcOffset], domain[0], domain[1]);
+      const x = n === 1 ? clampedX : clampedX ** n;
 
       for (let j = 0; j < length; ++j) {
-        dest[destOffset + j] = c0[j] + x * diff[j];
+        let v = c0[j] + x * diff[j];
+        if (range) {
+          v = MathClamp(v, range[2 * j], range[2 * j + 1]);
+        }
+        dest[destOffset + j] = v;
       }
     };
   }
@@ -381,4 +388,4 @@ function isPDFFunction(v) {
   return fnDict.has("FunctionType");
 }
 
-export { FunctionType, isPDFFunction, PDFFunctionFactory };
+export { FunctionType, getSampleArray, isPDFFunction, PDFFunctionFactory };

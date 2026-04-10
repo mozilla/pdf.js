@@ -14075,5 +14075,12 @@
     "md5": "7f0f390a70228fffe95835518ec266c5",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "function_shading",
+    "file": "pdfs/function_shading.pdf",
+    "md5": "83851473de7d6fe03494b99de762d97d",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

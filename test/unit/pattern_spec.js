@@ -72,35 +72,49 @@ describe("pattern", function () {
       const shading = createFunctionBasedShading();
       const ir = shading.getIR();
 
+      // #minStepsFromFnObj returns [32, 32] for non-Type-0 functions, so
+      // stepsX = max(ceil(bboxW=2), 32) = 32  →  verticesPerRow = 33
+      // stepsY = max(ceil(bboxH=3), 32) = 32  →  total vertices  = 33×33 = 1089
+      const totalVertices = 33 * 33;
+      const verticesPerRow = 33;
+
       expect(ir[0]).toEqual("Mesh");
       expect(ir[1]).toEqual(1);
       expect(ir[2]).toBeInstanceOf(Float32Array);
-      expect(ir[2].length).toEqual(24);
-      expect(Array.from(ir[2].slice(0, 6))).toEqual([10, 20, 11, 20, 12, 20]);
-      expect(Array.from(ir[2].slice(-6))).toEqual([10, 23, 11, 23, 12, 23]);
+      expect(ir[2].length).toEqual(totalVertices * 2);
+      // First row (y=0): x steps by 2/32=0.0625 in user space (matrix ×2).
+      expect(Array.from(ir[2].slice(0, 6))).toEqual([
+        10, 20, 10.0625, 20, 10.125, 20,
+      ]);
+      // Last row (y=1): same x steps, y=3+20=23.
+      expect(Array.from(ir[2].slice(-6))).toEqual([
+        11.875, 23, 11.9375, 23, 12, 23,
+      ]);
 
       expect(ir[3]).toBeInstanceOf(Uint8ClampedArray);
-      expect(ir[3].length).toEqual(48);
+      expect(ir[3].length).toEqual(totalVertices * 4);
+      // col=0: x=0→R=0; col=1: x=1/32→R≈8; col=2: x=2/32→R≈16.
       expect(Array.from(ir[3].slice(0, 12))).toEqual([
-        0, 0, 0, 0, 128, 0, 0, 0, 191, 0, 0, 0,
+        0, 0, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0,
       ]);
+      // Boundary vertices evaluated at 1−½step: G≈251, R≈251.
       expect(Array.from(ir[3].slice(-12))).toEqual([
-        0, 212, 0, 0, 128, 212, 0, 0, 191, 212, 0, 0,
+        239, 251, 0, 0, 247, 251, 0, 0, 251, 251, 0, 0,
       ]);
 
       expect(ir[4]).toEqual([
         jasmine.objectContaining({
-          verticesPerRow: 3,
+          verticesPerRow,
         }),
       ]);
       expect(ir[4][0].coords).toBeInstanceOf(Uint32Array);
-      expect(Array.from(ir[4][0].coords)).toEqual([
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-      ]);
+      expect(Array.from(ir[4][0].coords)).toEqual(
+        Array.from({ length: totalVertices }, (_, i) => i)
+      );
       expect(ir[4][0].colors).toBeInstanceOf(Uint32Array);
-      expect(Array.from(ir[4][0].colors)).toEqual([
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-      ]);
+      expect(Array.from(ir[4][0].colors)).toEqual(
+        Array.from({ length: totalVertices }, (_, i) => i)
+      );
       expect(ir[5]).toEqual([10, 20, 12, 23]);
       expect(ir[6]).toBeNull();
       expect(ir[7]).toBeNull();
@@ -134,8 +148,11 @@ describe("pattern", function () {
       });
       const [, , , colors] = shading.getIR();
 
-      expect(colors.length).toEqual(48);
-      expect(Array.from(colors)).toEqual(new Array(48).fill(0));
+      // 33×33 grid (stepsX=stepsY=32); boundary vertices are evaluated at
+      // 1−½step rather than exactly 1, so the fn always returns 0.
+      const totalVertices = 33 * 33;
+      expect(colors.length).toEqual(totalVertices * 4);
+      expect(Array.from(colors)).toEqual(new Array(totalVertices * 4).fill(0));
     });
   });
 });

@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { drawMeshWithGPU, isGPUReady, loadMeshShader } from "./webgpu.js";
+import {
+  drawMeshWithGPU,
+  drawPsFunctionWithGPU,
+  isGPUReady,
+  loadMeshShader,
+} from "./webgpu.js";
 import {
   FormatError,
   info,
@@ -440,6 +445,9 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._bounds = IR[5];
     this._bbox = IR[6];
     this._background = IR[7];
+    this._wgslShader = IR[8] ?? null; // compiled PS WGSL shader, or null
+    this._wgslMatrix = IR[9] ?? null; // domain→user-space matrix, or null (identity)
+    this._wgslDomain = IR[10] ?? null; // shading domain [x0,x1,y0,y1], or null
     this.matrix = null;
     // Pre-compile the mesh pipeline now that we know GPU-renderable content
     // is present; no-op if the GPU is not available or already compiled.
@@ -489,7 +497,31 @@ class MeshShadingPattern extends BaseShadingPattern {
     const paddedHeight = height + BORDER_SIZE * 2;
     const tmpCanvas = canvasFactory.create(paddedWidth, paddedHeight);
 
-    if (isGPUReady()) {
+    if (this._wgslShader && isGPUReady()) {
+      // Fast path: evaluate the compiled PostScript function entirely on the
+      // GPU. We render a full-canvas quad; the vertex shader interpolates
+      // PS-domain (i, j) coordinates across the quad so every fragment
+      // computes its own color without any CPU-side mesh generation.
+      tmpCanvas.context.drawImage(
+        drawPsFunctionWithGPU(
+          this._wgslShader,
+          this._buildPsFunctionVertices(
+            offsetX,
+            offsetY,
+            scaleX,
+            scaleY,
+            paddedWidth,
+            paddedHeight,
+            BORDER_SIZE
+          ),
+          paddedWidth,
+          paddedHeight,
+          backgroundColor
+        ),
+        0,
+        0
+      );
+    } else if (isGPUReady()) {
       tmpCanvas.context.drawImage(
         drawMeshWithGPU(
           this._figures,
@@ -526,6 +558,71 @@ class MeshShadingPattern extends BaseShadingPattern {
       scaleX,
       scaleY,
     };
+  }
+
+  /**
+   * Build 6 interleaved vertices (2 triangles) for the PS-function WGSL path.
+   *
+   * Each vertex: [pos.x, pos.y, coord.x, coord.y].
+   * - (pos.x, pos.y) NDC (Normalized Device Coordinates) position of the domain
+   *   corner in the output canvas.
+   * - (coord.x, coord.y) PS-domain (i, j) value at that corner.
+   *
+   * The polygon covers the domain quadrilateral (which may be rotated/sheared),
+   * not the full canvas rectangle.  This ensures pixels outside the domain
+   * shape are never coloured — matching the CPU mesh path which only rasterizes
+   * triangles inside the domain.
+   *
+   * Mapping for each domain corner (i, j):
+   *   content coord  cx = a*i + c*j + e  (forward matrix application)
+   *   NDC            ndcX = ((cx - offsetX) / scaleX + borderSize)
+   *                           / paddedWidth * 2 - 1
+   *
+   * The domain→content mapping is affine, so GPU interpolation of (coord)
+   * across the quad is exact for every fragment.
+   */
+  _buildPsFunctionVertices(
+    offsetX,
+    offsetY,
+    scaleX,
+    scaleY,
+    paddedWidth,
+    paddedHeight,
+    borderSize
+  ) {
+    const [x0, x1, y0, y1] = this._wgslDomain;
+    const mat = this._wgslMatrix ?? [1, 0, 0, 1, 0, 0];
+    const [a, b, c, d, e, f] = mat;
+
+    // Map a PS-domain point (i, j) to its NDC position in the output canvas.
+    //   Step 1: apply the domain->user-space matrix to get content coords.
+    //   Step 2: apply the content->NDC transform the GPU vertex shader uses.
+    const toNDC = (i, j) => {
+      const cx = a * i + c * j + e;
+      const cy = b * i + d * j + f;
+      return [
+        (((cx - offsetX) / scaleX + borderSize) / paddedWidth) * 2 - 1,
+        1 - (((cy - offsetY) / scaleY + borderSize) / paddedHeight) * 2,
+      ];
+    };
+
+    const [ndcX00, ndcY00] = toNDC(x0, y0);
+    const [ndcX10, ndcY10] = toNDC(x1, y0);
+    const [ndcX01, ndcY01] = toNDC(x0, y1);
+    const [ndcX11, ndcY11] = toNDC(x1, y1);
+
+    // Two triangles covering the domain quadrilateral.
+    // GPU interpolates (coord) linearly across each triangle — exact for
+    // any affine domain->content mapping.
+    // prettier-ignore
+    return new Float32Array([
+      ndcX00, ndcY00, x0, y0,
+      ndcX10, ndcY10, x1, y0,
+      ndcX01, ndcY01, x0, y1,
+      ndcX10, ndcY10, x1, y0,
+      ndcX11, ndcY11, x1, y1,
+      ndcX01, ndcY01, x0, y1,
+    ]);
   }
 
   isModifyingCurrentTransform() {

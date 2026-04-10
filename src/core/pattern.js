@@ -33,6 +33,7 @@ import {
   MissingDataException,
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
+import { buildFunctionBasedWgslShader } from "./postscript/wgsl_compiler.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { MathClamp } from "../shared/math_clamp.js";
 
@@ -47,11 +48,14 @@ const ShadingType = {
 };
 
 class Pattern {
-  // eslint-disable-next-line no-unused-private-class-members
   static #hasGPU = false;
 
   constructor() {
     unreachable("Cannot initialize Pattern.");
+  }
+
+  static get hasGPU() {
+    return this.#hasGPU;
   }
 
   static setOptions({ hasGPU }) {
@@ -411,7 +415,6 @@ class FunctionBasedShading extends BaseShading {
     if (!fnObj) {
       throw new FormatError("FunctionBasedShading: missing /Function");
     }
-    const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
 
     // Domain [x0, x1, y0, y1]; defaults to [0, 1, 0, 1].
     const [x0, x1, y0, y1] = lookupRect(dict.getArray("Domain"), [0, 1, 0, 1]);
@@ -423,17 +426,51 @@ class FunctionBasedShading extends BaseShading {
     this.bounds = BBOX_INIT.slice();
     Util.axialAlignedBoundingBox([x0, y0, x1, y1], matrix, this.bounds);
 
+    // When the GPU is available and the colorspace is DeviceGray or DeviceRGB,
+    // try to compile the function to WGSL and skip CPU mesh generation.
+    this.wgslShader = null;
+    this.wgslMatrix = null;
+    this.wgslDomain = null;
+    if (
+      Pattern.hasGPU &&
+      (cs.name === "DeviceGray" || cs.name === "DeviceRGB")
+    ) {
+      try {
+        this.wgslShader = buildFunctionBasedWgslShader(xref, fnObj);
+      } catch {}
+    }
+
+    if (this.wgslShader) {
+      this.wgslDomain = [x0, x1, y0, y1];
+      const [a, b, c, d, e, f] = matrix;
+      this.wgslMatrix =
+        a === 1 && b === 0 && c === 0 && d === 1 && e === 0 && f === 0
+          ? null
+          : [a, b, c, d, e, f];
+      // GPU renders directly; no CPU mesh needed.
+      this.coords = new Float32Array(0);
+      this.colors = new Uint8ClampedArray(0);
+      this.figures = [];
+      return;
+    }
+
+    // CPU fallback: evaluate the function over a lattice mesh.
+    const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
+
     const bboxW = this.bounds[2] - this.bounds[0];
     const bboxH = this.bounds[3] - this.bounds[1];
+    const [minStepsX, minStepsY] = FunctionBasedShading.#minStepsFromFn(
+      fnObj,
+      xref
+    );
 
-    // 1 step per user-space unit, capped for performance.
     const stepsX = MathClamp(
-      Math.ceil(bboxW),
+      Math.max(Math.ceil(bboxW), minStepsX),
       1,
       FunctionBasedShading.MAX_STEP_COUNT
     );
     const stepsY = MathClamp(
-      Math.ceil(bboxH),
+      Math.max(Math.ceil(bboxH), minStepsY),
       1,
       FunctionBasedShading.MAX_STEP_COUNT
     );
@@ -484,6 +521,43 @@ class FunctionBasedShading extends BaseShading {
     ];
   }
 
+  // Return [minStepsX, minStepsY] based on the function's intrinsic sampling
+  // density.  For Type-0 (sampled) functions we need enough steps per sample
+  // cell so that Gouraud (linear triangle) shading faithfully approximates
+  // the bilinear interpolation — one step per cell is not enough because the
+  // bilinear cross-term causes visible errors for high-contrast patterns.  A
+  // minimum of 32 ensures each cell is covered by multiple triangles, which
+  // makes the approximation visually accurate.  We also keep at least
+  // Size[i]-1 so that the mesh is never coarser than the sample grid.  For
+  // all other function types 32 provides smooth results for curved gradients.
+  static #minStepsFromFnObj(fnObj) {
+    const dict = fnObj?.dict || fnObj;
+    if (dict?.get?.("FunctionType") === 0) {
+      const size = dict.getArray("Size");
+      if (Array.isArray(size) && size.length >= 2) {
+        return [Math.max(32, size[0] - 1), Math.max(32, size[1] - 1)];
+      }
+    }
+    return [32, 32];
+  }
+
+  static #minStepsFromFn(fnObj, xref) {
+    const obj = xref.fetchIfRef(fnObj);
+    if (Array.isArray(obj)) {
+      let minX = 1,
+        minY = 1;
+      for (const fn of obj) {
+        const [x, y] = FunctionBasedShading.#minStepsFromFnObj(
+          xref.fetchIfRef(fn)
+        );
+        minX = Math.max(minX, x);
+        minY = Math.max(minY, y);
+      }
+      return [minX, minY];
+    }
+    return FunctionBasedShading.#minStepsFromFnObj(obj);
+  }
+
   getIR() {
     return [
       "Mesh",
@@ -494,6 +568,9 @@ class FunctionBasedShading extends BaseShading {
       this.bounds,
       this.bbox,
       this.background,
+      this.wgslShader, // [8] compiled WGSL shader string, or null
+      this.wgslMatrix, // [9] domain→user-space matrix [a,b,c,d,e,f], or null
+      this.wgslDomain, // [10] shading domain [x0,x1,y0,y1], or null
     ];
   }
 }

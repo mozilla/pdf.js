@@ -75,6 +75,10 @@ class WebGPU {
   // Format chosen to match the OffscreenCanvas swapchain on this device.
   #preferredFormat = null;
 
+  // Per-shader pipeline cache for compiled PostScript function shaders.
+  // Key: WGSL source string.  Value: GPURenderPipeline.
+  #psFunctionPipelines = new Map();
+
   async #initGPU() {
     if (!globalThis.navigator?.gpu) {
       return false;
@@ -357,6 +361,122 @@ class WebGPU {
     // GPU-resident; drawing it onto a 2D canvas is a GPU-to-GPU blit.
     return offscreen.transferToImageBitmap();
   }
+
+  /**
+   * Return (creating and caching if necessary) a render pipeline for a
+   * compiled PostScript WGSL shader. The shader is expected to follow the
+   * layout produced by {@link PsWgslCompiler}:
+   *   @location(0) pos:   vec2f  — NDC position
+   *   @location(1) coord: vec2f  — PS-domain (i, j) coordinate
+   *
+   * @param {string} wgslShader
+   * @returns {GPURenderPipeline}
+   */
+  #getOrCreatePsPipeline(wgslShader) {
+    let pipeline = this.#psFunctionPipelines.get(wgslShader);
+    if (pipeline) {
+      return pipeline;
+    }
+    const module = this.#device.createShaderModule({ code: wgslShader });
+    pipeline = this.#device.createRenderPipeline({
+      layout: "auto",
+      vertex: {
+        module,
+        entryPoint: "vs_main",
+        buffers: [
+          {
+            // Interleaved: [pos.x, pos.y, coord.x, coord.y] — 4 × float32.
+            arrayStride: 4 * 4,
+            attributes: [
+              { shaderLocation: 0, offset: 0, format: "float32x2" },
+              { shaderLocation: 1, offset: 2 * 4, format: "float32x2" },
+            ],
+          },
+        ],
+      },
+      fragment: {
+        module,
+        entryPoint: "fs_main",
+        targets: [{ format: this.#preferredFormat }],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+    this.#psFunctionPipelines.set(wgslShader, pipeline);
+    return pipeline;
+  }
+
+  /**
+   * Evaluate a compiled PostScript WGSL shader over a full-canvas quad.
+   *
+   * `vertices` is a Float32Array with 6 vertices (2 triangles covering the
+   * entire output canvas). Each vertex carries four floats:
+   *   [pos.x, pos.y, coord.x, coord.y]
+   * where (pos.x, pos.y) are NDC coordinates in [−1, 1]² and
+   * (coord.x, coord.y) are the PostScript-domain (i, j) values that the
+   * fragment shader should evaluate. The GPU interpolates (coord) linearly
+   * across the quad so every fragment receives its correct domain coordinate.
+   *
+   * @param {string}         wgslShader
+   * @param {Float32Array}   vertices      6 × 4 floats
+   * @param {number}         paddedWidth
+   * @param {number}         paddedHeight
+   * @param {Uint8Array|null} backgroundColor  [r,g,b] or null
+   * @returns {ImageBitmap}
+   */
+  drawPsFunction(
+    wgslShader,
+    vertices,
+    paddedWidth,
+    paddedHeight,
+    backgroundColor
+  ) {
+    const device = this.#device;
+    const pipeline = this.#getOrCreatePsPipeline(wgslShader);
+
+    const vertexBuffer = device.createBuffer({
+      size: vertices.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+    });
+    device.queue.writeBuffer(vertexBuffer, 0, vertices);
+
+    const offscreen = new OffscreenCanvas(paddedWidth, paddedHeight);
+    const gpuCtx = offscreen.getContext("webgpu");
+    gpuCtx.configure({
+      device,
+      format: this.#preferredFormat,
+      alphaMode: backgroundColor ? "opaque" : "premultiplied",
+    });
+
+    const clearValue = backgroundColor
+      ? {
+          r: backgroundColor[0] / 255,
+          g: backgroundColor[1] / 255,
+          b: backgroundColor[2] / 255,
+          a: 1,
+        }
+      : { r: 0, g: 0, b: 0, a: 0 };
+
+    const commandEncoder = device.createCommandEncoder();
+    const renderPass = commandEncoder.beginRenderPass({
+      colorAttachments: [
+        {
+          view: gpuCtx.getCurrentTexture().createView(),
+          clearValue,
+          loadOp: "clear",
+          storeOp: "store",
+        },
+      ],
+    });
+    renderPass.setPipeline(pipeline);
+    renderPass.setVertexBuffer(0, vertexBuffer);
+    renderPass.draw(6); // 6 vertices = 2 triangles covering the full quad
+    renderPass.end();
+
+    device.queue.submit([commandEncoder.finish()]);
+    vertexBuffer.destroy();
+
+    return offscreen.transferToImageBitmap();
+  }
 }
 
 const _webGPU = new WebGPU();
@@ -398,4 +518,26 @@ function drawMeshWithGPU(
   );
 }
 
-export { drawMeshWithGPU, initGPU, isGPUReady, loadMeshShader };
+function drawPsFunctionWithGPU(
+  wgslShader,
+  vertices,
+  paddedWidth,
+  paddedHeight,
+  backgroundColor
+) {
+  return _webGPU.drawPsFunction(
+    wgslShader,
+    vertices,
+    paddedWidth,
+    paddedHeight,
+    backgroundColor
+  );
+}
+
+export {
+  drawMeshWithGPU,
+  drawPsFunctionWithGPU,
+  initGPU,
+  isGPUReady,
+  loadMeshShader,
+};
