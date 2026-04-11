@@ -3295,6 +3295,14 @@ class InternalRenderTask {
       this._canvasContext ||
       this._canvas.getContext("2d", {
         alpha: false,
+        // Pin the canvas backing store to sRGB. Image pixels written via
+        // `putImageData` bypass color management, so on wide-gamut displays
+        // (e.g. Display P3 on Apple Silicon) the compositor otherwise
+        // reinterprets sRGB pixel values as P3 and shifts them toward
+        // magenta. Regressed in b1b728d47 (v5.4.54), when this getContext
+        // call moved from the caller (who previously supplied a pre-built
+        // context) into PDF.js itself.
+        colorSpace: "srgb",
         willReadFrequently: !this._enableHWA,
       });
 
