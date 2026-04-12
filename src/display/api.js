@@ -41,12 +41,7 @@ import {
   CanvasDependencyTracker,
   CanvasImagesTracker,
 } from "./canvas_dependency_tracker.js";
-import { FontFaceObject, FontLoader } from "./font_loader.js";
-import {
-  FontInfo,
-  FontPathInfo,
-  PatternInfo,
-} from "./obj_bin_transform_display.js";
+import { FontLoader } from "./font_loader.js";
 import {
   getDataProp,
   getFactoryUrlProp,
@@ -75,6 +70,7 @@ import { GlobalWorkerOptions } from "./worker_options.js";
 import { initGPU } from "./webgpu.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
+import { ObjectHandler } from "./object_handler.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PagesMapper } from "./pages_mapper.js";
 import { PageViewport } from "./page_viewport.js";
@@ -2753,6 +2749,14 @@ class WorkerTransport {
       page._startRenderPage(data.transparency, data.cacheKey);
     });
 
+    const objectHandler = new ObjectHandler({
+      messageHandler,
+      commonObjs: this.commonObjs,
+      fontLoader: this.fontLoader,
+      pageCache: this.#pageCache,
+      pdfBug: this._params.pdfBug,
+    });
+
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
         return null; // Ignore any pending requests if the worker was terminated.
@@ -2762,78 +2766,7 @@ class WorkerTransport {
         return null;
       }
 
-      switch (type) {
-        case "Font":
-          if ("error" in exportedData) {
-            const exportedError = exportedData.error;
-            warn(`Error during font loading: ${exportedError}`);
-            this.commonObjs.resolve(id, exportedError);
-            break;
-          }
-
-          const fontData = new FontInfo(exportedData);
-          const inspectFont =
-            this._params.pdfBug && globalThis.FontInspector?.enabled
-              ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
-              : null;
-          const font = new FontFaceObject(
-            fontData,
-            inspectFont,
-            exportedData.charProcOperatorList,
-            exportedData.extra
-          );
-
-          this.fontLoader
-            .bind(font)
-            .catch(() => messageHandler.sendWithPromise("FontFallback", { id }))
-            .finally(() => {
-              if (!font.fontExtraProperties) {
-                // Immediately release the `font.data` property once the font
-                // has been attached to the DOM, since it's no longer needed,
-                // rather than waiting for a `PDFDocumentProxy.cleanup` call.
-                // Since `font.data` could be very large, e.g. in some cases
-                // multiple megabytes, this will help reduce memory usage.
-                font.clearData();
-              }
-              this.commonObjs.resolve(id, font);
-            });
-          break;
-        case "CopyLocalImage":
-          const { imageRef } = exportedData;
-          assert(imageRef, "The imageRef must be defined.");
-
-          for (const pageProxy of this.#pageCache.values()) {
-            for (const [, data] of pageProxy.objs) {
-              if (data?.ref !== imageRef) {
-                continue;
-              }
-              if (!data.dataLen) {
-                return null;
-              }
-              const copy = structuredClone(data);
-              if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-                copy.CopyLocalImage = true;
-              }
-              this.commonObjs.resolve(id, copy);
-              return data.dataLen;
-            }
-          }
-          break;
-        case "FontPath":
-          this.commonObjs.resolve(id, new FontPathInfo(exportedData));
-          break;
-        case "Image":
-          this.commonObjs.resolve(id, exportedData);
-          break;
-        case "Pattern":
-          const pattern = new PatternInfo(exportedData);
-          this.commonObjs.resolve(id, pattern.getIR());
-          break;
-        default:
-          throw new Error(`Got unknown common object type ${type}`);
-      }
-
-      return null;
+      return objectHandler.resolveCommonObject(id, type, exportedData);
     });
 
     messageHandler.on("obj", ([id, pageIndex, type, imageData]) => {
@@ -2841,25 +2774,7 @@ class WorkerTransport {
         // Ignore any pending requests if the worker was terminated.
         return;
       }
-
-      const pageProxy = this.#pageCache.get(pageIndex);
-      if (pageProxy.objs.has(id)) {
-        return;
-      }
-      // Don't store data *after* cleanup has successfully run, see bug 1854145.
-      if (pageProxy._intentStates.size === 0) {
-        imageData?.bitmap?.close(); // Release any `ImageBitmap` data.
-        return;
-      }
-
-      switch (type) {
-        case "Image":
-        case "Pattern":
-          pageProxy.objs.resolve(id, imageData);
-          break;
-        default:
-          throw new Error(`Got unknown object type ${type}`);
-      }
+      objectHandler.resolveObject(id, pageIndex, type, imageData);
     });
 
     messageHandler.on("DocProgress", data => {
