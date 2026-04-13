@@ -14,15 +14,25 @@
  */
 
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
+import { CanvasGraphics } from "./canvas.js";
 import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
+import { OffscreenCanvasFactory } from "./canvas_factory.js";
+import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFObjects } from "./pdf_objects.js";
+import { WorkerFilterFactory } from "./filter_factory.js";
 
 class RendererMessageHandler {
   static #commonObjs = new PDFObjects();
 
   static #objsMap = new Map();
+
+  static #renderTaskStates = new Map();
+
+  static #canvasMap = new Map();
+
+  static #cleanedPages = new Set();
 
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis,
@@ -48,6 +58,72 @@ class RendererMessageHandler {
     handler.send("ready", null);
   }
 
+  static #getPageObjs(pageIndex) {
+    let objs = this.#objsMap.get(pageIndex);
+    if (!objs) {
+      objs = new PDFObjects();
+      this.#objsMap.set(pageIndex, objs);
+    }
+    return objs;
+  }
+
+  static #cleanupRenderTask(renderTaskId) {
+    const renderTaskState = this.#renderTaskStates.get(renderTaskId);
+    if (!renderTaskState) {
+      return;
+    }
+    renderTaskState.aborted = true;
+    renderTaskState.continueResolve?.();
+
+    renderTaskState.gfx.endDrawing();
+    this.#renderTaskStates.delete(renderTaskId);
+  }
+
+  static #cleanupPage(pageIndex, keepCanvas = false) {
+    this.#cleanedPages.add(pageIndex);
+    this.#objsMap.delete(pageIndex);
+    for (const [renderTaskId, renderTaskState] of this.#renderTaskStates) {
+      if (renderTaskState.pageIndex === pageIndex) {
+        this.#cleanupRenderTask(renderTaskId);
+      }
+    }
+    if (!keepCanvas) {
+      this.#canvasMap.delete(pageIndex);
+    }
+  }
+
+  static #appendOperatorList(renderTaskState, fnArray, argsArray, lastChunk) {
+    const { operatorList } = renderTaskState;
+    if (fnArray) {
+      operatorList.fnArray.push(...fnArray);
+      operatorList.argsArray.push(...argsArray);
+    }
+    operatorList.lastChunk = lastChunk;
+  }
+
+  static async #executeOperatorList(renderTaskState, operationsFilter) {
+    const { operatorList, gfx } = renderTaskState;
+    while (!renderTaskState.aborted) {
+      const continuePromise = new Promise(resolve => {
+        renderTaskState.continueResolve = resolve;
+      });
+
+      renderTaskState.operatorListIdx = gfx.executeOperatorList(
+        operatorList,
+        renderTaskState.operatorListIdx,
+        renderTaskState.continueResolve,
+        undefined, // Renderer does not support stepper yet.
+        operationsFilter
+      );
+
+      if (renderTaskState.operatorListIdx === operatorList.argsArray.length) {
+        return renderTaskState.operatorListIdx;
+      }
+      await continuePromise;
+    }
+    return renderTaskState.operatorListIdx;
+  }
+
   static #setupObjectHandler(handler) {
     const objectHandler = new ObjectHandler({
       messageHandler: handler,
@@ -65,6 +141,13 @@ class RendererMessageHandler {
     });
 
     handler.on("obj", ([id, pageIndex, type, imageData]) => {
+      // The page may have been cleaned up before this message was processed;
+      // drop the data and release any `ImageBitmap` instead of resurrecting
+      // an empty object bag for a dead page.
+      if (this.#cleanedPages.has(pageIndex)) {
+        imageData?.bitmap?.close();
+        return;
+      }
       objectHandler.resolveObject(id, pageIndex, type, imageData);
     });
   }
@@ -86,6 +169,138 @@ class RendererMessageHandler {
     });
 
     this.#setupObjectHandler(handler);
+
+    handler.on("cleanupPage", ({ pageIndex, keepCanvas }) => {
+      this.#cleanupPage(pageIndex, keepCanvas);
+    });
+
+    handler.on("restorePage", ({ pageIndex }) => {
+      this.#cleanedPages.delete(pageIndex);
+    });
+
+    // Mirrors the document-level cleanup the main thread performs in
+    // `WorkerTransport.startCleanup`; without this the worker's copies of
+    // `commonObjs`/`fontLoader` would outlive their main-thread counterparts.
+    handler.on("Cleanup", ({ keepLoadedFonts }) => {
+      this.#commonObjs.clear();
+      if (!keepLoadedFonts) {
+        this.#fontLoader.clear();
+      }
+    });
+
+    handler.on("CleanupRenderTask", ({ renderTaskId }) => {
+      this.#cleanupRenderTask(renderTaskId);
+    });
+
+    handler.on("InitializeGraphics", async data => {
+      const {
+        canvas,
+        pageIndex,
+        renderTaskId,
+        enableHWA = false,
+        annotationCanvasMap,
+        transform,
+        viewport,
+        transparency,
+        background,
+      } = data;
+      if (enableWebGPU) {
+        await initGPU();
+      }
+      const objs = this.#getPageObjs(pageIndex);
+      const optionalContentConfig = OptionalContentConfig.fromSerializable(
+        data.optionalContentConfig
+      );
+
+      const ctx = canvas.getContext("2d", {
+        alpha: false,
+        willReadFrequently: !enableHWA,
+      });
+      const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
+      const filterFactory = new WorkerFilterFactory();
+      const annotationCanvases = annotationCanvasMap
+        ? new Map(annotationCanvasMap)
+        : null;
+      const gfx = new CanvasGraphics(
+        ctx,
+        this.#commonObjs,
+        objs,
+        canvasFactory,
+        filterFactory,
+        { optionalContentConfig },
+        annotationCanvases
+        /** Renderer worker doesn't support pageColors and dependencyTracker */
+      );
+
+      gfx.beginDrawing({
+        transform,
+        viewport,
+        transparency,
+        background,
+      });
+
+      // Store a reference to the OffscreenCanvas
+      this.#canvasMap.set(pageIndex, canvas);
+
+      this.#renderTaskStates.set(renderTaskId, {
+        pageIndex,
+        gfx,
+        operatorList: {
+          fnArray: [],
+          argsArray: [],
+          lastChunk: false,
+        },
+        operatorListIdx: 0,
+        continueResolve: null,
+        aborted: false,
+      });
+    });
+
+    handler.on("UpdateAnnotationCanvases", data => {
+      const { renderTaskId, annotationCanvasMap } = data;
+      if (!annotationCanvasMap) {
+        return;
+      }
+      const renderTaskState = this.#renderTaskStates.get(renderTaskId);
+      if (!renderTaskState || !renderTaskState.gfx.annotationCanvasMap) {
+        return;
+      }
+      for (const [id, canvas] of annotationCanvasMap) {
+        renderTaskState.gfx.annotationCanvasMap.set(id, canvas);
+      }
+    });
+
+    handler.on("ExecuteOperatorList", async data => {
+      const {
+        renderTaskId,
+        fnArray,
+        argsArray,
+        operatorListIdx,
+        operationsFilter,
+        lastChunk,
+      } = data;
+      const renderTaskState = this.#renderTaskStates.get(renderTaskId);
+      if (!renderTaskState) {
+        // A render task can be cleaned up before queued
+        // ExecuteOperatorList messages for that task are processed.
+        return operatorListIdx;
+      }
+
+      renderTaskState.operatorListIdx = operatorListIdx;
+      this.#appendOperatorList(renderTaskState, fnArray, argsArray, lastChunk);
+
+      const currentOperatorListIdx = await this.#executeOperatorList(
+        renderTaskState,
+        operationsFilter
+      );
+      if (
+        renderTaskState.operatorList.lastChunk &&
+        currentOperatorListIdx === renderTaskState.operatorList.argsArray.length
+      ) {
+        this.#cleanupRenderTask(renderTaskId);
+      }
+      return currentOperatorListIdx;
+    });
   }
 }
 
