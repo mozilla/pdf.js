@@ -41,6 +41,7 @@ const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
 const VIEWER_LOCALE = "en-US";
 const WORKER_SRC = "../build/generic/build/pdf.worker.mjs";
+const RENDERER_SRC = "../build/generic/build/pdf.renderer.mjs";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -534,6 +535,7 @@ class Driver {
   constructor(options) {
     // Configure the global worker options.
     GlobalWorkerOptions.workerSrc = WORKER_SRC;
+    GlobalWorkerOptions.rendererSrc = RENDERER_SRC;
 
     // We only need to initialize the `L10n`-instance here, since translation is
     // triggered by a `MutationObserver`; see e.g. `Rasterize.annotationLayer`.
@@ -571,6 +573,9 @@ class Driver {
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
+    // Used as the render-target when testing rendering in worker, since a
+    // canvas can only be transferred once using `transferControlToOffscreen`.
+    this.renderCanvas = null;
   }
 
   run() {
@@ -1202,8 +1207,23 @@ class Driver {
                 initPromise = Promise.resolve();
               }
             }
+            // Render into a separate canvas to allow
+            // `transferControlToOffscreen`
+            if (partialCrop) {
+              // Rendering directly into `this.canvas` is required to support
+              // `recordOperations` and cropping operations.
+              this.renderCanvas = this.canvas;
+            } else {
+              this.renderCanvas = document.createElement("canvas");
+              this.renderCanvas.width = pixelWidth;
+              this.renderCanvas.height = pixelHeight;
+              this.renderCanvas.style.width = this.canvas.style.width;
+              this.renderCanvas.style.height = this.canvas.style.height;
+            }
+            const renderCanvas = this.renderCanvas;
+
             const renderContext = {
-              canvas: this.canvas,
+              canvas: renderCanvas,
               viewport,
               optionalContentConfigPromise: task.optionalContentConfigPromise,
               annotationCanvasMap,
@@ -1225,6 +1245,14 @@ class Driver {
             }
 
             const completeRender = error => {
+              if (renderCanvas !== this.canvas) {
+                try {
+                  ctx.drawImage(renderCanvas, 0, 0);
+                } catch (ex) {
+                  this._info(`Unable to copy the render canvas: ${ex}`);
+                }
+                renderCanvas.resetWorkerCanvas?.();
+              }
               // if text layer is present, compose it on top of the page
               if (textLayerCanvas) {
                 if (task.type === "text") {
@@ -1265,6 +1293,7 @@ class Driver {
                 await renderTask.promise;
 
                 if (partialCrop) {
+                  ctx = this.canvas.getContext("2d", { alpha: false });
                   const clearOutsidePartial = () => {
                     const { width, height } = ctx.canvas;
                     // Everything above the partial area
