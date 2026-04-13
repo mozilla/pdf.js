@@ -65,7 +65,11 @@ class ObjectHandler {
         this.fontLoader
           .bind(font)
           .catch(() =>
-            this.messageHandler.sendWithPromise("FontFallback", { id })
+            this.messageHandler
+              .sendWithPromise("FontFallback", { id })
+              .catch(reason => {
+                warn(`FontFallback failed for "${id}": ${reason}`);
+              })
           )
           .finally(() => {
             if (!font.fontExtraProperties) {
