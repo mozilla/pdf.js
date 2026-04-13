@@ -16,6 +16,7 @@
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
 import { CanvasGraphics } from "./canvas.js";
 import { FontLoader } from "./font_loader.js";
+import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
 import { OffscreenCanvasFactory } from "./canvas_factory.js";
@@ -198,6 +199,7 @@ class RendererMessageHandler {
         pageIndex,
         renderTaskId,
         enableHWA = false,
+        enableWebGPU = false,
         annotationCanvasMap,
         transform,
         viewport,
