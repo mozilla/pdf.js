@@ -21,6 +21,7 @@ import {
   AbortException,
   AnnotationMode,
   assert,
+  FeatureTest,
   getVerbosityLevel,
   info,
   isNodeJS,
@@ -41,7 +42,6 @@ import {
   CanvasDependencyTracker,
   CanvasImagesTracker,
 } from "./canvas_dependency_tracker.js";
-import { FontLoader } from "./font_loader.js";
 import {
   getDataProp,
   getFactoryUrlProp,
@@ -65,6 +65,7 @@ import { CanvasGraphics } from "./canvas.js";
 import { DOMBinaryDataFactory } from "display-binary_data_factory";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMFilterFactory } from "./filter_factory.js";
+import { FontLoader } from "./font_loader.js";
 import { getNetworkStream } from "display-network_stream";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { initGPU } from "./webgpu.js";
@@ -185,7 +186,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
  *   context to create elements with and to load resources, such as fonts,
- *   into. Defaults to the current document.
+ *   into. Defaults to the current document. Renderer-worker rendering is
+ *   disabled when this is set to a custom document.
  * @property {boolean} [disableRange] - Disable range request loading of PDF
  *   files. When enabled, and if the server supports partial content requests,
  *   then the PDF will be fetched in chunks. The default value is `false`.
@@ -215,6 +217,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {Object} [pagesMapper] - The pages mapper that will be used to map
  *   page ids and page numbers. It's used when the page order is changed or some
  *   pages are removed, cloned, etc.
+ * @property {boolean} [disableWorkerRendering] - Disables rendering of pages in
+ *   a worker thread. The default value is `false`.
  */
 
 /**
@@ -304,6 +308,12 @@ function getDocument(src = {}) {
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
+  // Parameters only intended for development/testing purposes.
+  const styleElement =
+    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
+      ? src.styleElement
+      : null;
+
   // Parameters whose default values depend on other parameters.
   const useSystemFonts =
     typeof src.useSystemFonts === "boolean"
@@ -323,12 +333,12 @@ function getDocument(src = {}) {
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
         );
-
-  // Parameters only intended for development/testing purposes.
-  const styleElement =
-    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
-      ? src.styleElement
-      : null;
+  const disableWorkerRendering =
+    src.disableWorkerRendering === true ||
+    typeof Worker === "undefined" ||
+    !FeatureTest.isOffscreenCanvasSupported ||
+    ownerDocument !== globalThis.document ||
+    !!styleElement;
 
   // Set the main-thread verbosity level.
   setVerbosityLevel(verbosity);
@@ -353,6 +363,9 @@ function getDocument(src = {}) {
       port: GlobalWorkerOptions.workerPort,
     });
     task._worker = worker;
+  }
+  if (!disableWorkerRendering) {
+    task._rendererWorker = new RendererWorker({ verbosity });
   }
 
   const docParams = {
@@ -397,7 +410,18 @@ function getDocument(src = {}) {
     },
   };
 
-  Promise.all([worker.promise, gpuPromise])
+  const workerPromises = [worker.promise, gpuPromise];
+  if (task._rendererWorker) {
+    workerPromises.push(
+      task._rendererWorker.promise.catch(reason => {
+        warn(`Renderer worker disabled: ${reason.message}`);
+        task._rendererWorker?.destroy();
+        task._rendererWorker = null;
+      })
+    );
+  }
+
+  Promise.all(workerPromises)
     .then(function ([, hasGPU]) {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
@@ -450,7 +474,10 @@ function getDocument(src = {}) {
           messageHandler,
           task,
           networkStream,
-          transportParams,
+          {
+            ...transportParams,
+            rendererHandler: task._rendererWorker?.rendererHandler || null,
+          },
           transportFactory,
           pagesMapper
         );
@@ -509,6 +536,11 @@ class PDFDocumentLoadingTask {
    * @private
    */
   _worker = null;
+
+  /**
+   * @private
+   */
+  _rendererWorker = null;
 
   /**
    * Unique identifier for the document loading task.
@@ -583,6 +615,9 @@ class PDFDocumentLoadingTask {
 
     this._worker?.destroy();
     this._worker = null;
+
+    this._rendererWorker?.destroy();
+    this._rendererWorker = null;
   }
 
   /**
@@ -2034,6 +2069,160 @@ class PDFPageProxy {
 }
 
 /**
+ * @typedef {Object} RendererWorkerParameters
+ * @property {string} [name] - The name of the worker.
+ * @property {number} [verbosity] - Controls the logging level;
+ *   the constants from {@link VerbosityLevel} should be used.
+ */
+
+/**
+ * Renderer worker abstraction that controls the instantiation of a dedicated
+ * worker that can host canvas rendering.
+ *
+ * @param {RendererWorkerParameters} params - The worker initialization
+ *   parameters.
+ */
+class RendererWorker {
+  #worker = null;
+
+  #rendererHandler = null;
+
+  #capability = Promise.withResolvers();
+
+  constructor({ name = null, verbosity = getVerbosityLevel() } = {}) {
+    this.name = name;
+    this.destroyed = false;
+    this.verbosity = verbosity;
+    this.#initialize();
+  }
+
+  /**
+   * Promise for worker initialization completion.
+   * @type {Promise<void>}
+   */
+  get promise() {
+    return this.#capability.promise;
+  }
+
+  /**
+   * The current MessageHandler-instance.
+   * @type {MessageHandler | null}
+   */
+  get rendererHandler() {
+    return this.#rendererHandler;
+  }
+
+  #resolve() {
+    this.#capability.resolve();
+    // Send global setting, e.g. verbosity level.
+    this.#rendererHandler.send("configure", {
+      verbosity: this.verbosity,
+    });
+  }
+
+  #initialize() {
+    if (typeof Worker === "undefined") {
+      this.#capability.reject(
+        new Error("Renderer worker requires Worker support.")
+      );
+      return;
+    }
+    try {
+      const { rendererSrc } = RendererWorker;
+      const worker = new Worker(rendererSrc, { type: "module" });
+      const rendererHandler = new MessageHandler("main", "renderer", worker);
+
+      rendererHandler.on("ready", () => {
+        ac.abort();
+        if (this.destroyed) {
+          terminateEarly("Worker was destroyed.");
+          return;
+        }
+        try {
+          sendTest();
+        } catch (reason) {
+          terminateEarly(reason);
+        }
+      });
+
+      const terminateEarly = reason => {
+        ac.abort();
+        rendererHandler.destroy();
+        worker.terminate();
+
+        this.#capability.reject(
+          new Error(
+            `Renderer worker failed to initialize: "${reason?.message ?? reason}".`
+          )
+        );
+      };
+
+      const ac = new AbortController();
+      worker.addEventListener(
+        "error",
+        event => {
+          if (!this.#worker) {
+            // Worker failed to initialize due to an error.
+            terminateEarly(event.error || event.message);
+          }
+        },
+        { signal: ac.signal }
+      );
+
+      rendererHandler.on("test", data => {
+        ac.abort();
+        if (this.destroyed || !data) {
+          terminateEarly("TypedArray transfer test failed.");
+          return;
+        }
+        this.#rendererHandler = rendererHandler;
+        this.#worker = worker;
+
+        this.#resolve();
+      });
+
+      const sendTest = () => {
+        const testObj = new Uint8Array();
+        // Ensure that we can use `postMessage` transfers.
+        rendererHandler.send("test", testObj, [testObj.buffer]);
+      };
+
+      // It might take time for the worker to initialize. We will try to send
+      // the "test" message immediately, and once the "ready" message arrives.
+      // The worker shall process only the first received "test" message.
+      sendTest();
+    } catch (reason) {
+      this.#capability.reject(reason);
+    }
+  }
+
+  /**
+   * Destroys the worker instance.
+   */
+  destroy() {
+    this.destroyed = true;
+
+    // We need to terminate only web worker created resource.
+    this.#worker?.terminate();
+    this.#worker = null;
+
+    this.#rendererHandler?.destroy();
+    this.#rendererHandler = null;
+  }
+
+  /**
+   * The current `rendererSrc`, when it exists.
+   * @type {string}
+   */
+  static get rendererSrc() {
+    if (GlobalWorkerOptions.rendererSrc) {
+      return GlobalWorkerOptions.rendererSrc;
+    }
+    throw new Error('No "GlobalWorkerOptions.rendererSrc" specified.');
+  }
+}
+
+/**
  * @typedef {Object} PDFWorkerParameters
  * @property {string} [name] - The name of the worker.
  * @property {Worker} [port] - The `workerPort` object.
@@ -2423,6 +2612,7 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this.enableHWA = params.enableHWA;
+    this.rendererHandler = params.rendererHandler || null;
     this.loadingParams = params.loadingParams;
     this._params = params;
 
@@ -3439,6 +3629,7 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  RendererWorker,
   RenderTask,
   version,
 };
