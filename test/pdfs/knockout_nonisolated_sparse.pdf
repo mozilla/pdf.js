@@ -1,0 +1,50 @@
+%PDF-1.7
+% PDF.js test fixture
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 220 180] /Resources << /XObject << /G 4 0 R >> /ExtGState << /M 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [20 20 180 160] /Resources << >> /Group << /Type /Group /S /Transparency /CS /DeviceRGB /I false /K true >> /Length 30 >>
+stream
+q
+0 0 1 rg
+50 50 60 60 re
+f
+Q
+endstream
+endobj
+5 0 obj
+<< /Type /ExtGState /BM /Multiply >>
+endobj
+6 0 obj
+<<  /Length 39 >>
+stream
+q
+0.8 g
+0 0 220 180 re
+f
+/M gs
+/G Do
+Q
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000031 00000 n 
+0000000080 00000 n 
+0000000137 00000 n 
+0000000291 00000 n 
+0000000526 00000 n 
+0000000578 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+667
+%%EOF

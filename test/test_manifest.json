@@ -6741,6 +6741,54 @@
     }
   },
   {
+    "id": "knockout_smask",
+    "file": "pdfs/knockout_smask.pdf",
+    "md5": "d89fbb623f8e5f200a324607dd30449d",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Knockout group element with an active soft mask."
+  },
+  {
+    "id": "knockout_nested",
+    "file": "pdfs/knockout_nested.pdf",
+    "md5": "e3db1591b84f7654d53f553c60ec9fd1",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Nested knockout group used as an element of an outer knockout group."
+  },
+  {
+    "id": "knockout_nested_group_alpha",
+    "file": "pdfs/knockout_nested_group_alpha.pdf",
+    "md5": "cec0133fe020f089a73530274c295fcc",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Nested transparency group with parent alpha used as an element of an outer knockout group."
+  },
+  {
+    "id": "knockout_nonisolated_sparse",
+    "file": "pdfs/knockout_nonisolated_sparse.pdf",
+    "md5": "6c9837d997785b4d7f848fa7a96ff984",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Sparse non-isolated knockout group under a blend mode."
+  },
+  {
+    "id": "knockout_isolated_overlap",
+    "file": "pdfs/knockout_isolated_overlap.pdf",
+    "md5": "b9c5dda6b8c7eb51a904766171290dc0",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Isolated knockout group with two overlapping translucent fills; the overlap area must show only the second fill (no source-over mix)."
+  },
+  {
+    "id": "knockout_blend_multiply",
+    "file": "pdfs/knockout_blend_multiply.pdf",
+    "md5": "e0b68fa675e58685fbf1b916fa03e301",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Non-isolated knockout group with a Multiply blend mode element on a yellow backdrop; the element must blend against the backdrop, not against a transparent temp canvas."
+  },
+  {
     "id": "issue6010_1",
     "file": "pdfs/issue6010_1.pdf",
     "md5": "b58adce5dbb08936ddb0d904f0da8716",
@@ -14196,5 +14244,13 @@
     "md5": "267dc76f33cc0c0b6d36ff4605f60907",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "knockout_groups_test",
+    "file": "pdfs/knockout_groups_test.pdf",
+    "md5": "8e085d0dcea38e976f81cbfb50ece6cd",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Knockout groups composite-modes survey."
   }
 ]

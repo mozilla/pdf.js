@@ -657,6 +657,21 @@ class FeatureTest {
     });
   }
 
+  static get isCanvasFilterSupported() {
+    let ctx;
+    if (this.isOffscreenCanvasSupported) {
+      ctx = new OffscreenCanvas(1, 1).getContext("2d");
+    } else if (typeof document !== "undefined") {
+      ctx = document.createElement("canvas").getContext("2d");
+    }
+    // Spec-compliant Canvas2D defaults `ctx.filter` to "none". On
+    // browsers without filter support (Safari) the property is absent
+    // until you assign to it, after which it behaves like an ordinary
+    // JS property and stores whatever string you set without applying
+    // it. Probing the default lets us detect the difference reliably.
+    return shadow(this, "isCanvasFilterSupported", ctx?.filter !== undefined);
+  }
+
   static get isAlphaColorInputSupported() {
     return shadow(
       this,

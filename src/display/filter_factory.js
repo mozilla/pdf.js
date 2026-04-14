@@ -42,6 +42,10 @@ class BaseFilterFactory {
     return "none";
   }
 
+  addKnockoutFilter(alpha = 0) {
+    return "none";
+  }
+
   addHighlightHCMFilter(filterName, fgColor, bgColor, newFgColor, newBgColor) {
     return "none";
   }
@@ -325,6 +329,37 @@ class DOMFilterFactory extends BaseFilterFactory {
     if (map) {
       this.#addTransferMapAlphaConversion(tableA, filter);
     }
+
+    return url;
+  }
+
+  addKnockoutFilter(alpha = 0) {
+    // Shape alpha mask: for translucent elements, remove the opacity constant
+    // from the painted alpha while preserving antialias coverage. With no
+    // usable opacity, fall back to a binary mask.
+    const slope = alpha > 0 ? Math.min(1 / alpha, 1e6) : 1e6;
+    const key = `knockout_${slope}`;
+    const value = this.#cache.get(key);
+    if (value) {
+      return value;
+    }
+
+    const id = `g_${this.#docId}_knockout_filter_${this.#id++}`;
+    const url = this.#createUrl(id);
+    this.#cache.set(key, url);
+
+    const filter = this.#createFilter(id);
+    const feComponentTransfer = this.#document.createElementNS(
+      SVG_NS,
+      "feComponentTransfer"
+    );
+    filter.append(feComponentTransfer);
+    const feFuncA = this.#document.createElementNS(SVG_NS, "feFuncA");
+    // Linear feFunc clamps to [0, 1].
+    feFuncA.setAttribute("type", "linear");
+    feFuncA.setAttribute("slope", `${slope}`);
+    feFuncA.setAttribute("intercept", "0");
+    feComponentTransfer.append(feFuncA);
 
     return url;
   }

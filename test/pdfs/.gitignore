@@ -16,6 +16,12 @@
 !bug1727053.pdf
 !issue18408_reduced.pdf
 !bug1907000_reduced.pdf
+!knockout_blend_multiply.pdf
+!knockout_isolated_overlap.pdf
+!knockout_nested.pdf
+!knockout_nested_group_alpha.pdf
+!knockout_nonisolated_sparse.pdf
+!knockout_smask.pdf
 !SimFang-variant.pdf
 !bug1953099.pdf
 !issue11913.pdf
@@ -913,3 +919,4 @@
 !smask_alpha_bc.pdf
 !smask_luminosity_oob_transfer.pdf
 !operator_list_cycle.pdf
+!knockout_groups_test.pdf
