@@ -793,7 +793,7 @@ class AnnotationEditorUIManager {
     const textInputChecker = (_self, { target: el }) => {
       if (el instanceof HTMLInputElement) {
         const { type } = el;
-        return type !== "text" && type !== "number";
+        return type !== "text" && type !== "number" && type !== "password";
       }
       return true;
     };
