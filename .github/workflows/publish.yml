@@ -1,0 +1,67 @@
+name: Node.js Package
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx gulp dist
+
+      - name: prepare package metadata
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+
+          const packageJsonPath = path.join(process.cwd(), 'build/dist/package.json');
+          const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+          packageJson.name = '@verybestjp/pdfjs-dist';
+          packageJson.repository = {
+            type: 'git',
+            url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}.git`,
+          };
+          packageJson.publishConfig = {
+            registry: 'https://npm.pkg.github.com',
+          };
+
+          fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+          NODE
+
+      - working-directory: build/dist
+        run: npm version patch --no-git-tag-version
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@verybestjp'
+
+      - run: |
+          cd build/dist
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            npm publish --dry-run
+          else
+            npm publish
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
