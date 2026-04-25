@@ -596,7 +596,7 @@ function getRGBA(color) {
     const [r, g, b] = color
       .slice(/* "rgb(".length */ 4, -1) // Strip out "rgb(" and ")".
       .split(",")
-      .map(x => parseInt(x));
+      .map(x => parseInt(x, 10));
     return [r, g, b, 1];
   }
 
@@ -605,9 +605,9 @@ function getRGBA(color) {
       .slice(/* "rgba(".length */ 5, -1) // Strip out "rgba(" and ")".
       .split(",");
     return [
-      parseInt(parts[0]),
-      parseInt(parts[1]),
-      parseInt(parts[2]),
+      parseInt(parts[0], 10),
+      parseInt(parts[1], 10),
+      parseInt(parts[2], 10),
       parseFloat(parts[3]),
     ];
   }
