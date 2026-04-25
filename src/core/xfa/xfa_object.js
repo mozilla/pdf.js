@@ -370,7 +370,7 @@ class XFAObject {
   }
 
   *[$getContainedChildren]() {
-    // This function is overriden in Subform and SubformSet.
+    // This function is overridden in Subform and SubformSet.
     for (const node of this[$getChildren]()) {
       yield node;
     }

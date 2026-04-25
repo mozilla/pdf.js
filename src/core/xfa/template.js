@@ -569,7 +569,7 @@ class Area extends XFAObject {
   }
 
   *[$getContainedChildren]() {
-    // This function is overriden in order to fake that subforms under
+    // This function is overridden in order to fake that subforms under
     // this set are in fact under parent subform.
     yield* getContainedChildren(this);
   }
@@ -4921,7 +4921,7 @@ class Subform extends XFAObject {
   }
 
   *[$getContainedChildren]() {
-    // This function is overriden in order to fake that subforms under
+    // This function is overridden in order to fake that subforms under
     // this set are in fact under parent subform.
     yield* getContainedChildren(this);
   }
@@ -5276,7 +5276,7 @@ class SubformSet extends XFAObject {
   }
 
   *[$getContainedChildren]() {
-    // This function is overriden in order to fake that subforms under
+    // This function is overridden in order to fake that subforms under
     // this set are in fact under parent subform.
     yield* getContainedChildren(this);
   }
