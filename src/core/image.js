@@ -694,16 +694,8 @@ class PDFImage {
   }
 
   async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
-    const drawWidth = this.drawWidth;
-    const drawHeight = this.drawHeight;
-    const imgData = {
-      width: drawWidth,
-      height: drawHeight,
-      interpolate: this.interpolate,
-      kind: 0,
-      data: null,
-      // Other fields are filled in below.
-    };
+    let drawWidth = this.drawWidth;
+    let drawHeight = this.drawHeight;
 
     const numComps = this.numComps;
     const originalWidth = this.width;
@@ -712,9 +704,48 @@ class PDFImage {
 
     // Rows start at byte boundary.
     const rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
-    const mustBeResized =
+    let mustBeResized =
       isOffscreenCanvasSupported &&
       ImageResizer.needsToBeResized(drawWidth, drawHeight);
+
+    // When a mask is much larger than the image it applies to (as happens with
+    // high-resolution JBIG2 masks over a low-resolution image), `drawWidth` /
+    // `drawHeight` can be enormous (e.g. 20595x28611 ⇒ 2.35 GB RGBA buffer).
+    // Downscale early so the RGBA buffer fits in memory; `fillOpacity` and
+    // `colorSpace.fillRgb` resample from the original data into the smaller
+    // buffer. Only apply this when a mask/smask is inflating the output size
+    // beyond the source image, since other paths assume the data length
+    // matches `drawWidth * drawHeight`.
+    if (
+      mustBeResized &&
+      (drawWidth > originalWidth || drawHeight > originalHeight)
+    ) {
+      const { MAX_AREA, MAX_DIM } = ImageResizer;
+      const area = drawWidth * drawHeight;
+      let scale = 1;
+      if (MAX_AREA > 0 && area > MAX_AREA) {
+        scale = Math.sqrt(area / MAX_AREA);
+      }
+      scale = Math.max(scale, drawWidth / MAX_DIM, drawHeight / MAX_DIM);
+      if (scale > 1) {
+        drawWidth = Math.max(1, Math.floor(drawWidth / scale));
+        drawHeight = Math.max(1, Math.floor(drawHeight / scale));
+        // The capped dims fit in canvas limits, so let the fast OffscreenCanvas
+        // path build the final bitmap directly — skipping an unnecessary
+        // Uint8ClampedArray allocation, BMP-encode and ImageBitmap round-trip
+        // through `ImageResizer`.
+        mustBeResized = ImageResizer.needsToBeResized(drawWidth, drawHeight);
+      }
+    }
+
+    const imgData = {
+      width: drawWidth,
+      height: drawHeight,
+      interpolate: this.interpolate,
+      kind: 0,
+      data: null,
+      // Other fields are filled in below.
+    };
 
     if (!this.smask && !this.mask && this.colorSpace.name === "DeviceRGBA") {
       imgData.kind = ImageKind.RGBA_32BPP;
