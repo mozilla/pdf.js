@@ -41,6 +41,7 @@ jobs:
             skip: --noFirefox
 
     runs-on: ${{ matrix.os }}
+    environment: code-coverage
 
     steps:
       - name: Checkout repository
@@ -75,13 +76,13 @@ jobs:
         if: ${{ matrix.os == 'windows-latest' }}
         run: Set-DisplayResolution -Width 1920 -Height 1080 -Force
 
-      - name: Run integration tests (Windows)
+      - name: Run integration tests with code coverage (Windows)
         if: ${{ matrix.os == 'windows-latest' }}
-        run: npx gulp integrationtest ${{ matrix.skip }}
+        run: npx gulp integrationtest --coverage --coverage-output build/coverage/integration ${{ matrix.skip }}
 
-      - name: Run integration tests (Linux)
+      - name: Run integration tests with code coverage (Linux)
         if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: xvfb-run -a --server-args="-screen 0, 1920x1080x24" npx gulp integrationtest ${{ matrix.skip }}
+        run: xvfb-run -a --server-args="-screen 0, 1920x1080x24" npx gulp integrationtest --coverage --coverage-output build/coverage/integration ${{ matrix.skip }}
 
       - name: Save cached PDF files
         uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -89,3 +90,15 @@ jobs:
           path: test/pdfs/*.pdf
           key: cached-pdf-files-${{ hashFiles('test/pdfs/*.pdf') }}
           enableCrossOsArchive: true
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          files: ./build/coverage/integration/lcov.info
+          flags: integrationtest
+          name: codecov-umbrella
+          disable_search: true
+          disable_telem: true
+          verbose: true

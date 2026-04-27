@@ -42,7 +42,7 @@
 
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
 import { isNodeJS } from "../../src/shared/util.js";
-import { mergeWorkerCoverageIntoWindow } from "../coverage_utils.js";
+import { mergeCoverageIntoGlobal } from "../coverage_utils.js";
 import { MessageHandler } from "pdfjs/shared/message_handler.js";
 import { PDFWorker } from "pdfjs/display/api.js";
 import { TestReporter } from "../reporter.js";
@@ -156,7 +156,7 @@ function installWorkerCoverageHook() {
     const handler = new MessageHandler("main", "worker", webWorker);
     const promise = handler
       .sendWithPromise("GetWorkerCoverage", null)
-      .then(mergeWorkerCoverageIntoWindow)
+      .then(mergeCoverageIntoGlobal)
       .catch(e => {
         console.warn(`Failed to collect worker coverage: ${e}`);
       })

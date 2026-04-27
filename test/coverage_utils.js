@@ -15,15 +15,15 @@
 
 // Istanbul coverage objects use s (statements), b (branches), and f (functions)
 // as shorthand keys for the hit-count maps.
-function mergeWorkerCoverageIntoWindow(coverage) {
+function mergeCoverageIntoGlobal(coverage) {
   if (!coverage || Object.keys(coverage).length === 0) {
     return;
   }
-  window.__coverage__ ??= {};
+  globalThis.__coverage__ ??= {};
   for (const [key, fileCoverage] of Object.entries(coverage)) {
-    const existing = window.__coverage__[key];
+    const existing = globalThis.__coverage__[key];
     if (!existing) {
-      window.__coverage__[key] = fileCoverage;
+      globalThis.__coverage__[key] = fileCoverage;
       continue;
     }
     for (const id of Object.keys(fileCoverage.s)) {
@@ -49,10 +49,10 @@ async function fetchAndMergeWorkerCoverage(pdfWorker) {
       "GetWorkerCoverage",
       null
     );
-    mergeWorkerCoverageIntoWindow(coverage);
+    mergeCoverageIntoGlobal(coverage);
   } catch (e) {
     console.warn(`Failed to collect worker coverage: ${e}`);
   }
 }
 
-export { fetchAndMergeWorkerCoverage, mergeWorkerCoverageIntoWindow };
+export { fetchAndMergeWorkerCoverage, mergeCoverageIntoGlobal };

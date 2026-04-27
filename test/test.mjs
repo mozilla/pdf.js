@@ -890,6 +890,7 @@ async function startIntegrationTest() {
   sessions[0].numRuns = results.runs;
   sessions[0].numErrors = results.failures;
   sessions[0].failures = results.failureList;
+  sessions[0].coverage = globalThis.__coverage__;
   await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
