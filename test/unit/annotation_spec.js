@@ -649,6 +649,7 @@ describe("annotation", function () {
       annotationDict.set("Type", Name.get("Annot"));
       annotationDict.set("Subtype", Name.get("Text"));
       annotationDict.set("T", "ParentTitle");
+      annotationDict.set("Subj", "ParentSubject");
       annotationDict.set("Contents", "ParentText");
       annotationDict.set("CreationDate", "D:20180423");
       annotationDict.set("M", "D:20190423");
@@ -691,6 +692,7 @@ describe("annotation", function () {
       expect(data.inReplyTo).toEqual(annotationRef.toString());
       expect(data.replyType).toEqual("Group");
       expect(data.titleObj).toEqual({ str: "ParentTitle", dir: "ltr" });
+      expect(data.subjectObj).toEqual({ str: "ParentSubject", dir: "ltr" });
       expect(data.contentsObj).toEqual({ str: "ParentText", dir: "ltr" });
       expect(data.creationDate).toEqual("D:20180423");
       expect(data.modificationDate).toEqual("D:20190423");
@@ -723,6 +725,7 @@ describe("annotation", function () {
       replyDict.set("IRT", annotationRef);
       replyDict.set("RT", Name.get("R"));
       replyDict.set("T", "ReplyTitle");
+      replyDict.set("Subj", "ReplySubject");
       replyDict.set("Contents", "ReplyText");
       replyDict.set("CreationDate", "D:20180523");
       replyDict.set("M", "D:20190523");
@@ -746,6 +749,7 @@ describe("annotation", function () {
       expect(data.inReplyTo).toEqual(annotationRef.toString());
       expect(data.replyType).toEqual("R");
       expect(data.titleObj).toEqual({ str: "ReplyTitle", dir: "ltr" });
+      expect(data.subjectObj).toEqual({ str: "ReplySubject", dir: "ltr" });
       expect(data.contentsObj).toEqual({ str: "ReplyText", dir: "ltr" });
       expect(data.creationDate).toEqual("D:20180523");
       expect(data.modificationDate).toEqual("D:20190523");
@@ -4142,6 +4146,7 @@ describe("annotation", function () {
         annotationDict.set("Type", Name.get("Annot"));
         annotationDict.set("Subtype", Name.get("Text"));
         annotationDict.set("T", "Correct Title");
+        annotationDict.set("Subj", "Correct Subject");
         annotationDict.set("Contents", "Correct Text");
         annotationDict.set("M", "D:20190423");
         annotationDict.set("C", [0, 0, 1]);
@@ -4184,6 +4189,7 @@ describe("annotation", function () {
           idFactoryMock
         );
         expect(data.titleObj).toEqual({ str: "Correct Title", dir: "ltr" });
+        expect(data.subjectObj).toEqual({ str: "Correct Subject", dir: "ltr" });
         expect(data.contentsObj).toEqual({ str: "Correct Text", dir: "ltr" });
         expect(data.modificationDate).toEqual("D:20190423");
         expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));

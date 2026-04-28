@@ -942,7 +942,6 @@ class CommentPopup {
     time.className = "commentPopupTime";
 
     const title = (this.#title = document.createElement("span"));
-    title.className = "commentPopupTitle";
 
     const buttons = (this.#buttonsContainer = document.createElement("div"));
     buttons.className = "commentPopupButtons";
