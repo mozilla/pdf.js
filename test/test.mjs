@@ -102,6 +102,7 @@ function parseOptions() {
       noPrompts: { type: "boolean", default: false },
       port: { type: "string", default: "0" },
       reftest: { type: "boolean", default: false },
+      screenReader: { type: "boolean", default: false },
       statsDelay: { type: "string", default: "0" },
       statsFile: { type: "string", default: "" },
       strictVerify: { type: "boolean", default: false },
@@ -131,6 +132,7 @@ function parseOptions() {
         "  --noPrompts         Use default answers (for CLOUD TESTS only!).\n" +
         "  --port              Port for the HTTP server. [0]\n" +
         "  --reftest           Start reftest viewer on comparison failures.\n" +
+        "  --screenReader      Run the screen-reader integration tests.\n" +
         "  --statsDelay        Milliseconds to wait before starting stats. [0]\n" +
         "  --statsFile         File where to store stats.\n" +
         "  --strictVerify      Error if manifest file verification fails.\n" +
@@ -146,6 +148,12 @@ function parseOptions() {
   ) {
     throw new Error(
       "--reftest, --unitTest, --fontTest, and --masterMode must not be specified together."
+    );
+  }
+  if (values.screenReader && values.headless) {
+    throw new Error(
+      "--screenReader cannot be used with --headless: real screen readers " +
+        "(NVDA, VoiceOver) cannot attach to headless browsers."
     );
   }
   if (values.noDownload && values.downloadOnly) {
@@ -893,6 +901,88 @@ async function startIntegrationTest() {
   await Promise.all(sessions.map(session => closeSession(session.name)));
 }
 
+async function startScreenReaderTest() {
+  // Real screen readers can only attach to one OS-foregrounded window at a
+  // time, and a second running browser tends to steal focus from the one
+  // being driven. So we run the spec against each browser in turn, fully
+  // closing the previous one before starting the next. `runTests` builds
+  // a fresh Jasmine instance and calls the spec's `register()` per call,
+  // which is what makes the multi-call pattern safe.
+  const finalize = onAllSessionsClosedAfterTests("screenreader");
+  startServer();
+
+  const { runTests } = await import("./screenreader/jasmine-boot.js");
+  global.integrationBaseUrl = `http://${host}:${server.port}/build/generic/web/viewer.html`;
+
+  const browserNames = [];
+  if (!options.noFirefox) {
+    browserNames.push("firefox");
+  }
+  if (!options.noChrome) {
+    browserNames.push("chrome");
+  }
+
+  if (browserNames.length === 0) {
+    finalize();
+    return;
+  }
+
+  // Suppress the auto-finalize that `closeSession` triggers when every
+  // tracked session is closed; otherwise closing the first browser would
+  // `process.exit` before the next browser's run starts.
+  onAllSessionsClosed = undefined;
+
+  const aggregateResults = { runs: 0, failures: 0, failureList: [] };
+
+  for (const browserName of browserNames) {
+    const newSessionStart = sessions.length;
+
+    // `startBrowsers` reads `options.noChrome`/`options.noFirefox` to pick
+    // which browsers to launch; toggle them so it launches just one.
+    const savedNoChrome = options.noChrome;
+    const savedNoFirefox = options.noFirefox;
+    options.noChrome = browserName !== "chrome";
+    options.noFirefox = browserName !== "firefox";
+    try {
+      await startBrowsers({
+        baseUrl: null,
+        initializeSession: session => {
+          session.numRuns = 0;
+          session.numErrors = 0;
+          session.failures = [];
+        },
+      });
+    } finally {
+      options.noChrome = savedNoChrome;
+      options.noFirefox = savedNoFirefox;
+    }
+
+    const newSessions = sessions.slice(newSessionStart);
+    // The spec uses `global.integrationSessions` (via `loadAndWait`) to
+    // find browsers. Expose only the freshly-started one so it drives a
+    // single browser per run.
+    global.integrationSessions = newSessions;
+
+    const results = { runs: 0, failures: 0, failureList: [] };
+    await runTests(results);
+    aggregateResults.runs += results.runs;
+    aggregateResults.failures += results.failures;
+    aggregateResults.failureList.push(...results.failureList);
+
+    await Promise.all(newSessions.map(session => closeSession(session.name)));
+  }
+
+  // Park aggregates on a session so `finalize` reports them across all
+  // browsers; the per-browser `numRuns`/`numErrors` set in `startBrowsers`
+  // are zeroed and would otherwise drop the counts.
+  if (sessions[0]) {
+    sessions[0].numRuns = aggregateResults.runs;
+    sessions[0].numErrors = aggregateResults.failures;
+    sessions[0].failures = aggregateResults.failureList;
+  }
+  finalize();
+}
+
 function unitTestPostHandler(parsedUrl, req, res) {
   var pathname = parsedUrl.pathname;
   if (
@@ -1347,6 +1437,10 @@ async function main() {
       // Allows linked PDF files in integration-tests as well.
       await ensurePDFsDownloaded();
       await startIntegrationTest();
+    } else if (options.screenReader) {
+      // Allows linked PDF files in screen-reader tests as well.
+      await ensurePDFsDownloaded();
+      await startScreenReaderTest();
     } else {
       await startRefTest(options.masterMode, options.reftest);
     }
