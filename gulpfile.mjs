@@ -326,6 +326,7 @@ function createWebpackConfig(
     // `core-js`, see https://github.com/zloirock/core-js/issues/514,
     // should be excluded from processing.
     /node_modules[\\/]core-js/,
+    /external[\\/]brotli/,
   ];
 
   const babelPresets = skipBabel
@@ -996,8 +997,8 @@ gulp.task("release-brotli", async function (done) {
 
   const OUTPUT_DIR = "./external/brotli/";
   const hash = process.argv[hashIndex + 1];
-  const url = `https://raw.githubusercontent.com/google/brotli/${hash}/js/decode.js`;
-  const outputPath = OUTPUT_DIR + "decode.js";
+  const url = `https://raw.githubusercontent.com/google/brotli/${hash}/js/decode.min.js`;
+  const outputPath = OUTPUT_DIR + "decode.min.js";
   const res = await fetch(url);
   const fileStream = fs.createWriteStream(outputPath, { flags: "w" });
   await finished(stream.Readable.fromWeb(res.body).pipe(fileStream));

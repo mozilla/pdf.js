@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BrotliDecode } from "../../external/brotli/decode.js";
+import { BrotliDecode } from "../../external/brotli/decode.min.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Stream } from "./stream.js";
 
