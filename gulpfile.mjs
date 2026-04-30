@@ -752,6 +752,9 @@ function runTests(testsName, { bot = false } = {}) {
       case "integration":
         args.push("--integration");
         break;
+      case "screenreader":
+        args.push("--screenReader");
+        break;
       default:
         reject(new Error(`Unknown tests name '${testsName}'`));
         return;
@@ -2025,6 +2028,13 @@ gulp.task(
   "integrationtest",
   gulp.series(setTestEnv, "generic", async function runIntegrationTest() {
     await runTests("integration");
+  })
+);
+
+gulp.task(
+  "screenreadertest",
+  gulp.series(setTestEnv, "generic", async function runScreenReaderTest() {
+    await runTests("screenreader");
   })
 );
 

@@ -9,6 +9,8 @@
     "@eslint/json": "^1.2.0",
     "@fluent/bundle": "^0.19.1",
     "@fluent/dom": "^0.10.2",
+    "@guidepup/guidepup": "^0.24.1",
+    "@guidepup/setup": "^0.21.0",
     "@metalsmith/layouts": "^3.0.0",
     "@metalsmith/markdown": "^1.10.0",
     "@napi-rs/canvas": "^0.1.100",
