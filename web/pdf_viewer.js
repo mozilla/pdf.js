@@ -967,6 +967,8 @@ class PDFViewer {
           const element = (this.#hiddenCopyElement =
             document.createElement("div"));
           element.id = "hiddenCopyElement";
+          element.style.cssText =
+            "position:absolute;top:0;left:0;width:0;height:0;display:none";
           viewer.before(element);
         }
 
