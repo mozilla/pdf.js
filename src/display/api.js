@@ -1654,7 +1654,7 @@ class PDFPageProxy {
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
     ])
-      .then(([renderPageData, optionalContentConfig]) => {
+      .then(async ([renderPageData, optionalContentConfig]) => {
         if (this.destroyed) {
           complete();
           return;
@@ -1671,7 +1671,7 @@ class PDFPageProxy {
           renderPageData && typeof renderPageData === "object"
             ? renderPageData
             : { transparency: renderPageData };
-        internalRenderTask.initializeGraphics({
+        await internalRenderTask.initializeGraphics({
           transparency,
           hasCanvasFilters: hasCanvasFilters || intentState.hasCanvasFilters,
           optionalContentConfig,
@@ -3590,7 +3590,7 @@ class InternalRenderTask {
     return { annotationCanvases, transfers };
   }
 
-  initializeGraphics({
+  async initializeGraphics({
     transparency = false,
     hasCanvasFilters = false,
     optionalContentConfig,
@@ -3640,6 +3640,7 @@ class InternalRenderTask {
     if (!useWorkerRendering) {
       this._rendererHandler = null;
     }
+    let initPromise = null;
     if (useWorkerRendering) {
       try {
         const offscreen = this._canvas.transferControlToOffscreen();
@@ -3664,7 +3665,7 @@ class InternalRenderTask {
           transparency,
           background,
         };
-        this._rendererHandler.send(
+        initPromise = this._rendererHandler.sendWithPromise(
           "InitializeGraphics",
           initParams,
           initTransfers
@@ -3681,7 +3682,9 @@ class InternalRenderTask {
           `Failed to initialize graphics in renderer worker: ${ex.message}. ` +
             "Falling back to main-thread rendering."
         );
-        // Fallback to regular rendering.
+        // Fallback to regular rendering. Only safe for synchronous failures
+        // before transferControlToOffscreen detaches the canvas; an async
+        // rejection from sendWithPromise is awaited below and propagates.
         this._rendererHandler = null;
         useWorkerRendering = false;
       }
@@ -3714,6 +3717,13 @@ class InternalRenderTask {
         transparency,
         background,
       });
+    }
+    if (initPromise) {
+      // Wait for the renderer worker to finish setup.
+      await initPromise;
+      if (this.cancelled) {
+        return;
+      }
     }
     this.operatorListIdx = 0;
     this.graphicsReady = true;

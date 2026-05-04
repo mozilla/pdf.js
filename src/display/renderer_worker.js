@@ -31,6 +31,9 @@ class RendererMessageHandler {
 
   static #renderTaskStates = new Map();
 
+  // Holds references to `OffscreenCanvas` instances transferred from the
+  // main thread. This is used to preserve the placeholder `<canvas>` bitmap
+  // across page cleanup (e.g. during scrolling/idle cleanup in the viewer).
   static #canvasMap = new Map();
 
   static #cleanedPages = new Set();
@@ -76,7 +79,7 @@ class RendererMessageHandler {
     renderTaskState.aborted = true;
     renderTaskState.continueResolve?.();
 
-    renderTaskState.gfx.endDrawing();
+    renderTaskState.gfx?.endDrawing();
     this.#renderTaskStates.delete(renderTaskId);
   }
 
@@ -241,7 +244,9 @@ class RendererMessageHandler {
         background,
       });
 
-      // Store a reference to the OffscreenCanvas
+      // Keep a strong reference to the OffscreenCanvas so the placeholder
+      // `<canvas>` can continue to display the last rendered output after
+      // `cleanupPage` (when `keepCanvas` is true).
       this.#canvasMap.set(pageIndex, canvas);
 
       this.#renderTaskStates.set(renderTaskId, {
