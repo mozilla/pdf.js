@@ -34,6 +34,7 @@ import {
 import {
   getCurrentTransform,
   getCurrentTransformInverse,
+  getRGBA,
   makePathFromDrawOPS,
   OutputScale,
   PixelsPerInch,
@@ -85,120 +86,45 @@ function mirrorContextOperations(ctx, destCtx) {
   if (ctx._removeMirroring) {
     throw new Error("Context is already forwarding operations.");
   }
-  ctx.__originalSave = ctx.save;
-  ctx.__originalRestore = ctx.restore;
-  ctx.__originalRotate = ctx.rotate;
-  ctx.__originalScale = ctx.scale;
-  ctx.__originalTranslate = ctx.translate;
-  ctx.__originalTransform = ctx.transform;
-  ctx.__originalSetTransform = ctx.setTransform;
-  ctx.__originalResetTransform = ctx.resetTransform;
-  ctx.__originalClip = ctx.clip;
-  ctx.__originalMoveTo = ctx.moveTo;
-  ctx.__originalLineTo = ctx.lineTo;
-  ctx.__originalBezierCurveTo = ctx.bezierCurveTo;
-  ctx.__originalRect = ctx.rect;
-  ctx.__originalClosePath = ctx.closePath;
-  ctx.__originalBeginPath = ctx.beginPath;
+  const originalMethods = new Map();
+  for (const name of [
+    "save",
+    "restore",
+    "rotate",
+    "scale",
+    "translate",
+    "transform",
+    "setTransform",
+    "resetTransform",
+    "clip",
+    "moveTo",
+    "lineTo",
+    "bezierCurveTo",
+    "quadraticCurveTo",
+    "arc",
+    "arcTo",
+    "ellipse",
+    "rect",
+    "roundRect",
+    "closePath",
+    "beginPath",
+  ]) {
+    const original = ctx[name];
+    if (typeof original !== "function" || typeof destCtx[name] !== "function") {
+      continue;
+    }
+    originalMethods.set(name, original);
+    ctx[name] = function (...args) {
+      destCtx[name](...args);
+      return original.apply(this, args);
+    };
+  }
 
   ctx._removeMirroring = () => {
-    ctx.save = ctx.__originalSave;
-    ctx.restore = ctx.__originalRestore;
-    ctx.rotate = ctx.__originalRotate;
-    ctx.scale = ctx.__originalScale;
-    ctx.translate = ctx.__originalTranslate;
-    ctx.transform = ctx.__originalTransform;
-    ctx.setTransform = ctx.__originalSetTransform;
-    ctx.resetTransform = ctx.__originalResetTransform;
-
-    ctx.clip = ctx.__originalClip;
-    ctx.moveTo = ctx.__originalMoveTo;
-    ctx.lineTo = ctx.__originalLineTo;
-    ctx.bezierCurveTo = ctx.__originalBezierCurveTo;
-    ctx.rect = ctx.__originalRect;
-    ctx.closePath = ctx.__originalClosePath;
-    ctx.beginPath = ctx.__originalBeginPath;
-    delete ctx._removeMirroring;
-  };
-
-  ctx.save = function () {
-    destCtx.save();
-    this.__originalSave();
-  };
-
-  ctx.restore = function () {
-    destCtx.restore();
-    this.__originalRestore();
-  };
-
-  ctx.translate = function (x, y) {
-    destCtx.translate(x, y);
-    this.__originalTranslate(x, y);
-  };
-
-  ctx.scale = function (x, y) {
-    destCtx.scale(x, y);
-    this.__originalScale(x, y);
-  };
-
-  ctx.transform = function (a, b, c, d, e, f) {
-    destCtx.transform(a, b, c, d, e, f);
-    this.__originalTransform(a, b, c, d, e, f);
-  };
-
-  ctx.setTransform = function (a, b, c, d, e, f) {
-    if (b === undefined) {
-      destCtx.setTransform(a);
-      this.__originalSetTransform(a);
-    } else {
-      destCtx.setTransform(a, b, c, d, e, f);
-      this.__originalSetTransform(a, b, c, d, e, f);
+    for (const [name, original] of originalMethods) {
+      ctx[name] = original;
     }
-  };
-
-  ctx.resetTransform = function () {
-    destCtx.resetTransform();
-    this.__originalResetTransform();
-  };
-
-  ctx.rotate = function (angle) {
-    destCtx.rotate(angle);
-    this.__originalRotate(angle);
-  };
-
-  ctx.clip = function (rule) {
-    destCtx.clip(rule);
-    this.__originalClip(rule);
-  };
-
-  ctx.moveTo = function (x, y) {
-    destCtx.moveTo(x, y);
-    this.__originalMoveTo(x, y);
-  };
-
-  ctx.lineTo = function (x, y) {
-    destCtx.lineTo(x, y);
-    this.__originalLineTo(x, y);
-  };
-
-  ctx.bezierCurveTo = function (cp1x, cp1y, cp2x, cp2y, x, y) {
-    destCtx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
-    this.__originalBezierCurveTo(cp1x, cp1y, cp2x, cp2y, x, y);
-  };
-
-  ctx.rect = function (x, y, width, height) {
-    destCtx.rect(x, y, width, height);
-    this.__originalRect(x, y, width, height);
-  };
-
-  ctx.closePath = function () {
-    destCtx.closePath();
-    this.__originalClosePath();
-  };
-
-  ctx.beginPath = function () {
-    destCtx.beginPath();
-    this.__originalBeginPath();
+    delete ctx._removeMirroring;
   };
 }
 
@@ -655,6 +581,18 @@ class CanvasGraphics {
     this.smaskPreparedFor = null;
     this.smaskPreparedOffsetX = 0;
     this.smaskPreparedOffsetY = 0;
+    // For mask-size prebakes with non-zero OOB alpha, the constant
+    // alpha applied to OOB pixels (dirty box outside the mask canvas)
+    // at compose time. Null when no compose-time OOB work is needed:
+    //   - layer-size prebake bakes OOB inline; or
+    //   - OOB alpha is 0 and destination-in's transparent source
+    //     samples clear OOB layer pixels for free.
+    // Compose-time behavior splits on this:
+    //   null         -> clip = full dirty box; OOB cleared or baked.
+    //   255          -> clip excludes OOB; OOB survives unchanged.
+    //   intermediate -> clip excludes OOB, then a fade pass applies
+    //                   this constant alpha.
+    this.smaskPreparedOOBAlpha = null;
     this.suspendedCtx = null;
     this.contentVisible = true;
     this.markedContentStack = markedContentStack || [];
@@ -1270,14 +1208,15 @@ class CanvasGraphics {
     this.smaskPreparedFor = null;
     this.smaskPreparedOffsetX = 0;
     this.smaskPreparedOffsetY = 0;
+    this.smaskPreparedOOBAlpha = null;
   }
 
-  _ensurePreparedSMask(smask, width, height) {
+  _ensurePreparedSMask(smask) {
     if (smask === this.smaskPreparedFor) {
       return;
     }
     this._clearPreparedSMask();
-    this._prepareSMaskCanvas(smask, width, height);
+    this._prepareSMaskCanvas(smask);
   }
 
   checkSMaskState(opIdx) {
@@ -1291,94 +1230,145 @@ class CanvasGraphics {
       // (e.g. a direct SMask A->B replacement, or a restore() that surfaces
       // a different saved mask). _ensurePreparedSMask is a no-op when the
       // same mask object is re-encountered.
-      this._ensurePreparedSMask(
-        this.current.activeSMask,
-        this.ctx.canvas.width,
-        this.ctx.canvas.height
-      );
+      this._ensurePreparedSMask(this.current.activeSMask);
     }
   }
 
-  /**
-   * Backdrop cases use a layer-sized canvas so that the backdrop color
-   * correctly extends to pixels outside the mask canvas bounds.
-   * Filter-only cases use a mask-sized canvas to avoid a large allocation when
-   * the mask is small relative to the page; `composeSMask` then uses
-   * `smaskPreparedOffsetX/Y` to translate dirty-box coordinates into the
-   * smaller canvas's coordinate space. Plain-alpha masks with no backdrop or
-   * transfer map need no canvas at all.
-   */
-  _prepareSMaskCanvas(smask, width, height) {
+  _prepareSMaskCanvas(smask) {
     const { canvas: maskCanvas, subtype, backdrop, transferMap } = smask;
     const hasFilter =
       subtype === "Luminosity" || (subtype === "Alpha" && transferMap);
-    if (!backdrop && !hasFilter) {
-      // No canvas to prepare, but record the mask so that checkSMaskState's
-      // identity check does not keep re-entering the rebuild path for the same
-      // plain-alpha mask on every restore()/setGState() call.
+
+    // Nothing to amortize unless we have a filter or a Luminosity
+    // backdrop -- Alpha SMasks ignore /BC for the alpha output, and
+    // unknown subtypes have no defined backdrop semantics. Record the
+    // mask so checkSMaskState's identity check skips the rebuild path
+    // on subsequent restore()/setGState() calls.
+    if (!hasFilter && !(subtype === "Luminosity" && backdrop)) {
       this.smaskPreparedFor = smask;
       return;
     }
 
-    let preparedEntry, offsetX, offsetY;
-
-    if (backdrop && hasFilter) {
-      // Both backdrop and filter: must apply backdrop BEFORE filter (spec
-      // order). Use a layer-sized intermediate so that pixels outside the
-      // mask canvas bounds get the backdrop color before filtering.
-      const srcEntry = this.canvasFactory.create(width, height);
-      const sCtx = srcEntry.context;
-      sCtx.drawImage(maskCanvas, smask.offsetX, smask.offsetY);
-      sCtx.globalCompositeOperation = "destination-atop";
-      sCtx.fillStyle = backdrop;
-      sCtx.fillRect(0, 0, width, height);
-      sCtx.globalCompositeOperation = "source-over";
-
-      preparedEntry = this.canvasFactory.create(width, height);
-      const pCtx = preparedEntry.context;
-      pCtx.filter =
-        subtype === "Alpha"
-          ? this.filterFactory.addAlphaFilter(transferMap)
-          : this.filterFactory.addLuminosityFilter(transferMap);
-      pCtx.drawImage(srcEntry.canvas, 0, 0);
-      pCtx.filter = "none";
-      this.canvasFactory.destroy(srcEntry);
-      offsetX = offsetY = 0;
-    } else if (hasFilter) {
-      // Filter only, no backdrop: use a mask-sized canvas to avoid allocating
-      // a full width × height page canvas for what may be a small mask. The
-      // mask is drawn at (0, 0) and composeSMask compensates via
-      // smaskPreparedOffsetX/Y.
-      preparedEntry = this.canvasFactory.create(
-        maskCanvas.width,
-        maskCanvas.height
-      );
-      const pCtx = preparedEntry.context;
-      pCtx.filter =
-        subtype === "Alpha"
-          ? this.filterFactory.addAlphaFilter(transferMap)
-          : this.filterFactory.addLuminosityFilter(transferMap);
-      pCtx.drawImage(maskCanvas, 0, 0);
-      pCtx.filter = "none";
-      ({ offsetX, offsetY } = smask);
+    // Constant alpha OOB pixels receive after the spec backdrop+filter
+    // chain (see smaskPreparedOOBAlpha field doc for the compose-time
+    // table). /BC only feeds the alpha output for Luminosity (its
+    // color enters the luminance computation). Alpha SMasks treat /BC
+    // as a pure color-space backdrop and must not bake it into the
+    // alpha output.
+    let filteredOOBAlpha;
+    if (subtype === "Luminosity" && backdrop) {
+      // backdrop is "#RRGGBB" (see Evaluator#handleSMask).
+      const [r, g, b] = getRGBA(backdrop);
+      const inputAlpha = Math.round(0.3 * r + 0.59 * g + 0.11 * b);
+      filteredOOBAlpha = transferMap?.[inputAlpha] ?? inputAlpha;
     } else {
-      // Backdrop only (no filter): layer-sized canvas. destination-atop on
-      // the full width × height fills every transparent pixel — including those
-      // outside the mask canvas bounds — with the backdrop color.
-      preparedEntry = this.canvasFactory.create(width, height);
-      const pCtx = preparedEntry.context;
-      pCtx.drawImage(maskCanvas, smask.offsetX, smask.offsetY);
-      pCtx.globalCompositeOperation = "destination-atop";
-      pCtx.fillStyle = backdrop;
-      pCtx.fillRect(0, 0, width, height);
-      pCtx.globalCompositeOperation = "source-over";
-      offsetX = offsetY = 0;
+      // Alpha, or Luminosity with no backdrop: OOB input is transparent,
+      // and both filters map alpha=0 to alpha=0; only transferMap[0] can
+      // produce a non-zero result.
+      filteredOOBAlpha = transferMap?.[0] ?? 0;
+    }
+
+    // Use a layer-size prebake when the layer is at most this many
+    // times bigger than the mask: layer-size avoids compose-time OOB
+    // work and hits the same-size drawImage GPU fast path, but the
+    // alloc cost grows with the layer. The crossover is empirical;
+    // tuned against the bug-2033095 corpus.
+    const SMASK_LAYER_TO_MASK_AREA_RATIO = 4;
+    const { width: layerW, height: layerH } = this.ctx.canvas;
+    const maskArea = maskCanvas.width * maskCanvas.height;
+    const useLayerSize =
+      layerW * layerH < SMASK_LAYER_TO_MASK_AREA_RATIO * maskArea;
+
+    let filterUrl = null;
+    if (hasFilter) {
+      filterUrl =
+        subtype === "Alpha"
+          ? this.filterFactory.addAlphaFilter(transferMap)
+          : this.filterFactory.addLuminosityFilter(transferMap);
+    }
+
+    // Alpha SMasks must not bake /BC into the prepared canvas (see
+    // filteredOOBAlpha comment above).
+    const bakedBackdrop = subtype === "Luminosity" ? backdrop : null;
+
+    let preparedEntry, offsetX, offsetY;
+    if (useLayerSize) {
+      preparedEntry = this._bakeSMaskCanvas(
+        maskCanvas,
+        smask.offsetX,
+        smask.offsetY,
+        layerW,
+        layerH,
+        bakedBackdrop,
+        filterUrl
+      );
+      offsetX = 0;
+      offsetY = 0;
+    } else {
+      preparedEntry = this._bakeSMaskCanvas(
+        maskCanvas,
+        0,
+        0,
+        maskCanvas.width,
+        maskCanvas.height,
+        bakedBackdrop,
+        filterUrl
+      );
+      offsetX = smask.offsetX;
+      offsetY = smask.offsetY;
     }
 
     this.smaskPreparedEntry = preparedEntry;
     this.smaskPreparedFor = smask;
     this.smaskPreparedOffsetX = offsetX;
     this.smaskPreparedOffsetY = offsetY;
+    // Only mask-size prebakes with non-zero OOB alpha need compose-time
+    // OOB work (see field doc).
+    this.smaskPreparedOOBAlpha =
+      !useLayerSize && filteredOOBAlpha !== 0 ? filteredOOBAlpha : null;
+  }
+
+  /**
+   * Bake the mask plus optional backdrop into a (w x h) canvas with the
+   * mask drawn at (drawX, drawY), then optionally pipe through
+   * `filterUrl`. Returns the prepared canvas-factory entry.
+   *
+   * The backdrop fill uses destination-atop so transparent / partial-
+   * alpha pixels inside the mask see the backdrop *before* filtering
+   * (per PDF spec). Filtering the raw mask would yield filter(0)
+   * instead of filter(backdrop) -- wrong for "keep" Luminosity and for
+   * Alpha masks whose transferMap[255] differs from transferMap[0].
+   *
+   * In the no-backdrop layer-size case the OOB region of srcEntry
+   * stays transparent and the filter outputs filter(transparent) =
+   * transferMap[0], matching the spec's transparent extension of the
+   * mask group. No-backdrop mask-size prebakes have no OOB region;
+   * destination-in handles OOB at compose time.
+   */
+  _bakeSMaskCanvas(maskCanvas, drawX, drawY, w, h, backdrop, filterUrl) {
+    if (!backdrop && !filterUrl) {
+      // Caller (_prepareSMaskCanvas) gates on this; without either,
+      // the prebake would just be a wasted copy of the mask.
+      unreachable("_bakeSMaskCanvas with neither backdrop nor filter");
+    }
+    const srcEntry = this.canvasFactory.create(w, h);
+    const sCtx = srcEntry.context;
+    sCtx.drawImage(maskCanvas, drawX, drawY);
+    if (backdrop) {
+      sCtx.globalCompositeOperation = "destination-atop";
+      sCtx.fillStyle = backdrop;
+      sCtx.fillRect(0, 0, w, h);
+    }
+    if (!filterUrl) {
+      return srcEntry;
+    }
+    const preparedEntry = this.canvasFactory.create(w, h);
+    const pCtx = preparedEntry.context;
+    pCtx.filter = filterUrl;
+    pCtx.drawImage(srcEntry.canvas, 0, 0);
+    pCtx.filter = "none";
+    this.canvasFactory.destroy(srcEntry);
+    return preparedEntry;
   }
 
   /**
@@ -1402,11 +1392,7 @@ class CanvasGraphics {
     copyCtxState(this.suspendedCtx, ctx);
     mirrorContextOperations(ctx, this.suspendedCtx);
 
-    this._ensurePreparedSMask(
-      this.current.activeSMask,
-      drawnWidth,
-      drawnHeight
-    );
+    this._ensurePreparedSMask(this.current.activeSMask);
 
     this.setGState(opIdx, [["BM", "source-over"]]);
   }
@@ -1432,14 +1418,16 @@ class CanvasGraphics {
       return;
     }
 
-    if (!dirtyBox) {
-      dirtyBox = [0, 0, this.ctx.canvas.width, this.ctx.canvas.height];
-    } else {
-      dirtyBox[0] = Math.floor(dirtyBox[0]);
-      dirtyBox[1] = Math.floor(dirtyBox[1]);
-      dirtyBox[2] = Math.ceil(dirtyBox[2]);
-      dirtyBox[3] = Math.ceil(dirtyBox[3]);
-    }
+    // Don't mutate the caller's box -- callers (e.g. consumePath) may
+    // hold on to it.
+    dirtyBox = dirtyBox
+      ? [
+          Math.floor(dirtyBox[0]),
+          Math.floor(dirtyBox[1]),
+          Math.ceil(dirtyBox[2]),
+          Math.ceil(dirtyBox[3]),
+        ]
+      : [0, 0, this.ctx.canvas.width, this.ctx.canvas.height];
     const smask = this.current.activeSMask;
     const suspendedCtx = this.suspendedCtx;
 
@@ -1469,44 +1457,73 @@ class CanvasGraphics {
 
     const preparedEntry = this.smaskPreparedEntry;
     if (preparedEntry) {
-      // Fast path: backdrop and/or filter pre-applied. For layer-sized entries
-      // (backdrop cases) smaskPreparedOffsetX/Y are 0 so source and destination
-      // coordinates are identical. For mask-sized entries (filter-only) we
-      // subtract the mask's layer offset to convert the dirty-box position into
-      // the smaller canvas's coordinate space.
-      // Out-of-bounds source pixels are treated as transparent by the specs,
-      // which is correct for a no-backdrop mask.
-      const srcX = layerOffsetX - this.smaskPreparedOffsetX;
-      const srcY = layerOffsetY - this.smaskPreparedOffsetY;
-      layerCtx.save();
-      layerCtx.globalAlpha = 1;
-      layerCtx.setTransform(1, 0, 0, 1, 0, 0);
-      const clip = new Path2D();
-      clip.rect(layerOffsetX, layerOffsetY, layerWidth, layerHeight);
-      layerCtx.clip(clip);
-      layerCtx.globalCompositeOperation = "destination-in";
-      layerCtx.drawImage(
-        preparedEntry.canvas,
-        srcX,
-        srcY,
-        layerWidth,
-        layerHeight,
-        layerOffsetX,
-        layerOffsetY,
-        layerWidth,
-        layerHeight
-      );
-      layerCtx.restore();
+      // Fast path: prepared-mask destination-in drawImage. See
+      // smaskPreparedOOBAlpha field doc for the OOB handling table.
+      let clipX = layerOffsetX;
+      let clipY = layerOffsetY;
+      let clipW = layerWidth;
+      let clipH = layerHeight;
+      const oobAlpha = this.smaskPreparedOOBAlpha;
+      const hasOOBAlpha = oobAlpha !== null;
+      if (hasOOBAlpha) {
+        clipX = Math.max(layerOffsetX, smask.offsetX);
+        clipY = Math.max(layerOffsetY, smask.offsetY);
+        const x1 = Math.min(
+          layerOffsetX + layerWidth,
+          smask.offsetX + smask.canvas.width
+        );
+        const y1 = Math.min(
+          layerOffsetY + layerHeight,
+          smask.offsetY + smask.canvas.height
+        );
+        clipW = x1 - clipX;
+        clipH = y1 - clipY;
+      }
+      if (clipW > 0 && clipH > 0) {
+        const srcX = clipX - this.smaskPreparedOffsetX;
+        const srcY = clipY - this.smaskPreparedOffsetY;
+        layerCtx.save();
+        layerCtx.globalAlpha = 1;
+        layerCtx.setTransform(1, 0, 0, 1, 0, 0);
+        const clip = new Path2D();
+        clip.rect(clipX, clipY, clipW, clipH);
+        layerCtx.clip(clip);
+        layerCtx.globalCompositeOperation = "destination-in";
+        layerCtx.drawImage(
+          preparedEntry.canvas,
+          srcX,
+          srcY,
+          clipW,
+          clipH,
+          clipX,
+          clipY,
+          clipW,
+          clipH
+        );
+        layerCtx.restore();
+      }
+      if (hasOOBAlpha && oobAlpha < 255) {
+        this._applySMaskOOBAlpha(
+          layerCtx,
+          layerOffsetX,
+          layerOffsetY,
+          layerWidth,
+          layerHeight,
+          clipX,
+          clipY,
+          clipX + clipW,
+          clipY + clipH,
+          oobAlpha
+        );
+      }
     } else {
       this.genericComposeSMask(
-        smask.context,
+        smask,
         layerCtx,
         layerWidth,
         layerHeight,
         layerOffsetX,
-        layerOffsetY,
-        smask.offsetX,
-        smask.offsetY
+        layerOffsetY
       );
     }
 
@@ -1514,8 +1531,8 @@ class CanvasGraphics {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = smask.blendMode || "source-over";
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    // Only blit the dirty box region — the rest of the scratch canvas is
-    // still transparent from the clearRect in compose().
+    // Blit only the dirty box -- the rest of the scratch canvas was
+    // cleared in compose().
     ctx.drawImage(
       layerCtx.canvas,
       layerOffsetX,
@@ -1530,22 +1547,75 @@ class CanvasGraphics {
     ctx.restore();
   }
 
+  /**
+   * Fade the dirty box's OOB region by a constant alpha. Called from
+   * composeSMask when smaskPreparedOOBAlpha is in (0, 255).
+   *
+   * destination-in clears every destination pixel outside the source's
+   * footprint, so four fillRects (one per strip) would each clear the
+   * others. Instead one fillRect covers the dirty box, restricted by
+   * an even-odd clip enclosing exactly (dirty_box XOR mask_region);
+   * within the clip the source covers everything so no "outside
+   * source" pixels exist.
+   */
+  _applySMaskOOBAlpha(
+    layerCtx,
+    layerOffsetX,
+    layerOffsetY,
+    layerWidth,
+    layerHeight,
+    maskX0,
+    maskY0,
+    maskX1,
+    maskY1,
+    alpha
+  ) {
+    const hasInnerCutout = maskX0 < maskX1 && maskY0 < maskY1;
+    if (
+      hasInnerCutout &&
+      maskX0 === layerOffsetX &&
+      maskY0 === layerOffsetY &&
+      maskX1 === layerOffsetX + layerWidth &&
+      maskY1 === layerOffsetY + layerHeight
+    ) {
+      // Dirty box is entirely inside the mask -- no OOB region to fade.
+      return;
+    }
+    const path = new Path2D();
+    path.rect(layerOffsetX, layerOffsetY, layerWidth, layerHeight);
+    if (hasInnerCutout) {
+      path.rect(maskX0, maskY0, maskX1 - maskX0, maskY1 - maskY0);
+    }
+
+    layerCtx.save();
+    layerCtx.globalAlpha = alpha / 255;
+    layerCtx.setTransform(1, 0, 0, 1, 0, 0);
+    layerCtx.clip(path, "evenodd");
+    layerCtx.globalCompositeOperation = "destination-in";
+    // MUST be fully opaque -- destination-in scales dst_a by src_a, and
+    // globalAlpha must be the only thing scaling source alpha.
+    layerCtx.fillStyle = "#000000";
+    layerCtx.fillRect(layerOffsetX, layerOffsetY, layerWidth, layerHeight);
+    layerCtx.restore();
+  }
+
   genericComposeSMask(
-    maskCtx,
+    smask,
     layerCtx,
     width,
     height,
     layerOffsetX,
-    layerOffsetY,
-    maskOffsetX,
-    maskOffsetY
+    layerOffsetY
   ) {
-    // This path is only reached when there is no backdrop and no filter
-    // (those cases are handled by the _prepareSMaskCanvas fast path).
-    // A simple destination-in blit of the mask onto the layer suffices.
-    const maskCanvas = maskCtx.canvas;
-    const maskX = layerOffsetX - maskOffsetX;
-    const maskY = layerOffsetY - maskOffsetY;
+    // composeSMask helper, reached only for plain-alpha masks (no
+    // filter, no backdrop); every backdrop/filter case prebakes in
+    // _prepareSMaskCanvas. A single destination-in blit suffices:
+    // transparent OOB mask samples clear OOB layer pixels.
+    const {
+      context: maskCtx,
+      offsetX: maskOffsetX,
+      offsetY: maskOffsetY,
+    } = smask;
 
     layerCtx.save();
     layerCtx.globalAlpha = 1;
@@ -1555,9 +1625,9 @@ class CanvasGraphics {
     layerCtx.clip(clip);
     layerCtx.globalCompositeOperation = "destination-in";
     layerCtx.drawImage(
-      maskCanvas,
-      maskX,
-      maskY,
+      maskCtx.canvas,
+      layerOffsetX - maskOffsetX,
+      layerOffsetY - maskOffsetY,
       width,
       height,
       layerOffsetX,
