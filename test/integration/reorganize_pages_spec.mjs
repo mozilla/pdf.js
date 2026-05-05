@@ -3084,6 +3084,12 @@ describe("Reorganize Pages View", () => {
             () => parseInt(document.getElementById("pageNumber").max, 10) === 6
           );
 
+          // Focus must move to the first newly inserted page (page 3, since
+          // we merged after page 2).
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 3
+          );
+
           // Pages 1–2 come from the original document, then all 3 pages of
           // the merged PDF, then pages 4–6 of the original shifted to the end.
           await waitForHavingContents(page, [1, 2, 1, 2, 3, 3]);
