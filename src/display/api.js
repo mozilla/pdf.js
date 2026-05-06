@@ -2916,9 +2916,32 @@ class WorkerTransport {
     };
     let transfer;
     if (this.annotationStorage.size > 0) {
-      const { map, transfer: t } = this.annotationStorage.serializable;
+      const serialized = this.annotationStorage.serializable;
+      let { map } = serialized;
+      transfer = serialized.transfer;
+      // Annotation pageIndex tracks the editor's current viewer position; the
+      // worker keys lookups by source index. Remap UI -> source via pagesMapper
+      // so reorganized pages still receive their annotations after extraction.
+      const mapping = this.pagesMapper.getMapping();
+      if (mapping) {
+        const remapped = new Map();
+        for (const [k, v] of map) {
+          if (
+            v?.pageIndex !== undefined &&
+            v.pageIndex >= 0 &&
+            v.pageIndex < mapping.length
+          ) {
+            const sourceIdx = mapping[v.pageIndex] - 1;
+            if (sourceIdx !== v.pageIndex) {
+              remapped.set(k, { ...v, pageIndex: sourceIdx });
+              continue;
+            }
+          }
+          remapped.set(k, v);
+        }
+        map = remapped;
+      }
       params.annotationStorage = map;
-      transfer = t;
     }
     return this.messageHandler
       .sendWithPromise("ExtractPages", params, transfer)

@@ -6354,6 +6354,146 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("places new annotations on the correct page after reordering (bug 2027682)", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.FREETEXT,
+          rect: [12, 34, 56, 78],
+          rotation: 0,
+          fontSize: 10,
+          color: [0, 0, 0],
+          value: "on source page 2",
+          pageIndex: 1,
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0, 1, 2], pageIndices: [2, 0, 1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(3);
+
+        for (let i = 1; i <= 3; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annotations = await pdfPage.getAnnotations();
+          const hasNew = annotations.some(
+            a => a.contentsObj?.str === "on source page 2"
+          );
+          if (i === 1) {
+            expect(hasNew).withContext(`Page ${i}`).toBeTrue();
+          } else {
+            expect(hasNew).withContext(`Page ${i}`).toBeFalse();
+          }
+        }
+
+        await loadingTask.destroy();
+      });
+
+      it("does not bleed new annotations across documents when merging (bug 2027682)", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const pdfData2 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_2_3_pages.pdf",
+        });
+
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.FREETEXT,
+          rect: [12, 34, 56, 78],
+          rotation: 0,
+          fontSize: 10,
+          color: [0, 0, 0],
+          value: "primary page 1",
+          pageIndex: 0,
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: pdfData2 },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument(data);
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(6);
+
+        for (let i = 1; i <= 6; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const annotations = await pdfPage.getAnnotations();
+          const hasNew = annotations.some(
+            a => a.contentsObj?.str === "primary page 1"
+          );
+          if (i === 4) {
+            expect(hasNew).withContext(`Page ${i}`).toBeTrue();
+          } else {
+            expect(hasNew).withContext(`Page ${i}`).toBeFalse();
+          }
+        }
+
+        await loadingTask.destroy();
+      });
+
+      it("places annotations correctly after the user reorganizes pages in the viewer (bug 2027682)", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("page_with_number.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+
+        // Simulate the user moving source page 1 (1-based) to UI position 5,
+        // mirroring what the viewer's pagesMapper records on a drag-drop. The
+        // annotation editor is then rebound to that new UI position, so its
+        // pageIndex (=4 in 0-based) reflects where the editor *currently* is,
+        // not where its source page is.
+        pdfDoc.pagesMapper.movePages(new Set([1]), [1], 5);
+
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.FREETEXT,
+          rect: [12, 34, 56, 78],
+          rotation: 0,
+          fontSize: 10,
+          color: [0, 0, 0],
+          value: "moved annotation",
+          pageIndex: 4,
+        });
+
+        // Export-all reflecting the post-reorganize layout: source 0 ends at
+        // output 4, the others shift down by one.
+        const data = await pdfDoc.extractPages([
+          {
+            document: null,
+            includePages: [0, 1, 2, 3, 4],
+            pageIndices: [4, 0, 1, 2, 3],
+          },
+        ]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument(data);
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(5);
+
+        for (let i = 1; i <= 5; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const annotations = await pdfPage.getAnnotations();
+          const hasNew = annotations.some(
+            a => a.contentsObj?.str === "moved annotation"
+          );
+          if (i === 5) {
+            expect(hasNew).withContext(`Page ${i}`).toBeTrue();
+          } else {
+            expect(hasNew).withContext(`Page ${i}`).toBeFalse();
+          }
+        }
+
+        await newLoadingTask.destroy();
+      });
+
       it("fills missing pageIndices with the first free slots", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("tracemonkey.pdf")

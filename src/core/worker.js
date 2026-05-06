@@ -647,6 +647,7 @@ class WorkerMessageHandler {
           const buffer = await pdfEditor.extractPages(
             pageInfos,
             annotationStorage,
+            pdfManager.pdfDocument,
             handler,
             task
           );
