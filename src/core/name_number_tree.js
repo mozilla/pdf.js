@@ -46,8 +46,8 @@ class NameOrNumberTree {
       processed.put(this.root);
     }
     const queue = [this.root];
-    while (queue.length > 0) {
-      const obj = xref.fetchIfRef(queue.shift());
+    for (const node of queue) {
+      const obj = xref.fetchIfRef(node);
       if (!(obj instanceof Dict)) {
         continue;
       }
