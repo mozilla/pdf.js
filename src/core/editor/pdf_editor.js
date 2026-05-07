@@ -125,6 +125,8 @@ class PDFEditor {
 
   #newAnnotationsParams = null;
 
+  #primaryDocument = null;
+
   currentDocument = null;
 
   oldPages = [];
@@ -774,13 +776,22 @@ class PDFEditor {
    * @param {Array<PageInfo>} pageInfos
    * @param {Object} annotationStorage - The annotation storage containing the
    *  annotations to be merged into the new document.
+   * @param {PDFDocument} primaryDocument - The document the annotation storage
+   *  belongs to.
    * @param {MessageHandler} handler - The message handler to use for processing
    *  the annotations.
    * @param {WorkerTask} task - The worker task to use for reporting progress
    *  and cancellation.
    * @return {Promise<void>}
    */
-  async extractPages(pageInfos, annotationStorage, handler, task) {
+  async extractPages(
+    pageInfos,
+    annotationStorage,
+    primaryDocument,
+    handler,
+    task
+  ) {
+    this.#primaryDocument = primaryDocument;
     if (pageInfos.some(info => info.insertAfter !== undefined)) {
       pageInfos = this.#resolveInsertAfterIndices(pageInfos);
     }
@@ -2170,7 +2181,9 @@ class PDFEditor {
     }
 
     const newAnnotations =
-      this.#newAnnotationsParams?.newAnnotationsByPage?.get(pageIndex);
+      documentData.document === this.#primaryDocument
+        ? this.#newAnnotationsParams?.newAnnotationsByPage?.get(page.pageIndex)
+        : null;
     if (newAnnotations) {
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
       const changes = new RefSetCache();
