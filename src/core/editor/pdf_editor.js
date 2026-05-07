@@ -563,9 +563,10 @@ class PDFEditor {
    * @property {Array<number>} [pageIndices]
    *  position of the pages in the final document.
    * @property {number} [insertAfter]
-   *  0-based index in the base sequential document after which to insert the
-   *  pages. Sequential pageInfos (those without pageIndices) have their indices
-   *  shifted to accommodate the insertion. Cannot be combined with pageIndices.
+   *  0-based index in the base sequential sequence after which to insert the
+   *  pages. When every contributing pageInfo has pageIndices, this is
+   *  interpreted against that explicit layout. Cannot be combined with
+   *  pageIndices on the same entry.
    */
 
   /**
@@ -578,81 +579,58 @@ class PDFEditor {
     if (!document) {
       return [];
     }
-    let keptIndices, keptRanges, deletedIndices, deletedRanges;
-    for (const page of includePages || []) {
-      if (Array.isArray(page)) {
-        (keptRanges ||= []).push(page);
-      } else {
-        (keptIndices ||= new Set()).add(page);
+    const compile = list => {
+      if (!list?.length) {
+        return null;
       }
-    }
-    for (const page of excludePages || []) {
-      if (Array.isArray(page)) {
-        (deletedRanges ||= []).push(page);
-      } else {
-        (deletedIndices ||= new Set()).add(page);
+      const indices = new Set();
+      const ranges = [];
+      for (const item of list) {
+        if (Array.isArray(item)) {
+          ranges.push(item);
+        } else {
+          indices.add(item);
+        }
       }
-    }
-    const indices = [];
+      return { indices, ranges };
+    };
+    const matches = (index, { indices, ranges }) =>
+      indices.has(index) ||
+      ranges.some(([start, end]) => index >= start && index <= end);
+    const inc = compile(includePages);
+    const exc = compile(excludePages);
+    const result = [];
     for (let i = 0, ii = document.numPages; i < ii; i++) {
-      if (deletedIndices?.has(i)) {
+      if (exc && matches(i, exc)) {
         continue;
       }
-      if (deletedRanges) {
-        let isDeleted = false;
-        for (const [start, end] of deletedRanges) {
-          if (i >= start && i <= end) {
-            isDeleted = true;
-            break;
-          }
-        }
-        if (isDeleted) {
-          continue;
-        }
-      }
-      let takePage = false;
-      if (keptIndices) {
-        takePage = keptIndices.has(i);
-      }
-      if (!takePage && keptRanges) {
-        for (const [start, end] of keptRanges) {
-          if (i >= start && i <= end) {
-            takePage = true;
-            break;
-          }
-        }
-      }
-      if (!takePage && !keptIndices && !keptRanges) {
-        takePage = true;
-      }
-      if (takePage) {
-        indices.push(i);
+      if (!inc || matches(i, inc)) {
+        result.push(i);
       }
     }
-    return indices;
+    return result;
   }
 
   /**
    * Resolve insertAfter pageInfos by converting them (and sequential pageInfos)
    * to explicit pageIndices, shifting indices to accommodate each insertion.
-   * insertAfter values are relative to the base sequential sequence (i.e. the
-   * concatenation of pages from pageInfos that have neither pageIndices nor
-   * insertAfter), so they are independent of each other.
    * @param {Array<PageInfo>} pageInfos
    * @returns {Array<PageInfo>}
    */
   #resolveInsertAfterIndices(pageInfos) {
-    // Single pass: build the base sequential sequence and collect insertAfter
-    // entries, computing each pageInfo's filtered page count only once and only
-    // for pageInfos that actually contribute pages.
-    const sequence = []; // each element is the index into pageInfos
+    const counts = new Array(pageInfos.length);
+    const sequence = [];
     const insertAfterList = [];
     for (let i = 0; i < pageInfos.length; i++) {
       const info = pageInfos[i];
-      if (!info.document || info.pageIndices) {
+      if (!info.document) {
+        counts[i] = 0;
         continue;
       }
-      const count = this.#getFilteredPageIndices(info).length;
+      const count = (counts[i] = this.#getFilteredPageIndices(info).length);
+      if (info.pageIndices) {
+        continue;
+      }
       if (info.insertAfter === undefined) {
         for (let j = 0; j < count; j++) {
           sequence.push(i);
@@ -661,50 +639,49 @@ class PDFEditor {
         insertAfterList.push({ i, insertAfter: info.insertAfter, count });
       }
     }
+    if (insertAfterList.length === 0) {
+      return pageInfos;
+    }
 
-    insertAfterList.sort((a, b) => a.insertAfter - b.insertAfter);
+    // Partial pageIndices rely on auto-fill in extractPages, which races with
+    // the slots insertAfter assigns here.
+    for (let i = 0; i < pageInfos.length; i++) {
+      const info = pageInfos[i];
+      if (
+        info.document &&
+        info.pageIndices &&
+        info.pageIndices.length < counts[i]
+      ) {
+        throw new Error(
+          "extractPages: partial pageIndices cannot be combined with insertAfter entries."
+        );
+      }
+    }
 
-    // Partial pageIndices would auto-fill into free slots at extraction time,
-    // which collides with the positions insertAfter shifts/assigns. Reject.
-    if (insertAfterList.length > 0) {
+    insertAfterList.sort((a, b) => a.insertAfter - b.insertAfter || a.i - b.i);
+
+    // If there is no base sequential sequence, resolve insertAfter against the
+    // explicit layout. Shift pageIndices values but keep their array order:
+    // extractPages maps each filtered source page to the corresponding
+    // pageIndices entry.
+    if (
+      sequence.length === 0 &&
+      pageInfos.some(info => info.document && info.pageIndices)
+    ) {
+      const updatedPageInfos = pageInfos.slice();
+      let maxExistingPos = -1;
       for (const info of pageInfos) {
         if (!info.document || !info.pageIndices) {
           continue;
         }
-        const filteredCount = this.#getFilteredPageIndices(info).length;
-        if (info.pageIndices.length < filteredCount) {
-          throw new Error(
-            "extractPages: partial pageIndices cannot be combined with insertAfter entries."
-          );
-        }
-      }
-    }
-
-    // If the base sequential sequence is empty but some entries carry explicit
-    // pageIndices (e.g. after a deletion), resolve each insertAfter against
-    // that explicit layout: shift existing positions past the insertion point
-    // and fill the gap. Entries without a document are ignored. With no
-    // explicit entries we fall through to the sequential branch, whose
-    // Array.splice already clamps to position 0 on an empty sequence.
-    const hasExplicitLayout =
-      insertAfterList.length > 0 &&
-      pageInfos.some(info => info.document && info.pageIndices);
-    if (sequence.length === 0 && hasExplicitLayout) {
-      const updatedPageInfos = pageInfos.slice();
-      let maxExistingPos = -1;
-      for (const info of pageInfos) {
-        if (info.document && info.pageIndices) {
-          for (const idx of info.pageIndices) {
-            if (idx > maxExistingPos) {
-              maxExistingPos = idx;
-            }
+        for (const idx of info.pageIndices) {
+          if (idx > maxExistingPos) {
+            maxExistingPos = idx;
           }
         }
       }
       let offset = 0;
       for (const { i, insertAfter, count } of insertAfterList) {
-        // Clamp to [-1, maxExistingPos] so out-of-range values don't produce
-        // negative or gap-creating positions.
         const threshold = Math.min(
           Math.max(insertAfter, -1) + offset,
           maxExistingPos
@@ -725,49 +702,39 @@ class PDFEditor {
             ),
           };
         }
-        const insertedIndices = [];
+        const pageIndices = [];
         for (let k = 0; k < count; k++) {
-          insertedIndices.push(threshold + 1 + k);
+          pageIndices.push(threshold + 1 + k);
         }
-        const newInfo = {
-          ...updatedPageInfos[i],
-          pageIndices: insertedIndices,
-        };
-        delete newInfo.insertAfter;
-        updatedPageInfos[i] = newInfo;
+        const result = { ...updatedPageInfos[i], pageIndices };
+        delete result.insertAfter;
+        updatedPageInfos[i] = result;
         offset += count;
         maxExistingPos += count;
       }
       return updatedPageInfos;
     }
 
-    // insertAfter values are relative to the base sequential sequence (stable
-    // across entries thanks to the sort above); offset converts them to
-    // current-sequence positions as we splice.
     let offset = 0;
     for (const { i, insertAfter, count } of insertAfterList) {
-      const insertPos = insertAfter + 1 + offset;
+      const insertPos = Math.max(insertAfter, -1) + 1 + offset;
       sequence.splice(insertPos, 0, ...new Array(count).fill(i));
       offset += count;
     }
 
-    // Map each pageInfo index to its final positions in the sequence using a
-    // plain array (keys are dense integers so no need for a Map).
     const pageIndicesArr = new Array(pageInfos.length);
     for (let pos = 0; pos < sequence.length; pos++) {
       const infoIdx = sequence[pos];
       (pageIndicesArr[infoIdx] ||= []).push(pos);
     }
 
-    // Return updated pageInfos: sequential and insertAfter pageInfos now have
-    // explicit pageIndices; already-indexed pageInfos are left unchanged.
     return pageInfos.map((info, i) => {
       if (!info.document || info.pageIndices) {
         return info;
       }
-      const newInfo = { ...info, pageIndices: pageIndicesArr[i] || [] };
-      delete newInfo.insertAfter;
-      return newInfo;
+      const result = { ...info, pageIndices: pageIndicesArr[i] || [] };
+      delete result.insertAfter;
+      return result;
     });
   }
 
@@ -792,9 +759,7 @@ class PDFEditor {
     task
   ) {
     this.#primaryDocument = primaryDocument;
-    if (pageInfos.some(info => info.insertAfter !== undefined)) {
-      pageInfos = this.#resolveInsertAfterIndices(pageInfos);
-    }
+    pageInfos = this.#resolveInsertAfterIndices(pageInfos);
     const promises = [];
     let newIndex = 0;
     this.isSingleFile =

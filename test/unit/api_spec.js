@@ -5584,6 +5584,35 @@ small scripts as well as for`);
       return refs;
     };
 
+    async function checkPageNumberOrder(pageInfos, expected) {
+      let loadingTask = getDocument(
+        buildGetDocumentParams("page_with_number.pdf")
+      );
+      let pdfDoc = await loadingTask.promise;
+      const data = await pdfDoc.extractPages(pageInfos);
+      await loadingTask.destroy();
+
+      expect(data).not.toBeNull();
+      if (!data) {
+        return;
+      }
+
+      loadingTask = getDocument(data);
+      pdfDoc = await loadingTask.promise;
+      expect(pdfDoc.numPages).toEqual(expected.length);
+
+      for (let i = 0, ii = expected.length; i < ii; i++) {
+        const pageNum = i + 1;
+        const pdfPage = await pdfDoc.getPage(pageNum);
+        const { items } = await pdfPage.getTextContent();
+        expect(mergeText(items))
+          .withContext(`Page ${pageNum}`)
+          .toEqual(expected[i]);
+      }
+
+      await loadingTask.destroy();
+    }
+
     describe("Merge pdfs", function () {
       it("should merge three PDFs", async function () {
         const loadingTask = getDocument(
@@ -7421,6 +7450,45 @@ small scripts as well as for`);
         }
 
         await loadingTask.destroy();
+      });
+
+      it("insertAfter preserves non-monotonic explicit pageIndices", async function () {
+        // Explicit pageIndices place page 2 before page 1. The inserted page 3
+        // lands after position 0, so the final order is "2", "3", "1".
+        await checkPageNumberOrder(
+          [
+            { document: null, includePages: [0, 1], pageIndices: [1, 0] },
+            { document: null, includePages: [2], insertAfter: 0 },
+          ],
+          ["2", "3", "1"]
+        );
+      });
+
+      it("insertAfter shifts only the values past the threshold in non-monotonic pageIndices", async function () {
+        // pageIndices [2, 0, 1] place pages 1·2·3 as "2", "3", "1". Inserting
+        // page 4 after position 1 shifts only values > 1, so [2, 0, 1] becomes
+        // [3, 0, 1] and the final order is "2", "3", "4", "1".
+        await checkPageNumberOrder(
+          [
+            { document: null, includePages: [0, 1, 2], pageIndices: [2, 0, 1] },
+            { document: null, includePages: [3], insertAfter: 1 },
+          ],
+          ["2", "3", "4", "1"]
+        );
+      });
+
+      it("insertAfter preserves mixed sequential and explicit layouts", async function () {
+        // Sequential pages 1 and 2 form the base sequence; page 3 is inserted
+        // after base position 0. The explicit page 4 already accounts for the
+        // shifted tail at position 3.
+        await checkPageNumberOrder(
+          [
+            { document: null, includePages: [0, 1] },
+            { document: null, includePages: [3], pageIndices: [3] },
+            { document: null, includePages: [2], insertAfter: 0 },
+          ],
+          ["1", "3", "2", "4"]
+        );
       });
 
       it("rejects partial pageIndices combined with insertAfter", async function () {
