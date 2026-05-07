@@ -14168,5 +14168,33 @@
       }
     },
     "type": "eq"
+  },
+  {
+    "id": "smask_alpha_oob",
+    "file": "pdfs/smask_alpha_oob.pdf",
+    "md5": "51b86d51d5311db6805a7e5be2ee0aeb",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "smask_alpha_oob_transfer",
+    "file": "pdfs/smask_alpha_oob_transfer.pdf",
+    "md5": "4c5fa755f6cc26283f1b21f9b5f59ada",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "smask_alpha_bc",
+    "file": "pdfs/smask_alpha_bc.pdf",
+    "md5": "493e7aeef054aab09f325f48703d5ba8",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "smask_luminosity_oob_transfer",
+    "file": "pdfs/smask_luminosity_oob_transfer.pdf",
+    "md5": "267dc76f33cc0c0b6d36ff4605f60907",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

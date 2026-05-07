@@ -908,3 +908,7 @@
 !issue21126.pdf
 !bug2035197_1.pdf
 !bug2035197_2.pdf
+!smask_alpha_oob.pdf
+!smask_alpha_oob_transfer.pdf
+!smask_alpha_bc.pdf
+!smask_luminosity_oob_transfer.pdf
