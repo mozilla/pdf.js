@@ -31,6 +31,20 @@ import { calculateMD5 } from "./calculate_md5.js";
 import { calculateSHA256 } from "./calculate_sha256.js";
 import { DecryptStream } from "./decrypt_stream.js";
 
+/**
+ * @typedef {typeof AES128Cipher | typeof AES256Cipher | typeof ARCFourCipher
+ * | typeof NullCipher} CipherConstructors
+ */
+
+/**
+ * @callback ResolveCipher
+ *   Find the appropriate cipher class based on the filter name.
+ * @param {Name | null} [filterName]
+ *   Name.
+ * @returns {CipherConstructors}
+ *   Cipher constructor.
+ */
+
 class ARCFourCipher {
   a = 0;
 
@@ -737,13 +751,46 @@ class PDF20 extends PDFBase {
 }
 
 class CipherTransform {
-  constructor(stringCipherConstructor, streamCipherConstructor) {
-    this.StringCipherConstructor = stringCipherConstructor;
-    this.StreamCipherConstructor = streamCipherConstructor;
+  /** @type {Map<string, CipherConstructors>} */
+  #cipherCache = new Map();
+
+  /**
+   * @param {ResolveCipher} resolveCipher
+   *   Resolve a cipher constructor from a crypt filter name.
+   * @param {Name | null} [stringFilterName]
+   *   Default crypt filter for strings.
+   * @param {Name | null} [streamFilterName]
+   *   Default crypt filter for streams.
+   */
+  constructor(resolveCipher, stringFilterName = null, streamFilterName = null) {
+    this.resolveCipher = resolveCipher;
+    this.streamFilterName = streamFilterName;
+    this.stringFilterName = stringFilterName;
   }
 
-  createStream(stream, length) {
-    const cipher = new this.StreamCipherConstructor();
+  /**
+   * @param {Name | null} [filterName]
+   *   Crypt filter name.
+   * @returns {CipherConstructors}
+   *   Cipher constructor.
+   */
+  #getCipher(filterName = null) {
+    const key = filterName instanceof Name ? filterName.name : "__default__";
+
+    return this.#cipherCache.getOrInsertComputed(key, () =>
+      this.resolveCipher(filterName)
+    );
+  }
+
+  /**
+   * @param {BaseStream} stream
+   * @param {number | null} length
+   * @param {Name | null} [cryptFilterName]
+   * @returns {DecryptStream}
+   */
+  createStream(stream, length, cryptFilterName = null) {
+    const Cipher = this.#getCipher(cryptFilterName || this.streamFilterName);
+    const cipher = new Cipher();
     return new DecryptStream(
       stream,
       length,
@@ -754,14 +801,16 @@ class CipherTransform {
   }
 
   decryptString(s) {
-    const cipher = new this.StringCipherConstructor();
+    const Cipher = this.#getCipher(this.stringFilterName);
+    const cipher = new Cipher();
     let data = stringToBytes(s);
     data = cipher.decryptBlock(data, true);
     return bytesToString(data);
   }
 
   encryptString(s) {
-    const cipher = new this.StringCipherConstructor();
+    const Cipher = this.#getCipher(this.stringFilterName);
+    const cipher = new Cipher();
     if (cipher instanceof AESBaseCipher) {
       // Append some chars equal to "16 - (M mod 16)"
       // where M is the string length (see section 7.6.2 in PDF specification)
@@ -986,41 +1035,6 @@ class CipherTransformFactory {
     return hash.subarray(0, Math.min(n + 5, 16));
   }
 
-  #buildCipherConstructor(cf, name, num, gen, key) {
-    if (!(name instanceof Name)) {
-      throw new FormatError("Invalid crypt filter name.");
-    }
-    const self = this;
-    const cryptFilter = cf.get(name.name);
-    const cfm = cryptFilter?.get("CFM");
-
-    if (!cfm || cfm.name === "None") {
-      return function () {
-        return new NullCipher();
-      };
-    }
-    if (cfm.name === "V2") {
-      return function () {
-        return new ARCFourCipher(
-          self.#buildObjectKey(num, gen, key, /* isAes = */ false)
-        );
-      };
-    }
-    if (cfm.name === "AESV2") {
-      return function () {
-        return new AES128Cipher(
-          self.#buildObjectKey(num, gen, key, /* isAes = */ true)
-        );
-      };
-    }
-    if (cfm.name === "AESV3") {
-      return function () {
-        return new AES256Cipher(key);
-      };
-    }
-    throw new FormatError("Unknown crypto method");
-  }
-
   constructor(dict, fileId, password) {
     const filter = dict.get("Filter");
     if (!isName(filter, "Standard")) {
@@ -1185,36 +1199,66 @@ class CipherTransformFactory {
     }
   }
 
+  /**
+   * @param {number} num
+   *   Object number.
+   * @param {number} gen
+   *   Generation number.
+   * @returns {CipherTransform}
+   *   Cipher transform.
+   */
   createCipherTransform(num, gen) {
     if (this.algorithm === 4 || this.algorithm === 5) {
-      return new CipherTransform(
-        this.#buildCipherConstructor(
-          this.cf,
-          this.strf,
-          num,
-          gen,
-          this.encryptionKey
-        ),
-        this.#buildCipherConstructor(
-          this.cf,
-          this.stmf,
-          num,
-          gen,
-          this.encryptionKey
-        )
-      );
+      /** @type {ResolveCipher} */
+      const resolveCipher = filterName => {
+        if (!(filterName instanceof Name)) {
+          throw new FormatError("Invalid crypt filter name.");
+        }
+        const cryptFilter = this.cf.get(filterName.name);
+        const cfm = cryptFilter?.get("CFM");
+
+        if (!cfm || cfm.name === "None") {
+          return NullCipher;
+        }
+        if (cfm.name === "V2") {
+          return ARCFourCipher.bind(
+            null,
+            this.#buildObjectKey(
+              num,
+              gen,
+              this.encryptionKey,
+              /* isAes = */ false
+            )
+          );
+        }
+        if (cfm.name === "AESV2") {
+          return AES128Cipher.bind(
+            null,
+            this.#buildObjectKey(
+              num,
+              gen,
+              this.encryptionKey,
+              /* isAes = */ true
+            )
+          );
+        }
+        if (cfm.name === "AESV3") {
+          return AES256Cipher.bind(null, this.encryptionKey);
+        }
+        throw new FormatError("Unknown crypto method");
+      };
+
+      return new CipherTransform(resolveCipher, this.strf, this.stmf);
     }
+
     // algorithms 1 and 2
-    const key = this.#buildObjectKey(
-      num,
-      gen,
-      this.encryptionKey,
-      /* isAes = */ false
-    );
-    const cipherConstructor = function () {
-      return new ARCFourCipher(key);
-    };
-    return new CipherTransform(cipherConstructor, cipherConstructor);
+    /** @type {ResolveCipher} */
+    const resolveCipher = () =>
+      ARCFourCipher.bind(
+        null,
+        this.#buildObjectKey(num, gen, this.encryptionKey, /* isAes = */ false)
+      );
+    return new CipherTransform(resolveCipher);
   }
 }
 
@@ -1222,6 +1266,7 @@ export {
   AES128Cipher,
   AES256Cipher,
   ARCFourCipher,
+  CipherTransform,
   CipherTransformFactory,
   PDF17,
   PDF20,
