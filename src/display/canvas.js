@@ -1279,13 +1279,20 @@ class CanvasGraphics {
     const useLayerSize =
       layerW * layerH < SMASK_LAYER_TO_MASK_AREA_RATIO * maskArea;
 
-    let filterUrl = null;
-    if (hasFilter) {
-      filterUrl =
-        subtype === "Alpha"
-          ? this.filterFactory.addAlphaFilter(transferMap)
-          : this.filterFactory.addLuminosityFilter(transferMap);
-    }
+    // Bundle the filter URL with the spec needed for the pixel-buffer
+    // fallback (see _bakeSMaskCanvas). subtype + transferMap let the
+    // fallback reproduce the SVG filter without an extra round-trip
+    // through the filter factory.
+    const filterSpec = hasFilter
+      ? {
+          url:
+            subtype === "Alpha"
+              ? this.filterFactory.addAlphaFilter(transferMap)
+              : this.filterFactory.addLuminosityFilter(transferMap),
+          subtype,
+          transferMap,
+        }
+      : null;
 
     // Alpha SMasks must not bake /BC into the prepared canvas (see
     // filteredOOBAlpha comment above).
@@ -1300,7 +1307,7 @@ class CanvasGraphics {
         layerW,
         layerH,
         bakedBackdrop,
-        filterUrl
+        filterSpec
       );
       offsetX = 0;
       offsetY = 0;
@@ -1312,7 +1319,7 @@ class CanvasGraphics {
         maskCanvas.width,
         maskCanvas.height,
         bakedBackdrop,
-        filterUrl
+        filterSpec
       );
       offsetX = smask.offsetX;
       offsetY = smask.offsetY;
@@ -1330,8 +1337,9 @@ class CanvasGraphics {
 
   /**
    * Bake the mask plus optional backdrop into a (w x h) canvas with the
-   * mask drawn at (drawX, drawY), then optionally pipe through
-   * `filterUrl`. Returns the prepared canvas-factory entry.
+   * mask drawn at (drawX, drawY), then optionally pipe through the SVG
+   * filter described by `filterSpec`. Returns the prepared canvas-
+   * factory entry.
    *
    * The backdrop fill uses destination-atop so transparent / partial-
    * alpha pixels inside the mask see the backdrop *before* filtering
@@ -1344,9 +1352,17 @@ class CanvasGraphics {
    * transferMap[0], matching the spec's transparent extension of the
    * mask group. No-backdrop mask-size prebakes have no OOB region;
    * destination-in handles OOB at compose time.
+   *
+   * Some browsers (e.g. older Safari) silently ignore SVG `url(#id)`
+   * filters on a 2D canvas: the assignment is accepted but
+   * `ctx.filter` reads back as "none" and `drawImage` produces an
+   * unfiltered copy. We detect that and fall back to a pixel-buffer
+   * loop that reproduces the SVG filter exactly (matrix luminance and
+   * `feFuncA` transferMap, both with sRGB color-interpolation, i.e.
+   * straight on gamma-encoded byte values).
    */
-  _bakeSMaskCanvas(maskCanvas, drawX, drawY, w, h, backdrop, filterUrl) {
-    if (!backdrop && !filterUrl) {
+  _bakeSMaskCanvas(maskCanvas, drawX, drawY, w, h, backdrop, filterSpec) {
+    if (!backdrop && !filterSpec) {
       // Caller (_prepareSMaskCanvas) gates on this; without either,
       // the prebake would just be a wasted copy of the mask.
       unreachable("_bakeSMaskCanvas with neither backdrop nor filter");
@@ -1359,14 +1375,45 @@ class CanvasGraphics {
       sCtx.fillStyle = backdrop;
       sCtx.fillRect(0, 0, w, h);
     }
-    if (!filterUrl) {
+    if (!filterSpec) {
       return srcEntry;
     }
     const preparedEntry = this.canvasFactory.create(w, h);
     const pCtx = preparedEntry.context;
-    pCtx.filter = filterUrl;
+    // Pre-assign read: undefined means no canvas filter API (assigning
+    // would just set a JS property and post-assign read would lie).
+    // Post-assign "none"/"" means the URL was rejected (Firefox
+    // normalizes accepted url(#id) to an absolute URL).
+    const filterSupported = pCtx.filter !== undefined;
+    pCtx.filter = filterSpec.url;
+    const filterApplied =
+      filterSupported && pCtx.filter !== "none" && pCtx.filter !== "";
     pCtx.drawImage(srcEntry.canvas, 0, 0);
-    pCtx.filter = "none";
+    if (filterSupported) {
+      pCtx.filter = "none";
+    }
+    if (!filterApplied) {
+      const img = pCtx.getImageData(0, 0, w, h);
+      const { data } = img;
+      const { transferMap } = filterSpec;
+      if (filterSpec.subtype === "Luminosity") {
+        for (let i = 0, ii = data.length; i < ii; i += 4) {
+          // Match #addLuminosityConversion: a' = 0.3*R + 0.59*G + 0.11*B,
+          // RGB -> 0; then optional transferMap on alpha.
+          const a =
+            (0.3 * data[i] + 0.59 * data[i + 1] + 0.11 * data[i + 2] + 0.5) | 0;
+          data[i] = data[i + 1] = data[i + 2] = 0;
+          data[i + 3] = transferMap?.[a] ?? a;
+        }
+      } else {
+        // Alpha: transferMap is guaranteed by _prepareSMaskCanvas's
+        // hasFilter gate.
+        for (let i = 3, ii = data.length; i < ii; i += 4) {
+          data[i] = transferMap[data[i]];
+        }
+      }
+      pCtx.putImageData(img, 0, 0);
+    }
     this.canvasFactory.destroy(srcEntry);
     return preparedEntry;
   }
