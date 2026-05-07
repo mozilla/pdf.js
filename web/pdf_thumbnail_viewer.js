@@ -338,7 +338,7 @@ class PDFThumbnailViewer {
             insertAfter: currentPageIndex ?? -1,
           });
           this.eventBus._on(
-            "thumbnailsloaded",
+            "pagesloaded",
             () => {
               // Clear any pre-merge selection: thumbnails are rebuilt fresh
               // (all unchecked), so the old set would cause a label/visual
@@ -358,7 +358,10 @@ class PDFThumbnailViewer {
                 this.#selectPage(i + 1, true);
               }
               if (insertedPagesCount) {
-                this.#updateCurrentPage(currentPageIndex + 2);
+                this.#updateCurrentPage(
+                  currentPageIndex + 2,
+                  /* force = */ true
+                );
               }
             },
             { once: true }
