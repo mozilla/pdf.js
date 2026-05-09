@@ -95,7 +95,7 @@ async function openDocument(source, name) {
 
   if (pdfDoc) {
     pageView.reset();
-    await pdfDoc.destroy();
+    await pdfDoc.loadingTask.destroy();
     pdfDoc = null;
   }
 

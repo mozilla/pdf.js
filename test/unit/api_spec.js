@@ -3203,7 +3203,7 @@ describe("api", function () {
         params.url = url.href;
         loadingTask = getDocument(params);
         return loadingTask.promise
-          .then(pdf => pdf.destroy())
+          .then(() => loadingTask.destroy())
           .then(
             function () {
               expect(expectSuccess).toEqual(true);

@@ -969,7 +969,7 @@ class Driver {
     // Wipe out the link to the pdfdoc so it can be GC'ed.
     for (const task of [this.currentTask, ...this.taskQueue]) {
       if (task?.pdfDoc) {
-        destroyedPromises.push(task.pdfDoc.destroy());
+        destroyedPromises.push(task.pdfDoc.loadingTask.destroy());
         delete task.pdfDoc;
       }
     }

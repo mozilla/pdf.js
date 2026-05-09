@@ -1027,13 +1027,6 @@ class PDFDocumentProxy {
   }
 
   /**
-   * Destroys the current document instance and terminates the worker.
-   */
-  destroy() {
-    return this.loadingTask.destroy();
-  }
-
-  /**
    * @param {RefProxy} ref - The page reference.
    * @returns {number | null} The page number, if it's cached.
    */
