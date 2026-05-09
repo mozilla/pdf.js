@@ -866,7 +866,7 @@ class Driver {
             await loadingTask.destroy();
             delete task.annotationStorage;
 
-            return getDocument(data).promise;
+            return getDocument({ data }).promise;
           });
         }
 

@@ -26,7 +26,7 @@
       //
       // Asynchronous download PDF
       //
-      const loadingTask = pdfjsLib.getDocument(url);
+      const loadingTask = pdfjsLib.getDocument({ url });
       const pdf = await loadingTask.promise;
       //
       // Fetch the first page

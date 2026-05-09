@@ -123,7 +123,7 @@
       /**
        * Asynchronously downloads PDF.
        */
-      var loadingTask = pdfjsLib.getDocument(url);
+      var loadingTask = pdfjsLib.getDocument({ url });
       pdfDoc = await loadingTask.promise;
       document.getElementById("page_count").textContent = pdfDoc.numPages;
 

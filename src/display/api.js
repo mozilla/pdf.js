@@ -221,19 +221,10 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * XHR as fallback) is used, which means it must follow same origin rules,
  * e.g. no cross-domain requests without CORS.
  *
- * @param {string | URL | TypedArray | ArrayBuffer | DocumentInitParameters}
- *   src - Can be a URL where a PDF file is located, a typed array (Uint8Array)
- *         already populated with data, or a parameter object.
+ * @param {DocumentInitParameters} src - Parameter object.
  * @returns {PDFDocumentLoadingTask}
  */
 function getDocument(src = {}) {
-  if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-    if (typeof src === "string" || src instanceof URL) {
-      src = { url: src };
-    } else if (src instanceof ArrayBuffer || ArrayBuffer.isView(src)) {
-      src = { data: src };
-    }
-  }
   const task = new PDFDocumentLoadingTask();
   const { docId } = task;
 
