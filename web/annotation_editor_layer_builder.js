@@ -82,6 +82,9 @@ class AnnotationEditorLayerBuilder {
   }
 
   updatePageIndex(newPageIndex) {
+    if (this.pageIndex === newPageIndex) {
+      return;
+    }
     this.pageIndex = newPageIndex;
     this.annotationEditorLayer?.updatePageIndex(newPageIndex);
   }
