@@ -47,7 +47,7 @@
     "ordered-read-streams": "^2.0.0",
     "pngjs": "^7.0.0",
     "postcss": "^8.5.14",
-    "postcss-discard-comments": "^7.0.7",
+    "postcss-discard-comments": "^8.0.0",
     "postcss-values-parser": "^7.0.0",
     "prettier": "^3.8.3",
     "puppeteer": "^24.43.1",
