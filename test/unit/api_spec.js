@@ -5207,7 +5207,7 @@ have written that much by now. So, here’s to squashing bugs.`);
   describe("PDFDataRangeTransport", function () {
     async function streamDelay() {
       return new Promise(resolve => {
-        setTimeout(resolve, 250);
+        setTimeout(resolve, 100);
       });
     }
     let dataPromise;
@@ -5269,7 +5269,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(contentDispositionFilename).toEqual("aaa.pdf");
       expect(contentLength).toEqual(dataLength);
 
-      expect(fetches).toBeGreaterThan(4);
+      expect(fetches).toEqual(5);
 
       expect(initialProgress).toEqual({
         loaded: initialDataLength,
@@ -5428,7 +5428,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(contentDispositionFilename).toEqual(null);
       expect(contentLength).toEqual(dataLength);
 
-      expect(fetches).toBeGreaterThan(2);
+      expect(fetches).toEqual(3);
 
       expect(initialProgress.loaded).toBeGreaterThan(initialDataLength);
       expect(initialProgress.total).toEqual(dataLength);
