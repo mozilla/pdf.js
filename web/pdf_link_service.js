@@ -486,6 +486,11 @@ class PDFLinkService {
         this.pdfViewer.previousPage();
         break;
 
+      case "GoBack":
+      case "menu:GoBack":
+        this.pdfHistory?.back();
+        break;
+
       case "LastPage":
         this.page = this.pagesCount;
         break;
