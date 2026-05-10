@@ -23,8 +23,11 @@
   --sidebar-transition-timing-function: ease;
 
   --toolbar-height: 32px;
-  --toolbar-horizontal-padding: 1px;
-  --toolbar-vertical-padding: 2px;
+  --toolbar-horizontal-padding: 4px;
+  --toolbar-vertical-padding: 4px;
+  --toolbar-border-radius: 8px;
+  --toolbar-button-border-radius: 6px;
+  --doorhanger-border-radius: 8px;
   --icon-size: 16px;
 
   --toolbar-icon-opacity: 0.7;
@@ -46,27 +49,28 @@
     rgb(42 42 46 / 0.9)
   );
   --sidebar-toolbar-bg-color: light-dark(rgb(245 246 247), rgb(50 50 52));
-  --toolbar-bg-color: light-dark(rgb(249 249 250), rgb(56 56 61));
+  --toolbar-bg-color: light-dark(rgb(249 249 250 / 0.96), rgb(56 56 61 / 0.96));
   --toolbar-border-color: light-dark(rgb(184 184 184), rgb(12 12 13));
-  --toolbar-box-shadow: 0 1px 0 var(--toolbar-border-color);
+  --toolbar-box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.1), 0 0 0 1px var(--toolbar-border-color);
   --toolbar-border-bottom: none;
   --toolbarSidebar-box-shadow:
     inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25),
     0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
   --toolbarSidebar-border-bottom: none;
-  --button-hover-color: color-mix(in srgb, currentColor 17%, transparent);
+  --button-hover-color: color-mix(in srgb, currentColor 14%, transparent);
   --toggled-btn-color: light-dark(rgb(0 0 0), rgb(255 255 255));
-  --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
-  --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
+  --toggled-btn-bg-color: color-mix(in srgb, currentColor 20%, transparent);
+  --toggled-hover-active-btn-color: color-mix(in srgb, currentColor 28%, transparent);
   --toggled-hover-btn-outline: none;
-  --dropdown-btn-bg-color: light-dark(rgb(215 215 219), rgb(74 74 79));
+  --dropdown-btn-bg-color: light-dark(rgb(230 230 233), rgb(74 74 79));
   --dropdown-btn-border: none;
   --separator-color: rgb(0 0 0 / 0.3);
   --field-color: light-dark(rgb(6 6 6), rgb(250 250 250));
   --field-bg-color: light-dark(rgb(255 255 255), rgb(64 64 68));
   --field-border-color: light-dark(rgb(187 187 188), rgb(115 115 115));
-  --doorhanger-bg-color: light-dark(rgb(255 255 255), #42414d);
-  --doorhanger-border-color: light-dark(rgb(12 12 13 / 0.2), rgb(39 39 43));
+  --doorhanger-bg-color: light-dark(rgb(255 255 255 / 0.98), rgb(66 65 77 / 0.98));
+  --doorhanger-border-color: light-dark(rgb(12 12 13 / 0.14), rgb(39 39 43));
   --doorhanger-hover-color: light-dark(rgb(12 12 13), rgb(249 249 250));
   --doorhanger-separator-color: light-dark(rgb(222 222 222), rgb(92 92 97));
   --dialog-button-border: none;
