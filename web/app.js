@@ -98,6 +98,7 @@ import { ViewHistory } from "./view_history.js";
 import { ViewsManager } from "web-views_manager";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
+const FORCE_REDRAW_VISIBLE_PAGES_TIMEOUT = 5 * 60 * 1000; // ms
 
 const ViewOnLoad = {
   UNKNOWN: -1,
@@ -174,6 +175,7 @@ const PDFViewerApplication = {
   _eventBusAbortController: null,
   _windowAbortController: null,
   _globalAbortController: new AbortController(),
+  _lastHiddenTime: 0,
   documentInfo: null,
   metadata: null,
   _contentDispositionFilename: null,
@@ -2090,6 +2092,13 @@ const PDFViewerApplication = {
     if (this.supportsPrinting && (await this._printPermissionPromise)) {
       window.print();
     }
+  },
+
+  _forceRedrawVisiblePages() {
+    if (!this.pdfDocument || !this.pdfViewer?.pagesCount) {
+      return;
+    }
+    this.pdfViewer.forceRedrawVisiblePages();
   },
 
   bindEvents() {
