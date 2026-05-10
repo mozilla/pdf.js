@@ -4452,6 +4452,19 @@ have written that much by now. So, here’s to squashing bugs.`);
       }
     );
 
+    it("gets operator list, from a PDF with a Form -> Form -> Pattern -> Form cycle", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("operator_list_cycle.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const operatorList = await pdfPage.getOperatorList();
+      expect(operatorList.lastChunk).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
     it("gets operator list, containing Annotation-operatorLists", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("annotation-line.pdf")
