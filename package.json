@@ -57,7 +57,7 @@
     "terser-webpack-plugin": "^5.6.0",
     "tsc-alias": "^1.8.17",
     "ttest": "^4.0.0",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vinyl": "^3.0.1",
     "webpack": "^5.106.2",
     "webpack-stream": "^7.0.0"
