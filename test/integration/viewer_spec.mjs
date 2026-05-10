@@ -29,6 +29,45 @@ import {
 import { PNG } from "pngjs";
 
 describe("PDF viewer", () => {
+  describe("Force redraw after long idle", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        "page-width"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("redraws visible pages when focus returns after a long idle", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const redrawPromise = await createPromise(page, resolve => {
+            window.PDFViewerApplication.pdfViewer.forceRedrawVisiblePages =
+              resolve;
+          });
+
+          await page.evaluate(() => {
+            const originalNow = performance.now.bind(performance);
+            let now = originalNow();
+            performance.now = () => now;
+            window.dispatchEvent(new Event("blur"));
+            now += 6 * 60 * 1000;
+            window.dispatchEvent(new Event("focus"));
+            performance.now = originalNow;
+          });
+
+          await awaitPromise(redrawPromise);
+        })
+      );
+    });
+  });
+
   describe("Zoom origin", () => {
     let pages;
 
