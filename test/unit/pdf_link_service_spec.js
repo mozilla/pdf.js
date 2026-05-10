@@ -112,4 +112,26 @@ describe("PDFLinkService", function () {
       expect(link.title).toEqual("Disabled: https://attacker.example/path");
     });
   });
+
+  describe("executeNamedAction", function () {
+    it("dispatches GoBack actions to pdfHistory", function () {
+      for (const action of ["GoBack", "menu:GoBack"]) {
+        let backCalls = 0;
+        const linkService = new PDFLinkService({
+          eventBus: {
+            dispatch() {},
+          },
+        });
+        linkService.setHistory({
+          back() {
+            backCalls++;
+          },
+        });
+
+        linkService.executeNamedAction(action);
+
+        expect(backCalls).toEqual(1);
+      }
+    });
+  });
 });
