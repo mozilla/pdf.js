@@ -18,13 +18,13 @@ This tutorial shows how PDF.js can be used as a library in a web browser.
 The object structure of PDF.js loosely follows the structure of an actual PDF. At the top level there is a document object. From the document, more information and individual pages can be fetched. To get the document:
 
 ```js
-pdfjsLib.getDocument('helloworld.pdf')
+pdfjsLib.getDocument({ url: "helloworld.pdf" })
 ```
 
 Remember though that PDF.js uses promises, and the above will return a `PDFDocumentLoadingTask` instance that has a `promise` property which is resolved with the document object.
 
 ```js
-var loadingTask = pdfjsLib.getDocument('helloworld.pdf');
+var loadingTask = pdfjsLib.getDocument({ url: "helloworld.pdf" });
 loadingTask.promise.then(function(pdf) {
   // you can now use *pdf* here
 });
@@ -48,8 +48,8 @@ var viewport = page.getViewport({ scale: scale, });
 // Support HiDPI-screens.
 var outputScale = window.devicePixelRatio || 1;
 
-var canvas = document.getElementById('the-canvas');
-var context = canvas.getContext('2d');
+var canvas = document.getElementById("the-canvas");
+var context = canvas.getContext("2d");
 
 canvas.width = Math.floor(viewport.width * outputScale);
 canvas.height = Math.floor(viewport.height * outputScale);

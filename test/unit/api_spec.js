@@ -121,7 +121,7 @@ describe("api", function () {
   describe("getDocument", function () {
     it("creates pdf doc from URL-string", async function () {
       const urlStr = TEST_PDFS_PATH + basicApiFileName;
-      const loadingTask = getDocument(urlStr);
+      const loadingTask = getDocument({ url: urlStr });
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
       const pdfDocument = await loadingTask.promise;
 
@@ -135,7 +135,7 @@ describe("api", function () {
     it("creates pdf doc from URL-object", async function () {
       const urlObj = TestPdfsServer.resolveURL(basicApiFileName);
 
-      const loadingTask = getDocument(urlObj);
+      const loadingTask = getDocument({ url: urlObj });
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
       const pdfDocument = await loadingTask.promise;
 
@@ -210,7 +210,7 @@ describe("api", function () {
       expect(typedArrayPdf).toBeInstanceOf(Uint8Array);
       expect(typedArrayPdf.length).toEqual(basicApiFileLength);
 
-      const loadingTask = getDocument(typedArrayPdf);
+      const loadingTask = getDocument({ data: typedArrayPdf });
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const progressReportedCapability = Promise.withResolvers();
@@ -245,7 +245,7 @@ describe("api", function () {
       expect(arrayBufferPdf).toBeInstanceOf(ArrayBuffer);
       expect(arrayBufferPdf.byteLength).toEqual(basicApiFileLength);
 
-      const loadingTask = getDocument(arrayBufferPdf);
+      const loadingTask = getDocument({ data: arrayBufferPdf });
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       const progressReportedCapability = Promise.withResolvers();
@@ -516,7 +516,7 @@ describe("api", function () {
     );
 
     it("creates pdf doc from empty TypedArray", async function () {
-      const loadingTask = getDocument(new Uint8Array(0));
+      const loadingTask = getDocument({ data: new Uint8Array(0) });
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       try {
@@ -850,7 +850,7 @@ describe("api", function () {
       expect(typedArrayPdf).toBeInstanceOf(Uint8Array);
       expect(typedArrayPdf.length).toEqual(1116);
 
-      const loadingTask = getDocument(typedArrayPdf.slice());
+      const loadingTask = getDocument({ data: typedArrayPdf.slice() });
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
 
       let passwordData = null;
@@ -2407,7 +2407,7 @@ describe("api", function () {
       expect(typedArrayPdf).toBeInstanceOf(Uint8Array);
       expect(typedArrayPdf.length).toEqual(10719);
 
-      const loadingTask = getDocument(typedArrayPdf.slice());
+      const loadingTask = getDocument({ data: typedArrayPdf.slice() });
       const pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       // Trigger parsing of the JPEG image.
@@ -2463,7 +2463,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const annotations = await pdfPage.getAnnotations();
@@ -2486,7 +2486,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const datasets = await pdfDoc.getXFADatasets();
 
@@ -2522,7 +2522,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const datasets = await pdfDoc.getXFADatasets();
 
@@ -2559,7 +2559,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       page = await pdfDoc.getPage(1);
       const newStructTree = await page.getStructTree();
@@ -2594,7 +2594,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const annotations = await pdfDoc.getAnnotArray(0);
 
@@ -2673,7 +2673,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       // Ensure that the Annotation text-content was actually compressed.
       typedArray = await pdfDoc.getData();
@@ -2714,7 +2714,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const opList = await page.getOperatorList();
@@ -2772,7 +2772,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
@@ -2867,7 +2867,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
@@ -2935,11 +2935,11 @@ describe("api", function () {
       const blob = await getImageBlob("firefox_logo.png");
 
       let loadingTask, pdfDoc;
-      let data = buildGetDocumentParams("empty.pdf");
+      let docParams = buildGetDocumentParams("empty.pdf");
 
       for (let i = 1; i <= 2; i++) {
         const bitmap = await createImageBitmap(blob);
-        loadingTask = getDocument(data);
+        loadingTask = getDocument(docParams);
         pdfDoc = await loadingTask.promise;
         pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
           annotationType: AnnotationEditorType.STAMP,
@@ -2955,11 +2955,11 @@ describe("api", function () {
           },
         });
 
-        data = await pdfDoc.saveDocument();
+        docParams = { data: await pdfDoc.saveDocument() };
         await loadingTask.destroy();
       }
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument(docParams);
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
@@ -3018,7 +3018,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
@@ -3081,7 +3081,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
@@ -3119,7 +3119,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const annotations = await page.getAnnotations();
@@ -3163,7 +3163,7 @@ describe("api", function () {
       const data = await pdfDoc.saveDocument();
       await loadingTask.destroy();
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       const tree = await page.getStructTree();
@@ -3203,7 +3203,7 @@ describe("api", function () {
         params.url = url.href;
         loadingTask = getDocument(params);
         return loadingTask.promise
-          .then(pdf => pdf.destroy())
+          .then(() => loadingTask.destroy())
           .then(
             function () {
               expect(expectSuccess).toEqual(true);
@@ -5597,7 +5597,7 @@ small scripts as well as for`);
         return;
       }
 
-      loadingTask = getDocument(data);
+      loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       expect(pdfDoc.numPages).toEqual(expected.length);
 
@@ -5631,7 +5631,7 @@ small scripts as well as for`);
           { document: pdfData2 },
           { document: pdfData3 },
         ]);
-        let newLoadingTask = getDocument(data);
+        let newLoadingTask = getDocument({ data });
         let newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(9);
 
@@ -5649,7 +5649,7 @@ small scripts as well as for`);
           { document: pdfData2 },
           { document: null },
         ]);
-        newLoadingTask = getDocument(data);
+        newLoadingTask = getDocument({ data });
         newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(9);
         for (let i = 1; i <= 9; i++) {
@@ -5666,7 +5666,7 @@ small scripts as well as for`);
           { document: pdfData2, includePages: [0] },
           { document: pdfData3, includePages: [0] },
         ]);
-        newLoadingTask = getDocument(data);
+        newLoadingTask = getDocument({ data });
         newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(3);
         for (let i = 1; i <= 3; i++) {
@@ -5681,7 +5681,7 @@ small scripts as well as for`);
           { document: pdfData2, excludePages: [0] },
           { document: pdfData3, excludePages: [0] },
         ]);
-        newLoadingTask = getDocument(data);
+        newLoadingTask = getDocument({ data });
         newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(6);
         for (let i = 1; i <= 6; i++) {
@@ -5709,7 +5709,7 @@ small scripts as well as for`);
           { document: pdfData1, includePages: [[0, 0], 2] },
           { document: null, includePages: [[2, 4], 7] },
         ]);
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(6);
 
@@ -5756,7 +5756,7 @@ small scripts as well as for`);
             ],
           },
         ]);
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(6);
 
@@ -5796,7 +5796,7 @@ small scripts as well as for`);
           { document: null, includePages: [0] },
           { document: pdfData1, password: "asdfasdf" },
         ]);
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(2);
 
@@ -5845,7 +5845,7 @@ small scripts as well as for`);
           includePages: [0, 1, 5, 7, 10],
         });
         await loadingTask.destroy();
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         const newPdfDoc = await loadingTask.promise;
         labels = await newPdfDoc.getPageLabels();
         expect(labels).toEqual(["i", "ii", "1", "a", "5"]);
@@ -5869,7 +5869,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         destinations = await pdfDoc.getDestinations();
@@ -5905,7 +5905,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(4);
@@ -5932,7 +5932,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(8);
@@ -5973,7 +5973,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(3);
@@ -6010,7 +6010,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(4);
@@ -6089,7 +6089,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(2);
@@ -6192,7 +6192,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(3);
@@ -6283,7 +6283,7 @@ small scripts as well as for`);
           { document: null, includePages: [1, 3, 5], pageIndices: [1, 2, 0] },
         ]);
         await loadingTask.destroy();
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(3);
@@ -6365,7 +6365,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(2);
@@ -6404,7 +6404,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(3);
 
@@ -6449,7 +6449,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(6);
 
@@ -6503,7 +6503,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(5);
 
@@ -6533,7 +6533,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(3);
@@ -6574,7 +6574,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         const attachments = await pdfDoc.getAttachments();
@@ -6601,7 +6601,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         const attachments = await pdfDoc.getAttachments();
@@ -6649,7 +6649,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(1);
@@ -6701,7 +6701,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         expect(pdfDoc.numPages).toEqual(2);
@@ -6747,7 +6747,7 @@ small scripts as well as for`);
         const data = await pdfDoc.extractPages([{ document: null }]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
 
         const calculationOrder = await pdfDoc.getCalculationOrderIds();
@@ -6778,7 +6778,7 @@ small scripts as well as for`);
         expect(data).not.toBeNull();
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(2);
         await newLoadingTask.destroy();
@@ -6810,7 +6810,7 @@ small scripts as well as for`);
         const data = await pdfDoc.extractPages([{ document: null }]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
@@ -6890,7 +6890,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
@@ -6928,7 +6928,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
@@ -6996,7 +6996,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(2);
 
@@ -7056,7 +7056,7 @@ small scripts as well as for`);
         const data = await pdfDoc.extractPages([{ document: null }]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
@@ -7084,7 +7084,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(2);
 
@@ -7133,7 +7133,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(1);
 
@@ -7165,7 +7165,7 @@ small scripts as well as for`);
         const data = await pdfDoc.extractPages([{ document: null }]);
         await loadingTask.destroy();
 
-        const newLoadingTask = getDocument(data);
+        const newLoadingTask = getDocument({ data });
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(1);
         await newLoadingTask.destroy();
@@ -7188,7 +7188,7 @@ small scripts as well as for`);
         // Opening the result without a password must fail.
         // Use a copy so the underlying ArrayBuffer is not detached before the
         // second getDocument call below.
-        const passwordNeededLoadingTask = getDocument(data.slice());
+        const passwordNeededLoadingTask = getDocument({ data: data.slice() });
         await passwordNeededLoadingTask.promise.then(
           function () {
             // Shouldn't get here.
@@ -7227,7 +7227,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(3);
 
@@ -7262,7 +7262,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(3);
 
@@ -7296,7 +7296,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(23);
 
@@ -7335,7 +7335,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(3);
 
@@ -7368,7 +7368,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(4);
 
@@ -7401,7 +7401,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(3);
 
@@ -7433,7 +7433,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(3);
 
@@ -7520,7 +7520,7 @@ small scripts as well as for`);
         ]);
         await loadingTask.destroy();
 
-        loadingTask = getDocument(data);
+        loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(2);
 

@@ -10,7 +10,7 @@ class MainTest {
   }
 
   loadPdf() {
-    this.task = getDocument("file://" + this.file);
+    this.task = getDocument({ url: "file://" + this.file });
     return this.task.promise;
   }
 }

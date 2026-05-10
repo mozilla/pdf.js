@@ -14,7 +14,7 @@ const pdfPath =
 
 // Will be using promises to load document, pages and misc data instead of
 // callback.
-const loadingTask = getDocument(pdfPath);
+const loadingTask = getDocument({ url: pdfPath });
 loadingTask.promise
   .then(function (doc) {
     const numPages = doc.numPages;
