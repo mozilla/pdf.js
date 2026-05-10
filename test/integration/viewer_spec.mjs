@@ -29,6 +29,61 @@ import {
 import { PNG } from "pngjs";
 
 describe("PDF viewer", () => {
+  describe("Toolbar layout", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("doesn't wrap find bar labels in a narrow window", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.setViewport({ width: 300, height: 800 });
+          await waitAndClick(page, "#viewFindButton");
+          await page.waitForSelector("#findbar:not(.hidden)");
+
+          const wrappedLabels = await page.evaluate(() => {
+            const range = document.createRange();
+
+            return Array.from(
+              document.querySelectorAll("#findbar .toolbarLabel")
+            )
+              .filter(label => {
+                const walker = document.createTreeWalker(
+                  label,
+                  NodeFilter.SHOW_TEXT
+                );
+                const tops = new Set();
+                let node;
+
+                while ((node = walker.nextNode())) {
+                  if (!node.nodeValue.trim()) {
+                    continue;
+                  }
+                  range.selectNodeContents(node);
+                  for (const { top } of range.getClientRects()) {
+                    tops.add(Math.round(top));
+                  }
+                }
+
+                return tops.size > 1;
+              })
+              .map(label => label.textContent.trim());
+          });
+
+          expect(wrappedLabels)
+            .withContext(`In ${browserName}`)
+            .toEqual([]);
+        })
+      );
+    });
+  });
+
   describe("Zoom origin", () => {
     let pages;
 
