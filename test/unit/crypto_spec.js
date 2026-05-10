@@ -35,50 +35,36 @@ import { calculateMD5 } from "../../src/core/calculate_md5.js";
 import { calculateSHA256 } from "../../src/core/calculate_sha256.js";
 
 describe("crypto", function () {
-  function hex2binary(s) {
-    const digits = "0123456789ABCDEF";
-    s = s.toUpperCase();
-    const n = s.length >> 1;
-    const result = new Uint8Array(n);
-    for (let i = 0, j = 0; i < n; ++i) {
-      const d1 = s.charAt(j++);
-      const d2 = s.charAt(j++);
-      const value = (digits.indexOf(d1) << 4) | digits.indexOf(d2);
-      result[i] = value;
-    }
-    return result;
-  }
-
   // RFC 1321, A.5 Test suite
   describe("calculateMD5", function () {
     it("should pass RFC 1321 test #1", function () {
       const input = stringToBytes("");
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("d41d8cd98f00b204e9800998ecf8427e");
+      const expected = Uint8Array.fromHex("d41d8cd98f00b204e9800998ecf8427e");
       expect(result).toEqual(expected);
     });
     it("should pass RFC 1321 test #2", function () {
       const input = stringToBytes("a");
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("0cc175b9c0f1b6a831c399e269772661");
+      const expected = Uint8Array.fromHex("0cc175b9c0f1b6a831c399e269772661");
       expect(result).toEqual(expected);
     });
     it("should pass RFC 1321 test #3", function () {
       const input = stringToBytes("abc");
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("900150983cd24fb0d6963f7d28e17f72");
+      const expected = Uint8Array.fromHex("900150983cd24fb0d6963f7d28e17f72");
       expect(result).toEqual(expected);
     });
     it("should pass RFC 1321 test #4", function () {
       const input = stringToBytes("message digest");
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("f96b697d7cb7938d525a2f31aaf161d0");
+      const expected = Uint8Array.fromHex("f96b697d7cb7938d525a2f31aaf161d0");
       expect(result).toEqual(expected);
     });
     it("should pass RFC 1321 test #5", function () {
       const input = stringToBytes("abcdefghijklmnopqrstuvwxyz");
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("c3fcd3d76192e4007dfb496cca67e13b");
+      const expected = Uint8Array.fromHex("c3fcd3d76192e4007dfb496cca67e13b");
       expect(result).toEqual(expected);
     });
     it("should pass RFC 1321 test #6", function () {
@@ -86,7 +72,7 @@ describe("crypto", function () {
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
       );
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("d174ab98d277d9f5a5611c2c9f419d9f");
+      const expected = Uint8Array.fromHex("d174ab98d277d9f5a5611c2c9f419d9f");
       expect(result).toEqual(expected);
     });
     it("should pass RFC 1321 test #7", function () {
@@ -95,7 +81,7 @@ describe("crypto", function () {
           "90123456789012345678901234567890"
       );
       const result = calculateMD5(input, 0, input.length);
-      const expected = hex2binary("57edf4a22be3c955ac49da2e2107b67a");
+      const expected = Uint8Array.fromHex("57edf4a22be3c955ac49da2e2107b67a");
       expect(result).toEqual(expected);
     });
   });
@@ -103,40 +89,40 @@ describe("crypto", function () {
   // http://www.freemedialibrary.com/index.php/RC4_test_vectors are used
   describe("ARCFourCipher", function () {
     it("should pass test #1", function () {
-      const key = hex2binary("0123456789abcdef");
-      const input = hex2binary("0123456789abcdef");
+      const key = Uint8Array.fromHex("0123456789abcdef");
+      const input = Uint8Array.fromHex("0123456789abcdef");
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary("75b7878099e0c596");
+      const expected = Uint8Array.fromHex("75b7878099e0c596");
       expect(result).toEqual(expected);
     });
     it("should pass test #2", function () {
-      const key = hex2binary("0123456789abcdef");
-      const input = hex2binary("0000000000000000");
+      const key = Uint8Array.fromHex("0123456789abcdef");
+      const input = Uint8Array.fromHex("0000000000000000");
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary("7494c2e7104b0879");
+      const expected = Uint8Array.fromHex("7494c2e7104b0879");
       expect(result).toEqual(expected);
     });
     it("should pass test #3", function () {
-      const key = hex2binary("0000000000000000");
-      const input = hex2binary("0000000000000000");
+      const key = Uint8Array.fromHex("0000000000000000");
+      const input = Uint8Array.fromHex("0000000000000000");
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary("de188941a3375d3a");
+      const expected = Uint8Array.fromHex("de188941a3375d3a");
       expect(result).toEqual(expected);
     });
     it("should pass test #4", function () {
-      const key = hex2binary("ef012345");
-      const input = hex2binary("00000000000000000000");
+      const key = Uint8Array.fromHex("ef012345");
+      const input = Uint8Array.fromHex("00000000000000000000");
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary("d6a141a7ec3c38dfbd61");
+      const expected = Uint8Array.fromHex("d6a141a7ec3c38dfbd61");
       expect(result).toEqual(expected);
     });
     it("should pass test #5", function () {
-      const key = hex2binary("0123456789abcdef");
-      const input = hex2binary(
+      const key = Uint8Array.fromHex("0123456789abcdef");
+      const input = Uint8Array.fromHex(
         "010101010101010101010101010101010101010101010101010" +
           "10101010101010101010101010101010101010101010101010101010101010101010" +
           "10101010101010101010101010101010101010101010101010101010101010101010" +
@@ -156,7 +142,7 @@ describe("crypto", function () {
       );
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "7595c3e6114a09780c4ad452338e1ffd9a1be9498f813d76" +
           "533449b6778dcad8c78a8d2ba9ac66085d0e53d59c26c2d1c490c1ebbe0ce66d1b6b" +
           "1b13b6b919b847c25a91447a95e75e4ef16779cde8bf0a95850e32af9689444fd377" +
@@ -177,15 +163,15 @@ describe("crypto", function () {
       expect(result).toEqual(expected);
     });
     it("should pass test #6", function () {
-      const key = hex2binary("fb029e3031323334");
-      const input = hex2binary(
+      const key = Uint8Array.fromHex("fb029e3031323334");
+      const input = Uint8Array.fromHex(
         "aaaa0300000008004500004e661a00008011be640a0001220af" +
           "fffff00890089003a000080a601100001000000000000204543454a4548454346434" +
           "550464545494546464343414341434143414341414100002000011bd0b604"
       );
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "f69c5806bd6ce84626bcbefb9474650aad1f7909b0f64d5f" +
           "58a503a258b7ed22eb0ea64930d3a056a55742fcce141d485f8aa836dea18df42c53" +
           "80805ad0c61a5d6f58f41040b24b7d1a693856ed0d4398e7aee3bf0e2a2ca8f7"
@@ -193,13 +179,13 @@ describe("crypto", function () {
       expect(result).toEqual(expected);
     });
     it("should pass test #7", function () {
-      const key = hex2binary("0123456789abcdef");
-      const input = hex2binary(
+      const key = Uint8Array.fromHex("0123456789abcdef");
+      const input = Uint8Array.fromHex(
         "123456789abcdef0123456789abcdef0123456789abcdef012345678"
       );
       const cipher = new ARCFourCipher(key);
       const result = cipher.encryptBlock(input);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "66a0949f8af7d6891f7f832ba833c00c892ebe30143ce28740011ecf"
       );
       expect(result).toEqual(expected);
@@ -210,7 +196,7 @@ describe("crypto", function () {
     it("should properly hash abc", function () {
       const input = stringToBytes("abc");
       const result = calculateSHA256(input, 0, input.length);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD"
       );
       expect(result).toEqual(expected);
@@ -220,7 +206,7 @@ describe("crypto", function () {
         "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
       );
       const result = calculateSHA256(input, 0, input.length);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "248D6A61D20638B8E5C026930C3E6039A33CE45964FF2167F6ECEDD419DB06C1"
       );
       expect(result).toEqual(expected);
@@ -231,7 +217,7 @@ describe("crypto", function () {
     it("should properly hash abc", function () {
       const input = stringToBytes("abc");
       const result = calculateSHA384(input, 0, input.length);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "CB00753F45A35E8BB5A03D699AC65007272C32AB0EDED163" +
           "1A8B605A43FF5BED8086072BA1E7CC2358BAECA134C825A7"
       );
@@ -244,7 +230,7 @@ describe("crypto", function () {
           "mnopqrstnopqrstu"
       );
       const result = calculateSHA384(input, 0, input.length);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "09330C33F71147E83D192FC782CD1B4753111B173B3B05D2" +
           "2FA08086E3B0F712FCC7C71A557E2DB966C3E9FA91746039"
       );
@@ -256,7 +242,7 @@ describe("crypto", function () {
     it("should properly hash abc", function () {
       const input = stringToBytes("abc");
       const result = calculateSHA512(input, 0, input.length);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "DDAF35A193617ABACC417349AE20413112E6FA4E89A97EA2" +
           "0A9EEEE64B55D39A2192992A274FC1A836BA3C23A3FEEBBD" +
           "454D4423643CE80E2A9AC94FA54CA49F"
@@ -270,7 +256,7 @@ describe("crypto", function () {
           "mnopqrstnopqrstu"
       );
       const result = calculateSHA512(input, 0, input.length);
-      const expected = hex2binary(
+      const expected = Uint8Array.fromHex(
         "8E959B75DAE313DA8CF4F72814FC143F8F7779C6EB9F7FA1" +
           "7299AEADB6889018501D289E4900F7E4331B99DEC4B5433A" +
           "C7D329EEB6DD26545E96E55B874BE909"
@@ -282,26 +268,25 @@ describe("crypto", function () {
   describe("AES128", function () {
     describe("Encryption", function () {
       it("should be able to encrypt a block", function () {
-        const input = hex2binary("00112233445566778899aabbccddeeff");
-        const key = hex2binary("000102030405060708090a0b0c0d0e0f");
-        const iv = hex2binary("00000000000000000000000000000000");
+        const input = Uint8Array.fromHex("00112233445566778899aabbccddeeff");
+        const key = Uint8Array.fromHex("000102030405060708090a0b0c0d0e0f");
+        const iv = Uint8Array.fromHex("00000000000000000000000000000000");
         const cipher = new AES128Cipher(key);
         const result = cipher.encrypt(input, iv);
-        const expected = hex2binary("69c4e0d86a7b0430d8cdb78070b4c55a");
+        const expected = Uint8Array.fromHex("69c4e0d86a7b0430d8cdb78070b4c55a");
         expect(result).toEqual(expected);
       });
     });
 
     describe("Decryption", function () {
       it("should be able to decrypt a block with IV in stream", function () {
-        const input = hex2binary(
-          "0000000000000000000000000000000069c4e0d86a7b0430d" +
-            "8cdb78070b4c55a"
+        const input = Uint8Array.fromHex(
+          "0000000000000000000000000000000069c4e0d86a7b0430d8cdb78070b4c55a"
         );
-        const key = hex2binary("000102030405060708090a0b0c0d0e0f");
+        const key = Uint8Array.fromHex("000102030405060708090a0b0c0d0e0f");
         const cipher = new AES128Cipher(key);
         const result = cipher.decryptBlock(input);
-        const expected = hex2binary("00112233445566778899aabbccddeeff");
+        const expected = Uint8Array.fromHex("00112233445566778899aabbccddeeff");
         expect(result).toEqual(expected);
       });
     });
@@ -310,44 +295,40 @@ describe("crypto", function () {
   describe("AES256", function () {
     describe("Encryption", function () {
       it("should be able to encrypt a block", function () {
-        const input = hex2binary("00112233445566778899aabbccddeeff");
-        const key = hex2binary(
-          "000102030405060708090a0b0c0d0e0f101112131415161718" +
-            "191a1b1c1d1e1f"
+        const input = Uint8Array.fromHex("00112233445566778899aabbccddeeff");
+        const key = Uint8Array.fromHex(
+          "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
         );
-        const iv = hex2binary("00000000000000000000000000000000");
+        const iv = Uint8Array.fromHex("00000000000000000000000000000000");
         const cipher = new AES256Cipher(key);
         const result = cipher.encrypt(input, iv);
-        const expected = hex2binary("8ea2b7ca516745bfeafc49904b496089");
+        const expected = Uint8Array.fromHex("8ea2b7ca516745bfeafc49904b496089");
         expect(result).toEqual(expected);
       });
     });
 
     describe("Decryption", function () {
       it("should be able to decrypt a block with specified iv", function () {
-        const input = hex2binary("8ea2b7ca516745bfeafc49904b496089");
-        const key = hex2binary(
-          "000102030405060708090a0b0c0d0e0f101112131415161718" +
-            "191a1b1c1d1e1f"
+        const input = Uint8Array.fromHex("8ea2b7ca516745bfeafc49904b496089");
+        const key = Uint8Array.fromHex(
+          "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
         );
-        const iv = hex2binary("00000000000000000000000000000000");
+        const iv = Uint8Array.fromHex("00000000000000000000000000000000");
         const cipher = new AES256Cipher(key);
         const result = cipher.decryptBlock(input, false, iv);
-        const expected = hex2binary("00112233445566778899aabbccddeeff");
+        const expected = Uint8Array.fromHex("00112233445566778899aabbccddeeff");
         expect(result).toEqual(expected);
       });
       it("should be able to decrypt a block with IV in stream", function () {
-        const input = hex2binary(
-          "000000000000000000000000000000008ea2b7ca516745bf" +
-            "eafc49904b496089"
+        const input = Uint8Array.fromHex(
+          "000000000000000000000000000000008ea2b7ca516745bfeafc49904b496089"
         );
-        const key = hex2binary(
-          "000102030405060708090a0b0c0d0e0f101112131415161718" +
-            "191a1b1c1d1e1f"
+        const key = Uint8Array.fromHex(
+          "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
         );
         const cipher = new AES256Cipher(key);
         const result = cipher.decryptBlock(input, false);
-        const expected = hex2binary("00112233445566778899aabbccddeeff");
+        const expected = Uint8Array.fromHex("00112233445566778899aabbccddeeff");
         expect(result).toEqual(expected);
       });
     });
