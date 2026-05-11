@@ -20,6 +20,7 @@ import {
   escapePDFName,
   escapeString,
   getInheritableProperty,
+  getModificationDate,
   getSizeInBytes,
   isAscii,
   isWhiteSpace,
@@ -554,6 +555,14 @@ describe("core_utils", function () {
 
     it("should return false for arrays with different values", function () {
       expect(deepCompare([Ref.get(1, 0)], [Ref.get(2, 0)])).toBeFalse();
+    });
+  });
+
+  describe("getModificationDate", function () {
+    it("should get a correctly formatted date", function () {
+      const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
+      expect(getModificationDate(date)).toEqual("31410609020653");
+      expect(getModificationDate(date.toString())).toEqual("31410609020653");
     });
   });
 

@@ -17,7 +17,6 @@ import {
   BaseException,
   bytesToString,
   createValidAbsoluteUrl,
-  getModificationDate,
   getUuid,
   stringToBytes,
   stringToPDFString,
@@ -207,14 +206,6 @@ describe("util", function () {
         new URL("tel:+0123456789")
       );
       expect(createValidAbsoluteUrl("/foo", "tel:0123456789")).toEqual(null);
-    });
-  });
-
-  describe("getModificationDate", function () {
-    it("should get a correctly formatted date", function () {
-      const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
-      expect(getModificationDate(date)).toEqual("31410609020653");
-      expect(getModificationDate(date.toString())).toEqual("31410609020653");
     });
   });
 

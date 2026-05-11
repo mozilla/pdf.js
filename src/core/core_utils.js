@@ -716,6 +716,22 @@ function stringToUTF16String(str, bigEndian = false) {
   return buf.join("");
 }
 
+function getModificationDate(date = new Date()) {
+  if (!(date instanceof Date)) {
+    date = new Date(date);
+  }
+  const buffer = [
+    date.getUTCFullYear().toString(),
+    (date.getUTCMonth() + 1).toString().padStart(2, "0"),
+    date.getUTCDate().toString().padStart(2, "0"),
+    date.getUTCHours().toString().padStart(2, "0"),
+    date.getUTCMinutes().toString().padStart(2, "0"),
+    date.getUTCSeconds().toString().padStart(2, "0"),
+  ];
+
+  return buffer.join("");
+}
+
 function getRotationMatrix(rotation, width, height) {
   switch (rotation) {
     case 90:
@@ -753,6 +769,7 @@ export {
   fetchBinaryData,
   getInheritableProperty,
   getLookupTableFactory,
+  getModificationDate,
   getNewAnnotationsMap,
   getParentToUpdate,
   getRotationMatrix,
