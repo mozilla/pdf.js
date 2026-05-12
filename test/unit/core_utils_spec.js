@@ -32,7 +32,12 @@ import {
   toRomanNumerals,
   validateCSSFont,
 } from "../../src/core/core_utils.js";
-import { Dict, Ref } from "../../src/core/primitives.js";
+import {
+  clearPrimitiveCaches,
+  Dict,
+  Name,
+  Ref,
+} from "../../src/core/primitives.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("core_utils", function () {
@@ -499,6 +504,20 @@ describe("core_utils", function () {
       expect(deepCompare(a, b)).toBeTrue();
     });
 
+    it("should return true for Dicts with same Ref values, after clearing cached Refs", function () {
+      const refA = Ref.get(10, 0);
+      clearPrimitiveCaches();
+      const refB = Ref.get(10, 0);
+      // Ensure that Ref-objects are not identical, after clearing the cache.
+      expect(refA).not.toBe(refB);
+
+      const a = new Dict();
+      a.set("Foo", refA);
+      const b = new Dict();
+      b.set("Foo", refB);
+      expect(deepCompare(a, b)).toBeTrue();
+    });
+
     it("should return false for Dicts with different Ref values", function () {
       const a = new Dict();
       a.set("Foo", Ref.get(10, 0));
@@ -555,6 +574,30 @@ describe("core_utils", function () {
 
     it("should return false for arrays with different values", function () {
       expect(deepCompare([Ref.get(1, 0)], [Ref.get(2, 0)])).toBeFalse();
+    });
+
+    it("should return true for equal Names", function () {
+      const name1 = Name.get("name"),
+        name2 = Name.get("name");
+      expect(name1).toBe(name2); // Names are cached.
+
+      expect(deepCompare(name1, name2)).toBeTrue();
+    });
+
+    it("should return false for different Names", function () {
+      const name1 = Name.get("name"),
+        name2 = Name.get("otherName");
+      expect(deepCompare(name1, name2)).toBeFalse();
+    });
+
+    it("should return true for equal Names, after clearing cached Names", function () {
+      const name1 = Name.get("name");
+      clearPrimitiveCaches();
+      const name2 = Name.get("name");
+      // Ensure that Name-objects are not identical, after clearing the cache.
+      expect(name1).not.toBe(name2);
+
+      expect(deepCompare(name1, name2)).toBeTrue();
     });
   });
 

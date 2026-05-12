@@ -23,7 +23,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { Dict, isName, Ref, RefSet } from "./primitives.js";
+import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
 
 const PDF_VERSION_REGEXP = /^[1-9]\.\d$/;
@@ -210,6 +210,13 @@ function deepCompare(a, b) {
   if (a === b) {
     return true;
   }
+  if (a instanceof Ref && b instanceof Ref) {
+    return isRefsEqual(a, b);
+  }
+  if (a instanceof Name && b instanceof Name) {
+    return a.name === b.name;
+  }
+
   if (a instanceof Dict && b instanceof Dict) {
     if (a.size !== b.size) {
       return false;
