@@ -1437,16 +1437,15 @@ class CanvasGraphics {
     }
     const preparedEntry = this.canvasFactory.create(w, h);
     const pCtx = preparedEntry.context;
-    // Pre-assign read: undefined means no canvas filter API (assigning
-    // would just set a JS property and post-assign read would lie).
     // Post-assign "none"/"" means the URL was rejected (Firefox
     // normalizes accepted url(#id) to an absolute URL).
-    const filterSupported = pCtx.filter !== undefined;
     pCtx.filter = filterSpec.url;
     const filterApplied =
-      filterSupported && pCtx.filter !== "none" && pCtx.filter !== "";
+      FeatureTest.isCanvasFilterSupported &&
+      pCtx.filter !== "none" &&
+      pCtx.filter !== "";
     pCtx.drawImage(srcEntry.canvas, 0, 0);
-    if (filterSupported) {
+    if (FeatureTest.isCanvasFilterSupported) {
       pCtx.filter = "none";
     }
     if (!filterApplied) {
