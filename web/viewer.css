@@ -713,6 +713,25 @@ dialog :link {
   margin-top: 10px;
 }
 
+/*#if !MOZCENTRAL*/
+#printServiceDialog {
+  min-width: 200px;
+}
+/*#endif*/
+
+/*#if CHROME*/
+#chrome-pdfjs-logo-bg {
+  display: block;
+  padding-left: 60px;
+  min-height: 48px;
+  background-size: 48px;
+  background-repeat: no-repeat;
+  font-size: 14px;
+  line-height: 1.8em;
+  word-break: break-all;
+}
+/*#endif*/
+
 .grab-to-pan-grab {
   cursor: grab !important;
 }
