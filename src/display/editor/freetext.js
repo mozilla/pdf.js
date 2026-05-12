@@ -133,7 +133,7 @@ class FreeTextEditor extends AnnotationEditor {
       AnnotationEditor._defaultLineColor;
     this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
     if (!this.annotationElementId) {
-      this._uiManager.a11yAlert("pdfjs-editor-freetext-added-alert");
+      this._uiManager.a11yAlert(AnnotationEditor._l10nAlert.freetext);
     }
     this.canAddComment = false;
   }
