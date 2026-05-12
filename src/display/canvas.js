@@ -544,6 +544,47 @@ const NORMAL_CLIP = {};
 const EO_CLIP = {};
 
 class CanvasGraphics {
+  // Knockout group support fields.
+  #knockoutGroupLevel = 0;
+
+  #knockoutElementDepth = 0;
+
+  #knockoutTempCanvasEntry = null;
+
+  #knockoutSavedCtx = null;
+
+  #knockoutSavedSMaskCtx = null;
+
+  // Parent ctx globalCompositeOperation (GCO) at element start. Restored on
+  // tempCtx before the post-element copyCtxState so the saved ctx keeps its
+  // blend mode.
+  #knockoutSavedGCO = null;
+
+  #knockoutElementAlpha = 1;
+
+  /**
+   * Lazy alpha-scaling filter cache, populated on the first translucent
+   * knockout element. One of:
+   *   - `Map<alpha, url>` - when `ctx.filter` is supported; one SVG filter
+   *     per quantised alpha_s value (cache bounded by 8-bit alpha precision).
+   *   - `"none"` - no DOM available; the JS pixel-loop fallback handles
+   *     scaling instead.
+   * Stays `undefined` until the first translucent element forces a resolve.
+   * @type {Map<number, string> | "none" | undefined}
+   */
+  #knockoutFilterCache;
+
+  // Snapshot of #groupStackMeta.at(-1) at element-begin so the right backdrop
+  // is used even if nested groups push/pop during the element's lifetime.
+  #knockoutElementGroupMeta = null;
+
+  // Per-group metadata, aligned with `groupStack`. `null` for the no-canvas
+  // fast path. Otherwise: `backdropCtx` (parent ctx for non-isolated KO,
+  // read directly since it's frozen), `hasInnerBackdrop` (non-isolated
+  // non-KO subgroup inside a KO parent), `savedKnockoutLevel` (level to
+  // restore on exit), pixel offsets, and pooled scratch entries.
+  #groupStackMeta = [];
+
   constructor(
     canvasCtx,
     commonObjs,
@@ -791,6 +832,22 @@ class CanvasGraphics {
     this.tempSMask = null;
     this.smaskStack.length = 0;
 
+    // Drop knockout state in case rendering was cancelled mid-group. Pooled
+    // temp/backdrop entries are owned by the meta and freed there; the
+    // active-element fields just alias into the meta, so only clear them.
+    for (const meta of this.#groupStackMeta) {
+      this.#destroyKnockoutPools(meta);
+    }
+    this.#groupStackMeta.length = 0;
+    this.#knockoutTempCanvasEntry = null;
+    this.#knockoutSavedCtx = null;
+    this.#knockoutSavedSMaskCtx = null;
+    this.#knockoutSavedGCO = null;
+    this.#knockoutElementAlpha = 1;
+    this.#knockoutElementGroupMeta = null;
+    this.#knockoutElementDepth = 0;
+    this.#knockoutGroupLevel = 0;
+
     this.cachedPatterns.clear();
 
     for (const cache of this._cachedBitmapsMap.values()) {
@@ -916,7 +973,7 @@ class CanvasGraphics {
       paintHeight = newHeight;
     }
 
-    // writeEntry is now the stale buffer — destroy it.
+    // writeEntry is now the stale buffer; destroy it.
     this.canvasFactory.destroy(writeEntry);
     return {
       img: readEntry.canvas,
@@ -1460,6 +1517,310 @@ class CanvasGraphics {
     this._clearPreparedSMask();
   }
 
+  #createKnockoutMaskCanvas(sourceCanvas, reuseEntry = null, alpha = 1) {
+    const { width, height } = sourceCanvas;
+    // reuseEntry is assumed to match sourceCanvas in size (all current call
+    // sites guarantee this); the mask is rebuilt in-place.
+    const maskEntry = reuseEntry ?? this.canvasFactory.create(width, height);
+    const maskCtx = maskEntry.context;
+    // Snap alpha_s to 8-bit precision: the painted alpha we're scaling is
+    // already 8-bit, so any finer-grained alpha_s is indistinguishable. Caps
+    // both the local Map and the filter-factory cache at <=256 entries
+    // regardless of how many distinct gstate alpha values the PDF uses.
+    alpha = Math.round(alpha * 255) / 255;
+    const needsAlphaScaling = alpha < 1;
+    if (needsAlphaScaling && this.#knockoutFilterCache === undefined) {
+      // On Safari `ctx.filter` is settable but inert: the filter URL would
+      // be stored without being applied, leaving the mask unscaled.
+      // Force the JS fallback there.
+      this.#knockoutFilterCache = FeatureTest.isCanvasFilterSupported
+        ? new Map()
+        : "none";
+    }
+    let knockoutFilter = "none";
+    if (needsAlphaScaling && this.#knockoutFilterCache instanceof Map) {
+      knockoutFilter = this.#knockoutFilterCache.get(alpha);
+      if (!knockoutFilter) {
+        knockoutFilter = this.filterFactory.addKnockoutFilter(alpha);
+        this.#knockoutFilterCache.set(alpha, knockoutFilter);
+      }
+    }
+
+    if (!needsAlphaScaling || knockoutFilter !== "none") {
+      // Reused entries may carry stale pixels. Avoid the
+      // globalCompositeOperation = "copy" + filter combo: that pair is
+      // browser-divergent.
+      if (reuseEntry) {
+        maskCtx.save();
+        maskCtx.setTransform(1, 0, 0, 1, 0, 0);
+        maskCtx.clearRect(0, 0, width, height);
+        maskCtx.restore();
+      }
+      maskCtx.filter = knockoutFilter;
+      maskCtx.drawImage(sourceCanvas, 0, 0);
+      maskCtx.filter = "none";
+      return maskEntry;
+    }
+
+    // No-DOM fallback (Node/embedded). Scale painted alpha back to shape
+    // coverage; color channels are irrelevant for destination-out/in.
+    const sourceData = sourceCanvas
+      .getContext("2d", { willReadFrequently: true })
+      .getImageData(0, 0, width, height);
+    const maskData = maskCtx.createImageData(width, height);
+    const sourcePixels = sourceData.data,
+      maskPixels = maskData.data;
+    const alphaScale = alpha > 0 ? 1 / alpha : 1e6;
+    for (let i = 3, ii = sourcePixels.length; i < ii; i += 4) {
+      maskPixels[i] = Math.min(Math.round(sourcePixels[i] * alphaScale), 255);
+    }
+    maskCtx.putImageData(maskData, 0, 0);
+    return maskEntry;
+  }
+
+  #getOrCreatePooledEntry(meta, key, width, height) {
+    let entry = meta?.[key] ?? null;
+    if (
+      entry &&
+      (entry.canvas.width !== width || entry.canvas.height !== height)
+    ) {
+      this.canvasFactory.destroy(entry);
+      entry = null;
+    }
+    if (!entry) {
+      entry = this.canvasFactory.create(width, height);
+      if (meta) {
+        meta[key] = entry;
+      }
+      return entry;
+    }
+    // Reused entry: clear any stale pixels before the caller refills it.
+    const ctx = entry.context;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.restore();
+    return entry;
+  }
+
+  #compositeKnockoutSurface(destCtx, surfaceCanvas, options = {}) {
+    const {
+      // Backdrop canvas for non-isolated groups, or null for isolated.
+      // Passed directly (no copy) since the parent canvas is frozen while
+      // the group renders.
+      backdropCanvas = null,
+      // Transform for destCtx before the final draw. Identity is correct
+      // when destCtx and surfaceCanvas share pixel coords (per-element
+      // path); pass currentMtx for the endGroup subgroup-into-parent path.
+      destTransform = [1, 0, 0, 1, 0, 0],
+      // Pixel origin within backdropCanvas of the region that maps onto
+      // surfaceCanvas. [0,0] when the backdrop is already pre-cropped;
+      // pass the (possibly compounded) group offsets in endGroup.
+      backdropOffset = [0, 0],
+      // Pool entry to refill in place for the knockout mask. Caller owns
+      // its lifetime when provided.
+      reuseMaskEntry = null,
+      // Group meta to pool the backdrop scratch on. Without it the scratch
+      // is allocated and destroyed locally.
+      poolMeta = null,
+      // Per-element surfaces already have alpha/filter baked in (defaults
+      // 1/"none"). Subgroup canvases don't, so endGroup passes the parent
+      // values to apply only at the final draw.
+      sourceAlpha = 1,
+      sourceFilter = "none",
+      knockoutAlpha = 1,
+    } = options;
+    const { width, height } = surfaceCanvas;
+    const knockoutMaskEntry = this.#createKnockoutMaskCanvas(
+      surfaceCanvas,
+      reuseMaskEntry,
+      knockoutAlpha
+    );
+    const sourceCompositeOperation = destCtx.globalCompositeOperation;
+
+    destCtx.save();
+    destCtx.setTransform(...destTransform);
+    destCtx.globalAlpha = 1;
+    if (FeatureTest.isCanvasFilterSupported) {
+      destCtx.filter = "none";
+    }
+
+    // Erase prior group content wherever the new surface has any coverage.
+    destCtx.globalCompositeOperation = "destination-out";
+    destCtx.drawImage(knockoutMaskEntry.canvas, 0, 0);
+
+    if (backdropCanvas) {
+      // Non-isolated: refill the just-erased footprint with the backdrop,
+      // pre-clipped to the same shape mask so non-element pixels stay
+      // transparent (otherwise sparse groups bleed the backdrop rect).
+      const [bx, by] = backdropOffset;
+      const backdropEntry = this.#getOrCreatePooledEntry(
+        poolMeta,
+        "knockoutBackdropEntry",
+        width,
+        height
+      );
+      const backdropCtx = backdropEntry.context;
+      backdropCtx.drawImage(
+        backdropCanvas,
+        bx,
+        by,
+        width,
+        height,
+        0,
+        0,
+        width,
+        height
+      );
+      backdropCtx.globalCompositeOperation = "destination-in";
+      backdropCtx.drawImage(knockoutMaskEntry.canvas, 0, 0);
+      // Reset the GCO so the pooled entry is in a known state for next use.
+      backdropCtx.globalCompositeOperation = "source-over";
+
+      destCtx.globalCompositeOperation = "destination-over";
+      destCtx.drawImage(backdropEntry.canvas, 0, 0);
+      if (!poolMeta) {
+        this.canvasFactory.destroy(backdropEntry);
+      }
+    }
+    destCtx.globalCompositeOperation = sourceCompositeOperation;
+    destCtx.globalAlpha = sourceAlpha;
+    if (FeatureTest.isCanvasFilterSupported) {
+      destCtx.filter = sourceFilter ?? "none";
+    }
+    destCtx.drawImage(surfaceCanvas, 0, 0);
+
+    destCtx.restore();
+    if (!reuseMaskEntry) {
+      this.canvasFactory.destroy(knockoutMaskEntry);
+    }
+  }
+
+  /**
+   * Begin a knockout element. In a KO group each element composites against
+   * the initial group backdrop (transparent if isolated, parent canvas if
+   * not) rather than against the running group result. We render onto a temp
+   * canvas; path/clip/transform ops are mirrored back to the group canvas so
+   * its state stays in sync for the next element.
+   *
+   * @returns {boolean} true if a knockout element was started.
+   */
+  #beginKnockoutElement(alpha = 1) {
+    if (
+      this.#knockoutGroupLevel === 0 ||
+      this.#knockoutElementDepth > 0 ||
+      !this.contentVisible
+    ) {
+      return false;
+    }
+    this.#knockoutElementDepth++;
+    this.#knockoutElementAlpha = alpha;
+    const groupMeta = this.#groupStackMeta.at(-1);
+    const { canvas } = this.ctx;
+    const tempEntry = this.#getOrCreatePooledEntry(
+      groupMeta,
+      "knockoutTempEntry",
+      canvas.width,
+      canvas.height
+    );
+    this.#knockoutTempCanvasEntry = tempEntry;
+    const tempCtx = tempEntry.context;
+    // Bracket-save before installing mirroring so #endKnockoutElement can
+    // restore() the pooled canvas to a clean clip+transform without
+    // propagating that save through the mirror.
+    tempCtx.save();
+    tempCtx.setTransform(this.ctx.getTransform());
+    copyCtxState(this.ctx, tempCtx);
+    // Force source-over for the element raster: the parent's blend mode is
+    // meant for the final composite back onto the group canvas (done by
+    // #compositeKnockoutSurface), not for drawing onto a transparent temp
+    // (e.g. multiply on alpha=0 zeros the element's colour). Stash the
+    // parent GCO and re-apply it on tempCtx before the post-element
+    // copyCtxState so the saved ctx keeps the parent blend mode.
+    this.#knockoutSavedGCO = tempCtx.globalCompositeOperation;
+    tempCtx.globalCompositeOperation = "source-over";
+    mirrorContextOperations(tempCtx, this.ctx);
+    this.#knockoutElementGroupMeta = groupMeta;
+    this.#knockoutSavedCtx = this.ctx;
+    this.#knockoutSavedSMaskCtx = this.suspendedCtx;
+    this.ctx = tempCtx;
+    if (this.inSMaskMode) {
+      this.suspendedCtx = tempCtx;
+    }
+    return true;
+  }
+
+  /**
+   * End a knockout element started by `#beginKnockoutElement`. Composites
+   * the rendered surface onto the group canvas with KO semantics: build a
+   * shape mask from the element (painted alpha scaled back to geometric
+   * coverage when alpha_s < 1), destination-out the group canvas over that
+   * mask, restore the initial backdrop into the cleared footprint
+   * (non-isolated only), then paint the element on top.
+   *
+   * @param {boolean} started - the value returned by `#beginKnockoutElement`.
+   */
+  #endKnockoutElement(started) {
+    if (!started) {
+      return;
+    }
+    const tempEntry = this.#knockoutTempCanvasEntry;
+    const savedCtx = this.#knockoutSavedCtx;
+    const savedSMaskCtx = this.#knockoutSavedSMaskCtx;
+    const tempCtx = tempEntry.context;
+    this.#knockoutTempCanvasEntry = null;
+    this.#knockoutSavedCtx = null;
+    this.#knockoutSavedSMaskCtx = null;
+    if (
+      this.inSMaskMode &&
+      this.suspendedCtx === tempCtx &&
+      this.ctx !== tempCtx
+    ) {
+      this.endSMaskMode();
+    }
+    if (this.inSMaskMode) {
+      this.suspendedCtx = savedSMaskCtx;
+    }
+    this.ctx._removeMirroring();
+    // Re-apply the parent GCO before copyCtxState writes it back to
+    // savedCtx so #compositeKnockoutSurface sees the original blend mode.
+    this.ctx.globalCompositeOperation = this.#knockoutSavedGCO;
+    this.#knockoutSavedGCO = null;
+    copyCtxState(this.ctx, savedCtx);
+    this.ctx = savedCtx;
+    const groupMeta = this.#knockoutElementGroupMeta;
+    this.#knockoutElementGroupMeta = null;
+    const knockoutAlpha = this.#knockoutElementAlpha;
+    this.#knockoutElementAlpha = 1;
+    try {
+      this.#compositeKnockoutSurface(
+        savedSMaskCtx ?? savedCtx,
+        tempEntry.canvas,
+        {
+          backdropCanvas: groupMeta?.backdropCtx?.canvas ?? null,
+          backdropOffset: groupMeta?.backdropCtx
+            ? [groupMeta.offsetX, groupMeta.offsetY]
+            : [0, 0],
+          reuseMaskEntry: groupMeta?.knockoutMaskEntry ?? null,
+          poolMeta: groupMeta,
+          knockoutAlpha,
+        }
+      );
+    } finally {
+      // Pop the begin-element bracket save so the pooled canvas re-enters
+      // with a clean clip+transform stack.
+      tempCtx.restore();
+      // Decrement only after the canvas is fully reset, so a re-entry from
+      // a compositing callback sees depth>0 and bails out.
+      this.#knockoutElementDepth--;
+      // Defensive: groupMeta is non-null in practice for any active KO
+      // element, but if it isn't we must release the unpooled entry.
+      if (!groupMeta) {
+        this.canvasFactory.destroy(tempEntry);
+      }
+    }
+  }
+
   compose(dirtyBox) {
     if (!this.current.activeSMask) {
       return;
@@ -1477,10 +1838,21 @@ class CanvasGraphics {
       : [0, 0, this.ctx.canvas.width, this.ctx.canvas.height];
     const smask = this.current.activeSMask;
     const suspendedCtx = this.suspendedCtx;
+    const applySMaskInPlace =
+      this.#knockoutElementDepth > 0 && suspendedCtx === this.ctx;
 
-    this.composeSMask(suspendedCtx, smask, this.ctx, dirtyBox);
+    this.composeSMask(
+      applySMaskInPlace ? null : suspendedCtx,
+      smask,
+      this.ctx,
+      dirtyBox
+    );
+    if (applySMaskInPlace) {
+      return;
+    }
+
     // Whatever was drawn has been moved to the suspended canvas, now clear it
-    // out of the current canvas. Only the dirty box region needs clearing —
+    // out of the current canvas. Only the dirty box region needs clearing;
     // everything outside it is already transparent.
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1572,6 +1944,10 @@ class CanvasGraphics {
         layerOffsetX,
         layerOffsetY
       );
+    }
+
+    if (!ctx) {
+      return;
     }
 
     ctx.save();
@@ -1807,6 +2183,8 @@ class CanvasGraphics {
   }
 
   stroke(opIdx, path, consumePath = true) {
+    const started =
+      consumePath && this.#beginKnockoutElement(this.current.strokeAlpha);
     const ctx = this.ctx;
     const strokeColor = this.current.strokeColor;
     // For stroke we want to temporarily change the global alpha to the
@@ -1855,6 +2233,7 @@ class CanvasGraphics {
 
     // Restore the global alpha to the fill alpha
     ctx.globalAlpha = this.current.fillAlpha;
+    this.#endKnockoutElement(started);
   }
 
   closeStroke(opIdx, path) {
@@ -1862,6 +2241,8 @@ class CanvasGraphics {
   }
 
   fill(opIdx, path, consumePath = true) {
+    const started =
+      consumePath && this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
     const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
@@ -1881,6 +2262,7 @@ class CanvasGraphics {
           this.consumePath(opIdx, path, intersect);
         }
         this.current.tilingPatternDims = null;
+        this.#endKnockoutElement(started);
         return;
       }
       const baseTransform = fillColor.isModifyingCurrentTransform()
@@ -1922,6 +2304,7 @@ class CanvasGraphics {
     if (consumePath) {
       this.consumePath(opIdx, path, intersect);
     }
+    this.#endKnockoutElement(started);
   }
 
   eoFill(opIdx, path) {
@@ -1930,10 +2313,18 @@ class CanvasGraphics {
   }
 
   fillStroke(opIdx, path) {
+    // Fill and stroke share one KO element so they composite against the
+    // initial backdrop once, not twice. Use the smaller of the two alpha_s as
+    // the mask divisor: it's conservative (over-clamps the other pass's
+    // mask towards 1) but keeps the mask coverage at least as large as the
+    // union of fill+stroke shapes, which is what KO erasure wants.
+    const started = this.#beginKnockoutElement(
+      Math.min(this.current.fillAlpha, this.current.strokeAlpha)
+    );
     this.fill(opIdx, path, false);
     this.stroke(opIdx, path, false);
-
     this.consumePath(opIdx, path);
+    this.#endKnockoutElement(started);
   }
 
   eoFillStroke(opIdx, path) {
@@ -1955,10 +2346,12 @@ class CanvasGraphics {
   }
 
   rawFillPath(opIdx, path) {
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     this.ctx.fill(path);
     this.dependencyTracker
       ?.recordDependencies(opIdx, Dependencies.rawFillPath)
       .recordOperation(opIdx);
+    this.#endKnockoutElement(started);
   }
 
   // Clipping
@@ -2332,8 +2725,10 @@ class CanvasGraphics {
     const current = this.current;
     const font = current.font;
     if (font.isType3Font) {
+      const started = this.#beginKnockoutElement(current.fillAlpha);
       this.showType3Text(opIdx, glyphs);
       this.dependencyTracker?.recordShowTextOperation(opIdx);
+      this.#endKnockoutElement(started);
       return undefined;
     }
 
@@ -2343,6 +2738,7 @@ class CanvasGraphics {
       return undefined;
     }
 
+    const started = this.#beginKnockoutElement(current.fillAlpha);
     const ctx = this.ctx;
     const fontSizeScale = current.fontSizeScale;
     const charSpacing = current.charSpacing;
@@ -2456,6 +2852,7 @@ class CanvasGraphics {
       current.x += width * widthAdvanceScale * textHScale;
       ctx.restore();
       this.compose();
+      this.#endKnockoutElement(started);
       return undefined;
     }
 
@@ -2571,6 +2968,7 @@ class CanvasGraphics {
     this.compose();
 
     this.dependencyTracker?.recordShowTextOperation(opIdx);
+    this.#endKnockoutElement(started);
     return undefined;
   }
 
@@ -2763,6 +3161,7 @@ class CanvasGraphics {
     if (!this.contentVisible) {
       return;
     }
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
 
     this.save(opIdx);
@@ -2803,6 +3202,7 @@ class CanvasGraphics {
 
     this.compose(this.current.getClippedPathBoundingBox());
     this.restore(opIdx);
+    this.#endKnockoutElement(started);
   }
 
   // Images
@@ -2864,31 +3264,14 @@ class CanvasGraphics {
     }
 
     const currentCtx = this.ctx;
-    // TODO non-isolated groups - according to Rik at adobe non-isolated
-    // group results aren't usually that different and they even have tools
-    // that ignore this setting. Notes from Rik on implementing:
-    // - When you encounter an transparency group, create a new canvas with
-    // the dimensions of the bbox
-    // - copy the content from the previous canvas to the new canvas
-    // - draw as usual
-    // - remove the backdrop alpha:
-    // alphaNew = 1 - (1 - alpha)/(1 - alphaBackdrop) with 'alpha' the alpha
-    // value of your transparency group and 'alphaBackdrop' the alpha of the
-    // backdrop
-    // - remove background color:
-    // colorNew = color - alphaNew *colorBackdrop /(1 - alphaNew)
-    if (!group.isolated) {
-      info("TODO: Support non-isolated groups.");
-    }
-
-    // TODO knockout - supposedly possible with the clever use of compositing
-    // modes.
-    if (group.knockout) {
-      warn("Knockout groups not supported.");
+    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
+      info("TODO: Fully support non-isolated non-knockout groups.");
     }
 
     if (
       !group.needsIsolation &&
+      !group.knockout &&
+      this.#knockoutGroupLevel === 0 &&
       currentCtx.globalAlpha === 1 &&
       currentCtx.globalCompositeOperation === "source-over" &&
       !inSMaskMode
@@ -2905,6 +3288,7 @@ class CanvasGraphics {
         currentCtx.clip(clip);
       }
       this.groupStack.push(null); // null = no intermediate canvas
+      this.#groupStackMeta.push(null);
       this.groupLevel++;
       return;
     }
@@ -2952,6 +3336,37 @@ class CanvasGraphics {
       this.smaskGroupCanvases.push(scratchCanvas);
     }
     const groupCtx = scratchCanvas.context;
+    // Non-isolated KO: keep a reference to the parent ctx (not a copy). It's
+    // frozen while the group renders, so we can read from it on demand. The
+    // backdrop is only restored under each element's footprint in
+    // #compositeKnockoutSurface so it doesn't become part of the group
+    // source itself.
+    const backdropCtx = group.knockout && !group.isolated ? currentCtx : null;
+    // Non-isolated non-KO subgroup inside a KO parent: at endGroup we'll
+    // blend its elements against the outer KO running canvas (also frozen),
+    // so just record the flag here and read ctx.canvas at composite time.
+    const hasInnerBackdrop =
+      !group.isolated &&
+      !group.knockout &&
+      !group.smask &&
+      this.#knockoutGroupLevel > 0;
+
+    // Pool the per-element shape mask for the lifetime of this KO group.
+    // Non-KO groups never call #compositeKnockoutSurface for their own
+    // elements so the entry is unused there.
+    const knockoutMaskEntry = group.knockout
+      ? this.canvasFactory.create(drawnWidth, drawnHeight)
+      : null;
+
+    // For KO groups bump the level so inner elements get KO treatment; for
+    // non-KO groups reset to 0 so an ancestor KO group doesn't apply to
+    // them. Restored on endGroup.
+    const savedKnockoutLevel = this.#knockoutGroupLevel;
+    if (group.knockout) {
+      this.#knockoutGroupLevel++;
+    } else {
+      this.#knockoutGroupLevel = 0;
+    }
 
     // Since we created a new canvas that is just the size of the bounding box
     // we have to translate the group ctx.
@@ -3032,6 +3447,17 @@ class CanvasGraphics {
       ["TR", null],
     ]);
     this.groupStack.push(currentCtx);
+    this.#groupStackMeta.push({
+      backdropCtx,
+      savedKnockoutLevel,
+      offsetX,
+      offsetY,
+      hasInnerBackdrop,
+      knockoutMaskEntry,
+      // Per-group scratch pools, lazily filled and freed in endGroup.
+      knockoutTempEntry: null,
+      knockoutBackdropEntry: null,
+    });
     this.groupLevel++;
   }
 
@@ -3042,6 +3468,12 @@ class CanvasGraphics {
     this.groupLevel--;
     const groupCtx = this.ctx;
     const ctx = this.groupStack.pop();
+    const groupMeta = this.#groupStackMeta.pop();
+    // Restore the knockout level that was in effect before this group began.
+    // Simple groups (groupMeta === null) never modify the level, so skip them.
+    if (groupMeta) {
+      this.#knockoutGroupLevel = groupMeta.savedKnockoutLevel;
+    }
     if (ctx === null) {
       // Simple group: content was drawn directly on the parent canvas.
       this.restore(opIdx);
@@ -3068,6 +3500,7 @@ class CanvasGraphics {
           this.ctx.setTransform(this.suspendedCtx.getTransform());
         }
       }
+      this.#destroyKnockoutPools(groupMeta);
     } else {
       this.ctx.restore();
       const currentMtx = getCurrentTransform(this.ctx);
@@ -3080,13 +3513,119 @@ class CanvasGraphics {
         currentMtx,
         dirtyBox
       );
-      this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      const parentGroupMeta = this.#groupStackMeta.at(-1);
+      if (this.#knockoutGroupLevel > 0) {
+        // The subgroup is one element of the enclosing KO group, so
+        // composite it with KO semantics. Two coord systems below:
+        //  - `currentMtx` (`destTransform`) places the subgroup canvas in
+        //    the parent on the final draw, like the non-KO `drawImage`.
+        //  - `groupMeta.offsetX/Y` are the pixel origins beginGroup stored
+        //    when sizing the scratch; we use them (not `currentMtx[4]/[5]`,
+        //    which are PDF-transform components) to crop the backdrop.
+        if (groupMeta.hasInnerBackdrop) {
+          // Non-isolated subgroup inside a KO parent: blend the elements
+          // against the subgroup's own initial backdrop for colour, but use
+          // the elements-only scratch as the alpha mask so transparent
+          // areas don't erase the parent. `ctx` is the outer KO canvas
+          // (just popped); its pixels still match the subgroup's
+          // beginGroup state since the subgroup draws to its own scratch.
+          const { width, height } = groupCtx.canvas;
+          const colorEntry = this.canvasFactory.create(width, height);
+          const colorCtx = colorEntry.context;
+          colorCtx.drawImage(
+            ctx.canvas,
+            groupMeta.offsetX,
+            groupMeta.offsetY,
+            width,
+            height,
+            0,
+            0,
+            width,
+            height
+          );
+          colorCtx.globalCompositeOperation = "source-over";
+          colorCtx.drawImage(groupCtx.canvas, 0, 0);
+          // Clip colorEntry to the subgroup's element footprint so
+          // backdrop pixels outside the elements don't bleed onto the
+          // parent. Built with alpha=1 (no scaling) so the mask uses the
+          // subgroup's composited painted alpha directly as shape - its
+          // global gstate alpha gets applied at the final draw below. The
+          // mask is sized to the subgroup canvas, so we can't reuse the
+          // parent KO group's pooled mask here; allocate a fresh entry
+          // and reuse it for both the destination-in and the
+          // destination-out below.
+          const shapeMaskEntry = this.#createKnockoutMaskCanvas(
+            groupCtx.canvas
+          );
+          colorCtx.globalCompositeOperation = "destination-in";
+          colorCtx.drawImage(shapeMaskEntry.canvas, 0, 0);
+          // Inline the isolated-path compositing here so we can share
+          // shapeMaskEntry with the destination-in above.
+          const sourceCompositeOperation = this.ctx.globalCompositeOperation;
+          const sourceAlpha = this.ctx.globalAlpha;
+          const sourceFilter = this.ctx.filter;
+          this.ctx.save();
+          this.ctx.setTransform(...currentMtx);
+          this.ctx.globalAlpha = 1;
+          if (FeatureTest.isCanvasFilterSupported) {
+            this.ctx.filter = "none";
+          }
+          this.ctx.globalCompositeOperation = "destination-out";
+          this.ctx.drawImage(shapeMaskEntry.canvas, 0, 0);
+          this.ctx.globalCompositeOperation = sourceCompositeOperation;
+          this.ctx.globalAlpha = sourceAlpha;
+          if (FeatureTest.isCanvasFilterSupported) {
+            this.ctx.filter = sourceFilter ?? "none";
+          }
+          this.ctx.drawImage(colorEntry.canvas, 0, 0);
+          this.ctx.restore();
+          this.canvasFactory.destroy(shapeMaskEntry);
+          this.canvasFactory.destroy(colorEntry);
+        } else {
+          // For a non-isolated KO parent the backdrop lives one level up.
+          // Compound the parent's and subgroup's offsets to crop it.
+          const backdropCtx = parentGroupMeta?.backdropCtx ?? null;
+          this.#compositeKnockoutSurface(this.ctx, groupCtx.canvas, {
+            backdropCanvas: backdropCtx?.canvas ?? null,
+            destTransform: currentMtx,
+            backdropOffset: backdropCtx
+              ? [
+                  parentGroupMeta.offsetX + groupMeta.offsetX,
+                  parentGroupMeta.offsetY + groupMeta.offsetY,
+                ]
+              : [0, 0],
+            sourceAlpha: this.ctx.globalAlpha,
+            sourceFilter: this.ctx.filter,
+          });
+        }
+      } else {
+        this.ctx.drawImage(groupCtx.canvas, 0, 0);
+      }
       this.ctx.restore();
       this.canvasFactory.destroy({
         canvas: groupCtx.canvas,
         context: groupCtx,
       });
+      this.#destroyKnockoutPools(groupMeta);
       this.compose(dirtyBox);
+    }
+  }
+
+  #destroyKnockoutPools(groupMeta) {
+    if (!groupMeta) {
+      return;
+    }
+    if (groupMeta.knockoutMaskEntry) {
+      this.canvasFactory.destroy(groupMeta.knockoutMaskEntry);
+      groupMeta.knockoutMaskEntry = null;
+    }
+    if (groupMeta.knockoutTempEntry) {
+      this.canvasFactory.destroy(groupMeta.knockoutTempEntry);
+      groupMeta.knockoutTempEntry = null;
+    }
+    if (groupMeta.knockoutBackdropEntry) {
+      this.canvasFactory.destroy(groupMeta.knockoutBackdropEntry);
+      groupMeta.knockoutBackdropEntry = null;
     }
   }
 
@@ -3184,6 +3723,7 @@ class CanvasGraphics {
     img = this.getObject(opIdx, img.data, img);
     img.count = count;
 
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
     const mask = this._createMaskCanvas(opIdx, img);
     const maskCanvas = mask.canvas;
@@ -3209,6 +3749,7 @@ class CanvasGraphics {
       this.canvasFactory.destroy(mask.canvasEntry);
     }
     this.compose();
+    this.#endKnockoutElement(started);
   }
 
   paintImageMaskXObjectRepeat(
@@ -3226,6 +3767,7 @@ class CanvasGraphics {
 
     img = this.getObject(opIdx, img.data, img);
 
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
     ctx.save();
     const currentTransform = getCurrentTransform(ctx);
@@ -3270,12 +3812,14 @@ class CanvasGraphics {
     this.compose();
 
     this.dependencyTracker?.recordOperation(opIdx);
+    this.#endKnockoutElement(started);
   }
 
   paintImageMaskXObjectGroup(opIdx, images) {
     if (!this.contentVisible) {
       return;
     }
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
 
     const fillColor = this.current.fillColor;
@@ -3332,6 +3876,7 @@ class CanvasGraphics {
     }
     this.compose();
     this.dependencyTracker?.recordOperation(opIdx);
+    this.#endKnockoutElement(started);
   }
 
   paintImageXObject(opIdx, objId) {
@@ -3401,6 +3946,7 @@ class CanvasGraphics {
     }
     const width = imgData.width;
     const height = imgData.height;
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
 
     this.save(opIdx);
@@ -3479,12 +4025,14 @@ class CanvasGraphics {
     }
     this.compose();
     this.restore(opIdx);
+    this.#endKnockoutElement(started);
   }
 
   paintInlineImageXObjectGroup(opIdx, imgData, map) {
     if (!this.contentVisible) {
       return;
     }
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
     let imgToPaint;
     let inlineImgCanvas = null;
@@ -3526,12 +4074,14 @@ class CanvasGraphics {
     }
     this.dependencyTracker?.recordOperation(opIdx);
     this.compose();
+    this.#endKnockoutElement(started);
   }
 
   paintSolidColorImageMask(opIdx) {
     if (!this.contentVisible) {
       return;
     }
+    const started = this.#beginKnockoutElement(this.current.fillAlpha);
     this.dependencyTracker
       ?.resetBBox(opIdx)
       .recordBBox(opIdx, this.ctx, 0, 1, 0, 1)
@@ -3539,6 +4089,7 @@ class CanvasGraphics {
       .recordOperation(opIdx);
     this.ctx.fillRect(0, 0, 1, 1);
     this.compose();
+    this.#endKnockoutElement(started);
   }
 
   // Marked content
