@@ -3342,13 +3342,15 @@ class CanvasGraphics {
     // #compositeKnockoutSurface so it doesn't become part of the group
     // source itself.
     const backdropCtx = group.knockout && !group.isolated ? currentCtx : null;
-    // Non-isolated non-KO subgroup inside a KO parent: at endGroup we'll
-    // blend its elements against the outer KO running canvas (also frozen),
-    // so just record the flag here and read ctx.canvas at composite time.
+    // Non-isolated non-KO subgroup inside a KO parent, with inner compositing
+    // of its own: at endGroup we'll blend its elements against the outer KO
+    // running canvas (also frozen), so just record the flag here and read
+    // ctx.canvas at composite time.
     const hasInnerBackdrop =
       !group.isolated &&
       !group.knockout &&
       !group.smask &&
+      group.needsIsolation &&
       this.#knockoutGroupLevel > 0;
 
     // Pool the per-element shape mask for the lifetime of this KO group.
