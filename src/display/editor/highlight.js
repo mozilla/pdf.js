@@ -128,7 +128,7 @@ class HighlightEditor extends AnnotationEditor {
     }
 
     if (!this.annotationElementId) {
-      this._uiManager.a11yAlert("pdfjs-editor-highlight-added-alert");
+      this._uiManager.a11yAlert(AnnotationEditor._l10nAlert.highlight);
     }
   }
 

@@ -109,6 +109,8 @@ class AnnotationEditor {
 
   static _l10n = null;
 
+  static _l10nAlert = null;
+
   static _l10nResizer = null;
 
   #isDraggable = false;
@@ -247,7 +249,15 @@ class AnnotationEditor {
   static initialize(l10n, _uiManager) {
     AnnotationEditor._l10n ??= l10n;
 
-    AnnotationEditor._l10nResizer ||= Object.freeze({
+    AnnotationEditor._l10nAlert ??= Object.freeze({
+      highlight: "pdfjs-editor-highlight-added-alert",
+      freetext: "pdfjs-editor-freetext-added-alert",
+      ink: "pdfjs-editor-ink-added-alert",
+      stamp: "pdfjs-editor-stamp-added-alert",
+      signature: "pdfjs-editor-signature-added-alert",
+    });
+
+    AnnotationEditor._l10nResizer ??= Object.freeze({
       topLeft: "pdfjs-editor-resizer-top-left",
       topMiddle: "pdfjs-editor-resizer-top-middle",
       topRight: "pdfjs-editor-resizer-top-right",
