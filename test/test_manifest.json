@@ -14252,5 +14252,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Knockout groups composite-modes survey."
+  },
+  {
+    "id": "issue18032",
+    "file": "pdfs/issue18032.pdf",
+    "md5": "656234fde97953c4e3fc7698831590a9",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Non-isolated knockout group with a nested non-isolated subgroup over existing text."
   }
 ]
