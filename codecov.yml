@@ -1,0 +1,3 @@
+flag_management:
+  default_rules:
+    carryforward: true
