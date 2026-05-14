@@ -1036,6 +1036,9 @@ class WorkerMessageHandler {
           .getPage(data.pageIndex)
           .then(page => page.annotations.map(a => a.toString()));
       });
+      handler.on("GetWorkerCoverage", function () {
+        return globalThis.__coverage__ ?? {};
+      });
     }
 
     return workerHandlerName;

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { mergeCoverageIntoGlobal } from "../coverage_utils.js";
 import os from "os";
 
 const isMac = os.platform() === "darwin";
@@ -149,11 +150,42 @@ function closePages(pages) {
 }
 
 async function closeSinglePage(page) {
-  // Avoid to keep something from a previous test.
-  await page.evaluate(async () => {
+  const coverage = await page.evaluate(async () => {
+    // Collect coverage data from the worker before the document is closed.
+    let workerCoverage = null;
+    const handler =
+      window.PDFViewerApplication.pdfDocument?._transport?.messageHandler;
+    if (handler) {
+      try {
+        workerCoverage = await handler.sendWithPromise(
+          "GetWorkerCoverage",
+          null
+        );
+      } catch {}
+    }
+
+    // Close the viewer gracefully, and clear local storage to avoid state
+    // leaking from one test to another.
     await window.PDFViewerApplication.testingClose();
     window.localStorage.clear();
+
+    // Serialize the coverage data to a JSON string because that is a lot
+    // faster/cheaper to transfer from the browser to Node.js over the WebDriver
+    // BiDi protocol, otherwise Puppeteer's (significantly slower) serialization
+    // logic kicks in (see https://github.com/puppeteer/puppeteer/issues/2427).
+    return {
+      page: window.__coverage__ ? JSON.stringify(window.__coverage__) : null,
+      worker: workerCoverage ? JSON.stringify(workerCoverage) : null,
+    };
   });
+
+  if (coverage.page) {
+    mergeCoverageIntoGlobal(JSON.parse(coverage.page));
+  }
+  if (coverage.worker) {
+    mergeCoverageIntoGlobal(JSON.parse(coverage.worker));
+  }
+
   await page.close({ runBeforeUnload: false });
 }
 
