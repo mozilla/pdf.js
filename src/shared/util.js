@@ -661,7 +661,10 @@ class FeatureTest {
     let ctx;
     if (this.isOffscreenCanvasSupported) {
       ctx = new OffscreenCanvas(1, 1).getContext("2d");
-    } else if (typeof document !== "undefined") {
+    } else if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("WORKER_THREAD")) &&
+      typeof document !== "undefined"
+    ) {
       ctx = document.createElement("canvas").getContext("2d");
     }
     // Spec-compliant Canvas2D defaults `ctx.filter` to "none". On
@@ -673,21 +676,22 @@ class FeatureTest {
   }
 
   static get isAlphaColorInputSupported() {
+    if (
+      (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) ||
+      typeof document === "undefined"
+    ) {
+      return shadow(this, "isAlphaColorInputSupported", false);
+    }
+    const input = document.createElement("input");
+    input.type = "color";
+    input.setAttribute("alpha", "");
+    input.value = "#ff000080";
+    // If alpha is supported the color picker retains the alpha channel, so
+    // the value won't be a plain opaque color (7-char #rrggbb).
     return shadow(
       this,
       "isAlphaColorInputSupported",
-      (() => {
-        if (typeof document === "undefined") {
-          return false;
-        }
-        const input = document.createElement("input");
-        input.type = "color";
-        input.setAttribute("alpha", "");
-        input.value = "#ff000080";
-        // If alpha is supported the color picker retains the alpha channel, so
-        // the value won't be a plain opaque color (7-char #rrggbb).
-        return input.value !== "#ff0000";
-      })()
+      input.value !== "#ff0000"
     );
   }
 }
