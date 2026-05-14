@@ -1850,17 +1850,13 @@ class CanvasGraphics {
       return;
     }
 
-    // Whatever was drawn has been moved to the suspended canvas, now clear it
-    // out of the current canvas. Only the dirty box region needs clearing;
-    // everything outside it is already transparent.
+    // Clear the full scratch canvas, not just the dirty box. Pixels left
+    // outside dirtyBox can leak into a later compose() whose destination-in
+    // pass doesn't overwrite them, producing stale output -- this is what
+    // breaks `firefox-issue17779-partial` (issue #21276).
     this.ctx.save();
     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.clearRect(
-      dirtyBox[0],
-      dirtyBox[1],
-      dirtyBox[2] - dirtyBox[0],
-      dirtyBox[3] - dirtyBox[1]
-    );
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     this.ctx.restore();
   }
 
