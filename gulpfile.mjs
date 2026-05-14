@@ -113,6 +113,7 @@ const BABEL_PRESET_ENV_OPTS = Object.freeze({
 
 const DEFINES = Object.freeze({
   SKIP_BABEL: true,
+  WORKER_THREAD: false,
   TESTING: undefined,
   COVERAGE: undefined,
   // The main build targets:
@@ -536,8 +537,12 @@ function createSandboxBundle(defines, extraOptions = undefined) {
 }
 
 function createWorkerBundle(defines) {
-  const workerFileConfig = createWebpackConfig(defines, {
-    filename: defines.MINIFIED ? "pdf.worker.min.mjs" : "pdf.worker.mjs",
+  const workerDefines = {
+    ...defines,
+    WORKER_THREAD: true,
+  };
+  const workerFileConfig = createWebpackConfig(workerDefines, {
+    filename: workerDefines.MINIFIED ? "pdf.worker.min.mjs" : "pdf.worker.mjs",
     library: {
       type: "module",
     },
