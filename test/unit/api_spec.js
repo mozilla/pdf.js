@@ -4590,6 +4590,27 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("gets operatorList, from PDF with /BrotliDecode", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("Brotli-Prototype-FileA.pdf")
+      );
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
+
+      const pdfDoc = await loadingTask.promise;
+      expect(pdfDoc.numPages).toEqual(25);
+
+      const pdfPage = await pdfDoc.getPage(1);
+      expect(pdfPage).toBeInstanceOf(PDFPageProxy);
+
+      const opList = await pdfPage.getOperatorList();
+      expect(opList.fnArray.length).toBeGreaterThan(9800);
+      expect(opList.argsArray.length).toBeGreaterThan(9800);
+      expect(opList.lastChunk).toBeTrue();
+      expect(opList.separateAnnots).toBeNull();
+
+      await loadingTask.destroy();
+    });
+
     it("gets page stats after parsing page, without `pdfBug` set", async function () {
       await page.getOperatorList();
       expect(page.stats).toEqual(null);
