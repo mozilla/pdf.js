@@ -2316,6 +2316,86 @@ gulp.task("lint-licenses", function (done) {
     });
 });
 
+gulp.task("lint-chmod", function (done) {
+  console.log("\n### Checking executable bit on tracked and untracked files");
+
+  // Files allowed to keep the executable bit (shebang scripts).
+  const EXECUTABLE_FILES = new Set(["test/chromium/test-telemetry.js"]);
+
+  // Cover untracked-but-not-ignored files too: a `gulp lint` run before
+  // `git add` would otherwise miss any 0755 file the developer just created.
+  // `-z` is NUL-separated to tolerate whitespace in paths; `--exclude-standard`
+  // honours .gitignore / .git/info/exclude / core.excludesFile.
+  let lsFiles;
+  try {
+    lsFiles = execSync("git ls-files -coz --exclude-standard", {
+      encoding: "utf8",
+    });
+  } catch (e) {
+    done(e);
+    return;
+  }
+
+  const offenders = [];
+  for (const file of lsFiles.split("\0")) {
+    if (!file || EXECUTABLE_FILES.has(file)) {
+      continue;
+    }
+    let stat;
+    try {
+      stat = fs.lstatSync(file);
+    } catch {
+      // Tracked file removed from the working tree, broken symlink, etc.
+      continue;
+    }
+    // Skip symlinks (stored as mode 120000) and directories (submodules show
+    // up here as 160000 in the index, never as a regular file on disk).
+    if (!stat.isFile()) {
+      continue;
+    }
+    // Match git's own heuristic in `ce_permissions`: only the owner execute
+    // bit matters when deciding between 100644 and 100755.
+    if (stat.mode & 0o100) {
+      offenders.push(file);
+    }
+  }
+
+  if (offenders.length === 0) {
+    console.log("files checked, no errors found");
+    done();
+    return;
+  }
+
+  if (!process.argv.includes("--fix")) {
+    for (const file of offenders.sort()) {
+      console.log(`  Unexpected executable bit: ${file}`);
+    }
+    done(
+      new Error(
+        "Executable-bit check failed (run `gulp lint-chmod --fix` to clear)."
+      )
+    );
+    return;
+  }
+
+  // Working-tree-only fix, like every other --fix in `gulp lint`: clear the
+  // bit on disk and let the user stage the change. On filesystems with
+  // `core.filemode=false` (e.g. Windows) this is a no-op and the offending
+  // mode must be cleared with `git update-index --chmod=-x` instead.
+  for (const file of offenders.sort()) {
+    try {
+      const { mode } = fs.statSync(file);
+      fs.chmodSync(file, mode & ~0o111);
+    } catch (e) {
+      done(e);
+      return;
+    }
+    console.log(`  cleared executable bit: ${file}`);
+  }
+  console.log(`done: ${offenders.length} file(s) updated`);
+  done();
+});
+
 gulp.task("lint", function (done) {
   console.log("\n### Linting JS/CSS/JSON/SVG/HTML files");
 
@@ -2380,7 +2460,7 @@ gulp.task("lint", function (done) {
       return;
     }
 
-    gulp.task("lint-licenses")(done);
+    gulp.series("lint-licenses", "lint-chmod")(done);
   });
 });
 
