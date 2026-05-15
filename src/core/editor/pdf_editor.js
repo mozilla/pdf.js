@@ -29,11 +29,11 @@ import {
 import { Dict, isName, Name, Ref, RefSet, RefSetCache } from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
-import { stringToBytes, stringToPDFString } from "../../shared/util.js";
+import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
 import { AnnotationFactory } from "../annotation.js";
 import { BaseStream } from "../base_stream.js";
 import { StringStream } from "../stream.js";
-import { stringToAsciiOrUTF16BE } from "../string_utils.js";
+import { stringToBytes } from "../../shared/util.js";
 
 const MAX_LEAVES_PER_PAGES_NODE = 16;
 const MAX_IN_NAME_TREE_NODE = 64;

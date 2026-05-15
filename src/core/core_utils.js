@@ -19,12 +19,12 @@ import {
   BaseException,
   makeArr,
   objectSize,
-  stringToPDFString,
   Util,
   warn,
 } from "../shared/util.js";
 import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
+import { stringToPDFString } from "./string_utils.js";
 
 const PDF_VERSION_REGEXP = /^[1-9]\.\d$/;
 const MAX_INT_32 = 2 ** 31 - 1;

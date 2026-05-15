@@ -26,7 +26,6 @@ import {
   normalizeUnicode,
   OPS,
   shadow,
-  stringToPDFString,
   TextRenderingMode,
   Util,
   warn,
@@ -90,6 +89,7 @@ import { getUnicodeForGlyph } from "./unicode.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { PDFImage } from "./image.js";
 import { Stream } from "./stream.js";
+import { stringToPDFString } from "./string_utils.js";
 
 const DefaultPartialEvaluatorOptions = Object.freeze({
   maxImageSize: -1,

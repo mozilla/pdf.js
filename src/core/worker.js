@@ -21,7 +21,6 @@ import {
   isNodeJS,
   PasswordException,
   setVerbosityLevel,
-  stringToPDFString,
   VerbosityLevel,
   warn,
 } from "../shared/util.js";
@@ -38,6 +37,7 @@ import { clearGlobalCaches } from "./cleanup_helper.js";
 import { incrementalUpdate } from "./writer.js";
 import { PDFEditor } from "./editor/pdf_editor.js";
 import { PDFWorkerStream } from "./worker_stream.js";
+import { stringToPDFString } from "./string_utils.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
 class WorkerTask {
