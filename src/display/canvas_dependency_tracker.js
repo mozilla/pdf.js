@@ -14,6 +14,7 @@
  */
 
 import { BBOX_INIT, FeatureTest, Util } from "../shared/util.js";
+import { getCurrentTransform } from "./display_utils.js";
 import { MathClamp } from "../shared/math_clamp.js";
 
 const FORCED_DEPENDENCY_LABEL = "__forcedDependency";
@@ -1121,7 +1122,7 @@ class CanvasImagesTracker {
       this.#coords = newCoords;
     }
 
-    const transform = Util.domMatrixToTransform(ctx.getTransform());
+    const transform = getCurrentTransform(ctx);
 
     // We want top left, bottom left, top right.
     // (0, 0) is the bottom left corner.

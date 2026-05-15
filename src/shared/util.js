@@ -709,10 +709,6 @@ class Util {
     return `#${this.hexNums[r]}${this.hexNums[g]}${this.hexNums[b]}`;
   }
 
-  static domMatrixToTransform(dm) {
-    return [dm.a, dm.b, dm.c, dm.d, dm.e, dm.f];
-  }
-
   // Apply a scaling matrix to some min/max values.
   // If a scaling factor is negative then min and max must be
   // swapped.
