@@ -728,6 +728,7 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = ਨਵਾਂ
+pdfjs-views-manager-waiting-for-file = …ਫ਼ਾਇਲ ਨੂੰ ਅੱਪਲੋਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
 pdfjs-toggle-views-manager-button1 =
     .title = ਸਫ਼ਿਆਂ ਦਾ ਇੰਤਜ਼ਾਮ
 
