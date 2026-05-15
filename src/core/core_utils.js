@@ -684,45 +684,6 @@ function getNewAnnotationsMap(annotationStorage) {
   return newAnnotationsByPage.size > 0 ? newAnnotationsByPage : null;
 }
 
-// If the string is null or undefined then it is returned as is.
-function stringToAsciiOrUTF16BE(str) {
-  if (str === null || str === undefined) {
-    return str;
-  }
-  return isAscii(str) ? str : stringToUTF16String(str, /* bigEndian = */ true);
-}
-
-function isAscii(str) {
-  if (typeof str !== "string") {
-    return false;
-  }
-  return !str || /^[\x00-\x7F]*$/.test(str);
-}
-
-function stringToUTF16HexString(str) {
-  const buf = [];
-  for (let i = 0, ii = str.length; i < ii; i++) {
-    const char = str.charCodeAt(i);
-    buf.push(Util.hexNums[(char >> 8) & 0xff], Util.hexNums[char & 0xff]);
-  }
-  return buf.join("");
-}
-
-function stringToUTF16String(str, bigEndian = false) {
-  const buf = [];
-  if (bigEndian) {
-    buf.push("\xFE\xFF");
-  }
-  for (let i = 0, ii = str.length; i < ii; i++) {
-    const char = str.charCodeAt(i);
-    buf.push(
-      String.fromCharCode((char >> 8) & 0xff),
-      String.fromCharCode(char & 0xff)
-    );
-  }
-  return buf.join("");
-}
-
 function getModificationDate(date = new Date()) {
   if (!(date instanceof Date)) {
     date = new Date(date);
@@ -782,7 +743,6 @@ export {
   getRotationMatrix,
   getSizeInBytes,
   IDENTITY_MATRIX,
-  isAscii,
   isBooleanArray,
   isNumberArray,
   isWhiteSpace,
@@ -798,9 +758,6 @@ export {
   recoverJsURL,
   RESOURCES_KEYS_OPERATOR_LIST,
   RESOURCES_KEYS_TEXT_CONTENT,
-  stringToAsciiOrUTF16BE,
-  stringToUTF16HexString,
-  stringToUTF16String,
   toRomanNumerals,
   validateCSSFont,
   validateFontName,
