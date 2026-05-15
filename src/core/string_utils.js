@@ -16,10 +16,7 @@
 import { Util } from "../shared/util.js";
 
 function isAscii(str) {
-  if (typeof str !== "string") {
-    return false;
-  }
-  return !str || /^[\x00-\x7F]*$/.test(str);
+  return typeof str === "string" && (!str || /^[\x00-\x7F]*$/.test(str));
 }
 
 // If the string is null or undefined then it is returned as is.
