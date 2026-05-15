@@ -33,7 +33,6 @@ import {
   OPS,
   RenderingIntentFlag,
   shadow,
-  stringToPDFString,
   unreachable,
   Util,
   warn,
@@ -53,8 +52,6 @@ import {
   numberToString,
   RESOURCES_KEYS_OPERATOR_LIST,
   RESOURCES_KEYS_TEXT_CONTENT,
-  stringToAsciiOrUTF16BE,
-  stringToUTF16String,
 } from "./core_utils.js";
 import {
   createDefaultAppearance,
@@ -66,6 +63,11 @@ import {
 import { DateFormats, TimeFormats } from "../shared/scripting_utils.js";
 import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { Stream, StringStream } from "./stream.js";
+import {
+  stringToAsciiOrUTF16BE,
+  stringToPDFString,
+  stringToUTF16String,
+} from "./string_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";

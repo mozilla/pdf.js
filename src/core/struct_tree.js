@@ -16,13 +16,13 @@
 import {
   AnnotationPrefix,
   makeArr,
-  stringToPDFString,
   stringToUTF8String,
   warn,
 } from "../shared/util.js";
 import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
-import { lookupNormalRect, stringToAsciiOrUTF16BE } from "./core_utils.js";
+import { stringToAsciiOrUTF16BE, stringToPDFString } from "./string_utils.js";
 import { BaseStream } from "./base_stream.js";
+import { lookupNormalRect } from "./core_utils.js";
 import { NumberTree } from "./name_number_tree.js";
 
 const MAX_DEPTH = 40;

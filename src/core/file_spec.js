@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-import { stringToPDFString, stripPath, warn } from "../shared/util.js";
+import { stripPath, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { Dict } from "./primitives.js";
+import { stringToPDFString } from "./string_utils.js";
 
 function pickPlatformItem(dict) {
   if (dict instanceof Dict) {

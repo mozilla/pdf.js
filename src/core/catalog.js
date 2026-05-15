@@ -22,7 +22,6 @@ import {
   objectSize,
   PermissionFlag,
   shadow,
-  stringToPDFString,
   stringToUTF8String,
   warn,
 } from "../shared/util.js";
@@ -53,6 +52,7 @@ import { clearGlobalCaches } from "./cleanup_helper.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { FileSpec } from "./file_spec.js";
 import { MetadataParser } from "./metadata_parser.js";
+import { stringToPDFString } from "./string_utils.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
 const isRef = v => v instanceof Ref;

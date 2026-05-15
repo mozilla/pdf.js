@@ -18,7 +18,6 @@ import {
   escapePDFName,
   getRotationMatrix,
   numberToString,
-  stringToUTF16HexString,
 } from "./core_utils.js";
 import { Dict, Name } from "./primitives.js";
 import {
@@ -33,6 +32,7 @@ import { EvaluatorPreprocessor } from "./evaluator.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { PDFFunctionFactory } from "./function.js";
 import { StringStream } from "./stream.js";
+import { stringToUTF16HexString } from "./string_utils.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
   constructor(str) {

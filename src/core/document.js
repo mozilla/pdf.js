@@ -26,7 +26,6 @@ import {
   RenderingIntentFlag,
   shadow,
   stringToBytes,
-  stringToPDFString,
   stringToUTF8String,
   unreachable,
   Util,
@@ -76,6 +75,7 @@ import { OperatorList } from "./operator_list.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
+import { stringToPDFString } from "./string_utils.js";
 import { StructTreePage } from "./struct_tree.js";
 import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
