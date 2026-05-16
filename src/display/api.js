@@ -39,6 +39,7 @@ import {
   SerializableEmpty,
 } from "./annotation_storage.js";
 import {
+  BBoxReader,
   CanvasBBoxTracker,
   CanvasDependencyTracker,
   CanvasImagesTracker,
@@ -1576,14 +1577,25 @@ class PDFPageProxy {
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
+      // Get the trackers from `gfx` into the task's. The worker path populates
+      // them from the final `ExecuteOperatorList` response, so we don't need
+      // this in that case.
+      if (!internalRenderTask._rendererHandler && internalRenderTask.gfx) {
+        const { dependencyTracker, imagesTracker } = internalRenderTask.gfx;
+        internalRenderTask.recordedBBoxes = dependencyTracker?.take() ?? null;
+        internalRenderTask.debugMetadata = recordForDebugger
+          ? (dependencyTracker?.takeDebugMetadata() ?? null)
+          : null;
+        internalRenderTask.imageCoordinates = imagesTracker?.take() ?? null;
+      }
+
       if (shouldRecordOperations) {
-        const recordedBBoxes = internalRenderTask.gfx?.dependencyTracker.take();
+        const { recordedBBoxes, debugMetadata } = internalRenderTask;
         if (recordedBBoxes) {
           internalRenderTask.stepper?.setOperatorBBoxes(
             recordedBBoxes,
-            internalRenderTask.gfx.dependencyTracker.takeDebugMetadata()
+            debugMetadata
           );
-
           if (recordOperations) {
             this.recordedBBoxes = recordedBBoxes;
           }
@@ -1591,7 +1603,7 @@ class PDFPageProxy {
       }
 
       if (shouldRecordImages && !error) {
-        this.imageCoordinates = internalRenderTask.gfx?.imagesTracker.take();
+        this.imageCoordinates = internalRenderTask.imageCoordinates;
       }
 
       // Attempt to reduce memory usage during *printing*, by always running
@@ -1622,34 +1634,18 @@ class PDFPageProxy {
       }
     };
 
-    let dependencyTracker = null;
-    let bboxTracker = null;
-    if (shouldRecordOperations || shouldRecordImages) {
-      bboxTracker = new CanvasBBoxTracker(
-        canvas,
-        intentState.operatorList.length
-      );
-    }
-    if (shouldRecordOperations) {
-      dependencyTracker = new CanvasDependencyTracker(
-        bboxTracker,
-        recordForDebugger
-      );
-    }
-
     const internalRenderTask = new InternalRenderTask({
       callback: complete,
       // Only include the required properties, and *not* the entire object.
       params: {
         canvas,
         canvasContext,
-        dependencyTracker: dependencyTracker ?? bboxTracker,
-        imagesTracker: shouldRecordImages
-          ? new CanvasImagesTracker(canvas)
-          : null,
         viewport,
         transform,
         background,
+        recordOperations: shouldRecordOperations,
+        recordImages: shouldRecordImages,
+        recordForDebugger,
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
@@ -1664,10 +1660,7 @@ class PDFPageProxy {
       enableHWA: this._transport.enableHWA,
       enableWebGPU: this._transport.enableWebGPU,
       operationsFilter,
-      rendererHandler:
-        shouldRecordOperations || shouldRecordImages
-          ? null
-          : this._transport.rendererHandler,
+      rendererHandler: this._transport.rendererHandler,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -3562,13 +3555,19 @@ class InternalRenderTask {
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
     this._enableWebGPU = enableWebGPU;
-    this._dependencyTracker = params.dependencyTracker;
-    this._imagesTracker = params.imagesTracker;
+    this._recordOperations = !!params.recordOperations;
+    this._recordImages = !!params.recordImages;
+    this._recordForDebugger = !!params.recordForDebugger;
     this._operationsFilter = operationsFilter;
     this._rendererHandler = rendererHandler;
     this._renderTaskId = InternalRenderTask.#renderTaskId++;
     this._sentOperatorListLength = 0;
     this._transferredAnnotationCanvasIds = new Set();
+    // We get the recordedBBoxes and debugMetadata from the worker
+    // when recording is enabled,
+    this.recordedBBoxes = null;
+    this.debugMetadata = null;
+    this.imageCoordinates = null;
   }
 
   get completed() {
@@ -3648,30 +3647,25 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const {
-      viewport,
-      transform,
-      background,
-      dependencyTracker,
-      imagesTracker,
-    } = this.params;
+    const { viewport, transform, background } = this.params;
 
-    // TODO: Add support for dependencyTracker and imagesTracker when
-    // rendering in the worker
-    // Worker Rendering is disabled when canvas filters are present because
-    // OffscreenCanvas's OffscreenCanvasRenderingContext2D completely ignores
-    // the value of .filter defined with a data url.
-    // See bug 2011237
-
+    // The stepper-driven debug recording path needs `gfx` on the main thread,
+    // so we have to fall back to local rendering when it's enabled. Plain
+    // `recordOperations`/`recordImages` are now handled inside the worker.
+    // Worker rendering is also disabled when canvas filters (TR) are present
+    // because OffscreenCanvas's OffscreenCanvasRenderingContext2D ignores
+    // `.filter` values set from a data URL. See bug 2011237.
     let useWorkerRendering =
       this._rendererHandler &&
       this._canvasContext === null &&
       !hasCanvasFilters &&
       !this.pageColors &&
-      !dependencyTracker &&
-      !imagesTracker;
+      !this._recordForDebugger;
 
-    if (!useWorkerRendering) {
+    if (!useWorkerRendering && this._rendererHandler) {
+      // Only warn when a renderer worker is actually available, but cannot be
+      // used for this particular render
+      warn("Falling back to main-thread rendering.");
       this._rendererHandler = null;
     }
     let initPromise = null;
@@ -3698,6 +3692,8 @@ class InternalRenderTask {
           viewport,
           transparency,
           background,
+          recordOperations: this._recordOperations,
+          recordImages: this._recordImages,
         };
         initPromise = this._rendererHandler.sendWithPromise(
           "InitializeGraphics",
@@ -3733,6 +3729,25 @@ class InternalRenderTask {
           willReadFrequently: !this._enableHWA,
         });
 
+      let bboxTracker = null;
+      let dependencyTracker = null;
+      let imagesTracker = null;
+      if (this._recordOperations || this._recordImages) {
+        bboxTracker = new CanvasBBoxTracker(
+          this._canvas,
+          this.operatorList.fnArray.length
+        );
+      }
+      if (this._recordOperations) {
+        dependencyTracker = new CanvasDependencyTracker(
+          bboxTracker,
+          this._recordForDebugger
+        );
+      }
+      if (this._recordImages) {
+        imagesTracker = new CanvasImagesTracker(this._canvas);
+      }
+
       this.gfx = new CanvasGraphics(
         canvasContext,
         this.commonObjs,
@@ -3742,7 +3757,7 @@ class InternalRenderTask {
         { optionalContentConfig },
         this.annotationCanvasMap,
         this.pageColors,
-        dependencyTracker,
+        dependencyTracker ?? bboxTracker,
         imagesTracker
       );
       this.gfx.beginDrawing({
@@ -3797,8 +3812,10 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
-    // Support for dependency tracking and stepper when rendering
-    // in the worker has not been added.
+    // When rendering in the renderer worker, the worker manages its own copy
+    // of the bbox/dependency tracker (sized inside `#appendOperatorList`).
+    // The stepper is main-thread only and is mutually exclusive with worker
+    // rendering, so there's nothing to update here in that case.
     if (!this._rendererHandler) {
       this.gfx.dependencyTracker?.growOperationsCount(
         this.operatorList.fnArray.length
@@ -3868,7 +3885,7 @@ class InternalRenderTask {
         sentLength < operatorListArgsArrayLen
           ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
           : null;
-      this.operatorListIdx = await this._rendererHandler.sendWithPromise(
+      const response = await this._rendererHandler.sendWithPromise(
         "ExecuteOperatorList",
         {
           renderTaskId: this._renderTaskId,
@@ -3882,6 +3899,16 @@ class InternalRenderTask {
           lastChunk: operatorList.lastChunk,
         }
       );
+      this.operatorListIdx = response.operatorListIdx;
+      // Only the final chunk carries `recordedBBoxes` / `imageCoordinates`.
+      if (response.recordedBBoxesBuffer) {
+        this.recordedBBoxes = BBoxReader.fromBuffer(
+          response.recordedBBoxesBuffer
+        );
+      }
+      if (response.imageCoordinates) {
+        this.imageCoordinates = response.imageCoordinates;
+      }
       this._sentOperatorListLength = operatorListArgsArrayLen;
       if (this.cancelled) {
         return;
