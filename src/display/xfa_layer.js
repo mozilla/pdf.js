@@ -15,7 +15,7 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_storage").AnnotationStorage} AnnotationStorage */
-/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("./page_viewport").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/pdf_link_service.js").PDFLinkService} PDFLinkService */
 

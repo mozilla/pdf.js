@@ -39,7 +39,6 @@ import {
 } from "./test_utils.js";
 import {
   fetchData as fetchDataDOM,
-  PageViewport,
   RenderingCancelledException,
   StatTimer,
 } from "../../src/display/display_utils.js";
@@ -56,6 +55,7 @@ import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { Metadata } from "../../src/display/metadata.js";
+import { PageViewport } from "../../src/display/page_viewport.js";
 
 const WORKER_SRC = "../../build/generic/build/pdf.worker.mjs";
 
