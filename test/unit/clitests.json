@@ -48,6 +48,7 @@
     "pdf_viewer_spec.js",
     "postscript_spec.js",
     "primitives_spec.js",
+    "scripting_utils_spec.js",
     "stream_spec.js",
     "string_utils_spec.js",
     "struct_tree_spec.js",
