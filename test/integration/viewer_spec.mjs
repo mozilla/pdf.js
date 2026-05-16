@@ -1403,6 +1403,10 @@ describe("PDF viewer", () => {
       );
     });
 
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
     it("keeps the content under the pinch centre fixed on the screen", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -1608,6 +1612,10 @@ describe("PDF viewer", () => {
         "tracemonkey_annotation_on_page_8.pdf",
         `.page[data-page-number = "1"] .endOfContent`
       );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
     });
 
     it("Check that the top right corner of the annotation is centered vertically", async () => {
