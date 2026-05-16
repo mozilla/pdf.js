@@ -85,19 +85,6 @@ class Outline {
     }
   }
 
-  static _normalizePagePoint(x, y, rotation) {
-    switch (rotation) {
-      case 90:
-        return [1 - y, x];
-      case 180:
-        return [1 - x, 1 - y];
-      case 270:
-        return [y, 1 - x];
-      default:
-        return [x, y];
-    }
-  }
-
   static createBezierPoints(x1, y1, x2, y2, x3, y3) {
     return [
       (x1 + 5 * x2) / 6,
