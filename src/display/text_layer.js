@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-/** @typedef {import("./display_utils").PageViewport} PageViewport */
+/** @typedef {import("./page_viewport").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
 /** @typedef {import("./text_layer_images").TextLayerImages} TextLayerImages */
 

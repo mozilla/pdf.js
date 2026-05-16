@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { getXfaPageViewport, PixelsPerInch } from "pdfjs-lib";
+import { PixelsPerInch, XfaLayer } from "pdfjs-lib";
 import { SimpleLinkService } from "./pdf_link_service.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
@@ -51,7 +51,7 @@ function getXfaHtmlForPrinting(printContainer, pdfDocument) {
       linkService,
       xfaHtml: xfaPage,
     });
-    const viewport = getXfaPageViewport(xfaPage, { scale });
+    const viewport = XfaLayer.getPageViewport(xfaPage, { scale });
 
     builder.render({ viewport, intent: "print" });
     page.append(builder.div);

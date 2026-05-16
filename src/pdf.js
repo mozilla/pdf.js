@@ -20,7 +20,7 @@
 /** @typedef {import("./display/api").PDFDocumentProxy} PDFDocumentProxy */
 /** @typedef {import("./display/api").PDFPageProxy} PDFPageProxy */
 /** @typedef {import("./display/api").RenderTask} RenderTask */
-/** @typedef {import("./display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("./display/page_viewport").PageViewport} PageViewport */
 
 import {
   AbortException,
@@ -55,7 +55,6 @@ import {
   getPdfFilenameFromUrl,
   getRGB,
   getRGBA,
-  getXfaPageViewport,
   isDataScheme,
   isPdfFile,
   noContextMenu,
@@ -122,7 +121,6 @@ globalThis.pdfjsLib = {
   getRGB,
   getRGBA,
   getUuid,
-  getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
   InvalidPDFException,
@@ -186,7 +184,6 @@ export {
   getRGB,
   getRGBA,
   getUuid,
-  getXfaPageViewport,
   GlobalWorkerOptions,
   ImageKind,
   InvalidPDFException,

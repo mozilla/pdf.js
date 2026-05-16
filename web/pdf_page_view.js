@@ -14,7 +14,7 @@
  */
 
 // eslint-disable-next-line max-len
-/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("../src/display/page_viewport").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
 /** @typedef {import("./event_utils").EventBus} EventBus */

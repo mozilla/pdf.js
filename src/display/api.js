@@ -57,7 +57,6 @@ import {
 import {
   isDataScheme,
   isValidFetchUrl,
-  PageViewport,
   RenderingCancelledException,
   StatTimer,
 } from "./display_utils.js";
@@ -78,6 +77,7 @@ import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PagesMapper } from "./pages_mapper.js";
+import { PageViewport } from "./page_viewport.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
 import { PDFObjects } from "./pdf_objects.js";
 import { TextLayer } from "./text_layer.js";

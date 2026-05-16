@@ -15,7 +15,7 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
-/** @typedef {import("../display_utils.js").PageViewport} PageViewport */
+/** @typedef {import("../page_viewport.js").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 // eslint-disable-next-line max-len

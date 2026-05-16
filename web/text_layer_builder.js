@@ -15,7 +15,7 @@
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 // eslint-disable-next-line max-len
-/** @typedef {import("../src/display/display_utils").PageViewport} PageViewport */
+/** @typedef {import("../src/display/page_viewport").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/text_layer_images.js").TextLayerImages} TextLayerImages */
 /** @typedef {import("./text_highlighter").TextHighlighter} TextHighlighter */
