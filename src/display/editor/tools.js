@@ -24,6 +24,7 @@ import {
   FeatureTest,
   getUuid,
   shadow,
+  SVG_NS,
   Util,
   warn,
 } from "../../shared/util.js";
@@ -170,7 +171,7 @@ class ImageManager {
     // The "workaround" is to append "svgView(preserveAspectRatio(none))" to the
     // url, but according to comment #15, it seems that it leads to unexpected
     // behavior in Safari.
-    const svg = `data:image/svg+xml;charset=UTF-8,<svg viewBox="0 0 1 1" width="1" height="1" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" style="fill:red;"/></svg>`;
+    const svg = `data:image/svg+xml;charset=UTF-8,<svg viewBox="0 0 1 1" width="1" height="1" xmlns="${SVG_NS}"><rect width="1" height="1" style="fill:red;"/></svg>`;
     const canvas = new OffscreenCanvas(1, 3);
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     const image = new Image();

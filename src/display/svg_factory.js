@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-import { SVG_NS } from "./display_utils.js";
-import { unreachable } from "../shared/util.js";
+import { SVG_NS, unreachable } from "../shared/util.js";
 
 class BaseSVGFactory {
   constructor() {

@@ -13,8 +13,14 @@
  * limitations under the License.
  */
 
-import { getRGB, isDataScheme, SVG_NS } from "./display_utils.js";
-import { unreachable, updateUrlHash, Util, warn } from "../shared/util.js";
+import { getRGB, isDataScheme } from "./display_utils.js";
+import {
+  SVG_NS,
+  unreachable,
+  updateUrlHash,
+  Util,
+  warn,
+} from "../shared/util.js";
 
 class BaseFilterFactory {
   constructor() {

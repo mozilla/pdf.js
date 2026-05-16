@@ -36,6 +36,8 @@ const LINE_FACTOR = 1.35;
 const LINE_DESCENT_FACTOR = 0.35;
 const BASELINE_FACTOR = LINE_DESCENT_FACTOR / LINE_FACTOR;
 
+const SVG_NS = "http://www.w3.org/2000/svg";
+
 /**
  * Refer to the `WorkerTransport.getRenderingIntent`-method in the API, to see
  * how these flags are being used:
@@ -1237,6 +1239,7 @@ export {
   stringToBytes,
   stringToUTF8String,
   stripPath,
+  SVG_NS,
   TextRenderingMode,
   UnknownErrorException,
   unreachable,

@@ -102,13 +102,12 @@ import {
   getStringOption,
   HTMLResult,
 } from "./utils.js";
-import { Util, warn } from "../../shared/util.js";
+import { SVG_NS, Util, warn } from "../../shared/util.js";
 import { getMetrics } from "./fonts.js";
 import { recoverJsURL } from "../core_utils.js";
 import { searchNode } from "./som.js";
 
 const TEMPLATE_NS_ID = NamespaceIds.template.id;
-const SVG_NS = "http://www.w3.org/2000/svg";
 
 // In case of lr-tb (and rl-tb) layouts, we try:
 //  - to put the container at the end of a line
