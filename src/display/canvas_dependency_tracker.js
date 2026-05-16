@@ -70,6 +70,17 @@ class BBoxReader {
     this.#coords = coords;
   }
 
+  static fromBuffer(buffer) {
+    return new BBoxReader(
+      new Uint32Array(buffer),
+      new Uint8ClampedArray(buffer)
+    );
+  }
+
+  get buffer() {
+    return this.#bboxes.buffer;
+  }
+
   get length() {
     return this.#bboxes.length;
   }
@@ -1257,6 +1268,7 @@ class CanvasImagesTracker {
 }
 
 export {
+  BBoxReader,
   CanvasBBoxTracker,
   CanvasDependencyTracker,
   CanvasImagesTracker,

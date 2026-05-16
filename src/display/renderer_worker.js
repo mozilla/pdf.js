@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+import {
+  CanvasBBoxTracker,
+  CanvasDependencyTracker,
+  CanvasImagesTracker,
+} from "./canvas_dependency_tracker.js";
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
 import { CanvasGraphics } from "./canvas.js";
 import { FontLoader } from "./font_loader.js";
@@ -103,6 +108,9 @@ class RendererMessageHandler {
       operatorList.argsArray.push(...argsArray);
     }
     operatorList.lastChunk = lastChunk;
+    renderTaskState.gfx.dependencyTracker?.growOperationsCount(
+      operatorList.fnArray.length
+    );
   }
 
   static async #executeOperatorList(renderTaskState, operationsFilter) {
@@ -208,6 +216,8 @@ class RendererMessageHandler {
         viewport,
         transparency,
         background,
+        recordOperations = false,
+        recordImages = false,
       } = data;
       if (enableWebGPU) {
         await initGPU();
@@ -226,6 +236,22 @@ class RendererMessageHandler {
       const annotationCanvases = annotationCanvasMap
         ? new Map(annotationCanvasMap)
         : null;
+      let bboxTracker = null;
+      let dependencyTracker = null;
+      let imagesTracker = null;
+      if (recordOperations || recordImages) {
+        bboxTracker = new CanvasBBoxTracker(canvas, 0);
+      }
+      if (recordOperations) {
+        dependencyTracker = new CanvasDependencyTracker(
+          bboxTracker,
+          /* recordDebugMetadata = */ false
+        );
+      }
+      if (recordImages) {
+        imagesTracker = new CanvasImagesTracker(canvas);
+      }
+
       const gfx = new CanvasGraphics(
         ctx,
         this.#commonObjs,
@@ -233,8 +259,10 @@ class RendererMessageHandler {
         canvasFactory,
         filterFactory,
         { optionalContentConfig },
-        annotationCanvases
-        /** Renderer worker doesn't support pageColors and dependencyTracker */
+        annotationCanvases,
+        /* pageColors = */ null,
+        dependencyTracker ?? bboxTracker,
+        imagesTracker
       );
 
       gfx.beginDrawing({
@@ -290,7 +318,7 @@ class RendererMessageHandler {
       if (!renderTaskState) {
         // A render task can be cleaned up before queued
         // ExecuteOperatorList messages for that task are processed.
-        return operatorListIdx;
+        return { operatorListIdx };
       }
 
       renderTaskState.operatorListIdx = operatorListIdx;
@@ -300,13 +328,24 @@ class RendererMessageHandler {
         renderTaskState,
         operationsFilter
       );
+
+      let recordedBBoxesBuffer = null;
+      let imageCoordinates = null;
       if (
         renderTaskState.operatorList.lastChunk &&
         currentOperatorListIdx === renderTaskState.operatorList.argsArray.length
       ) {
+        const reader = renderTaskState.gfx.dependencyTracker?.take();
+        recordedBBoxesBuffer = reader?.buffer;
+        const images = renderTaskState.gfx.imagesTracker?.take();
+        imageCoordinates = images || null;
         this.#cleanupRenderTask(renderTaskId);
       }
-      return currentOperatorListIdx;
+      return {
+        operatorListIdx: currentOperatorListIdx,
+        recordedBBoxesBuffer,
+        imageCoordinates,
+      };
     });
   }
 }
