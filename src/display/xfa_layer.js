@@ -15,10 +15,10 @@
 
 // eslint-disable-next-line max-len
 /** @typedef {import("./annotation_storage").AnnotationStorage} AnnotationStorage */
-/** @typedef {import("./page_viewport").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/pdf_link_service.js").PDFLinkService} PDFLinkService */
 
+import { PageViewport } from "./page_viewport.js";
 import { XfaText } from "./xfa_text.js";
 
 /**
@@ -292,6 +292,20 @@ class XfaLayer {
     const transform = `matrix(${parameters.viewport.transform.join(",")})`;
     parameters.div.style.transform = transform;
     parameters.div.hidden = false;
+  }
+
+  /**
+   * NOTE: This is (mostly) intended to support printing of XFA forms.
+   */
+  static getPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
+    const { width, height } = xfaPage.attributes.style;
+
+    return new PageViewport({
+      viewBox: [0, 0, parseInt(width, 10), parseInt(height, 10)],
+      userUnit: 1,
+      scale,
+      rotation,
+    });
   }
 }
 

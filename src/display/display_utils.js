@@ -348,21 +348,6 @@ class PDFDateString {
   }
 }
 
-/**
- * NOTE: This is (mostly) intended to support printing of XFA forms.
- */
-function getXfaPageViewport(xfaPage, { scale = 1, rotation = 0 }) {
-  const { width, height } = xfaPage.attributes.style;
-  const viewBox = [0, 0, parseInt(width, 10), parseInt(height, 10)];
-
-  return new PageViewport({
-    viewBox,
-    userUnit: 1,
-    scale,
-    rotation,
-  });
-}
-
 function getRGBA(color) {
   if (color.startsWith("#")) {
     // #RRGGBB or #RRGGBBAA
@@ -845,7 +830,6 @@ export {
   getPdfFilenameFromUrl,
   getRGB,
   getRGBA,
-  getXfaPageViewport,
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
