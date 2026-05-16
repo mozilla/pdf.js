@@ -25,8 +25,6 @@ import { MathClamp } from "../shared/math_clamp.js";
 import { PageViewport } from "./page_viewport.js";
 import { XfaLayer } from "./xfa_layer.js";
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-
 class PixelsPerInch {
   static CSS = 96.0;
 
@@ -844,5 +842,4 @@ export {
   StatTimer,
   stopEvent,
   SupportedImageMimeTypes,
-  SVG_NS,
 };
