@@ -90,6 +90,67 @@ describe("PDFDocumentProperties", () => {
             pageSize: `${FSI}8.27${PDI} × ${FSI}11.69${PDI} ${FSI}in${PDI} (${FSI}A4${PDI}, ${FSI}portrait${PDI})`,
             linearized: "No",
           });
+
+          await page.click("#documentPropertiesClose");
+          await page.waitForSelector("#documentPropertiesDialog", {
+            hidden: true,
+          });
+        })
+      );
+    });
+  });
+
+  describe("Document with approximately A4-sized page", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "arial_unicode_en_cidfont.pdf",
+        ".textLayer .endOfContent"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the document properties dialog has the correct information", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+
+          await page.click("#documentProperties");
+          await page.waitForSelector("#documentPropertiesDialog", {
+            hidden: false,
+          });
+
+          await page.waitForFunction(
+            `document.getElementById("fileSizeField").textContent !== "-"`
+          );
+          const props = await getFieldProperties(page);
+
+          expect(props).toEqual({
+            fileName: "arial_unicode_en_cidfont.pdf",
+            fileSize: `${FSI}15.4${PDI} KB (${FSI}15,779${PDI} bytes)`,
+            title: "-",
+            author: "Adil Allawi",
+            subject: "-",
+            keywords: "-",
+            creationDate: "7/10/11, 7:17:28 PM",
+            modificationDate: "-",
+            creator: "Writer",
+            producer: "NeoOffice 3.2 Beta",
+            version: "1.4",
+            pageCount: "1",
+            pageSize: `${FSI}8.27${PDI} × ${FSI}11.69${PDI} ${FSI}in${PDI} (${FSI}A4${PDI}, ${FSI}portrait${PDI})`,
+            linearized: "No",
+          });
+
+          await page.click("#documentPropertiesClose");
+          await page.waitForSelector("#documentPropertiesDialog", {
+            hidden: true,
+          });
         })
       );
     });
