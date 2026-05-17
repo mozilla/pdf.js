@@ -18,7 +18,9 @@ import {
   CFFCompiler,
   CFFFDSelect,
   CFFParser,
+  CFFPrivateDict,
   CFFStrings,
+  CFFTopDict,
 } from "../../src/core/cff_parser.js";
 import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
@@ -110,6 +112,77 @@ describe("CFFParser", function () {
     expect(topDict.getByName("FontBBox")).toEqual([-168, -218, 1000, 898]);
     expect(topDict.getByName("CharStrings")).toEqual(94);
     expect(topDict.getByName("Private")).toEqual([45, 102]);
+  });
+
+  it("ignores an empty FontBBox when adjusting ascent/descent", function () {
+    cff.topDict.setByName("FontBBox", [0, 0, 0, 0]);
+    const fontDataWithEmptyBBox = new CFFCompiler(cff).compile();
+
+    const properties = {
+      ascent: 800,
+      descent: -200,
+    };
+    new CFFParser(
+      new Stream(fontDataWithEmptyBBox),
+      properties,
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(properties.ascent).toEqual(800);
+    expect(properties.descent).toEqual(-200);
+    expect(properties.ascentScaled).toBeUndefined();
+  });
+
+  it("repairs an empty FontBBox from font descriptor data", function () {
+    cff.topDict.setByName("FontBBox", [0, 0, 0, 0]);
+    const fontDataWithEmptyBBox = new CFFCompiler(cff).compile();
+
+    const properties = {
+      bbox: [2974, -300, 64236, 900],
+    };
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithEmptyBBox),
+      properties,
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.getByName("FontBBox")).toEqual([
+      -1300, -300, 2974, 900,
+    ]);
+    expect(properties.ascent).toEqual(900);
+    expect(properties.descent).toEqual(-300);
+    expect(properties.ascentScaled).toEqual(true);
+  });
+
+  it("repairs likely Ghostscript-zeroed FDArray private defaults", function () {
+    cff.isCIDFont = true;
+    cff.topDict.setByName("ROS", [0, 0, 0]);
+    cff.topDict.setByName("FDSelect", 0);
+    cff.topDict.setByName("FDArray", 0);
+
+    const fdDict = new CFFTopDict(cff.strings);
+    fdDict.setByName("Private", [0, 0]);
+    fdDict.privateDict = new CFFPrivateDict(cff.strings);
+    fdDict.privateDict.setByName("BlueScale", 0);
+    fdDict.privateDict.setByName("BlueShift", 0);
+    fdDict.privateDict.setByName("BlueFuzz", 0);
+    fdDict.privateDict.setByName("ExpansionFactor", 0);
+
+    cff.fdArray = [fdDict];
+    cff.fdSelect = new CFFFDSelect(0, Array(cff.charStrings.count).fill(0));
+    const fontDataWithBrokenFDPrivate = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithBrokenFDPrivate),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+    const privateDict = reparsedCff.fdArray[0].privateDict;
+
+    expect(privateDict.getByName("BlueScale")).toEqual(0.039625);
+    expect(privateDict.getByName("BlueShift")).toEqual(7);
+    expect(privateDict.getByName("BlueFuzz")).toEqual(1);
+    expect(privateDict.getByName("ExpansionFactor")).toEqual(0.06);
   });
 
   it("refuses to add topDict key with invalid value (bug 1068432)", function () {
