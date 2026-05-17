@@ -108,6 +108,11 @@ const CFFStandardStrings = [
 
 const NUM_STANDARD_CFF_STRINGS = 391;
 
+const DEFAULT_BLUE_SCALE = 0.039625;
+const DEFAULT_BLUE_SHIFT = 7;
+const DEFAULT_BLUE_FUZZ = 1;
+const DEFAULT_EXPANSION_FACTOR = 0.06;
+
 const CharstringValidationData = [
   /*  0 */ null,
   /*  1 */ { id: "hstem", min: 2, stackClearing: true, stem: true },
@@ -262,8 +267,16 @@ class CFFParser {
       properties.fontMatrix = fontMatrix;
     }
 
-    const fontBBox = topDict.getByName("FontBBox");
-    if (fontBBox) {
+    let fontBBox = topDict.getByName("FontBBox");
+    if (fontBBox?.every(coord => coord === 0) && properties.bbox) {
+      fontBBox = Util.normalizeRect(
+        properties.bbox.map(coord =>
+          coord > 0x7fff && coord <= 0xffff ? coord - 0x10000 : coord
+        )
+      );
+      topDict.setByName("FontBBox", fontBBox);
+    }
+    if (fontBBox?.some(coord => coord !== 0)) {
       // adjusting ascent/descent
       properties.ascent = Math.max(fontBBox[3], fontBBox[1]);
       properties.descent = Math.min(fontBBox[1], fontBBox[3]);
@@ -785,10 +798,28 @@ class CFFParser {
     );
     parentDict.privateDict = privateDict;
 
-    if (privateDict.getByName("ExpansionFactor") === 0) {
+    const blueScale = privateDict.getByName("BlueScale");
+    const blueShift = privateDict.getByName("BlueShift");
+    const blueFuzz = privateDict.getByName("BlueFuzz");
+    const expansionFactor = privateDict.getByName("ExpansionFactor");
+    if (
+      blueScale === 0 &&
+      blueShift === 0 &&
+      blueFuzz === 0 &&
+      expansionFactor === 0
+    ) {
+      // Ghostscript can fail to initialize Private DICT defaults before
+      // writing them, which leaves omitted blue zone values as explicit
+      // zeroes. This has been seen in FDArray entries.
+      privateDict.setByName("BlueScale", DEFAULT_BLUE_SCALE);
+      privateDict.setByName("BlueShift", DEFAULT_BLUE_SHIFT);
+      privateDict.setByName("BlueFuzz", DEFAULT_BLUE_FUZZ);
+    }
+
+    if (expansionFactor === 0) {
       // Firefox doesn't render correctly such a font on Windows (see issue
       // 15289), hence we just reset it to its default value.
-      privateDict.setByName("ExpansionFactor", 0.06);
+      privateDict.setByName("ExpansionFactor", DEFAULT_EXPANSION_FACTOR);
     }
 
     // Parse the Subrs index also since it's relative to the private dict.
@@ -1247,16 +1278,16 @@ const CFFPrivateDictLayout = [
   [7, "OtherBlues", "delta", null],
   [8, "FamilyBlues", "delta", null],
   [9, "FamilyOtherBlues", "delta", null],
-  [[12, 9], "BlueScale", "num", 0.039625],
-  [[12, 10], "BlueShift", "num", 7],
-  [[12, 11], "BlueFuzz", "num", 1],
+  [[12, 9], "BlueScale", "num", DEFAULT_BLUE_SCALE],
+  [[12, 10], "BlueShift", "num", DEFAULT_BLUE_SHIFT],
+  [[12, 11], "BlueFuzz", "num", DEFAULT_BLUE_FUZZ],
   [10, "StdHW", "num", null],
   [11, "StdVW", "num", null],
   [[12, 12], "StemSnapH", "delta", null],
   [[12, 13], "StemSnapV", "delta", null],
   [[12, 14], "ForceBold", "num", 0],
   [[12, 17], "LanguageGroup", "num", 0],
-  [[12, 18], "ExpansionFactor", "num", 0.06],
+  [[12, 18], "ExpansionFactor", "num", DEFAULT_EXPANSION_FACTOR],
   [[12, 19], "initialRandomSeed", "num", 0],
   [20, "defaultWidthX", "num", 0],
   [21, "nominalWidthX", "num", 0],
