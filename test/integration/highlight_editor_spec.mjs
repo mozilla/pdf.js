@@ -1726,10 +1726,6 @@ describe("Highlight Editor", () => {
     it("must check that an existing highlight is ignored on hovering", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (navigator.platform.includes("Win")) {
-            pending("Fails consistently on Windows (issue #20136).");
-          }
-
           await switchToHighlight(page);
 
           const rect = await getSpanRectFromText(
