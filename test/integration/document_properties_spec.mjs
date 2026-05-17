@@ -14,6 +14,7 @@
  */
 
 import { closePages, FSI, loadAndWait, PDI } from "./test_utils.mjs";
+import fs from "fs/promises";
 
 const FIELDS = [
   "fileName",
@@ -144,6 +145,70 @@ describe("PDFDocumentProperties", () => {
             version: "1.4",
             pageCount: "1",
             pageSize: `${FSI}8.27${PDI} × ${FSI}11.69${PDI} ${FSI}in${PDI} (${FSI}A4${PDI}, ${FSI}portrait${PDI})`,
+            linearized: "No",
+          });
+
+          await page.click("#documentPropertiesClose");
+          await page.waitForSelector("#documentPropertiesDialog", {
+            hidden: true,
+          });
+        })
+      );
+    });
+  });
+
+  describe("Document without contentLength", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the document properties dialog has the correct information", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Open a binary PDF document, such that `contentLength` is undefined.
+          const base64 = await fs.readFile("./pdfs/clippath.pdf", {
+            encoding: "base64",
+          });
+
+          await page.evaluate(async b64 => {
+            await window.PDFViewerApplication.open({
+              data: Uint8Array.fromBase64(b64),
+            });
+          }, base64);
+
+          await page.click("#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+
+          await page.click("#documentProperties");
+          await page.waitForSelector("#documentPropertiesDialog", {
+            hidden: false,
+          });
+
+          await page.waitForFunction(
+            `document.getElementById("fileSizeField").textContent !== "-"`
+          );
+          const props = await getFieldProperties(page);
+
+          expect(props).toEqual({
+            fileName: "document.pdf",
+            fileSize: `${FSI}0.448${PDI} KB (${FSI}459${PDI} bytes)`,
+            title: "-",
+            author: "-",
+            subject: "-",
+            keywords: "-",
+            creationDate: "-",
+            modificationDate: "-",
+            creator: "-",
+            producer: "-",
+            version: "1.1",
+            pageCount: "1",
+            pageSize: `${FSI}2.78${PDI} × ${FSI}1.39${PDI} ${FSI}in${PDI} (${FSI}landscape${PDI})`,
             linearized: "No",
           });
 
