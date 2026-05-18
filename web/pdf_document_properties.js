@@ -121,7 +121,13 @@ class PDFDocumentProperties {
       pdfPage,
     ] = await Promise.all([
       this.pdfDocument.getMetadata(),
-      this.pdfDocument.getPage(currentPageNumber),
+      this.pdfDocument.getPage(currentPageNumber).catch(reason => {
+        console.error(
+          `PDFDocumentProperties - unable to get page ${currentPageNumber}.`,
+          reason
+        );
+        return null;
+      }),
     ]);
 
     const [
@@ -138,7 +144,7 @@ class PDFDocumentProperties {
       this._titleLookup(),
       this.#parseDate(metadata?.get("xmp:createdate"), info.CreationDate),
       this.#parseDate(metadata?.get("xmp:modifydate"), info.ModDate),
-      this.#parsePageSize(getPageSizeInches(pdfPage), pagesRotation),
+      this.#parsePageSize(pdfPage, pagesRotation),
       this.#parseLinearization(info.IsLinearized),
     ]);
 
@@ -245,10 +251,11 @@ class PDFDocumentProperties {
       : undefined;
   }
 
-  async #parsePageSize(pageSizeInches, pagesRotation) {
-    if (!pageSizeInches) {
+  async #parsePageSize(pdfPage, pagesRotation) {
+    if (!pdfPage) {
       return undefined;
     }
+    let pageSizeInches = getPageSizeInches(pdfPage);
     // Take the viewer rotation into account as well; compare with Adobe Reader.
     if (pagesRotation % 180 !== 0) {
       pageSizeInches = {

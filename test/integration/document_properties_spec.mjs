@@ -88,7 +88,7 @@ describe("PDFDocumentProperties", () => {
       await closePages(pages);
     });
 
-    it("must check that the document properties dialog has the correct information", async () => {
+    it("check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await openDocumentProperties(page);
@@ -130,7 +130,7 @@ describe("PDFDocumentProperties", () => {
       await closePages(pages);
     });
 
-    it("must check that the document properties dialog has the correct information", async () => {
+    it("check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await openDocumentProperties(page);
@@ -169,7 +169,7 @@ describe("PDFDocumentProperties", () => {
       await closePages(pages);
     });
 
-    it("must check that the document properties dialog has the correct information", async () => {
+    it("check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Open a binary PDF document, such that `contentLength` is undefined.
@@ -219,7 +219,7 @@ describe("PDFDocumentProperties", () => {
       await closePages(pages);
     });
 
-    it("must check that the document properties dialog has the correct information", async () => {
+    it("check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await openDocumentProperties(page);
@@ -300,7 +300,7 @@ describe("PDFDocumentProperties", () => {
       await closePages(pages);
     });
 
-    it("must check that the document properties dialog has the correct information", async () => {
+    it("check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await openDocumentProperties(page);
@@ -346,6 +346,78 @@ describe("PDFDocumentProperties", () => {
             version: "1.4",
             pageCount: "3",
             pageSize: `${FSI}9.01${PDI} × ${FSI}4.49${PDI} ${FSI}in${PDI} (${FSI}landscape${PDI})`,
+            linearized: "No",
+          });
+
+          await closeDocumentProperties(page);
+        })
+      );
+    });
+  });
+
+  describe("Document with corrupt page", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "Pages-tree-refs.pdf",
+        ".textLayer .endOfContent",
+        null,
+        null,
+        { page: 2 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("check that the document properties dialog has the correct information", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await openDocumentProperties(page);
+
+          await checkFieldProperties(page, {
+            fileName: "Pages-tree-refs.pdf",
+            fileSize: `${FSI}1.07${PDI} KB (${FSI}1,098${PDI} bytes)`,
+            title: "-",
+            author: "-",
+            subject: "-",
+            keywords: "-",
+            creationDate: "-",
+            modificationDate: "-",
+            creator: "-",
+            producer: "-",
+            version: "1.7",
+            pageCount: "2",
+            pageSize: "-",
+            linearized: "No",
+          });
+
+          await closeDocumentProperties(page);
+
+          // Goto the first page (which is *not* corrupt).
+          await page.click("#previous");
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 1
+          );
+
+          await openDocumentProperties(page);
+
+          await checkFieldProperties(page, {
+            fileName: "Pages-tree-refs.pdf",
+            fileSize: `${FSI}1.07${PDI} KB (${FSI}1,098${PDI} bytes)`,
+            title: "-",
+            author: "-",
+            subject: "-",
+            keywords: "-",
+            creationDate: "-",
+            modificationDate: "-",
+            creator: "-",
+            producer: "-",
+            version: "1.7",
+            pageCount: "2",
+            pageSize: `${FSI}8.27${PDI} × ${FSI}11.69${PDI} ${FSI}in${PDI} (${FSI}A4${PDI}, ${FSI}portrait${PDI})`,
             linearized: "No",
           });
 
