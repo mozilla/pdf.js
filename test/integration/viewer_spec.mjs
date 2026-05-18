@@ -26,7 +26,10 @@ import {
   waitForPageChanging,
   waitForPageRendered,
 } from "./test_utils.mjs";
+import path from "path";
 import { PNG } from "pngjs";
+
+const __dirname = import.meta.dirname;
 
 describe("PDF viewer", () => {
   describe("Zoom origin", () => {
@@ -1899,6 +1902,109 @@ describe("PDF viewer", () => {
           })
         );
       });
+    });
+
+    describe("@page size stylesheet under CSP", () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait(
+          "basicapi.pdf",
+          ".textLayer .endOfContent",
+          null,
+          {
+            earlySetup: () => {
+              // Capture state while window.print() runs — the print service's
+              // destroy() removes the @page stylesheet right after, on the
+              // afterprint event.
+              window._pageRuleApplied = null;
+              window.print = () => {
+                window._pageRuleApplied = [
+                  ...document.querySelectorAll("style"),
+                ].some(
+                  s =>
+                    s.sheet?.cssRules.length > 0 &&
+                    [...s.sheet.cssRules].some(r => r.cssText.includes("@page"))
+                );
+              };
+            },
+            appSetup: app => {
+              app._testPrintResolver = Promise.withResolvers();
+            },
+            eventBusSetup: eventBus => {
+              eventBus.on(
+                "afterprint",
+                () => {
+                  window.PDFViewerApplication._testPrintResolver.resolve();
+                },
+                { once: true }
+              );
+            },
+          }
+        );
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      // The print service injects an inline
+      // <style>@page { size: WxH pt }</style> to match the PDF's page
+      // dimensions. If the CSP `style-src-elem` directive blocks inline
+      // <style> elements, the element is created but its content is never
+      // parsed — `sheet.cssRules` stays empty and the @page rule has no
+      // effect. See web/viewer.html.
+      it("must apply the injected @page rule (no CSP block)", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await waitAndClick(page, "#printButton");
+            await awaitPromise(
+              await page.evaluateHandle(() => [
+                window.PDFViewerApplication._testPrintResolver.promise,
+              ])
+            );
+
+            const hasPageRule = await page.evaluate(
+              () => window._pageRuleApplied
+            );
+            expect(hasPageRule)
+              .withContext(
+                `In ${browserName}: injected @page stylesheet was parsed`
+              )
+              .toBeTrue();
+          })
+        );
+      });
+    });
+  });
+
+  describe("Open a new PDF via the file input", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    // The "Open" input wraps the chosen file in a blob URL,
+    // which the worker then fetches. `connect-src` in the production CSP must
+    // therefore allow `blob:` — see web/viewer.html.
+    it("must load a PDF picked through the file input (blob URL)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const fileInput = await page.$("#fileInput");
+          await fileInput.uploadFile(
+            path.join(__dirname, "../pdfs/basicapi.pdf")
+          );
+
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.pdfDocument?.numPages === 3
+          );
+        })
+      );
     });
   });
 });

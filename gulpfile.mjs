@@ -1214,6 +1214,10 @@ function discardCommentsCSS() {
 }
 
 function preprocessHTML(source, defines) {
+  defines = {
+    ...defines,
+    TESTING: defines.TESTING ?? process.env.TESTING === "true",
+  };
   const outName = getTempFile("~preprocess", ".html");
   preprocess(source, outName, defines);
   const out = fs.readFileSync(outName).toString();

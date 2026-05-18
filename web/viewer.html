@@ -29,6 +29,35 @@ See https://github.com/adobe-type-tools/cmap-resources
     <!--#endif-->
     <title>PDF.js viewer</title>
 
+    <!--
+      The print service injects an inline <style>@page { size: … }</style>
+      at print time (web/pdf_print_service.js, web/firefox_print_service.js)
+      to match the PDF's page dimensions. Since the size varies per PDF the
+      content can't be pre-hashed, so style-src-elem allows 'unsafe-inline'.
+      Inline style="…" attributes stay blocked via style-src (no fallback).
+    -->
+    <!--#if MOZCENTRAL-->
+    <!--<meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src resource: 'wasm-unsafe-eval'; worker-src resource:; style-src resource:; style-src-elem resource: 'unsafe-inline'; img-src resource: blob: data:; font-src resource:; connect-src resource:; base-uri 'none'; form-action 'none';"
+    />-->
+    <!--#elif TESTING-->
+    <!--<meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-eval'; worker-src 'self' blob:; style-src 'self'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src * blob: data:; base-uri 'self'; form-action 'none';"
+    />-->
+    <!--#elif CHROME-->
+    <!--<meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src * blob: data:; base-uri 'self'; form-action 'none';"
+    />-->
+    <!--#else-->
+    <!--<meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self'; style-src-elem 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; connect-src * blob: data:; base-uri 'none'; form-action 'none';"
+    />-->
+    <!--#endif-->
+
     <!--#if MOZCENTRAL-->
     <!--#include viewer-snippet-firefox-extension.html-->
     <!--#elif CHROME-->
@@ -1237,7 +1266,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         </dialog>
 
         <!--#if !MOZCENTRAL-->
-        <dialog id="printServiceDialog" style="min-width: 200px">
+        <dialog id="printServiceDialog">
           <div class="row">
             <span data-l10n-id="pdfjs-print-progress-message"></span>
           </div>
