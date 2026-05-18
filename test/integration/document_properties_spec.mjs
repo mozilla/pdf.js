@@ -33,21 +33,42 @@ const FIELDS = [
   "linearized",
 ];
 
-describe("PDFDocumentProperties", () => {
-  async function getFieldProperties(page) {
-    const promises = [];
+async function openDocumentProperties(page) {
+  await page.click("#secondaryToolbarToggleButton");
+  await page.waitForSelector("#secondaryToolbar", { hidden: false });
 
-    for (const name of FIELDS) {
-      promises.push(
-        page.evaluate(
-          n => [n, document.getElementById(`${n}Field`).textContent],
-          name
-        )
-      );
-    }
-    return Object.fromEntries(await Promise.all(promises));
+  await page.click("#documentProperties");
+  await page.waitForSelector("#documentPropertiesDialog", {
+    hidden: false,
+  });
+}
+
+async function closeDocumentProperties(page) {
+  await page.click("#documentPropertiesClose");
+  await page.waitForSelector("#documentPropertiesDialog", {
+    hidden: true,
+  });
+}
+
+async function checkFieldProperties(page, expectedProps) {
+  await page.waitForFunction(
+    `document.getElementById("fileSizeField").textContent !== "-"`
+  );
+  const promises = [];
+
+  for (const name of FIELDS) {
+    promises.push(
+      page.evaluate(
+        n => [n, document.getElementById(`${n}Field`).textContent],
+        name
+      )
+    );
   }
+  const props = Object.fromEntries(await Promise.all(promises));
+  expect(props).toEqual(expectedProps);
+}
 
+describe("PDFDocumentProperties", () => {
   describe("Document with both /Info and /Metadata", () => {
     let pages;
 
@@ -62,20 +83,9 @@ describe("PDFDocumentProperties", () => {
     it("must check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#secondaryToolbarToggleButton");
-          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+          await openDocumentProperties(page);
 
-          await page.click("#documentProperties");
-          await page.waitForSelector("#documentPropertiesDialog", {
-            hidden: false,
-          });
-
-          await page.waitForFunction(
-            `document.getElementById("fileSizeField").textContent !== "-"`
-          );
-          const props = await getFieldProperties(page);
-
-          expect(props).toEqual({
+          await checkFieldProperties(page, {
             fileName: "basicapi.pdf",
             fileSize: `${FSI}103${PDI} KB (${FSI}105,779${PDI} bytes)`,
             title: "Basic API Test",
@@ -92,10 +102,7 @@ describe("PDFDocumentProperties", () => {
             linearized: "No",
           });
 
-          await page.click("#documentPropertiesClose");
-          await page.waitForSelector("#documentPropertiesDialog", {
-            hidden: true,
-          });
+          await closeDocumentProperties(page);
         })
       );
     });
@@ -118,20 +125,9 @@ describe("PDFDocumentProperties", () => {
     it("must check that the document properties dialog has the correct information", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#secondaryToolbarToggleButton");
-          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+          await openDocumentProperties(page);
 
-          await page.click("#documentProperties");
-          await page.waitForSelector("#documentPropertiesDialog", {
-            hidden: false,
-          });
-
-          await page.waitForFunction(
-            `document.getElementById("fileSizeField").textContent !== "-"`
-          );
-          const props = await getFieldProperties(page);
-
-          expect(props).toEqual({
+          await checkFieldProperties(page, {
             fileName: "arial_unicode_en_cidfont.pdf",
             fileSize: `${FSI}15.4${PDI} KB (${FSI}15,779${PDI} bytes)`,
             title: "-",
@@ -148,10 +144,7 @@ describe("PDFDocumentProperties", () => {
             linearized: "No",
           });
 
-          await page.click("#documentPropertiesClose");
-          await page.waitForSelector("#documentPropertiesDialog", {
-            hidden: true,
-          });
+          await closeDocumentProperties(page);
         })
       );
     });
@@ -182,20 +175,9 @@ describe("PDFDocumentProperties", () => {
             });
           }, base64);
 
-          await page.click("#secondaryToolbarToggleButton");
-          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+          await openDocumentProperties(page);
 
-          await page.click("#documentProperties");
-          await page.waitForSelector("#documentPropertiesDialog", {
-            hidden: false,
-          });
-
-          await page.waitForFunction(
-            `document.getElementById("fileSizeField").textContent !== "-"`
-          );
-          const props = await getFieldProperties(page);
-
-          expect(props).toEqual({
+          await checkFieldProperties(page, {
             fileName: "document.pdf",
             fileSize: `${FSI}0.448${PDI} KB (${FSI}459${PDI} bytes)`,
             title: "-",
@@ -212,10 +194,7 @@ describe("PDFDocumentProperties", () => {
             linearized: "No",
           });
 
-          await page.click("#documentPropertiesClose");
-          await page.waitForSelector("#documentPropertiesDialog", {
-            hidden: true,
-          });
+          await closeDocumentProperties(page);
         })
       );
     });
