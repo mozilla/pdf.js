@@ -111,6 +111,9 @@ class PDFDocumentProperties {
       this.#updateUI();
       return;
     }
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      this._fieldDataLastUpdated = Date.now();
+    }
 
     // Get the document properties.
     const [
@@ -219,6 +222,9 @@ class PDFDocumentProperties {
       // unless it's being reset (i.e. `this.#fieldData === null`),
       // since it will be updated the next time `this.open` is called.
       return;
+    }
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      this.dialog.dataset.fieldDataLastUpdated = this._fieldDataLastUpdated;
     }
     for (const id in this.fields) {
       const content = this.#fieldData?.[id];
