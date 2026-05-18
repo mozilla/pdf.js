@@ -1,0 +1,246 @@
+name: Fetch PDF test files
+on:
+  workflow_call:
+    secrets:
+      CLIENT_ID:
+        required: false
+      APP_PRIVATE_KEY:
+        required: false
+    outputs:
+      cache-key:
+        description: >-
+          Cache key containing the PDF test files prepared for this workflow
+          run. Callers use this key when restoring `test/pdfs/*.pdf`.
+        value: ${{ jobs.prepare-pdfs.outputs.cache-key }}
+
+permissions:
+  contents: read
+
+jobs:
+  private-pdfs:
+    name: Fetch private PDF baseline
+    if: >-
+      ${{
+        github.event_name != 'pull_request' ||
+        github.event.pull_request.head.repo.full_name == github.repository
+      }}
+    runs-on: ubuntu-latest
+    environment: pdfs-fetch
+    outputs:
+      sha: ${{ steps.pdfs-sha.outputs.sha }}
+      cache-key: ${{ steps.pdfs-sha.outputs.cache-key }}
+
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@1b10c78c7865c340bc4f6099eb2f838309f1e8c3 # v3.1.1
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mozilla
+          repositories: pdf.js.pdfs
+          permission-contents: read
+
+      - name: Resolve pdf.js.pdfs HEAD SHA
+        id: pdfs-sha
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          sha=$(gh api repos/mozilla/pdf.js.pdfs/commits/HEAD --jq '.sha')
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "cache-key=pdf-js-pdfs-$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Check cache for PDF test files
+        id: pdfs-cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: test/pdfs/*.pdf
+          key: pdf-js-pdfs-${{ steps.pdfs-sha.outputs.sha }}
+          enableCrossOsArchive: true
+          lookup-only: true
+
+      - name: Checkout PDF test files
+        if: steps.pdfs-cache.outputs.cache-hit != 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: mozilla/pdf.js.pdfs
+          ref: ${{ steps.pdfs-sha.outputs.sha }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: pdf.js.pdfs
+          persist-credentials: false
+
+      - name: Stage PDFs for caching
+        if: steps.pdfs-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p test/pdfs
+          cp pdf.js.pdfs/pdfs/*.pdf test/pdfs/
+
+      - name: Save cached PDF test files
+        if: steps.pdfs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: test/pdfs/*.pdf
+          key: pdf-js-pdfs-${{ steps.pdfs-sha.outputs.sha }}
+          enableCrossOsArchive: true
+
+  prepare-pdfs:
+    name: Prepare PDF test files
+    needs: private-pdfs
+    if: >-
+      ${{
+        always() &&
+        (
+          needs.private-pdfs.result == 'success' ||
+          (
+            github.event_name == 'pull_request' &&
+            github.event.pull_request.head.repo.full_name != github.repository
+          )
+        )
+      }}
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.pdf-cache-key.outputs.key }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          sparse-checkout: |
+            /*
+            !test/pdfs/*.pdf
+          sparse-checkout-cone-mode: false
+
+      - name: Compute PDF cache key
+        id: pdf-cache-key
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BASE_SHA: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            base_sha="$PR_BASE_SHA"
+          else
+            base_sha="$PUSH_BASE_SHA"
+          fi
+
+          changed_pdfs=$(mktemp)
+          if [ -n "$base_sha" ]; then
+            git diff -z --name-only --diff-filter=AM "$base_sha"...HEAD -- 'test/pdfs/*.pdf' > "$changed_pdfs"
+          fi
+
+          inputs_hash=$(
+            {
+              git ls-files -s -- test/test_manifest.json 'test/pdfs/*.link'
+              if [ -s "$changed_pdfs" ]; then
+                xargs -0 git ls-tree HEAD -- < "$changed_pdfs"
+              fi
+            } | sha256sum | cut -d ' ' -f 1
+          )
+
+          if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+            key="pdf-js-pr-pdfs-${PR_NUMBER}-${inputs_hash}"
+            restore_keys="pdf-js-pr-pdfs-${PR_NUMBER}-"
+          else
+            key="pdf-js-prepared-pdfs-${GITHUB_SHA}-${inputs_hash}"
+            restore_keys="pdf-js-prepared-pdfs-"
+          fi
+
+          {
+            echo "key=$key"
+            echo "base-sha=$base_sha"
+            echo "restore-keys<<EOF"
+            echo "$restore_keys"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Restore prepared PDF test files
+        id: prepared-pdfs-cache
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: test/pdfs/*.pdf
+          key: ${{ steps.pdf-cache-key.outputs.key }}
+          restore-keys: ${{ steps.pdf-cache-key.outputs.restore-keys }}
+          enableCrossOsArchive: true
+
+      - name: Restore private PDF baseline
+        if: steps.prepared-pdfs-cache.outputs.cache-hit != 'true' && needs.private-pdfs.result == 'success'
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: test/pdfs/*.pdf
+          key: ${{ needs.private-pdfs.outputs.cache-key }}
+          enableCrossOsArchive: true
+          fail-on-cache-miss: true
+
+      - name: Checkout public PDF baseline
+        if: steps.prepared-pdfs-cache.outputs.cache-hit != 'true' && needs.private-pdfs.result == 'skipped'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: pdfs-base
+          persist-credentials: false
+          sparse-checkout: |
+            test/pdfs/*.pdf
+          sparse-checkout-cone-mode: false
+
+      - name: Stage public PDF baseline
+        if: steps.prepared-pdfs-cache.outputs.cache-hit != 'true' && needs.private-pdfs.result == 'skipped'
+        run: |
+          mkdir -p test/pdfs
+          cp pdfs-base/test/pdfs/*.pdf test/pdfs/
+
+      - name: Stage changed PDF files
+        if: steps.prepared-pdfs-cache.outputs.cache-hit != 'true'
+        env:
+          BASE_SHA: ${{ steps.pdf-cache-key.outputs.base-sha }}
+        run: |
+          mkdir -p test/pdfs
+
+          if [ -z "$BASE_SHA" ]; then
+            exit 0
+          fi
+
+          git diff -z --name-only --diff-filter=AM "$BASE_SHA"...HEAD -- 'test/pdfs/*.pdf' |
+            while IFS= read -r -d '' file; do
+              git checkout --ignore-skip-worktree-bits HEAD -- "$file"
+            done
+
+      - name: Download linked PDF test files
+        if: steps.prepared-pdfs-cache.outputs.cache-hit != 'true'
+        working-directory: test
+        run: |
+          node --input-type=module <<'EOF'
+          import fs from "fs";
+          import {
+            calculateMD5,
+            downloadManifestFiles,
+            verifyManifestFiles,
+          } from "./downloadutils.mjs";
+
+          const manifest = JSON.parse(fs.readFileSync("test_manifest.json"));
+          for (const item of manifest) {
+            if (!item.link || !item.md5 || !fs.existsSync(item.file)) {
+              continue;
+            }
+            try {
+              if ((await calculateMD5(item.file)) !== item.md5) {
+                fs.rmSync(item.file, { force: true });
+              }
+            } catch {
+              fs.rmSync(item.file, { force: true });
+            }
+          }
+          await downloadManifestFiles(manifest);
+          await verifyManifestFiles(manifest);
+          EOF
+
+      - name: Save prepared PDF test files
+        if: steps.prepared-pdfs-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        continue-on-error: true
+        with:
+          path: test/pdfs/*.pdf
+          key: ${{ steps.pdf-cache-key.outputs.key }}
+          enableCrossOsArchive: true
