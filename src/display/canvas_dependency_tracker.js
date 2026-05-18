@@ -28,6 +28,56 @@ function expandBBox(array, index, minX, minY, maxX, maxY) {
   array[index * 4 + 3] = Math.max(array[index * 4 + 3], maxY);
 }
 
+// Apply a scaling matrix to some min/max values.
+// If a scaling factor is negative then min and max must be swapped.
+function scaleMinMax(transform, minMax) {
+  let temp;
+  if (transform[0]) {
+    if (transform[0] < 0) {
+      temp = minMax[0];
+      minMax[0] = minMax[2];
+      minMax[2] = temp;
+    }
+    minMax[0] *= transform[0];
+    minMax[2] *= transform[0];
+
+    if (transform[3] < 0) {
+      temp = minMax[1];
+      minMax[1] = minMax[3];
+      minMax[3] = temp;
+    }
+    minMax[1] *= transform[3];
+    minMax[3] *= transform[3];
+  } else {
+    temp = minMax[0];
+    minMax[0] = minMax[1];
+    minMax[1] = temp;
+    temp = minMax[2];
+    minMax[2] = minMax[3];
+    minMax[3] = temp;
+
+    if (transform[1] < 0) {
+      temp = minMax[1];
+      minMax[1] = minMax[3];
+      minMax[3] = temp;
+    }
+    minMax[1] *= transform[1];
+    minMax[3] *= transform[1];
+
+    if (transform[2] < 0) {
+      temp = minMax[0];
+      minMax[0] = minMax[2];
+      minMax[2] = temp;
+    }
+    minMax[0] *= transform[2];
+    minMax[2] *= transform[2];
+  }
+  minMax[0] += transform[4];
+  minMax[1] += transform[5];
+  minMax[2] += transform[4];
+  minMax[3] += transform[5];
+}
+
 // This is computed rathter than hard-coded to keep into
 // account the platform's endianess.
 const EMPTY_BBOX = new Uint32Array(new Uint8Array([255, 255, 0, 0]).buffer)[0];
@@ -613,7 +663,7 @@ class CanvasDependencyTracker {
         computedBBox = [0, 0, 0, 0];
         Util.axialAlignedBoundingBox(fontBBox, font.fontMatrix, computedBBox);
         if (scale !== 1 || x !== 0 || y !== 0) {
-          Util.scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
+          scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
         }
 
         if (isBBoxTrustworthy) {
