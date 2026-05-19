@@ -994,10 +994,18 @@ async function startBrowser({
     // value gives Chrome a more similar execution speed as Firefox.
     options.slowMo = 3;
 
-    // avoid crash
-    options.args = ["--no-sandbox", "--disable-setuid-sandbox"];
-    // silent printing in a pdf
-    options.args.push("--kiosk-printing");
+    options.args = [
+      // Avoid crashing because no sandbox is shipped by default and we only run
+      // our own trusted content in the scope of the tests (for more information
+      // see https://pptr.dev/troubleshooting#setting-up-chrome-linux-sandbox).
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      // Print PDFs silently (without print preview or user interaction).
+      "--kiosk-printing",
+      // Disable hardware acceleration (fixes rendering issues, see #15168 and
+      // #21272, and environments like GitHub Actions don't expose GPUs anyway).
+      "--disable-gpu",
+    ];
   }
 
   if (browserName === "firefox") {
@@ -1016,12 +1024,13 @@ async function startBrowser({
       // Save file in output
       "browser.download.folderList": 2,
       "browser.download.dir": tempDir,
-      // Print silently in a pdf
+      // Print PDFs silently (without print preview or user interaction).
       "print.always_print_silent": true,
       print_printer: "PDF",
       "print.printer_PDF.print_to_file": true,
       "print.printer_PDF.print_to_filename": printFile,
-      // Disable gpu acceleration
+      // Disable hardware acceleration (fixes rendering issues, see #15168 and
+      // #21272, and environments like GitHub Actions don't expose GPUs anyway).
       "gfx.canvas.accelerated": false,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
