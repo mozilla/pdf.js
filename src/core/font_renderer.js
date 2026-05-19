@@ -163,6 +163,9 @@ function lookupCmap(ranges, unicode) {
 }
 
 function compileGlyf(code, cmds, font, visitedGlyphs = new Set()) {
+  if (!code?.length) {
+    return;
+  }
   if (visitedGlyphs.has(code)) {
     warn("compileGlyf: skipping recursive composite glyph reference.");
     return;
