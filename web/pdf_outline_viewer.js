@@ -155,7 +155,10 @@ class PDFOutlineViewer extends BaseTreeViewer {
         const content = await linkService.getAttachmentContent(attachmentId);
 
         if (content) {
-          this.downloadManager.openOrDownloadData(content, attachment.filename);
+          this.downloadManager?.openOrDownloadData(
+            content,
+            attachment.filename
+          );
         }
       };
 

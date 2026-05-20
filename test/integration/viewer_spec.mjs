@@ -1455,6 +1455,72 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Save/download disabled when supportsDownloading is false", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        null,
+        null,
+        { supportsDownloading: false }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must hide the download buttons and skip save/download", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector("#downloadButton", { hidden: true });
+          await waitAndClick(page, "#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryDownload", { hidden: true });
+
+          const triggered = await page.evaluate(async () => {
+            const app = window.PDFViewerApplication;
+            const calls = [];
+            const saveDocument = app.pdfDocument.saveDocument.bind(
+              app.pdfDocument
+            );
+            app.pdfDocument.saveDocument = (...args) => {
+              calls.push("saveDocument");
+              return saveDocument(...args);
+            };
+
+            // Each bail-out path dispatches a TESTING-only "downloadskipped"
+            // event, so we can deterministically wait for all four attempts to
+            // run to completion.
+            let skipped = 0;
+            const allSkipped = new Promise(resolve => {
+              app.eventBus.on("downloadskipped", function listener() {
+                if (++skipped === 4) {
+                  app.eventBus.off("downloadskipped", listener);
+                  resolve();
+                }
+              });
+            });
+
+            await app.download();
+            await app.save();
+            await app.downloadOrSave();
+            app.eventBus.dispatch("download", { source: null });
+            await allSkipped;
+
+            return { calls, skipped, downloadManager: app.downloadManager };
+          });
+          expect(triggered.downloadManager)
+            .withContext(`In ${browserName}`)
+            .toBeNull();
+          expect(triggered.calls).withContext(`In ${browserName}`).toEqual([]);
+          expect(triggered.skipped).withContext(`In ${browserName}`).toBe(4);
+        })
+      );
+    });
+  });
+
   describe("Pinch-zoom", () => {
     let pages;
 
