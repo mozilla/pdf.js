@@ -21,6 +21,7 @@ import {
   closePages,
   closeSinglePage,
   getSpanRectFromText,
+  kbSelectAll,
   loadAndWait,
   waitForEvent,
 } from "./test_utils.mjs";
@@ -1116,6 +1117,142 @@ describe("Text layer", () => {
         await expectAsync(page)
           .withContext(`third selection`)
           .toHaveRoughlySelected(/frequently .* We call such a s/s);
+      });
+    });
+
+    describe("with select-all (Ctrl+A)", () => {
+      /** @type {Array<[string, Page]>} */
+      let pages;
+
+      /**
+       * Return the set of page numbers that have a non-empty selection
+       * overlay path in their draw layer.
+       *
+       * @param {Page} page
+       * @returns {Promise<Array<number>>}
+       */
+      async function pagesWithDrawnSelection(page) {
+        return page.evaluate(() => {
+          const numbers = new Set();
+          for (const path of document.querySelectorAll(
+            ".page .canvasWrapper .selection svg path"
+          )) {
+            if (path.getAttribute("d")?.trim()) {
+              const n = path.closest(".page")?.dataset.pageNumber;
+              if (n) {
+                numbers.add(Number(n));
+              }
+            }
+          }
+          return [...numbers].sort((a, b) => a - b);
+        });
+      }
+
+      beforeEach(async () => {
+        pages = await loadAndWait(
+          "tracemonkey.pdf",
+          `.page[data-page-number = "1"] .endOfContent`
+        );
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      it("draws a selection overlay on currently-rendered pages", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            // Wait for at least two text layers to be rendered so the
+            // overlay can be expected on multiple pages. The number of
+            // pages rendered up-front at the default zoom can vary
+            // depending on the viewport size on CI.
+            await page.waitForFunction(
+              () =>
+                document.querySelectorAll(".textLayer .endOfContent").length >=
+                2
+            );
+
+            await waitForEvent({
+              page,
+              eventName: "selectionchange",
+              action: () => kbSelectAll(page),
+            });
+
+            expect(await hasDrawnSelection(page))
+              .withContext(`In ${browserName}`)
+              .toBeTrue();
+
+            // Several text layers are rendered at the default zoom and
+            // each one should now carry a selection overlay.
+            const drawn = await pagesWithDrawnSelection(page);
+            expect(drawn.length)
+              .withContext(
+                `In ${browserName}, pages with selection overlay: ` +
+                  `${drawn.join(",")}`
+              )
+              .toBeGreaterThan(1);
+            expect(drawn[0])
+              .withContext(`In ${browserName}, first selected page`)
+              .toBe(1);
+          })
+        );
+      });
+
+      it("extends the overlay onto pages rendered after scroll", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await waitForEvent({
+              page,
+              eventName: "selectionchange",
+              action: () => kbSelectAll(page),
+            });
+
+            const initial = await pagesWithDrawnSelection(page);
+            expect(initial.length)
+              .withContext(`In ${browserName}, initial pages with overlay`)
+              .toBeGreaterThan(0);
+
+            // Pick the first page that hasn't been rendered with a
+            // selection overlay yet, scroll to it, and verify the overlay
+            // gets drawn on it once its draw layer is parented.
+            const lastInitial = initial.at(-1);
+            const targetPage = lastInitial + 1;
+
+            await page.evaluate(n => {
+              const pageDiv = document.querySelector(
+                `.page[data-page-number="${n}"]`
+              );
+              pageDiv.scrollIntoView({ block: "center" });
+            }, targetPage);
+
+            await page.waitForSelector(
+              `.page[data-page-number="${targetPage}"] .textLayer .endOfContent`,
+              { timeout: 0 }
+            );
+
+            // After the new page is rendered, its draw layer becomes
+            // "live" (`setParent` is called) and the selection overlay
+            // must be extended onto it without requiring a new
+            // `selectionchange` event.
+            await page.waitForFunction(
+              n => {
+                const path = document.querySelector(
+                  `.page[data-page-number="${n}"] .canvasWrapper .selection svg path`
+                );
+                return !!path?.getAttribute("d")?.trim();
+              },
+              { timeout: 0 },
+              targetPage
+            );
+
+            const afterScroll = await pagesWithDrawnSelection(page);
+            expect(afterScroll)
+              .withContext(
+                `In ${browserName}, target page ${targetPage} has overlay`
+              )
+              .toContain(targetPage);
+          })
+        );
       });
     });
   });
