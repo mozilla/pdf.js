@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+/**
+ * @import { Page } from "puppeteer"
+ */
+
 import {
   closePages,
   closeSinglePage,
@@ -20,7 +24,28 @@ import {
   loadAndWait,
   waitForEvent,
 } from "./test_utils.mjs";
+import { MathClamp } from "../../src/shared/math_clamp.js";
 import { startBrowser } from "../test.mjs";
+
+/**
+ * @typedef Point
+ * @property {number} x
+ * @property {number} y
+ */
+
+/**
+ * @typedef Rect
+ * @property {number} x
+ * @property {number} y
+ * @property {number} width
+ * @property {number} height
+ */
+
+/**
+ * @typedef SpanInfo
+ * @property {Rect} rect
+ * @property {string} text
+ */
 
 describe("Text layer", () => {
   describe("Text selection", () => {
@@ -59,6 +84,144 @@ describe("Text layer", () => {
       };
     }
 
+    /**
+     * Pick a point outside the page while remaining inside the viewer.
+     *
+     * @param {Rect} page
+     *   Page rectangle.
+     * @param {Rect} viewer
+     *   Viewer rectangle.
+     * @param {number} preferredY
+     *   Preferred Y coordinate for the pointer target, to avoid unnecessarily
+     *   moving the pointer too far.
+     * @returns {Point}
+     *   Point outside the page bounds but inside the viewer.
+     */
+    function getOutsidePagePosition(page, viewer, preferredY) {
+      // The pointer target must remain inside the visible viewer area;
+      // otherwise Firefox can fail with an out-of-bounds move.
+      const minX = Math.ceil(viewer.x) + 5;
+      const maxX = Math.floor(viewer.x + viewer.width) - 5;
+      const minY = Math.ceil(viewer.y) + 5;
+      const maxY = Math.floor(viewer.y + viewer.height) - 5;
+      const y = MathClamp(minY, Math.round(preferredY), maxY);
+
+      const candidates = [
+        { x: Math.round(page.x + page.width + 20), y },
+        // Prefer below over left: going left retraces through existing text
+        // and shrinks the selection before exiting the page boundary.
+        {
+          x: Math.round(page.x + page.width / 2),
+          y: Math.round(page.y + page.height + 20),
+        },
+        { x: Math.round(page.x - 20), y },
+        {
+          x: Math.round(page.x + page.width / 2),
+          y: Math.round(page.y - 20),
+        },
+      ];
+
+      for (const candidate of candidates) {
+        if (
+          candidate.x >= minX &&
+          candidate.x <= maxX &&
+          candidate.y >= minY &&
+          candidate.y <= maxY
+        ) {
+          return candidate;
+        }
+      }
+
+      // Fallback: still return a safe in-view point if preferred directions
+      // are clipped by the viewport at this scroll position.
+      return { x: maxX, y };
+    }
+
+    /**
+     * Get current selection.
+     *
+     * @param {Page} page
+     * @returns {Promise<string>}
+     */
+    async function getSelectionText(page) {
+      return page.evaluate(
+        () => window.getSelection()?.toString().replaceAll("\r\n", "\n") || ""
+      );
+    }
+
+    /**
+     * Check if the draw layer contains a non-empty selection.
+     *
+     * @param {Page} page
+     * @returns {Promise<boolean>}
+     */
+    async function hasDrawnSelection(page) {
+      return page.evaluate(() => {
+        // If there is no selection, the `div.selection` is removed.
+        for (const path of document.querySelectorAll(
+          ".canvasWrapper .selection svg path"
+        )) {
+          if (path.getAttribute("d")?.trim()) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
+
+    /**
+     * Get the first non-empty text span on a page.
+     *
+     * @param {Page} page
+     * @param {number} pageNumber
+     * @returns {Promise<SpanInfo | null>}
+     */
+    async function getFirstSpanInfo(page, pageNumber) {
+      await page.waitForSelector(
+        `.page[data-page-number="${pageNumber}"] > .textLayer .endOfContent`
+      );
+      return page.evaluate(number => {
+        for (const el of document.querySelectorAll(
+          `.page[data-page-number="${number}"] > .textLayer span:not(:has(> span))`
+        )) {
+          const text = el.textContent?.trim();
+          if (!text) {
+            continue;
+          }
+          const { x, y, width, height } = el.getBoundingClientRect();
+          return { rect: { x, y, width, height }, text };
+        }
+        return null;
+      }, pageNumber);
+    }
+
+    /**
+     * Get the last non-empty text span on a page.
+     *
+     * @param {Page} page
+     * @param {number} pageNumber
+     * @returns {Promise<SpanInfo | null>}
+     */
+    async function getLastSpanInfo(page, pageNumber) {
+      await page.waitForSelector(
+        `.page[data-page-number="${pageNumber}"] > .textLayer .endOfContent`
+      );
+      return page.evaluate(number => {
+        let last = null;
+        for (const el of document.querySelectorAll(
+          `.page[data-page-number="${number}"] > .textLayer span:not(:has(> span))`
+        )) {
+          const text = el.textContent?.trim();
+          if (!text) {
+            continue;
+          }
+          const { x, y, width, height } = el.getBoundingClientRect();
+          last = { rect: { x, y, width, height }, text };
+        }
+        return last;
+      }, pageNumber);
+    }
+
     beforeEach(() => {
       jasmine.addAsyncMatchers({
         // Check that a page has a selection containing the given text, with
@@ -67,11 +230,7 @@ describe("Text layer", () => {
           return {
             async compare(page, expected) {
               const TOLERANCE = 10;
-
-              const actual = await page.evaluate(() =>
-                // We need to normalize EOL for Windows
-                window.getSelection().toString().replaceAll("\r\n", "\n")
-              );
+              const actual = await getSelectionText(page);
 
               let start, end;
               if (expected instanceof RegExp) {
@@ -108,6 +267,275 @@ describe("Text layer", () => {
     });
 
     describe("using mouse", () => {
+      describe("selection is preserved when dragging outside page bounds", () => {
+        /** @type {Array<[string, Page]>} */
+        let pages;
+
+        beforeEach(async () => {
+          pages = await loadAndWait(
+            "tracemonkey.pdf",
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            (_page, browserName) => ({
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
+          );
+        });
+
+        afterEach(async () => {
+          await closePages(pages);
+        });
+
+        it("keeps selection when dragging to another page and then outside", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const scrollTarget = await getSpanRectFromText(
+                page,
+                1,
+                "Unlike method-based dynamic compilers, our dynamic com-"
+              );
+              await page.evaluate(top => {
+                document.getElementById("viewerContainer").scrollTop = top;
+              }, scrollTarget.y - 50);
+
+              const [
+                positionStartPage1,
+                positionStartPage2,
+                positionEndPage2,
+                page2Rect,
+                viewerRect,
+              ] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "Each compiled trace covers one path through the program with"
+                ).then(middlePosition),
+                getSpanRectFromText(
+                  page,
+                  2,
+                  "Hence, recording and compiling a trace"
+                ).then(middlePosition),
+                getSpanRectFromText(
+                  page,
+                  2,
+                  "cache. Alternatively, the VM could simply stop tracing, and give up"
+                ).then(belowEndPosition),
+                page.$eval('.page[data-page-number="2"]', div => {
+                  const { x, y, width, height } = div.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+                page.$eval("#viewerContainer", div => {
+                  const { x, y, width, height } = div.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+              ]);
+
+              const outsidePage2 = getOutsidePagePosition(
+                page2Rect,
+                viewerRect,
+                positionEndPage2.y
+              );
+
+              await page.mouse.move(positionStartPage1.x, positionStartPage1.y);
+              await page.mouse.down();
+              // First cross into page 2 while still in-bounds so we can verify
+              // the multi-page selection is established before exiting page 2.
+              await moveInSteps(
+                page,
+                positionStartPage1,
+                positionStartPage2,
+                20
+              );
+
+              const selectionBeforeOutside = await getSelectionText(page);
+              expect(selectionBeforeOutside)
+                .withContext(`In ${browserName}, before leaving page 2`)
+                .toMatch(/path through.*Hence, recording/s);
+
+              await moveInSteps(page, positionStartPage2, positionEndPage2, 20);
+              const selectionInsidePage2 = await getSelectionText(page);
+              expect(selectionInsidePage2)
+                .withContext(`In ${browserName}, while still on page 2`)
+                .toMatch(/path through.*Hence, recording and .* tracing/s);
+
+              await moveInSteps(page, positionEndPage2, outsidePage2, 20);
+
+              await page.mouse.up();
+
+              expect(await hasDrawnSelection(page))
+                .withContext(
+                  `In ${browserName}, selection drawn while outside page`
+                )
+                .toBeTrue();
+
+              const selectedText = await getSelectionText(page);
+              expect(selectedText.length)
+                .withContext(
+                  `In ${browserName}, selection not lost after mouseup`
+                )
+                .toBeGreaterThan(10);
+            })
+          );
+        });
+
+        it("keeps selection when dragging outside the current page", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [positionStart, page1Rect, viewerRect] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "(frequently executed) bytecode sequences, records"
+                ).then(middlePosition),
+                page.$eval('.page[data-page-number="1"]', div => {
+                  const { x, y, width, height } = div.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+                page.$eval("#viewerContainer", div => {
+                  const { x, y, width, height } = div.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+              ]);
+
+              const outsidePage1 = getOutsidePagePosition(
+                page1Rect,
+                viewerRect,
+                positionStart.y
+              );
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              await moveInSteps(page, positionStart, outsidePage1, 20);
+
+              await page.mouse.up();
+
+              expect(await hasDrawnSelection(page))
+                .withContext(
+                  `In ${browserName}, selection drawn while outside page`
+                )
+                .toBeTrue();
+
+              const selectedText = await getSelectionText(page);
+              expect(selectedText.length)
+                .withContext(`In ${browserName}`)
+                .toBeGreaterThan(5);
+            })
+          );
+        });
+      });
+
+      describe("selection with tagged PDFs", () => {
+        /** @type {Array<[string, Page]>} */
+        let pages;
+
+        beforeEach(async () => {
+          pages = await loadAndWait(
+            "structure_simple.pdf",
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            (_page, browserName) => ({
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
+          );
+        });
+
+        afterEach(async () => {
+          await closePages(pages);
+        });
+
+        it("keeps selection when dragging outside the page", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [firstSpanInfo, pageRect, viewerRect] = await Promise.all([
+                getFirstSpanInfo(page, 1),
+                page.$eval('.page[data-page-number="1"]', div => {
+                  const { x, y, width, height } = div.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+                page.$eval("#viewerContainer", div => {
+                  const { x, y, width, height } = div.getBoundingClientRect();
+                  return { x, y, width, height };
+                }),
+              ]);
+
+              expect(firstSpanInfo)
+                .withContext(`In ${browserName}`)
+                .not.toBeNull();
+
+              const positionStart = middlePosition(firstSpanInfo.rect);
+              const outsidePage = getOutsidePagePosition(
+                pageRect,
+                viewerRect,
+                positionStart.y
+              );
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              await moveInSteps(page, positionStart, outsidePage, 20);
+
+              await page.mouse.up();
+
+              expect(await hasDrawnSelection(page))
+                .withContext(
+                  `In ${browserName}, selection drawn while outside page`
+                )
+                .toBeTrue();
+
+              const selectedText = await getSelectionText(page);
+              expect(selectedText.length)
+                .withContext(`In ${browserName}`)
+                .toBeGreaterThan(0);
+              expect(selectedText)
+                .withContext(`In ${browserName}`)
+                .toContain(firstSpanInfo.text.slice(0, 1));
+            })
+          );
+        });
+
+        it("doesn't jump when hovering on an empty area", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [firstSpanInfo, lastSpanInfo] = await Promise.all([
+                getFirstSpanInfo(page, 1),
+                getLastSpanInfo(page, 1),
+              ]);
+
+              expect(firstSpanInfo)
+                .withContext(`In ${browserName}, first span`)
+                .not.toBeNull();
+              expect(lastSpanInfo)
+                .withContext(`In ${browserName}, last span`)
+                .not.toBeNull();
+
+              const positionStart = middlePosition(firstSpanInfo.rect);
+              const positionEnd = belowEndPosition(lastSpanInfo.rect);
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              // Drag from the first to the last text run to pass through the
+              // tagged content and end in the empty area below the text.
+              await moveInSteps(page, positionStart, positionEnd, 20);
+
+              await page.mouse.up();
+
+              expect(await hasDrawnSelection(page))
+                .withContext(`In ${browserName}, selection drawn in tagged PDF`)
+                .toBeTrue();
+
+              await expectAsync(page)
+                .withContext(`In ${browserName}`)
+                // Selection starts mid-word in Heading 1, so assert the stable
+                // trailing content rather than exact full-line boundaries.
+                .toHaveRoughlySelected(
+                  /ing 1\s+This paragraph 1\.\s+Heading 2\s+This paragraph 2/s
+                );
+            })
+          );
+        });
+      });
+
       describe("doesn't jump when hovering on an empty area", () => {
         let pages;
 
@@ -273,7 +701,7 @@ describe("Text layer", () => {
                 .withContext(`In ${browserName}`)
                 .toHaveRoughlySelected(
                   "rs as the railway projects under\n" +
-                    "development enter the construction phase (estimated at "
+                    "development enter the construction phase (estimated at"
                 );
             })
           );
@@ -519,9 +947,7 @@ describe("Text layer", () => {
               );
               await page.mouse.up();
 
-              const selection = await page.evaluate(() =>
-                window.getSelection().toString()
-              );
+              const selection = await getSelectionText(page);
               expect(selection).withContext(`In ${browserName}`).toEqual("AB");
 
               // The selectionchange handler in TextLayerBuilder walks up
@@ -537,6 +963,65 @@ describe("Text layer", () => {
               expect(endOfContentIsDirectChild)
                 .withContext(`In ${browserName}`)
                 .toBeTrue();
+            })
+          );
+        });
+      });
+
+      describe("with `enableSelectionRendering` disabled", () => {
+        /** @type {Array<[string, Page]>} */
+        let pages;
+
+        beforeEach(async () => {
+          pages = await loadAndWait(
+            "tracemonkey.pdf",
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            (_page, browserName) => ({
+              enableSelectionRendering: false,
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
+          );
+        });
+
+        afterEach(async () => {
+          await closePages(pages);
+        });
+
+        it("does not render a selection overlay in the draw layer", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [positionStart, positionEnd] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "(frequently executed) bytecode sequences, records"
+                ).then(middlePosition),
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "them, and compiles them to fast native code. We call such a se-"
+                ).then(belowEndPosition),
+              ]);
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              await moveInSteps(page, positionStart, positionEnd, 20);
+              await page.mouse.up();
+
+              // Text should still be selectable.
+              const selectedText = await getSelectionText(page);
+              expect(selectedText.length)
+                .withContext(`In ${browserName}, text is still selectable`)
+                .toBeGreaterThan(0);
+
+              // But no selection overlay should appear in the draw layer.
+              expect(await hasDrawnSelection(page))
+                .withContext(
+                  `In ${browserName}, no selection drawn when disabled`
+                )
+                .toBeFalse();
             })
           );
         });

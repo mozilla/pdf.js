@@ -376,6 +376,7 @@ const PDFViewerApplication = {
         enableNewBadge: x => x === "true",
         enablePermissions: x => x === "true",
         enableMerge: x => x === "true",
+        enableSelectionRendering: x => x === "true",
         enableSplitMerge: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
         highlightEditorColors: x => x,
@@ -578,6 +579,7 @@ const PDFViewerApplication = {
       enableOptimizedPartialRendering: AppOptions.get(
         "enableOptimizedPartialRendering"
       ),
+      enableSelectionRendering: AppOptions.get("enableSelectionRendering"),
       imagesRightClickMinSize: AppOptions.get("imagesRightClickMinSize"),
       pageColors,
       mlManager,

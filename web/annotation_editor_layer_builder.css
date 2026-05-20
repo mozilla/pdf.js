@@ -285,6 +285,7 @@
     pointer-events: auto;
     box-sizing: content-box;
     padding: var(--editor-toolbar-padding);
+    user-select: none;
 
     position: absolute;
     inset-inline-end: 0;
