@@ -14267,5 +14267,12 @@
     "md5": "b68dd5a3e6833d1af94e295fe1d60285",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue18548_reduced",
+    "file": "pdfs/issue18548_reduced.pdf",
+    "md5": "39d15f7f810bd89a4e5858df9c75ca4e",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

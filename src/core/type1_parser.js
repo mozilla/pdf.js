@@ -566,6 +566,13 @@ class Type1Parser {
       },
     };
     let token, length, data, lenIV;
+    // Some fonts (e.g. those embedded in issue18548.pdf) define a second
+    // `/Subrs` and `/CharStrings` block that the PostScript runtime selects
+    // conditionally (e.g. high-resolution variants). Testing with other
+    // viewers shows that none of them actually use these conditional blocks,
+    // so we can "safely" ignore them.
+    let subrsParsed = false;
+    let charStringsParsed = false;
     while ((token = this.getToken()) !== null) {
       if (token !== "/") {
         continue;
@@ -573,6 +580,10 @@ class Type1Parser {
       token = this.getToken();
       switch (token) {
         case "CharStrings":
+          if (charStringsParsed) {
+            break;
+          }
+          charStringsParsed = true;
           // The number immediately following CharStrings must be greater or
           // equal to the number of CharStrings.
           this.getToken();
@@ -610,6 +621,10 @@ class Type1Parser {
           }
           break;
         case "Subrs":
+          if (subrsParsed) {
+            break;
+          }
+          subrsParsed = true;
           this.readInt(); // num
           this.getToken(); // read in 'array'
           while (this.getToken() === "dup") {
