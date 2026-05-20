@@ -44,6 +44,7 @@ async function runTests(results) {
       "signature_editor_spec.mjs",
       "simple_viewer_spec.mjs",
       "stamp_editor_spec.mjs",
+      "text_extractor_spec.mjs",
       "text_field_spec.mjs",
       "text_layer_spec.mjs",
       "text_layer_images_spec.mjs",
