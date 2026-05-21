@@ -40,9 +40,26 @@ import {
   waitForTextToBe,
   waitForTooltipToBe,
 } from "./test_utils.mjs";
+import fs from "fs";
 import path from "path";
 
 const __dirname = import.meta.dirname;
+
+async function createPDFDataTransfer(page, filename) {
+  const pdfPath = path.join(__dirname, "../pdfs", filename);
+  const pdfData = fs.readFileSync(pdfPath).toString("base64");
+  return page.evaluateHandle(
+    (data, name) => {
+      const transfer = new DataTransfer();
+      const view = Uint8Array.fromBase64(data);
+      const file = new File([view], name, { type: "application/pdf" });
+      transfer.items.add(file);
+      return transfer;
+    },
+    pdfData,
+    filename
+  );
+}
 
 async function waitForThumbnailVisible(page, pageNums) {
   await showViewsManager(page);
@@ -3222,6 +3239,138 @@ describe("Reorganize Pages View", () => {
           // Focus must move to the first newly inserted page (page 2).
           await page.waitForFunction(
             () => window.PDFViewerApplication.page === 2
+          );
+        })
+      );
+    });
+  });
+
+  describe("Drag-and-drop PDF merge", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "three_pages_with_number.pdf",
+        '.page[data-page-number = "1"] .endOfContent',
+        "1",
+        null,
+        { enableSplitMerge: true, enableMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should show the marker and merge before the first thumbnail", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, [1, 2, 3]);
+
+          const dataTransfer = await createPDFDataTransfer(
+            page,
+            "three_pages_with_number.pdf"
+          );
+          const markerInfo = await page.evaluate(
+            (transfer, selector) => {
+              const container = document.getElementById("thumbnailsView");
+              const target = document.querySelector(selector);
+              const { left, top, width, height } =
+                target.getBoundingClientRect();
+              const clientX = left + width / 4;
+              const clientY = top + height / 4;
+              const dispatchDragEvent = type => {
+                target.dispatchEvent(
+                  new DragEvent(type, {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX,
+                    clientY,
+                    dataTransfer: transfer,
+                  })
+                );
+              };
+
+              dispatchDragEvent("dragenter");
+              dispatchDragEvent("dragover");
+
+              const marker = container.querySelector(":scope > .dragMarker");
+              const { width: markerWidth = 0, height: markerHeight = 0 } =
+                marker?.getBoundingClientRect() ?? {};
+              const translate = marker?.style.translate ?? "";
+              const filesLength = transfer.files.length;
+
+              dispatchDragEvent("dragleave");
+              const survivedDragLeave = !!container.querySelector(
+                ":scope > .dragMarker"
+              );
+
+              return {
+                markerHeight,
+                markerWidth,
+                filesLength,
+                survivedDragLeave,
+                translate,
+              };
+            },
+            dataTransfer,
+            getThumbnailSelector(1)
+          );
+
+          expect(markerInfo.markerWidth + markerInfo.markerHeight)
+            .withContext(`In ${browserName}, marker dimensions`)
+            .toBeGreaterThan(0);
+          expect(markerInfo.filesLength)
+            .withContext(`In ${browserName}, dropped files`)
+            .toBe(1);
+          expect(markerInfo.translate.includes("NaN"))
+            .withContext(`In ${browserName}, marker position`)
+            .toBeFalse();
+          expect(markerInfo.survivedDragLeave)
+            .withContext(`In ${browserName}, marker after child dragleave`)
+            .toBeTrue();
+
+          const handleMerged = await createPromise(page, resolve => {
+            const listener = ({ pagesCount }) => {
+              if (pagesCount !== 6) {
+                return;
+              }
+              window.PDFViewerApplication.eventBus.off("pagesloaded", listener);
+              resolve();
+            };
+            window.PDFViewerApplication.eventBus.on("pagesloaded", listener);
+          });
+          await page.evaluate(
+            (transfer, selector) => {
+              const target = document.querySelector(selector);
+              const { left, top, width, height } =
+                target.getBoundingClientRect();
+              target.dispatchEvent(
+                new DragEvent("drop", {
+                  bubbles: true,
+                  cancelable: true,
+                  clientX: left + width / 4,
+                  clientY: top + height / 4,
+                  dataTransfer: transfer,
+                })
+              );
+            },
+            dataTransfer,
+            getThumbnailSelector(1)
+          );
+          await awaitPromise(handleMerged);
+
+          await page.waitForFunction(
+            () => parseInt(document.getElementById("pageNumber").max, 10) === 6
+          );
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 1
+          );
+          await waitForHavingContents(page, [1, 2, 3, 1, 2, 3]);
+          await waitForTextToBe(
+            page,
+            "#viewsManagerStatusActionLabel",
+            `${FSI}3${PDI} selected`
           );
         })
       );

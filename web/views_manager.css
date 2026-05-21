@@ -632,14 +632,15 @@
             pointer-events: none;
           }
         }
+      }
 
-        > .dragMarker {
-          position: absolute;
-          top: 0;
-          left: 0;
-          border: 2px solid var(--indicator-color);
-          contain: strict;
-        }
+      &.isDragging > .dragMarker,
+      &.isDraggingFile > .dragMarker {
+        position: absolute;
+        top: 0;
+        left: 0;
+        border: 2px solid var(--indicator-color);
+        contain: strict;
       }
 
       &.pasteMode {
