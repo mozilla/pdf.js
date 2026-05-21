@@ -46,6 +46,7 @@ async function initializePDFJS(callback) {
   await Promise.all(
     [
       "pdfjs-test/font/font_core_spec.js",
+      "pdfjs-test/font/font_glyf_spec.js",
       "pdfjs-test/font/font_os2_spec.js",
       "pdfjs-test/font/font_post_spec.js",
       "pdfjs-test/font/font_fpgm_spec.js",
