@@ -39,6 +39,19 @@ class Preferences extends BasePreferences {
 }
 
 class ExternalServices extends BaseExternalServices {
+  constructor() {
+    super();
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      // For testing purposes.
+      Object.defineProperty(this, "reportText", {
+        value: data => {
+          window._reportTextData = data;
+        },
+      });
+    }
+  }
+
   async createL10n() {
     return new GenericL10n(AppOptions.get("localeProperties")?.lang);
   }
