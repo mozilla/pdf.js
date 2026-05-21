@@ -154,6 +154,90 @@ describe("CFFParser", function () {
     expect(properties.ascentScaled).toEqual(true);
   });
 
+  it("repairs a FontBBox with unsigned-encoded negative coordinates", function () {
+    // [-456, -305, 2158, 989] encoded as unsigned 16-bit values; produced
+    // by some Ghostscript-generated CFF fonts.
+    cff.topDict.setByName("FontBBox", [65080, 65231, 2158, 989]);
+    const fontDataRepaired = new CFFCompiler(cff).compile();
+
+    const properties = {
+      bbox: [-456, -305, 2158, 989],
+    };
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataRepaired),
+      properties,
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.getByName("FontBBox")).toEqual([
+      -456, -305, 2158, 989,
+    ]);
+    expect(properties.ascent).toEqual(989);
+    expect(properties.descent).toEqual(-305);
+    expect(properties.ascentScaled).toEqual(true);
+  });
+
+  it("doesn't replace a repairable FontBBox with an empty descriptor bbox", function () {
+    cff.topDict.setByName("FontBBox", [65080, 65231, 2158, 989]);
+    const fontDataRepaired = new CFFCompiler(cff).compile();
+
+    const properties = {
+      bbox: [0, 0, 0, 0],
+    };
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataRepaired),
+      properties,
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.getByName("FontBBox")).toEqual([
+      -456, -305, 2158, 989,
+    ]);
+    expect(properties.ascent).toEqual(989);
+    expect(properties.descent).toEqual(-305);
+    expect(properties.ascentScaled).toEqual(true);
+  });
+
+  it("repairs unsigned-encoded negative FontBBox without descriptor data", function () {
+    cff.topDict.setByName("FontBBox", [65080, 65231, 2158, 989]);
+    const fontDataRepaired = new CFFCompiler(cff).compile();
+
+    const properties = {};
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataRepaired),
+      properties,
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.getByName("FontBBox")).toEqual([
+      -456, -305, 2158, 989,
+    ]);
+    expect(properties.ascent).toEqual(989);
+    expect(properties.descent).toEqual(-305);
+    expect(properties.ascentScaled).toEqual(true);
+  });
+
+  it("preserves large positive upper FontBBox coordinates", function () {
+    cff.topDict.setByName("FontBBox", [0, -305, 40000, 989]);
+    const fontDataRepaired = new CFFCompiler(cff).compile();
+
+    const properties = {
+      bbox: [0, -305, 40000, 989],
+    };
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataRepaired),
+      properties,
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.getByName("FontBBox")).toEqual([
+      0, -305, 40000, 989,
+    ]);
+    expect(properties.ascent).toEqual(989);
+    expect(properties.descent).toEqual(-305);
+    expect(properties.ascentScaled).toEqual(true);
+  });
+
   it("repairs likely Ghostscript-zeroed FDArray private defaults", function () {
     cff.isCIDFont = true;
     cff.topDict.setByName("ROS", [0, 0, 0]);
