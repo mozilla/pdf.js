@@ -151,6 +151,9 @@ describe("display_utils", function () {
       expect(getPdfFilenameFromUrl("/pdfs/%AA.pdf")).toEqual("%AA.pdf");
 
       expect(getPdfFilenameFromUrl("/pdfs/%2F.pdf")).toEqual("%2F.pdf");
+
+      // A corrupt relative URL.
+      expect(getPdfFilenameFromUrl("//%%file.pdf")).toEqual("document.pdf");
     });
 
     it("gets PDF filename from (some) standard protocols", function () {
