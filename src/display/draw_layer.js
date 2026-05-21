@@ -203,6 +203,9 @@ class DrawLayer {
   /** @type {Object | null} */
   #pageColors = null;
 
+  /** @type {MutationObserver | null} */
+  #textLayerObserver = null;
+
   #toUpdate = new Map();
 
   static #id = 0;
@@ -248,6 +251,28 @@ class DrawLayer {
       DrawLayer.#textLayers.set(textLayer, { drawLayer: this });
       DrawLayer.#textLayerSet.add(textLayer);
       this.#textLayer = textLayer;
+      this.#textLayerObserver = new MutationObserver(records => {
+        if (
+          !this.#parent ||
+          !this.#textLayer?.isConnected ||
+          !DrawLayer.#hasSelection()
+        ) {
+          return;
+        }
+        for (const { addedNodes } of records) {
+          for (const node of addedNodes) {
+            if (
+              node.nodeType === Node.ELEMENT_NODE &&
+              node.classList.contains("endOfContent")
+            ) {
+              DrawLayer.#selectionChange();
+              return;
+            }
+          }
+        }
+      });
+      this.#textLayerObserver.observe(textLayer, { childList: true });
+
       if (DrawLayer.#selectionChangeAC === null) {
         DrawLayer.#selectionChangeAC = new AbortController();
         const { signal } = DrawLayer.#selectionChangeAC;
@@ -288,6 +313,12 @@ class DrawLayer {
   setParent(parent) {
     if (!this.#parent) {
       this.#parent = parent;
+      // A new text layer just became live (e.g. its page was scrolled into
+      // view). If a selection already exists, redraw overlays so that the
+      // selection extends into this newly-rendered text layer.
+      if (this.#textLayer?.isConnected && DrawLayer.#hasSelection()) {
+        DrawLayer.#selectionChange();
+      }
       return;
     }
 
@@ -322,6 +353,25 @@ class DrawLayer {
   }
 
   /**
+   * @returns {boolean}
+   *   Whether there is a non-collapsed document selection.
+   */
+  static #hasSelection() {
+    const selection = document.getSelection();
+    return !!selection && !selection.isCollapsed;
+  }
+
+  /**
+   * @returns {Array<Element>}
+   *   Connected text layers sorted in document order.
+   */
+  static #getOrderedTextLayers() {
+    return [...this.#textLayerSet]
+      .filter(textLayer => textLayer.isConnected)
+      .sort(compareTextLayers);
+  }
+
+  /**
    * Handle `selectionchange` to update the selection display for text layers.
    * We want to display the selection in a separate layer on top of the text
    * layer because the text layer has `mix-blend-mode: multiply` and we want
@@ -341,6 +391,7 @@ class DrawLayer {
     }
     /** @type {WeakMap<Node, SelectionRotator>} */
     const rotators = new WeakMap();
+    const orderedTextLayers = this.#getOrderedTextLayers();
     /** @type {Array<[Range, Element]>} */
     const ranges = [];
     for (let i = 0, ii = selection.rangeCount; i < ii; i++) {
@@ -390,10 +441,30 @@ class DrawLayer {
         }
       }
 
-      if (!startTextLayer || !endTextLayer) {
-        // Any remaining partial/outside range can be ignored.
+      const activeTextLayers = orderedTextLayers.filter(textLayer =>
+        range.intersectsNode(textLayer)
+      );
+      if (activeTextLayers.length === 0) {
         continue;
       }
+
+      // If a boundary is outside any text layer, use the selected live text
+      // layers as the range edges. This handles Select All, whose DOM range can
+      // span ancestors of the text layers.
+      let boundarySubstituted = false;
+      if (!startTextLayer) {
+        startTextLayer = activeTextLayers[0];
+        startContainer = startTextLayer;
+        startOffset = 0;
+        boundarySubstituted = true;
+      }
+      if (!endTextLayer) {
+        endTextLayer = activeTextLayers.at(-1);
+        endContainer = endTextLayer;
+        endOffset = endTextLayer.childNodes.length;
+        boundarySubstituted = true;
+      }
+
       if (endContainer.nodeType === Node.ELEMENT_NODE) {
         if (endContainer.classList.contains("endOfContent")) {
           const previousNode = endContainer.previousSibling;
@@ -435,37 +506,13 @@ class DrawLayer {
         startOffset = normalizedStart.offset;
       }
 
-      if (startTextLayer === endTextLayer) {
+      if (
+        startTextLayer === endTextLayer &&
+        !boundarySubstituted &&
+        activeTextLayers.includes(startTextLayer)
+      ) {
         ranges.push([range, startTextLayer]);
         continue;
-      }
-
-      /** @type {Array<Element>} */
-      let activeTextLayers = [];
-      const orderedTextLayers = [...this.#textLayerSet].sort(compareTextLayers);
-      const startIndex = orderedTextLayers.indexOf(startTextLayer);
-      const endIndex = orderedTextLayers.indexOf(endTextLayer);
-
-      if (startIndex !== -1 && endIndex !== -1) {
-        const [minIndex, maxIndex] =
-          startIndex < endIndex
-            ? [startIndex, endIndex]
-            : [endIndex, startIndex];
-        activeTextLayers = orderedTextLayers.slice(minIndex, maxIndex + 1);
-      } else {
-        // Fallback if a layer is no longer tracked for any reason.
-        for (const textLayer of this.#textLayerSet) {
-          if (range.intersectsNode(textLayer)) {
-            activeTextLayers.push(textLayer);
-          }
-        }
-        if (!activeTextLayers.includes(startTextLayer)) {
-          activeTextLayers.push(startTextLayer);
-        }
-        if (!activeTextLayers.includes(endTextLayer)) {
-          activeTextLayers.push(endTextLayer);
-        }
-        activeTextLayers.sort(compareTextLayers);
       }
 
       for (const textLayer of activeTextLayers) {
@@ -793,6 +840,8 @@ class DrawLayer {
     }
     this.#mapping.clear();
     this.#toUpdate.clear();
+    this.#textLayerObserver?.disconnect();
+    this.#textLayerObserver = null;
     if (this.#textLayer) {
       const data = DrawLayer.#textLayers.get(this.#textLayer);
       if (data?.drawLayer === this) {
