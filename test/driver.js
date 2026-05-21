@@ -242,7 +242,8 @@ class Rasterize {
     fieldObjects,
     page,
     imageResourcesPath,
-    renderForms = false
+    renderForms = false,
+    optionalContentConfigPromise = null
   ) {
     try {
       const { svg, foreignObject, style, div } = this.createContainer(viewport);
@@ -263,6 +264,7 @@ class Rasterize {
         imageResourcesPath,
         renderForms,
         fieldObjects,
+        optionalContentConfig: await optionalContentConfigPromise,
       };
 
       // Ensure that the annotationLayer gets translated.
@@ -1355,7 +1357,8 @@ class Driver {
                     task.fieldObjects,
                     page,
                     IMAGE_RESOURCES_PATH,
-                    renderForms
+                    renderForms,
+                    task.optionalContentConfigPromise
                   ).then(() => {
                     completeRender(false);
                   });

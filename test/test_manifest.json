@@ -1957,6 +1957,42 @@
     "type": "eq"
   },
   {
+    "id": "issue20433-initial",
+    "file": "pdfs/issue20433.pdf",
+    "md5": "3a550da7807540982ed457397667db79",
+    "link": true,
+    "rounds": 1,
+    "firstPage": 2,
+    "type": "eq",
+    "forms": true
+  },
+  {
+    "id": "issue20433-no-form",
+    "file": "pdfs/issue20433.pdf",
+    "md5": "3a550da7807540982ed457397667db79",
+    "link": true,
+    "rounds": 1,
+    "firstPage": 2,
+    "type": "eq",
+    "forms": true,
+    "optionalContent": {
+      "73R": false
+    }
+  },
+  {
+    "id": "issue20433-no-mathml",
+    "file": "pdfs/issue20433.pdf",
+    "md5": "3a550da7807540982ed457397667db79",
+    "link": true,
+    "rounds": 1,
+    "firstPage": 2,
+    "type": "eq",
+    "forms": true,
+    "optionalContent": {
+      "115R": false
+    }
+  },
+  {
     "id": "issue13845",
     "file": "pdfs/issue13845.pdf",
     "md5": "7c6b675f61ae68a2e416f4aa26da567c",
