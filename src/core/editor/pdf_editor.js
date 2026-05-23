@@ -87,24 +87,27 @@ class XRefWrapper {
     this._getNewRef = getNewRef;
   }
 
-  fetch(ref) {
-    return ref instanceof Ref ? this.entries[ref.num] : ref;
-  }
-
-  fetchIfRefAsync(ref) {
-    return Promise.resolve(this.fetch(ref));
-  }
-
-  fetchIfRef(ref) {
-    return this.fetch(ref);
-  }
-
-  fetchAsync(ref) {
-    return Promise.resolve(this.fetch(ref));
-  }
-
   getNewTemporaryRef() {
     return this._getNewRef();
+  }
+
+  fetchIfRef(obj) {
+    return obj instanceof Ref ? this.fetch(obj) : obj;
+  }
+
+  fetch(ref) {
+    if (!(ref instanceof Ref)) {
+      throw new Error("ref object is not a reference");
+    }
+    return this.entries[ref.num];
+  }
+
+  async fetchIfRefAsync(obj) {
+    return obj instanceof Ref ? this.fetchAsync(obj) : obj;
+  }
+
+  async fetchAsync(ref) {
+    return this.fetch(ref);
   }
 }
 
@@ -193,8 +196,7 @@ class PDFEditor {
    * @returns {Ref}
    */
   get newRef() {
-    const ref = Ref.get(this.newRefCount++, 0);
-    return ref;
+    return Ref.get(this.newRefCount++, 0);
   }
 
   /**
@@ -518,9 +520,9 @@ class PDFEditor {
         attributes = [attributes];
       }
       for (let attr of attributes) {
-        attr = this.xrefWrapper.fetch(attr);
+        attr = this.xrefWrapper.fetchIfRef(attr);
         if (isName(attr.get("O"), "Table") && attr.has("Headers")) {
-          const headers = this.xrefWrapper.fetch(attr.getRaw("Headers"));
+          const headers = this.xrefWrapper.fetchIfRef(attr.getRaw("Headers"));
           if (Array.isArray(headers)) {
             for (let i = 0, ii = headers.length; i < ii; i++) {
               const newId = dedupIDs.get(
