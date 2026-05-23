@@ -4728,7 +4728,35 @@ class PartialEvaluator {
     const newProperties = await this.extractDataStructures(dict, properties);
     this.extractWidths(dict, descriptor, newProperties);
 
-    return new Font(fontName.name, fontFile, newProperties, this.options);
+    const font = new Font(fontName.name, fontFile, newProperties, this.options);
+    // The embedded font may have been too corrupt to parse, in which case
+    // we ended up in the fallback path without a substitution selected.
+    // Try the substitution map now so text renders in a font close to what
+    // the document asked for (issue 7625).
+    if (
+      font.missingFile &&
+      !font.systemFontInfo &&
+      !isType3Font &&
+      this.options.useSystemFonts
+    ) {
+      const standardFontName = getStandardFontName(fontName.name);
+      const substitution = getFontSubstitution(
+        this.systemFontCache,
+        this.idFactory,
+        this.options.standardFontDataUrl,
+        fontName.name,
+        standardFontName,
+        type
+      );
+      if (substitution) {
+        if (substitution.guessFallback) {
+          substitution.guessFallback = false;
+          substitution.css += `,${font.fallbackName}`;
+        }
+        font.systemFontInfo = substitution;
+      }
+    }
+    return font;
   }
 
   static buildFontPaths(font, glyphs, handler, evaluatorOptions) {
