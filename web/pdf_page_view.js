@@ -355,9 +355,6 @@ class PDFPageView extends BasePDFPageView {
   }
 
   updatePageNumber(newPageNumber) {
-    if (this.id === newPageNumber) {
-      return;
-    }
     const oldPageNumber = this.id;
     this.id = newPageNumber;
     this.renderingId = `page${newPageNumber}`;
