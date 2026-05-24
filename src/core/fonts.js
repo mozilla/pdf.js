@@ -2698,7 +2698,7 @@ class Font {
       if (
         (header.version === "OTTO" &&
           (!properties.composite ||
-            (properties.fontFileN === 3 && parsedCff?.isCIDFont))) ||
+            (properties.fontFileN === "FontFile3" && parsedCff?.isCIDFont))) ||
         !tables.head ||
         !tables.hhea ||
         !tables.maxp ||

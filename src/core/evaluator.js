@@ -4666,18 +4666,11 @@ class PartialEvaluator {
 
     let fontFile, fontFileN, subtype, length1, length2, length3;
     try {
-      fontFile = descriptor.get("FontFile");
-      if (fontFile) {
-        fontFileN = 1;
-      } else {
-        fontFile = descriptor.get("FontFile2");
+      for (const n of ["FontFile", "FontFile2", "FontFile3"]) {
+        fontFile = descriptor.get(n);
         if (fontFile) {
-          fontFileN = 2;
-        } else {
-          fontFile = descriptor.get("FontFile3");
-          if (fontFile) {
-            fontFileN = 3;
-          }
+          fontFileN = n;
+          break;
         }
       }
 
