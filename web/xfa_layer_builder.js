@@ -37,6 +37,10 @@ import { XfaLayer } from "pdfjs-lib";
  */
 
 class XfaLayerBuilder {
+  #cancelled = false;
+
+  div = null;
+
   /**
    * @param {XfaLayerBuilderOptions} options
    */
@@ -50,9 +54,6 @@ class XfaLayerBuilder {
     this.annotationStorage = annotationStorage;
     this.linkService = linkService;
     this.xfaHtml = xfaHtml;
-
-    this.div = null;
-    this._cancelled = false;
   }
 
   /**
@@ -62,50 +63,33 @@ class XfaLayerBuilder {
    *   with a `textDivs` property that can be used with the TextHighlighter.
    */
   async render({ viewport, intent = "display" }) {
+    let xfaHtml;
     if (intent === "print") {
-      const parameters = {
-        viewport: viewport.clone({ dontFlip: true }),
-        div: this.div,
-        xfaHtml: this.xfaHtml,
-        annotationStorage: this.annotationStorage,
-        linkService: this.linkService,
-        intent,
-      };
+      xfaHtml = this.xfaHtml;
+    } else {
+      xfaHtml = await this.pdfPage.getXfa();
 
-      // Create an xfa layer div and render the form
-      this.div = document.createElement("div");
-      parameters.div = this.div;
-
-      return XfaLayer.render(parameters);
+      if (this.#cancelled || !xfaHtml) {
+        return { textDivs: [] };
+      }
     }
 
-    // intent === "display"
-    const xfaHtml = await this.pdfPage.getXfa();
-    if (this._cancelled || !xfaHtml) {
-      return { textDivs: [] };
-    }
-
-    const parameters = {
+    // Create an xfa layer div and render the form
+    const hasDiv = !!this.div;
+    const params = {
       viewport: viewport.clone({ dontFlip: true }),
-      div: this.div,
+      div: (this.div ??= document.createElement("div")),
       xfaHtml,
       annotationStorage: this.annotationStorage,
       linkService: this.linkService,
       intent,
     };
 
-    if (this.div) {
-      return XfaLayer.update(parameters);
-    }
-    // Create an xfa layer div and render the form
-    this.div = document.createElement("div");
-    parameters.div = this.div;
-
-    return XfaLayer.render(parameters);
+    return hasDiv ? XfaLayer.update(params) : XfaLayer.render(params);
   }
 
   cancel() {
-    this._cancelled = true;
+    this.#cancelled = true;
   }
 
   hide() {
