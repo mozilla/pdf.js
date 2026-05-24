@@ -787,6 +787,12 @@ class CFFParser {
       this.emptyPrivateDictionary(parentDict);
       return;
     }
+    // The Private DICT extends past the end of the font data, which means
+    // the embedded font is truncated; abort so the caller can substitute a
+    // system font instead of rendering blank glyphs (issue 7625).
+    if (offset + size > this.bytes.length) {
+      throw new FormatError("CFF Private DICT extends past end of font");
+    }
 
     const privateDictEnd = offset + size;
     const dictData = this.bytes.subarray(offset, privateDictEnd);
