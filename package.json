@@ -48,7 +48,7 @@
     "pngjs": "^7.0.0",
     "postcss": "^8.5.15",
     "postcss-discard-comments": "^8.0.0",
-    "postcss-values-parser": "^7.0.0",
+    "postcss-values-parser": "^8.0.0",
     "prettier": "^3.8.3",
     "puppeteer": "^24.43.1",
     "stylelint": "^17.12.0",
