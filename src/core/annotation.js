@@ -76,6 +76,7 @@ import { FileSpec } from "./file_spec.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
+import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { XFAFactory } from "./xfa/factory.js";
 
 class AnnotationFactory {
@@ -663,6 +664,8 @@ function getTransformMatrix(rect, bbox, matrix) {
 }
 
 class Annotation {
+  _oc = undefined;
+
   constructor(params) {
     const { annotationGlobals, dict, orphanFields, ref, subtype, xref } =
       params;
@@ -679,7 +682,7 @@ class Annotation {
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
     this.setAppearance(dict);
-    this.setOptionalContent(dict);
+    this.#setOptionalContent(xref, dict);
 
     const MK = dict.get("MK");
     this.setBorderAndBackgroundColors(MK);
@@ -710,6 +713,7 @@ class Annotation {
       hasAppearance: !!this.appearance,
       id: params.id,
       modificationDate: this.modificationDate,
+      oc: this._oc,
       rect: this.rectangle,
       subtype,
       hasOwnCanvas: false,
@@ -1169,14 +1173,17 @@ class Annotation {
     }
   }
 
-  setOptionalContent(dict) {
-    this.oc = null;
-
-    const oc = dict.get("OC");
-    if (oc instanceof Name) {
-      warn("setOptionalContent: Support for /Name-entry is not implemented.");
-    } else if (oc instanceof Dict) {
-      this.oc = oc;
+  #setOptionalContent(xref, dict) {
+    if (dict.has("OC")) {
+      try {
+        this._oc = parseMarkedContentProps(
+          xref,
+          dict.get("OC"),
+          /* resources = */ null
+        );
+      } catch (ex) {
+        warn(`#setOptionalContent: ${ex}`);
+      }
     }
   }
 
@@ -1229,13 +1236,7 @@ class Annotation {
 
     const opList = new OperatorList();
 
-    let optionalContent;
-    if (this.oc) {
-      optionalContent = await evaluator.parseMarkedContentProps(
-        this.oc,
-        /* resources = */ null
-      );
-    }
+    const optionalContent = this._oc;
     if (optionalContent !== undefined) {
       opList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }
@@ -2110,13 +2111,7 @@ class WidgetAnnotation extends Annotation {
     const bbox = [0, 0, this.width, this.height];
     const transform = getTransformMatrix(this.data.rect, bbox, matrix);
 
-    let optionalContent;
-    if (this.oc) {
-      optionalContent = await evaluator.parseMarkedContentProps(
-        this.oc,
-        /* resources = */ null
-      );
-    }
+    const optionalContent = this._oc;
     if (optionalContent !== undefined) {
       opList.addOp(OPS.beginMarkedContentProps, ["OC", optionalContent]);
     }

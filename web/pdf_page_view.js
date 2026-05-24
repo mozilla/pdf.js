@@ -464,6 +464,7 @@ class PDFPageView extends BasePDFPageView {
         viewport: this.viewport,
         intent: "display",
         structTreeLayer: this.structTreeLayer,
+        optionalContentConfigPromise: this._optionalContentConfigPromise,
       });
     } catch (ex) {
       console.error("#renderAnnotationLayer:", ex);

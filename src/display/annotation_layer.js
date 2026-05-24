@@ -16,6 +16,8 @@
 /** @typedef {import("./api").PDFPageProxy} PDFPageProxy */
 /** @typedef {import("./page_viewport").PageViewport} PageViewport */
 // eslint-disable-next-line max-len
+/** @typedef {import("../src/display/optional_content_config").OptionalContentConfig} OptionalContentConfig */
+// eslint-disable-next-line max-len
 /** @typedef {import("../../web/text_accessibility.js").TextAccessibilityManager} TextAccessibilityManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/editor/tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
@@ -884,6 +886,18 @@ class AnnotationElement {
         mustEnterInEditMode: true,
       });
     });
+  }
+
+  updateOC(optionalContentConfig) {
+    if (!this.data.oc || !optionalContentConfig) {
+      return;
+    }
+    const isVisible = optionalContentConfig.isVisible(this.data.oc);
+    if (isVisible) {
+      this.show();
+    } else {
+      this.hide();
+    }
   }
 
   get width() {
@@ -3755,7 +3769,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationEditorUIManager} [annotationEditorUIManager]
  * @property {StructTreeLayerBuilder} [structTreeLayer]
- * @property {CommentManager} [commentManager] - The comment manager instance.
+ * @property {OptionalContentConfig} [optionalContentConfig]
  */
 
 /**
@@ -3827,7 +3841,7 @@ class AnnotationLayer {
    * @memberof AnnotationLayer
    */
   async render(params) {
-    const { annotations } = params;
+    const { annotations, optionalContentConfig } = params;
     const layer = this.div;
     setLayerDimensions(layer, this.viewport);
 
@@ -3892,6 +3906,7 @@ class AnnotationLayer {
       if (data.hidden) {
         rendered.style.visibility = "hidden";
       }
+      element.updateOC(optionalContentConfig);
 
       if (element._isEditable) {
         this.#editableAnnotations.set(element.data.id, element);
@@ -4052,11 +4067,14 @@ class AnnotationLayer {
    * @param {AnnotationLayerParameters} viewport
    * @memberof AnnotationLayer
    */
-  update({ viewport }) {
+  update({ viewport, optionalContentConfig }) {
     const layer = this.div;
     this.viewport = viewport;
     setLayerDimensions(layer, { rotation: viewport.rotation });
 
+    for (const element of this.#elements) {
+      element.updateOC(optionalContentConfig);
+    }
     this.#setAnnotationCanvasMap();
     layer.hidden = false;
   }

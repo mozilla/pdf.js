@@ -63,6 +63,7 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {PageViewport} viewport
  * @property {string} [intent] - The default value is "display".
  * @property {StructTreeLayerBuilder} [structTreeLayer]
+ * @property {Promise} [optionalContentConfigPromise]
  */
 
 class AnnotationLayerBuilder {
@@ -125,8 +126,15 @@ class AnnotationLayerBuilder {
    * @returns {Promise<void>} A promise that is resolved when rendering of the
    *   annotations is complete.
    */
-  async render({ viewport, intent = "display", structTreeLayer = null }) {
+  async render({
+    viewport,
+    intent = "display",
+    structTreeLayer = null,
+    optionalContentConfigPromise = null,
+  }) {
     if (this.div) {
+      const optionalContentConfig = await optionalContentConfigPromise;
+
       if (this._cancelled || !this.annotationLayer) {
         return;
       }
@@ -134,15 +142,18 @@ class AnnotationLayerBuilder {
       // transformation matrices.
       this.annotationLayer.update({
         viewport: viewport.clone({ dontFlip: true }),
+        optionalContentConfig,
       });
       return;
     }
 
-    const [annotations, hasJSActions, fieldObjects] = await Promise.all([
-      this.pdfPage.getAnnotations({ intent }),
-      this._hasJSActionsPromise,
-      this._fieldObjectsPromise,
-    ]);
+    const [annotations, hasJSActions, fieldObjects, optionalContentConfig] =
+      await Promise.all([
+        this.pdfPage.getAnnotations({ intent }),
+        this._hasJSActionsPromise,
+        this._fieldObjectsPromise,
+        optionalContentConfigPromise,
+      ]);
     if (this._cancelled) {
       return;
     }
@@ -169,6 +180,7 @@ class AnnotationLayerBuilder {
       enableScripting: this.enableScripting,
       hasJSActions,
       fieldObjects,
+      optionalContentConfig,
     });
 
     this.#annotations = annotations;

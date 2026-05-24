@@ -87,6 +87,7 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
+import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { PDFImage } from "./image.js";
 import { Stream } from "./stream.js";
 import { stringToPDFString } from "./string_utils.js";
@@ -1651,105 +1652,8 @@ class PartialEvaluator {
     throw new FormatError(`Unknown PatternName: ${patternName}`);
   }
 
-  _parseVisibilityExpression(array, nestingCounter, currentResult) {
-    const MAX_NESTING = 10;
-    if (++nestingCounter > MAX_NESTING) {
-      warn("Visibility expression is too deeply nested");
-      return;
-    }
-    const length = array.length;
-    const operator = this.xref.fetchIfRef(array[0]);
-    if (length < 2 || !(operator instanceof Name)) {
-      warn("Invalid visibility expression");
-      return;
-    }
-    switch (operator.name) {
-      case "And":
-      case "Or":
-      case "Not":
-        currentResult.push(operator.name);
-        break;
-      default:
-        warn(`Invalid operator ${operator.name} in visibility expression`);
-        return;
-    }
-    for (let i = 1; i < length; i++) {
-      const raw = array[i];
-      const object = this.xref.fetchIfRef(raw);
-      if (Array.isArray(object)) {
-        const nestedResult = [];
-        currentResult.push(nestedResult);
-        // Recursively parse a subarray.
-        this._parseVisibilityExpression(object, nestingCounter, nestedResult);
-      } else if (raw instanceof Ref) {
-        // Reference to an OCG dictionary.
-        currentResult.push(raw.toString());
-      }
-    }
-  }
-
   async parseMarkedContentProps(contentProperties, resources) {
-    let optionalContent;
-    if (contentProperties instanceof Name) {
-      const properties = resources.get("Properties");
-      optionalContent = properties.get(contentProperties.name);
-    } else if (contentProperties instanceof Dict) {
-      optionalContent = contentProperties;
-    } else {
-      throw new FormatError("Optional content properties malformed.");
-    }
-
-    const optionalContentType = optionalContent.get("Type")?.name;
-    if (optionalContentType === "OCG") {
-      return {
-        type: optionalContentType,
-        id: optionalContent.objId,
-      };
-    } else if (optionalContentType === "OCMD") {
-      const expression = optionalContent.get("VE");
-      if (Array.isArray(expression)) {
-        const result = [];
-        this._parseVisibilityExpression(expression, 0, result);
-        if (result.length > 0) {
-          return {
-            type: "OCMD",
-            expression: result,
-          };
-        }
-      }
-
-      const optionalContentGroups = optionalContent.get("OCGs");
-      if (
-        Array.isArray(optionalContentGroups) ||
-        optionalContentGroups instanceof Dict
-      ) {
-        const groupIds = [];
-        if (Array.isArray(optionalContentGroups)) {
-          for (const ocg of optionalContentGroups) {
-            groupIds.push(ocg.toString());
-          }
-        } else {
-          // Dictionary, just use the obj id.
-          groupIds.push(optionalContentGroups.objId);
-        }
-
-        return {
-          type: optionalContentType,
-          ids: groupIds,
-          policy:
-            optionalContent.get("P") instanceof Name
-              ? optionalContent.get("P").name
-              : null,
-          expression: null,
-        };
-      } else if (optionalContentGroups instanceof Ref) {
-        return {
-          type: optionalContentType,
-          id: optionalContentGroups.toString(),
-        };
-      }
-    }
-    return null;
+    return parseMarkedContentProps(this.xref, contentProperties, resources);
   }
 
   async getOperatorList({
