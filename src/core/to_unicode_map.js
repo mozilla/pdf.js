@@ -96,6 +96,7 @@ class IdentityToUnicodeMap {
   }
 
   amend(map) {
+    /* istanbul ignore next */
     unreachable("Should not call amend()");
   }
 }

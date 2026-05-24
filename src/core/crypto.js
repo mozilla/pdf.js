@@ -197,6 +197,7 @@ class AESBaseCipher {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === AESBaseCipher
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize AESBaseCipher.");
     }
     this.buffer = new Uint8Array(16);
@@ -204,6 +205,7 @@ class AESBaseCipher {
   }
 
   _expandKey(cipherKey) {
+    /* istanbul ignore next */
     unreachable("Cannot call `_expandKey` on the base class");
   }
 
@@ -640,11 +642,13 @@ class PDFBase {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === PDFBase
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize PDFBase.");
     }
   }
 
   _hash(password, input, userBytes) {
+    /* istanbul ignore next */
     unreachable("Abstract method `_hash` called");
   }
 

@@ -22,6 +22,7 @@ class BaseLocalCache {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BaseLocalCache
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BaseLocalCache.");
     }
     this._onlyRefs = options?.onlyRefs === true;
@@ -35,6 +36,7 @@ class BaseLocalCache {
 
   getByName(name) {
     if (this._onlyRefs) {
+      /* istanbul ignore next */
       unreachable("Should not call `getByName` method.");
     }
     const ref = this._nameRefMap.get(name);
@@ -49,6 +51,7 @@ class BaseLocalCache {
   }
 
   set(name, ref, data) {
+    /* istanbul ignore next */
     unreachable("Abstract method `set` called.");
   }
 }

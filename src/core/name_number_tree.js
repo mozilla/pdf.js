@@ -27,6 +27,7 @@ class NameOrNumberTree {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === NameOrNumberTree
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize NameOrNumberTree.");
     }
     this.root = root;

@@ -69,7 +69,8 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
   return {
     name: "babel-plugin-pdfjs-preprocessor",
     manipulateOptions({ parserOpts }) {
-      parserOpts.attachComment = false;
+      // Keep "istanbul ignore ..." comments when collecting coverage.
+      parserOpts.attachComment = ctx.defines.COVERAGE === true;
     },
     visitor: {
       "ExportNamedDeclaration|ImportDeclaration": ({ node }) => {

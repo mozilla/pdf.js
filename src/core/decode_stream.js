@@ -48,6 +48,7 @@ class DecodeStream extends BaseStream {
   }
 
   readBlock() {
+    /* istanbul ignore next */
     unreachable("Abstract method `readBlock` called");
   }
 

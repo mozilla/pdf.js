@@ -45,6 +45,7 @@ class ColorSpaceUtils {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       (!globalColorSpaceCache || !localColorSpaceCache)
     ) {
+      /* istanbul ignore next */
       unreachable(
         'ColorSpaceUtils.parse - expected "globalColorSpaceCache"/"localColorSpaceCache" argument.'
       );

@@ -59,6 +59,7 @@ class BasePdfManager {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BasePdfManager
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BasePdfManager.");
     }
     this._docBaseUrl = parseDocBaseUrl(docBaseUrl);
@@ -125,18 +126,22 @@ class BasePdfManager {
   }
 
   async ensure(obj, prop, args) {
+    /* istanbul ignore next */
     unreachable("Abstract method `ensure` called");
   }
 
   requestRange(begin, end) {
+    /* istanbul ignore next */
     unreachable("Abstract method `requestRange` called");
   }
 
   requestLoadedStream(noFetch = false) {
+    /* istanbul ignore next */
     unreachable("Abstract method `requestLoadedStream` called");
   }
 
   sendProgressiveData(chunk) {
+    /* istanbul ignore next */
     unreachable("Abstract method `sendProgressiveData` called");
   }
 
@@ -145,6 +150,7 @@ class BasePdfManager {
   }
 
   terminate(reason) {
+    /* istanbul ignore next */
     unreachable("Abstract method `terminate` called");
   }
 }

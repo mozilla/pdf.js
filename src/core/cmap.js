@@ -387,18 +387,22 @@ class IdentityCMap extends CMap {
   }
 
   mapCidRange(low, high, dstLow) {
+    /* istanbul ignore next */
     unreachable("should not call mapCidRange");
   }
 
   mapBfRange(low, high, dstLow) {
+    /* istanbul ignore next */
     unreachable("should not call mapBfRange");
   }
 
   mapBfRangeToArray(low, high, array) {
+    /* istanbul ignore next */
     unreachable("should not call mapBfRangeToArray");
   }
 
   mapOne(src, dst) {
+    /* istanbul ignore next */
     unreachable("should not call mapCidOne");
   }
 
@@ -435,6 +439,7 @@ class IdentityCMap extends CMap {
 
   // eslint-disable-next-line getter-return
   get isIdentityCMap() {
+    /* istanbul ignore next */
     unreachable("should not access .isIdentityCMap");
   }
 }

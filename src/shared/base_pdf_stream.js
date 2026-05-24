@@ -35,6 +35,7 @@ class BasePDFStream {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BasePDFStream
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BasePDFStream.");
     }
     this._source = source;
@@ -123,6 +124,7 @@ class BasePDFStreamReader {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BasePDFStreamReader
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BasePDFStreamReader.");
     }
     this._stream = stream;
@@ -188,6 +190,7 @@ class BasePDFStreamReader {
    * @returns {Promise}
    */
   async read() {
+    /* istanbul ignore next */
     unreachable("Abstract method `read` called");
   }
 
@@ -196,6 +199,7 @@ class BasePDFStreamReader {
    * @param {Object} reason
    */
   cancel(reason) {
+    /* istanbul ignore next */
     unreachable("Abstract method `cancel` called");
   }
 }
@@ -211,6 +215,7 @@ class BasePDFStreamRangeReader {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BasePDFStreamRangeReader
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BasePDFStreamRangeReader.");
     }
     this._stream = stream;
@@ -225,6 +230,7 @@ class BasePDFStreamRangeReader {
    * @returns {Promise}
    */
   async read() {
+    /* istanbul ignore next */
     unreachable("Abstract method `read` called");
   }
 
@@ -233,6 +239,7 @@ class BasePDFStreamRangeReader {
    * @param {Object} reason
    */
   cancel(reason) {
+    /* istanbul ignore next */
     unreachable("Abstract method `cancel` called");
   }
 }

@@ -21,17 +21,20 @@ class BaseStream {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BaseStream
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BaseStream.");
     }
   }
 
   // eslint-disable-next-line getter-return
   get length() {
+    /* istanbul ignore next */
     unreachable("Abstract getter `length` accessed");
   }
 
   // eslint-disable-next-line getter-return
   get isEmpty() {
+    /* istanbul ignore next */
     unreachable("Abstract getter `isEmpty` accessed");
   }
 
@@ -40,10 +43,12 @@ class BaseStream {
   }
 
   getByte() {
+    /* istanbul ignore next */
     unreachable("Abstract method `getByte` called");
   }
 
   getBytes(length) {
+    /* istanbul ignore next */
     unreachable("Abstract method `getBytes` called");
   }
 
@@ -57,6 +62,7 @@ class BaseStream {
   }
 
   async asyncGetBytes() {
+    /* istanbul ignore next */
     unreachable("Abstract method `asyncGetBytes` called");
   }
 
@@ -112,6 +118,7 @@ class BaseStream {
   }
 
   getByteRange(begin, end) {
+    /* istanbul ignore next */
     unreachable("Abstract method `getByteRange` called");
   }
 
@@ -124,14 +131,17 @@ class BaseStream {
   }
 
   reset() {
+    /* istanbul ignore next */
     unreachable("Abstract method `reset` called");
   }
 
   moveStart() {
+    /* istanbul ignore next */
     unreachable("Abstract method `moveStart` called");
   }
 
   makeSubStream(start, length, dict = null) {
+    /* istanbul ignore next */
     unreachable("Abstract method `makeSubStream` called");
   }
 

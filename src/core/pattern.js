@@ -51,6 +51,7 @@ class Pattern {
   static #hasGPU = false;
 
   constructor() {
+    /* istanbul ignore next */
     unreachable("Cannot initialize Pattern.");
   }
 
@@ -125,11 +126,13 @@ class BaseShading {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BaseShading
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize BaseShading.");
     }
   }
 
   getIR() {
+    /* istanbul ignore next */
     unreachable("Abstract method `getIR` called.");
   }
 }
@@ -321,6 +324,7 @@ class RadialAxialShading extends BaseShading {
       r1 = coordsArr[5];
       type = "radial";
     } else {
+      /* istanbul ignore next */
       unreachable(`getPattern type unknown: ${shadingType}`);
     }
 
@@ -765,6 +769,7 @@ class MeshShading extends BaseShading {
         patchMesh = true;
         break;
       default:
+        /* istanbul ignore next */
         unreachable("Unsupported mesh type.");
         break;
     }

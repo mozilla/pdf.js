@@ -789,6 +789,7 @@ class CompiledFont {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === CompiledFont
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize CompiledFont.");
     }
     this.fontMatrix = fontMatrix;
@@ -858,6 +859,7 @@ class CompiledFont {
   }
 
   compileGlyphImpl() {
+    /* istanbul ignore next */
     unreachable("Children classes should implement this.");
   }
 

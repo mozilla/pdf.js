@@ -47,6 +47,7 @@ class WasmImage {
 
   // eslint-disable-next-line getter-return
   static get instance() {
+    /* istanbul ignore next */
     unreachable("Abstract getter `instance` accessed");
   }
 
@@ -61,6 +62,7 @@ class WasmImage {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === WasmImage
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize WasmImage.");
     }
 
@@ -131,6 +133,7 @@ class WasmImage {
   }
 
   async decode(bytes, _params) {
+    /* istanbul ignore next */
     unreachable("Abstract method `decode` called");
   }
 }

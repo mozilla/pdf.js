@@ -141,6 +141,7 @@ class ColorSpace {
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === ColorSpace
     ) {
+      /* istanbul ignore next */
       unreachable("Cannot initialize ColorSpace.");
     }
     this.name = name;
@@ -167,6 +168,7 @@ class ColorSpace {
    * The result placed into the dest array starting from the destOffset.
    */
   getRgbItem(src, srcOffset, dest, destOffset) {
+    /* istanbul ignore next */
     unreachable("Should not call ColorSpace.getRgbItem");
   }
 
@@ -180,6 +182,7 @@ class ColorSpace {
    * array).
    */
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
+    /* istanbul ignore next */
     unreachable("Should not call ColorSpace.getRgbBuffer");
   }
 
@@ -189,6 +192,7 @@ class ColorSpace {
    * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
    */
   getOutputLength(inputLength, alpha01) {
+    /* istanbul ignore next */
     unreachable("Should not call ColorSpace.getOutputLength");
   }
 
@@ -438,6 +442,7 @@ class PatternCS extends ColorSpace {
   }
 
   isDefaultDecode(decode, bpc) {
+    /* istanbul ignore next */
     unreachable("Should not call PatternCS.isDefaultDecode");
   }
 }

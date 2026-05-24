@@ -1392,6 +1392,7 @@ class Annotation {
       this.appearance &&
       !this._streams.includes(this.appearance)
     ) {
+      /* istanbul ignore next */
       unreachable("The appearance stream should always be reset.");
     }
 
@@ -3369,6 +3370,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       };
       char = "\x6C";
     } else {
+      /* istanbul ignore next */
       unreachable(`_getDefaultCheckedAppearance - unsupported type: ${type}`);
     }
 

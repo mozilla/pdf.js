@@ -1039,10 +1039,12 @@ class PDFDocument {
       }
 
       static createObjId() {
+        /* istanbul ignore next */
         unreachable("Abstract method `createObjId` called.");
       }
 
       static getPageObjId() {
+        /* istanbul ignore next */
         unreachable("Abstract method `getPageObjId` called.");
       }
     };
