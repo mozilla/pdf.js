@@ -2271,9 +2271,7 @@ describe("Highlight Editor", () => {
           const pdfData = fs.readFileSync(pdfPath).toString("base64");
           const dataTransfer = await page.evaluateHandle(data => {
             const transfer = new DataTransfer();
-            const view = Uint8Array.from(atob(data), code =>
-              code.charCodeAt(0)
-            );
+            const view = Uint8Array.fromBase64(data);
             const file = new File([view], "basicapi.pdf", {
               type: "application/pdf",
             });
