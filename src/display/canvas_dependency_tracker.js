@@ -28,54 +28,32 @@ function expandBBox(array, index, minX, minY, maxX, maxY) {
   array[index * 4 + 3] = Math.max(array[index * 4 + 3], maxY);
 }
 
-// Apply a scaling matrix to some min/max values.
 // If a scaling factor is negative then min and max must be swapped.
-function scaleMinMax(transform, minMax) {
+function scaleCharBBox(scaleX, scaleY, x, y, bbox) {
   let temp;
-  if (transform[0]) {
-    if (transform[0] < 0) {
-      temp = minMax[0];
-      minMax[0] = minMax[2];
-      minMax[2] = temp;
+  if (scaleX) {
+    if (scaleX < 0) {
+      temp = bbox[0];
+      bbox[0] = bbox[2];
+      bbox[2] = temp;
     }
-    minMax[0] *= transform[0];
-    minMax[2] *= transform[0];
+    bbox[0] *= scaleX;
+    bbox[2] *= scaleX;
 
-    if (transform[3] < 0) {
-      temp = minMax[1];
-      minMax[1] = minMax[3];
-      minMax[3] = temp;
+    if (scaleY < 0) {
+      temp = bbox[1];
+      bbox[1] = bbox[3];
+      bbox[3] = temp;
     }
-    minMax[1] *= transform[3];
-    minMax[3] *= transform[3];
+    bbox[1] *= scaleY;
+    bbox[3] *= scaleY;
   } else {
-    temp = minMax[0];
-    minMax[0] = minMax[1];
-    minMax[1] = temp;
-    temp = minMax[2];
-    minMax[2] = minMax[3];
-    minMax[3] = temp;
-
-    if (transform[1] < 0) {
-      temp = minMax[1];
-      minMax[1] = minMax[3];
-      minMax[3] = temp;
-    }
-    minMax[1] *= transform[1];
-    minMax[3] *= transform[1];
-
-    if (transform[2] < 0) {
-      temp = minMax[0];
-      minMax[0] = minMax[2];
-      minMax[2] = temp;
-    }
-    minMax[0] *= transform[2];
-    minMax[2] *= transform[2];
+    bbox.fill(0);
   }
-  minMax[0] += transform[4];
-  minMax[1] += transform[5];
-  minMax[2] += transform[4];
-  minMax[3] += transform[5];
+  bbox[0] += x;
+  bbox[1] += y;
+  bbox[2] += x;
+  bbox[3] += y;
 }
 
 // This is computed rathter than hard-coded to keep into
@@ -663,7 +641,7 @@ class CanvasDependencyTracker {
         computedBBox = [0, 0, 0, 0];
         Util.axialAlignedBoundingBox(fontBBox, font.fontMatrix, computedBBox);
         if (scale !== 1 || x !== 0 || y !== 0) {
-          scaleMinMax([scale, 0, 0, -scale, x, y], computedBBox);
+          scaleCharBBox(scale, -scale, x, y, computedBBox);
         }
 
         if (isBBoxTrustworthy) {
