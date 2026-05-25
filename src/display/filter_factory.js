@@ -132,6 +132,9 @@ class DOMFilterFactory extends BaseFilterFactory {
     if (!this.#_defs) {
       const div = this.#document.createElement("div");
       const { style } = div;
+      // The pdf colors are mostly in light mode (white background with a black
+      // foreground), so the filters are created in light mode.
+      style.colorScheme = "only light";
       style.visibility = "hidden";
       style.contain = "strict";
       style.width = style.height = 0;
