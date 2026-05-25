@@ -79,7 +79,7 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  * @property {Object} [waitingBar] - The waiting bar elements shown during
  *   long-running operations.
  * @property {Object} [addFileComponent] - The file picker and button used to
- *   add a PDF file to merge with the current one.
+ *   add one or more PDF files to merge with the current one.
  */
 
 /**
@@ -321,9 +321,9 @@ class PDFThumbnailViewer {
       if (this.#enableMerge && addFileComponent) {
         const { picker, button } = addFileComponent;
         picker.addEventListener("change", () => {
-          const file = picker.files?.[0];
-          if (file) {
-            this.#mergeFile(file, this._currentPageNumber - 1);
+          const files = Array.from(picker.files ?? []);
+          if (files.length) {
+            this.#mergeFiles(files, this._currentPageNumber - 1);
           }
         });
         button.addEventListener("click", () => {
@@ -351,23 +351,32 @@ class PDFThumbnailViewer {
     this.renderingQueue.renderHighestPriority();
   }
 
-  async #mergeFile(file, insertAfter) {
-    if (file.type !== "application/pdf") {
-      const magic = await file.slice(0, 5).text();
-      if (magic !== "%PDF-") {
-        return;
-      }
-    }
+  async #mergeFiles(files, insertAfter) {
     this.#toggleBar("waiting", "pdfjs-views-manager-waiting-for-file");
-    const buffer = await file.bytes();
+    const buffers = [];
+    for (const file of files) {
+      if (file.type !== "application/pdf") {
+        const magic = await file.slice(0, 5).text();
+        if (magic !== "%PDF-") {
+          continue;
+        }
+      }
+      buffers.push(await file.bytes());
+    }
+    if (buffers.length === 0) {
+      this.#toggleBar("status");
+      return;
+    }
     const pagesCount = this.#pagesMapper.pagesNumber;
     const data = this.hasStructuralChanges()
       ? this.getStructuralChanges()
       : [{ document: null }];
-    data.push({
-      document: buffer,
-      insertAfter,
-    });
+    for (const buffer of buffers) {
+      data.push({
+        document: buffer,
+        insertAfter,
+      });
+    }
     this.eventBus._on(
       "pagesloaded",
       () => {
@@ -1579,7 +1588,7 @@ class PDFThumbnailViewer {
       // the only available signal. Matches the existing global drop handler
       // in app.js. Files with no MIME (e.g. some macOS sources) are rejected
       // here to keep the "copy" cursor honest; if needed, drop-time magic-byte
-      // validation in #mergeFile would still catch a permissive variant.
+      // validation in #mergeFiles would still catch a permissive variant.
       for (const item of dataTransfer.items) {
         if (item.kind === "file" && item.type === "application/pdf") {
           return true;
@@ -1668,7 +1677,7 @@ class PDFThumbnailViewer {
         }
         e.preventDefault();
         e.stopPropagation();
-        const file = e.dataTransfer.files?.[0];
+        const files = Array.from(e.dataTransfer.files ?? []);
         // If no dragover ever ran (e.g. instant drop), compute the index from
         // the drop event itself so we don't fall through to a stale fallback.
         if (isNaN(this.#lastDraggedOverIndex) && this.#thumbnailsPositions) {
@@ -1682,8 +1691,8 @@ class PDFThumbnailViewer {
           ? -1
           : this.#lastDraggedOverIndex;
         this.#endExternalFileDrag();
-        if (file) {
-          this.#mergeFile(file, insertAfter);
+        if (files.length) {
+          this.#mergeFiles(files, insertAfter);
         }
       },
       { signal }
