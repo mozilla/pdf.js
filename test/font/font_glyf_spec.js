@@ -109,7 +109,7 @@ describe("font_glyf", function () {
         );
       expect(notdef).not.toBeNull();
       expect(notdef[1] || "").not.toMatch(
-        /<component\b[^>]*glyphName="\.notdef"/
+        /<component\b[^>]+glyphName="\.notdef"/
       );
     });
   });
@@ -132,7 +132,7 @@ describe("font_glyf", function () {
       const output = await ttx(font.data);
       verifyTtxOutput(output);
       expect(
-        /<OS_2>\s*(<!--[\s\S]*?-->\s*)?<version value="3"\/>/.test(output)
+        /<OS_2>\s*(?:<!--[\s\S]*?-->\s*)?<version value="3"\/>/.test(output)
       ).toEqual(true);
       expect(/<sCapHeight\b/.test(output)).toEqual(true);
       expect(/<usMaxContext\b/.test(output)).toEqual(true);

@@ -43,7 +43,7 @@ function extractFtlIds(ftlPath) {
   const lines = readFileSync(ftlPath, "utf8").split("\n");
   const ids = [];
   for (const line of lines) {
-    const match = line.match(/^([a-zA-Z][a-zA-Z0-9-]*)\s*=/);
+    const match = line.match(/^([a-z][a-z0-9-]*)\s*=/i);
     if (match) {
       ids.push(match[1]);
     }

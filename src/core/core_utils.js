@@ -564,7 +564,7 @@ function validateFontName(fontFamily, mustWarn = false) {
   } else {
     // See https://developer.mozilla.org/en-US/docs/Web/CSS/custom-ident.
     for (const ident of fontFamily.split(/[ \t]+/)) {
-      if (/^(\d|(-(\d|-)))/.test(ident) || !/^[\w-\\]+$/.test(ident)) {
+      if (/^(?:\d|-[\d-])/.test(ident) || !/^[\w\\-]+$/.test(ident)) {
         if (mustWarn) {
           warn(`FontFamily contains invalid <custom-ident>: ${fontFamily}.`);
         }

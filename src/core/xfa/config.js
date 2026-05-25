@@ -1003,7 +1003,7 @@ class Rename extends ContentObject {
     // is no colon.
     if (
       this[$content].toLowerCase().startsWith("xml") ||
-      new RegExp("[\\p{L}_][\\p{L}\\d._\\p{M}-]*", "u").test(this[$content])
+      /[\p{L}_][\p{L}\d._\p{M}-]*/u.test(this[$content])
     ) {
       warn("XFA - Rename: invalid XFA name");
     }

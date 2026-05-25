@@ -1135,7 +1135,7 @@ gulp.task("locale", function () {
     if (!checkDir(dirPath)) {
       continue;
     }
-    if (!/^[a-z][a-z]([a-z])?(-[A-Z][A-Z])?$/.test(locale)) {
+    if (!/^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(locale)) {
       console.log("Skipping invalid locale: " + locale);
       continue;
     }

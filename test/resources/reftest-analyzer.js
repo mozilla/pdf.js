@@ -205,7 +205,7 @@ window.onload = function () {
       }
       line = match[1];
       match = line.match(
-        /^(TEST-PASS|TEST-UNEXPECTED-PASS|TEST-KNOWN-FAIL|TEST-UNEXPECTED-FAIL)(\(EXPECTED RANDOM\)|) \| ([^|]+) \|(.*)/
+        /^(TEST-PASS|TEST-UNEXPECTED-PASS|TEST-KNOWN-FAIL|TEST-UNEXPECTED-FAIL)(\(EXPECTED RANDOM\))? \| ([^|]+) \|(.*)/
       );
       if (match) {
         const state = match[1];
@@ -225,7 +225,7 @@ window.onload = function () {
         continue;
       }
       match = line.match(
-        /^ {2}IMAGE[^:]*\((\d+\.?\d*)x(\d+\.?\d*)x(\d+\.?\d*)\): (.*)$/
+        /^ {2}IMAGE[^:]*\((\d+(?:\.\d*)?)x(\d+(?:\.\d*)?)x(\d+(?:\.\d*)?)\): (.*)$/
       );
       if (match) {
         const item = gTestItems.at(-1);

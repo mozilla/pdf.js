@@ -21,7 +21,7 @@ function rewriteWebArchiveUrl(url) {
   // Without this, an HTML page containing an iframe with the PDF file
   // will be served instead (issue 8920).
   const webArchiveRegex =
-    /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/g;
+    /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/;
   const urlParts = webArchiveRegex.exec(url);
   if (urlParts) {
     return `${urlParts[1]}${urlParts[2]}if_${urlParts[3]}`;

@@ -16,7 +16,11 @@
 import { stringToBytes, Util, warn } from "../shared/util.js";
 
 function isAscii(str) {
-  return typeof str === "string" && (!str || /^[\x00-\x7F]*$/.test(str));
+  return (
+    typeof str === "string" &&
+    // eslint-disable-next-line no-control-regex
+    (!str || /^[\x00-\x7F]*$/.test(str))
+  );
 }
 
 // If the string is null or undefined then it is returned as is.
@@ -91,6 +95,7 @@ function stringToPDFString(str, keepEscapeSequence = false) {
         if (keepEscapeSequence || !decoded.includes("\x1b")) {
           return decoded;
         }
+        // eslint-disable-next-line no-control-regex
         return decoded.replaceAll(/\x1b[^\x1b]*(?:\x1b|$)/g, "");
       } catch (ex) {
         warn(`stringToPDFString: "${ex}".`);

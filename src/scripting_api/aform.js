@@ -26,8 +26,9 @@ class AForm {
 
     // The e-mail address regex below originates from:
     // https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address
+    // eslint-disable-next-line regexp/use-ignore-case
     this._emailRegex = new RegExp(
-      "^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+" +
+      "^[\\w.!#$%&'*+/=?^`{|}~-]+" +
         "@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?" +
         "(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
     );
@@ -184,12 +185,12 @@ class AForm {
       // comma sep
       pattern = event.willCommit
         ? /^[+-]?(\d+(,\d*)?|,\d+)$/
-        : /^[+-]?\d*,?\d*$/;
+        : /^[+-]?\d*(?:,\d*)?$/;
     } else {
       // dot sep
       pattern = event.willCommit
         ? /^[+-]?(\d+(\.\d*)?|\.\d+)$/
-        : /^[+-]?\d*\.?\d*$/;
+        : /^[+-]?\d*(?:\.\d*)?$/;
     }
 
     if (!pattern.test(value)) {
@@ -571,7 +572,7 @@ class AForm {
       event.rc = true;
     }
 
-    const re = /([-()]|\s)+/g;
+    const re = /[-()\s]+/g;
     value = value.replaceAll(re, "");
     for (const format of formats) {
       this.#AFSpecial_KeystrokeEx_helper(

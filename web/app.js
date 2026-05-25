@@ -1115,7 +1115,7 @@ const PDFViewerApplication = {
       //  - The title may contain incorrectly encoded characters, which thus
       //    looks broken, hence we ignore the Metadata entry when it contains
       //    characters from the Specials Unicode block (fixes bug 1605526).
-      if (title !== "Untitled" && !/[\uFFF0-\uFFFF]/g.test(title)) {
+      if (title !== "Untitled" && !/[\uFFF0-\uFFFF]/.test(title)) {
         return title;
       }
     }

@@ -91,7 +91,7 @@ describe("custom ownerDocument", function () {
 
   const checkFont = font => /g_d\d+_f1/.test(font.family);
   const checkFontFaceRule = rule =>
-    /^@font-face {font-family:"g_d\d+_f1";src:/.test(rule);
+    /^@font-face \{font-family:"g_d\d+_f1";src:/.test(rule);
 
   beforeEach(() => {
     globalThis.FontFace = function MockFontFace(name) {

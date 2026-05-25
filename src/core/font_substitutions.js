@@ -579,8 +579,8 @@ function getFontSubstitution(
       return null;
     }
     // Maybe we'll be lucky and the OS will have the font.
-    const bold = /bold/gi.test(baseFontName);
-    const italic = /oblique|italic/gi.test(baseFontName);
+    const bold = /bold/i.test(baseFontName);
+    const italic = /oblique|italic/i.test(baseFontName);
     const style =
       (bold && italic && BOLDITALIC) ||
       (bold && BOLD) ||
