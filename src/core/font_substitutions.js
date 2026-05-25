@@ -21,6 +21,10 @@ const NORMAL = {
   style: "normal",
   weight: "normal",
 };
+const MEDIUM = {
+  style: "normal",
+  weight: "500",
+};
 const BOLD = {
   style: "normal",
   weight: "bold",
@@ -364,6 +368,194 @@ const substitutionMap = new Map([
       alias: "\xCB\xCE\xCC\xE5",
     },
   ],
+  // Standard Acrobat CJK fonts. These BaseFont names appear in PDFs that
+  // don't embed a CJK font and rely on the reader having Acrobat's bundled
+  // CJK fonts installed.
+  // Adobe-Japan1 - Mincho (serif).
+  [
+    "HeiseiMin-W3",
+    {
+      local: [
+        "Hiragino Mincho ProN",
+        "Hiragino Mincho Pro",
+        "Yu Mincho",
+        "YuMincho",
+        "Source Han Serif JP",
+        "Noto Serif JP",
+        "Noto Serif CJK JP",
+        "IPAexMincho",
+        "IPAMincho",
+        "Takao Mincho",
+        "MS Mincho",
+        "MS PMincho",
+      ],
+      style: NORMAL,
+      ultimate: "serif",
+    },
+  ],
+  // Adobe-Japan1 - Gothic (sans-serif).
+  [
+    "HeiseiKakuGo-W5",
+    {
+      local: [
+        "Hiragino Kaku Gothic ProN",
+        "Hiragino Kaku Gothic Pro",
+        "Hiragino Sans",
+        "Yu Gothic",
+        "YuGothic",
+        "Source Han Sans JP",
+        "Noto Sans JP",
+        "Noto Sans CJK JP",
+        "IPAexGothic",
+        "IPAGothic",
+        "Takao Gothic",
+        "Meiryo",
+        "MS Gothic",
+        "MS PGothic",
+      ],
+      style: MEDIUM,
+      ultimate: "sans-serif",
+    },
+  ],
+  // Common Adobe-Japan1 variants and Kozuka names.
+  ["HeiseiMin-W3-Acro", { alias: "HeiseiMin-W3" }],
+  ["HeiseiKakuGo-W5-Acro", { alias: "HeiseiKakuGo-W5" }],
+  ["KozMinPro-Regular", { alias: "HeiseiMin-W3" }],
+  ["KozMinProVI-Regular", { alias: "HeiseiMin-W3" }],
+  ["KozMinPr6N-Regular", { alias: "HeiseiMin-W3" }],
+  ["KozGoPro-Regular", { alias: "HeiseiKakuGo-W5" }],
+  ["KozGoProVI-Regular", { alias: "HeiseiKakuGo-W5" }],
+  ["KozGoPr6N-Regular", { alias: "HeiseiKakuGo-W5" }],
+
+  // Adobe-GB1 - Song (Simplified Chinese serif).
+  [
+    "STSong-Light",
+    {
+      local: [
+        "STSong",
+        "Songti SC",
+        "Source Han Serif SC",
+        "Source Han Serif CN",
+        "Noto Serif SC",
+        "Noto Serif CJK SC",
+        "AR PL UMing CN",
+        "SimSun",
+        "NSimSun",
+      ],
+      style: NORMAL,
+      ultimate: "serif",
+    },
+  ],
+  // Adobe-GB1 - Hei (Simplified Chinese sans-serif).
+  [
+    "STHeiti-Regular",
+    {
+      local: [
+        "STHeiti",
+        "Heiti SC",
+        "PingFang SC",
+        "Source Han Sans SC",
+        "Source Han Sans CN",
+        "Noto Sans SC",
+        "Noto Sans CJK SC",
+        "Microsoft YaHei",
+        "SimHei",
+        "WenQuanYi Zen Hei",
+      ],
+      style: NORMAL,
+      ultimate: "sans-serif",
+    },
+  ],
+  ["STSongStd-Light", { alias: "STSong-Light" }],
+  ["AdobeSongStd-Light", { alias: "STSong-Light" }],
+  ["AdobeHeitiStd-Regular", { alias: "STHeiti-Regular" }],
+  // KaiTi (regular script) and FangSong (imitation Song) are different
+  // typographic styles; route to the existing GB2312-keyed entries above.
+  ["AdobeKaitiStd-Regular", { alias: "\xBF\xAC\xCC\xE5" }],
+  ["AdobeFangsongStd-Regular", { alias: "\xB7\xC2\xCB\xCE" }],
+
+  // Adobe-CNS1 - Sung (Traditional Chinese serif).
+  [
+    "MSung-Light",
+    {
+      local: [
+        "Songti TC",
+        "LiSong Pro",
+        "Source Han Serif TC",
+        "Source Han Serif TW",
+        "Noto Serif TC",
+        "Noto Serif CJK TC",
+        "AR PL UMing TW",
+        "PMingLiU",
+        "MingLiU",
+        "MingLiU_HKSCS",
+      ],
+      style: NORMAL,
+      ultimate: "serif",
+    },
+  ],
+  // Adobe-CNS1 - Hei (Traditional Chinese sans-serif).
+  [
+    "MHei-Medium",
+    {
+      local: [
+        "Heiti TC",
+        "STHeiti",
+        "Source Han Sans TC",
+        "Source Han Sans TW",
+        "Noto Sans TC",
+        "Noto Sans CJK TC",
+        "PingFang TC",
+        "Microsoft JhengHei",
+      ],
+      style: MEDIUM,
+      ultimate: "sans-serif",
+    },
+  ],
+  ["MSungStd-Light", { alias: "MSung-Light" }],
+  ["AdobeMingStd-Light", { alias: "MSung-Light" }],
+
+  // Adobe-Korea1 - Myeongjo (Korean serif).
+  [
+    "HYSMyeongJo-Medium",
+    {
+      local: [
+        "AppleMyungjo",
+        "Source Han Serif KR",
+        "Noto Serif KR",
+        "Noto Serif CJK KR",
+        "Nanum Myeongjo",
+        "Batang",
+      ],
+      style: MEDIUM,
+      ultimate: "serif",
+    },
+  ],
+  // Adobe-Korea1 - Gothic (Korean sans-serif).
+  [
+    "HYGoThic-Medium",
+    {
+      local: [
+        "Apple SD Gothic Neo",
+        "AppleGothic",
+        "Source Han Sans KR",
+        "Noto Sans KR",
+        "Noto Sans CJK KR",
+        "Nanum Gothic",
+        "Malgun Gothic",
+        "Dotum",
+        "Gulim",
+      ],
+      style: MEDIUM,
+      ultimate: "sans-serif",
+    },
+  ],
+  ["HYSMyeongJoStd-Medium", { alias: "HYSMyeongJo-Medium" }],
+  ["AdobeMyungjoStd-Medium", { alias: "HYSMyeongJo-Medium" }],
+  // Bold variants reuse the same fallback list with a bold style override
+  // so the @font-face declaration requests a bold local() match.
+  ["HYGoThic-Bold", { alias: "HYGoThic-Medium", style: BOLD }],
+  ["AdobeGothicStd-Bold", { alias: "HYGoThic-Medium", style: BOLD }],
 ]);
 
 const fontAliases = new Map([["Arial-Black", "ArialBlack"]]);
