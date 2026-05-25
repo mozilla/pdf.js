@@ -22,18 +22,18 @@
 
 import { MathClamp } from "../shared/math_clamp.js";
 
-function makeColorComp(n) {
-  return Math.floor(MathClamp(n, 0, 1) * 255)
-    .toString(16)
-    .padStart(2, "0");
-}
-
-function scaleAndClamp(x) {
-  return MathClamp(x, 0, 1) * 255;
-}
-
 // PDF specifications section 10.3
 class ColorConverters {
+  static #makeColorComp(n) {
+    return Math.floor(MathClamp(n, 0, 1) * 255)
+      .toString(16)
+      .padStart(2, "0");
+  }
+
+  static #scaleAndClamp(x) {
+    return MathClamp(x, 0, 1) * 255;
+  }
+
   static CMYK_G([c, y, m, k]) {
     return ["G", 1 - Math.min(1, 0.3 * c + 0.59 * m + 0.11 * y + k)];
   }
@@ -47,12 +47,12 @@ class ColorConverters {
   }
 
   static G_rgb([g]) {
-    g = scaleAndClamp(g);
+    g = this.#scaleAndClamp(g);
     return [g, g, g];
   }
 
   static G_HTML([g]) {
-    const G = makeColorComp(g);
+    const G = this.#makeColorComp(g);
     return `#${G}${G}${G}`;
   }
 
@@ -61,11 +61,11 @@ class ColorConverters {
   }
 
   static RGB_rgb(color) {
-    return color.map(scaleAndClamp);
+    return color.map(this.#scaleAndClamp.bind(this));
   }
 
   static RGB_HTML(color) {
-    return `#${color.map(makeColorComp).join("")}`;
+    return `#${color.map(this.#makeColorComp.bind(this)).join("")}`;
   }
 
   static T_HTML() {
@@ -87,9 +87,9 @@ class ColorConverters {
 
   static CMYK_rgb([c, y, m, k]) {
     return [
-      scaleAndClamp(1 - Math.min(1, c + k)),
-      scaleAndClamp(1 - Math.min(1, m + k)),
-      scaleAndClamp(1 - Math.min(1, y + k)),
+      this.#scaleAndClamp(1 - Math.min(1, c + k)),
+      this.#scaleAndClamp(1 - Math.min(1, m + k)),
+      this.#scaleAndClamp(1 - Math.min(1, y + k)),
     ];
   }
 

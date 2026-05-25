@@ -13,207 +13,236 @@
  * limitations under the License.
  */
 
-import {
-  Border,
-  Cursor,
-  Display,
-  Font,
-  GlobalConstants,
-  Highlight,
-  Position,
-  ScaleHow,
-  ScaleWhen,
-  Style,
-  Trans,
-  ZoomType,
-} from "./constants.js";
-import { CheckboxField, Field, RadioButtonField } from "./field.js";
-import { AForm } from "./aform.js";
-import { App } from "./app.js";
-import { Color } from "./color.js";
-import { Console } from "./console.js";
-import { Doc } from "./doc.js";
-import { ProxyHandler } from "./proxy.js";
-import { serializeError } from "./app_utils.js";
-import { Util } from "./util.js";
+import "./app_utils.js";
+import "./app.js";
+import "./aform.js";
+import "./color.js";
+import "./console.js";
+import "./doc.js";
+import "./event.js";
+import "./field.js";
+import "./util.js";
+import { ADBE } from "./constants.js";
 
-function initSandbox(params) {
-  delete globalThis.pdfjsScripting;
+globalThis.pdfjsScripting = {
+  initSandbox(params) {
+    delete globalThis.pdfjsScripting;
 
-  // externalCall is a function to call a function defined
-  // outside the sandbox.
-  // (see src/pdf.sandbox.external.js).
-  const externalCall = globalThis.callExternalFunction;
-  delete globalThis.callExternalFunction;
+    // externalCall is a function to call a function defined
+    // outside the sandbox.
+    // (see src/pdf.sandbox.external.js).
+    const externalCall = globalThis.callExternalFunction;
+    delete globalThis.callExternalFunction;
 
-  // eslint-disable-next-line no-eval
-  const globalEval = code => globalThis.eval(code);
-  const send = data => externalCall("send", [data]);
-  const proxyHandler = new ProxyHandler();
-  const { data } = params;
-  const doc = new Doc({
-    send,
-    globalEval,
-    ...data.docInfo,
-  });
-  const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
-  const app = new App({
-    send,
-    globalEval,
-    externalCall,
-    _document,
-    calculationOrder: data.calculationOrder,
-    proxyHandler,
-    ...data.appInfo,
-  });
-
-  const util = new Util({ externalCall });
-  const appObjects = app._objects;
-
-  if (data.objects) {
-    const annotations = [];
-
-    for (const [name, objs] of Object.entries(data.objects)) {
-      annotations.length = 0;
-      let container = null;
-
-      for (const obj of objs) {
-        if (obj.type !== "") {
-          annotations.push(obj);
-        } else {
-          container = obj;
-        }
+    // eslint-disable-next-line no-eval
+    const globalEval = code => globalThis.eval(code);
+    const send = data => {
+      if (data.stack) {
+        data = { command: "error", value: `${data.toString()}\n${data.stack}` };
       }
+      externalCall("send", [data]);
+    };
+    const appObjects = Object.create(null);
+    const { data } = params;
 
-      let obj = container;
-      if (annotations.length > 0) {
-        obj = annotations[0];
-        obj.send = send;
+    const {
+      AForm,
+      App,
+      CheckboxField,
+      Console,
+      Doc,
+      EventDispatcher,
+      Field,
+      RadioButtonField,
+      Util,
+    } = globalThis;
+    delete globalThis.AForm;
+    delete globalThis.App;
+    delete globalThis.CheckboxField;
+    delete globalThis.Console;
+    delete globalThis.Doc;
+    delete globalThis.EventDispatcher;
+    delete globalThis.Field;
+    delete globalThis.RadioButtonField;
+    delete globalThis.Util;
+
+    // Claim all internal factories before any instance is created.
+    // Each is a one-shot: claimInternals() deletes itself from the class after
+    // the first call, making it inaccessible from that point on.
+    const getDocInternals = Doc.claimInternals();
+    const getEventDispatcherInternals = EventDispatcher.claimInternals();
+    const getAppInternals = App.claimInternals();
+    const getUtilInternals = Util.claimInternals();
+    const fieldPrivate = Field.claimInternals();
+    const radioFieldPrivate = RadioButtonField.claimInternals(fieldPrivate);
+    const checkboxFieldPrivate =
+      CheckboxField.claimInternals(radioFieldPrivate);
+
+    function getFieldPrivate(field) {
+      if (field instanceof CheckboxField) {
+        return checkboxFieldPrivate;
       }
-
-      obj.globalEval = globalEval;
-      obj.doc = _document;
-      obj.fieldPath = name;
-      obj.appObjects = appObjects;
-      obj.util = util;
-
-      const otherFields = annotations.slice(1);
-
-      let field;
-      switch (obj.type) {
-        case "radiobutton": {
-          field = new RadioButtonField(otherFields, obj);
-          break;
-        }
-        case "checkbox": {
-          field = new CheckboxField(otherFields, obj);
-          break;
-        }
-        default:
-          if (otherFields.length > 0) {
-            obj.siblings = otherFields.map(x => x.id);
-          }
-          field = new Field(obj);
+      if (field instanceof RadioButtonField) {
+        return radioFieldPrivate;
       }
-
-      const wrapped = new Proxy(field, proxyHandler);
-      const _object = { obj: field, wrapped };
-      doc._addField(name, _object);
-      for (const object of objs) {
-        appObjects[object.id] = _object;
-      }
-      if (container) {
-        appObjects[container.id] = _object;
-      }
+      return fieldPrivate;
     }
-  }
 
-  const color = new Color();
-
-  globalThis.event = null;
-  globalThis.global = Object.create(null);
-  globalThis.app = new Proxy(app, proxyHandler);
-  globalThis.color = new Proxy(color, proxyHandler);
-  globalThis.console = new Proxy(new Console({ send }), proxyHandler);
-  globalThis.util = new Proxy(util, proxyHandler);
-  globalThis.border = Border;
-  globalThis.cursor = Cursor;
-  globalThis.display = Display;
-  globalThis.font = Font;
-  globalThis.highlight = Highlight;
-  globalThis.position = Position;
-  globalThis.scaleHow = ScaleHow;
-  globalThis.scaleWhen = ScaleWhen;
-  globalThis.style = Style;
-  globalThis.trans = Trans;
-  globalThis.zoomtype = ZoomType;
-
-  // Avoid to have a popup asking to update Acrobat.
-  globalThis.ADBE = {
-    Reader_Value_Asked: true,
-    Viewer_Value_Asked: true,
-  };
-
-  // AF... functions
-  const aform = new AForm(doc, app, util, color);
-  for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
-    if (name !== "constructor" && !name.startsWith("_")) {
-      globalThis[name] = aform[name].bind(aform);
-    }
-  }
-
-  // Add global constants such as IDS_GREATER_THAN or RE_NUMBER_ENTRY_DOT_SEP
-  for (const [name, value] of Object.entries(GlobalConstants)) {
-    Object.defineProperty(globalThis, name, {
-      value,
-      writable: false,
+    const userActivationData = {
+      userActivation: false,
+      disablePrinting: false,
+      disableSaving: false,
+    };
+    const doc = new Doc({
+      send,
+      globalEval,
+      userActivationData,
+      ...data.docInfo,
+      getFieldPrivate,
     });
-  }
+    const docInternals = getDocInternals(doc);
 
-  // Color functions
-  Object.defineProperties(globalThis, {
-    ColorConvert: {
-      value: color.convert.bind(color),
-      writable: true,
-    },
-    ColorEqual: {
-      value: color.equal.bind(color),
-      writable: true,
-    },
-  });
+    const eventDispatcher = new EventDispatcher(
+      doc,
+      data.calculationOrder,
+      appObjects,
+      externalCall,
+      getFieldPrivate,
+      docInternals,
+      userActivationData
+    );
+    const eventDispatcherInternals =
+      getEventDispatcherInternals(eventDispatcher);
 
-  // The doc properties must live in the global scope too
-  const properties = Object.create(null);
-  for (const name of Object.getOwnPropertyNames(Doc.prototype)) {
-    if (name === "constructor" || name.startsWith("_")) {
-      continue;
+    const app = (globalThis.app = new App({
+      send,
+      globalEval,
+      userActivationData,
+      externalCall,
+      doc,
+      calculationOrder: data.calculationOrder,
+      ...data.appInfo,
+      getFieldPrivate,
+    }));
+    const appInternals = getAppInternals(app);
+
+    const util = (globalThis.util = new Util());
+    const utilInternals = getUtilInternals(util);
+
+    if (data.objects) {
+      const annotations = [];
+
+      for (const [name, objs] of Object.entries(data.objects)) {
+        annotations.length = 0;
+        let container = null;
+
+        for (const obj of objs) {
+          if (obj.type !== "") {
+            annotations.push(obj);
+          } else {
+            container = obj;
+          }
+        }
+
+        let obj = container;
+        if (annotations.length > 0) {
+          obj = annotations[0];
+          obj.send = send;
+        }
+
+        obj.globalEval = globalEval;
+        obj.fieldPath = name;
+        obj.appObjects = appObjects;
+        obj.util = util;
+        obj.fieldPrivate = fieldPrivate;
+        obj.radioFieldPrivate = radioFieldPrivate;
+        obj.checkboxFieldPrivate = checkboxFieldPrivate;
+        obj.getFieldPrivate = getFieldPrivate;
+        obj.docInternals = docInternals;
+
+        const otherFields = annotations.slice(1);
+
+        let field;
+        switch (obj.type) {
+          case "radiobutton": {
+            obj.fieldPrivate = radioFieldPrivate;
+            field = new RadioButtonField(otherFields, obj);
+            break;
+          }
+          case "checkbox": {
+            obj.fieldPrivate = checkboxFieldPrivate;
+            field = new CheckboxField(otherFields, obj);
+            break;
+          }
+          default:
+            if (otherFields.length > 0) {
+              obj.siblings = otherFields.map(x => x.id);
+            }
+            field = new Field(obj);
+        }
+
+        docInternals.addField(name, field);
+        for (const object of objs) {
+          appObjects[object.id] = field;
+        }
+        if (container) {
+          appObjects[container.id] = field;
+        }
+      }
     }
-    const descriptor = Object.getOwnPropertyDescriptor(Doc.prototype, name);
-    if (descriptor.get) {
-      properties[name] = {
-        get: descriptor.get.bind(doc),
-        set: descriptor.set.bind(doc),
-      };
-    } else {
-      properties[name] = {
-        value: Doc.prototype[name].bind(doc),
-      };
+
+    globalThis.event = null;
+    globalThis.global = Object.create(null);
+    globalThis.console = new Console({ send });
+    globalThis.ADBE = ADBE;
+
+    // AF... functions
+    const aform = new AForm(
+      doc,
+      app,
+      util,
+      utilInternals,
+      eventDispatcherInternals.mergeChange
+    );
+    for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
+      if (name !== "constructor") {
+        globalThis[name] = aform[name].bind(aform);
+      }
     }
-  }
-  Object.defineProperties(globalThis, properties);
 
-  const functions = {
-    dispatchEvent: app._dispatchEvent.bind(app),
-    timeoutCb: app._evalCallback.bind(app),
-  };
-
-  return (name, args) => {
-    try {
-      functions[name](args);
-    } catch (error) {
-      send(serializeError(error));
+    // The doc properties must live in the global scope too
+    const properties = Object.create(null);
+    for (const name of Object.getOwnPropertyNames(Doc.prototype)) {
+      if (name === "constructor" || name.startsWith("_")) {
+        continue;
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(Doc.prototype, name);
+      if (descriptor.get) {
+        properties[name] = {
+          get: descriptor.get.bind(doc),
+          set: descriptor.set.bind(doc),
+        };
+      } else {
+        properties[name] = {
+          value: Doc.prototype[name].bind(doc),
+        };
+      }
     }
-  };
-}
+    Object.defineProperties(globalThis, properties);
 
-export { initSandbox };
+    const functions = {
+      dispatchEvent: eventDispatcherInternals.dispatch,
+      timeoutCb: appInternals.evalCallback,
+    };
+
+    return (name, args) => {
+      try {
+        functions[name](args);
+      } catch (error) {
+        send(error);
+      }
+    };
+  },
+};
+
+export {};

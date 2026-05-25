@@ -13,19 +13,17 @@
  * limitations under the License.
  */
 
-import { PDFObject } from "./pdf_object.js";
+globalThis.Thermometer = class Thermometer {
+  #cancelled = false;
 
-class Thermometer extends PDFObject {
-  _cancelled = false;
+  #duration = 100;
 
-  _duration = 100;
+  #text = "";
 
-  _text = "";
-
-  _value = 0;
+  #value = 0;
 
   get cancelled() {
-    return this._cancelled;
+    return this.#cancelled;
   }
 
   set cancelled(_) {
@@ -33,27 +31,27 @@ class Thermometer extends PDFObject {
   }
 
   get duration() {
-    return this._duration;
+    return this.#duration;
   }
 
   set duration(val) {
-    this._duration = val;
+    this.#duration = val;
   }
 
   get text() {
-    return this._text;
+    return this.#text;
   }
 
   set text(val) {
-    this._text = val;
+    this.#text = val;
   }
 
   get value() {
-    return this._value;
+    return this.#value;
   }
 
   set value(val) {
-    this._value = val;
+    this.#value = val;
   }
 
   begin() {
@@ -63,6 +61,6 @@ class Thermometer extends PDFObject {
   end() {
     /* TODO */
   }
-}
+};
 
-export { Thermometer };
+export {};

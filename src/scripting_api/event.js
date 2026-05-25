@@ -13,11 +13,6 @@
  * limitations under the License.
  */
 
-import {
-  USERACTIVATION_CALLBACKID,
-  USERACTIVATION_MAXTIME_VALIDITY,
-} from "./app_utils.js";
-
 class Event {
   constructor(data) {
     this.change = data.change || "";
@@ -43,18 +38,52 @@ class Event {
   }
 }
 
-class EventDispatcher {
-  constructor(document, calculationOrder, objects, externalCall) {
-    this._document = document;
-    this._calculationOrder = calculationOrder;
-    this._objects = objects;
-    this._externalCall = externalCall;
-
-    this._document.obj._eventDispatcher = this;
-    this._isCalculating = false;
+globalThis.EventDispatcher = class EventDispatcher {
+  static claimInternals() {
+    delete EventDispatcher.claimInternals;
+    return instance => ({
+      dispatch: instance.#dispatch.bind(instance),
+      mergeChange: instance.#mergeChange.bind(instance),
+    });
   }
 
-  mergeChange(event) {
+  #doc;
+
+  #calculationOrder;
+
+  #objects;
+
+  #externalCall;
+
+  #getFieldPrivate;
+
+  #docInternals;
+
+  #isCalculating = false;
+
+  #userActivationData;
+
+  constructor(
+    doc,
+    calculationOrder,
+    objects,
+    externalCall,
+    getFieldPrivate,
+    docInternals,
+    userActivationData
+  ) {
+    this.#doc = doc;
+    this.#calculationOrder = calculationOrder;
+    this.#objects = objects;
+    this.#externalCall = externalCall;
+    this.#getFieldPrivate = getFieldPrivate;
+    this.#docInternals = docInternals;
+    this.#userActivationData = userActivationData;
+
+    docInternals.setCalculateNow(this.#calculateNow.bind(this));
+  }
+
+  #mergeChange(event) {
     let value = event.value;
     if (Array.isArray(value)) {
       return value;
@@ -72,30 +101,33 @@ class EventDispatcher {
     return `${prefix}${event.change}${postfix}`;
   }
 
-  userActivation() {
-    this._document.obj._userActivation = true;
-    this._externalCall("setTimeout", [
+  #userActivation() {
+    this.#userActivationData.userActivation = true;
+
+    const USERACTIVATION_CALLBACKID = 0;
+    const USERACTIVATION_MAXTIME_VALIDITY = 5000;
+    this.#externalCall("setTimeout", [
       USERACTIVATION_CALLBACKID,
       USERACTIVATION_MAXTIME_VALIDITY,
     ]);
   }
 
-  dispatch(baseEvent) {
+  #dispatch(baseEvent) {
     if (
       typeof PDFJSDev !== "undefined" &&
       PDFJSDev.test("TESTING") &&
       baseEvent.name === "sandboxtripbegin"
     ) {
-      this._externalCall("send", [{ command: "sandboxTripEnd" }]);
+      this.#externalCall("send", [{ command: "sandboxTripEnd" }]);
       return;
     }
 
     const id = baseEvent.id;
-    if (!(id in this._objects)) {
+    if (!(id in this.#objects)) {
       let event;
       if (id === "doc" || id === "page") {
         event = globalThis.event = new Event(baseEvent);
-        event.source = event.target = this._document.wrapped;
+        event.source = event.target = globalThis;
         event.name = baseEvent.name;
       }
       if (id === "doc") {
@@ -103,11 +135,11 @@ class EventDispatcher {
         if (eventName === "Open") {
           // The user has decided to open this pdf, hence we enable
           // userActivation.
-          this.userActivation();
+          this.#userActivation();
           // Initialize named actions before calling formatAll to avoid any
           // errors in the case where a formatter is using one of those named
           // actions (see #15818).
-          this._document.obj._initActions();
+          this.#docInternals.initActions();
           // Before running the Open event, we run the format callbacks but
           // without changing the value of the fields.
           // Acrobat does the same thing.
@@ -116,38 +148,41 @@ class EventDispatcher {
         if (
           !["DidPrint", "DidSave", "WillPrint", "WillSave"].includes(eventName)
         ) {
-          this.userActivation();
+          this.#userActivation();
         }
-        this._document.obj._dispatchDocEvent(event.name);
+        this.#docInternals.dispatchDocEvent(event.name);
       } else if (id === "page") {
-        this.userActivation();
-        this._document.obj._dispatchPageEvent(
+        this.#userActivation();
+        this.#docInternals.dispatchPageEvent(
           event.name,
           baseEvent.actions,
           baseEvent.pageNumber
         );
       } else if (id === "app" && baseEvent.name === "ResetForm") {
-        this.userActivation();
+        this.#userActivation();
         for (const fieldId of baseEvent.ids) {
-          const obj = this._objects[fieldId];
-          obj?.obj._reset();
+          const field = this.#objects[fieldId];
+          if (field) {
+            this.#getFieldPrivate(field).reset(field);
+          }
         }
       }
       return;
     }
 
     const name = baseEvent.name;
-    const source = this._objects[id];
+    const source = this.#objects[id];
     const event = (globalThis.event = new Event(baseEvent));
     let savedChange;
 
-    this.userActivation();
+    this.#userActivation();
 
-    if (source.obj._isButton()) {
-      source.obj._id = id;
-      event.value = source.obj._getExportValue(event.value);
+    const sfp = this.#getFieldPrivate(source);
+    if (sfp.isButton()) {
+      sfp.setId(source, id);
+      event.value = sfp.getExportValue(source, event.value);
       if (name === "Action") {
-        source.obj._value = event.value;
+        sfp.setValue(source, event.value);
       }
     }
 
@@ -189,17 +224,17 @@ class EventDispatcher {
       if (event.willCommit) {
         this.runValidation(source, event);
       } else {
-        if (source.obj._isChoice) {
-          source.obj.value = savedChange.changeEx;
-          source.obj._send({
-            id: source.obj._id,
-            siblings: source.obj._siblings,
-            value: source.obj.value,
+        if (sfp.getIsChoice(source)) {
+          source.value = savedChange.changeEx;
+          sfp.send(source, {
+            id: sfp.getId(source),
+            siblings: sfp.getSiblings(source),
+            value: source.value,
           });
           return;
         }
 
-        const value = (source.obj.value = this.mergeChange(event));
+        const value = (source.value = this.#mergeChange(event));
         let selStart, selEnd;
         if (
           event.selStart !== savedChange.selStart ||
@@ -211,26 +246,26 @@ class EventDispatcher {
         } else {
           selEnd = selStart = savedChange.selStart + event.change.length;
         }
-        source.obj._send({
-          id: source.obj._id,
-          siblings: source.obj._siblings,
+        sfp.send(source, {
+          id: sfp.getId(source),
+          siblings: sfp.getSiblings(source),
           value,
           selRange: [selStart, selEnd],
         });
       }
     } else if (!event.willCommit) {
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      sfp.send(source, {
+        id: sfp.getId(source),
+        siblings: sfp.getSiblings(source),
         value: savedChange.value,
         selRange: [savedChange.selStart, savedChange.selEnd],
       });
     } else {
       // Entry is not valid (rc == false) and it's a commit
       // so just clear the field.
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      sfp.send(source, {
+        id: sfp.getId(source),
+        siblings: sfp.getSiblings(source),
         value: "",
         formattedValue: null,
         selRange: [0, 0],
@@ -241,38 +276,39 @@ class EventDispatcher {
   formatAll() {
     // Run format actions if any for all the fields.
     const event = (globalThis.event = new Event({}));
-    for (const source of Object.values(this._objects)) {
-      event.value = source.obj._getValue();
+    for (const source of Object.values(this.#objects)) {
+      event.value = this.#getFieldPrivate(source).getComputedValue(source);
       this.runActions(source, source, event, "Format");
     }
   }
 
   runValidation(source, event) {
     const didValidateRun = this.runActions(source, source, event, "Validate");
+    const sfp = this.#getFieldPrivate(source);
     if (event.rc) {
-      source.obj.value = event.value;
+      source.value = event.value;
 
       this.runCalculate(source, event);
 
-      const savedValue = (event.value = source.obj._getValue());
+      const savedValue = (event.value = sfp.getComputedValue(source));
       let formattedValue = null;
 
       if (this.runActions(source, source, event, "Format")) {
         formattedValue = event.value?.toString?.();
       }
 
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      sfp.send(source, {
+        id: sfp.getId(source),
+        siblings: sfp.getSiblings(source),
         value: savedValue,
         formattedValue,
       });
       event.value = savedValue;
     } else if (didValidateRun) {
       // The value is not valid.
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      sfp.send(source, {
+        id: sfp.getId(source),
+        siblings: sfp.getSiblings(source),
         value: "",
         formattedValue: null,
         selRange: [0, 0],
@@ -282,63 +318,64 @@ class EventDispatcher {
   }
 
   runActions(source, target, event, eventName) {
-    event.source = source.wrapped;
-    event.target = target.wrapped;
+    event.source = source;
+    event.target = target;
     event.name = eventName;
-    event.targetName = target.obj.name;
+    event.targetName = target.name;
     event.rc = true;
 
-    return target.obj._runActions(event);
+    return this.#getFieldPrivate(target).runActions(target, event);
   }
 
-  calculateNow() {
+  #calculateNow() {
     // This function can be called by a JS script (doc.calculateNow()).
-    // If !this._calculationOrder then there is nothing to calculate.
-    // _isCalculating is here to prevent infinite recursion with calculateNow.
-    // If !this._document.obj.calculate then the script doesn't want to have
+    // If !this.#calculationOrder then there is nothing to calculate.
+    // #isCalculating is here to prevent infinite recursion with calculateNow.
+    // If !this.#doc.calculate then the script doesn't want to have
     // a calculate.
 
     if (
-      !this._calculationOrder ||
-      this._isCalculating ||
-      !this._document.obj.calculate
+      !this.#calculationOrder ||
+      this.#isCalculating ||
+      !this.#doc.calculate
     ) {
       return;
     }
-    this._isCalculating = true;
-    const first = this._calculationOrder[0];
-    const source = this._objects[first];
+    this.#isCalculating = true;
+    const first = this.#calculationOrder[0];
+    const source = this.#objects[first];
     globalThis.event = new Event({});
 
     this.runCalculate(source, globalThis.event);
 
-    this._isCalculating = false;
+    this.#isCalculating = false;
   }
 
   runCalculate(source, event) {
-    // _document.obj.calculate is equivalent to doc.calculate and can be
+    // #doc.calculate is equivalent to doc.calculate and can be
     // changed by a script to allow a future calculate or not.
     // This function is either called by calculateNow or when an action
     // is triggered (in this case we cannot be currently calculating).
-    // So there are no need to check for _isCalculating because it has
+    // So there are no need to check for #isCalculating because it has
     // been already done in calculateNow.
-    if (!this._calculationOrder || !this._document.obj.calculate) {
+    if (!this.#calculationOrder || !this.#doc.calculate) {
       return;
     }
 
-    for (const targetId of this._calculationOrder) {
-      if (!(targetId in this._objects)) {
+    for (const targetId of this.#calculationOrder) {
+      if (!(targetId in this.#objects)) {
         continue;
       }
 
-      if (!this._document.obj.calculate) {
+      if (!this.#doc.calculate) {
         // An action could have changed calculate value.
         break;
       }
 
       event.value = null;
-      const target = this._objects[targetId];
-      let savedValue = target.obj._getValue();
+      const target = this.#objects[targetId];
+      const tfp = this.#getFieldPrivate(target);
+      let savedValue = tfp.getComputedValue(target);
       this.runActions(source, target, event, "Calculate");
 
       if (!event.rc) {
@@ -347,37 +384,37 @@ class EventDispatcher {
 
       if (event.value !== null) {
         // A new value has been calculated so set it.
-        target.obj.value = event.value;
+        target.value = event.value;
       } else {
-        event.value = target.obj._getValue();
+        event.value = tfp.getComputedValue(target);
       }
 
       this.runActions(target, target, event, "Validate");
       if (!event.rc) {
-        if (target.obj._getValue() !== savedValue) {
-          target.wrapped.value = savedValue;
+        if (tfp.getComputedValue(target) !== savedValue) {
+          target.value = savedValue;
         }
         continue;
       }
 
       if (event.value === null) {
-        event.value = target.obj._getValue();
+        event.value = tfp.getComputedValue(target);
       }
 
-      savedValue = target.obj._getValue();
+      savedValue = tfp.getComputedValue(target);
       let formattedValue = null;
       if (this.runActions(target, target, event, "Format")) {
         formattedValue = event.value?.toString?.();
       }
 
-      target.obj._send({
-        id: target.obj._id,
-        siblings: target.obj._siblings,
+      tfp.send(target, {
+        id: tfp.getId(target),
+        siblings: tfp.getSiblings(target),
         value: savedValue,
         formattedValue,
       });
     }
   }
-}
+};
 
-export { Event, EventDispatcher };
+export {};

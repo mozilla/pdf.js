@@ -14,16 +14,29 @@
  */
 /* eslint-disable radix */
 
-import { PDFObject } from "./pdf_object.js";
+globalThis.Util = class Util {
+  static claimInternals() {
+    delete Util.claimInternals;
+    return instance => ({
+      scand: instance.#scand.bind(instance),
+    });
+  }
 
-class Util extends PDFObject {
   #dateActionsCache = null;
 
-  constructor(data) {
-    super(data);
+  #scandCache;
 
-    this._scandCache = new Map();
-    this._months = [
+  #months;
+
+  #days;
+
+  MILLISECONDS_IN_DAY = 86400000;
+
+  MILLISECONDS_IN_WEEK = 604800000;
+
+  constructor() {
+    this.#scandCache = new Map();
+    this.#months = [
       "January",
       "February",
       "March",
@@ -37,7 +50,7 @@ class Util extends PDFObject {
       "November",
       "December",
     ];
-    this._days = [
+    this.#days = [
       "Sunday",
       "Monday",
       "Tuesday",
@@ -46,11 +59,6 @@ class Util extends PDFObject {
       "Friday",
       "Saturday",
     ];
-    this.MILLISECONDS_IN_DAY = 86400000;
-    this.MILLISECONDS_IN_WEEK = 604800000;
-
-    // used with crackURL
-    this._externalCall = data.externalCall;
   }
 
   printf(...args) {
@@ -220,12 +228,12 @@ class Util extends PDFObject {
     }
 
     const handlers = {
-      mmmm: data => this._months[data.month],
-      mmm: data => this._months[data.month].substring(0, 3),
+      mmmm: data => this.#months[data.month],
+      mmm: data => this.#months[data.month].substring(0, 3),
       mm: data => (data.month + 1).toString().padStart(2, "0"),
       m: data => (data.month + 1).toString(),
-      dddd: data => this._days[data.dayOfWeek],
-      ddd: data => this._days[data.dayOfWeek].substring(0, 3),
+      dddd: data => this.#days[data.dayOfWeek],
+      ddd: data => this.#days[data.dayOfWeek].substring(0, 3),
       dd: data => data.day.toString().padStart(2, "0"),
       d: data => data.day.toString(),
       yyyy: data => data.year.toString().padStart(4, "0"),
@@ -443,10 +451,11 @@ class Util extends PDFObject {
   }
 
   scand(cFormat, cDate) {
-    return this._scand(cFormat, cDate);
+    return this.#scand(cFormat, cDate);
   }
 
-  _scand(cFormat, cDate, strict = false) {
+  // Keep _scand accessible from aform.js (trusted code).
+  #scand(cFormat, cDate, strict = false) {
     if (typeof cDate !== "string") {
       return new Date(cDate);
     }
@@ -464,9 +473,9 @@ class Util extends PDFObject {
         return this.scand("m/d/yy h:MM:ss tt", cDate);
     }
 
-    if (!this._scandCache.has(cFormat)) {
-      const months = this._months;
-      const days = this._days;
+    if (!this.#scandCache.has(cFormat)) {
+      const months = this.#months;
+      const days = this.#days;
 
       const handlers = {
         mmmm: {
@@ -609,10 +618,10 @@ class Util extends PDFObject {
         }
       );
 
-      this._scandCache.set(cFormat, [re, actions]);
+      this.#scandCache.set(cFormat, [re, actions]);
     }
 
-    const [re, actions] = this._scandCache.get(cFormat);
+    const [re, actions] = this.#scandCache.get(cFormat);
 
     const matches = new RegExp(`^${re}$`, "g").exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
@@ -654,6 +663,6 @@ class Util extends PDFObject {
   xmlToSpans() {
     /* Not implemented */
   }
-}
+};
 
-export { Util };
+export {};

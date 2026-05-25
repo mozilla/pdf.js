@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-class PrintParams {
+globalThis.PrintParams = class PrintParams {
   binaryOk = true;
 
   bitmapDPI = 150;
@@ -174,6 +174,6 @@ class PrintParams {
   constructor(data) {
     this.lastPage = data.lastPage;
   }
-}
+};
 
-export { PrintParams };
+export {};

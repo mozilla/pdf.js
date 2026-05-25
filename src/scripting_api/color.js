@@ -14,38 +14,33 @@
  */
 
 import { ColorConverters } from "../shared/scripting_utils.js";
-import { PDFObject } from "./pdf_object.js";
 
-class Color extends PDFObject {
-  transparent = ["T"];
+globalThis.color = Object.freeze({
+  transparent: ["T"],
 
-  black = ["G", 0];
+  black: ["G", 0],
 
-  white = ["G", 1];
+  white: ["G", 1],
 
-  red = ["RGB", 1, 0, 0];
+  red: ["RGB", 1, 0, 0],
 
-  green = ["RGB", 0, 1, 0];
+  green: ["RGB", 0, 1, 0],
 
-  blue = ["RGB", 0, 0, 1];
+  blue: ["RGB", 0, 0, 1],
 
-  cyan = ["CMYK", 1, 0, 0, 0];
+  cyan: ["CMYK", 1, 0, 0, 0],
 
-  magenta = ["CMYK", 0, 1, 0, 0];
+  magenta: ["CMYK", 0, 1, 0, 0],
 
-  yellow = ["CMYK", 0, 0, 1, 0];
+  yellow: ["CMYK", 0, 0, 1, 0],
 
-  dkGray = ["G", 0.25];
+  dkGray: ["G", 0.25],
 
-  gray = ["G", 0.5];
+  gray: ["G", 0.5],
 
-  ltGray = ["G", 0.75];
+  ltGray: ["G", 0.75],
 
-  constructor() {
-    super({});
-  }
-
-  static _isValidSpace(cColorSpace) {
+  _isValidSpace(cColorSpace) {
     return (
       typeof cColorSpace === "string" &&
       (cColorSpace === "T" ||
@@ -53,14 +48,14 @@ class Color extends PDFObject {
         cColorSpace === "RGB" ||
         cColorSpace === "CMYK")
     );
-  }
+  },
 
-  static _isValidColor(colorArray) {
+  _isValidColor(colorArray) {
     if (!Array.isArray(colorArray) || colorArray.length === 0) {
       return false;
     }
     const space = colorArray[0];
-    if (!Color._isValidSpace(space)) {
+    if (!this._isValidSpace(space)) {
       return false;
     }
 
@@ -92,14 +87,14 @@ class Color extends PDFObject {
     return colorArray
       .slice(1)
       .every(c => typeof c === "number" && c >= 0 && c <= 1);
-  }
+  },
 
-  static _getCorrectColor(colorArray) {
-    return Color._isValidColor(colorArray) ? colorArray : ["G", 0];
-  }
+  _getCorrectColor(colorArray) {
+    return this._isValidColor(colorArray) ? colorArray : ["G", 0];
+  },
 
   convert(colorArray, cColorSpace) {
-    if (!Color._isValidSpace(cColorSpace)) {
+    if (!this._isValidSpace(cColorSpace)) {
       return this.black;
     }
 
@@ -107,7 +102,7 @@ class Color extends PDFObject {
       return ["T"];
     }
 
-    colorArray = Color._getCorrectColor(colorArray);
+    colorArray = this._getCorrectColor(colorArray);
     if (colorArray[0] === cColorSpace) {
       return colorArray;
     }
@@ -119,11 +114,11 @@ class Color extends PDFObject {
     return ColorConverters[`${colorArray[0]}_${cColorSpace}`](
       colorArray.slice(1)
     );
-  }
+  },
 
   equal(colorArray1, colorArray2) {
-    colorArray1 = Color._getCorrectColor(colorArray1);
-    colorArray2 = Color._getCorrectColor(colorArray2);
+    colorArray1 = this._getCorrectColor(colorArray1);
+    colorArray2 = this._getCorrectColor(colorArray2);
 
     if (colorArray1[0] === "T" || colorArray2[0] === "T") {
       return colorArray1[0] === "T" && colorArray2[0] === "T";
@@ -134,7 +129,10 @@ class Color extends PDFObject {
     }
 
     return colorArray1.slice(1).every((c, i) => c === colorArray2[i + 1]);
-  }
-}
+  },
+});
 
-export { Color };
+globalThis.ColorConvert = globalThis.color.convert.bind(globalThis.color);
+globalThis.ColorEqual = globalThis.color.equal.bind(globalThis.color);
+
+export {};

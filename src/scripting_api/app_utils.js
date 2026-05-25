@@ -13,24 +13,6 @@
  * limitations under the License.
  */
 
-const VIEWER_TYPE = "PDF.js";
-const VIEWER_VARIATION = "Full";
-const VIEWER_VERSION = 21.00720099;
-const FORMS_VERSION = 21.00720099;
-
-const USERACTIVATION_CALLBACKID = 0;
-const USERACTIVATION_MAXTIME_VALIDITY = 5000;
-
-function serializeError(error) {
-  const value = `${error.toString()}\n${error.stack}`;
-  return { command: "error", value };
-}
-
-// Helpers for simple `Map.prototype.getOrInsertComputed()` invocations,
-// to avoid duplicate function creation.
-const makeArr = () => [];
-const makeMap = () => new Map();
-
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   // TODO: Remove this once `Math.sumPrecise` is supported in QuickJS.
   //
@@ -55,14 +37,4 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
   }
 }
 
-export {
-  FORMS_VERSION,
-  makeArr,
-  makeMap,
-  serializeError,
-  USERACTIVATION_CALLBACKID,
-  USERACTIVATION_MAXTIME_VALIDITY,
-  VIEWER_TYPE,
-  VIEWER_VARIATION,
-  VIEWER_VERSION,
-};
+export {};
