@@ -49,6 +49,61 @@ import { startBrowser } from "../test.mjs";
  */
 
 describe("Text layer", () => {
+  describe("Text layout", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        100,
+        {
+          postPageSetup: async page => {
+            await page.evaluate(() => {
+              const style = document.createElement("style");
+              style.textContent = `
+                body,
+                #mainContainer {
+                  letter-spacing: 5px;
+                  word-spacing: 5px;
+                }
+              `;
+              document.documentElement.append(style);
+            });
+          },
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must ignore inherited text spacing styles", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          const spacing = await page.evaluate(() => {
+            const textLayer = document.querySelector(".textLayer");
+            const span = textLayer.querySelector("span");
+            const textLayerStyle = getComputedStyle(textLayer);
+            const spanStyle = getComputedStyle(span);
+            return {
+              textLayerLetterSpacing: textLayerStyle.letterSpacing,
+              textLayerWordSpacing: textLayerStyle.wordSpacing,
+              spanLetterSpacing: spanStyle.letterSpacing,
+              spanWordSpacing: spanStyle.wordSpacing,
+            };
+          });
+
+          expect(spacing.textLayerLetterSpacing).toEqual("normal");
+          expect(spacing.spanLetterSpacing).toEqual("normal");
+          expect(["0px", "normal"]).toContain(spacing.textLayerWordSpacing);
+          expect(["0px", "normal"]).toContain(spacing.spanWordSpacing);
+        })
+      );
+    });
+  });
+
   describe("Text selection", () => {
     // page.mouse.move(x, y, { steps: ... }) doesn't work in Firefox, because
     // puppeteer will send fractional intermediate positions and Firefox doesn't

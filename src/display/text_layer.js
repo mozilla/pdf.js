@@ -473,7 +473,8 @@ class TextLayer {
       // OffscreenCanvas.
       const canvas = document.createElement("canvas");
       canvas.style.cssText =
-        "position:absolute;top:0;left:0;width:0;height:0;display:none";
+        "position:absolute;top:0;left:0;width:0;height:0;display:none;" +
+        "letter-spacing:normal;word-spacing:normal";
       canvas.lang = lang;
       document.body.append(canvas);
       ctx = canvas.getContext("2d", {
