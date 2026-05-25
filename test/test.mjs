@@ -423,15 +423,38 @@ async function startRefTest(masterMode, showRefImages) {
   checkRefsTmp();
 }
 
-function handleSessionTimeout(session) {
-  if (session.closed) {
+async function handleSessionTimeout(session) {
+  if (session.closed || session.recovering) {
     return;
   }
+  const inflightIds = Object.keys(session.tasks);
+  const suffix = inflightIds.length > 0 ? ` (${inflightIds.join(", ")})` : "";
   console.log(
-    `${TEST_UNEXPECTED_FAIL} | test failed ${session.name} has not responded in ${browserTimeout}s`
+    `${TEST_UNEXPECTED_FAIL} | test failed ${session.name} has not responded in ${browserTimeout}s${suffix}`
   );
   session.numErrors += session.remaining;
   session.remaining = 0;
+  session.taskResults = {};
+  session.tasks = {};
+
+  monitorBrowserTimeout(session, null);
+  if (session.page) {
+    session.recovering = true;
+    try {
+      await session.page.reload({
+        timeout: browserTimeout * 1000,
+        waitUntil: "domcontentloaded",
+      });
+      session.recovering = false;
+      monitorBrowserTimeout(session, handleSessionTimeout);
+      return;
+    } catch (err) {
+      console.log(
+        `Failed to reload ${session.name} after timeout: ${err.message}`
+      );
+      session.recovering = false;
+    }
+  }
   closeSession(session.name);
 }
 
@@ -768,9 +791,15 @@ async function handleWsBinaryResult(data) {
   const { browser, id, round, page, failure, lastPageNum, numberOfTasks } =
     meta;
   const session = getSession(browser);
+  if (!session || session.closed) {
+    return;
+  }
   monitorBrowserTimeout(session, handleSessionTimeout);
 
   const taskResults = session.taskResults[id];
+  if (!taskResults) {
+    return;
+  }
   if (!taskResults[round]) {
     taskResults[round] = [];
   }
