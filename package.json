@@ -51,7 +51,7 @@
     "postcss-discard-comments": "^8.0.0",
     "postcss-values-parser": "^8.0.0",
     "prettier": "^3.8.3",
-    "puppeteer": "^24.43.1",
+    "puppeteer": "^25.1.0",
     "stylelint": "^17.12.0",
     "stylelint-prettier": "^5.0.3",
     "svglint": "^4.2.1",
