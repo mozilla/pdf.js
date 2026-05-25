@@ -4436,6 +4436,13 @@ class PartialEvaluator {
         // FontDescriptor is only required for Type3 fonts when the document
         // is a tagged pdf.
         descriptor = Dict.empty;
+      } else if (composite) {
+        // Some PDFs omit the FontDescriptor on the descendant CIDFont when
+        // referencing one of the standard Acrobat CJK fonts via a predefined
+        // CMap (e.g. /Encoding /90ms-RKSJ-H with /BaseFont /HeiseiMin-W3).
+        // Fall through so the CMap is loaded by the composite-font path
+        // below; otherwise multi-byte codes would be decoded byte-by-byte.
+        descriptor = Dict.empty;
       } else {
         // Before PDF 1.5 if the font was one of the base 14 fonts, having a
         // FontDescriptor was not required.

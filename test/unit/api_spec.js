@@ -4009,6 +4009,25 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
+    it("gets text content from a Type0 composite font with no FontDescriptor, using a predefined CMap", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("90ms_rksj_h_sample.pdf", {
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("Hello ASCII\n日本語テスト");
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content with a rised text", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue16221.pdf"));
       const pdfDoc = await loadingTask.promise;
