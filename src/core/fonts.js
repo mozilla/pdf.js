@@ -3187,9 +3187,23 @@ class Font {
     } else {
       // ... using existing 'name' table as prototype
       const [namePrototype, nameRecords] = readNameTable(tables.name);
+      this.psName = namePrototype[0][6] || null;
+
+      // Edge on Windows substitutes the system Symbol font for any embedded
+      // font whose name table identifies it as "Symbol"/"SymbolMT", ignoring
+      // the embedded glyphs. Overwrite the family/full/PostScript name
+      // entries with the unique `loadedName` so the regenerated name table
+      // cannot collide with the system font, mirroring what Firefox does for
+      // downloadable @font-face fonts (gfxFontUtils::RenameFont).
+      const family = namePrototype[1][1] || namePrototype[0][1] || "";
+      if (/^symbol/i.test(family) || /^symbol/i.test(this.psName || "")) {
+        for (const id of [1, 4, 6]) {
+          namePrototype[0][id] = this.loadedName;
+          namePrototype[1][id] = this.loadedName;
+        }
+      }
 
       tables.name.data = createNameTable(name, namePrototype);
-      this.psName = namePrototype[0][6] || null;
 
       if (!properties.composite) {
         // For TrueType fonts that do not include `ToUnicode` or `Encoding`
