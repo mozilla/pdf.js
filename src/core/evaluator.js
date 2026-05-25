@@ -4203,9 +4203,7 @@ class PartialEvaluator {
   isSerifFont(baseFontName) {
     // Simulating descriptor flags attribute
     const fontNameWoStyle = baseFontName.split("-", 1)[0];
-    return (
-      fontNameWoStyle in getSerifFonts() || /serif/gi.test(fontNameWoStyle)
-    );
+    return fontNameWoStyle in getSerifFonts() || /serif/i.test(fontNameWoStyle);
   }
 
   getBaseFontMetrics(name) {

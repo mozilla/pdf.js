@@ -140,7 +140,7 @@ class PDFNetworkStream extends BasePDFStream {
     const chunk = getArrayBuffer(xhr.response);
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
       const rangeHeader = xhr.getResponseHeader("Content-Range");
-      if (/bytes (\d+)-(\d+)\/(\d+)/.test(rangeHeader)) {
+      if (/bytes \d+-\d+\/\d+/.test(rangeHeader)) {
         pendingRequest.onDone(chunk);
       } else {
         warn(`Missing or invalid "Content-Range" header.`);

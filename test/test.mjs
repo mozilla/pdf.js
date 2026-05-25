@@ -78,7 +78,7 @@ function parseOptions() {
   // Expand `-X=value` short-option forms into `["-X", "value"]` since
   // parseArgs only strips the `=` separator for long options (--foo=bar).
   const args = process.argv.slice(2).flatMap(arg => {
-    const m = arg.match(/^(-[a-zA-Z])=(.*)/s);
+    const m = arg.match(/^(-[a-z])=(.*)/is);
     return m ? [m[1], m[2]] : [arg];
   });
   const { values } = parseArgs({

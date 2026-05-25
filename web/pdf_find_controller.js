@@ -75,8 +75,8 @@ let DIACRITICS_EXCEPTION_STR; // Lazily initialized, see below.
 
 const DIACRITICS_REG_EXP = /\p{M}+/gu;
 const SPECIAL_CHARS_REG_EXP = /([+^$|])|(\p{P}+)|(\s+)|(\p{M})|(\p{L})/gu;
-const NOT_DIACRITIC_FROM_END_REG_EXP = /([^\p{M}])\p{M}*$/u;
-const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*([^\p{M}])/u;
+const NOT_DIACRITIC_FROM_END_REG_EXP = /(\P{M})\p{M}*$/u;
+const NOT_DIACRITIC_FROM_START_REG_EXP = /^\p{M}*(\P{M})/u;
 
 // The range [AC00-D7AF] corresponds to the Hangul syllables.
 // The few other chars are some CJK Compatibility Ideographs.
@@ -149,7 +149,7 @@ function normalize(text, options = {}) {
     ];
     normalizationRegex = new RegExp(
       regexps.map(r => `(${r})`).join("|"),
-      "gum"
+      "gmu"
     );
 
     if (hasSyllables) {

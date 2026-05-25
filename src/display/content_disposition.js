@@ -81,6 +81,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
   }
   function textdecode(encoding, value) {
     if (encoding) {
+      // eslint-disable-next-line no-control-regex
       if (!/^[\x00-\xFF]+$/.test(value)) {
         return value;
       }
@@ -184,6 +185,7 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
 
     // Firefox also decodes words even where RFC 2047 section 5 states:
     // "An 'encoded-word' MUST NOT appear within a 'quoted-string'."
+    // eslint-disable-next-line no-control-regex
     if (!value.startsWith("=?") || /[\x00-\x19\x80-\xff]/.test(value)) {
       return value;
     }
@@ -195,12 +197,12 @@ function getFilenameFromContentDispositionHeader(contentDisposition) {
     // encoded-text = any printable ASCII character other than ? or space.
     //        ... but Firefox permits ? and space.
     return value.replaceAll(
-      /=\?([\w-]*)\?([QqBb])\?((?:[^?]|\?(?!=))*)\?=/g,
+      /=\?([\w-]*)\?([QB])\?((?:[^?]|\?(?!=))*)\?=/gi,
       function (matches, charset, encoding, text) {
         if (encoding === "q" || encoding === "Q") {
           // RFC 2047 section 4.2.
           text = text.replaceAll("_", " ");
-          text = text.replaceAll(/=([0-9a-fA-F]{2})/g, function (match, hex) {
+          text = text.replaceAll(/=([0-9a-f]{2})/gi, function (match, hex) {
             return String.fromCharCode(parseInt(hex, 16));
           });
           return textdecode(charset, text);

@@ -1793,16 +1793,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               case "deleteWordBackward": {
                 const match = value
                   .substring(0, selectionStart)
-                  .match(/\w*[^\w]*$/);
+                  .match(/\w*\W*$/);
                 if (match) {
                   selStart -= match[0].length;
                 }
                 break;
               }
               case "deleteWordForward": {
-                const match = value
-                  .substring(selectionStart)
-                  .match(/^[^\w]*\w*/);
+                const match = value.substring(selectionStart).match(/^\W*\w*/);
                 if (match) {
                   selEnd += match[0].length;
                 }

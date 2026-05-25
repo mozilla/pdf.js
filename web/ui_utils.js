@@ -175,6 +175,7 @@ function parseQueryString(query) {
   return params;
 }
 
+// eslint-disable-next-line no-control-regex
 const InvisibleCharsRegExp = /[\x00-\x1F]/g;
 
 /**

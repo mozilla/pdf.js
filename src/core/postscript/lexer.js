@@ -132,7 +132,7 @@ class Lexer {
     this.pos = 0;
     this.len = data.length;
     // Sticky regexes: set lastIndex before exec() to match at an exact offset.
-    this._numberPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?/y;
+    this._numberPattern = /[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?/iy;
     this._identifierPattern = /[a-z]+/y;
   }
 

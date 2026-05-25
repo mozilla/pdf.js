@@ -138,7 +138,8 @@ class Autolinker {
   static findLinks(text) {
     // Regex can be tested and verified at https://regex101.com/r/rXoLiT/2.
     this.#regex ??=
-      /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|(?=\p{L})[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[[\p{P}--\-]<>]]+(?:\.[\S--[[\p{P}--\-]<>]]+)+)/gmv;
+      // eslint-disable-next-line regexp/no-super-linear-backtracking
+      /\b(?:https?:\/\/|mailto:|www\.)(?:[\S--[\p{P}<>]]|\/|[\S--[\[\]]]+[\S--[\p{P}<>]])+|(?=\p{L})[\S--[@\p{Ps}\p{Pe}<>]]+@([\S--[[\p{P}--\-]<>]]+(?:\.[\S--[[\p{P}--\-]<>]]+)+)/gv;
 
     const [normalizedText, diffs] = normalize(text, { ignoreDashEOL: true });
     const matches = normalizedText.matchAll(this.#regex);

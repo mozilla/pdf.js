@@ -585,7 +585,7 @@ describe("Text layer", () => {
                 // Selection starts mid-word in Heading 1, so assert the stable
                 // trailing content rather than exact full-line boundaries.
                 .toHaveRoughlySelected(
-                  /ing 1\s+This paragraph 1\.\s+Heading 2\s+This paragraph 2/s
+                  /ing 1\s+This paragraph 1\.\s+Heading 2\s+This paragraph 2/
                 );
             })
           );

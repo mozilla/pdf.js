@@ -115,10 +115,7 @@ class FontView {
         return;
       }
       const ext = MIMETYPE_TO_EXTENSION.get(font.mimetype) ?? "font";
-      const name = (font.name || font.loadedName).replaceAll(
-        /[^a-z0-9_-]/gi,
-        "_"
-      );
+      const name = (font.name || font.loadedName).replaceAll(/[^\w-]/g, "_");
       const blob = new Blob([font.data], { type: font.mimetype });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

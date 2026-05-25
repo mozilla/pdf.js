@@ -132,7 +132,7 @@ function preprocess(inFilename, outFilename, defines) {
     }
   }
   function expand(line) {
-    line = line.replaceAll(/__[\w]+__/g, function (variable) {
+    line = line.replaceAll(/__\w+__/g, function (variable) {
       variable = variable.substring(2, variable.length - 2);
       if (variable in defines) {
         return defines[variable];
@@ -158,6 +158,7 @@ function preprocess(inFilename, outFilename, defines) {
   let state = STATE_NONE;
   const stack = [];
   const control =
+    // eslint-disable-next-line regexp/no-super-linear-backtracking
     /^(?:\/\/|\s*\/\*|\s*<!--)\s*#(if|elif|else|endif|expand|include|error)\b(?:\s+(.*?)(?:\*\/|-->)?$)?/;
 
   while ((line = readLine()) !== null) {

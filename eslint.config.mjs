@@ -7,6 +7,7 @@ import noUnsanitized from "eslint-plugin-no-unsanitized";
 import perfectionist from "eslint-plugin-perfectionist";
 import preferMathClamp from "./external/eslint_plugins/prefer-math-clamp.mjs";
 import prettierRecommended from "eslint-plugin-prettier/recommended";
+import regexpPlugin from "eslint-plugin-regexp";
 import unicorn from "eslint-plugin-unicorn";
 
 const jsFiles = folder => {
@@ -55,6 +56,14 @@ export default [
   \* ======================================================================== */
 
   prettierRecommended,
+  {
+    files: jsFiles("."),
+    plugins: regexpPlugin.configs["flat/recommended"].plugins,
+    rules: {
+      ...regexpPlugin.configs["flat/recommended"].rules,
+      "regexp/no-legacy-features": "off",
+    },
+  },
   {
     files: ["**/*.json", "**/.*.json"],
     language: "json/json",

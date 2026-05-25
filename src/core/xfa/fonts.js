@@ -90,7 +90,7 @@ class FontFinder {
       return font;
     }
 
-    const pattern = /,|-|_| |bolditalic|bold|italic|regular|it/gi;
+    const pattern = /[,\-_ ]|bolditalic|bold|italic|regular|it/gi;
     let name = fontName.replaceAll(pattern, "");
     font = this.fonts.get(name);
     if (font) {

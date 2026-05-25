@@ -134,8 +134,7 @@ function mapStyle(styleStr, node, richText) {
         ? `${style[key]} ${newValue}`
         : newValue;
     } else {
-      style[key.replaceAll(/-([a-zA-Z])/g, (_, x) => x.toUpperCase())] =
-        newValue;
+      style[key.replaceAll(/-([a-z])/gi, (_, x) => x.toUpperCase())] = newValue;
     }
   }
 

@@ -62,6 +62,7 @@ class Util extends PDFObject {
       throw new TypeError("First argument of printf must be a string");
     }
 
+    // eslint-disable-next-line regexp/no-misleading-capturing-group
     const pattern = /%(,[0-4])?([+ 0#]+)?(\d+)?(\.\d+)?(.)/g;
     const PLUS = 1;
     const SPACE = 2;
