@@ -353,17 +353,28 @@ class PDFThumbnailViewer {
 
   async #mergeFiles(files, insertAfter) {
     this.#toggleBar("waiting", "pdfjs-views-manager-waiting-for-file");
-    const buffers = [];
+    const entries = [];
     for (const file of files) {
-      if (file.type !== "application/pdf") {
+      const isImage = file.type?.startsWith("image/");
+      if (!isImage && file.type !== "application/pdf") {
         const magic = await file.slice(0, 5).text();
         if (magic !== "%PDF-") {
           continue;
         }
       }
-      buffers.push(await file.bytes());
+      if (isImage) {
+        let bitmap;
+        try {
+          bitmap = await PDFThumbnailViewer.#fileToImageBitmap(file);
+        } catch {
+          continue;
+        }
+        entries.push({ image: bitmap, insertAfter });
+      } else {
+        entries.push({ document: await file.bytes(), insertAfter });
+      }
     }
-    if (buffers.length === 0) {
+    if (entries.length === 0) {
       this.#toggleBar("status");
       return;
     }
@@ -371,12 +382,7 @@ class PDFThumbnailViewer {
     const data = this.hasStructuralChanges()
       ? this.getStructuralChanges()
       : [{ document: null }];
-    for (const buffer of buffers) {
-      data.push({
-        document: buffer,
-        insertAfter,
-      });
-    }
+    data.push(...entries);
     this.eventBus._on(
       "pagesloaded",
       () => {
@@ -655,6 +661,71 @@ class PDFThumbnailViewer {
     return (PDFThumbnailViewer.#draggingScaleFactor ||= parseFloat(
       getComputedStyle(image).getPropertyValue("--thumbnail-dragging-scale")
     ));
+  }
+
+  static #fitImageDimensions(width, height, { minSide = 0, maxSide }) {
+    const longest = Math.max(width, height);
+    let scale = 1;
+    if (minSide > 0 && longest < minSide) {
+      scale = minSide / longest;
+    } else if (longest > maxSide) {
+      scale = maxSide / longest;
+    }
+    return scale === 1
+      ? { width, height }
+      : {
+          width: Math.max(1, Math.round(width * scale)),
+          height: Math.max(1, Math.round(height * scale)),
+        };
+  }
+
+  static async #fileToImageBitmap(file) {
+    // Keep image pages large enough to look good when fitted to a PDF page, but
+    // bounded so saving does not allocate worker-side buffers at camera-photo
+    // dimensions.
+    const MIN_RASTER_SIDE = 1024;
+    const MAX_RASTER_SIDE = 4096;
+
+    if (file.type !== "image/svg+xml") {
+      const bitmap = await createImageBitmap(file);
+      const { width, height } = PDFThumbnailViewer.#fitImageDimensions(
+        bitmap.width,
+        bitmap.height,
+        { maxSide: MAX_RASTER_SIDE }
+      );
+      if (width === bitmap.width && height === bitmap.height) {
+        return bitmap;
+      }
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(bitmap, 0, 0, width, height);
+      bitmap.close();
+      return canvas.transferToImageBitmap();
+    }
+    // createImageBitmap doesn't work with SVG (mirroring the workaround in
+    // src/display/editor/tools.js ImageManager): load the file via an Image
+    // element and rasterize it through an OffscreenCanvas. The target raster
+    // size uses the SVG's intrinsic dimensions, clamped so the longest side
+    // falls in [1024, 4096]: large enough to avoid pixelation when fitted to
+    // a page, but capped to prevent a runaway SVG (e.g. a huge viewBox) from
+    // allocating a multi-gigabyte bitmap.
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const { width, height } = PDFThumbnailViewer.#fitImageDimensions(
+        image.naturalWidth || MIN_RASTER_SIDE,
+        image.naturalHeight || MIN_RASTER_SIDE,
+        { minSide: MIN_RASTER_SIDE, maxSide: MAX_RASTER_SIDE }
+      );
+      const canvas = new OffscreenCanvas(width, height);
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(image, 0, 0, width, height);
+      return canvas.transferToImageBitmap();
+    } finally {
+      URL.revokeObjectURL(url);
+    }
   }
 
   #updateThumbnails(currentPageNumber) {
@@ -1580,7 +1651,7 @@ class PDFThumbnailViewer {
     const container = this.container;
     const signal = this.#abortSignal;
 
-    const hasPdfItem = dataTransfer => {
+    const hasMergeableItem = dataTransfer => {
       if (!dataTransfer) {
         return false;
       }
@@ -1590,7 +1661,10 @@ class PDFThumbnailViewer {
       // here to keep the "copy" cursor honest; if needed, drop-time magic-byte
       // validation in #mergeFiles would still catch a permissive variant.
       for (const item of dataTransfer.items) {
-        if (item.kind === "file" && item.type === "application/pdf") {
+        if (
+          item.kind === "file" &&
+          (item.type === "application/pdf" || item.type.startsWith("image/"))
+        ) {
           return true;
         }
       }
@@ -1611,7 +1685,7 @@ class PDFThumbnailViewer {
           // A page-move drag is already in progress.
           !isNaN(this.#lastDraggedOverIndex) ||
           !this._thumbnails.length ||
-          !hasPdfItem(e.dataTransfer)
+          !hasMergeableItem(e.dataTransfer)
         ) {
           return;
         }

@@ -2154,4 +2154,4 @@ class PDFDocument {
   }
 }
 
-export { Page, PDFDocument };
+export { LETTER_SIZE_MEDIABOX, Page, PDFDocument };

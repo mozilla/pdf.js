@@ -25,14 +25,17 @@ import {
   getInheritableProperty,
   getModificationDate,
   getNewAnnotationsMap,
+  numberToString,
 } from "../core_utils.js";
 import { Dict, isName, Name, Ref, RefSet, RefSetCache } from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
+import { Stream, StringStream } from "../stream.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
 import { AnnotationFactory } from "../annotation.js";
 import { BaseStream } from "../base_stream.js";
-import { StringStream } from "../stream.js";
+import { createImage } from "./pdf_images.js";
+import { LETTER_SIZE_MEDIABOX } from "../document.js";
 import { stringToBytes } from "../../shared/util.js";
 
 const MAX_LEAVES_PER_PAGES_NODE = 16;
@@ -112,15 +115,11 @@ class XRefWrapper {
 }
 
 class PDFEditor {
-  // Whether the edited PDF contains only one file. This is used to determine if
-  // we can handle some potential duplications.
-  // For example, there are no obvious way to dedup page labels when merging
-  // multiple PDF files.
-  hasSingleFile = false;
-
-  // Whether the edited PDF contains only one file used one or more times.
-  // This is used to determine if we can preserve some information such as
-  // passwords.
+  // Whether the edited PDF is built from a single source file, used one or more
+  // times. This is used to determine if we can preserve information that can't
+  // be meaningfully merged across distinct files, such as page labels, the Info
+  // dictionary, and passwords. For example, there's no obvious way to dedup
+  // page labels when merging multiple PDF files.
   isSingleFile = false;
 
   #newAnnotationsParams = null;
@@ -554,7 +553,9 @@ class PDFEditor {
 
   /**
    * @typedef {Object} PageInfo
-   * @property {PDFDocument} document
+   * @property {PDFDocument} [document]
+   * @property {ImageBitmap} [image]
+   *  image to insert as a synthetic page.
    * @property {Array<Array<number>|number>} [includePages]
    *  included ranges (inclusive) or indices.
    * @property {Array<Array<number>|number>} [excludePages]
@@ -622,11 +623,15 @@ class PDFEditor {
     const insertAfterList = [];
     for (let i = 0; i < pageInfos.length; i++) {
       const info = pageInfos[i];
-      if (!info.document) {
+      let count;
+      if (info.image) {
+        count = counts[i] = 1;
+      } else if (!info.document) {
         counts[i] = 0;
         continue;
+      } else {
+        count = counts[i] = this.#getFilteredPageIndices(info).length;
       }
-      const count = (counts[i] = this.#getFilteredPageIndices(info).length);
       if (info.pageIndices) {
         continue;
       }
@@ -642,12 +647,14 @@ class PDFEditor {
       return pageInfos;
     }
 
+    const hasContent = info => !!(info.document || info.image);
+
     // Partial pageIndices rely on auto-fill in extractPages, which races with
     // the slots insertAfter assigns here.
     for (let i = 0; i < pageInfos.length; i++) {
       const info = pageInfos[i];
       if (
-        info.document &&
+        hasContent(info) &&
         info.pageIndices &&
         info.pageIndices.length < counts[i]
       ) {
@@ -665,12 +672,12 @@ class PDFEditor {
     // pageIndices entry.
     if (
       sequence.length === 0 &&
-      pageInfos.some(info => info.document && info.pageIndices)
+      pageInfos.some(info => hasContent(info) && info.pageIndices)
     ) {
       const updatedPageInfos = pageInfos.slice();
       let maxExistingPos = -1;
       for (const info of pageInfos) {
-        if (!info.document || !info.pageIndices) {
+        if (!hasContent(info) || !info.pageIndices) {
           continue;
         }
         for (const idx of info.pageIndices) {
@@ -688,7 +695,7 @@ class PDFEditor {
         for (let j = 0; j < updatedPageInfos.length; j++) {
           const existingInfo = updatedPageInfos[j];
           if (
-            !existingInfo.document ||
+            !hasContent(existingInfo) ||
             !existingInfo.pageIndices ||
             existingInfo.pageIndices.every(idx => idx <= threshold)
           ) {
@@ -728,7 +735,7 @@ class PDFEditor {
     }
 
     return pageInfos.map((info, i) => {
-      if (!info.document || info.pageIndices) {
+      if (!hasContent(info) || info.pageIndices) {
         return info;
       }
       const result = { ...info, pageIndices: pageIndicesArr[i] || [] };
@@ -761,10 +768,24 @@ class PDFEditor {
     pageInfos = this.#resolveInsertAfterIndices(pageInfos);
     const promises = [];
     let newIndex = 0;
+    const reservePageSlot = newPageIndex => {
+      if (!Number.isInteger(newPageIndex) || newPageIndex < 0) {
+        throw new Error("extractPages: invalid page index.");
+      }
+      if (this.oldPages[newPageIndex] !== undefined) {
+        throw new Error("extractPages: overlapping pageIndices.");
+      }
+      // Reserve the slot immediately because page/image collection can be
+      // async.
+      this.oldPages[newPageIndex] = null;
+    };
+    // Image entries don't carry document identity, so ignore them when
+    // deciding whether we're operating on a single source PDF.
+    const docPageInfos = pageInfos.filter(info => !!info.document);
     this.isSingleFile =
-      pageInfos.length === 1 ||
-      pageInfos.every(info => info.document === pageInfos[0].document);
-    this.hasSingleFile = pageInfos.length === 1;
+      docPageInfos.length === 1 ||
+      (docPageInfos.length > 0 &&
+        docPageInfos.every(info => info.document === docPageInfos[0].document));
     const allDocumentData = [];
 
     if (annotationStorage) {
@@ -780,27 +801,57 @@ class PDFEditor {
       };
     }
 
-    for (const {
-      document,
-      includePages,
-      excludePages,
-      pageIndices,
-    } of pageInfos) {
+    const imageEntries = [];
+    for (const pageInfo of pageInfos) {
+      const { document, image, includePages, excludePages, pageIndices } =
+        pageInfo;
+      if (image) {
+        if (pageIndices) {
+          newIndex = -1;
+          if (pageIndices.length > 1) {
+            throw new Error("extractPages: too many pageIndices.");
+          }
+        }
+        // Image entries are inserted as synthetic pages. Reserve a slot now;
+        // the actual page dict is built after real pages are collected so
+        // that we know the modal MediaBox dimensions to use.
+        let newPageIndex;
+        if (pageIndices?.length) {
+          newPageIndex = pageIndices[0];
+        } else if (newIndex !== -1) {
+          newPageIndex = newIndex++;
+        } else {
+          for (
+            newPageIndex = 0;
+            this.oldPages[newPageIndex] !== undefined;
+            newPageIndex++
+          ) {
+            /* empty */
+          }
+        }
+        reservePageSlot(newPageIndex);
+        imageEntries.push({ image, slot: newPageIndex });
+        continue;
+      }
       if (!document) {
         continue;
       }
       if (pageIndices) {
         newIndex = -1;
       }
+      const filteredPageIndices = this.#getFilteredPageIndices({
+        document,
+        includePages,
+        excludePages,
+      });
+      if (pageIndices && pageIndices.length > filteredPageIndices.length) {
+        throw new Error("extractPages: too many pageIndices.");
+      }
       const documentData = new DocumentData(document);
       allDocumentData.push(documentData);
       promises.push(this.#collectDocumentData(documentData));
       let pageIndex = 0;
-      for (const i of this.#getFilteredPageIndices({
-        document,
-        includePages,
-        excludePages,
-      })) {
+      for (const i of filteredPageIndices) {
         let newPageIndex;
         if (pageIndices) {
           newPageIndex = pageIndices[pageIndex++];
@@ -821,8 +872,7 @@ class PDFEditor {
             }
           }
         }
-        // Reserve the slot immediately because the page fetch is async.
-        this.oldPages[newPageIndex] = null;
+        reservePageSlot(newPageIndex);
         promises.push(
           document.getPage(i).then(page => {
             this.oldPages[newPageIndex] = new PageData(page, documentData);
@@ -831,6 +881,11 @@ class PDFEditor {
       }
     }
     await Promise.all(promises);
+    for (let i = 0, ii = this.oldPages.length; i < ii; i++) {
+      if (this.oldPages[i] === undefined) {
+        throw new Error("extractPages: sparse pageIndices.");
+      }
+    }
     promises.length = 0;
 
     this.#collectValidDestinations(allDocumentData);
@@ -838,15 +893,31 @@ class PDFEditor {
     this.#collectPageLabels();
 
     for (const page of this.oldPages) {
-      promises.push(this.#postCollectPageData(page));
+      if (page) {
+        promises.push(this.#postCollectPageData(page));
+      }
     }
     await Promise.all(promises);
 
     this.#findDuplicateNamedDestinations();
     this.#setPostponedRefCopies(allDocumentData);
 
+    const imageSlots = new Map();
+    for (const entry of imageEntries) {
+      imageSlots.set(entry.slot, entry);
+    }
+    const modalPageSize = imageSlots.size > 0 ? this.#modalPageSize() : null;
+
     for (let i = 0, ii = this.oldPages.length; i < ii; i++) {
-      this.newPages[i] = await this.#makePageCopy(i, null);
+      const imageEntry = imageSlots.get(i);
+      if (imageEntry) {
+        this.newPages[i] = await this.#makeImagePage(
+          imageEntry.image,
+          modalPageSize
+        );
+      } else {
+        this.newPages[i] = await this.#makePageCopy(i, null);
+      }
     }
 
     this.#fixPostponedRefCopies(allDocumentData);
@@ -1058,6 +1129,9 @@ class PDFEditor {
     let newStructParentId = 0;
     const { parentTree: newParentTree } = this;
     for (let i = 0, ii = this.newPages.length; i < ii; i++) {
+      if (!this.oldPages[i]) {
+        continue;
+      }
       const {
         documentData: {
           parentTree,
@@ -1362,6 +1436,9 @@ class PDFEditor {
     };
     for (let i = 0, ii = this.oldPages.length; i < ii; i++) {
       const page = this.oldPages[i];
+      if (!page) {
+        continue;
+      }
       const {
         documentData: {
           destinations,
@@ -2023,19 +2100,23 @@ class PDFEditor {
   async #collectPageLabels() {
     // We can only preserve page labels when editing a single PDF file.
     // This is consistent with behavior in Adobe Acrobat.
-    if (!this.hasSingleFile) {
+    if (!this.isSingleFile) {
+      return;
+    }
+    const firstRealPage = this.oldPages.find(p => !!p);
+    if (!firstRealPage) {
       return;
     }
     const {
       documentData: { document, pageLabels },
-    } = this.oldPages[0];
+    } = firstRealPage;
     if (!pageLabels) {
       return;
     }
     const numPages = document.numPages;
-    const oldPageLabels = [];
+    const labelsByPageIndex = new Map();
     const oldPageIndices = new Set(
-      this.oldPages.map(({ page: { pageIndex } }) => pageIndex)
+      this.oldPages.filter(p => !!p).map(({ page: { pageIndex } }) => pageIndex)
     );
     let currentLabel = null;
     let stFirstIndex = -1;
@@ -2054,19 +2135,27 @@ class PDFEditor {
         currentLabel.set("St", st + (i - stFirstIndex));
         stFirstIndex = -1;
       }
-      oldPageLabels.push(currentLabel);
+      labelsByPageIndex.set(i, currentLabel);
     }
-    currentLabel = oldPageLabels[0];
-    let currentIndex = 0;
-    const newPageLabels = (this.pageLabels = [[0, currentLabel]]);
-    for (let i = 0, ii = oldPageLabels.length; i < ii; i++) {
-      const label = oldPageLabels[i];
+
+    const defaultLabel = index => {
+      const label = new Dict();
+      label.setIfName("S", "D");
+      label.set("St", index + 1);
+      return label;
+    };
+    currentLabel = null;
+    const newPageLabels = (this.pageLabels = []);
+    for (let i = 0, ii = this.oldPages.length; i < ii; i++) {
+      const pageData = this.oldPages[i];
+      const label = pageData
+        ? labelsByPageIndex.get(pageData.page.pageIndex) || defaultLabel(i)
+        : defaultLabel(i);
       if (label === currentLabel) {
         continue;
       }
-      currentIndex = i;
       currentLabel = label;
-      newPageLabels.push([currentIndex, currentLabel]);
+      newPageLabels.push([i, currentLabel]);
     }
   }
 
@@ -2188,6 +2277,136 @@ class PDFEditor {
     }
 
     this.currentDocument = null;
+
+    return pageRef;
+  }
+
+  #modalPageSize() {
+    const counts = new Map();
+    for (const pageData of this.oldPages) {
+      if (!pageData) {
+        continue;
+      }
+      const { page } = pageData;
+      const [x0, y0, x1, y1] = page.view;
+      let width = x1 - x0;
+      let height = y1 - y0;
+      if (width <= 0 || height <= 0) {
+        continue;
+      }
+      // The synthesized page won't carry a /Rotate entry, so swap dimensions
+      // for 90/270 to match what the user sees in the source page.
+      if (page.rotate % 180 !== 0) {
+        [width, height] = [height, width];
+      }
+      const key = `${width}x${height}`;
+      const entry = counts.get(key);
+      if (entry) {
+        entry.count++;
+      } else {
+        counts.set(key, { width, height, count: 1 });
+      }
+    }
+    if (counts.size === 0) {
+      const [, , width, height] = LETTER_SIZE_MEDIABOX;
+      return { width, height };
+    }
+    let best = null;
+    for (const entry of counts.values()) {
+      if (
+        !best ||
+        entry.count > best.count ||
+        (entry.count === best.count &&
+          entry.width * entry.height > best.width * best.height)
+      ) {
+        best = entry;
+      }
+    }
+    return { width: best.width, height: best.height };
+  }
+
+  /**
+   * Create a brand-new page that displays a single image, sized to the modal
+   * page dimensions with a margin equal to 10% of the page width on every
+   * side. The image is encoded as JPEG or lossless Flate depending on its
+   * contents; when the source has transparency, an SMask carrying the alpha
+   * channel is attached so the mask is preserved on render.
+   * @param {ImageBitmap} bitmap
+   * @param {{width: number, height: number}} pageSize
+   * @returns {Promise<Ref>}
+   */
+  async #makeImagePage(bitmap, pageSize) {
+    const { width: pageW, height: pageH } = pageSize;
+    const DEFAULT_MARGIN_RATIO = 0.1;
+    const margin = pageW * DEFAULT_MARGIN_RATIO;
+    const availW = Math.max(1, pageW - 2 * margin);
+    const availH = Math.max(1, pageH - 2 * margin);
+
+    const lastRef = this.newRefCount;
+
+    const {
+      imageStream,
+      smaskStream,
+      width: imgW,
+      height: imgH,
+    } = await createImage(bitmap, this.xrefWrapper, { closeBitmap: true });
+
+    const scale = Math.min(availW / imgW, availH / imgH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const tx = (pageW - drawW) / 2;
+    const ty = (pageH - drawH) / 2;
+
+    if (smaskStream) {
+      const smaskRef = this.newRef;
+      this.xref[smaskRef.num] = smaskStream;
+      imageStream.dict.set("SMask", smaskRef);
+    }
+    const imageRef = this.newRef;
+    this.xref[imageRef.num] = imageStream;
+
+    const xobjectDict = new Dict(this.xrefWrapper);
+    xobjectDict.set("Im0", imageRef);
+    const resourcesDict = new Dict(this.xrefWrapper);
+    resourcesDict.set("XObject", xobjectDict);
+    resourcesDict.set("ProcSet", [Name.get("PDF"), Name.get("ImageC")]);
+
+    const content =
+      `q ${numberToString(drawW)} 0 0 ${numberToString(drawH)} ` +
+      `${numberToString(tx)} ${numberToString(ty)} cm /Im0 Do Q`;
+    const contentsDict = new Dict(this.xrefWrapper);
+    const contentsStream = new Stream(
+      stringToBytes(content),
+      0,
+      0,
+      contentsDict
+    );
+    const contentsRef = this.newRef;
+    this.xref[contentsRef.num] = contentsStream;
+
+    const pageRef = this.newRef;
+    const pageDict = (this.xref[pageRef.num] = new Dict(this.xrefWrapper));
+    pageDict.setIfName("Type", "Page");
+    pageDict.set("MediaBox", [0, 0, pageW, pageH]);
+    pageDict.set("Resources", resourcesDict);
+    pageDict.set("Contents", contentsRef);
+
+    if (this.useObjectStreams) {
+      const newLastRef = this.newRefCount;
+      const pageObjectRefs = [];
+      for (let i = lastRef; i < newLastRef; i++) {
+        const obj = this.xref[i];
+        if (obj instanceof BaseStream) {
+          continue;
+        }
+        pageObjectRefs.push(Ref.get(i, 0));
+      }
+      for (let i = 0; i < pageObjectRefs.length; i += 0xffff) {
+        const objStreamRef = this.newRef;
+        this.objStreamRefs.add(objStreamRef.num);
+        this.xref[objStreamRef.num] = pageObjectRefs.slice(i, i + 0xffff);
+      }
+    }
 
     return pageRef;
   }
@@ -2485,9 +2704,10 @@ class PDFEditor {
   #makeInfo() {
     const infoMap = new Map();
     if (this.isSingleFile) {
+      const firstRealPage = this.oldPages.find(p => !!p);
       const {
         xref: { trailer },
-      } = this.oldPages[0].documentData.document;
+      } = firstRealPage.documentData.document;
       const oldInfoDict = trailer.get("Info");
       for (const [key, value] of oldInfoDict || []) {
         if (typeof value === "string") {
@@ -2520,7 +2740,8 @@ class PDFEditor {
     if (!this.isSingleFile) {
       return [null, null, null];
     }
-    const { documentData } = this.oldPages[0];
+    const firstRealPage = this.oldPages.find(p => !!p);
+    const { documentData } = firstRealPage;
     const {
       document: {
         xref: { trailer, encrypt },

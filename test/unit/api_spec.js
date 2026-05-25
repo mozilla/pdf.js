@@ -5929,6 +5929,41 @@ small scripts as well as for`);
         expect(labels).toEqual(["i", "ii", "1", "a", "5"]);
         await loadingTask.destroy();
       });
+
+      it("extract pages with an inserted image and check labels", async function () {
+        if (isNodeJS) {
+          pending("Cannot create a bitmap from Node.js.");
+        }
+        let loadingTask = getDocument(
+          buildGetDocumentParams("labelled_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const bitmap = await getImageBitmap("firefox_logo.png");
+
+        const data = await pdfDoc.extractPages([
+          {
+            document: null,
+            includePages: [0, 1],
+            pageIndices: [0, 1],
+          },
+          {
+            image: bitmap,
+            pageIndices: [2],
+          },
+          {
+            document: null,
+            includePages: [5],
+            pageIndices: [3],
+          },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        const newPdfDoc = await loadingTask.promise;
+        const labels = await newPdfDoc.getPageLabels();
+        expect(labels).toEqual(["i", "ii", "3", "1"]);
+        await loadingTask.destroy();
+      });
     });
 
     describe("Named destinations", function () {
@@ -6635,6 +6670,41 @@ small scripts as well as for`);
         expect(
           mergeText(textItems).includes("4. Nested Trace Tree Formation")
         ).toBeTrue();
+
+        await loadingTask.destroy();
+      });
+
+      it("fills pages around an explicitly placed image", async function () {
+        if (isNodeJS) {
+          pending("Cannot create a bitmap from Node.js.");
+        }
+
+        let loadingTask = getDocument(
+          buildGetDocumentParams("three_pages_with_number.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const bitmap = await getImageBitmap("firefox_logo.png");
+        const data = await pdfDoc.extractPages([
+          { image: bitmap, pageIndices: [1] },
+          { document: null, includePages: [0, 1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(3);
+
+        let pdfPage = await pdfDoc.getPage(1);
+        let { items: textItems } = await pdfPage.getTextContent();
+        expect(mergeText(textItems)).toEqual("1");
+
+        pdfPage = await pdfDoc.getPage(2);
+        ({ items: textItems } = await pdfPage.getTextContent());
+        expect(mergeText(textItems)).toEqual("");
+
+        pdfPage = await pdfDoc.getPage(3);
+        ({ items: textItems } = await pdfPage.getTextContent());
+        expect(mergeText(textItems)).toEqual("2");
 
         await loadingTask.destroy();
       });

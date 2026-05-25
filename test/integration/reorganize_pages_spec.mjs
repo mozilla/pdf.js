@@ -123,6 +123,33 @@ async function waitForHavingContents(page, expected) {
   );
 }
 
+async function waitForPageCanvasToHaveImage(page, pageNumber) {
+  const selector = `.page[data-page-number = "${pageNumber}"] .canvasWrapper canvas`;
+  await page.waitForSelector(selector, { visible: true });
+  await page.waitForFunction(
+    sel => {
+      const canvas = document.querySelector(sel);
+      if (!canvas?.width || !canvas.height) {
+        return false;
+      }
+      const { data } = canvas
+        .getContext("2d", { willReadFrequently: true })
+        .getImageData(0, 0, canvas.width, canvas.height);
+      for (let i = 0, ii = data.length; i < ii; i += 4) {
+        if (
+          data[i + 3] !== 0 &&
+          (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255)
+        ) {
+          return true;
+        }
+      }
+      return false;
+    },
+    {},
+    selector
+  );
+}
+
 function getSearchResults(page) {
   return page.evaluate(() => {
     const pages = document.querySelectorAll(".page");
@@ -3492,6 +3519,139 @@ describe("Reorganize Pages View", () => {
             "#viewsManagerStatusActionLabel",
             `${FSI}6${PDI} selected`
           );
+        })
+      );
+    });
+  });
+
+  describe("Add image as page", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "three_pages_with_number.pdf",
+        '.page[data-page-number = "1"] .endOfContent',
+        "1",
+        null,
+        { enableSplitMerge: true, enableMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should insert an image as a new page after the current page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          // Navigate to page 2 so the image is inserted after it.
+          await page.evaluate(() => {
+            window.PDFViewerApplication.page = 2;
+          });
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 2
+          );
+          await waitAndClick(page, getThumbnailSelector(2));
+
+          const handleMerged = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus._on(
+              "thumbnailsloaded",
+              resolve,
+              { once: true }
+            );
+          });
+
+          const picker = await page.$("#viewsManagerAddFilePicker");
+          await picker.uploadFile(
+            path.join(__dirname, "../images/firefox_logo.png")
+          );
+          await awaitPromise(handleMerged);
+
+          // 3 original pages + 1 inserted image page = 4 pages total.
+          await page.waitForFunction(
+            () => parseInt(document.getElementById("pageNumber").max, 10) === 4
+          );
+
+          // Focus must move to the newly inserted page (page 3, since the
+          // image was inserted after page 2).
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 3
+          );
+          await waitForPageCanvasToHaveImage(page, 3);
+
+          // The original text pages must keep their content: pages 1–2 from
+          // the original, then the image page (no text), then page 3 of the
+          // original shifted to position 4. The viewer only renders pages that
+          // are visible, so force all pages into the viewport (WRAPPED scroll
+          // mode + minimum scale) to ensure their text layers render before we
+          // inspect them; otherwise a page outside the viewport (e.g. page 2
+          // when the current page is 3) may not have rendered yet.
+          const expectedTexts = ["1", "2", "", "3"];
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.scrollMode = 2; /* = ScrollMode.WRAPPED = */
+            window.PDFViewerApplication.pdfViewer.updateScale({
+              drawingDelay: 0,
+              scaleFactor: 0.01,
+            });
+          });
+          await page.waitForFunction(
+            expected => {
+              const layers = document.querySelectorAll(".page .textLayer");
+              if (layers.length !== expected.length) {
+                return false;
+              }
+              return Array.from(layers).every((tl, i) => {
+                const _page = tl.closest(".page");
+                return (
+                  _page?.getAttribute("data-page-number") === String(i + 1) &&
+                  tl.textContent.trim() === expected[i]
+                );
+              });
+            },
+            {},
+            expectedTexts
+          );
+
+          const hasChanges = await page.evaluate(() =>
+            window.PDFViewerApplication._hasChanges()
+          );
+          expect(hasChanges).withContext(`In ${browserName}`).toBeTrue();
+        })
+      );
+    });
+
+    it("should insert an SVG image as a new page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          const handleMerged = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus._on(
+              "thumbnailsloaded",
+              resolve,
+              { once: true }
+            );
+          });
+
+          const picker = await page.$("#viewsManagerAddFilePicker");
+          await picker.uploadFile(
+            path.join(__dirname, "../images/firefox_logo.svg")
+          );
+          await awaitPromise(handleMerged);
+
+          // The SVG must be rasterized and inserted as a new page, bringing
+          // the document to 4 pages.
+          await page.waitForFunction(
+            () => parseInt(document.getElementById("pageNumber").max, 10) === 4
+          );
+          await waitForPageCanvasToHaveImage(page, 2);
+
+          const hasChanges = await page.evaluate(() =>
+            window.PDFViewerApplication._hasChanges()
+          );
+          expect(hasChanges).withContext(`In ${browserName}`).toBeTrue();
         })
       );
     });
