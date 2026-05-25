@@ -17,6 +17,7 @@ import {
   bytesToString,
   FormatError,
   info,
+  isArrayEqual,
   shadow,
   stringToBytes,
   Util,
@@ -32,6 +33,20 @@ import { DataBuilder } from "./data_builder.js";
 
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
+
+function looksLikeUnsigned16BitNegative(coord) {
+  return coord > 0x7fff && coord <= 0xffff;
+}
+
+function recoverSigned16BitBBox(bbox, onlyLowerLeft = false) {
+  return Util.normalizeRect(
+    bbox.map((coord, i) =>
+      (!onlyLowerLeft || i < 2) && looksLikeUnsigned16BitNegative(coord)
+        ? coord - 0x10000
+        : coord
+    )
+  );
+}
 
 /**
  * The CFF class takes a Type1 file and wrap it into a
@@ -268,13 +283,36 @@ class CFFParser {
     }
 
     let fontBBox = topDict.getByName("FontBBox");
-    if (fontBBox?.every(coord => coord === 0) && properties.bbox) {
-      fontBBox = Util.normalizeRect(
-        properties.bbox.map(coord =>
-          coord > 0x7fff && coord <= 0xffff ? coord - 0x10000 : coord
-        )
-      );
+    const descriptorBBox = properties.bbox?.some(coord => coord !== 0)
+      ? recoverSigned16BitBBox(properties.bbox)
+      : null;
+    const cffBBoxHasUnsignedLowerLeft = fontBBox
+      ?.slice(0, 2)
+      .some(looksLikeUnsigned16BitNegative);
+    const cffBBoxHasUnsignedCoords = fontBBox?.some(
+      looksLikeUnsigned16BitNegative
+    );
+    if (fontBBox?.every(coord => coord === 0) && descriptorBBox) {
+      // The CFF FontBBox is empty, hence fall back to the FontDescriptor bbox.
+      fontBBox = descriptorBBox;
       topDict.setByName("FontBBox", fontBBox);
+    } else if (cffBBoxHasUnsignedCoords) {
+      const recoveredFontBBox = recoverSigned16BitBBox(fontBBox);
+      const descriptorCorroborates =
+        descriptorBBox &&
+        properties.bbox.some(coord => coord < 0) &&
+        !properties.bbox.some(looksLikeUnsigned16BitNegative) &&
+        isArrayEqual(recoveredFontBBox, descriptorBBox);
+
+      if (descriptorCorroborates || cffBBoxHasUnsignedLowerLeft) {
+        // Some Ghostscript-generated CFF fonts encode negative lower-left
+        // coordinates as unsigned 16-bit values. Preserve large upper-right
+        // coordinates unless the descriptor independently confirms the repair.
+        fontBBox = descriptorCorroborates
+          ? recoveredFontBBox
+          : recoverSigned16BitBBox(fontBBox, /* onlyLowerLeft = */ true);
+        topDict.setByName("FontBBox", fontBBox);
+      }
     }
     if (fontBBox?.some(coord => coord !== 0)) {
       // adjusting ascent/descent
