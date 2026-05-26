@@ -538,6 +538,22 @@ class KeyboardManager {
   }
 
   /**
+   * Normalize alphabetic keys for shortcut matching because `event.key`
+   * depends on the active keyboard layout (e.g. "я" instead of "z" on
+   * Russian layouts), while `event.code` represents the physical key.
+   */
+  #getNormalizedKey(event) {
+    const { code, key } = event;
+
+    // Normalize only A–Z physical keys
+    if (code && code.startsWith("Key") && code.length === 4) {
+      return code.slice(3).toLowerCase();
+    }
+
+    return key;
+  }
+
+  /**
    * Serialize an event into a string in order to match a
    * potential key for a callback.
    * @param {KeyboardEvent} event
@@ -556,7 +572,7 @@ class KeyboardManager {
     if (event.shiftKey) {
       this.buffer.push("shift");
     }
-    this.buffer.push(event.key);
+    this.buffer.push(this.#getNormalizedKey(event));
     const str = this.buffer.join("+");
     this.buffer.length = 0;
 
@@ -571,7 +587,9 @@ class KeyboardManager {
    * @returns
    */
   exec(self, event) {
-    if (!this.allKeys.has(event.key)) {
+    const key = this.#getNormalizedKey(event);
+
+    if (!this.allKeys.has(key)) {
       return;
     }
     const info = this.callbacks.get(this.#serialize(event));
