@@ -9,3 +9,5 @@ var i = typeof PDFJSDev === 'undefined' ? PDFJSDev.eval('FALSE') : '0';
 var j = typeof PDFJSDev !== 'undefined' ? PDFJSDev.eval('OBJ.obj') : '0';
 var k = !PDFJSDev.test('TRUE');
 var l = !PDFJSDev.test('FALSE');
+
+use(a, b, c, d, e, f, g, i, j, k, l);

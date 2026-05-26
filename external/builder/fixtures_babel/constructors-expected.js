@@ -18,6 +18,8 @@ class E extends A {
 class F {
   constructor() {
     var a = 0;
+    use(a);
   }
 }
 class G {}
+use(B, C, D, E, F, G);
