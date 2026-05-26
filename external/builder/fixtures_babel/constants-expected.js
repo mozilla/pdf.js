@@ -13,6 +13,3 @@ var l = true;
 var m = false;
 var n = false;
 var o = true;
-var p = null;
-var q = 1;
-use(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q);
