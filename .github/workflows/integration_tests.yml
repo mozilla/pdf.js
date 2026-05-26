@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'gulpfile.mjs'
+      - 'external/builder/**'
       - 'src/**'
       - 'test/test.mjs'
       - 'test/integration/**'
@@ -13,6 +14,7 @@ on:
   pull_request:
     paths:
       - 'gulpfile.mjs'
+      - 'external/builder/**'
       - 'src/**'
       - 'test/test.mjs'
       - 'test/integration/**'
