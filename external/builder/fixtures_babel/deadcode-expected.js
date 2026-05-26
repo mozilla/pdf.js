@@ -5,12 +5,12 @@ function f2() {
 }
 f2();
 function f3() {
-  before();
+  var i = 0;
   throw "test";
 }
 f3();
 function f4() {
-  before();
+  var i = 0;
 }
 f4();
 var obj = {
@@ -23,4 +23,3 @@ class C {
 }
 var arrow1 = () => {};
 var arrow2 = () => {};
-use(obj, C, arrow1, arrow2);

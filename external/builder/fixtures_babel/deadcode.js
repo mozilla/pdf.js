@@ -1,43 +1,41 @@
 function f1() {
   return;
-  after();
+  var i = 0;
 }
 f1();
 
 function f2() {
   return 1;
-  after();
+  var i = 0;
 }
 f2();
 
 function f3() {
-  before();
+  var i = 0;
   throw "test";
-  after();
+  var j = 0;
 }
 f3();
 
 function f4() {
-  before();
+  var i = 0;
   if (true) {
     return;
   }
   throw "test";
-  after();
+  var j = 0;
 }
 f4();
 
 var obj = {
-  method1() { return; after(); },
+  method1() { return; var i = 0; },
   method2() { return; },
 };
 
 class C {
-  method1() { return; after(); }
+  method1() { return; var i = 0; }
   method2() { return; }
 }
 
-var arrow1 = () => { return; after(); };
+var arrow1 = () => { return; var i = 0; };
 var arrow2 = () => { return; };
-
-use(obj, C, arrow1, arrow2);

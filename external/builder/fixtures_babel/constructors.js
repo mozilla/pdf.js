@@ -24,7 +24,6 @@ class F {
   constructor() {
     if (PDFJSDev.test('TRUE')) {
       var a = 0;
-      use(a);
     }
   }
 }
@@ -33,9 +32,6 @@ class G {
   constructor() {
     if (PDFJSDev.test('FALSE')) {
       var a = 0;
-      use(a);
     }
   }
 }
-
-use(B, C, D, E, F, G);

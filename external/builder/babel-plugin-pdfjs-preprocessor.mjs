@@ -47,29 +47,16 @@ function handlePreprocessorAction(ctx, actionName, args, path) {
 }
 
 function babelPluginPDFJSPreprocessor(babel, ctx) {
-  function removeUnusedFunctionsAndVariables(path) {
-    const { scope } = path;
+  function removeUnusedFunctions(path) {
     let removed;
     do {
       removed = false;
-      scope.crawl();
-      for (const name in scope.bindings) {
-        const binding = scope.bindings[name];
+      path.scope.crawl();
+      for (const name in path.scope.bindings) {
+        const binding = path.scope.bindings[name];
         if (!binding.referenced) {
           const { path: bindingPath } = binding;
           if (bindingPath.isFunctionDeclaration()) {
-            bindingPath.remove();
-            removed = true;
-          } else if (
-            bindingPath.isClassDeclaration() &&
-            !bindingPath.node.body.body.some(m => m.type === "StaticBlock")
-          ) {
-            bindingPath.remove();
-            removed = true;
-          } else if (
-            bindingPath.isVariableDeclarator() &&
-            scope.isPure(bindingPath.node.init, false)
-          ) {
             bindingPath.remove();
             removed = true;
           }
@@ -126,28 +113,24 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
       LogicalExpression: {
         exit(path) {
           const { node } = path;
-          let leftIsTruthy = false;
-          switch (node.left.type) {
-            case "BooleanLiteral":
-            case "NumericLiteral":
-            case "StringLiteral":
-            case "NullLiteral":
-              leftIsTruthy = Boolean(node.left.value);
-              break;
-            default:
-              return;
+          if (!t.isBooleanLiteral(node.left)) {
+            return;
           }
 
           switch (node.operator) {
             case "&&":
               // true && expr => expr
               // false && expr => false
-              path.replaceWith(leftIsTruthy ? node.right : node.left);
+              path.replaceWith(
+                node.left.value === true ? node.right : node.left
+              );
               break;
             case "||":
               // true || expr => true
               // false || expr => expr
-              path.replaceWith(leftIsTruthy ? node.left : node.right);
+              path.replaceWith(
+                node.left.value === true ? node.left : node.right
+              );
               break;
           }
         },
@@ -275,7 +258,7 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
             body.pop();
           }
 
-          removeUnusedFunctionsAndVariables(path);
+          removeUnusedFunctions(path);
         },
       },
       ClassMethod: {
@@ -301,7 +284,7 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
       Program: {
         exit(path) {
           if (path.node.sourceType === "module") {
-            removeUnusedFunctionsAndVariables(path);
+            removeUnusedFunctions(path);
           }
         },
       },
