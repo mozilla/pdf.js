@@ -13,3 +13,7 @@ var l = 'test' !== 'test2';
 var m = '1' === true;
 var n = !true;
 var o = !false;
+var p = null && 1;
+var q = null || 1;
+
+use(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q);

@@ -16,3 +16,4 @@ var j = {
 };
 var k = false;
 var l = true;
+use(a, b, c, d, e, f, g, i, j, k, l);
