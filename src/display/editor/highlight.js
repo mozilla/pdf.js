@@ -94,10 +94,10 @@ class HighlightEditor extends AnnotationEditor {
       this,
       "_keyboardManager",
       new KeyboardManager([
-        [["ArrowLeft", "mac+ArrowLeft"], proto._moveCaret, { args: [0] }],
-        [["ArrowRight", "mac+ArrowRight"], proto._moveCaret, { args: [1] }],
-        [["ArrowUp", "mac+ArrowUp"], proto._moveCaret, { args: [2] }],
-        [["ArrowDown", "mac+ArrowDown"], proto._moveCaret, { args: [3] }],
+        [["ArrowLeft"], proto._moveCaret, { args: [0] }],
+        [["ArrowRight"], proto._moveCaret, { args: [1] }],
+        [["ArrowUp"], proto._moveCaret, { args: [2] }],
+        [["ArrowDown"], proto._moveCaret, { args: [3] }],
       ])
     );
   }

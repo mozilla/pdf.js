@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { CommandManager } from "../../src/display/editor/tools.js";
+import {
+  CommandManager,
+  KeyboardManager,
+} from "../../src/display/editor/tools.js";
+import { FeatureTest } from "../../src/shared/util.js";
 import { SignatureExtractor } from "../../src/display/editor/drawers/signaturedraw.js";
 
 describe("editor", function () {
@@ -137,5 +141,125 @@ describe("editor", function () {
     compressed = await SignatureExtractor.compressSignature(signature);
     decompressed = await SignatureExtractor.decompressSignature(compressed);
     expect(decompressed).toEqual(signature);
+  });
+
+  describe("Keyboard Manager", function () {
+    function makeEvent(props) {
+      return {
+        altKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        shiftKey: false,
+        preventDefault() {},
+        stopPropagation() {},
+        ...props,
+      };
+    }
+
+    function withPlatform(isMac, callback) {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        FeatureTest,
+        "platform"
+      );
+      Object.defineProperty(FeatureTest, "platform", {
+        value: { isMac },
+        configurable: true,
+      });
+      try {
+        callback();
+      } finally {
+        Object.defineProperty(FeatureTest, "platform", descriptor);
+      }
+    }
+
+    it("should match a shortcut by event.key", function () {
+      let called = 0;
+      const manager = new KeyboardManager([[["ctrl+a"], () => called++]]);
+
+      manager.exec(null, makeEvent({ key: "a", code: "KeyA", ctrlKey: true }));
+      expect(called).toEqual(1);
+    });
+
+    it("should not fire when the modifiers don't match", function () {
+      let called = 0;
+      const manager = new KeyboardManager([[["ctrl+a"], () => called++]]);
+
+      manager.exec(null, makeEvent({ key: "a", code: "KeyA", metaKey: true }));
+      expect(called).toEqual(0);
+    });
+
+    it("should fall back to event.code on a non-Latin layout", function () {
+      let called = 0;
+      const manager = new KeyboardManager([[["ctrl+a"], () => called++]]);
+
+      manager.exec(null, makeEvent({ key: "ф", code: "KeyA", ctrlKey: true }));
+      expect(called).toEqual(1);
+    });
+
+    it("should not remap a Latin letter via event.code", function () {
+      let called = 0;
+      const manager = new KeyboardManager([[["ctrl+q"], () => called++]]);
+
+      manager.exec(null, makeEvent({ key: "a", code: "KeyQ", ctrlKey: true }));
+      expect(called).toEqual(0);
+
+      manager.exec(null, makeEvent({ key: "q", code: "KeyA", ctrlKey: true }));
+      expect(called).toEqual(1);
+    });
+
+    it("should match an uppercase event.key (e.g. shift on mac)", function () {
+      let called = 0;
+      const manager = new KeyboardManager([
+        [["ctrl+shift+z", "ctrl+shift+Z"], () => called++],
+      ]);
+
+      manager.exec(
+        null,
+        makeEvent({ key: "Z", code: "KeyZ", ctrlKey: true, shiftKey: true })
+      );
+      expect(called).toEqual(1);
+    });
+
+    it("should use the mac+ shortcut on macOS", function () {
+      withPlatform(true, () => {
+        let called = 0;
+        const manager = new KeyboardManager([
+          [["ctrl+a", "mac+meta+a"], () => called++],
+        ]);
+
+        manager.exec(
+          null,
+          makeEvent({ key: "a", code: "KeyA", metaKey: true })
+        );
+        expect(called).toEqual(1);
+
+        manager.exec(
+          null,
+          makeEvent({ key: "a", code: "KeyA", ctrlKey: true })
+        );
+        expect(called).toEqual(1);
+      });
+    });
+
+    it("should use the bare shortcut on non-macOS", function () {
+      withPlatform(false, () => {
+        let called = 0;
+        const manager = new KeyboardManager([
+          [["ctrl+a", "mac+meta+a"], () => called++],
+        ]);
+
+        manager.exec(
+          null,
+          makeEvent({ key: "a", code: "KeyA", ctrlKey: true })
+        );
+        expect(called).toEqual(1);
+
+        manager.exec(
+          null,
+          makeEvent({ key: "a", code: "KeyA", metaKey: true })
+        );
+        expect(called).toEqual(1);
+      });
+    });
   });
 });

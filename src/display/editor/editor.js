@@ -137,26 +137,23 @@ class AnnotationEditor {
       this,
       "_resizerKeyboardManager",
       new KeyboardManager([
-        [["ArrowLeft", "mac+ArrowLeft"], resize, { args: [-small, 0] }],
+        [["ArrowLeft"], resize, { args: [-small, 0] }],
         [
           ["ctrl+ArrowLeft", "mac+shift+ArrowLeft"],
           resize,
           { args: [-big, 0] },
         ],
-        [["ArrowRight", "mac+ArrowRight"], resize, { args: [small, 0] }],
+        [["ArrowRight"], resize, { args: [small, 0] }],
         [
           ["ctrl+ArrowRight", "mac+shift+ArrowRight"],
           resize,
           { args: [big, 0] },
         ],
-        [["ArrowUp", "mac+ArrowUp"], resize, { args: [0, -small] }],
+        [["ArrowUp"], resize, { args: [0, -small] }],
         [["ctrl+ArrowUp", "mac+shift+ArrowUp"], resize, { args: [0, -big] }],
-        [["ArrowDown", "mac+ArrowDown"], resize, { args: [0, small] }],
+        [["ArrowDown"], resize, { args: [0, small] }],
         [["ctrl+ArrowDown", "mac+shift+ArrowDown"], resize, { args: [0, big] }],
-        [
-          ["Escape", "mac+Escape"],
-          AnnotationEditor.prototype._stopResizingWithKeyboard,
-        ],
+        [["Escape"], AnnotationEditor.prototype._stopResizingWithKeyboard],
       ])
     );
   }

@@ -512,56 +512,102 @@ class CommandManager {
  * non-mac OSes.
  */
 class KeyboardManager {
+  static ALT = 0x1;
+
+  static CTRL = 0x2;
+
+  static META = 0x4;
+
+  static SHIFT = 0x8;
+
   /**
    * Create a new keyboard manager class.
    * @param {Array<Array>} callbacks - an array containing an array of shortcuts
-   * and a callback to call.
-   * A shortcut is a string like `ctrl+c` or `mac+ctrl+c` for mac OS.
+   * and a callback to call. If the array contains no `mac+`-prefixed entry,
+   * every shortcut applies on all platforms. As soon as it contains at least
+   * one `mac+` entry, the `mac+` ones become the macOS-only set and the bare
+   * entries apply only on non-Mac.
    */
   constructor(callbacks) {
-    this.buffer = [];
     this.callbacks = new Map();
-    this.allKeys = new Set();
 
     const { isMac } = FeatureTest.platform;
     for (const [keys, callback, options = {}] of callbacks) {
+      const hasMacOverride = keys.some(k => k.startsWith("mac+"));
       for (const key of keys) {
-        const isMacKey = key.startsWith("mac+");
-        if (isMac && isMacKey) {
-          this.callbacks.set(key.slice(4), { callback, options });
-          this.allKeys.add(key.split("+").at(-1));
-        } else if (!isMac && !isMacKey) {
-          this.callbacks.set(key, { callback, options });
-          this.allKeys.add(key.split("+").at(-1));
+        let shortcut = key;
+        if (hasMacOverride) {
+          const isMacKey = key.startsWith("mac+");
+          if (isMac !== isMacKey) {
+            continue;
+          }
+          if (isMacKey) {
+            shortcut = key.slice(4);
+          }
         }
+        const [keyName, modifiers] = KeyboardManager.#parseShortcut(shortcut);
+        if (keyName === null) {
+          continue;
+        }
+        this.callbacks
+          .getOrInsertComputed(keyName, () => [])
+          .push({ callback, options, modifiers });
       }
     }
   }
 
   /**
-   * Serialize an event into a string in order to match a
-   * potential key for a callback.
-   * @param {KeyboardEvent} event
-   * @returns {string}
+   * Parse a shortcut string like "ctrl+shift+a" into a `[key, modifiers]`
+   * pair. Modifier names are case-insensitive and may appear in any order;
+   * the key part is matched against `event.key` so `Space` is normalized to
+   * `" "` but other names like `ArrowLeft`, `Enter`, `Backspace`, and
+   * single-letter keys (`a`, `Z`) are preserved.
+   * @param {string} value
+   * @returns {[string|null, number]}
    */
-  #serialize(event) {
-    if (event.altKey) {
-      this.buffer.push("alt");
+  static #parseShortcut(value) {
+    let keyPart = null;
+    let modifiers = 0;
+    for (let part of value.split("+")) {
+      part = part.trim();
+      if (!part) {
+        continue;
+      }
+      const upper = part.toUpperCase();
+      const modifier = KeyboardManager[upper];
+      if (modifier) {
+        modifiers |= modifier;
+        continue;
+      }
+      if (keyPart !== null) {
+        warn(`KeyboardManager: multiple keys in shortcut "${value}"`);
+        break;
+      }
+      keyPart = upper === "SPACE" ? " " : part;
     }
-    if (event.ctrlKey) {
-      this.buffer.push("ctrl");
+    if (keyPart === null) {
+      warn(`KeyboardManager: no key found in shortcut "${value}"`);
     }
-    if (event.metaKey) {
-      this.buffer.push("meta");
-    }
-    if (event.shiftKey) {
-      this.buffer.push("shift");
-    }
-    this.buffer.push(event.key);
-    const str = this.buffer.join("+");
-    this.buffer.length = 0;
+    return [keyPart, modifiers];
+  }
 
-    return str;
+  /**
+   * Translate `event.code` (a layout-independent physical key identifier) to
+   * the equivalent `event.key` value on a US layout, so a Ctrl+A shortcut
+   * still fires when the user is on a layout where the "A" key produces a
+   * non-Latin character.
+   * @param {string} code
+   * @returns {string|null}
+   */
+  static #codeToKey(code) {
+    // KeyA..KeyZ -> a..z, Digit0..Digit9 / Numpad0..Numpad9 -> 0..9.
+    // Codes like NumpadEnter are intentionally skipped — their event.key
+    // already matches the corresponding non-numpad key.
+    const match = /^(?:Key([A-Z])|(?:Digit|Numpad)(\d))$/.exec(code);
+    if (!match) {
+      return null;
+    }
+    return match[1]?.toLowerCase() ?? match[2];
   }
 
   /**
@@ -572,13 +618,38 @@ class KeyboardManager {
    * @returns
    */
   exec(self, event) {
-    if (!this.allKeys.has(event.key)) {
-      return;
+    let shortcuts = this.callbacks.get(event.key);
+    if (!shortcuts) {
+      // Layout-independent fallback: on a Cyrillic layout the physical "A"
+      // key reports event.key="ф" but event.code="KeyA". This must be skipped
+      // when event.key is already a Latin letter, otherwise on AZERTY (where
+      // the "A" key has event.key="a" but event.code="KeyQ") ctrl+A would
+      // wrongly trigger ctrl+Q.
+      if (/^[a-z]$/i.test(event.key)) {
+        return;
+      }
+      const fallback = KeyboardManager.#codeToKey(event.code);
+      if (fallback === null || fallback === event.key) {
+        return;
+      }
+      shortcuts = this.callbacks.get(fallback);
+      if (!shortcuts) {
+        return;
+      }
     }
-    const info = this.callbacks.get(this.#serialize(event));
+
+    const eventModifiers =
+      (event.altKey ? KeyboardManager.ALT : 0) |
+      (event.ctrlKey ? KeyboardManager.CTRL : 0) |
+      (event.metaKey ? KeyboardManager.META : 0) |
+      (event.shiftKey ? KeyboardManager.SHIFT : 0);
+    const info = shortcuts.find(
+      shortcut => shortcut.modifiers === eventModifiers
+    );
     if (!info) {
       return;
     }
+
     const {
       callback,
       options: { bubbles = false, args = [], checker = null },
@@ -844,7 +915,7 @@ class AnnotationEditorUIManager {
           { checker: textInputChecker },
         ],
         [
-          ["Enter", "mac+Enter"],
+          ["Enter"],
           proto.addNewEditorFromKeyboard,
           {
             // Those shortcuts can be used in the toolbar for some other actions
@@ -857,7 +928,7 @@ class AnnotationEditorUIManager {
           },
         ],
         [
-          [" ", "mac+ "],
+          ["Space"],
           proto.addNewEditorFromKeyboard,
           {
             // Those shortcuts can be used in the toolbar for some other actions
@@ -868,9 +939,9 @@ class AnnotationEditorUIManager {
               self.#container.contains(document.activeElement),
           },
         ],
-        [["Escape", "mac+Escape"], proto.unselectAll],
+        [["Escape"], proto.unselectAll],
         [
-          ["ArrowLeft", "mac+ArrowLeft"],
+          ["ArrowLeft"],
           proto.translateSelectedEditors,
           { args: [-small, 0], checker: arrowChecker },
         ],
@@ -880,7 +951,7 @@ class AnnotationEditorUIManager {
           { args: [-big, 0], checker: arrowChecker },
         ],
         [
-          ["ArrowRight", "mac+ArrowRight"],
+          ["ArrowRight"],
           proto.translateSelectedEditors,
           { args: [small, 0], checker: arrowChecker },
         ],
@@ -890,7 +961,7 @@ class AnnotationEditorUIManager {
           { args: [big, 0], checker: arrowChecker },
         ],
         [
-          ["ArrowUp", "mac+ArrowUp"],
+          ["ArrowUp"],
           proto.translateSelectedEditors,
           { args: [0, -small], checker: arrowChecker },
         ],
@@ -900,7 +971,7 @@ class AnnotationEditorUIManager {
           { args: [0, -big], checker: arrowChecker },
         ],
         [
-          ["ArrowDown", "mac+ArrowDown"],
+          ["ArrowDown"],
           proto.translateSelectedEditors,
           { args: [0, small], checker: arrowChecker },
         ],

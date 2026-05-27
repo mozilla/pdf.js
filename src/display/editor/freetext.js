@@ -73,12 +73,10 @@ class FreeTextEditor extends AnnotationEditor {
           proto.commitOrRemove,
           { bubbles: true },
         ],
+        [["ctrl+Enter", "mac+meta+Enter"], proto.commitOrRemove],
+        [["Escape"], proto.commitOrRemove],
         [
-          ["ctrl+Enter", "mac+meta+Enter", "Escape", "mac+Escape"],
-          proto.commitOrRemove,
-        ],
-        [
-          ["ArrowLeft", "mac+ArrowLeft"],
+          ["ArrowLeft"],
           proto._translateEmpty,
           { args: [-small, 0], checker: arrowChecker },
         ],
@@ -88,7 +86,7 @@ class FreeTextEditor extends AnnotationEditor {
           { args: [-big, 0], checker: arrowChecker },
         ],
         [
-          ["ArrowRight", "mac+ArrowRight"],
+          ["ArrowRight"],
           proto._translateEmpty,
           { args: [small, 0], checker: arrowChecker },
         ],
@@ -98,7 +96,7 @@ class FreeTextEditor extends AnnotationEditor {
           { args: [big, 0], checker: arrowChecker },
         ],
         [
-          ["ArrowUp", "mac+ArrowUp"],
+          ["ArrowUp"],
           proto._translateEmpty,
           { args: [0, -small], checker: arrowChecker },
         ],
@@ -108,7 +106,7 @@ class FreeTextEditor extends AnnotationEditor {
           { args: [0, -big], checker: arrowChecker },
         ],
         [
-          ["ArrowDown", "mac+ArrowDown"],
+          ["ArrowDown"],
           proto._translateEmpty,
           { args: [0, small], checker: arrowChecker },
         ],
