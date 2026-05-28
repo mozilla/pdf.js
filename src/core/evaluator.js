@@ -544,6 +544,11 @@ class PartialEvaluator {
       if (smask?.backdrop) {
         colorSpace ||= ColorSpaceUtils.rgb;
         smask.backdrop = colorSpace.getRgbHex(smask.backdrop, 0);
+      } else if (smask?.subtype === "Luminosity") {
+        // Per PDF spec 11.6.5.2: when /BC is missing the backdrop is the
+        // initial value of the group colour space, which is black for all
+        // standard colour spaces.
+        smask.backdrop = "#000000";
       }
 
       newOpList = new CheckedOperatorList();
