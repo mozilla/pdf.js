@@ -1689,6 +1689,31 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets encrypted attachments in password-protected documents", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("encrypted-attachment.pdf", {
+          password: "000000",
+        })
+      );
+      let embeddedLoadingTask = null;
+
+      try {
+        const pdfDoc = await loadingTask.promise;
+        const attachments = await pdfDoc.getAttachments();
+        const attachment = attachments?.["attachment.pdf"];
+
+        expect(attachment).toBeDefined();
+        expect(attachment.filename).toEqual("attachment.pdf");
+
+        embeddedLoadingTask = getDocument({ data: attachment.content });
+        const embeddedPdfDoc = await embeddedLoadingTask.promise;
+        expect(embeddedPdfDoc.numPages).toBe(1);
+      } finally {
+        await embeddedLoadingTask?.destroy();
+        await loadingTask.destroy();
+      }
+    });
+
     it("gets javascript with printing instructions (JS action)", async function () {
       // PDF document with "JavaScript" action in the OpenAction dictionary.
       const loadingTask = getDocument(buildGetDocumentParams("issue6106.pdf"));
