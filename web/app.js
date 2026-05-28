@@ -756,6 +756,7 @@ const PDFViewerApplication = {
         eventBus,
         l10n,
         downloadManager,
+        linkService,
       });
     }
 

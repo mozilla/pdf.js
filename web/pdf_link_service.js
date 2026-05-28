@@ -15,8 +15,12 @@
 
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
+/**
+ * @import { CatalogAttachmentContent } from "../src/core/catalog.js";
+ */
+
+import { isValidExplicitDest, PasswordException } from "pdfjs-lib";
 import { internalOpt } from "./internal_evt.js";
-import { isValidExplicitDest } from "pdfjs-lib";
 import { parseQueryString } from "./ui_utils.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
@@ -252,6 +256,23 @@ class PDFLinkService {
       ignoreDestinationZoom: true,
       ...options,
     });
+  }
+
+  /**
+   * @param {string} id
+   *   Unique attachment identifier (required).
+   * @returns {Promise<CatalogAttachmentContent>}
+   *   Content.
+   */
+  async getAttachmentContent(id) {
+    try {
+      return await this.pdfDocument?.getAttachmentContent(id);
+    } catch (error) {
+      if (!(error instanceof PasswordException)) {
+        console.warn(`Unable to load attachment content: ${error}`);
+      }
+    }
+    return null;
   }
 
   /**

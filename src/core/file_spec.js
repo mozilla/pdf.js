@@ -13,11 +13,31 @@
  * limitations under the License.
  */
 
-import { stripPath, warn } from "../shared/util.js";
+import {
+  PasswordException,
+  PasswordResponses,
+  stripPath,
+  warn,
+} from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { Dict } from "./primitives.js";
 import { stringToPDFString } from "./string_utils.js";
 
+/**
+ * @import { CatalogAttachmentContent } from "./catalog.js";
+ */
+
+/**
+ * Get a platform-specific item from a file-spec dictionary.
+ *
+ * Search order follows the PDF platform keys: `UF`, `F`, `Unix`, `Mac`,
+ * `DOS`.
+ *
+ * @param {Dict | null | undefined} dict
+ *   Dictionary.
+ * @returns {unknown}
+ *   Matching dictionary value or `null` when no key is found.
+ */
 function pickPlatformItem(dict) {
   if (dict instanceof Dict) {
     // Look for the filename in this order: UF, F, Unix, Mac, DOS
@@ -38,9 +58,11 @@ function pickPlatformItem(dict) {
  * collections attributes and related files (/RF)
  */
 class FileSpec {
-  #contentAvailable = false;
-
-  constructor(root, skipContent = false) {
+  /**
+   * @param {Dict | null | undefined} root
+   *   File specification dictionary.
+   */
+  constructor(root) {
     if (!(root instanceof Dict)) {
       return;
     }
@@ -50,13 +72,6 @@ class FileSpec {
     }
     if (root.has("RF")) {
       warn("Related file specifications are not supported");
-    }
-    if (!skipContent) {
-      if (root.has("EF")) {
-        this.#contentAvailable = true;
-      } else {
-        warn("Non-embedded file specifications are not supported");
-      }
     }
   }
 
@@ -73,19 +88,6 @@ class FileSpec {
     return "";
   }
 
-  get content() {
-    if (!this.#contentAvailable) {
-      return null;
-    }
-    const ef = pickPlatformItem(this.root?.get("EF"));
-
-    if (ef instanceof BaseStream) {
-      return ef.getBytes();
-    }
-    warn("Embedded file specification points to non-existing/invalid content");
-    return null;
-  }
-
   get description() {
     const desc = this.root?.get("Desc");
     if (desc && typeof desc === "string") {
@@ -95,13 +97,46 @@ class FileSpec {
   }
 
   get serializable() {
-    const { filename, content, description } = this;
+    const { filename, description } = this;
     return {
       rawFilename: filename,
       filename: stripPath(filename) || "unnamed",
-      content,
       description,
     };
+  }
+
+  /**
+   * Read attachment bytes from a file-spec dictionary.
+   *
+   * @param {Dict | null | undefined} dict
+   *   File-spec dictionary containing an `EF` entry.
+   * @returns {CatalogAttachmentContent}
+   *   Attachment bytes when available; otherwise `null`.
+   * @throws {PasswordException}
+   *   When attachment bytes are encrypted and no key is available.
+   */
+  static readContent(dict) {
+    if (!(dict instanceof Dict)) {
+      return null;
+    }
+    const ef = pickPlatformItem(dict.get("EF"));
+    if (!(ef instanceof BaseStream)) {
+      warn(
+        "Embedded file specification points to non-existing/invalid content"
+      );
+      return null;
+    }
+
+    // Throw if we need a password but don’t have one.
+    const encrypt = dict.xref?.encrypt;
+    if (encrypt?.encryptionKey === null) {
+      throw new PasswordException(
+        "No password given",
+        PasswordResponses.NEED_PASSWORD
+      );
+    }
+
+    return ef.getBytes();
   }
 }
 

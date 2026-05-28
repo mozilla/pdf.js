@@ -32,6 +32,65 @@ import { PNG } from "pngjs";
 const __dirname = import.meta.dirname;
 
 describe("PDF viewer", () => {
+  describe("EFOpen attachments", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "auth-event-ef-open.pdf",
+        ".textLayer .endOfContent",
+        "page-fit"
+      );
+    });
+
+    afterEach(async () => {
+      if (pages) {
+        await closePages(pages);
+      }
+    });
+
+    it("keeps rendering after cancelling attachment password prompt", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Open the views manager sidebar.
+          await showViewsManager(page);
+
+          // Open the view selector menu.
+          await page.click("#viewsManagerSelectorButton");
+
+          // Check that the attachments option is not disabled.
+          await page.waitForSelector("#attachmentsViewMenu", { visible: true });
+          const attachmentsEnabled = await page.$eval(
+            "#attachmentsViewMenu",
+            el => !el.disabled
+          );
+          expect(attachmentsEnabled)
+            .withContext(`In ${browserName}`)
+            .toBe(true);
+
+          // Switch to the attachments view.
+          await page.click("#attachmentsViewMenu");
+          await page.waitForSelector("#attachmentsView a", { timeout: 0 });
+
+          await page.click("#attachmentsView a");
+          await page.waitForSelector("#passwordDialog[open]", { timeout: 0 });
+          await waitAndClick(page, "#passwordCancel");
+
+          const stillRendered = await page.evaluate(() => {
+            const textLayer = document.querySelector(
+              ".page[data-page-number='1'] .textLayer .endOfContent"
+            );
+            const canvas = document.querySelector(
+              ".page[data-page-number='1'] canvas"
+            );
+            return !!textLayer && !!canvas;
+          });
+          expect(stillRendered).withContext(`In ${browserName}`).toBe(true);
+        })
+      );
+    });
+  });
+
   describe("Zoom origin", () => {
     let pages;
 

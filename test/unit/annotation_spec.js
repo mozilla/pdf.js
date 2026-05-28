@@ -29,7 +29,6 @@ import {
   DrawOPS,
   OPS,
   RenderingIntentFlag,
-  stringToBytes,
   stringToUTF8String,
 } from "../../src/shared/util.js";
 import {
@@ -53,6 +52,8 @@ describe("annotation", function () {
     constructor(params) {
       this.pdfDocument = {
         catalog: {
+          attachmentDictById: new Map(),
+          attachmentIdByRef: new RefSetCache(),
           baseUrl: params.docBaseUrl || null,
         },
       };
@@ -4063,12 +4064,88 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.FILEATTACHMENT);
+      expect(data.fileId.startsWith("annotation:")).toEqual(true);
       expect(data.file).toEqual({
         rawFilename: "Test.txt",
         filename: "Test.txt",
-        content: stringToBytes("Test attachment"),
         description: "abc",
       });
+
+      // Content lookup and reading requires a bigger mock than used here.
+      expect(
+        pdfManagerMock.pdfDocument.catalog.attachmentDictById.has(data.fileId)
+      ).toEqual(true);
+    });
+
+    it("should reuse the attachment NameTree id for referenced files", async function () {
+      const fileStream = new StringStream(
+        "<<\n" +
+          "/Type /EmbeddedFile\n" +
+          "/Subtype /text#2Fplain\n" +
+          ">>\n" +
+          "stream\n" +
+          "Test attachment" +
+          "endstream\n"
+      );
+      const parser = new Parser({
+        lexer: new Lexer(fileStream),
+        xref: null,
+        allowStreams: true,
+      });
+
+      const fileStreamRef = Ref.get(28, 0);
+      const fileStreamDict = parser.getObj();
+
+      const embeddedFileDict = new Dict();
+      embeddedFileDict.set("F", fileStreamRef);
+
+      const fileSpecRef = Ref.get(29, 0);
+      const fileSpecDict = new Dict();
+      fileSpecDict.set("Type", Name.get("Filespec"));
+      fileSpecDict.set("Desc", "abc");
+      fileSpecDict.set("EF", embeddedFileDict);
+      fileSpecDict.set("UF", "Test.txt");
+
+      const fileAttachmentRef = Ref.get(30, 0);
+      const fileAttachmentDict = new Dict();
+      fileAttachmentDict.set("Type", Name.get("Annot"));
+      fileAttachmentDict.set("Subtype", Name.get("FileAttachment"));
+      fileAttachmentDict.set("FS", fileSpecRef);
+      fileAttachmentDict.set("T", "Topic");
+      fileAttachmentDict.set("Contents", "Test.txt");
+
+      const xref = new XRefMock([
+        { ref: fileStreamRef, data: fileStreamDict },
+        { ref: fileSpecRef, data: fileSpecDict },
+        { ref: fileAttachmentRef, data: fileAttachmentDict },
+      ]);
+      embeddedFileDict.assignXref(xref);
+      fileSpecDict.assignXref(xref);
+      fileAttachmentDict.assignXref(xref);
+
+      pdfManagerMock.pdfDocument.catalog.attachmentIdByRef.put(
+        fileSpecRef,
+        "Test.txt"
+      );
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        fileAttachmentRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.FILEATTACHMENT);
+      expect(data.fileId).toEqual("Test.txt");
+      expect(data.file).toEqual({
+        rawFilename: "Test.txt",
+        filename: "Test.txt",
+        description: "abc",
+      });
+
+      // File should not be added as it’s already referenced in the `NameTree`.
+      expect(
+        pdfManagerMock.pdfDocument.catalog.attachmentDictById.has(data.fileId)
+      ).toEqual(false);
     });
   });
 

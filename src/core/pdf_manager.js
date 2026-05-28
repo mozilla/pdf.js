@@ -31,6 +31,10 @@ import { PDFFunctionFactory } from "./function.js";
 import { Stream } from "./stream.js";
 import { WasmImage } from "./wasm_image.js";
 
+/**
+ * @typedef { LocalPdfManager | NetworkPdfManager } PdfManager
+ */
+
 function parseDocBaseUrl(url) {
   if (url) {
     const absoluteUrl = createValidAbsoluteUrl(url);
@@ -140,8 +144,17 @@ class BasePdfManager {
     unreachable("Abstract method `sendProgressiveData` called");
   }
 
+  /**
+   * Set password.
+   *
+   * @param {string} password
+   *   New password.
+   * @returns {undefined}
+   *   Nothing.
+   */
   updatePassword(password) {
     this._password = password;
+    this.pdfDocument.xref.encrypt?.setPassword(password);
   }
 
   terminate(reason) {
