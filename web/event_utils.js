@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { INTERNAL_EVT, internalOpt } from "./internal_evt.js";
+
 const WaitOnType = {
   EVENT: "event",
   TIMEOUT: "timeout",
@@ -53,10 +55,12 @@ async function waitOnEventOrTimeout({ target, name, delay = 0 }) {
     resolve(type);
   }
 
-  const evtMethod = target instanceof EventBus ? "_on" : "addEventListener";
-  target[evtMethod](name, handler.bind(null, WaitOnType.EVENT), {
-    signal: ac.signal,
-  });
+  const evtMethod = target instanceof EventBus ? "on" : "addEventListener";
+  const evtOpts =
+    target instanceof EventBus
+      ? { signal: ac.signal, ...internalOpt }
+      : { signal: ac.signal };
+  target[evtMethod](name, handler.bind(null, WaitOnType.EVENT), evtOpts);
 
   const timeout = setTimeout(handler.bind(null, WaitOnType.TIMEOUT), delay);
 
@@ -70,16 +74,39 @@ async function waitOnEventOrTimeout({ target, name, delay = 0 }) {
 class EventBus {
   #listeners = Object.create(null);
 
+  constructor() {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      // Prevent the class methods from being overridden by third-party users,
+      // to ensure that `INTERNAL_EVT` cannot be accessed from the outside.
+      Object.seal(this);
+    }
+  }
+
   /**
    * @param {string} eventName
    * @param {function} listener
    * @param {Object} [options]
    */
   on(eventName, listener, options = null) {
-    this._on(eventName, listener, {
-      external: true,
-      once: options?.once,
-      signal: options?.signal,
+    let rmAbort = null;
+    if (options?.signal instanceof AbortSignal) {
+      const { signal } = options;
+      if (signal.aborted) {
+        console.error("Cannot use an `aborted` signal.");
+        return;
+      }
+      const onAbort = () => this.off(eventName, listener);
+      rmAbort = () => signal.removeEventListener("abort", onAbort);
+
+      signal.addEventListener("abort", onAbort);
+    }
+
+    const eventListeners = (this.#listeners[eventName] ??= []);
+    eventListeners.push({
+      listener,
+      internal: options?.internal === INTERNAL_EVT,
+      once: options?.once === true,
+      rmAbort,
     });
   }
 
@@ -89,71 +116,6 @@ class EventBus {
    * @param {Object} [options]
    */
   off(eventName, listener, options = null) {
-    this._off(eventName, listener);
-  }
-
-  /**
-   * @param {string} eventName
-   * @param {Object} data
-   */
-  dispatch(eventName, data) {
-    const eventListeners = this.#listeners[eventName];
-    if (!eventListeners || eventListeners.length === 0) {
-      return;
-    }
-    let externalListeners;
-    // Making copy of the listeners array in case if it will be modified
-    // during dispatch.
-    for (const { listener, external, once } of eventListeners.slice(0)) {
-      if (once) {
-        this._off(eventName, listener);
-      }
-      if (external) {
-        (externalListeners ||= []).push(listener);
-        continue;
-      }
-      listener(data);
-    }
-    // Dispatch any "external" listeners *after* the internal ones, to give the
-    // viewer components time to handle events and update their state first.
-    if (externalListeners) {
-      for (const listener of externalListeners) {
-        listener(data);
-      }
-      externalListeners = null;
-    }
-  }
-
-  /**
-   * @ignore
-   */
-  _on(eventName, listener, options = null) {
-    let rmAbort = null;
-    if (options?.signal instanceof AbortSignal) {
-      const { signal } = options;
-      if (signal.aborted) {
-        console.error("Cannot use an `aborted` signal.");
-        return;
-      }
-      const onAbort = () => this._off(eventName, listener);
-      rmAbort = () => signal.removeEventListener("abort", onAbort);
-
-      signal.addEventListener("abort", onAbort);
-    }
-
-    const eventListeners = (this.#listeners[eventName] ||= []);
-    eventListeners.push({
-      listener,
-      external: options?.external === true,
-      once: options?.once === true,
-      rmAbort,
-    });
-  }
-
-  /**
-   * @ignore
-   */
-  _off(eventName, listener, options = null) {
     const eventListeners = this.#listeners[eventName];
     if (!eventListeners) {
       return;
@@ -164,6 +126,37 @@ class EventBus {
         evt.rmAbort?.(); // Ensure that the `AbortSignal` listener is removed.
         eventListeners.splice(i, 1);
         return;
+      }
+    }
+  }
+
+  /**
+   * @param {string} eventName
+   * @param {Object} data
+   */
+  dispatch(eventName, data) {
+    const eventListeners = this.#listeners[eventName];
+    if (!eventListeners?.length) {
+      return;
+    }
+    let extListeners;
+    // Making copy of the listeners array in case if it will be modified
+    // during dispatch.
+    for (const { listener, internal, once } of eventListeners.slice(0)) {
+      if (once) {
+        this.off(eventName, listener);
+      }
+      if (!internal) {
+        (extListeners ??= []).push(listener);
+        continue;
+      }
+      listener(data);
+    }
+    // Dispatch any "external" listeners *after* the internal ones, to give the
+    // viewer components time to handle events and update their state first.
+    if (extListeners) {
+      for (const listener of extListeners) {
+        listener(data);
       }
     }
   }

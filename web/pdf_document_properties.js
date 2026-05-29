@@ -19,6 +19,7 @@
 /** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
 
 import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
+import { internalOpt } from "./internal_evt.js";
 import { PDFDateString } from "pdfjs-lib";
 
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
@@ -82,12 +83,20 @@ class PDFDocumentProperties {
 
     this.overlayManager.register(this.dialog);
 
-    eventBus._on("pagechanging", evt => {
-      this._currentPageNumber = evt.pageNumber;
-    });
-    eventBus._on("rotationchanging", evt => {
-      this._pagesRotation = evt.pagesRotation;
-    });
+    eventBus.on(
+      "pagechanging",
+      evt => {
+        this._currentPageNumber = evt.pageNumber;
+      },
+      internalOpt
+    );
+    eventBus.on(
+      "rotationchanging",
+      evt => {
+        this._pagesRotation = evt.pagesRotation;
+      },
+      internalOpt
+    );
   }
 
   /**

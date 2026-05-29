@@ -27,6 +27,7 @@ import {
   watchScroll,
 } from "./ui_utils.js";
 import { MathClamp, noContextMenu, stopEvent } from "pdfjs-lib";
+import { internalOpt } from "./internal_evt.js";
 import { Menu } from "./menu.js";
 import { PDFThumbnailView } from "./pdf_thumbnail_view.js";
 import { RenderingStates } from "./renderable_view.js";
@@ -383,7 +384,7 @@ class PDFThumbnailViewer {
       ? this.getStructuralChanges()
       : [{ document: null }];
     data.push(...entries);
-    this.eventBus._on(
+    this.eventBus.on(
       "pagesloaded",
       () => {
         // Clear any pre-merge selection: thumbnails are rebuilt fresh
@@ -406,7 +407,7 @@ class PDFThumbnailViewer {
           this.#updateCurrentPage(insertAfter + 2, /* force = */ true);
         }
       },
-      { once: true }
+      { once: true, ...internalOpt }
     );
     this.#reportTelemetry({ action: "merge" });
     this.eventBus.dispatch("saveandload", {

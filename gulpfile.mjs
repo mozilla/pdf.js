@@ -116,6 +116,7 @@ const DEFINES = Object.freeze({
   WORKER_THREAD: false,
   TESTING: undefined,
   COVERAGE: undefined,
+  INTERNAL_EVT: crypto.randomUUID(),
   // The main build targets:
   GENERIC: false,
   MOZCENTRAL: false,

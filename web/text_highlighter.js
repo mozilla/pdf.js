@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { internalOpt } from "./internal_evt.js";
+
 /** @typedef {import("./event_utils").EventBus} EventBus */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_find_controller").PDFFindController} PDFFindController */
@@ -29,7 +31,7 @@
  * either the text layer or XFA layer depending on the type of document.
  */
 class TextHighlighter {
-  #eventAbortController = null;
+  #eventAC = null;
 
   /**
    * @param {TextHighlighterOptions} options
@@ -71,17 +73,17 @@ class TextHighlighter {
     }
     this.enabled = true;
 
-    if (!this.#eventAbortController) {
-      this.#eventAbortController = new AbortController();
+    if (!this.#eventAC) {
+      this.#eventAC = new AbortController();
 
-      this.eventBus._on(
+      this.eventBus.on(
         "updatetextlayermatches",
         evt => {
           if (evt.pageIndex === this.pageIdx || evt.pageIndex === -1) {
             this._updateMatches();
           }
         },
-        { signal: this.#eventAbortController.signal }
+        { signal: this.#eventAC.signal, ...internalOpt }
       );
     }
     this._updateMatches();
@@ -93,8 +95,8 @@ class TextHighlighter {
     }
     this.enabled = false;
 
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
 
     this._updateMatches(/* reset = */ true);
   }

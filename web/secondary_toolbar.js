@@ -22,6 +22,7 @@ import {
   toggleCheckedBtn,
   toggleExpandedBtn,
 } from "./ui_utils.js";
+import { internalOpt } from "./internal_evt.js";
 import { PagesCountLimit } from "./pdf_viewer.js";
 
 /**
@@ -235,9 +236,21 @@ class SecondaryToolbar {
       });
     }
 
-    eventBus._on("cursortoolchanged", this.#cursorToolChanged.bind(this));
-    eventBus._on("scrollmodechanged", this.#scrollModeChanged.bind(this));
-    eventBus._on("spreadmodechanged", this.#spreadModeChanged.bind(this));
+    eventBus.on(
+      "cursortoolchanged",
+      this.#cursorToolChanged.bind(this),
+      internalOpt
+    );
+    eventBus.on(
+      "scrollmodechanged",
+      this.#scrollModeChanged.bind(this),
+      internalOpt
+    );
+    eventBus.on(
+      "spreadmodechanged",
+      this.#spreadModeChanged.bind(this),
+      internalOpt
+    );
   }
 
   #cursorToolChanged({ tool, disabled }) {

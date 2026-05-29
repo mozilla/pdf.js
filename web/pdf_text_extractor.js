@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { internalOpt } from "./internal_evt.js";
+
 /**
  * This class manages the interaction of extracting the text content of the page
  * and passing it back to the external service.
@@ -29,15 +31,23 @@ class PdfTextExtractor {
   constructor(externalServices, pdfViewer, eventBus) {
     this.#externalServices = externalServices;
 
-    eventBus._on("pagesinit", () => {
-      this.#capability.resolve(pdfViewer);
-    });
-    eventBus._on("pagesdestroy", () => {
-      this.#capability.reject(new Error("pagesdestroy"));
-      this.#textPromise = null;
+    eventBus.on(
+      "pagesinit",
+      () => {
+        this.#capability.resolve(pdfViewer);
+      },
+      internalOpt
+    );
+    eventBus.on(
+      "pagesdestroy",
+      () => {
+        this.#capability.reject(new Error("pagesdestroy"));
+        this.#textPromise = null;
 
-      this.#capability = Promise.withResolvers();
-    });
+        this.#capability = Promise.withResolvers();
+      },
+      internalOpt
+    );
 
     window.addEventListener("requestTextContent", ({ detail }) => {
       this.extractTextContent(detail.requestId);

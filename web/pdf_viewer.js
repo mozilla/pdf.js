@@ -66,6 +66,7 @@ import {
   watchScroll,
 } from "./ui_utils.js";
 import { GenericL10n } from "web-null_l10n";
+import { internalOpt } from "./internal_evt.js";
 import { PDFPageView } from "./pdf_page_view.js";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { RenderingStates } from "./renderable_view.js";
@@ -258,7 +259,7 @@ class PDFViewer {
 
   #abortSignal = null;
 
-  #eventAbortController = null;
+  #eventAC = null;
 
   #minDurationToUpdateCanvas = 0;
 
@@ -420,12 +421,16 @@ class PDFViewer {
 
     // Trigger API-cleanup, once thumbnail rendering has finished,
     // if the relevant pageView is *not* cached in the buffer.
-    this.eventBus._on("thumbnailrendered", ({ pageNumber, pdfPage }) => {
-      const pageView = this._pages[pageNumber - 1];
-      if (!this.#buffer.has(pageView)) {
-        pdfPage?.cleanup();
-      }
-    });
+    this.eventBus.on(
+      "thumbnailrendered",
+      ({ pageNumber, pdfPage }) => {
+        const pageView = this._pages[pageNumber - 1];
+        if (!this.#buffer.has(pageView)) {
+          pdfPage?.cleanup();
+        }
+      },
+      internalOpt
+    );
 
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
@@ -937,8 +942,9 @@ class PDFViewer {
 
     const { eventBus, pageColors, viewer } = this;
 
-    this.#eventAbortController = new AbortController();
-    const { signal } = this.#eventAbortController;
+    this.#eventAC = new AbortController();
+    const { signal } = this.#eventAC;
+    const evtOpts = { signal, ...internalOpt };
 
     // Given that browsers don't handle huge amounts of DOM-elements very well,
     // enforce usage of PAGE-scrolling when loading *very* long/large documents.
@@ -968,7 +974,7 @@ class PDFViewer {
       // evicted from the buffer and destroyed even if we pause its rendering.
       this.#buffer.push(pageView);
     };
-    eventBus._on("pagerender", onBeforeDraw, { signal });
+    eventBus.on("pagerender", onBeforeDraw, evtOpts);
 
     const onAfterDraw = evt => {
       if (evt.cssTransform || evt.isDetailView) {
@@ -976,9 +982,9 @@ class PDFViewer {
       }
       this._onePageRenderedCapability.resolve({ timestamp: evt.timestamp });
 
-      eventBus._off("pagerendered", onAfterDraw); // Remove immediately.
+      eventBus.off("pagerendered", onAfterDraw); // Remove immediately.
     };
-    eventBus._on("pagerendered", onAfterDraw, { signal });
+    eventBus.on("pagerendered", onAfterDraw, evtOpts);
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages
@@ -1120,7 +1126,7 @@ class PDFViewer {
           this._updateSpreadMode();
         }
 
-        eventBus._on(
+        eventBus.on(
           "annotationeditorlayerrendered",
           evt => {
             if (this.#annotationEditorUIManager) {
@@ -1131,7 +1137,7 @@ class PDFViewer {
               });
             }
           },
-          { once: true, signal }
+          { once: true, signal, ...internalOpt }
         );
 
         // Fetch all the pages since the viewport is needed before printing
@@ -1368,8 +1374,8 @@ class PDFViewer {
       pages: [],
     };
 
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
 
     // Remove the pages from the DOM...
     this.viewer.textContent = "";
@@ -2688,11 +2694,11 @@ class PDFViewer {
         this.#cleanupSwitchAnnotationEditorMode();
         this.#switchAnnotationEditorModeAC = new AbortController();
         const signal = AbortSignal.any([
-          this.#eventAbortController.signal,
+          this.#eventAC.signal,
           this.#switchAnnotationEditorModeAC.signal,
         ]);
 
-        eventBus._on(
+        eventBus.on(
           "pagerendered",
           ({ pageNumber }) => {
             idsToRefresh.delete(pageNumber);
@@ -2703,7 +2709,7 @@ class PDFViewer {
               );
             }
           },
-          { signal }
+          { signal, ...internalOpt }
         );
         return;
       }
