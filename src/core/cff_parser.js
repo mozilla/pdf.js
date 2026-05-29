@@ -30,6 +30,7 @@ import {
 } from "./charsets.js";
 import { ExpertEncoding, StandardEncoding } from "./encodings.js";
 import { DataBuilder } from "./data_builder.js";
+import { MathClamp } from "../shared/math_clamp.js";
 
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
@@ -864,6 +865,43 @@ class CFFParser {
       // Firefox doesn't render correctly such a font on Windows (see issue
       // 15289), hence we just reset it to its default value.
       privateDict.setByName("ExpansionFactor", DEFAULT_EXPANSION_FACTOR);
+    }
+    if (blueScale > 0) {
+      // Adobe's font validator (AFDKO, see `absfont.cpp`) flags BlueScale as
+      // out-of-range when `BlueScale * maxZoneHeight` is below 0.5 or above 1.
+      // The Type 2 hinting engine in coretype/FreeType disables the lower
+      // clamp at render time because library fonts with small zones and a
+      // default BlueScale (0.039625) trip the threshold even though they
+      // render correctly. To avoid changing those fonts here, only apply
+      // the lower clamp when BlueScale is also smaller than the default,
+      // i.e. when the font genuinely deviates from the standard value.
+      // The upper clamp matches what FreeType already enforces (psblues.c)
+      // and is safe to apply unconditionally.
+      let maxZoneHeight = 0;
+      for (const zones of [
+        privateDict.getByName("BlueValues"),
+        privateDict.getByName("OtherBlues"),
+      ]) {
+        if (!zones) {
+          continue;
+        }
+        // BlueValues/OtherBlues are stored as deltas where the odd-indexed
+        // entries are the heights of each zone.
+        for (let i = 1; i < zones.length; i += 2) {
+          if (zones[i] > maxZoneHeight) {
+            maxZoneHeight = zones[i];
+          }
+        }
+      }
+      if (maxZoneHeight > 0) {
+        const minBlueScale =
+          blueScale < DEFAULT_BLUE_SCALE ? 0.5 / maxZoneHeight : -Infinity;
+        const maxBlueScale = 1 / maxZoneHeight;
+        const clamped = MathClamp(blueScale, minBlueScale, maxBlueScale);
+        if (clamped !== blueScale) {
+          privateDict.setByName("BlueScale", clamped);
+        }
+      }
     }
 
     // Parse the Subrs index also since it's relative to the private dict.

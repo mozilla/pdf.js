@@ -269,6 +269,94 @@ describe("CFFParser", function () {
     expect(privateDict.getByName("ExpansionFactor")).toEqual(0.06);
   });
 
+  it("clamps a too-small BlueScale up to 0.5 / maxZoneHeight", function () {
+    cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
+    // Zones (deltas): heights are the odd-indexed entries (all 20 here).
+    cff.topDict.privateDict.setByName(
+      "BlueValues",
+      [-20, 20, 530, 20, 220, 20, 30, 20]
+    );
+    cff.topDict.privateDict.setByName("OtherBlues", [-270, 20]);
+    cff.topDict.privateDict.setByName("BlueScale", 0.016666999);
+    cff.topDict.setByName("Private", [0, 0]);
+    const fontDataWithSmallBlueScale = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithSmallBlueScale),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    // maxZoneHeight = 20 -> minBlueScale = 0.5 / 20 = 0.025.
+    expect(reparsedCff.topDict.privateDict.getByName("BlueScale")).toEqual(
+      0.025
+    );
+  });
+
+  it("clamps a too-large BlueScale down to 1 / maxZoneHeight", function () {
+    cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
+    cff.topDict.privateDict.setByName(
+      "BlueValues",
+      [-20, 20, 530, 20, 220, 20, 30, 20]
+    );
+    cff.topDict.privateDict.setByName("BlueScale", 0.1);
+    cff.topDict.setByName("Private", [0, 0]);
+    const fontDataWithLargeBlueScale = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithLargeBlueScale),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    // maxZoneHeight = 20 -> maxBlueScale = 1 / 20 = 0.05.
+    expect(reparsedCff.topDict.privateDict.getByName("BlueScale")).toEqual(
+      0.05
+    );
+  });
+
+  it("preserves a BlueScale that is already inside the valid range", function () {
+    cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
+    cff.topDict.privateDict.setByName(
+      "BlueValues",
+      [-20, 20, 530, 20, 220, 20, 30, 20]
+    );
+    cff.topDict.privateDict.setByName("BlueScale", 0.039625);
+    cff.topDict.setByName("Private", [0, 0]);
+    const fontDataWithNormalBlueScale = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithNormalBlueScale),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.privateDict.getByName("BlueScale")).toEqual(
+      0.039625
+    );
+  });
+
+  it("preserves the default BlueScale even when zones are very small", function () {
+    // Foundry fonts (e.g. Eurostile LT Std Medium, maxZoneHeight 6) ship the
+    // default BlueScale of 0.039625 together with small zones; that combination
+    // technically violates AFDKO's lower bound but is the rendered intent.
+    cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
+    cff.topDict.privateDict.setByName("BlueValues", [-12, 6, 530, 6]);
+    cff.topDict.privateDict.setByName("BlueScale", 0.039625);
+    cff.topDict.setByName("Private", [0, 0]);
+    const fontDataDefaultBlueScale = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataDefaultBlueScale),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.topDict.privateDict.getByName("BlueScale")).toEqual(
+      0.039625
+    );
+  });
+
   it("refuses to add topDict key with invalid value (bug 1068432)", function () {
     const topDict = cff.topDict;
     const defaultValue = topDict.getByName("UnderlinePosition");
