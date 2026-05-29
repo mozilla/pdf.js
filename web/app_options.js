@@ -369,6 +369,11 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  postMessageAfterPrintCallback: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   printResolution: {
     /** @type {number} */
     value: 150,
