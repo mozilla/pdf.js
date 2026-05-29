@@ -961,7 +961,8 @@ class PDFDocumentProxy {
 
   /**
    * @typedef {Object} PageInfo
-   * @property {null|Uint8Array} document
+   * @property {null|Uint8Array} [document]
+   * @property {ImageBitmap} [image] Image to insert as a synthetic page.
    * @property {Array<Array<number>|number>} [includePages]
    *  included ranges or indices.
    * @property {Array<Array<number>|number>} [excludePages]
@@ -2899,10 +2900,25 @@ class WorkerTransport {
       pageInfos,
     };
     let transfer;
+    const ImageBitmapCtor = globalThis.ImageBitmap;
+    if (typeof ImageBitmapCtor === "function") {
+      const infos = Array.isArray(pageInfos) ? pageInfos : [pageInfos];
+      for (const pageInfo of infos) {
+        if (pageInfo?.image instanceof ImageBitmapCtor) {
+          (transfer ||= []).push(pageInfo.image);
+        }
+      }
+    }
     if (this.annotationStorage.size > 0) {
       const serialized = this.annotationStorage.serializable;
       let { map } = serialized;
-      transfer = serialized.transfer;
+      if (serialized.transfer?.length) {
+        if (transfer) {
+          transfer.push(...serialized.transfer);
+        } else {
+          transfer = serialized.transfer;
+        }
+      }
       // Annotation pageIndex tracks the editor's current viewer position; the
       // worker keys lookups by source index. Remap UI -> source via pagesMapper
       // so reorganized pages still receive their annotations after extraction.

@@ -569,6 +569,9 @@ class WorkerMessageHandler {
         }
         let newDocumentId = 0;
         for (const pageInfo of pageInfos) {
+          if (pageInfo.image) {
+            continue;
+          }
           if (pageInfo.document === null) {
             pageInfo.document = pdfManager.pdfDocument;
           } else if (ArrayBuffer.isView(pageInfo.document)) {
