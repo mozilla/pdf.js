@@ -61,7 +61,7 @@ class TextLayerBuilder {
 
   static #textLayers = new Map();
 
-  static #selectionChangeAbortController = null;
+  static #selectionChangeAC = null;
 
   /**
    * @param {TextLayerBuilderOptions} options
@@ -204,23 +204,20 @@ class TextLayerBuilder {
     this.#textLayers.delete(textLayerDiv);
 
     if (this.#textLayers.size === 0) {
-      this.#selectionChangeAbortController?.abort();
-      this.#selectionChangeAbortController = null;
+      this.#selectionChangeAC?.abort();
+      this.#selectionChangeAC = null;
     }
   }
 
   static #enableGlobalSelectionListener(globalAbortSignal) {
-    if (this.#selectionChangeAbortController) {
+    if (this.#selectionChangeAC) {
       // document-level event listeners already installed
       return;
     }
-    this.#selectionChangeAbortController = new AbortController();
+    this.#selectionChangeAC = new AbortController();
     const signal = globalAbortSignal
-      ? AbortSignal.any([
-          this.#selectionChangeAbortController.signal,
-          globalAbortSignal,
-        ])
-      : this.#selectionChangeAbortController.signal;
+      ? AbortSignal.any([this.#selectionChangeAC.signal, globalAbortSignal])
+      : this.#selectionChangeAC.signal;
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {

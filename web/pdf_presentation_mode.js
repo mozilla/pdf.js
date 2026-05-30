@@ -49,9 +49,9 @@ class PDFPresentationMode {
 
   #args = null;
 
-  #fullscreenChangeAbortController = null;
+  #fullscreenChangeAC = null;
 
-  #windowAbortController = null;
+  #windowAC = null;
 
   /**
    * @param {PDFPresentationModeOptions} options
@@ -350,11 +350,11 @@ class PDFPresentationMode {
   }
 
   #addWindowListeners() {
-    if (this.#windowAbortController) {
+    if (this.#windowAC) {
       return;
     }
-    this.#windowAbortController = new AbortController();
-    const { signal } = this.#windowAbortController;
+    this.#windowAC = new AbortController();
+    const { signal } = this.#windowAC;
 
     const touchSwipeBind = this.#touchSwipe.bind(this);
 
@@ -380,15 +380,15 @@ class PDFPresentationMode {
   }
 
   #removeWindowListeners() {
-    this.#windowAbortController?.abort();
-    this.#windowAbortController = null;
+    this.#windowAC?.abort();
+    this.#windowAC = null;
   }
 
   #addFullscreenChangeListeners() {
-    if (this.#fullscreenChangeAbortController) {
+    if (this.#fullscreenChangeAC) {
       return;
     }
-    this.#fullscreenChangeAbortController = new AbortController();
+    this.#fullscreenChangeAC = new AbortController();
 
     window.addEventListener(
       "fullscreenchange",
@@ -399,13 +399,13 @@ class PDFPresentationMode {
           this.#exit();
         }
       },
-      { signal: this.#fullscreenChangeAbortController.signal }
+      { signal: this.#fullscreenChangeAC.signal }
     );
   }
 
   #removeFullscreenChangeListeners() {
-    this.#fullscreenChangeAbortController?.abort();
-    this.#fullscreenChangeAbortController = null;
+    this.#fullscreenChangeAC?.abort();
+    this.#fullscreenChangeAC = null;
   }
 }
 

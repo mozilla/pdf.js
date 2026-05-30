@@ -23,6 +23,7 @@ import {
   MIN_SCALE,
   toggleExpandedBtn,
 } from "./ui_utils.js";
+import { internalOpt } from "./internal_evt.js";
 
 /**
  * @typedef {Object} ToolbarOptions
@@ -237,12 +238,16 @@ class Toolbar {
         value: this.value,
       });
     });
-    eventBus._on("pagesedited", ({ pagesMapper }) => {
-      const pagesCount = pagesMapper.pagesNumber;
-      if (pagesCount !== this.pagesCount) {
-        this.setPagesCount(pagesCount, this.hasPageLabels);
-      }
-    });
+    eventBus.on(
+      "pagesedited",
+      ({ pagesMapper }) => {
+        const pagesCount = pagesMapper.pagesNumber;
+        if (pagesCount !== this.pagesCount) {
+          this.setPagesCount(pagesCount, this.hasPageLabels);
+        }
+      },
+      internalOpt
+    );
 
     scaleSelect.addEventListener("change", function () {
       if (this.value === "custom") {
@@ -268,29 +273,46 @@ class Toolbar {
     // Suppress context menus for some controls.
     scaleSelect.oncontextmenu = noContextMenu;
 
-    eventBus._on(
+    eventBus.on(
       "annotationeditormodechanged",
-      this.#editorModeChanged.bind(this)
+      this.#editorModeChanged.bind(this),
+      internalOpt
     );
-    eventBus._on("showannotationeditorui", ({ mode }) => {
-      switch (mode) {
-        case AnnotationEditorType.HIGHLIGHT:
-          editorHighlightButton.click();
-          break;
-      }
-    });
-    eventBus._on("toolbardensity", this.#updateToolbarDensity.bind(this));
+    eventBus.on(
+      "showannotationeditorui",
+      ({ mode }) => {
+        switch (mode) {
+          case AnnotationEditorType.HIGHLIGHT:
+            editorHighlightButton.click();
+            break;
+        }
+      },
+      internalOpt
+    );
+    eventBus.on(
+      "toolbardensity",
+      this.#updateToolbarDensity.bind(this),
+      internalOpt
+    );
 
     if (editorHighlightColorPicker) {
-      eventBus._on("annotationeditoruimanager", ({ uiManager }) => {
-        const cp = (this.#colorPicker = new ColorPicker({ uiManager }));
-        uiManager.setMainHighlightColorPicker(cp);
-        editorHighlightColorPicker.append(cp.renderMainDropdown());
-      });
+      eventBus.on(
+        "annotationeditoruimanager",
+        ({ uiManager }) => {
+          const cp = (this.#colorPicker = new ColorPicker({ uiManager }));
+          uiManager.setMainHighlightColorPicker(cp);
+          editorHighlightColorPicker.append(cp.renderMainDropdown());
+        },
+        internalOpt
+      );
 
-      eventBus._on("mainhighlightcolorpickerupdatecolor", ({ value }) => {
-        this.#colorPicker?.updateColor(value);
-      });
+      eventBus.on(
+        "mainhighlightcolorpickerupdatecolor",
+        ({ value }) => {
+          this.#colorPicker?.updateColor(value);
+        },
+        internalOpt
+      );
     }
   }
 

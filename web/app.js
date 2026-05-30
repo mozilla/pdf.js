@@ -72,6 +72,7 @@ import { CaretBrowsingMode } from "./caret_browsing.js";
 import { CommentManager } from "./comment_manager.js";
 import { DownloadManager } from "web-download_manager";
 import { EditorUndoBar } from "./editor_undo_bar.js";
+import { internalOpt } from "./internal_evt.js";
 import { OverlayManager } from "./overlay_manager.js";
 import { PasswordPrompt } from "./password_prompt.js";
 import { PDFAttachmentViewer } from "web-pdf_attachment_viewer";
@@ -171,8 +172,8 @@ const PDFViewerApplication = {
   baseUrl: "",
   mlManager: null,
   _downloadUrl: "",
-  _eventBusAbortController: null,
-  _windowAbortController: null,
+  _eventBusAC: null,
+  _windowAC: null,
   _globalAbortController: new AbortController(),
   documentInfo: null,
   metadata: null,
@@ -1681,7 +1682,10 @@ const PDFViewerApplication = {
       // It should be *extremely* rare for metadata to not have been resolved
       // when this code runs, but ensure that we handle that case here.
       await new Promise(resolve => {
-        this.eventBus._on("metadataloaded", resolve, { once: true });
+        this.eventBus.on("metadataloaded", resolve, {
+          once: true,
+          ...internalOpt,
+        });
       });
       if (pdfDocument !== this.pdfDocument) {
         return null; // The document was closed while the metadata resolved.
@@ -1694,7 +1698,10 @@ const PDFViewerApplication = {
       // Hence we'll simply have to trust that the `contentLength` (as provided
       // by the server), when it exists, is accurate enough here.
       await new Promise(resolve => {
-        this.eventBus._on("documentloaded", resolve, { once: true });
+        this.eventBus.on("documentloaded", resolve, {
+          once: true,
+          ...internalOpt,
+        });
       });
       if (pdfDocument !== this.pdfDocument) {
         return null; // The document was closed while the downloadInfo resolved.
@@ -2095,11 +2102,11 @@ const PDFViewerApplication = {
   },
 
   bindEvents() {
-    if (this._eventBusAbortController) {
+    if (this._eventBusAC) {
       return;
     }
-    const ac = (this._eventBusAbortController = new AbortController());
-    const opts = { signal: ac.signal };
+    const ac = (this._eventBusAC = new AbortController());
+    const opts = { signal: ac.signal, ...internalOpt };
 
     const {
       eventBus,
@@ -2109,109 +2116,109 @@ const PDFViewerApplication = {
       preferences,
     } = this;
 
-    eventBus._on("resize", onResize.bind(this), opts);
-    eventBus._on("hashchange", onHashchange.bind(this), opts);
-    eventBus._on("beforeprint", this.beforePrint.bind(this), opts);
-    eventBus._on("afterprint", this.afterPrint.bind(this), opts);
-    eventBus._on("pagerender", onPageRender.bind(this), opts);
-    eventBus._on("pagerendered", onPageRendered.bind(this), opts);
-    eventBus._on("updateviewarea", onUpdateViewarea.bind(this), opts);
-    eventBus._on("pagechanging", onPageChanging.bind(this), opts);
-    eventBus._on("scalechanging", onScaleChanging.bind(this), opts);
-    eventBus._on("rotationchanging", onRotationChanging.bind(this), opts);
-    eventBus._on("sidebarviewchanged", onSidebarViewChanged.bind(this), opts);
-    eventBus._on("pagemode", onPageMode.bind(this), opts);
-    eventBus._on("namedaction", onNamedAction.bind(this), opts);
-    eventBus._on(
+    eventBus.on("resize", onResize.bind(this), opts);
+    eventBus.on("hashchange", onHashchange.bind(this), opts);
+    eventBus.on("beforeprint", this.beforePrint.bind(this), opts);
+    eventBus.on("afterprint", this.afterPrint.bind(this), opts);
+    eventBus.on("pagerender", onPageRender.bind(this), opts);
+    eventBus.on("pagerendered", onPageRendered.bind(this), opts);
+    eventBus.on("updateviewarea", onUpdateViewarea.bind(this), opts);
+    eventBus.on("pagechanging", onPageChanging.bind(this), opts);
+    eventBus.on("scalechanging", onScaleChanging.bind(this), opts);
+    eventBus.on("rotationchanging", onRotationChanging.bind(this), opts);
+    eventBus.on("sidebarviewchanged", onSidebarViewChanged.bind(this), opts);
+    eventBus.on("pagemode", onPageMode.bind(this), opts);
+    eventBus.on("namedaction", onNamedAction.bind(this), opts);
+    eventBus.on(
       "presentationmodechanged",
       evt => (pdfViewer.presentationModeState = evt.state),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "presentationmode",
       this.requestPresentationMode.bind(this),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "switchannotationeditormode",
       evt => (pdfViewer.annotationEditorMode = evt),
       opts
     );
-    eventBus._on("print", this.triggerPrinting.bind(this), opts);
-    eventBus._on("download", this.downloadOrSave.bind(this), opts);
-    eventBus._on("firstpage", () => (this.page = 1), opts);
-    eventBus._on("lastpage", () => (this.page = this.pagesCount), opts);
-    eventBus._on("nextpage", () => pdfViewer.nextPage(), opts);
-    eventBus._on("previouspage", () => pdfViewer.previousPage(), opts);
-    eventBus._on("zoomin", this.zoomIn.bind(this), opts);
-    eventBus._on("zoomout", this.zoomOut.bind(this), opts);
-    eventBus._on("zoomreset", this.zoomReset.bind(this), opts);
-    eventBus._on("pagenumberchanged", onPageNumberChanged.bind(this), opts);
-    eventBus._on(
+    eventBus.on("print", this.triggerPrinting.bind(this), opts);
+    eventBus.on("download", this.downloadOrSave.bind(this), opts);
+    eventBus.on("firstpage", () => (this.page = 1), opts);
+    eventBus.on("lastpage", () => (this.page = this.pagesCount), opts);
+    eventBus.on("nextpage", () => pdfViewer.nextPage(), opts);
+    eventBus.on("previouspage", () => pdfViewer.previousPage(), opts);
+    eventBus.on("zoomin", this.zoomIn.bind(this), opts);
+    eventBus.on("zoomout", this.zoomOut.bind(this), opts);
+    eventBus.on("zoomreset", this.zoomReset.bind(this), opts);
+    eventBus.on("pagenumberchanged", onPageNumberChanged.bind(this), opts);
+    eventBus.on(
       "scalechanged",
       evt => (pdfViewer.currentScaleValue = evt.value),
       opts
     );
-    eventBus._on("rotatecw", this.rotatePages.bind(this, 90), opts);
-    eventBus._on("rotateccw", this.rotatePages.bind(this, -90), opts);
-    eventBus._on(
+    eventBus.on("rotatecw", this.rotatePages.bind(this, 90), opts);
+    eventBus.on("rotateccw", this.rotatePages.bind(this, -90), opts);
+    eventBus.on(
       "optionalcontentconfig",
       evt => (pdfViewer.optionalContentConfigPromise = evt.promise),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "switchscrollmode",
       evt => (pdfViewer.scrollMode = evt.mode),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "scrollmodechanged",
       onViewerModesChanged.bind(this, "scrollMode"),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "switchspreadmode",
       evt => (pdfViewer.spreadMode = evt.mode),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "spreadmodechanged",
       onViewerModesChanged.bind(this, "spreadMode"),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "imagealttextsettings",
       onImageAltTextSettings.bind(this),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "documentproperties",
       () => pdfDocumentProperties?.open(),
       opts
     );
-    eventBus._on("findfromurlhash", onFindFromUrlHash.bind(this), opts);
-    eventBus._on(
+    eventBus.on("findfromurlhash", onFindFromUrlHash.bind(this), opts);
+    eventBus.on(
       "updatefindmatchescount",
       onUpdateFindMatchesCount.bind(this),
       opts
     );
-    eventBus._on(
+    eventBus.on(
       "updatefindcontrolstate",
       onUpdateFindControlState.bind(this),
       opts
     );
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      eventBus._on("fileinputchange", onFileInputChange.bind(this), opts);
-      eventBus._on("openfile", onOpenFile.bind(this), opts);
+      eventBus.on("fileinputchange", onFileInputChange.bind(this), opts);
+      eventBus.on("openfile", onOpenFile.bind(this), opts);
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      eventBus._on(
+      eventBus.on(
         "editingstateschanged",
         evt => externalServices.updateEditorStates(evt),
         opts
       );
-      eventBus._on(
+      eventBus.on(
         "reporttelemetry",
         evt => externalServices.reportTelemetry(evt.details),
         opts
@@ -2221,28 +2228,28 @@ const PDFViewerApplication = {
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("TESTING || MOZCENTRAL")
     ) {
-      eventBus._on(
+      eventBus.on(
         "setpreference",
         evt => preferences.set(evt.name, evt.value),
         opts
       );
     }
-    eventBus._on("pagesedited", this.onPagesEdited.bind(this), opts);
-    eventBus._on("saveextractedpages", this.onSavePages.bind(this), opts);
-    eventBus._on("saveandload", this.onSaveAndLoad.bind(this), opts);
+    eventBus.on("pagesedited", this.onPagesEdited.bind(this), opts);
+    eventBus.on("saveextractedpages", this.onSavePages.bind(this), opts);
+    eventBus.on("saveandload", this.onSaveAndLoad.bind(this), opts);
   },
 
   bindWindowEvents() {
-    if (this._windowAbortController) {
+    if (this._windowAC) {
       return;
     }
-    this._windowAbortController = new AbortController();
+    this._windowAC = new AbortController();
 
     const {
       eventBus,
       appConfig: { mainContainer },
       pdfViewer,
-      _windowAbortController: { signal },
+      _windowAC: { signal },
     } = this;
 
     this._touchManager = new TouchManager({
@@ -2382,13 +2389,13 @@ const PDFViewerApplication = {
   },
 
   unbindEvents() {
-    this._eventBusAbortController?.abort();
-    this._eventBusAbortController = null;
+    this._eventBusAC?.abort();
+    this._eventBusAC = null;
   },
 
   unbindWindowEvents() {
-    this._windowAbortController?.abort();
-    this._windowAbortController = null;
+    this._windowAC?.abort();
+    this._windowAC = null;
     this._touchManager = null;
   },
 

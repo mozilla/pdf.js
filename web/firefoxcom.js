@@ -19,6 +19,7 @@ import { BaseDownloadManager } from "./base_download_manager.js";
 import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
 import { DEFAULT_SCALE_VALUE } from "./ui_utils.js";
+import { internalOpt } from "./internal_evt.js";
 import { L10n } from "./l10n.js";
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
@@ -294,7 +295,9 @@ class MLManager {
   setEventBus(eventBus, abortSignal) {
     this.#eventBus = eventBus;
     this.#abortSignal = abortSignal;
-    eventBus._on(
+
+    const evtOpts = { signal: abortSignal, ...internalOpt };
+    eventBus.on(
       "enablealttextmodeldownload",
       ({ value }) => {
         if (this.enableAltTextModelDownload === value) {
@@ -306,14 +309,14 @@ class MLManager {
           this.deleteModel("altText");
         }
       },
-      { signal: abortSignal }
+      evtOpts
     );
-    eventBus._on(
+    eventBus.on(
       "enableguessalttext",
       ({ value }) => {
         this.toggleService("altText", value);
       },
-      { signal: abortSignal }
+      evtOpts
     );
   }
 

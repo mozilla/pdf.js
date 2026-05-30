@@ -18,6 +18,7 @@
 /** @typedef {import("./download_manager.js").DownloadManager} DownloadManager */
 
 import { BaseTreeViewer } from "./base_tree_viewer.js";
+import { internalOpt } from "./internal_evt.js";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
 /**
@@ -41,9 +42,10 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     super(options);
     this.downloadManager = options.downloadManager;
 
-    this.eventBus._on(
+    this.eventBus.on(
       "fileattachmentannotation",
-      this.#appendAttachment.bind(this)
+      this.#appendAttachment.bind(this),
+      internalOpt
     );
   }
 

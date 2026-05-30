@@ -21,6 +21,7 @@ import {
   getRGBA,
   Util,
 } from "pdfjs-lib";
+import { internalOpt } from "./internal_evt.js";
 
 /**
  * @typedef {Object} AnnotationEditorParamsOptions
@@ -155,42 +156,46 @@ class AnnotationEditorParams {
       dispatchEvent("CREATE");
     });
 
-    eventBus._on("annotationeditorparamschanged", evt => {
-      for (const [type, value] of evt.details) {
-        switch (type) {
-          case AnnotationEditorParamsType.FREETEXT_SIZE:
-            editorFreeTextFontSize.value = value;
-            break;
-          case AnnotationEditorParamsType.FREETEXT_COLOR:
-            editorFreeTextColor.value = value;
-            break;
-          case AnnotationEditorParamsType.INK_COLOR:
-            updateInkColor(value);
-            break;
-          case AnnotationEditorParamsType.INK_THICKNESS:
-            editorInkThickness.value = value;
-            break;
-          case AnnotationEditorParamsType.INK_OPACITY:
-            updateInkOpacity(value);
-            break;
-          case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
-            eventBus.dispatch("mainhighlightcolorpickerupdatecolor", {
-              source: this,
-              value,
-            });
-            break;
-          case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
-            editorFreeHighlightThickness.value = value;
-            break;
-          case AnnotationEditorParamsType.HIGHLIGHT_FREE:
-            editorFreeHighlightThickness.disabled = !value;
-            break;
-          case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
-            editorHighlightShowAll.setAttribute("aria-pressed", value);
-            break;
+    eventBus.on(
+      "annotationeditorparamschanged",
+      evt => {
+        for (const [type, value] of evt.details) {
+          switch (type) {
+            case AnnotationEditorParamsType.FREETEXT_SIZE:
+              editorFreeTextFontSize.value = value;
+              break;
+            case AnnotationEditorParamsType.FREETEXT_COLOR:
+              editorFreeTextColor.value = value;
+              break;
+            case AnnotationEditorParamsType.INK_COLOR:
+              updateInkColor(value);
+              break;
+            case AnnotationEditorParamsType.INK_THICKNESS:
+              editorInkThickness.value = value;
+              break;
+            case AnnotationEditorParamsType.INK_OPACITY:
+              updateInkOpacity(value);
+              break;
+            case AnnotationEditorParamsType.HIGHLIGHT_COLOR:
+              eventBus.dispatch("mainhighlightcolorpickerupdatecolor", {
+                source: this,
+                value,
+              });
+              break;
+            case AnnotationEditorParamsType.HIGHLIGHT_THICKNESS:
+              editorFreeHighlightThickness.value = value;
+              break;
+            case AnnotationEditorParamsType.HIGHLIGHT_FREE:
+              editorFreeHighlightThickness.disabled = !value;
+              break;
+            case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
+              editorHighlightShowAll.setAttribute("aria-pressed", value);
+              break;
+          }
         }
-      }
-    });
+      },
+      internalOpt
+    );
   }
 }
 

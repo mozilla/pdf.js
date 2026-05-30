@@ -3556,7 +3556,7 @@ describe("Reorganize Pages View", () => {
           await waitAndClick(page, getThumbnailSelector(2));
 
           const handleMerged = await createPromise(page, resolve => {
-            window.PDFViewerApplication.eventBus._on(
+            window.PDFViewerApplication.eventBus.on(
               "thumbnailsloaded",
               resolve,
               { once: true }
@@ -3628,7 +3628,7 @@ describe("Reorganize Pages View", () => {
           await waitForThumbnailVisible(page, 1);
 
           const handleMerged = await createPromise(page, resolve => {
-            window.PDFViewerApplication.eventBus._on(
+            window.PDFViewerApplication.eventBus.on(
               "thumbnailsloaded",
               resolve,
               { once: true }

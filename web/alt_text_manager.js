@@ -14,6 +14,7 @@
  */
 
 import { DOMSVGFactory } from "pdfjs-lib";
+import { internalOpt } from "./internal_evt.js";
 
 class AltTextManager {
   #clickAC = null;
@@ -170,8 +171,9 @@ class AltTextManager {
     this.#uiManager.removeEditListeners();
 
     this.#resizeAC = new AbortController();
-    this.#eventBus._on("resize", this.#setPosition.bind(this), {
+    this.#eventBus.on("resize", this.#setPosition.bind(this), {
       signal: this.#resizeAC.signal,
+      ...internalOpt,
     });
 
     try {

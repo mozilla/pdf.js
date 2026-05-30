@@ -35,6 +35,7 @@ import {
   setLayerDimensions,
   Util,
 } from "pdfjs-lib";
+import { internalOpt } from "./internal_evt.js";
 import { PresentationModeState } from "./ui_utils.js";
 
 /**
@@ -75,7 +76,7 @@ class AnnotationLayerBuilder {
 
   #onAppend = null;
 
-  #eventAbortController = null;
+  #eventAC = null;
 
   #linksInjected = false;
 
@@ -190,15 +191,15 @@ class AnnotationLayerBuilder {
     if (this.linkService.isInPresentationMode) {
       this.#updatePresentationModeState(PresentationModeState.FULLSCREEN);
     }
-    if (!this.#eventAbortController) {
-      this.#eventAbortController = new AbortController();
+    if (!this.#eventAC) {
+      this.#eventAC = new AbortController();
 
-      this._eventBus?._on(
+      this._eventBus?.on(
         "presentationmodechanged",
         evt => {
           this.#updatePresentationModeState(evt.state);
         },
-        { signal: this.#eventAbortController.signal }
+        { signal: this.#eventAC.signal, ...internalOpt }
       );
     }
   }
@@ -221,8 +222,8 @@ class AnnotationLayerBuilder {
   cancel() {
     this._cancelled = true;
 
-    this.#eventAbortController?.abort();
-    this.#eventAbortController = null;
+    this.#eventAC?.abort();
+    this.#eventAC = null;
   }
 
   hide(internal = false) {

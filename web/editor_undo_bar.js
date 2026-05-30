@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { internalOpt } from "./internal_evt.js";
 import { noContextMenu } from "pdfjs-lib";
 
 class EditorUndoBar {
@@ -62,13 +63,14 @@ class EditorUndoBar {
   show(undoAction, messageData) {
     if (!this.#initController) {
       this.#initController = new AbortController();
-      const opts = { signal: this.#initController.signal };
+      const domOpts = { signal: this.#initController.signal };
+      const evtOpts = { signal: this.#initController.signal, ...internalOpt };
       const boundHide = this.hide.bind(this);
 
-      this.#container.addEventListener("contextmenu", noContextMenu, opts);
-      this.#closeButton.addEventListener("click", boundHide, opts);
-      this.#eventBus._on("beforeprint", boundHide, opts);
-      this.#eventBus._on("download", boundHide, opts);
+      this.#container.addEventListener("contextmenu", noContextMenu, domOpts);
+      this.#closeButton.addEventListener("click", boundHide, domOpts);
+      this.#eventBus.on("beforeprint", boundHide, evtOpts);
+      this.#eventBus.on("download", boundHide, evtOpts);
     }
 
     this.hide();

@@ -19,6 +19,7 @@
 
 import { getCharacterType, getNormalizeWithNFKC } from "./pdf_find_utils.js";
 import { binarySearchFirstItem } from "./ui_utils.js";
+import { internalOpt } from "./internal_evt.js";
 
 const FindState = {
   FOUND: 0,
@@ -450,9 +451,9 @@ class PDFFindController {
     this.onIsPageVisible = null;
 
     this.#reset();
-    eventBus._on("find", this.#onFind.bind(this));
-    eventBus._on("findbarclose", this.#onFindBarClose.bind(this));
-    eventBus._on("pagesedited", this.#onPagesEdited.bind(this));
+    eventBus.on("find", this.#onFind.bind(this), internalOpt);
+    eventBus.on("findbarclose", this.#onFindBarClose.bind(this), internalOpt);
+    eventBus.on("pagesedited", this.#onPagesEdited.bind(this), internalOpt);
   }
 
   get highlightMatches() {

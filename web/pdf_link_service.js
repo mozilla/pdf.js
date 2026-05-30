@@ -15,6 +15,7 @@
 
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
+import { internalOpt } from "./internal_evt.js";
 import { isValidExplicitDest } from "pdfjs-lib";
 import { parseQueryString } from "./ui_utils.js";
 
@@ -192,7 +193,7 @@ class PDFLinkService {
     });
 
     const ac = new AbortController();
-    this.eventBus._on(
+    this.eventBus.on(
       "textlayerrendered",
       evt => {
         if (evt.pageNumber === pageNumber) {
@@ -200,7 +201,7 @@ class PDFLinkService {
           ac.abort();
         }
       },
-      { signal: ac.signal }
+      { signal: ac.signal, ...internalOpt }
     );
   }
 
