@@ -571,14 +571,7 @@ function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
 
 function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
   const ranges = getRanges(glyphs, toUnicodeExtraMap, numGlyphs);
-  const numTables = ranges.at(-1)[1] > 0xffff ? 2 : 1;
-
-  const cmap = new DataBuilder({ exactLength: 12 });
-  cmap.skip(2); // version, skip redundant "\x00\x00"
-  cmap.setInt16(numTables); // numTables
-  cmap.setArray([0x00, 0x03]); // platformID
-  cmap.setArray([0x00, 0x01]); // encodingID
-  cmap.setInt32(4 + numTables * 8); // start of the table record
+  const hasNonBmp = ranges.at(-1)[1] > 0xffff;
 
   let i, ii, j, jj;
   for (i = ranges.length - 1; i >= 0; --i) {
@@ -603,6 +596,11 @@ function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
     idRangeOffsets = new DataBuilder({ exactLength: segmentsLength }),
     glyphsIds = new DataBuilder({});
   let bias = 0;
+  // The "length" and "idRangeOffset" fields of a format 4 sub-table are
+  // 16-bit, hence fonts with a large/sparse glyph mapping cannot be encoded
+  // that way; when that happens we rely on the format 12 sub-table instead
+  // (see below) and skip the format 4 one altogether.
+  let format4Overflow = false;
 
   for (i = 0, ii = bmpLength; i < ii; i++) {
     const [start, end, codes] = ranges[i];
@@ -620,7 +618,14 @@ function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
       bias += end - start + 1;
 
       idDeltas.skip(2); // Skip redundant "\x00\x00"
-      idRangeOffsets.setInt16(offset);
+      if (offset > 0xffff) {
+        // The sub-table is discarded below, so just write a placeholder that
+        // fits in the 16-bit "idRangeOffset" field.
+        format4Overflow = true;
+        idRangeOffsets.skip(2);
+      } else {
+        idRangeOffsets.setInt16(offset);
+      }
 
       for (j = 0, jj = codes.length; j < jj; ++j) {
         glyphsIds.setInt16(codes[j]);
@@ -661,15 +666,18 @@ function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
   format314.setArray(idRangeOffsets.data);
   format314.setArray(glyphsIds.data);
 
-  let cmap31012 = null,
-    format31012 = null,
-    header31012 = null;
-  if (numTables > 1) {
-    cmap31012 = new DataBuilder({ exactLength: 8 });
-    cmap31012.setArray([0x00, 0x03]); // platformID
-    cmap31012.setArray([0x00, 0x0a]); // encodingID
-    cmap31012.setInt32(4 + numTables * 8 + 4 + format314.length); // start of the table record
+  // The format 4 (3, 1) sub-table can only be used when it fits within its
+  // 16-bit "length"/"idRangeOffset" fields. A format 12 (3, 10) sub-table is
+  // required for characters outside the BMP, and also acts as a fallback when
+  // the format 4 one overflows (note that format 12 covers the whole mapping,
+  // so dropping the redundant format 4 sub-table is fine).
+  const useFormat4 = !format4Overflow && format314.length + 4 <= 0xffff;
+  const useFormat12 = hasNonBmp || !useFormat4;
+  const numTables = (useFormat4 ? 1 : 0) + (useFormat12 ? 1 : 0);
 
+  let format31012 = null,
+    header31012 = null;
+  if (useFormat12) {
     format31012 = new DataBuilder({});
     for (const range of ranges) {
       let start = range[0];
@@ -698,22 +706,44 @@ function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
     header31012.setInt32(format31012.length / 12); // nGroups
   }
 
+  // Header ("version" + "numTables") followed by one encoding record per
+  // sub-table; the sub-tables themselves are appended afterwards.
+  const headerLength = 4 + numTables * 8;
+  const format4Length = useFormat4 ? 4 + format314.length : 0;
+
+  const cmap = new DataBuilder({ exactLength: headerLength });
+  cmap.skip(2); // version, skip redundant "\x00\x00"
+  cmap.setInt16(numTables); // numTables
+  let tableOffset = headerLength;
+  if (useFormat4) {
+    cmap.setArray([0x00, 0x03]); // platformID
+    cmap.setArray([0x00, 0x01]); // encodingID
+    cmap.setInt32(tableOffset); // start of the (3, 1) sub-table
+    tableOffset += format4Length;
+  }
+  if (useFormat12) {
+    cmap.setArray([0x00, 0x03]); // platformID
+    cmap.setArray([0x00, 0x0a]); // encodingID
+    cmap.setInt32(tableOffset); // start of the (3, 10) sub-table
+  }
+
   const table = new DataBuilder({
     exactLength:
-      4 +
       cmap.length +
-      (cmap31012?.length ?? 0) +
-      format314.length +
+      format4Length +
       (header31012?.length ?? 0) +
       (format31012?.length ?? 0),
   });
   table.setArray(cmap.data);
-  table.setArray(cmap31012?.data ?? []);
-  table.setArray([0x00, 0x04]); // format
-  table.setInt16(format314.length + 4); // length
-  table.setArray(format314.data);
-  table.setArray(header31012?.data ?? []);
-  table.setArray(format31012?.data ?? []);
+  if (useFormat4) {
+    table.setArray([0x00, 0x04]); // format
+    table.setInt16(format314.length + 4); // length
+    table.setArray(format314.data);
+  }
+  if (useFormat12) {
+    table.setArray(header31012.data);
+    table.setArray(format31012.data);
+  }
   return table.data;
 }
 
