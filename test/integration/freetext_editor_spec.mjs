@@ -3204,16 +3204,13 @@ describe("FreeText Editor", () => {
             .toEqual("Hello World and edited in Firefox");
 
           // Check that the canvas has nothing drawn at the annotation position.
-          await page.$eval(selector, el => (el.hidden = true));
-          let editorPng = await page.screenshot({
-            clip: editorRect,
-            type: "png",
-          });
-          await page.$eval(selector, el => (el.hidden = false));
-          let editorImage = PNG.sync.read(Buffer.from(editorPng));
-          expect(editorImage.data.every(x => x === 0xff))
-            .withContext(`In ${browserName}`)
-            .toBeTrue();
+          let isWhite = await isCanvasMonochrome(
+            page,
+            1,
+            editorRect,
+            0xffffffff
+          );
+          expect(isWhite).withContext(`In ${browserName}`).toBeTrue();
 
           const oneToThirteen = Array.from(new Array(13).keys(), n => n + 2);
           for (const pageNumber of oneToThirteen) {
@@ -3253,14 +3250,8 @@ describe("FreeText Editor", () => {
 
           await awaitPromise(handlePromise);
 
-          editorPng = await page.screenshot({
-            clip: editorRect,
-            type: "png",
-          });
-          editorImage = PNG.sync.read(Buffer.from(editorPng));
-          expect(editorImage.data.every(x => x === 0xff))
-            .withContext(`In ${browserName}`)
-            .toBeFalse();
+          isWhite = await isCanvasMonochrome(page, 1, editorRect, 0xffffffff);
+          expect(isWhite).withContext(`In ${browserName}`).toBeFalse();
         })
       );
     });
