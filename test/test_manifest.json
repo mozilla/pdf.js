@@ -14334,5 +14334,12 @@
     "md5": "16b39d943d268ebfa99ee57f1f470f53",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "cidfont_cmap_overflow",
+    "file": "pdfs/cidfont_cmap_overflow.pdf",
+    "md5": "8ce57e23b42b3232b0f2060bdd2c8b2a",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
