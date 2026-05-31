@@ -3823,6 +3823,14 @@
     "type": "eq"
   },
   {
+    "id": "issue7998",
+    "file": "pdfs/issue7998.pdf",
+    "md5": "6cf4622cbcb61fb07525dfb0ab23f9c3",
+    "rounds": 1,
+    "link": true,
+    "type": "eq"
+  },
+  {
     "id": "issue11279",
     "file": "pdfs/issue11279.pdf",
     "md5": "03361d24f3ed63b93f77abf731f8fc73",

@@ -3262,6 +3262,7 @@ class CanvasGraphics {
     if (
       !group.needsIsolation &&
       !group.knockout &&
+      !group.isGray &&
       this.#knockoutGroupLevel === 0 &&
       currentCtx.globalAlpha === 1 &&
       currentCtx.globalCompositeOperation === "source-over" &&
@@ -3473,6 +3474,13 @@ class CanvasGraphics {
       return;
     }
 
+    if (group.isGray) {
+      // The group color space is gray (a single component), so its rendered
+      // content must be converted to grayscale before being composited onto
+      // the parent canvas, see issue 7998.
+      this.#convertGroupToGray(groupCtx);
+    }
+
     this.ctx = ctx;
     // Turn off image smoothing to avoid sub pixel interpolation which can
     // look kind of blurry for some pdfs.
@@ -3602,6 +3610,38 @@ class CanvasGraphics {
       this.#destroyKnockoutPools(groupMeta);
       this.compose(dirtyBox);
     }
+  }
+
+  #convertGroupToGray(groupCtx) {
+    const { canvas } = groupCtx;
+    const { width, height } = canvas;
+
+    if (FeatureTest.isCanvasFilterSupported) {
+      // Draw the canvas onto itself with the grayscale filter applied (which
+      // preserves the alpha channel), using the "copy" composite operation so
+      // the filtered content fully replaces the original.
+      groupCtx.save();
+      groupCtx.setTransform(1, 0, 0, 1, 0, 0);
+      groupCtx.filter = "grayscale(1)";
+      groupCtx.globalAlpha = 1;
+      groupCtx.globalCompositeOperation = "copy";
+      groupCtx.drawImage(canvas, 0, 0);
+      groupCtx.restore();
+      return;
+    }
+
+    // Fallback when canvas filters aren't supported: convert each pixel to
+    // grayscale by hand, using the same luminance coefficients as the
+    // "grayscale(1)" filter while leaving the alpha channel untouched.
+    const imageData = groupCtx.getImageData(0, 0, width, height);
+    const { data } = imageData;
+    for (let i = 0, ii = data.length; i < ii; i += 4) {
+      const gray =
+        (data[i] * 0.2126 + data[i + 1] * 0.7152 + data[i + 2] * 0.0722 + 0.5) |
+        0;
+      data[i] = data[i + 1] = data[i + 2] = gray;
+    }
+    groupCtx.putImageData(imageData, 0, 0);
   }
 
   #destroyKnockoutPools(groupMeta) {
