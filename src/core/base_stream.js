@@ -135,6 +135,10 @@ class BaseStream {
     unreachable("Abstract method `makeSubStream` called");
   }
 
+  clone() {
+    unreachable("Abstract method `clone` called");
+  }
+
   /**
    * @returns {Array | null}
    */

@@ -88,8 +88,8 @@ class Stream extends BaseStream {
     return new Stream(
       this.bytes.buffer,
       this.start,
-      this.end - this.start,
-      this.dict.clone()
+      this.length,
+      this.dict?.clone()
     );
   }
 }
