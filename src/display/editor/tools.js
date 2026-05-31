@@ -1231,7 +1231,7 @@ class AnnotationEditorUIManager {
         resolve();
       }
     };
-    this._eventBus.on("editorsrendered", onEditorsRendered);
+    this._eventBus.on("editorsrendered", onEditorsRendered, internalOpt);
     await promise;
   }
 
@@ -1248,6 +1248,7 @@ class AnnotationEditorUIManager {
     this._eventBus.on("annotationeditormodechanged", callback, {
       once: true,
       signal: this._signal,
+      ...internalOpt,
     });
     this._eventBus.dispatch("showannotationeditorui", {
       source: this,
