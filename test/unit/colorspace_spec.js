@@ -841,14 +841,13 @@ describe("colorspace", function () {
       fnDict.set("Range", [0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0]);
       fnDict.set("Length", 58);
 
-      let fn = new StringStream(
+      const fn = new StringStream(
         "{ dup 0.84 mul " +
           "exch 0.00 exch " +
           "dup 0.44 mul " +
-          "exch 0.21 mul }"
+          "exch 0.21 mul }",
+        fnDict
       );
-      fn = new Stream(fn.bytes, 0, 58, fnDict);
-
       const fnRef = Ref.get(10, 0);
 
       const cs = [

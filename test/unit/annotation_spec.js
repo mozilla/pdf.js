@@ -1737,8 +1737,10 @@ describe("annotation", function () {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
 
-      const normalAppearanceStream = new StringStream("0.1 0.2 0.3 rg");
-      normalAppearanceStream.dict = normalAppearanceDict;
+      const normalAppearanceStream = new StringStream(
+        "0.1 0.2 0.3 rg",
+        normalAppearanceDict
+      );
 
       appearanceStatesDict.set("N", normalAppearanceStream);
       textWidgetDict.set("AP", appearanceStatesDict);
@@ -2549,11 +2551,12 @@ describe("annotation", function () {
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
 
-      const checkedStream = new StringStream("/ 12 Tf (4) Tj");
-      checkedStream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream(
+        "/ 12 Tf (4) Tj",
+        checkedAppearanceDict
+      );
 
-      const uncheckedStream = new StringStream("");
-      uncheckedStream.dict = uncheckedAppearanceDict;
+      const uncheckedStream = new StringStream("", uncheckedAppearanceDict);
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);
@@ -2609,11 +2612,15 @@ describe("annotation", function () {
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
 
-      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
-      checkedStream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream(
+        "0.1 0.2 0.3 rg",
+        checkedAppearanceDict
+      );
 
-      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
-      uncheckedStream.dict = uncheckedAppearanceDict;
+      const uncheckedStream = new StringStream(
+        "0.3 0.2 0.1 rg",
+        uncheckedAppearanceDict
+      );
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);
@@ -2690,11 +2697,15 @@ describe("annotation", function () {
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
 
-      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
-      checkedStream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream(
+        "0.1 0.2 0.3 rg",
+        checkedAppearanceDict
+      );
 
-      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
-      uncheckedStream.dict = uncheckedAppearanceDict;
+      const uncheckedStream = new StringStream(
+        "0.3 0.2 0.1 rg",
+        uncheckedAppearanceDict
+      );
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);
@@ -2752,11 +2763,15 @@ describe("annotation", function () {
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
 
-      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
-      checkedStream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream(
+        "0.1 0.2 0.3 rg",
+        checkedAppearanceDict
+      );
 
-      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
-      uncheckedStream.dict = uncheckedAppearanceDict;
+      const uncheckedStream = new StringStream(
+        "0.3 0.2 0.1 rg",
+        uncheckedAppearanceDict
+      );
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);
@@ -2995,11 +3010,15 @@ describe("annotation", function () {
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
 
-      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
-      checkedStream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream(
+        "0.1 0.2 0.3 rg",
+        checkedAppearanceDict
+      );
 
-      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
-      uncheckedStream.dict = uncheckedAppearanceDict;
+      const uncheckedStream = new StringStream(
+        "0.3 0.2 0.1 rg",
+        uncheckedAppearanceDict
+      );
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);
@@ -3077,11 +3096,15 @@ describe("annotation", function () {
       const checkedAppearanceDict = new Dict();
       const uncheckedAppearanceDict = new Dict();
 
-      const checkedStream = new StringStream("0.1 0.2 0.3 rg");
-      checkedStream.dict = checkedAppearanceDict;
+      const checkedStream = new StringStream(
+        "0.1 0.2 0.3 rg",
+        checkedAppearanceDict
+      );
 
-      const uncheckedStream = new StringStream("0.3 0.2 0.1 rg");
-      uncheckedStream.dict = uncheckedAppearanceDict;
+      const uncheckedStream = new StringStream(
+        "0.3 0.2 0.1 rg",
+        uncheckedAppearanceDict
+      );
 
       checkedAppearanceDict.set("BBox", [0, 0, 8, 8]);
       checkedAppearanceDict.set("FormType", 1);

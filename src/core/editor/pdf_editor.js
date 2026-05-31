@@ -30,12 +30,12 @@ import {
 import { Dict, isName, Name, Ref, RefSet, RefSetCache } from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
-import { Stream, StringStream } from "../stream.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
 import { AnnotationFactory } from "../annotation.js";
 import { BaseStream } from "../base_stream.js";
 import { createImage } from "./pdf_images.js";
 import { LETTER_SIZE_MEDIABOX } from "../document.js";
+import { StringStream } from "../stream.js";
 import { stringToBytes } from "../../shared/util.js";
 
 const MAX_LEAVES_PER_PAGES_NODE = 16;
@@ -2374,12 +2374,9 @@ class PDFEditor {
     const content =
       `q ${numberToString(drawW)} 0 0 ${numberToString(drawH)} ` +
       `${numberToString(tx)} ${numberToString(ty)} cm /Im0 Do Q`;
-    const contentsDict = new Dict(this.xrefWrapper);
-    const contentsStream = new Stream(
-      stringToBytes(content),
-      0,
-      0,
-      contentsDict
+    const contentsStream = new StringStream(
+      content,
+      new Dict(this.xrefWrapper)
     );
     const contentsRef = this.newRef;
     this.xref[contentsRef.num] = contentsStream;
@@ -2805,11 +2802,11 @@ class PDFEditor {
       offset += obj.length + 1;
     }
     streamBuffer[0] = objOffsets.join("\n");
-    const objStream = new StringStream(streamBuffer.join("\n"));
-    const objStreamDict = (objStream.dict = new Dict());
-    objStreamDict.setIfName("Type", "ObjStm");
-    objStreamDict.set("N", objRefs.length);
-    objStreamDict.set("First", streamBuffer[0].length + 1);
+    const dict = new Dict();
+    dict.setIfName("Type", "ObjStm");
+    dict.set("N", objRefs.length);
+    dict.set("First", streamBuffer[0].length + 1);
+    const objStream = new StringStream(streamBuffer.join("\n"), dict);
 
     changes.put(objStreamRef, { data: objStream });
   }

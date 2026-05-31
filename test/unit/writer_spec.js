@@ -157,8 +157,7 @@ describe("Writer", function () {
       const gdict = new Dict(null);
       gdict.set("H", 123.00001);
       const string = "a stream";
-      const stream = new StringStream(string);
-      stream.dict = new Dict(null);
+      const stream = new StringStream(string, new Dict());
       stream.dict.set("Length", string.length);
       gdict.set("I", stream);
 
