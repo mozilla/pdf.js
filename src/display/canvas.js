@@ -45,6 +45,7 @@ import {
   TilingPattern,
 } from "./pattern_helper.js";
 import { convertBlackAndWhiteToRGBA } from "../shared/image_utils.js";
+import { MathClamp } from "../shared/math_clamp.js";
 
 // <canvas> contexts store most of the state we need natively.
 // However, PDF needs a bit more state, which we store here.
@@ -2481,12 +2482,7 @@ class CanvasGraphics {
     // Keeping the font at minimal size and using the fontSizeScale to change
     // the current transformation matrix before the fillText/strokeText.
     // See https://bugzilla.mozilla.org/show_bug.cgi?id=726227
-    let browserFontSize = size;
-    if (size < MIN_FONT_SIZE) {
-      browserFontSize = MIN_FONT_SIZE;
-    } else if (size > MAX_FONT_SIZE) {
-      browserFontSize = MAX_FONT_SIZE;
-    }
+    const browserFontSize = MathClamp(size, MIN_FONT_SIZE, MAX_FONT_SIZE);
     this.current.fontSizeScale = size / browserFontSize;
 
     this.ctx.font = `${italic} ${bold} ${browserFontSize}px ${typeface}`;
