@@ -884,8 +884,10 @@ const PDFViewerApplication = {
     if (!this.supportsPrinting) {
       togglePrintingButtons(false);
     } else {
-      eventBus.on("printingallowed", ({ isAllowed }) =>
-        togglePrintingButtons(isAllowed)
+      eventBus.on(
+        "printingallowed",
+        ({ isAllowed }) => togglePrintingButtons(isAllowed),
+        internalOpt
       );
     }
 
@@ -1452,7 +1454,7 @@ const PDFViewerApplication = {
           }
           resolve(isAllowed);
         },
-        { once: true }
+        { once: true, ...internalOpt }
       );
     });
 
