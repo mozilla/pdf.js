@@ -170,5 +170,27 @@ describe("PDFPresentationMode", () => {
         })
       );
     });
+
+    it("check that clicking on internal links work in presentation mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await enterPresentationMode(page);
+
+          // Go to the last page.
+          await page.click("#pdfjs_internal_id_12R");
+          await page.waitForFunction(
+            `window.PDFViewerApplication.pdfViewer.currentPageNumber === 3`
+          );
+
+          // Go to the first page.
+          await page.keyboard.press("Home");
+          await page.waitForFunction(
+            `window.PDFViewerApplication.pdfViewer.currentPageNumber === 1`
+          );
+
+          await exitPresentationMode(page, browserName);
+        })
+      );
+    });
   });
 });
