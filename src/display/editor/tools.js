@@ -1810,6 +1810,15 @@ class AnnotationEditorUIManager {
       this.#mode !== AnnotationEditorType.NONE &&
       !this.isEditorHandlingKeyboard
     ) {
+      if (
+        event.key === "Escape" &&
+        !this.hasSomethingToControl() &&
+        !this.#currentDrawingSession
+      ) {
+        this.updateToolbar({ mode: AnnotationEditorType.NONE });
+        stopEvent(event);
+        return;
+      }
       AnnotationEditorUIManager._keyboardManager.exec(this, event);
     }
   }

@@ -128,6 +128,28 @@ describe("FreeText Editor", () => {
       await closePages(pages);
     });
 
+    it("must turn off the active editor tool with Escape", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await page.keyboard.press("Escape");
+          await awaitPromise(modeChangedHandle);
+
+          await page.waitForSelector("#editorFreeTextButton:not(.toggled)");
+          await page.waitForSelector(
+            ".annotationEditorLayer:not(.freetextEditing)"
+          );
+
+          const mode = await page.evaluate(
+            () => window.PDFViewerApplication.pdfViewer.annotationEditorMode
+          );
+          expect(mode).withContext(`In ${browserName}`).toEqual(0);
+        })
+      );
+    });
+
     it("must write a string in a FreeText editor", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
