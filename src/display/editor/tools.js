@@ -1276,12 +1276,12 @@ class AnnotationEditorUIManager {
     this.#currentPageIndex = pageNumber - 1;
   }
 
-  deletePage(id) {
-    for (const editor of this.getEditors(id)) {
+  deletePage(pageIndex) {
+    for (const editor of this.getEditors(pageIndex)) {
       editor.remove();
     }
-    this.#allLayers.delete(id);
-    if (this.#currentPageIndex === id) {
+    this.#allLayers.delete(pageIndex);
+    if (this.#currentPageIndex === pageIndex) {
       this.#currentPageIndex = 0;
     }
   }

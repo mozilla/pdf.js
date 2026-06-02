@@ -430,7 +430,7 @@ class PDFPageView extends BasePDFPageView {
       return;
     }
     this.destroy();
-    this.#layerProperties.annotationEditorUIManager?.deletePage(this.id);
+    this.#layerProperties.annotationEditorUIManager?.deletePage(this.id - 1);
   }
 
   hasEditableAnnotations() {

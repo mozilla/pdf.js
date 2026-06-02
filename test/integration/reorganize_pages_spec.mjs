@@ -34,6 +34,7 @@ import {
   waitAndClick,
   waitForBrowserTrip,
   waitForDOMMutation,
+  waitForPageRendered,
   waitForPointerUp,
   waitForSerialized,
   waitForStorageEntries,
@@ -2826,6 +2827,90 @@ describe("Reorganize Pages View", () => {
           expect(parseInt(pageCountAfterSecondDelete, 10))
             .withContext(`In ${browserName} after second delete`)
             .toBe(16);
+        })
+      );
+    });
+  });
+
+  describe("Annotation editor after deleting the current page", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        ".annotationEditorLayer",
+        "1",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should keep the ink editor usable on previous pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pageCount = await page.$eval("#pageNumber", el =>
+            parseInt(el.max, 10)
+          );
+          const handlePageRendered = await waitForPageRendered(page, pageCount);
+          await page.evaluate(lastPage => {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = lastPage;
+          }, pageCount);
+          await awaitPromise(handlePageRendered);
+
+          await waitForThumbnailVisible(page, pageCount);
+
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(pageCount)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.waitForFunction(
+            expectedCount =>
+              parseInt(document.getElementById("pageNumber").max, 10) ===
+              expectedCount,
+            {},
+            pageCount - 1
+          );
+
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = 1;
+          });
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 1
+          );
+
+          await switchToEditor("Ink", page);
+          const rect = await getRect(
+            page,
+            ".page[data-page-number='1'] .annotationEditorLayer"
+          );
+          const x = rect.x + rect.width * 0.3;
+          const y = rect.y + rect.height * 0.3;
+          const pointerUp = await waitForPointerUp(page);
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.mouse.move(x + 50, y + 50);
+          await page.mouse.up();
+          await awaitPromise(pointerUp);
+
+          await page.keyboard.press("Escape");
+          await waitForSerialized(page, 1);
+          await page.waitForSelector(".page[data-page-number='1'] .inkEditor", {
+            visible: true,
+          });
+
+          const inkEditors = await page.$$(
+            ".page[data-page-number='1'] .inkEditor"
+          );
+          expect(inkEditors.length).withContext(`In ${browserName}`).toBe(1);
         })
       );
     });
