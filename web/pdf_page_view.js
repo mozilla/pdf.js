@@ -1067,6 +1067,9 @@ class PDFPageView extends BasePDFPageView {
         },
         abortSignal: this.#abortSignal,
       });
+      if (this.enableSelectionRendering) {
+        this.textLayer.div.classList.add("selectionRendering");
+      }
     }
 
     if (

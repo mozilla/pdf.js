@@ -118,7 +118,18 @@
   }
 
   ::selection {
-    background: transparent;
+    /* stylelint-disable declaration-block-no-duplicate-properties */
+    /*#if !MOZCENTRAL*/
+    background: rgba(0 0 255 / 0.25);
+    /*#endif*/
+    /* stylelint-enable declaration-block-no-duplicate-properties */
+    background: color-mix(in srgb, AccentColor, transparent 50%);
+  }
+
+  &.selectionRendering {
+    ::selection {
+      background: transparent;
+    }
   }
 
   /* Avoids https://github.com/mozilla/pdf.js/issues/13840 in Chrome */
