@@ -3015,8 +3015,16 @@ class WorkerTransport {
       }
       try {
         rendererHandler.send(action, data);
-      } catch {
-        // Ignore errors if the renderer worker has been destroyed.
+      } catch (reason) {
+        if (rendererHandler.destroyed) {
+          return;
+        }
+        warn(`forwardToRenderer("${action}") failed: ${reason}`);
+        rendererHandler.send("objFailed", {
+          id: data[0],
+          pageIndex: action === "obj" ? data[1] : null,
+          reason: reason.message,
+        });
       }
     };
 
@@ -3895,6 +3903,8 @@ class InternalRenderTask {
       this.operatorList,
       this.operatorListIdx,
       this._continueBound,
+      // main-thread doesn't reject objects
+      null,
       this.stepper,
       this._operationsFilter
     );
