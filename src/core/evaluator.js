@@ -523,6 +523,7 @@ class PartialEvaluator {
         isolated: false,
         knockout: false,
         needsIsolation: false,
+        isGray: false,
       };
 
       const groupSubtype = group.get("S");
@@ -540,6 +541,10 @@ class PartialEvaluator {
             cs instanceof ColorSpace ? cs : await this._handleColorSpace(cs);
         }
       }
+
+      // When the group color space is gray (a single component) the group's
+      // content must be rendered in grayscale, see issue 7998.
+      groupOptions.isGray = colorSpace?.numComps === 1;
 
       if (smask?.backdrop) {
         colorSpace ||= ColorSpaceUtils.rgb;
