@@ -663,6 +663,7 @@ class CanvasGraphics {
     operatorList,
     executionStartIdx,
     continueCallback,
+    errorCallback,
     stepper,
     operationsFilter
   ) {
@@ -723,7 +724,7 @@ class CanvasGraphics {
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
             if (!objsPool.has(depObjId)) {
-              objsPool.get(depObjId, continueCallback);
+              objsPool.get(depObjId, continueCallback, errorCallback);
               return i;
             }
           }

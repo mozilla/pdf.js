@@ -116,14 +116,14 @@ class RendererMessageHandler {
   static async #executeOperatorList(renderTaskState, operationsFilter) {
     const { operatorList, gfx } = renderTaskState;
     while (!renderTaskState.aborted) {
-      const continuePromise = new Promise(resolve => {
-        renderTaskState.continueResolve = resolve;
-      });
+      const { promise, resolve, reject } = Promise.withResolvers();
+      renderTaskState.continueResolve = resolve;
 
       renderTaskState.operatorListIdx = gfx.executeOperatorList(
         operatorList,
         renderTaskState.operatorListIdx,
-        renderTaskState.continueResolve,
+        resolve,
+        reject,
         undefined, // Renderer does not support stepper yet.
         operationsFilter
       );
@@ -131,7 +131,7 @@ class RendererMessageHandler {
       if (renderTaskState.operatorListIdx === operatorList.argsArray.length) {
         return renderTaskState.operatorListIdx;
       }
-      await continuePromise;
+      await promise;
     }
     return renderTaskState.operatorListIdx;
   }
@@ -161,6 +161,18 @@ class RendererMessageHandler {
         return;
       }
       objectHandler.resolveObject(id, pageIndex, type, imageData);
+    });
+
+    handler.on("objFailed", ({ id, pageIndex, reason }) => {
+      const error = new Error(reason);
+      if (pageIndex === null) {
+        this.#commonObjs.reject(id, error);
+        return;
+      }
+      if (this.#cleanedPages.has(pageIndex)) {
+        return;
+      }
+      this.#getPageObjs(pageIndex).reject(id, error);
     });
   }
 

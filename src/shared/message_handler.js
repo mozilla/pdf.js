@@ -533,6 +533,10 @@ class MessageHandler {
     this.#messageAC?.abort();
     this.#messageAC = null;
   }
+
+  get destroyed() {
+    return this.#messageAC === null;
+  }
 }
 
 export { MessageHandler, wrapReason };
