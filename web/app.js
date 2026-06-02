@@ -390,6 +390,7 @@ const PDFViewerApplication = {
         pageColorsBackground: x => x,
         pageColorsForeground: x => x,
         sidebarViewOnLoad: x => parseInt(x, 10),
+        wheelZoomSensitivity: x => parseFloat(x),
       });
     }
 
@@ -2888,6 +2889,8 @@ function onWheel(evt) {
       );
       this.updateZoom(null, scaleFactor, origin);
     } else {
+      const sensitivity = AppOptions.get("wheelZoomSensitivity");
+      const wheelZoomSensitivity = sensitivity > 0 ? sensitivity : 1;
       const delta = normalizeWheelEventDirection(evt);
 
       let ticks = 0;
@@ -2902,15 +2905,15 @@ function onWheel(evt) {
         //
         // If we're getting fractional lines (I can't think of a scenario
         // this might actually happen), be safe and use the accumulator.
-        ticks =
-          Math.abs(delta) >= 1
-            ? Math.sign(delta)
-            : this._accumulateTicks(delta, "_wheelUnusedTicks");
+        const ticksDelta =
+          (Math.abs(delta) >= 1 ? Math.sign(delta) : delta) *
+          wheelZoomSensitivity;
+        ticks = this._accumulateTicks(ticksDelta, "_wheelUnusedTicks");
       } else {
         // pixel-based devices
         const PIXELS_PER_LINE_SCALE = 30;
         ticks = this._accumulateTicks(
-          delta / PIXELS_PER_LINE_SCALE,
+          (delta * wheelZoomSensitivity) / PIXELS_PER_LINE_SCALE,
           "_wheelUnusedTicks"
         );
       }

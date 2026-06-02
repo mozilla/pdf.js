@@ -135,6 +135,45 @@ describe("PDF viewer", () => {
         })
       );
     });
+
+    it("must respect custom mouse wheel zoom sensitivity", async () => {
+      const sensitivePages = await loadAndWait(
+        "empty.pdf",
+        ".textLayer .endOfContent",
+        1000,
+        null,
+        { wheelzoomsensitivity: 0.25 }
+      );
+
+      try {
+        await Promise.all(
+          sensitivePages.map(async ([browserName, page]) => {
+            await page.keyboard.down("Control");
+            try {
+              const zoomGetter = () =>
+                page.evaluate(
+                  () => window.PDFViewerApplication.pdfViewer.currentScale
+                );
+              const initialZoom = await zoomGetter();
+
+              await page.mouse.wheel({ deltaY: 100 });
+              expect(await zoomGetter())
+                .withContext(`In ${browserName}`)
+                .toEqual(initialZoom);
+
+              await page.mouse.wheel({ deltaY: 100 });
+              expect(await zoomGetter())
+                .withContext(`In ${browserName}`)
+                .toBeLessThan(initialZoom);
+            } finally {
+              await page.keyboard.up("Control");
+            }
+          })
+        );
+      } finally {
+        await closePages(sensitivePages);
+      }
+    });
   });
 
   describe("Zoom commands", () => {

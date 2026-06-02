@@ -184,6 +184,11 @@ const defaultOptions = {
     value: "",
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  wheelZoomSensitivity: {
+    /** @type {number} */
+    value: 1,
+    kind: OptionKind.VIEWER,
+  },
   disableHistory: {
     /** @type {boolean} */
     value: false,
