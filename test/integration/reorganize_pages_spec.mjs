@@ -101,6 +101,21 @@ function waitForPagesEdited(page, type) {
   );
 }
 
+async function drawInkLine(page, pageNumber) {
+  const rect = await getRect(
+    page,
+    `.page[data-page-number="${pageNumber}"] .annotationEditorLayer`
+  );
+  const x = rect.x + rect.width * 0.3;
+  const y = rect.y + rect.height * 0.3;
+  const clickHandle = await waitForPointerUp(page);
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 50, y + 50);
+  await page.mouse.up();
+  await awaitPromise(clickHandle);
+}
+
 async function waitForHavingContents(page, expected) {
   await page.evaluate(() => {
     // Make sure all the pages will be visible.
@@ -2853,18 +2868,7 @@ describe("Reorganize Pages View", () => {
         pages.map(async ([browserName, page]) => {
           // Enable ink editor mode and draw a line on page 1.
           await switchToEditor("Ink", page);
-          const rect = await getRect(
-            page,
-            ".page[data-page-number='1'] .annotationEditorLayer"
-          );
-          const x = rect.x + rect.width * 0.3;
-          const y = rect.y + rect.height * 0.3;
-          const clickHandle = await waitForPointerUp(page);
-          await page.mouse.move(x, y);
-          await page.mouse.down();
-          await page.mouse.move(x + 50, y + 50);
-          await page.mouse.up();
-          await awaitPromise(clickHandle);
+          await drawInkLine(page, 1);
 
           // Commit the drawing and wait for it to be serialized.
           await page.keyboard.press("Escape");
@@ -2907,6 +2911,68 @@ describe("Reorganize Pages View", () => {
           });
           const inkEditors = await page.$$(
             `.page[data-page-number="3"] .inkEditor`
+          );
+          expect(inkEditors.length).withContext(`In ${browserName}`).toBe(1);
+        })
+      );
+    });
+  });
+
+  describe("Delete last page while editing", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        ".annotationEditorLayer",
+        "50",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("should keep editor layers active on unchanged pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await (await page.$(".thumbnail[page-number='17']")).scrollIntoView();
+          await page.waitForSelector(getThumbnailSelector(17), {
+            visible: true,
+          });
+          await waitAndClick(page, getThumbnailSelector(17));
+          await page.waitForSelector(
+            `${getThumbnailSelector(17)}[aria-current="page"]`
+          );
+
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(17)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await waitAndClick(page, "#viewsManagerStatusActionButton");
+          await waitAndClick(page, "#viewsManagerStatusActionDelete");
+          await awaitPromise(handlePagesEdited);
+
+          await page.click("#viewsManagerToggleButton");
+          await page.waitForSelector("#viewsManager", { hidden: true });
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = 1;
+          });
+
+          await switchToEditor("Ink", page);
+          await page.waitForSelector(
+            `.page[data-page-number="1"] .annotationEditorLayer.inkEditing`
+          );
+          await drawInkLine(page, 1);
+
+          await page.keyboard.press("Escape");
+          await waitForSerialized(page, 1);
+          const inkEditors = await page.$$(
+            `.page[data-page-number="1"] .inkEditor`
           );
           expect(inkEditors.length).withContext(`In ${browserName}`).toBe(1);
         })

@@ -355,24 +355,28 @@ class PDFPageView extends BasePDFPageView {
   }
 
   updatePageNumber(newPageNumber) {
-    if (this.id === newPageNumber) {
-      return;
-    }
     const oldPageNumber = this.id;
-    this.id = newPageNumber;
-    this.renderingId = `page${newPageNumber}`;
-    if (this.pdfPage) {
-      this.pdfPage.pageNumber = newPageNumber;
+
+    if (oldPageNumber !== newPageNumber) {
+      this.id = newPageNumber;
+      this.renderingId = `page${newPageNumber}`;
+      if (this.pdfPage) {
+        this.pdfPage.pageNumber = newPageNumber;
+      }
+      // TODO: do we set the page label ?
+      this.setPageLabel(this.pageLabel);
+      const { div } = this;
+      div.setAttribute("data-page-number", newPageNumber);
+      div.setAttribute(
+        "data-l10n-args",
+        JSON.stringify({ page: newPageNumber })
+      );
+      this._textHighlighter.pageIdx = newPageNumber - 1;
     }
-    // TODO: do we set the page label ?
-    this.setPageLabel(this.pageLabel);
-    const { div } = this;
-    div.setAttribute("data-page-number", newPageNumber);
-    div.setAttribute("data-l10n-args", JSON.stringify({ page: newPageNumber }));
-    this._textHighlighter.pageIdx = newPageNumber - 1;
     // Don't update the page index for the draw layer, since it's just used as
     // an identifier.
 
+    // Page mutations clear the editor layer map; restore unchanged pages too.
     this.#layerProperties.annotationEditorUIManager?.updatePageIndex(
       oldPageNumber - 1,
       newPageNumber - 1
