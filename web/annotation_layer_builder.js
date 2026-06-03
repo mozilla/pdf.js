@@ -72,8 +72,6 @@ class AnnotationLayerBuilder {
 
   #commentManager = null;
 
-  #externalHide = false;
-
   #onAppend = null;
 
   #eventAC = null;
@@ -226,8 +224,7 @@ class AnnotationLayerBuilder {
     this.#eventAC = null;
   }
 
-  hide(internal = false) {
-    this.#externalHide = !internal;
+  hide() {
     if (!this.div) {
       return;
     }
@@ -263,10 +260,6 @@ class AnnotationLayerBuilder {
     }
 
     await this.annotationLayer.addLinkAnnotations(newLinks);
-    // Don't show the annotation layer if it was explicitly hidden previously.
-    if (!this.#externalHide) {
-      this.div.hidden = false;
-    }
   }
 
   #updatePresentationModeState(state) {
