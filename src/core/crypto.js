@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 
+/**
+ * @import {BaseStream} from "./base_stream.js";
+ */
+
 import {
   bytesToString,
   FormatError,
@@ -26,7 +30,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { calculateSHA384, calculateSHA512 } from "./calculate_sha_other.js";
-import { Dict, isName, Name } from "./primitives.js";
+import { Dict, isDict, isName, Name } from "./primitives.js";
 import { calculateMD5 } from "./calculate_md5.js";
 import { calculateSHA256 } from "./calculate_sha256.js";
 import { DecryptStream } from "./decrypt_stream.js";
@@ -754,6 +758,9 @@ class CipherTransform {
   /** @type {Map<string, CipherConstructors>} */
   #cipherCache = new Map();
 
+  /** @type {Name | null} */
+  embeddedFilterName = null;
+
   /**
    * @param {ResolveCipher} resolveCipher
    *   Resolve a cipher constructor from a crypt filter name.
@@ -789,7 +796,11 @@ class CipherTransform {
    * @returns {DecryptStream}
    */
   createStream(stream, length, cryptFilterName = null) {
-    const Cipher = this.#getCipher(cryptFilterName || this.streamFilterName);
+    const defaultFilterName =
+      this.embeddedFilterName && isDict(stream.dict, "EmbeddedFile")
+        ? this.embeddedFilterName
+        : this.streamFilterName;
+    const Cipher = this.#getCipher(cryptFilterName || defaultFilterName);
     const cipher = new Cipher();
     return new DecryptStream(
       stream,
@@ -843,6 +854,8 @@ class CipherTransform {
 }
 
 class CipherTransformFactory {
+  #fileId;
+
   static get _defaultPasswordBytes() {
     return shadow(
       this,
@@ -1042,6 +1055,7 @@ class CipherTransformFactory {
     }
     this.filterName = filter.name;
     this.dict = dict;
+    this.#fileId = fileId;
     const algorithm = dict.get("V");
     if (
       !Number.isInteger(algorithm) ||
@@ -1076,6 +1090,29 @@ class CipherTransformFactory {
     if (!Number.isInteger(keyLength) || keyLength < 40 || keyLength % 8 !== 0) {
       throw new FormatError("invalid key length");
     }
+
+    let cf = null;
+    let stmf = Name.get("Identity");
+    let strf = Name.get("Identity");
+    let eff = stmf;
+
+    if (algorithm >= 4) {
+      cf = dict.get("CF");
+      if (cf instanceof Dict) {
+        // The 'CF' dictionary itself should not be encrypted, and by setting
+        // `suppressEncryption` we can prevent an infinite loop inside of
+        // `XRef_fetchUncompressed` if the dictionary contains indirect
+        // objects (fixes issue7665.pdf).
+        cf.suppressEncryption = true;
+      }
+      stmf = dict.get("StmF") || Name.get("Identity");
+      strf = dict.get("StrF") || Name.get("Identity");
+      eff = dict.get("EFF") || stmf;
+    }
+    this.cf = cf;
+    this.stmf = stmf;
+    this.strf = strf;
+    this.eff = eff;
 
     const ownerBytes = stringToBytes(dict.get("O")),
       userBytes = stringToBytes(dict.get("U"));
@@ -1143,6 +1180,21 @@ class CipherTransformFactory {
     }
     if (!encryptionKey) {
       if (!password) {
+        if (
+          this.algorithm >= 4 &&
+          isName(this.stmf, "Identity") &&
+          isName(this.strf, "Identity")
+        ) {
+          const effCF = this.cf?.get(this.eff.name);
+          const authEvent = effCF?.get("AuthEvent");
+
+          if (isName(authEvent, "EFOpen")) {
+            // For EFOpen with Identity as default stream/string filters, defer
+            // password prompting until an EmbeddedFile stream is actually read.
+            this.encryptionKey = null;
+            return;
+          }
+        }
         throw new PasswordException(
           "No password given",
           PasswordResponses.NEED_PASSWORD
@@ -1182,21 +1234,23 @@ class CipherTransformFactory {
     } else {
       this.encryptionKey = encryptionKey;
     }
+  }
 
-    if (algorithm >= 4) {
-      const cf = dict.get("CF");
-      if (cf instanceof Dict) {
-        // The 'CF' dictionary itself should not be encrypted, and by setting
-        // `suppressEncryption` we can prevent an infinite loop inside of
-        // `XRef_fetchUncompressed` if the dictionary contains indirect
-        // objects (fixes issue7665.pdf).
-        cf.suppressEncryption = true;
-      }
-      this.cf = cf;
-      this.stmf = dict.get("StmF") || Name.get("Identity");
-      this.strf = dict.get("StrF") || Name.get("Identity");
-      this.eff = dict.get("EFF") || this.stmf;
-    }
+  /**
+   * Set password.
+   *
+   * @param {string} password
+   *   New password.
+   * @returns {undefined}
+   *   Nothing.
+   */
+  setPassword(password) {
+    const transform = new CipherTransformFactory(
+      this.dict,
+      this.#fileId,
+      password
+    );
+    this.encryptionKey = transform.encryptionKey;
   }
 
   /**
@@ -1219,6 +1273,12 @@ class CipherTransformFactory {
 
         if (!cfm || cfm.name === "None") {
           return NullCipher;
+        }
+        if (!this.encryptionKey) {
+          throw new PasswordException(
+            "No password given",
+            PasswordResponses.NEED_PASSWORD
+          );
         }
         if (cfm.name === "V2") {
           return ARCFourCipher.bind(
@@ -1248,7 +1308,13 @@ class CipherTransformFactory {
         throw new FormatError("Unknown crypto method");
       };
 
-      return new CipherTransform(resolveCipher, this.strf, this.stmf);
+      const transform = new CipherTransform(
+        resolveCipher,
+        this.strf,
+        this.stmf
+      );
+      transform.embeddedFilterName = this.eff;
+      return transform;
     }
 
     // algorithms 1 and 2

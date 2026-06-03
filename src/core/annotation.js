@@ -79,6 +79,10 @@ import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { StringStream } from "./stream.js";
 import { XFAFactory } from "./xfa/factory.js";
 
+/**
+ * @import { Catalog } from "./catalog.js";
+ */
+
 class AnnotationFactory {
   static createGlobals(pdfManager) {
     return Promise.all([
@@ -5207,11 +5211,39 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
 
-    const { dict } = params;
-    const file = new FileSpec(dict.get("FS"));
+    const { annotationGlobals, dict } = params;
+    const fileSpecRef = dict.getRaw("FS");
+    const fsDict = dict.get("FS");
+    const file = new FileSpec(fsDict);
+    /** @type {{catalog?: Catalog}} */
+    const { catalog } = annotationGlobals.pdfManager.pdfDocument;
+
+    // When this annotation references an embedded file that’s already in the
+    // catalog `NameTree` (such as `EFOpen`), reuse that `NameTree` id so the
+    // sidebar and annotation paths resolve the same attachment identity.
+    let fileId =
+      fileSpecRef instanceof Ref
+        ? catalog?.attachmentIdByRef.get(fileSpecRef)
+        : undefined;
+
+    // Fallback ids are namespaced to keep annotation-local ids distinct from
+    // `NameTree` ids (which are filename-based).
+    if (catalog && fsDict instanceof Dict && typeof fileId !== "string") {
+      const baseFileId = `annotation:${this.data.id}`;
+      fileId = baseFileId;
+
+      let i = 1;
+      while (catalog.attachmentDictById.has(fileId)) {
+        fileId = `${baseFileId}-${i++}`;
+      }
+
+      // Cache only fallbacks.
+      catalog.attachmentDictById.set(fileId, fsDict);
+    }
 
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
+    this.data.fileId = fileId;
     this.data.file = file.serializable;
 
     const name = dict.get("Name");

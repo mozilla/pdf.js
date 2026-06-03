@@ -436,6 +436,48 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("attachments");
     });
 
+    handler.on(
+      "GetAttachmentContent",
+      /**
+       * @param {string} id
+       *   Unique attachment identifier (required).
+       */
+      async function (id) {
+        // Loop to prompt again after an incorrect password.
+        while (true) {
+          try {
+            return await pdfManager.ensureCatalog("attachmentContent", [id]);
+          } catch (error) {
+            if (!(error instanceof PasswordException)) {
+              throw error;
+            }
+
+            const task = new WorkerTask(
+              `PasswordException: response ${error.code}`
+            );
+            startWorkerTask(task);
+
+            try {
+              const { password } = await handler.sendWithPromise(
+                "PasswordRequest",
+                error
+              );
+              try {
+                pdfManager.updatePassword(password);
+              } catch (exception) {
+                if (exception instanceof PasswordException) {
+                  continue;
+                }
+                throw exception;
+              }
+            } finally {
+              finishWorkerTask(task);
+            }
+          }
+        }
+      }
+    );
+
     handler.on("GetDocJSActions", function (data) {
       return pdfManager.ensureCatalog("jsActions");
     });

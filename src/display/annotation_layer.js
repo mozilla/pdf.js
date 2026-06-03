@@ -30,6 +30,10 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/base_download_manager.js").BaseDownloadManager} BaseDownloadManager */
 
+/**
+ * @import { CatalogAttachmentContent } from "../src/core/catalog.js";
+ */
+
 import {
   AnnotationBorderStyleType,
   AnnotationEditorPrefix,
@@ -984,6 +988,7 @@ class LinkAnnotationElement extends AnnotationElement {
     } else if (data.attachment) {
       this.#bindAttachment(
         link,
+        data.attachmentId,
         data.attachment,
         data.overlaidText,
         data.attachmentDest
@@ -1079,23 +1084,40 @@ class LinkAnnotationElement extends AnnotationElement {
   /**
    * Bind attachments to the link element.
    * @param {Object} link
-   * @param {Object} attachment
+   * @param {string} attachmentId
+   * @param {CatalogAttachment} attachment
    * @param {string} [overlaidText]
    * @param {string} [dest]
    */
-  #bindAttachment(link, attachment, overlaidText = "", dest = null) {
+  #bindAttachment(
+    link,
+    attachmentId,
+    attachment,
+    overlaidText = "",
+    dest = null
+  ) {
     link.href = this.linkService.getAnchorUrl("");
     if (attachment.description) {
       link.title = attachment.description;
     } else if (overlaidText) {
       link.title = overlaidText;
     }
+
+    const openAttachment = async () => {
+      /** @type {CatalogAttachmentContent} */
+      const content = await this.linkService.getAttachmentContent(attachmentId);
+
+      if (content) {
+        this.downloadManager?.openOrDownloadData(
+          content,
+          attachment.filename,
+          dest
+        );
+      }
+    };
+
     link.onclick = () => {
-      this.downloadManager?.openOrDownloadData(
-        attachment.content,
-        attachment.filename,
-        dest
-      );
+      openAttachment();
       return false;
     };
     this.#setInternalLink();
@@ -3672,12 +3694,14 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   constructor(parameters) {
     super(parameters, { isRenderable: true });
 
-    const { file } = this.data;
+    const { fileId, file } = this.data;
     this.filename = file.filename;
     this.content = file.content;
+    this.fileId = fileId;
 
     this.linkService.eventBus?.dispatch("fileattachmentannotation", {
       source: this,
+      attachmentId: this.fileId,
       ...file,
     });
   }
@@ -3742,8 +3766,15 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   /**
    * Download the file attachment associated with this annotation.
    */
-  #download() {
-    this.downloadManager?.openOrDownloadData(this.content, this.filename);
+  async #download() {
+    const { fileId, filename, content: fallbackContent } = this;
+    /** @type {CatalogAttachmentContent} */
+    const content =
+      (await this.linkService.getAttachmentContent(fileId)) || fallbackContent;
+
+    if (content) {
+      this.downloadManager?.openOrDownloadData(content, filename);
+    }
   }
 }
 

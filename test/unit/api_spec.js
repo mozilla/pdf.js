@@ -1664,9 +1664,13 @@ describe("api", function () {
       expect(attachments["foo.txt"]).toEqual({
         rawFilename: "foo.txt",
         filename: "foo.txt",
-        content: new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10]),
         description: "",
       });
+
+      const content = await pdfDoc.getAttachmentContent("foo.txt");
+      expect(content).toEqual(
+        new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10])
+      );
 
       await loadingTask.destroy();
     });
@@ -1676,15 +1680,82 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const attachments = await pdfDoc.getAttachments();
 
-      const { rawFilename, filename, content, description } =
-        attachments["empty.pdf"];
+      const { rawFilename, filename, description } = attachments["empty.pdf"];
       expect(rawFilename).toEqual("Empty page.pdf");
       expect(filename).toEqual("Empty page.pdf");
-      expect(content).toBeInstanceOf(Uint8Array);
-      expect(content.length).toEqual(2357);
       expect(description).toEqual(
         "SHA512: 06bec56808f93846f1d41ff0be4e54079c1291b860378c801c0f35f1d127a8680923ff6de59bd5a9692f01f0d97ca4f26da178ed03635fa4813d86c58a6c981a"
       );
+
+      const content = await pdfDoc.getAttachmentContent("empty.pdf");
+      expect(content).toBeInstanceOf(Uint8Array);
+      expect(content.length).toEqual(2357);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets encrypted attachments when password is requested on demand", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("encrypted-attachment.pdf")
+      );
+
+      let passwordRequests = 0;
+      loadingTask.onPassword = (updatePassword, reason) => {
+        passwordRequests++;
+        expect(reason).toEqual(PasswordResponses.NEED_PASSWORD);
+        updatePassword("000000");
+      };
+
+      const pdfDoc = await loadingTask.promise;
+
+      const attachments = await pdfDoc.getAttachments();
+      const { description, filename, rawFilename } =
+        attachments["attachment.pdf"] || {};
+      expect(rawFilename).toEqual("attachment.pdf");
+      expect(filename).toEqual("attachment.pdf");
+      expect(description).toEqual("");
+      expect(attachments["attachment.pdf"].content).toBeUndefined();
+
+      const content = await pdfDoc.getAttachmentContent("attachment.pdf");
+      expect(passwordRequests).toEqual(1);
+      expect(content).toBeInstanceOf(Uint8Array);
+
+      await loadingTask.destroy();
+    });
+
+    it("re-prompts for encrypted attachments after incorrect passwords", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("encrypted-attachment.pdf")
+      );
+
+      /** @type {Array<unknown>} */
+      const reasons = [];
+      loadingTask.onPassword = (updatePassword, reason) => {
+        reasons.push(reason);
+        if (reason === PasswordResponses.NEED_PASSWORD) {
+          updatePassword("incorrect-password");
+          return;
+        }
+        expect(reason).toEqual(PasswordResponses.INCORRECT_PASSWORD);
+        updatePassword("000000");
+      };
+
+      const pdfDoc = await loadingTask.promise;
+
+      const attachments = await pdfDoc.getAttachments();
+      const { description, filename, rawFilename } =
+        attachments["attachment.pdf"] || {};
+      expect(rawFilename).toEqual("attachment.pdf");
+      expect(filename).toEqual("attachment.pdf");
+      expect(description).toEqual("");
+      expect(attachments["attachment.pdf"].content).toBeUndefined();
+
+      const content = await pdfDoc.getAttachmentContent("attachment.pdf");
+      expect(reasons).toEqual([
+        PasswordResponses.NEED_PASSWORD,
+        PasswordResponses.INCORRECT_PASSWORD,
+      ]);
+      expect(content).toBeInstanceOf(Uint8Array);
 
       await loadingTask.destroy();
     });
@@ -1705,7 +1776,10 @@ describe("api", function () {
         expect(attachment).toBeDefined();
         expect(attachment.filename).toEqual("attachment.pdf");
 
-        embeddedLoadingTask = getDocument({ data: attachment.content });
+        const content = await pdfDoc.getAttachmentContent("attachment.pdf");
+        expect(content).toBeInstanceOf(Uint8Array);
+
+        embeddedLoadingTask = getDocument({ data: content });
         const embeddedPdfDoc = await embeddedLoadingTask.promise;
         expect(embeddedPdfDoc.numPages).toBe(1);
       } finally {
@@ -1983,6 +2057,7 @@ describe("api", function () {
 
       expect(outline[0]).toEqual({
         action: null,
+        attachmentId: undefined,
         attachment: undefined,
         dest: "section.1",
         url: null,
@@ -2010,6 +2085,7 @@ describe("api", function () {
 
       expect(outline[4]).toEqual({
         action: null,
+        attachmentId: undefined,
         attachment: undefined,
         dest: "Händel -- Halle🎆lujah",
         url: null,
@@ -2037,6 +2113,7 @@ describe("api", function () {
 
       expect(outline[1]).toEqual({
         action: "PrevPage",
+        attachmentId: undefined,
         attachment: undefined,
         dest: null,
         url: null,
@@ -2064,6 +2141,7 @@ describe("api", function () {
 
       expect(outline[0]).toEqual({
         action: null,
+        attachmentId: undefined,
         attachment: undefined,
         dest: null,
         url: null,
@@ -2104,6 +2182,7 @@ describe("api", function () {
       expect(outline).toEqual([
         {
           action: null,
+          attachmentId: undefined,
           attachment: undefined,
           dest: [{ num: 14, gen: 0 }, { name: "XYZ" }, 65, 705],
           url: null,
@@ -2119,6 +2198,7 @@ describe("api", function () {
         },
         {
           action: null,
+          attachmentId: undefined,
           attachment: undefined,
           dest: [{ num: 13, gen: 0 }, { name: "XYZ" }, 60, 710],
           url: null,
@@ -2147,6 +2227,7 @@ describe("api", function () {
       expect(outline).toEqual([
         {
           action: null,
+          attachmentId: undefined,
           attachment: undefined,
           dest: [{ num: 14, gen: 0 }, { name: "FitH" }],
           url: null,
@@ -2162,6 +2243,7 @@ describe("api", function () {
         },
         {
           action: null,
+          attachmentId: undefined,
           attachment: undefined,
           dest: [{ num: 13, gen: 0 }, { name: "FitH" }],
           url: null,
@@ -2190,6 +2272,7 @@ describe("api", function () {
       expect(outline).toEqual([
         {
           action: null,
+          attachmentId: undefined,
           attachment: undefined,
           dest: null,
           url: null,
@@ -2204,6 +2287,7 @@ describe("api", function () {
           items: [
             {
               action: null,
+              attachmentId: undefined,
               attachment: undefined,
               dest: [{ num: 37, gen: 0 }, { name: "XYZ" }, null, null, null],
               url: null,
@@ -2219,6 +2303,7 @@ describe("api", function () {
             },
             {
               action: null,
+              attachmentId: undefined,
               attachment: undefined,
               dest: [{ num: 36, gen: 0 }, { name: "XYZ" }, null, null, null],
               url: null,
@@ -3631,12 +3716,19 @@ describe("api", function () {
       expect(annotations.length).toEqual(1);
       expect(annotations[0].annotationType).toEqual(AnnotationType.LINK);
 
-      const { filename, content } = annotations[0].attachment;
-      expect(filename).toEqual("man.pdf");
+      const { attachmentDest, attachmentId, attachment } = annotations[0];
+      expect(attachment).toEqual({
+        description: "",
+        filename: "man.pdf",
+        rawFilename: "man.pdf",
+      });
+
+      expect(attachmentId).toEqual("man.pdf");
+      const content = await pdfDoc.getAttachmentContent(attachmentId);
       expect(content).toBeInstanceOf(Uint8Array);
       expect(content.length).toEqual(4508);
 
-      expect(annotations[0].attachmentDest).toEqual('[-1,{"name":"Fit"}]');
+      expect(attachmentDest).toEqual('[-1,{"name":"Fit"}]');
 
       await loadingTask.destroy();
     });
@@ -3649,11 +3741,18 @@ describe("api", function () {
       const annotations = await pdfPage.getAnnotations();
       expect(annotations.length).toEqual(30);
 
-      const { annotationType, attachment, attachmentDest } = annotations[0];
+      const { annotationType, attachmentDest, attachmentId, attachment } =
+        annotations[0];
       expect(annotationType).toEqual(AnnotationType.LINK);
 
-      const { filename, content } = attachment;
-      expect(filename).toEqual("destination-doc.pdf");
+      expect(attachment).toEqual({
+        description: "",
+        filename: "destination-doc.pdf",
+        rawFilename: "destination-doc.pdf",
+      });
+
+      expect(attachmentId).toEqual("destination-doc.pdf");
+      const content = await pdfDoc.getAttachmentContent(attachmentId);
       expect(content).toBeInstanceOf(Uint8Array);
       expect(content.length).toEqual(10305);
 
@@ -6730,9 +6829,13 @@ small scripts as well as for`);
         expect(attachments["foo.txt"]).toEqual({
           rawFilename: "foo.txt",
           filename: "foo.txt",
-          content: new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10]),
           description: "",
         });
+
+        const content = await pdfDoc.getAttachmentContent("foo.txt");
+        expect(content).toEqual(
+          new Uint8Array([98, 97, 114, 32, 98, 97, 122, 32, 10])
+        );
 
         await loadingTask.destroy();
       });
@@ -6761,15 +6864,18 @@ small scripts as well as for`);
         expect(attachments["foo.txt"]).toEqual({
           rawFilename: "foo.txt",
           filename: "foo.txt",
-          content: expectedContent,
           description: "",
         });
         expect(attachments["foo.txt_1"]).toEqual({
           rawFilename: "foo.txt",
           filename: "foo.txt",
-          content: expectedContent,
           description: "",
         });
+
+        const content = await pdfDoc.getAttachmentContent("foo.txt");
+        expect(content).toEqual(expectedContent);
+        const dedupedContent = await pdfDoc.getAttachmentContent("foo.txt_1");
+        expect(dedupedContent).toEqual(expectedContent);
 
         await loadingTask.destroy();
       });

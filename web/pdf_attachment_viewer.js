@@ -17,6 +17,14 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./download_manager.js").DownloadManager} DownloadManager */
 
+/**
+ * @import {
+ *   CatalogAttachmentContent,
+ *   CatalogAttachment,
+ * } from "../src/core/catalog.js";
+ * @import { PDFLinkService } from "./pdf_link_service.js";
+ */
+
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { internalOpt } from "./internal_evt.js";
 import { waitOnEventOrTimeout } from "./event_utils.js";
@@ -26,11 +34,13 @@ import { waitOnEventOrTimeout } from "./event_utils.js";
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {DownloadManager} downloadManager - The download manager.
+ * @property {PDFLinkService} linkService - Link service.
  */
 
 /**
- * @typedef {Object} PDFAttachmentViewerRenderParameters
- * @property {Object|null} attachments - A lookup table of attachment objects.
+ * @typedef PDFAttachmentViewerRenderParameters
+ * @property {Record<string, CatalogAttachment> | null} attachments - A lookup
+ *   table of attachment objects.
  * @property {boolean} [keepRenderedCapability]
  */
 
@@ -41,6 +51,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
   constructor(options) {
     super(options);
     this.downloadManager = options.downloadManager;
+    this.linkService = options.linkService;
 
     this.eventBus.on(
       "fileattachmentannotation",
@@ -93,14 +104,34 @@ class PDFAttachmentViewer extends BaseTreeViewer {
   }
 
   /**
+   * @param {HTMLAnchorElement} element
+   * @param {CatalogAttachment & { attachmentId?: string }} item
+   * @returns {undefined}
    * @protected
    */
-  _bindLink(element, { content, description, filename }) {
+  _bindLink(
+    element,
+    { attachmentId, content: fallbackContent, description, filename }
+  ) {
     if (description) {
       element.title = description;
     }
+
+    const openAttachment = async () => {
+      /** @type {CatalogAttachmentContent | undefined} */
+      // Prefer lazy loading when we have an attachment id; fallbackContent is
+      // only for the annotation-append path where bytes may already be present.
+      const content = attachmentId
+        ? await this.linkService.getAttachmentContent(attachmentId)
+        : fallbackContent;
+
+      if (content) {
+        this.downloadManager.openOrDownloadData(content, filename);
+      }
+    };
+
     element.onclick = () => {
-      this.downloadManager.openOrDownloadData(content, filename);
+      openAttachment();
       return false;
     };
   }
@@ -129,7 +160,10 @@ class PDFAttachmentViewer extends BaseTreeViewer {
       ul.append(li);
       const element = document.createElement("a");
       li.append(element);
-      this._bindLink(element, item);
+      this._bindLink(element, {
+        ...item,
+        attachmentId: item.attachmentId ?? name,
+      });
       element.textContent = this._normalizeTextContent(item.filename);
 
       attachmentsCount++;

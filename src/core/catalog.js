@@ -55,6 +55,37 @@ import { MetadataParser } from "./metadata_parser.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
+/**
+ * @import {XRef} from "./xref.js";
+ */
+
+/**
+ * @callback GetAttachmentContent
+ *   Callback used to lazily fetch attachment content.
+ * @param {string} id
+ *   Unique attachment identifier.
+ * @returns {CatalogAttachmentContent}
+ *   Result.
+ */
+
+/**
+ * @typedef {Uint8Array | null} CatalogAttachmentContent
+ *   Attachment value.
+ */
+
+/**
+ * @typedef CatalogAttachment
+ *   Attachment metadata.
+ * @property {CatalogAttachmentContent | undefined} [content]
+ *   Value, when already available.
+ * @property {string} description
+ *   Description.
+ * @property {string} filename
+ *   Filename (just the basename) for display.
+ * @property {string} rawFilename
+ *   File path.
+ */
+
 const isRef = v => v instanceof Ref;
 
 const isValidExplicitDest = _isValidExplicitDest.bind(
@@ -88,7 +119,17 @@ function fetchRemoteDest(action) {
 class Catalog {
   #actualNumPages = null;
 
+  /** @type {RefSetCache | null} */
+  #attachmentIdByRef = null;
+
   #catDict = null;
+
+  /**
+   * Attachment dictionaries keyed by attachment id.
+   *
+   * @type {Map<string, Dict>}
+   */
+  attachmentDictById = new Map();
 
   builtInCMapCache = new Map();
 
@@ -121,6 +162,29 @@ class Catalog {
     // Given that `XRef.parse` will both fetch *and* validate the /Pages-entry,
     // the following call must always succeed here:
     this.toplevelPagesDict; // eslint-disable-line no-unused-expressions
+  }
+
+  /**
+   * Attachment ids keyed by embedded-file reference.
+   *
+   * @type {RefSetCache}
+   */
+  get attachmentIdByRef() {
+    if (this.#attachmentIdByRef) {
+      return this.#attachmentIdByRef;
+    }
+
+    const attachmentIdByRef = new RefSetCache();
+    for (const [name, ref] of this.rawEmbeddedFiles || []) {
+      if (!(ref instanceof Ref)) {
+        continue;
+      }
+      attachmentIdByRef.put(
+        ref,
+        stringToPDFString(name, /* keepEscapeSequence = */ true)
+      );
+    }
+    return (this.#attachmentIdByRef = attachmentIdByRef);
   }
 
   cloneDict() {
@@ -369,6 +433,7 @@ class Catalog {
 
       const outlineItem = {
         action: data.action,
+        attachmentId: data.attachmentId,
         attachment: data.attachment,
         dest: data.dest,
         url: data.url,
@@ -1068,8 +1133,15 @@ class Catalog {
     );
   }
 
+  /**
+   * Get attachments.
+   *
+   * @returns {Record<string, CatalogAttachment> | null}
+   *   Attachments.
+   */
   get attachments() {
     const obj = this.#catDict.get("Names");
+    /** @type {Record<string, CatalogAttachment> | null} */
     let attachments = null;
 
     if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
@@ -1082,6 +1154,32 @@ class Catalog {
       }
     }
     return shadow(this, "attachments", attachments);
+  }
+
+  /**
+   * Get content for an attachment.
+   *
+   * @param {string} id
+   *   Unique attachment identifier (required).
+   * @returns {CatalogAttachmentContent}
+   *   Content.
+   */
+  attachmentContent(id) {
+    const dict = this.attachmentDictById.get(id);
+    if (dict) {
+      return FileSpec.readContent(dict);
+    }
+
+    const obj = this.#catDict.get("Names");
+    if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
+      const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
+      for (const [key, value] of nameTree.getAll()) {
+        if (stringToPDFString(key, /* keepEscapeSequence = */ true) === id) {
+          return FileSpec.readContent(value);
+        }
+      }
+    }
+    return null;
   }
 
   get rawEmbeddedFiles() {
@@ -1182,6 +1280,9 @@ class Catalog {
 
   async cleanup(manuallyTriggered = false) {
     clearGlobalCaches();
+    this.#attachmentIdByRef?.clear();
+    this.#attachmentIdByRef = null;
+    this.attachmentDictById.clear();
     this.globalColorSpaceCache.clear();
     this.globalImageCache.clear(/* onlyData = */ manuallyTriggered);
     this.pageKidsCountCache.clear();
@@ -1556,8 +1657,8 @@ class Catalog {
    *   properties will be placed.
    * @property {string} [docBaseUrl] - The document base URL that is used when
    *   attempting to recover valid absolute URLs from relative ones.
-   * @property {Object} [docAttachments] - The document attachments (may not
-   *   exist in most PDF documents).
+   * @property {Record<string, CatalogAttachment> | null} [docAttachments] - The
+   *   document attachments (may not exist in most PDF documents).
    */
 
   /**
@@ -1740,8 +1841,7 @@ class Catalog {
         case "GoToR":
           const urlDict = action.get("F");
           if (urlDict instanceof Dict) {
-            const fs = new FileSpec(urlDict, /* skipContent = */ true);
-            ({ rawFilename: url } = fs.serializable);
+            url = new FileSpec(urlDict).filename;
           } else if (typeof urlDict === "string") {
             url = urlDict;
           } else {
@@ -1766,22 +1866,21 @@ class Catalog {
 
         case "GoToE":
           const target = action.get("T");
-          let attachment;
+          /** @type {string | null} */
+          let id = null;
 
-          if (docAttachments && target instanceof Dict) {
+          if (target instanceof Dict) {
             const relationship = target.get("R");
             const name = target.get("N");
 
             if (isName(relationship, "C") && typeof name === "string") {
-              attachment =
-                docAttachments[
-                  stringToPDFString(name, /* keepEscapeSequence = */ true)
-                ];
+              id = stringToPDFString(name, /* keepEscapeSequence = */ true);
             }
           }
 
-          if (attachment) {
-            resultObj.attachment = attachment;
+          if (docAttachments && id) {
+            resultObj.attachmentId = id;
+            resultObj.attachment = docAttachments[id];
 
             // NOTE: the destination is relative to the *attachment*.
             const attachmentDest = fetchRemoteDest(action);
