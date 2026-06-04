@@ -6833,6 +6833,14 @@
     "about": "Non-isolated knockout group with a Multiply blend mode element on a yellow backdrop; the element must blend against the backdrop, not against a transparent temp canvas."
   },
   {
+    "id": "knockout_inner_backdrop",
+    "file": "pdfs/knockout_inner_backdrop.pdf",
+    "md5": "4b3b77319b9b2c6e6f1836c121f488c7",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Non-isolated, non-knockout subgroup that needs isolation (Multiply blend mode in its content) nested inside a knockout group; the subgroup's elements must blend against its own initial backdrop while its transparent areas leave the parent untouched."
+  },
+  {
     "id": "issue6010_1",
     "file": "pdfs/issue6010_1.pdf",
     "md5": "b58adce5dbb08936ddb0d904f0da8716",
