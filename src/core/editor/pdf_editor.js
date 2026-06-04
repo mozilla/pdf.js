@@ -29,14 +29,15 @@ import {
 } from "../core_utils.js";
 import { Dict, isName, Name, Ref, RefSet, RefSetCache } from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
+import { isArrayEqual, stringToBytes } from "../../shared/util.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
 import { AnnotationFactory } from "../annotation.js";
 import { BaseStream } from "../base_stream.js";
 import { createImage } from "./pdf_images.js";
 import { LETTER_SIZE_MEDIABOX } from "../document.js";
+import { MurmurHash3_64 } from "../../shared/murmurhash3.js";
 import { StringStream } from "../stream.js";
-import { stringToBytes } from "../../shared/util.js";
 
 const MAX_LEAVES_PER_PAGES_NODE = 16;
 const MAX_IN_NAME_TREE_NODE = 64;
@@ -63,6 +64,7 @@ class DocumentData {
     this.dedupNamedDestinations = new Map();
     this.usedNamedDestinations = new Set();
     this.postponedRefCopies = new RefSetCache();
+    this.resourceStreamPromises = new Map();
     this.usedStructParents = new Set();
     this.oldStructParentMapping = new Map();
     this.structTreeRoot = null;
@@ -125,6 +127,12 @@ class PDFEditor {
   #newAnnotationsParams = null;
 
   #primaryDocument = null;
+
+  // Deduplicates resource streams (fonts/images) shared across the merged
+  // documents. Maps a cheap content key to a bucket of { ref, dictStr, stream }
+  // candidates; the key only groups possible matches, an exact byte comparison
+  // decides, so a key collision can never alias two distinct resources.
+  #resourceStreamCache = new Map();
 
   currentDocument = null;
 
@@ -232,16 +240,22 @@ class PDFEditor {
    * @param {*} obj
    * @param {boolean} mustClone
    * @param {XRef} xref
+   * @param {RefSet} resourceStreamPath
    * @returns {Promise<*>}
    */
-  async #collectDependencies(obj, mustClone, xref) {
+  async #collectDependencies(
+    obj,
+    mustClone,
+    xref,
+    resourceStreamPath = new RefSet()
+  ) {
     if (obj instanceof Ref) {
       const {
         currentDocument: { oldRefMapping },
       } = this;
-      let newRef = oldRefMapping.get(obj);
-      if (newRef) {
-        return newRef;
+      const existingRef = oldRefMapping.get(obj);
+      if (existingRef) {
+        return existingRef;
       }
       const oldRef = obj;
       obj = await xref.fetchAsync(oldRef);
@@ -250,7 +264,19 @@ class PDFEditor {
         return obj;
       }
 
-      newRef = this.newRef;
+      // Deduplicate fonts/images against earlier copies (common when merging
+      // exports of the same template). Reusing a copy costs no reference, so
+      // allocation is deferred to #collectResourceStream until it's known new.
+      if (obj instanceof BaseStream && this.#isResourceStream(obj.dict)) {
+        return this.#collectResourceStream(
+          oldRef,
+          obj,
+          xref,
+          resourceStreamPath
+        );
+      }
+
+      const newRef = this.newRef;
       oldRefMapping.put(oldRef, newRef);
 
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -265,7 +291,12 @@ class PDFEditor {
         }
       }
 
-      this.xref[newRef.num] = await this.#collectDependencies(obj, true, xref);
+      this.xref[newRef.num] = await this.#collectDependencies(
+        obj,
+        true,
+        xref,
+        resourceStreamPath
+      );
       return newRef;
     }
     const promises = [];
@@ -285,9 +316,12 @@ class PDFEditor {
           continue;
         }
         promises.push(
-          this.#collectDependencies(obj[i], true, xref).then(
-            newObj => (obj[i] = newObj)
-          )
+          this.#collectDependencies(
+            obj[i],
+            true,
+            xref,
+            resourceStreamPath
+          ).then(newObj => (obj[i] = newObj))
         );
       }
       await Promise.all(promises);
@@ -314,15 +348,187 @@ class PDFEditor {
           continue;
         }
         promises.push(
-          this.#collectDependencies(rawObj, true, xref).then(newObj =>
-            dict.set(key, newObj)
-          )
+          this.#collectDependencies(
+            rawObj,
+            true,
+            xref,
+            resourceStreamPath
+          ).then(newObj => dict.set(key, newObj))
         );
       }
       await Promise.all(promises);
     }
 
     return obj;
+  }
+
+  /**
+   * Whether a stream is worth deduplicating: an image or an embedded font
+   * program (large and often shared). Per-page content streams etc. are
+   * essentially never shared, so hashing them would be wasted work.
+   * @param {Dict} dict
+   * @returns {boolean}
+   */
+  #isResourceStream(dict) {
+    const subtype = dict.get("Subtype");
+    return (
+      isName(subtype, "Image") ||
+      // FontFile/FontFile2 carry Length1; FontFile3 has one of these Subtypes.
+      dict.has("Length1") ||
+      isName(subtype, "Type1C") ||
+      isName(subtype, "CIDFontType0C") ||
+      isName(subtype, "OpenType")
+    );
+  }
+
+  /**
+   * Read the raw, still-encoded bytes of a stream.
+   * @param {BaseStream} stream
+   * @returns {Uint8Array}
+   */
+  #rawStreamBytes(stream) {
+    const original = stream.getOriginalStream();
+    original.reset();
+    return original.getBytes();
+  }
+
+  /**
+   * Serialize a dictionary to a canonical string. Two clones of the same source
+   * dict serialize identically, so this works as a bucket key and as an exact
+   * comparison.
+   * @param {Dict} dict
+   * @returns {Promise<string>}
+   */
+  async #serializeDict(dict) {
+    const buffer = [];
+    await writeValue(dict, buffer, /* transform = */ null);
+    return buffer.join("");
+  }
+
+  /**
+   * Cheap bucket key for a resource stream: the serialized dict, the byte
+   * length, and a few sampled chunks (so large payloads aren't fully hashed).
+   * Collisions only group candidates that are then compared byte-for-byte, so
+   * they cost time but never cause a wrong merge.
+   * @param {string} dictStr
+   * @param {Uint8Array} bytes
+   * @returns {string}
+   */
+  #resourceStreamKey(dictStr, bytes) {
+    const SAMPLE_SIZE = 256;
+    const SAMPLE_COUNT = 4;
+    const { length } = bytes;
+    const hash = new MurmurHash3_64();
+    hash.update(dictStr);
+    hash.update(`#${length}`);
+    if (length <= SAMPLE_SIZE * SAMPLE_COUNT) {
+      hash.update(bytes);
+    } else {
+      const step = Math.floor((length - SAMPLE_SIZE) / (SAMPLE_COUNT - 1));
+      for (let i = 0; i < SAMPLE_COUNT; i++) {
+        const start = Math.min(i * step, length - SAMPLE_SIZE);
+        hash.update(bytes.subarray(start, start + SAMPLE_SIZE));
+      }
+    }
+    return hash.hexdigest();
+  }
+
+  /**
+   * Clone a resource stream and return its output reference, reusing an earlier
+   * copy when possible. The reference is allocated lazily (in
+   * #dedupResourceStream), so a reused resource leaves no unused reference.
+   * @param {Ref} oldRef
+   * @param {BaseStream} stream
+   * @param {XRef} xref
+   * @param {RefSet} resourceStreamPath
+   * @returns {Promise<Ref>}
+   */
+  async #collectResourceStream(oldRef, stream, xref, resourceStreamPath) {
+    const {
+      currentDocument: { oldRefMapping, resourceStreamPromises },
+    } = this;
+
+    // Re-entry means a (malformed) cycle back to this stream: allocate its
+    // reference now to break the loop, like the generic path's eager alloc.
+    if (resourceStreamPath.has(oldRef)) {
+      let ref = oldRefMapping.get(oldRef);
+      if (!ref) {
+        ref = this.newRef;
+        oldRefMapping.put(oldRef, ref);
+      }
+      return ref;
+    }
+
+    const key = oldRef.toString();
+    const pending = resourceStreamPromises.get(key);
+    if (pending) {
+      return pending;
+    }
+
+    // The path only grows here, so the shared parent path can be passed
+    // read-only everywhere else; snapshot it, add this stream, and recurse.
+    const childPath = new RefSet(resourceStreamPath);
+    childPath.put(oldRef);
+
+    const promise = Promise.resolve().then(async () => {
+      const collected = await this.#collectDependencies(
+        stream,
+        true,
+        xref,
+        childPath
+      );
+
+      // A cycle already allocated a reference, so store the clone there.
+      const cycleRef = oldRefMapping.get(oldRef);
+      if (cycleRef) {
+        this.xref[cycleRef.num] = collected;
+        return cycleRef;
+      }
+
+      const ref = await this.#dedupResourceStream(collected);
+      oldRefMapping.put(oldRef, ref);
+      return ref;
+    });
+    resourceStreamPromises.set(key, promise);
+    try {
+      return await promise;
+    } finally {
+      if (resourceStreamPromises.get(key) === promise) {
+        resourceStreamPromises.delete(key);
+      }
+    }
+  }
+
+  /**
+   * Return the reference for a cloned resource stream, reusing a byte-identical
+   * earlier copy or else allocating and registering a new one.
+   * @param {BaseStream} stream
+   * @returns {Promise<Ref>}
+   */
+  async #dedupResourceStream(stream) {
+    const dictStr = await this.#serializeDict(stream.dict);
+    const bytes = this.#rawStreamBytes(stream);
+    const key = this.#resourceStreamKey(dictStr, bytes);
+
+    let bucket = this.#resourceStreamCache.get(key);
+    if (bucket) {
+      // Same key only means "maybe equal": confirm with an exact comparison.
+      for (const entry of bucket) {
+        if (
+          entry.dictStr === dictStr &&
+          isArrayEqual(this.#rawStreamBytes(entry.stream), bytes)
+        ) {
+          return entry.ref;
+        }
+      }
+    } else {
+      bucket = [];
+      this.#resourceStreamCache.set(key, bucket);
+    }
+    const ref = this.newRef;
+    this.xref[ref.num] = stream;
+    bucket.push({ ref, dictStr, stream });
+    return ref;
   }
 
   async #cloneStructTreeNode(

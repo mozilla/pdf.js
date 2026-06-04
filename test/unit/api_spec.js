@@ -27,6 +27,7 @@ import {
   PasswordResponses,
   PermissionFlag,
   ResponseException,
+  stringToBytes,
   UnknownErrorException,
 } from "../../src/shared/util.js";
 import {
@@ -86,6 +87,57 @@ describe("api", function () {
     return items
       .map(chunk => (chunk.str ?? "") + (chunk.hasEOL ? "\n" : ""))
       .join("");
+  }
+
+  function countMarker(bytes, marker) {
+    let count = 0;
+    for (let i = 0, ii = bytes.length - marker.length; i <= ii; i++) {
+      let j = 0;
+      while (j < marker.length && bytes[i + j] === marker.charCodeAt(j)) {
+        j++;
+      }
+      if (j === marker.length) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  function buildSharedImageResourcePdf() {
+    const streamObject = (num, dict, data) =>
+      `${num} 0 obj\n<< ${dict} /Length ${data.length} >>\n` +
+      `stream\n${data}\nendstream\nendobj\n`;
+    const objects = [
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] " +
+        "/Resources << /XObject << /Im0 4 0 R /Im1 4 0 R >> >> " +
+        "/Contents 5 0 R >>\nendobj\n",
+      streamObject(
+        4,
+        "/Type /XObject /Subtype /Image /Width 1 /Height 1 " +
+          "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode",
+        "FF0000>"
+      ),
+      streamObject(5, "", "q 10 0 0 10 0 0 cm /Im0 Do Q"),
+    ];
+
+    let pdf = "%PDF-1.7\n";
+    const offsets = [];
+    for (const obj of objects) {
+      offsets.push(pdf.length);
+      pdf += obj;
+    }
+    const xrefOffset = pdf.length;
+    pdf += `xref\n0 ${objects.length + 1}\n`;
+    pdf += "0000000000 65535 f \n";
+    for (const offset of offsets) {
+      pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
+    }
+    pdf +=
+      `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n` +
+      `startxref\n${xrefOffset}\n%%EOF\n`;
+    return stringToBytes(pdf);
   }
 
   function getNamedNodeInXML(node, path) {
@@ -5868,6 +5920,71 @@ small scripts as well as for`);
             `Document ${Math.ceil(i / 2)}:Page ${((i - 1) % 2) + 2}`
           );
         }
+        await newLoadingTask.destroy();
+
+        await loadingTask.destroy();
+      });
+
+      it("deduplicates resource streams shared across merged copies", async function () {
+        const MARKER = "/CIDFontType0C";
+
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        // The same buffer loaded several times yields distinct worker-side
+        // documents, so this is a true cross-document merge of identical data.
+        const pdfData = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_2_3_pages.pdf",
+        });
+
+        // Baseline: the font programs in one duplicate-free copy.
+        const dataSingle = await pdfDoc.extractPages([{ document: pdfData }]);
+        const fontsSingle = countMarker(dataSingle, MARKER);
+        expect(fontsSingle).toBeGreaterThan(0);
+
+        // Four identical copies must share them (a naive merge would write 4x).
+        const COPIES = 4;
+        const dataMany = await pdfDoc.extractPages(
+          new Array(COPIES).fill(0).map(() => ({ document: pdfData }))
+        );
+        expect(countMarker(dataMany, MARKER)).toEqual(fontsSingle);
+
+        // The merged document must still be valid and render every page.
+        const newLoadingTask = getDocument({ data: dataMany });
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(3 * COPIES);
+        for (let i = 1; i <= 3 * COPIES; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document 2:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+        await newLoadingTask.destroy();
+
+        await loadingTask.destroy();
+      });
+
+      it("deduplicates resource streams reached concurrently", async function () {
+        const pdfData = buildSharedImageResourcePdf();
+        const loadingTask = getDocument({ data: pdfData.slice() });
+        const pdfDoc = await loadingTask.promise;
+
+        // The source page has two XObject names pointing at the same image
+        // stream. Those references are cloned concurrently from the resource
+        // dictionary, and must not be mistaken for a reference cycle.
+        const data = await pdfDoc.extractPages([
+          { document: pdfData.slice() },
+          { document: pdfData.slice() },
+        ]);
+        expect(countMarker(data, "/Subtype /Image")).toEqual(1);
+
+        const newLoadingTask = getDocument({ data });
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(2);
+        await newPdfDoc.getPage(1);
+        await newPdfDoc.getPage(2);
         await newLoadingTask.destroy();
 
         await loadingTask.destroy();

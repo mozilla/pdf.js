@@ -75,14 +75,17 @@ async function writeStream(stream, buffer, transform) {
     isName(filterZero, "JBIG2Decode") ||
     isName(filterZero, "CCITTFaxDecode") ||
     isName(filterZero, "LZWDecode");
+  const isFilterZeroCompressedObject =
+    isFilterZeroFlateDecode ||
+    isFilterZeroImageDecode ||
+    isName(filterZero, "BrotliDecode");
 
   // If the string is too small there is no real benefit in compressing it.
   // The number 256 is arbitrary, but it should be reasonable.
   const MIN_LENGTH_FOR_COMPRESSING = 256;
 
   if (
-    !isFilterZeroFlateDecode &&
-    !isFilterZeroImageDecode &&
+    !isFilterZeroCompressedObject &&
     bytes.length >= MIN_LENGTH_FOR_COMPRESSING
   ) {
     try {
