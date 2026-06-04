@@ -19,10 +19,16 @@ import { objectSize } from "../../src/shared/util.js";
 
 describe("AppOptions", function () {
   it("checks that getAll returns data, for every OptionKind", function () {
-    const KIND_NAMES = ["BROWSER", "VIEWER", "API", "WORKER", "PREFERENCE"];
+    expect(Object.keys(OptionKind)).toEqual([
+      "BROWSER",
+      "VIEWER",
+      "API",
+      "WORKER",
+      "EVENT_DISPATCH",
+      "PREFERENCE",
+    ]);
 
-    for (const name of KIND_NAMES) {
-      const kind = OptionKind[name];
+    for (const kind of Object.values(OptionKind)) {
       expect(typeof kind).toEqual("number");
 
       const options = AppOptions.getAll(kind);
