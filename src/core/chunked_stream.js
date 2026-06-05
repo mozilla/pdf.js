@@ -260,13 +260,13 @@ class ChunkedStream extends Stream {
 }
 
 class ChunkedStreamManager {
-  aborted = false;
+  #aborted = false;
 
   currRequestId = 0;
 
   _chunksNeededByRequest = new Map();
 
-  _loadedStreamCapability = Promise.withResolvers();
+  #loadedStreamCapability = Promise.withResolvers();
 
   _promisesByRequest = new Map();
 
@@ -288,7 +288,7 @@ class ChunkedStreamManager {
     while (true) {
       const { value, done } = await rangeReader.read();
 
-      if (this.aborted) {
+      if (this.#aborted) {
         chunks = null;
         return; // Ignoring any data after abort.
       }
@@ -323,7 +323,7 @@ class ChunkedStreamManager {
       const missingChunks = this.stream.getMissingChunks();
       this._requestChunks(missingChunks);
     }
-    return this._loadedStreamCapability.promise;
+    return this.#loadedStreamCapability.promise;
   }
 
   _requestChunks(chunks) {
@@ -369,7 +369,7 @@ class ChunkedStreamManager {
     }
 
     return capability.promise.catch(reason => {
-      if (this.aborted) {
+      if (this.#aborted) {
         return; // Ignoring any pending requests after abort.
       }
       throw reason;
@@ -459,7 +459,7 @@ class ChunkedStreamManager {
     }
 
     if (stream.isDataLoaded) {
-      this._loadedStreamCapability.resolve(stream);
+      this.#loadedStreamCapability.resolve(stream);
     }
 
     const loadedRequests = [];
@@ -520,10 +520,6 @@ class ChunkedStreamManager {
     });
   }
 
-  onError(err) {
-    this._loadedStreamCapability.reject(err);
-  }
-
   getBeginChunk(begin) {
     return Math.floor(begin / this.chunkSize);
   }
@@ -533,12 +529,13 @@ class ChunkedStreamManager {
   }
 
   abort(reason) {
-    this.aborted = true;
+    this.#aborted = true;
     this.pdfStream?.cancelAllRequests(reason);
 
     for (const capability of this._promisesByRequest.values()) {
       capability.reject(reason);
     }
+    this.#loadedStreamCapability.reject(reason);
   }
 }
 
