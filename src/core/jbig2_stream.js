@@ -51,17 +51,37 @@ class Jbig2Stream extends DecodeStream {
     return true;
   }
 
+  // The JBIG2 file header is defined in ITU-T T.88, Annex D.4:
+  // https://www.itu.int/rec/T-REC-T.88
+  static stripFileHeader(bytes) {
+    if (
+      bytes.length >= 9 &&
+      bytes[0] === 0x97 &&
+      bytes[1] === 0x4a &&
+      bytes[2] === 0x42 &&
+      bytes[3] === 0x32 &&
+      bytes[4] === 0x0d &&
+      bytes[5] === 0x0a &&
+      bytes[6] === 0x1a &&
+      bytes[7] === 0x0a
+    ) {
+      const headerLength = (bytes[8] & 2) === 0 ? 13 : 9;
+      return bytes.subarray(headerLength);
+    }
+    return bytes;
+  }
+
   async decodeImage(bytes, length, _decoderOptions) {
     if (this.eof) {
       return this.buffer;
     }
-    bytes ||= this.bytes;
+    bytes = Jbig2Stream.stripFileHeader(bytes || this.bytes);
 
     let globals = null;
     if (this.params instanceof Dict) {
       const globalsStream = this.params.get("JBIG2Globals");
       if (globalsStream instanceof BaseStream) {
-        globals = globalsStream.getBytes();
+        globals = Jbig2Stream.stripFileHeader(globalsStream.getBytes());
       }
     }
     this.buffer = await JBig2CCITTFaxImage.instance.decode(
