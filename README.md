@@ -91,6 +91,71 @@ This will generate `pdf.js` and `pdf.worker.js` in the `build/generic/build/` di
 Both scripts are needed but only `pdf.js` needs to be included since `pdf.worker.js` will
 be loaded by `pdf.js`. The PDF.js files are large and should be minified for production.
 
+## Code coverage
+
+We track how much of the code is exercised by the test suite on
+[Codecov](https://codecov.io/gh/mozilla/pdf.js) (see the badge at the top of this
+file).
+
+### How it is collected
+
+When coverage is enabled, the build instruments the bundled code with
+[`babel-plugin-istanbul`](https://github.com/istanbuljs/babel-plugin-istanbul),
+which adds counters that record every line, branch and function that runs:
+
++ For browser-based tests (unit, integration and reference tests) the
+  instrumented code runs in the browser, fills a global `window.__coverage__`
+  object, and the test runner collects it from each browser session, merges the
+  results, and writes the report.
++ For the Node-based unit tests (`unittestcli`) the raw data is written to
+  `build/tmp/unittestcli-coverage.json` and turned into a report afterwards.
+
+### Collecting coverage locally
+
+Add the `--coverage` flag to any of the test tasks, for example:
+
+    $ npx gulp unittest --coverage           # browser unit tests
+    $ npx gulp unittestcli --coverage        # Node unit tests
+    $ npx gulp integrationtest --coverage    # Puppeteer integration tests
+    $ npx gulp botbrowsertest --coverage     # reference tests
+
+The following options control the output:
+
+| Option | Description | Default |
+| --- | --- | --- |
+| `--coverage` | Enable coverage collection. | off |
+| `--coverage-output <dir>` | Directory where the report is written. | `build/coverage` |
+| `--coverage-formats <list>` | Comma-separated list of formats: `info`, `html`, `json`, `text`, `cobertura`, `clover`. | `info` |
+| `--coverage-per-test` | Also build a per-test index (see below). | off |
+
+By default the report is written to `build/coverage` in the `info` format, i.e.
+an [LCOV](https://github.com/linux-test-project/lcov) `lcov.info` file (the same
+format that is uploaded to Codecov). Use `--coverage-formats html` to get a
+browsable HTML report instead, or pass several formats at once, e.g.
+`--coverage-formats info,html`.
+
+### Finding which tests cover a given line
+
+Run a browser test task with `--coverage-per-test` to build an index
+(`per-test-index.json`) in the coverage directory, then query it to list the
+tests that exercised a specific source line or function:
+
+    $ npx gulp botbrowsertest --coverage-per-test
+    $ npx gulp coverage_search --code="canvas.js::205"
+    $ npx gulp coverage_search --code="canvas.js::drawImageAtIntegerCoords"
+
+### Continuous integration
+
+On every push and pull request three GitHub Actions workflows collect coverage
+and upload it to Codecov, each tagged with its own Codecov *flag* so the test
+types can be told apart:
+
+| Workflow | Task | Codecov flag |
+| --- | --- | --- |
+| `unit_tests.yml` | `unittest` | `unittest` |
+| `integration_tests.yml` | `integrationtest` | `integrationtest` |
+| `coverage_browser_tests.yml` | `botbrowsertest` | `browsertest` |
+
 ## Using PDF.js in a web application
 
 To use PDF.js in a web application you can choose to use a pre-built version of the library
