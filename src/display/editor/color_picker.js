@@ -55,21 +55,12 @@ class ColorPicker {
       this,
       "_keyboardManager",
       new KeyboardManager([
-        [
-          ["Escape", "mac+Escape"],
-          ColorPicker.prototype._hideDropdownFromKeyboard,
-        ],
-        [[" ", "mac+ "], ColorPicker.prototype._colorSelectFromKeyboard],
-        [
-          ["ArrowDown", "ArrowRight", "mac+ArrowDown", "mac+ArrowRight"],
-          ColorPicker.prototype._moveToNext,
-        ],
-        [
-          ["ArrowUp", "ArrowLeft", "mac+ArrowUp", "mac+ArrowLeft"],
-          ColorPicker.prototype._moveToPrevious,
-        ],
-        [["Home", "mac+Home"], ColorPicker.prototype._moveToBeginning],
-        [["End", "mac+End"], ColorPicker.prototype._moveToEnd],
+        [["Escape"], ColorPicker.prototype._hideDropdownFromKeyboard],
+        [["Space"], ColorPicker.prototype._colorSelectFromKeyboard],
+        [["ArrowDown", "ArrowRight"], ColorPicker.prototype._moveToNext],
+        [["ArrowUp", "ArrowLeft"], ColorPicker.prototype._moveToPrevious],
+        [["Home"], ColorPicker.prototype._moveToBeginning],
+        [["End"], ColorPicker.prototype._moveToEnd],
       ])
     );
   }
