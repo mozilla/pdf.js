@@ -13,15 +13,12 @@
  * limitations under the License.
  */
 
-import { closePages, getRect, loadAndWait } from "./test_utils.mjs";
-
-const waitForSelectionChange = (page, selection) =>
-  page.waitForFunction(
-    // We need to replace EOL on Windows to make the test pass.
-    sel => document.getSelection().toString().replaceAll("\r\n", "\n") === sel,
-    {},
-    selection
-  );
+import {
+  closePages,
+  getRect,
+  loadAndWait,
+  waitForSelectionChange,
+} from "./test_utils.mjs";
 
 describe("Caret browsing", () => {
   describe("Selection", () => {

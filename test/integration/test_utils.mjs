@@ -1108,6 +1108,15 @@ async function waitForBrowserTrip(page) {
   await awaitPromise(handle);
 }
 
+function waitForSelectionChange(page, selection) {
+  return page.waitForFunction(
+    // We need to replace EOL on Windows to make the test pass.
+    sel => document.getSelection().toString().replaceAll("\r\n", "\n") === sel,
+    {},
+    selection
+  );
+}
+
 // Unicode bidi isolation characters, Fluent adds these markers to the text.
 const FSI = "\u2068";
 const PDI = "\u2069";
@@ -1190,6 +1199,7 @@ export {
   waitForPointerUp,
   waitForSandboxTrip,
   waitForSelectedEditor,
+  waitForSelectionChange,
   waitForSerialized,
   waitForStorageEntries,
   waitForTextToBe,
