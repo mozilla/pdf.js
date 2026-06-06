@@ -149,6 +149,7 @@ describe("autolinker", function () {
         "abc.example.com", // URL without scheme.
         "JD?M$0QP)lKn06l1apKDC@\\qJ4B!!(5m+j.7F790m", // Not a valid email.
         "262@0.302304", // Invalid domain.
+        "foo@123.456", // Invalid domain.
       ].join("\n")
     );
     expect(matches.length).toEqual(0);
