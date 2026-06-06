@@ -340,6 +340,49 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("creates pdf doc from binary string", async function () {
+      // This is identical to the `/examples/learning/helloworld.pdf` file,
+      // see also the `/examples/learning/helloworld64.html` example.
+      const dataStr = atob(
+        "JVBERi0xLjcKCjEgMCBvYmogICUgZW50cnkgcG9pbnQKPDwKICAvVHlwZSAvQ2F0YWxvZwog" +
+          "IC9QYWdlcyAyIDAgUgo+PgplbmRvYmoKCjIgMCBvYmoKPDwKICAvVHlwZSAvUGFnZXMKICAv" +
+          "TWVkaWFCb3ggWyAwIDAgMjAwIDIwMCBdCiAgL0NvdW50IDEKICAvS2lkcyBbIDMgMCBSIF0K" +
+          "Pj4KZW5kb2JqCgozIDAgb2JqCjw8CiAgL1R5cGUgL1BhZ2UKICAvUGFyZW50IDIgMCBSCiAg" +
+          "L1Jlc291cmNlcyA8PAogICAgL0ZvbnQgPDwKICAgICAgL0YxIDQgMCBSIAogICAgPj4KICA+" +
+          "PgogIC9Db250ZW50cyA1IDAgUgo+PgplbmRvYmoKCjQgMCBvYmoKPDwKICAvVHlwZSAvRm9u" +
+          "dAogIC9TdWJ0eXBlIC9UeXBlMQogIC9CYXNlRm9udCAvVGltZXMtUm9tYW4KPj4KZW5kb2Jq" +
+          "Cgo1IDAgb2JqICAlIHBhZ2UgY29udGVudAo8PAogIC9MZW5ndGggNDQKPj4Kc3RyZWFtCkJU" +
+          "CjcwIDUwIFRECi9GMSAxMiBUZgooSGVsbG8sIHdvcmxkISkgVGoKRVQKZW5kc3RyZWFtCmVu" +
+          "ZG9iagoKeHJlZgowIDYKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDEwIDAwMDAwIG4g" +
+          "CjAwMDAwMDAwNzkgMDAwMDAgbiAKMDAwMDAwMDE3MyAwMDAwMCBuIAowMDAwMDAwMzAxIDAw" +
+          "MDAwIG4gCjAwMDAwMDAzODAgMDAwMDAgbiAKdHJhaWxlcgo8PAogIC9TaXplIDYKICAvUm9v" +
+          "dCAxIDAgUgo+PgpzdGFydHhyZWYKNDkyCiUlRU9G"
+      );
+
+      const loadingTask = getDocument({ data: dataStr });
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
+
+      const progressReportedCapability = Promise.withResolvers();
+      loadingTask.onProgress = function (data) {
+        progressReportedCapability.resolve(data);
+      };
+
+      const [pdfDoc, progress] = await Promise.all([
+        loadingTask.promise,
+        progressReportedCapability.promise,
+      ]);
+
+      expect(pdfDoc).toBeInstanceOf(PDFDocumentProxy);
+      expect(pdfDoc.loadingTask).toBe(loadingTask);
+      expect(pdfDoc.numPages).toEqual(1);
+
+      expect(progress.loaded).toEqual(dataStr.length);
+      expect(progress.total).toEqual(dataStr.length);
+      expect(progress.percent).toEqual(100);
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from invalid PDF file", async function () {
       // A severely corrupt PDF file (even Adobe Reader fails to open it).
       const loadingTask = getDocument(buildGetDocumentParams("bug1020226.pdf"));
