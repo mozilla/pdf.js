@@ -73,14 +73,6 @@ class GrabToPan {
     }
   }
 
-  toggle() {
-    if (this.#activateAC) {
-      this.deactivate();
-    } else {
-      this.activate();
-    }
-  }
-
   /**
    * Whether to not pan if the target element is clicked.
    * Override this method to change the default behaviour.

@@ -33,6 +33,7 @@ async function runTests(results) {
       "caret_browsing_spec.mjs",
       "comment_spec.mjs",
       "copy_paste_spec.mjs",
+      "cursor_tools_spec.mjs",
       "document_properties_spec.mjs",
       "find_spec.mjs",
       "freetext_editor_spec.mjs",
