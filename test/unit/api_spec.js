@@ -228,6 +228,28 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("creates pdf doc from filesystem URL-string (in Node.js)", async function () {
+      if (!isNodeJS) {
+        pending("Testing Node.js functionality.");
+      }
+      const url = process.getBuiltinModule("url");
+      const cwdURL = url.pathToFileURL(process.cwd()) + "/";
+      const urlStr = new URL("./test/pdfs/basicapi.pdf", cwdURL).href;
+
+      const loadingTask = getDocument({ url: urlStr });
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
+      const pdfDocument = await loadingTask.promise;
+
+      expect(typeof urlStr).toEqual("string");
+      expect(pdfDocument).toBeInstanceOf(PDFDocumentProxy);
+      expect(pdfDocument.numPages).toEqual(3);
+
+      // Ensure that Node.js streaming was used to load the PDF document.
+      expect(pdfDocument.getNetworkStreamName()).toEqual("PDFNodeStream");
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from URL and aborts before worker initialized", async function () {
       const loadingTask = getDocument(basicApiGetDocumentParams);
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
