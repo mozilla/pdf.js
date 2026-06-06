@@ -68,10 +68,7 @@ class DrawLayerBuilder {
   cancel() {
     this._cancelled = true;
 
-    if (!this.#drawLayer) {
-      return;
-    }
-    this.#drawLayer.destroy();
+    this.#drawLayer?.destroy();
     this.#drawLayer = null;
   }
 
