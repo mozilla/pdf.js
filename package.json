@@ -5,7 +5,7 @@
     "@babel/core": "^7.29.7",
     "@babel/preset-env": "^7.29.7",
     "@babel/runtime": "^7.29.7",
-    "@eslint/json": "^1.2.0",
+    "@eslint/json": "^2.0.0",
     "@fluent/bundle": "^0.19.1",
     "@fluent/dom": "^0.10.2",
     "@metalsmith/layouts": "^3.0.0",
