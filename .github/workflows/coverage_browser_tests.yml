@@ -3,7 +3,7 @@ on:
   push:
     paths:
       - 'gulpfile.mjs'
-      - 'external/builder/**'
+      - 'external/**'
       - 'src/**'
       - 'test/images/**'
       - 'test/pdfs/**'
@@ -20,7 +20,7 @@ on:
   pull_request:
     paths:
       - 'gulpfile.mjs'
-      - 'external/builder/**'
+      - 'external/**'
       - 'src/**'
       - 'test/images/**'
       - 'test/pdfs/**'
