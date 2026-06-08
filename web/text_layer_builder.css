@@ -124,11 +124,13 @@
     /*#endif*/
     /* stylelint-enable declaration-block-no-duplicate-properties */
     background: color-mix(in srgb, AccentColor, transparent 50%);
+    color: transparent;
   }
 
   &.selectionRendering {
     ::selection {
       background: transparent;
+      color: transparent;
     }
   }
 
