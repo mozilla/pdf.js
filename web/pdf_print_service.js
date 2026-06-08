@@ -124,9 +124,9 @@ class PDFPrintService {
     // In browsers where @page + size is not supported, the next stylesheet
     // will be ignored and the user has to select the correct paper size in
     // the UI if wanted.
-    this.pageStyleSheet = document.createElement("style");
-    this.pageStyleSheet.textContent = `@page { size: ${width}pt ${height}pt;}`;
-    body.append(this.pageStyleSheet);
+    this.pageStyleSheet = new CSSStyleSheet();
+    this.pageStyleSheet.replaceSync(`@page { size: ${width}pt ${height}pt;}`);
+    document.adoptedStyleSheets.push(this.pageStyleSheet);
   }
 
   destroy() {
@@ -141,7 +141,9 @@ class PDFPrintService {
     body.removeAttribute("data-pdfjsprinting");
 
     if (this.pageStyleSheet) {
-      this.pageStyleSheet.remove();
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        styleSheet => styleSheet !== this.pageStyleSheet
+      );
       this.pageStyleSheet = null;
     }
     if (this._blobURLs) {
