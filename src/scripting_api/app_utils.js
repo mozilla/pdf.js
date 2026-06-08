@@ -32,16 +32,6 @@ const makeArr = () => [];
 const makeMap = () => new Map();
 
 if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-  // TODO: Remove this once `Math.sumPrecise` is supported in QuickJS.
-  //
-  // Note that this isn't a "proper" polyfill, but since we're only using it to
-  // replace `Array.prototype.reduce()` invocations it should be fine.
-  if (typeof Math.sumPrecise !== "function") {
-    Math.sumPrecise = function (numbers) {
-      return numbers.reduce((a, b) => a + b, 0);
-    };
-  }
-
   // TODO: Remove this once `Map.prototype.getOrInsertComputed` is supported in
   // QuickJS.
   if (typeof Map.prototype.getOrInsertComputed !== "function") {
