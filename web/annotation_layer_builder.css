@@ -138,6 +138,17 @@
     }
   }
 
+  /* A field rendered to its own canvas shows that canvas and keeps its editable
+     element hidden. Once the field is modified the canvas is outdated, so it's
+     hidden and the element is shown instead. */
+  .hasOwnCanvas:not(.sandboxModified) :is(input, textarea) {
+    display: none;
+  }
+
+  .hasOwnCanvas.sandboxModified canvas.annotationContent {
+    display: none;
+  }
+
   .textLayer.selecting ~ & section {
     pointer-events: none;
   }
