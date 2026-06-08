@@ -31,20 +31,6 @@ function serializeError(error) {
 const makeArr = () => [];
 const makeMap = () => new Map();
 
-if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-  // TODO: Remove this once `Map.prototype.getOrInsertComputed` is supported in
-  // QuickJS.
-  if (typeof Map.prototype.getOrInsertComputed !== "function") {
-    // eslint-disable-next-line no-extend-native
-    Map.prototype.getOrInsertComputed = function (key, callbackFn) {
-      if (!this.has(key)) {
-        this.set(key, callbackFn(key));
-      }
-      return this.get(key);
-    };
-  }
-}
-
 export {
   FORMS_VERSION,
   makeArr,
