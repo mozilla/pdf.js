@@ -1205,9 +1205,22 @@ class PartialEvaluator {
           }
           break;
         case "TR":
+        case "TR2": {
+          // TR2 takes precedence over TR (see PDF 32000-1:2008, Table 58), so
+          // ignore TR when a TR2 entry is present in the same dictionary.
+          if (key === "TR" && gState.has("TR2")) {
+            break;
+          }
+          // For TR2 the name /Default denotes "the transfer function that was
+          // in effect at the start of the page" (PDF 32000-1:2008, Table 58).
+          // A page always starts with the identity transfer function, hence
+          // /Default (and /Identity) means "no transfer function" here, which
+          // clears any filter previously set on the display side (issue 21406).
+          // `handleTransferFunction` returns `null` for those names.
           const transferMaps = this.handleTransferFunction(value);
-          gStateObj.push([key, transferMaps]);
+          gStateObj.push(["TR", transferMaps]);
           break;
+        }
         // Only generate info log messages for the following since
         // they are unlikely to have a big impact on the rendering.
         case "OP":
@@ -1217,7 +1230,6 @@ class PartialEvaluator {
         case "BG2":
         case "UCR":
         case "UCR2":
-        case "TR2":
         case "HT":
         case "SM":
         case "SA":
