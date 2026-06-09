@@ -1973,17 +1973,14 @@ describe("PDF viewer", () => {
           null,
           {
             earlySetup: () => {
-              // Capture state while window.print() runs — the print service's
-              // destroy() removes the @page stylesheet right after, on the
-              // afterprint event.
+              // Capture state during window.print(): destroy() removes the
+              // @page stylesheet from adoptedStyleSheets right afterwards.
               window._pageRuleApplied = null;
               window.print = () => {
-                window._pageRuleApplied = [
-                  ...document.querySelectorAll("style"),
-                ].some(
+                window._pageRuleApplied = document.adoptedStyleSheets.some(
                   s =>
-                    s.sheet?.cssRules.length > 0 &&
-                    [...s.sheet.cssRules].some(r => r.cssText.includes("@page"))
+                    s.cssRules.length > 0 &&
+                    [...s.cssRules].some(r => r.cssText.includes("@page"))
                 );
               };
             },
@@ -2007,12 +2004,8 @@ describe("PDF viewer", () => {
         await closePages(pages);
       });
 
-      // The print service injects an inline
-      // <style>@page { size: WxH pt }</style> to match the PDF's page
-      // dimensions. If the CSP `style-src-elem` directive blocks inline
-      // <style> elements, the element is created but its content is never
-      // parsed — `sheet.cssRules` stays empty and the @page rule has no
-      // effect. See web/viewer.html.
+      // The @page rule is injected via a constructable stylesheet, which is
+      // exempt from CSP, so the strict policy in web/viewer.html applies it.
       it("must apply the injected @page rule (no CSP block)", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {

@@ -170,9 +170,9 @@ class FirefoxPrintService {
     // Insert a @page + size rule to make sure that the page size is correctly
     // set. Note that we assume that all pages have the same size, because
     // variable-size pages are scaled down to the initial page size in Firefox.
-    this.pageStyleSheet = document.createElement("style");
-    this.pageStyleSheet.textContent = `@page { size: ${width}pt ${height}pt;}`;
-    body.append(this.pageStyleSheet);
+    this.pageStyleSheet = new CSSStyleSheet();
+    this.pageStyleSheet.replaceSync(`@page { size: ${width}pt ${height}pt;}`);
+    document.adoptedStyleSheets.push(this.pageStyleSheet);
 
     if (pdfDocument.isPureXfa) {
       getXfaHtmlForPrinting(printContainer, pdfDocument);
@@ -203,7 +203,9 @@ class FirefoxPrintService {
     body.removeAttribute("data-pdfjsprinting");
 
     if (this.pageStyleSheet) {
-      this.pageStyleSheet.remove();
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter(
+        styleSheet => styleSheet !== this.pageStyleSheet
+      );
       this.pageStyleSheet = null;
     }
   }
