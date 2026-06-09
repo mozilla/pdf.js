@@ -838,7 +838,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Record<string, CatalogAttachment> | null>}
+   * @returns {Promise<Map<string, CatalogAttachment> | null>}
    *   Promise that is resolved with a lookup table for mapping named
    *   attachments to their content.
    */
@@ -3077,7 +3077,7 @@ class WorkerTransport {
   }
 
   /**
-   * @returns {Promise<Record<string, CatalogAttachment> | null>}
+   * @returns {Promise<Map<string, CatalogAttachment> | null>}
    *   Promise that is resolved with a lookup table for mapping named
    *   attachments to their content.
    */

@@ -1136,21 +1136,21 @@ class Catalog {
   /**
    * Get attachments.
    *
-   * @returns {Record<string, CatalogAttachment> | null}
+   * @returns {Map<string, CatalogAttachment> | null}
    *   Attachments.
    */
   get attachments() {
     const obj = this.#catDict.get("Names");
-    /** @type {Record<string, CatalogAttachment> | null} */
+    /** @type {Map<string, CatalogAttachment> | null} */
     let attachments = null;
 
     if (obj instanceof Dict && obj.has("EmbeddedFiles")) {
       const nameTree = new NameTree(obj.getRaw("EmbeddedFiles"), this.xref);
       for (const [key, value] of nameTree.getAll()) {
-        const fs = new FileSpec(value);
-        attachments ??= Object.create(null);
-        attachments[stringToPDFString(key, /* keepEscapeSequence = */ true)] =
-          fs.serializable;
+        (attachments ??= new Map()).set(
+          stringToPDFString(key, /* keepEscapeSequence = */ true),
+          new FileSpec(value).serializable
+        );
       }
     }
     return shadow(this, "attachments", attachments);
@@ -1880,7 +1880,7 @@ class Catalog {
 
           if (docAttachments && id) {
             resultObj.attachmentId = id;
-            resultObj.attachment = docAttachments[id];
+            resultObj.attachment = docAttachments.get(id);
 
             // NOTE: the destination is relative to the *attachment*.
             const attachmentDest = fetchRemoteDest(action);

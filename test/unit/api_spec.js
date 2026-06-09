@@ -1778,7 +1778,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const attachments = await pdfDoc.getAttachments();
 
-      expect(attachments["foo.txt"]).toEqual({
+      expect(attachments.get("foo.txt")).toEqual({
         rawFilename: "foo.txt",
         filename: "foo.txt",
         description: "",
@@ -1797,7 +1797,8 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const attachments = await pdfDoc.getAttachments();
 
-      const { rawFilename, filename, description } = attachments["empty.pdf"];
+      const { rawFilename, filename, description } =
+        attachments.get("empty.pdf");
       expect(rawFilename).toEqual("Empty page.pdf");
       expect(filename).toEqual("Empty page.pdf");
       expect(description).toEqual(
@@ -1827,11 +1828,11 @@ describe("api", function () {
 
       const attachments = await pdfDoc.getAttachments();
       const { description, filename, rawFilename } =
-        attachments["attachment.pdf"] || {};
+        attachments.get("attachment.pdf");
       expect(rawFilename).toEqual("attachment.pdf");
       expect(filename).toEqual("attachment.pdf");
       expect(description).toEqual("");
-      expect(attachments["attachment.pdf"].content).toBeUndefined();
+      expect(attachments.get("attachment.pdf").content).toBeUndefined();
 
       const content = await pdfDoc.getAttachmentContent("attachment.pdf");
       expect(passwordRequests).toEqual(1);
@@ -1861,11 +1862,11 @@ describe("api", function () {
 
       const attachments = await pdfDoc.getAttachments();
       const { description, filename, rawFilename } =
-        attachments["attachment.pdf"] || {};
+        attachments.get("attachment.pdf");
       expect(rawFilename).toEqual("attachment.pdf");
       expect(filename).toEqual("attachment.pdf");
       expect(description).toEqual("");
-      expect(attachments["attachment.pdf"].content).toBeUndefined();
+      expect(attachments.get("attachment.pdf").content).toBeUndefined();
 
       const content = await pdfDoc.getAttachmentContent("attachment.pdf");
       expect(reasons).toEqual([
@@ -1888,7 +1889,7 @@ describe("api", function () {
       try {
         const pdfDoc = await loadingTask.promise;
         const attachments = await pdfDoc.getAttachments();
-        const attachment = attachments?.["attachment.pdf"];
+        const attachment = attachments.get("attachment.pdf");
 
         expect(attachment).toBeDefined();
         expect(attachment.filename).toEqual("attachment.pdf");
@@ -6996,7 +6997,7 @@ small scripts as well as for`);
 
         // Verify the original document has the expected attachment.
         const originalAttachments = await pdfDoc.getAttachments();
-        expect(originalAttachments["foo.txt"]).toBeDefined();
+        expect(originalAttachments.get("foo.txt")).toBeDefined();
 
         const data = await pdfDoc.extractPages([
           { document: null, includePages: [0] },
@@ -7008,7 +7009,7 @@ small scripts as well as for`);
 
         const attachments = await pdfDoc.getAttachments();
         expect(attachments).not.toBeNull();
-        expect(attachments["foo.txt"]).toEqual({
+        expect(attachments.get("foo.txt")).toEqual({
           rawFilename: "foo.txt",
           filename: "foo.txt",
           description: "",
@@ -7043,12 +7044,12 @@ small scripts as well as for`);
         const expectedContent = new Uint8Array([
           98, 97, 114, 32, 98, 97, 122, 32, 10,
         ]);
-        expect(attachments["foo.txt"]).toEqual({
+        expect(attachments.get("foo.txt")).toEqual({
           rawFilename: "foo.txt",
           filename: "foo.txt",
           description: "",
         });
-        expect(attachments["foo.txt_1"]).toEqual({
+        expect(attachments.get("foo.txt_1")).toEqual({
           rawFilename: "foo.txt",
           filename: "foo.txt",
           description: "",
