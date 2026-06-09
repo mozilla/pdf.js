@@ -1450,7 +1450,7 @@ class WidgetAnnotationElement extends AnnotationElement {
 
     style.color = Util.makeHexColor(...fontColor);
 
-    if (this.data.textAlignment !== null) {
+    if (this.data.textAlignment !== null && !this.data.comb) {
       style.textAlign = TEXT_ALIGNMENT[this.data.textAlignment];
     }
   }
@@ -1879,7 +1879,30 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
         const combWidth = fieldWidth / maxLen;
 
         element.classList.add("comb");
-        element.style.letterSpacing = `calc(${combWidth}px * var(--total-scale-factor) - 1ch)`;
+        element.style.setProperty(
+          "--comb-width",
+          `calc(${combWidth}px * var(--total-scale-factor))`
+        );
+
+        const alignment = this.data.textAlignment;
+        if (alignment === 1 || alignment === 2) {
+          const setCombOffset = () => {
+            const free = maxLen - element.value.length;
+            element.style.setProperty(
+              "--comb-offset",
+              `${alignment === 1 ? free >> 1 : free}`
+            );
+          };
+          setCombOffset();
+          for (const evt of [
+            "input",
+            "blur",
+            "resetform",
+            "updatefromsandbox",
+          ]) {
+            element.addEventListener(evt, setCombOffset);
+          }
+        }
       }
     } else {
       element = document.createElement("div");

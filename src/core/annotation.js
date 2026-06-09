@@ -2559,7 +2559,6 @@ class WidgetAnnotation extends Annotation {
         fontSize,
         totalWidth,
         totalHeight,
-        defaultHPadding,
         defaultVPadding,
         descent,
         lineHeight,
@@ -2924,7 +2923,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     fontSize,
     width,
     height,
-    hPadding,
     vPadding,
     descent,
     lineHeight,
@@ -2936,24 +2934,34 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     // Empty or it has a trailing whitespace.
     const colors = this.getBorderAndBackgroundAppearances(annotationStorage);
 
-    const buf = [];
-    const positions = font.getCharPositions(text);
-    for (const [start, end] of positions) {
-      buf.push(`(${escapeString(text.substring(start, end))}) Tj`);
-    }
+    const cells = font.getCharPositions(text).map(([start, end]) => {
+      const glyph = text.substring(start, end);
+      return { glyph, width: this._getTextWidth(glyph, font) * fontSize };
+    });
     if (isRTL) {
-      buf.reverse();
+      cells.reverse();
     }
 
-    const textWidth = combWidth * positions.length;
-    let hShift = hPadding;
+    const textWidth = combWidth * cells.length;
+    let hShift = 0;
     if (alignment === 1) {
       hShift += Math.floor((width - textWidth) / (2 * combWidth)) * combWidth;
     } else if (alignment === 2) {
       hShift += width - textWidth;
     }
 
-    const renderedComb = buf.join(` ${numberToString(combWidth)} 0 Td `);
+    const buf = [];
+    let previousWidth = 0;
+    for (let i = 0, ii = cells.length; i < ii; i++) {
+      const { glyph, width: glyphWidth } = cells[i];
+      const shift =
+        i === 0
+          ? (combWidth - glyphWidth) / 2
+          : combWidth + (previousWidth - glyphWidth) / 2;
+      buf.push(`${numberToString(shift)} 0 Td (${escapeString(glyph)}) Tj`);
+      previousWidth = glyphWidth;
+    }
+    const renderedComb = buf.join(" ");
     return (
       `/Tx BMC q ${colors}BT ` +
       defaultAppearance +
