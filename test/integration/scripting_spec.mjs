@@ -1886,23 +1886,30 @@ describe("Interaction", () => {
           const selector = getAnnotationSelector("9R");
           const hasVisibleCanvas = await page.$eval(
             `${selector} > canvas`,
-            elem => elem && !elem.hasAttribute("hidden")
+            elem => getComputedStyle(elem).display !== "none"
           );
           expect(hasVisibleCanvas)
             .withContext(`In ${browserName}`)
             .toEqual(true);
 
-          const hasHiddenInput = await page.$eval(`${selector} > input`, elem =>
-            elem?.hasAttribute("hidden")
+          const hasHiddenInput = await page.$eval(
+            `${selector} > input`,
+            elem => getComputedStyle(elem).display === "none"
           );
           expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
 
           await page.click(getSelector("12R"));
-          await page.waitForSelector(`${selector} > canvas[hidden]`);
+          await page.waitForFunction(
+            sel =>
+              getComputedStyle(document.querySelector(`${sel} > canvas`))
+                .display === "none",
+            {},
+            selector
+          );
 
           const hasHiddenCanvas = await page.$eval(
             `${selector} > canvas`,
-            elem => elem?.hasAttribute("hidden")
+            elem => getComputedStyle(elem).display === "none"
           );
           expect(hasHiddenCanvas)
             .withContext(`In ${browserName}`)
@@ -1910,7 +1917,7 @@ describe("Interaction", () => {
 
           const hasVisibleInput = await page.$eval(
             `${selector} > input`,
-            elem => elem && !elem.hasAttribute("hidden")
+            elem => getComputedStyle(elem).display !== "none"
           );
           expect(hasVisibleInput)
             .withContext(`In ${browserName}`)
@@ -2692,6 +2699,91 @@ describe("Interaction", () => {
           expect(thirdInputValue)
             .withContext(`In ${browserName}`)
             .toEqual("2025-07-02T12:34");
+        })
+      );
+    });
+  });
+
+  describe("in text_field_own_canvas_calc.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "text_field_own_canvas_calc.pdf",
+        getSelector("7R"),
+        "page-fit"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must show the field instead of its canvas when it was calculated while its page wasn't rendered", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // The read-only "Mirror" field (8R) is on page 3, which hasn't been
+          // rendered yet.
+          expect(await page.$(getSelector("8R")))
+            .withContext(`In ${browserName}`)
+            .toBeNull();
+
+          // Modifying the "Source" field (7R) on page 1 mirrors its value into
+          // the read-only field on page 3 through a Calculate action.
+          await page.type(getSelector("7R"), "Hello PDF.js");
+          await page.keyboard.press("Enter");
+          await waitForEntryInStorage(
+            page,
+            "8R",
+            { value: "Hello PDF.js" },
+            (stored, expected) =>
+              !!stored &&
+              JSON.parse(stored).value === JSON.parse(expected).value
+          );
+
+          // The value has been mirrored into the storage while page 3, and
+          // hence its annotation layer, hasn't been rendered yet.
+          const page3AnnotationCount = await page.evaluate(() => {
+            const layer = document.querySelector(
+              '.page[data-page-number="3"] .annotationLayer'
+            );
+            return layer ? layer.childElementCount : 0;
+          });
+          expect(page3AnnotationCount)
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
+
+          // Render page 3.
+          await scrollIntoView(page, '.page[data-page-number="3"]');
+          const inputPage3Selector = getSelector("8R");
+          await page.waitForSelector(
+            `.sandboxModified:has(${inputPage3Selector})`,
+            { visible: true }
+          );
+
+          // The field must show its (calculated) value and the now-outdated
+          // canvas must be hidden.
+          const { value, isFieldVisible, isCanvasHidden } = await page.evaluate(
+            sel => {
+              const input = document.querySelector(sel);
+              const canvas = input
+                .closest("section")
+                .querySelector("canvas.annotationContent");
+              return {
+                value: input.value,
+                isFieldVisible: getComputedStyle(input).display !== "none",
+                isCanvasHidden:
+                  !!canvas && getComputedStyle(canvas).display === "none",
+              };
+            },
+            inputPage3Selector
+          );
+
+          expect(value)
+            .withContext(`In ${browserName}`)
+            .toEqual("Hello PDF.js");
+          expect(isFieldVisible).withContext(`In ${browserName}`).toBe(true);
+          expect(isCanvasHidden).withContext(`In ${browserName}`).toBe(true);
         })
       );
     });

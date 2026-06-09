@@ -1,0 +1,64 @@
+%PDF-1.7
+%ÿÿÿÿ
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm 3 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 5 0 R 6 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Fields [7 0 R 8 0 R] /CO [8 0 R] /DR << /Font << /Helv 9 0 R >> >> /DA (/Helv 12 Tf 0 g) /NeedAppearances true >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << >> /Annots [7 0 R] >>
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << >> >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << >> /Annots [8 0 R] >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (Source) /Rect [100 650 300 670] /P 4 0 R /F 4 /DA (/Helv 12 Tf 0 g) /AP << /N 10 0 R >> >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (Mirror) /Ff 1 /Rect [100 650 300 670] /P 6 0 R /F 4 /DA (/Helv 12 Tf 0 g) /AA << /C 11 0 R >> /AP << /N 12 0 R >> >>
+endobj
+9 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Name /Helv >>
+endobj
+10 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 20] /Resources << /Font << /Helv 9 0 R >> >> /Length 50 >>
+stream
+/Tx BMC q BT /Helv 12 Tf 0 g 2 5 Td () Tj ET Q EMC
+endstream
+endobj
+11 0 obj
+<< /Type /Action /S /JavaScript /JS (event.value = this.getField("Source").value;) >>
+endobj
+12 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 20] /Resources << /Font << /Helv 9 0 R >> >> /Length 49 >>
+stream
+/Tx BMC q 0.85 0.85 0.85 rg 0 0 200 20 re f Q EMC
+endstream
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000015 00000 n 
+0000000080 00000 n 
+0000000149 00000 n 
+0000000282 00000 n 
+0000000386 00000 n 
+0000000474 00000 n 
+0000000578 00000 n 
+0000000729 00000 n 
+0000000906 00000 n 
+0000000988 00000 n 
+0000001179 00000 n 
+0000001281 00000 n 
+trailer
+<< /Size 13 /Root 1 0 R >>
+startxref
+1471
+%%EOF
