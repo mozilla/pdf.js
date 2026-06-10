@@ -2494,6 +2494,80 @@ describe("annotation", function () {
       expect(data.exportValue).toEqual("Checked");
     });
 
+    it("should handle checkboxes with an Opt export value", async function () {
+      // The appearance state is the index "0"; the real export value lives in
+      // the "Opt" array (e.g. for values that aren't valid Name objects).
+      buttonWidgetDict.set("V", Name.get("0"));
+      buttonWidgetDict.set("DV", Name.get("0"));
+      buttonWidgetDict.set("Opt", ["I Agree to terms"]);
+
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Off", 0);
+      normalAppearanceDict.set("0", 1);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.checkBox).toEqual(true);
+      expect(data.radioButton).toEqual(false);
+      expect(data.exportValue).toEqual("I Agree to terms");
+      expect(data.fieldValue).toEqual("I Agree to terms");
+      expect(data.defaultFieldValue).toEqual("I Agree to terms");
+    });
+
+    it("should handle checkboxes with an Opt export value in the parent", async function () {
+      const buttonWidgetRef = Ref.get(124, 0);
+      const parentRef = Ref.get(125, 0);
+
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("CheckedState"));
+      parentDict.set("DV", Name.get("CheckedState"));
+      parentDict.set("Kids", [buttonWidgetRef]);
+      parentDict.set("T", "CheckboxGroup");
+      parentDict.set("Opt", ["I Agree to terms"]);
+
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("Off", 0);
+      normalAppearanceDict.set("CheckedState", 1);
+      appearanceStatesDict.set("N", normalAppearanceDict);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("Parent", parentRef);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+      buttonWidgetDict.xref = parentDict.xref = xref;
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.checkBox).toEqual(true);
+      expect(data.radioButton).toEqual(false);
+      expect(data.exportValue).toEqual("I Agree to terms");
+      expect(data.fieldValue).toEqual("I Agree to terms");
+      expect(data.defaultFieldValue).toEqual("I Agree to terms");
+    });
+
     it("should handle checkboxes without export value", async function () {
       buttonWidgetDict.set("V", Name.get("Checked"));
       buttonWidgetDict.set("DV", Name.get("Off"));
@@ -2982,6 +3056,126 @@ describe("annotation", function () {
       expect(data.buttonValue).toEqual("2");
     });
 
+    it("should handle radio buttons with an Opt export value", async function () {
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("1"));
+      parentDict.set("Opt", ["Apple", "Banane", "Cherry"]);
+
+      const normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set("2", null);
+
+      const appearanceStatesDict = new Dict();
+      appearanceStatesDict.set("N", normalAppearanceStateDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("Parent", parentDict);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.radioButton).toEqual(true);
+      // The field value (parent "V" = "1") and this widget's own on-state ("2")
+      // are both mapped through "Opt" to their real export values.
+      expect(data.fieldValue).toEqual("Banane");
+      expect(data.buttonValue).toEqual("Cherry");
+    });
+
+    it("should not map non-canonical numeric radio states through Opt", async function () {
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("02"));
+      parentDict.set("Opt", ["Apple", "Banane", "Cherry"]);
+
+      const normalAppearanceStateDict = new Dict();
+      normalAppearanceStateDict.set("02", null);
+
+      const appearanceStatesDict = new Dict();
+      appearanceStatesDict.set("N", normalAppearanceStateDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("Parent", parentDict);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.radioButton).toEqual(true);
+      expect(data.fieldValue).toEqual("02");
+      expect(data.buttonValue).toEqual("02");
+    });
+
+    it("should handle radio buttons with non-numeric Opt export values", async function () {
+      const appleRef = Ref.get(122, 0);
+      const bananaRef = Ref.get(123, 0);
+      const cherryRef = Ref.get(124, 0);
+      const parentRef = Ref.get(125, 0);
+
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("BananaState"));
+      parentDict.set("Kids", [appleRef, bananaRef, cherryRef]);
+      parentDict.set("T", "Fruits");
+      parentDict.set("Opt", ["Apple", "Banane", "Cherry"]);
+
+      const createRadioDict = state => {
+        const radioDict = buttonWidgetDict.clone();
+        const normalAppearanceStateDict = new Dict();
+        normalAppearanceStateDict.set(state, null);
+
+        const appearanceStatesDict = new Dict();
+        appearanceStatesDict.set("N", normalAppearanceStateDict);
+
+        radioDict.set("Ff", AnnotationFieldFlag.RADIO);
+        radioDict.set("Parent", parentRef);
+        radioDict.set("AP", appearanceStatesDict);
+        return radioDict;
+      };
+
+      const appleDict = createRadioDict("AppleState");
+      const bananaDict = createRadioDict("BananaState");
+      const cherryDict = createRadioDict("CherryState");
+
+      const xref = new XRefMock([
+        { ref: appleRef, data: appleDict },
+        { ref: bananaRef, data: bananaDict },
+        { ref: cherryRef, data: cherryDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+      appleDict.xref =
+        bananaDict.xref =
+        cherryDict.xref =
+        parentDict.xref =
+          xref;
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        cherryRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.radioButton).toEqual(true);
+      expect(data.fieldValue).toEqual("Banane");
+      expect(data.buttonValue).toEqual("Cherry");
+    });
+
     it("should handle radio buttons with a field value that's not an ASCII string", async function () {
       const parentDict = new Dict();
       const name = "\x91I=\x91\xf0\x93\xe0\x97e3";
@@ -3254,6 +3448,113 @@ describe("annotation", function () {
       changes.clear();
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       expect(changes.size).toEqual(0);
+    });
+
+    it("should save radio buttons with Opt export values", async function () {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("CheckedState", Ref.get(314, 0));
+      normalAppearanceDict.set("Off", Ref.get(271, 0));
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+
+      const buttonWidgetRef = Ref.get(123, 0);
+      const parentRef = Ref.get(456, 0);
+
+      const parentDict = new Dict();
+      parentDict.set("V", Name.get("Off"));
+      parentDict.set("Kids", [buttonWidgetRef]);
+      parentDict.set("T", "RadioGroup");
+      parentDict.set("Opt", ["I Agree to terms"]);
+      buttonWidgetDict.set("Parent", parentRef);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+
+      parentDict.xref = xref;
+      buttonWidgetDict.xref = xref;
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.buttonValue).toEqual("I Agree to terms");
+
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: true });
+      const changes = new RefSetCache();
+
+      await annotation.save(partialEvaluator, task, annotationStorage, changes);
+      const data = await writeChanges(changes, xref);
+      expect(data.length).toEqual(2);
+      const [radioData, parentData] = data;
+      radioData.data = radioData.data.replace(/\(D:\d+\)/, "(date)");
+      expect(radioData.ref).toEqual(Ref.get(123, 0));
+      expect(radioData.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 32768 " +
+          "/AP << /N << /CheckedState 314 0 R /Off 271 0 R>>>> " +
+          "/Parent 456 0 R /AS /CheckedState /M (date)>>\nendobj\n"
+      );
+      expect(parentData.ref).toEqual(Ref.get(456, 0));
+      expect(parentData.data).toEqual(
+        "456 0 obj\n<< /V /CheckedState /Kids [123 0 R] /T (RadioGroup) " +
+          "/Opt [(I Agree to terms)]>>\nendobj\n"
+      );
+    });
+
+    it("should save checkboxes with Opt export values", async function () {
+      const appearanceStatesDict = new Dict();
+      const normalAppearanceDict = new Dict();
+
+      normalAppearanceDict.set("CheckedState", Ref.get(314, 0));
+      normalAppearanceDict.set("Off", Ref.get(271, 0));
+      appearanceStatesDict.set("N", normalAppearanceDict);
+
+      buttonWidgetDict.set("AP", appearanceStatesDict);
+      buttonWidgetDict.set("V", Name.get("Off"));
+      buttonWidgetDict.set("Opt", ["I Agree to terms"]);
+
+      const buttonWidgetRef = Ref.get(123, 0);
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      buttonWidgetDict.xref = xref;
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.exportValue).toEqual("I Agree to terms");
+
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: true });
+      const changes = new RefSetCache();
+
+      await annotation.save(partialEvaluator, task, annotationStorage, changes);
+      const [data] = await writeChanges(changes, xref);
+      data.data = data.data.replace(/\(D:\d+\)/, "(date)");
+      expect(data.ref).toEqual(Ref.get(123, 0));
+      expect(data.data).toEqual(
+        "123 0 obj\n" +
+          "<< /Type /Annot /Subtype /Widget /FT /Btn " +
+          "/AP << /N << /CheckedState 314 0 R /Off 271 0 R>>>> " +
+          "/V /CheckedState /Opt [(I Agree to terms)] " +
+          "/AS /CheckedState /M (date)>>\nendobj\n"
+      );
     });
 
     it("should save radio buttons without a field value", async function () {

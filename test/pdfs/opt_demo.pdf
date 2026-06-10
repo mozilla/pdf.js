@@ -1,0 +1,133 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm 4 0 R /Names << /JavaScript << /Names [(doc) 20 0 R] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 540 360] /Contents 17 0 R /Resources << /Font << /Helv 18 0 R >> >> /Annots [6 0 R 7 0 R 8 0 R 10 0 R 11 0 R 12 0 R 19 0 R 22 0 R 23 0 R] >>
+endobj
+4 0 obj
+<< /Fields [5 0 R 9 0 R 12 0 R 19 0 R 22 0 R 23 0 R] /DR << /Font << /Helv 18 0 R >> >> /DA (/Helv 0 Tf 0 g) /NeedAppearances false >>
+endobj
+5 0 obj
+<< /FT /Btn /Ff 49152 /T (fruit) /V /1 /DV /1 /Kids [6 0 R 7 0 R 8 0 R] /Opt [<FEFF308A30933054> (Banane) (Cherry)] >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 5 0 R /Rect [50 300 70 320] /AP << /N << /0 13 0 R /Off 14 0 R >> >> /AS /Off /A << /S /JavaScript /JS (this.getField("result").value = "fruit = [" + this.getField("fruit").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 5 0 R /Rect [50 270 70 290] /AP << /N << /1 13 0 R /Off 14 0 R >> >> /AS /1 /A << /S /JavaScript /JS (this.getField("result").value = "fruit = [" + this.getField("fruit").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 5 0 R /Rect [50 240 70 260] /AP << /N << /2 13 0 R /Off 14 0 R >> >> /AS /Off /A << /S /JavaScript /JS (this.getField("result").value = "fruit = [" + this.getField("fruit").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+9 0 obj
+<< /FT /Btn /Ff 49152 /T (shared) /V /Off /Kids [10 0 R 11 0 R] /Opt [(same) (same)] >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 9 0 R /Rect [50 178 70 198] /AP << /N << /0 13 0 R /Off 14 0 R >> >> /AS /Off /A << /S /JavaScript /JS (this.getField("result").value = "shared = [" + this.getField("shared").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 9 0 R /Rect [50 148 70 168] /AP << /N << /1 13 0 R /Off 14 0 R >> >> /AS /Off /A << /S /JavaScript /JS (this.getField("result").value = "shared = [" + this.getField("shared").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (agree) /Rect [50 86 70 106] /AP << /N << /0 15 0 R /Off 16 0 R >> >> /AS /Off /Opt [(I Agree to terms)] /A << /S /JavaScript /JS (this.getField("result").value = "agree = [" + this.getField("agree").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+13 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 20 20] /Resources << >> /Length 112 >>
+stream
+0 0 0 rg 16 10 m 16 13.31 13.31 16 10 16 c 6.69 16 4 13.31 4 10 c 4 6.69 6.69 4 10 4 c 13.31 4 16 6.69 16 10 c f
+endstream
+endobj
+14 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 20 20] /Resources << >> /Length 0 >>
+stream
+
+endstream
+endobj
+15 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 20 20] /Resources << >> /Length 35 >>
+stream
+0 0 0 RG 2 w 4 10 m 9 5 l 16 16 l S
+endstream
+endobj
+16 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 20 20] /Resources << >> /Length 0 >>
+stream
+
+endstream
+endobj
+17 0 obj
+<< /Length 929 >>
+stream
+BT
+/Helv 9 Tf 0 g
+1 0 0 1 50 332 Tm (Radio "fruit": AP states = kid indices; Opt = real export values) Tj
+1 0 0 1 75 306 Tm (state 0  ->  Opt[0] = JP ringo  [U+308A U+3093 U+3054]) Tj
+1 0 0 1 75 276 Tm (state 1  ->  Opt[1] = Banane   [selected]) Tj
+1 0 0 1 75 246 Tm (state 2  ->  Opt[2] = Cherry) Tj
+1 0 0 1 50 210 Tm (Radio "shared": both buttons share Opt = "same") Tj
+1 0 0 1 75 184 Tm (state 0  ->  "same") Tj
+1 0 0 1 75 154 Tm (state 1  ->  "same") Tj
+1 0 0 1 50 118 Tm (Checkbox "agree": AP state "0", Opt = "I Agree to terms") Tj
+1 0 0 1 75 92 Tm (agree) Tj
+1 0 0 1 330 250 Tm (Last changed field -> value:) Tj
+1 0 0 1 330 182 Tm (Radio "veg" \(parent has Opt but no /Kids\)) Tj
+1 0 0 1 355 154 Tm (state 0  ->  Opt[0] = Carrot) Tj
+1 0 0 1 355 124 Tm (state 1  ->  Opt[1] = Potato  [selected]) Tj
+1 0 0 1 50 26 Tm (Change any option; the box shows that field's value. pdf.js shows the index, Acrobat the Opt value.) Tj
+ET
+endstream
+endobj
+18 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+19 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /Ff 1 /T (result) /Rect [330 218 530 243] /DA (/Helv 11 Tf 0 g) /V () /MK << /BC [0] /BG [0.95 0.95 0.95] >> /F 4 >>
+endobj
+20 0 obj
+<< /S /JavaScript /JS (0;) >>
+endobj
+21 0 obj
+<< /FT /Btn /Ff 49152 /T (veg) /V /1 /DV /1 /Opt [(Carrot) (Potato)] >>
+endobj
+22 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 21 0 R /Rect [330 148 350 168] /AP << /N << /0 13 0 R /Off 14 0 R >> >> /AS /Off /A << /S /JavaScript /JS (this.getField("result").value = "veg = [" + this.getField("veg").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+23 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 21 0 R /Rect [330 118 350 138] /AP << /N << /1 13 0 R /Off 14 0 R >> >> /AS /1 /A << /S /JavaScript /JS (this.getField("result").value = "veg = [" + this.getField("veg").value + "]";) >> /MK << /BC [0] /BG [1] >> /F 4 >>
+endobj
+xref
+0 24
+0000000000 65535 f 
+0000000015 00000 n 
+0000000133 00000 n 
+0000000190 00000 n 
+0000000390 00000 n 
+0000000540 00000 n 
+0000000674 00000 n 
+0000000954 00000 n 
+0000001232 00000 n 
+0000001512 00000 n 
+0000001615 00000 n 
+0000001898 00000 n 
+0000002181 00000 n 
+0000002493 00000 n 
+0000002734 00000 n 
+0000002861 00000 n 
+0000003024 00000 n 
+0000003151 00000 n 
+0000004132 00000 n 
+0000004230 00000 n 
+0000004404 00000 n 
+0000004450 00000 n 
+0000004538 00000 n 
+0000004818 00000 n 
+trailer
+<< /Size 24 /Root 1 0 R >>
+startxref
+5096
+%%EOF

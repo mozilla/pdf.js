@@ -2745,4 +2745,60 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in opt_demo.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("opt_demo.pdf", getSelector("19R"));
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must expose the Opt export value of checkboxes and radio buttons", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          // Selecting a button runs a script that writes the field's value into
+          // the read-only "result" field (19R). The appearance states are
+          // indices, so without the "Opt" mapping we'd see the index here.
+          const cases = [
+            ["8R", "fruit = [Cherry]"],
+            ["6R", "fruit = [りんご]"],
+            ["10R", "shared = [same]"],
+            ["12R", "agree = [I Agree to terms]"],
+          ];
+          for (const [id, expected] of cases) {
+            await page.click(getSelector(id));
+            await page.waitForFunction(
+              `${getQuerySelector("19R")}.value === ${JSON.stringify(expected)}`
+            );
+          }
+        })
+      );
+    });
+
+    it("must expose the Opt export value when the parent has no Kids", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          // The "veg" parent carries "Opt" but no "Kids", so its export value
+          // is resolved from the numeric appearance-state name.
+          await page.click(getSelector("22R"));
+          await page.waitForFunction(
+            `${getQuerySelector("19R")}.value === "veg = [Carrot]"`
+          );
+
+          await page.click(getSelector("23R"));
+          await page.waitForFunction(
+            `${getQuerySelector("19R")}.value === "veg = [Potato]"`
+          );
+        })
+      );
+    });
+  });
 });
