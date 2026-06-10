@@ -448,36 +448,34 @@ class WorkerMessageHandler {
        *   Unique attachment identifier (required).
        */
       async function (id) {
+        async function getPassword(ex) {
+          const task = new WorkerTask(`PasswordException: response ${ex.code}`);
+          startWorkerTask(task);
+
+          try {
+            const res = await handler.sendWithPromise("PasswordRequest", ex);
+            return res.password;
+          } finally {
+            finishWorkerTask(task);
+          }
+        }
+        let passwordEx;
+
         // Loop to prompt again after an incorrect password.
         while (true) {
+          const password = passwordEx ? await getPassword(passwordEx) : null;
+
           try {
+            if (password) {
+              pdfManager.updatePassword(password);
+            }
             return await pdfManager.ensureCatalog("attachmentContent", [id]);
-          } catch (error) {
-            if (!(error instanceof PasswordException)) {
-              throw error;
+          } catch (ex) {
+            if (ex instanceof PasswordException) {
+              passwordEx = ex;
+              continue;
             }
-
-            const task = new WorkerTask(
-              `PasswordException: response ${error.code}`
-            );
-            startWorkerTask(task);
-
-            try {
-              const { password } = await handler.sendWithPromise(
-                "PasswordRequest",
-                error
-              );
-              try {
-                pdfManager.updatePassword(password);
-              } catch (exception) {
-                if (exception instanceof PasswordException) {
-                  continue;
-                }
-                throw exception;
-              }
-            } finally {
-              finishWorkerTask(task);
-            }
+            throw ex;
           }
         }
       }
