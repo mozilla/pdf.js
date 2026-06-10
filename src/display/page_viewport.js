@@ -190,27 +190,11 @@ class PageViewport {
    * @returns {Array} Array containing `x`- and `y`-coordinates of the
    *   point in the viewport coordinate space.
    * @see {@link convertToPdfPoint}
-   * @see {@link convertToViewportRectangle}
    */
   convertToViewportPoint(x, y) {
     const p = [x, y];
     Util.applyTransform(p, this.transform);
     return p;
-  }
-
-  /**
-   * Converts PDF rectangle to the viewport coordinates.
-   * @param {Array} rect - The xMin, yMin, xMax and yMax coordinates.
-   * @returns {Array} Array containing corresponding coordinates of the
-   *   rectangle in the viewport coordinate space.
-   * @see {@link convertToViewportPoint}
-   */
-  convertToViewportRectangle(rect) {
-    const topLeft = [rect[0], rect[1]];
-    Util.applyTransform(topLeft, this.transform);
-    const bottomRight = [rect[2], rect[3]];
-    Util.applyTransform(bottomRight, this.transform);
-    return [topLeft[0], topLeft[1], bottomRight[0], bottomRight[1]];
   }
 
   /**
