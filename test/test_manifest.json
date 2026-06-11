@@ -14405,5 +14405,21 @@
     "type": "eq",
     "annotations": true,
     "forms": true
+  },
+  {
+    "id": "issue18768_1",
+    "file": "pdfs/issue18768_1.pdf",
+    "md5": "9ea22e419297ee29e2255a98a71753a3",
+    "rounds": 1,
+    "link": true,
+    "type": "other"
+  },
+  {
+    "id": "issue18768_2",
+    "file": "pdfs/issue18768_2.pdf",
+    "md5": "d8c277668182811961ed4c0e9495bfc5",
+    "rounds": 1,
+    "link": true,
+    "type": "other"
   }
 ]
