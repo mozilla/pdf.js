@@ -3578,10 +3578,7 @@ class Font {
     return builder.toArray();
   }
 
-  /**
-   * @private
-   */
-  get _spaceWidth() {
+  get spaceWidth() {
     // trying to estimate space character width
     const possibleSpaceReplacements = ["space", "minus", "one", "i", "I"];
     let width;
@@ -3616,7 +3613,7 @@ class Font {
         break; // the non-zero width found
       }
     }
-    return shadow(this, "_spaceWidth", width || this.defaultWidth);
+    return shadow(this, "spaceWidth", width || this.defaultWidth);
   }
 
   /**
@@ -3673,7 +3670,7 @@ class Font {
         if (glyphName === "") {
           // Ensure that other relevant glyph properties are also updated
           // (fixes issue18059.pdf).
-          width ||= this._spaceWidth;
+          width ||= this.spaceWidth;
           if (!this.toUnicode.has(charcode)) {
             unicode = String.fromCharCode(fontCharCode);
           }

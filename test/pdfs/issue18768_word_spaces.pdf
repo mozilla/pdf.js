@@ -1,0 +1,146 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [7 0 R 10 0 R 13 0 R 16 0 R 19 0 R 22 0 R 25 0 R] /Count 7 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type3 /FontBBox [0 0 900 1000] /FontMatrix [0.001 0 0 0.001 0 0] /FirstChar 65 /LastChar 67 /Widths [300 300 900] /Encoding << /Type /Encoding /Differences [65 /A /B /C] >> /CharProcs << /A 5 0 R /B 5 0 R /C 6 0 R >> /Resources << >> >>
+endobj
+5 0 obj
+<< /Length 40 >>
+stream
+300 0 0 0 300 1000 d1
+0 0 300 1000 re f
+endstream
+endobj
+6 0 obj
+<< /Length 40 >>
+stream
+900 0 0 0 900 1000 d1
+0 0 900 1000 re f
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 8 0 R /Annots [9 0 R] >>
+endobj
+8 0 obj
+<< /Length 43 >>
+stream
+BT /H 10 Tf 100 100 Td 60 Tz (A B C) Tj ET
+endstream
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 11 0 R /Annots [12 0 R] >>
+endobj
+11 0 obj
+<< /Length 45 >>
+stream
+BT /H 10 Tf 100 100 Td -1.2 Tw (A B C) Tj ET
+endstream
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 14 0 R /Annots [15 0 R] >>
+endobj
+14 0 obj
+<< /Length 54 >>
+stream
+BT /H 10 Tf 100 100 Td -1.2 Tw [(A B) -160 (C)] TJ ET
+endstream
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 17 0 R /Annots [18 0 R] >>
+endobj
+17 0 obj
+<< /Length 54 >>
+stream
+BT /H 10 Tf 100 100 Td -1.2 Tw [(A) -160 (B C)] TJ ET
+endstream
+endobj
+18 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+19 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 20 0 R /Annots [21 0 R] >>
+endobj
+20 0 obj
+<< /Length 53 >>
+stream
+BT /T 10 Tf 100 100 Td [(A) -180 (B) -180 (C)] TJ ET
+endstream
+endobj
+21 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+22 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 23 0 R /Annots [24 0 R] >>
+endobj
+23 0 obj
+<< /Length 53 >>
+stream
+BT /T 10 Tf 100 100 Td [(C) -180 (B) -180 (A)] TJ ET
+endstream
+endobj
+24 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+25 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 200] /Resources << /Font << /H 3 0 R /T 4 0 R >> >> /Contents 26 0 R /Annots [27 0 R] >>
+endobj
+26 0 obj
+<< /Length 52 >>
+stream
+BT /T -10 Tf 100 100 Td [(A) -50 (B) -50 (C)] TJ ET
+endstream
+endobj
+27 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [10 90 290 110] /QuadPoints [10 110 290 110 10 90 290 90] /C [1 1 0] >>
+endobj
+xref
+0 28
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000157 00000 n 
+0000000227 00000 n 
+0000000504 00000 n 
+0000000593 00000 n 
+0000000682 00000 n 
+0000000832 00000 n 
+0000000924 00000 n 
+0000001053 00000 n 
+0000001206 00000 n 
+0000001301 00000 n 
+0000001431 00000 n 
+0000001584 00000 n 
+0000001688 00000 n 
+0000001818 00000 n 
+0000001971 00000 n 
+0000002075 00000 n 
+0000002205 00000 n 
+0000002358 00000 n 
+0000002461 00000 n 
+0000002591 00000 n 
+0000002744 00000 n 
+0000002847 00000 n 
+0000002977 00000 n 
+0000003130 00000 n 
+0000003232 00000 n 
+trailer
+<< /Size 28 /Root 1 0 R >>
+startxref
+3362
+%%EOF
