@@ -19,7 +19,7 @@ import {
   stringToUTF8String,
   warn,
 } from "../shared/util.js";
-import { Dict, isName, Name, Ref, RefSetCache } from "./primitives.js";
+import { Dict, isDict, isName, Name, Ref, RefSetCache } from "./primitives.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "./string_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { lookupNormalRect } from "./core_utils.js";
@@ -594,10 +594,7 @@ class StructElementNode {
     }
     for (let af of AFs) {
       af = this.xref.fetchIfRef(af);
-      if (!(af instanceof Dict)) {
-        continue;
-      }
-      if (!isName(af.get("Type"), "Filespec")) {
+      if (!isDict(af, "Filespec")) {
         continue;
       }
       if (!isName(af.get("AFRelationship"), "Supplement")) {
