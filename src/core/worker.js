@@ -308,6 +308,27 @@ class WorkerMessageHandler {
       return promise;
     }
 
+    async function getPassword(ex) {
+      if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+        assert(
+          ex instanceof PasswordException,
+          "getPassword - must be a `PasswordException`."
+        );
+      }
+      const task = new WorkerTask(`PasswordException: response ${ex.code}`);
+      startWorkerTask(task);
+
+      try {
+        const res = await handler.sendWithPromise("PasswordRequest", ex);
+        return res.password;
+      } finally {
+        // Ensure that any `catch` handler runs *before* removing the task.
+        Promise.resolve().then(() => {
+          finishWorkerTask(task);
+        });
+      }
+    }
+
     function setupDoc(data) {
       function onSuccess(doc) {
         ensureNotTerminated();
@@ -320,18 +341,12 @@ class WorkerMessageHandler {
         }
 
         if (ex instanceof PasswordException) {
-          const task = new WorkerTask(`PasswordException: response ${ex.code}`);
-          startWorkerTask(task);
-
-          handler
-            .sendWithPromise("PasswordRequest", ex)
-            .then(function ({ password }) {
-              finishWorkerTask(task);
+          getPassword(ex)
+            .then(password => {
               pdfManager.updatePassword(password);
               pdfManagerReady();
             })
-            .catch(function () {
-              finishWorkerTask(task);
+            .catch(() => {
               handler.send("DocException", ex);
             });
         } else {
@@ -448,36 +463,23 @@ class WorkerMessageHandler {
        *   Unique attachment identifier (required).
        */
       async function (id) {
+        let passwordEx;
+
         // Loop to prompt again after an incorrect password.
         while (true) {
+          const password = passwordEx ? await getPassword(passwordEx) : null;
+
           try {
+            if (password) {
+              pdfManager.updatePassword(password);
+            }
             return await pdfManager.ensureCatalog("attachmentContent", [id]);
-          } catch (error) {
-            if (!(error instanceof PasswordException)) {
-              throw error;
+          } catch (ex) {
+            if (ex instanceof PasswordException) {
+              passwordEx = ex;
+              continue;
             }
-
-            const task = new WorkerTask(
-              `PasswordException: response ${error.code}`
-            );
-            startWorkerTask(task);
-
-            try {
-              const { password } = await handler.sendWithPromise(
-                "PasswordRequest",
-                error
-              );
-              try {
-                pdfManager.updatePassword(password);
-              } catch (exception) {
-                if (exception instanceof PasswordException) {
-                  continue;
-                }
-                throw exception;
-              }
-            } finally {
-              finishWorkerTask(task);
-            }
+            throw ex;
           }
         }
       }
@@ -648,23 +650,12 @@ class WorkerMessageHandler {
                     warn("extractPages: XRefParseException.");
                   }
                 } else if (e instanceof PasswordException) {
-                  const task = new WorkerTask(
-                    `PasswordException: response ${e.code}`
-                  );
-
-                  startWorkerTask(task);
-
                   try {
-                    const { password } = await handler.sendWithPromise(
-                      "PasswordRequest",
-                      e
-                    );
+                    const password = await getPassword(e);
                     manager.updatePassword(password);
                   } catch {
                     isValid = false;
                     warn("extractPages: invalid password.");
-                  } finally {
-                    finishWorkerTask(task);
                   }
                 } else {
                   isValid = false;

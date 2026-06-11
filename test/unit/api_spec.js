@@ -1814,8 +1814,9 @@ describe("api", function () {
 
     it("gets encrypted attachments when password is requested on demand", async function () {
       const loadingTask = getDocument(
-        buildGetDocumentParams("encrypted-attachment.pdf")
+        buildGetDocumentParams("auth-event-ef-open.pdf")
       );
+      const pdfDoc = await loadingTask.promise;
 
       let passwordRequests = 0;
       loadingTask.onPassword = (updatePassword, reason) => {
@@ -1823,8 +1824,6 @@ describe("api", function () {
         expect(reason).toEqual(PasswordResponses.NEED_PASSWORD);
         updatePassword("000000");
       };
-
-      const pdfDoc = await loadingTask.promise;
 
       const attachments = await pdfDoc.getAttachments();
       const { description, filename, rawFilename } =
@@ -1843,8 +1842,9 @@ describe("api", function () {
 
     it("re-prompts for encrypted attachments after incorrect passwords", async function () {
       const loadingTask = getDocument(
-        buildGetDocumentParams("encrypted-attachment.pdf")
+        buildGetDocumentParams("auth-event-ef-open.pdf")
       );
+      const pdfDoc = await loadingTask.promise;
 
       /** @type {Array<unknown>} */
       const reasons = [];
@@ -1857,8 +1857,6 @@ describe("api", function () {
         expect(reason).toEqual(PasswordResponses.INCORRECT_PASSWORD);
         updatePassword("000000");
       };
-
-      const pdfDoc = await loadingTask.promise;
 
       const attachments = await pdfDoc.getAttachments();
       const { description, filename, rawFilename } =
@@ -1886,24 +1884,21 @@ describe("api", function () {
       );
       let embeddedLoadingTask = null;
 
-      try {
-        const pdfDoc = await loadingTask.promise;
-        const attachments = await pdfDoc.getAttachments();
-        const attachment = attachments.get("attachment.pdf");
+      const pdfDoc = await loadingTask.promise;
+      const attachments = await pdfDoc.getAttachments();
+      const attachment = attachments.get("attachment.pdf");
 
-        expect(attachment).toBeDefined();
-        expect(attachment.filename).toEqual("attachment.pdf");
+      expect(attachment).toBeDefined();
+      expect(attachment.filename).toEqual("attachment.pdf");
 
-        const content = await pdfDoc.getAttachmentContent("attachment.pdf");
-        expect(content).toBeInstanceOf(Uint8Array);
+      const content = await pdfDoc.getAttachmentContent("attachment.pdf");
+      expect(content).toBeInstanceOf(Uint8Array);
 
-        embeddedLoadingTask = getDocument({ data: content });
-        const embeddedPdfDoc = await embeddedLoadingTask.promise;
-        expect(embeddedPdfDoc.numPages).toBe(1);
-      } finally {
-        await embeddedLoadingTask?.destroy();
-        await loadingTask.destroy();
-      }
+      embeddedLoadingTask = getDocument({ data: content });
+      const embeddedPdfDoc = await embeddedLoadingTask.promise;
+      expect(embeddedPdfDoc.numPages).toBe(1);
+
+      await Promise.all([embeddedLoadingTask.destroy(), loadingTask.destroy()]);
     });
 
     it("gets javascript with printing instructions (JS action)", async function () {
