@@ -2803,6 +2803,13 @@
     "type": "eq"
   },
   {
+    "id": "issue21436",
+    "file": "pdfs/issue21436.pdf",
+    "md5": "93c4292a52db8a37eefd651cb677d2a9",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "txt2pdf",
     "file": "pdfs/txt2pdf.pdf",
     "md5": "02cefa0f5e8d96313bb05163b2f88c8c",

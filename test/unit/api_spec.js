@@ -827,6 +827,42 @@ describe("api", function () {
       ]);
     });
 
+    it("creates pdf doc from PDF files, with /Pages tree without /Kids array", async function () {
+      const loadingTask1 = getDocument(buildGetDocumentParams("issue9540.pdf"));
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("issue21436.pdf")
+      );
+
+      expect(loadingTask1).toBeInstanceOf(PDFDocumentLoadingTask);
+      expect(loadingTask2).toBeInstanceOf(PDFDocumentLoadingTask);
+
+      const pdfDocument1 = await loadingTask1.promise;
+      const pdfDocument2 = await loadingTask2.promise;
+
+      expect(pdfDocument1.numPages).toEqual(1);
+      expect(pdfDocument2.numPages).toEqual(1);
+
+      const pageA = await pdfDocument1.getPage(1);
+      expect(pageA).toBeInstanceOf(PDFPageProxy);
+
+      const opListA = await pageA.getOperatorList();
+      expect(opListA.fnArray.length).toEqual(19);
+      expect(opListA.argsArray.length).toEqual(19);
+      expect(opListA.lastChunk).toEqual(true);
+      expect(opListA.separateAnnots).toEqual(null);
+
+      const pageB = await pdfDocument2.getPage(1);
+      expect(pageB).toBeInstanceOf(PDFPageProxy);
+
+      const opListB = await pageB.getOperatorList();
+      expect(opListB.fnArray.length).toEqual(1);
+      expect(opListB.argsArray.length).toEqual(1);
+      expect(opListB.lastChunk).toEqual(true);
+      expect(opListB.separateAnnots).toEqual(null);
+
+      await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
+    });
+
     it("creates pdf doc from PDF files, with circular references", async function () {
       const loadingTask1 = getDocument(
         buildGetDocumentParams("poppler-91414-0-53.pdf")

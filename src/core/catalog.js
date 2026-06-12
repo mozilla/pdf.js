@@ -1484,6 +1484,22 @@ class Catalog {
         }
       }
       if (!Array.isArray(kids)) {
+        // Prevent errors in corrupt PDF documents that violate the
+        // specification by *inlining* Page dicts (fixes issue21436.pdf).
+        let type = currentNode.getRaw("Type");
+        if (type instanceof Ref) {
+          try {
+            type = await xref.fetchAsync(type);
+          } catch (ex) {
+            addPageError(ex);
+            break;
+          }
+        }
+        if (isName(type, "Page") || !currentNode.has("Kids")) {
+          addPageDict(currentNode, null);
+          break;
+        }
+
         addPageError(
           new FormatError("Page dictionary kids object is not an array.")
         );
