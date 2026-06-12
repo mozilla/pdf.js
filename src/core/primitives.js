@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, shadow, unreachable } from "../shared/util.js";
+import { assert, makeArr, shadow, unreachable } from "../shared/util.js";
 
 const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
@@ -242,11 +242,9 @@ class Dict {
         continue;
       }
       for (const [key, value] of dict.getRawEntries()) {
-        let property = properties.get(key);
-        if (property === undefined) {
-          property = [];
-          properties.set(key, property);
-        } else if (!mergeSubDicts || !(value instanceof Dict)) {
+        const property = properties.getOrInsertComputed(key, makeArr);
+
+        if (property.length && !(mergeSubDicts && value instanceof Dict)) {
           // Ignore additional entries, if either:
           //  - This is a "shallow" merge, where only the first element matters.
           //  - The value is *not* a `Dict`, since other types cannot be merged.

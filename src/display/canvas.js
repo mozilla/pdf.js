@@ -23,6 +23,7 @@ import {
   FONT_IDENTITY_MATRIX,
   ImageKind,
   info,
+  makeArr,
   makeMap,
   OPS,
   shadow,
@@ -1507,11 +1508,10 @@ class CanvasGraphics {
     }
     let knockoutFilter = "none";
     if (needsAlphaScaling && this.#knockoutFilterCache instanceof Map) {
-      knockoutFilter = this.#knockoutFilterCache.get(alpha);
-      if (!knockoutFilter) {
-        knockoutFilter = this.filterFactory.addKnockoutFilter(alpha);
-        this.#knockoutFilterCache.set(alpha, knockoutFilter);
-      }
+      knockoutFilter = this.#knockoutFilterCache.getOrInsertComputed(
+        alpha,
+        () => this.filterFactory.addKnockoutFilter(alpha)
+      );
     }
 
     if (!needsAlphaScaling || knockoutFilter !== "none") {
@@ -3682,11 +3682,10 @@ class CanvasGraphics {
         );
         const { canvas, context } = this.annotationCanvas;
         if (canvasName) {
-          let canvases = this.annotationCanvasMap.get(id);
-          if (!canvases) {
-            canvases = [];
-            this.annotationCanvasMap.set(id, canvases);
-          }
+          const canvases = this.annotationCanvasMap.getOrInsertComputed(
+            id,
+            makeArr
+          );
           canvas.setAttribute("data-canvas-name", canvasName);
           // Replace any same-named canvas from a previous render so stale
           // low-resolution canvases don't pile up across zooms.
