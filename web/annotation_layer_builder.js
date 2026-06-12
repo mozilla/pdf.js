@@ -224,6 +224,10 @@ class AnnotationLayerBuilder {
     this.#eventAC = null;
   }
 
+  refreshCanvases() {
+    this.annotationLayer?.refreshCanvases();
+  }
+
   hide() {
     if (!this.div) {
       return;

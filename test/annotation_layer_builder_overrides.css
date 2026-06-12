@@ -68,4 +68,26 @@
     color: red;
     font-size: 10px;
   }
+
+  .buttonWidgetAnnotation:is(.checkBox, .radioButton) {
+    img[data-canvas-name="checked"] {
+      &:has(~ input:checked) {
+        display: block;
+      }
+
+      &:has(~ input:not(:checked)) {
+        display: none;
+      }
+    }
+
+    img[data-canvas-name="unchecked"] {
+      &:has(~ input:checked) {
+        display: none;
+      }
+
+      &:has(~ input:not(:checked)) {
+        display: block;
+      }
+    }
+  }
 }

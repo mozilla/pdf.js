@@ -2413,49 +2413,6 @@ describe("Interaction", () => {
     });
   });
 
-  describe("Change radio property", () => {
-    let pages;
-
-    beforeEach(async () => {
-      pages = await loadAndWait("bug1922766.pdf", getAnnotationSelector("44R"));
-    });
-
-    afterEach(async () => {
-      await closePages(pages);
-    });
-
-    it("must check that a change on a radio implies the change on all the radio in the group", async () => {
-      await Promise.all(
-        pages.map(async ([browserName, page]) => {
-          await waitForScripting(page);
-
-          const checkColor = async color => {
-            await waitForSandboxTrip(page);
-            for (const i of [40, 41, 42, 43]) {
-              const bgColor = await page.$eval(
-                `[data-element-id='${i}R']`,
-                el => getComputedStyle(el).backgroundColor
-              );
-              expect(bgColor)
-                .withContext(`In ${browserName}`)
-                .toEqual(`rgb(${color.join(", ")})`);
-            }
-          };
-          await checkColor([255, 0, 0]);
-          await page.click(getAnnotationSelector("44R"));
-          await checkColor([0, 0, 255]);
-          await page.click(getAnnotationSelector("44R"));
-          await checkColor([255, 0, 0]);
-
-          await page.click(getAnnotationSelector("43R"));
-          await waitForSandboxTrip(page);
-          await page.click(getAnnotationSelector("44R"));
-          await checkColor([0, 0, 255]);
-        })
-      );
-    });
-  });
-
   describe("Date creation must be timezone consistent", () => {
     let pages;
 

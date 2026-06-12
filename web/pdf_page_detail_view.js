@@ -297,6 +297,7 @@ class PDFPageDetailView extends BasePDFPageView {
         this.canvas = prevCanvas;
       },
       () => {
+        this.pageView._refreshAnnotationLayer();
         this.dispatchPageRendered(
           /* cssTransform */ false,
           /* isDetailView */ true
