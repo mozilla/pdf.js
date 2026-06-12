@@ -515,7 +515,7 @@ pdfjs-image-alt-text-settings-button-label = Alternative tekst-innstillingar for
 pdfjs-editor-alt-text-settings-dialog-label = Alternative tekst-innstillingar for bilde
 pdfjs-editor-alt-text-settings-automatic-title = Automatisk alternativ tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Opprett alternativ tekt automatisk
-pdfjs-editor-alt-text-settings-create-model-description = Foreslår skildringar for å hjelpe folk som ikkje kan sjå bildet eller når bildet ikkje blir lasta inn.
+pdfjs-editor-alt-text-settings-create-model-description = Føreslår skildringar for å hjelpe folk som ikkje kan sjå bildet eller når bildet ikkje blir lasta inn.
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 pdfjs-editor-alt-text-settings-download-model-label = KI-modell for alternativ tekst ({ $totalSize } MB)
