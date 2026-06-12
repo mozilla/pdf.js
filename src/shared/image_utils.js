@@ -139,4 +139,9 @@ function grayToRGBA(src, dest) {
   }
 }
 
-export { convertBlackAndWhiteToRGBA, convertToRGBA, grayToRGBA };
+export {
+  convertBlackAndWhiteToRGBA,
+  convertRGBToRGBA,
+  convertToRGBA,
+  grayToRGBA,
+};

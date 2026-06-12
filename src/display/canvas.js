@@ -18,6 +18,10 @@ import {
   Dependencies,
 } from "./canvas_dependency_tracker.js";
 import {
+  convertBlackAndWhiteToRGBA,
+  convertRGBToRGBA,
+} from "../shared/image_utils.js";
+import {
   F32_BBOX_INIT,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
@@ -45,7 +49,6 @@ import {
   PathType,
   TilingPattern,
 } from "./pattern_helper.js";
-import { convertBlackAndWhiteToRGBA } from "../shared/image_utils.js";
 import { MathClamp } from "../shared/math_clamp.js";
 
 // <canvas> contexts store most of the state we need natively.
@@ -333,40 +336,36 @@ function putBinaryImageData(ctx, imgData) {
   // will (conceptually) put pixels past the bounds of the canvas.  But
   // that's ok; any such pixels are ignored.
 
-  const height = imgData.height,
-    width = imgData.width;
+  const { width, height, kind } = imgData;
   const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
   const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
   const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
 
   const chunkImgData = ctx.createImageData(width, FULL_CHUNK_HEIGHT);
-  let srcPos = 0,
-    destPos;
+  let srcPos = 0;
   const src = imgData.data;
   const dest = chunkImgData.data;
-  let i, j, thisChunkHeight, elemsInThisChunk;
+  let i;
 
   // There are multiple forms in which the pixel data can be passed, and
   // imgData.kind tells us which one this is.
-  if (imgData.kind === ImageKind.GRAYSCALE_1BPP) {
+  if (kind === ImageKind.GRAYSCALE_1BPP) {
     // Grayscale, 1 bit per pixel (i.e. black-and-white).
     for (i = 0; i < totalChunks; i++) {
-      thisChunkHeight = i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
-
       ({ srcPos } = convertBlackAndWhiteToRGBA({
         src,
         srcPos,
         dest,
         width,
-        height: thisChunkHeight,
+        height: i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight,
       }));
 
       ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
     }
-  } else if (imgData.kind === ImageKind.RGBA_32BPP) {
+  } else if (kind === ImageKind.RGBA_32BPP) {
     // RGBA, 32-bits per pixel.
-    j = 0;
-    elemsInThisChunk = width * FULL_CHUNK_HEIGHT * 4;
+    let j = 0;
+    let elemsInThisChunk = width * FULL_CHUNK_HEIGHT * 4;
     for (i = 0; i < fullChunks; i++) {
       dest.set(src.subarray(srcPos, srcPos + elemsInThisChunk));
       srcPos += elemsInThisChunk;
@@ -380,28 +379,21 @@ function putBinaryImageData(ctx, imgData) {
 
       ctx.putImageData(chunkImgData, 0, j);
     }
-  } else if (imgData.kind === ImageKind.RGB_24BPP) {
+  } else if (kind === ImageKind.RGB_24BPP) {
     // RGB, 24-bits per pixel.
-    thisChunkHeight = FULL_CHUNK_HEIGHT;
-    elemsInThisChunk = width * thisChunkHeight;
     for (i = 0; i < totalChunks; i++) {
-      if (i >= fullChunks) {
-        thisChunkHeight = partialChunkHeight;
-        elemsInThisChunk = width * thisChunkHeight;
-      }
-
-      destPos = 0;
-      for (j = elemsInThisChunk; j--; ) {
-        dest[destPos++] = src[srcPos++];
-        dest[destPos++] = src[srcPos++];
-        dest[destPos++] = src[srcPos++];
-        dest[destPos++] = 255;
-      }
+      ({ srcPos } = convertRGBToRGBA({
+        src,
+        srcPos,
+        dest: new Uint32Array(dest.buffer),
+        width,
+        height: i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight,
+      }));
 
       ctx.putImageData(chunkImgData, 0, i * FULL_CHUNK_HEIGHT);
     }
   } else {
-    throw new Error(`bad image kind: ${imgData.kind}`);
+    throw new Error(`bad image kind: ${kind}`);
   }
 }
 
@@ -413,8 +405,7 @@ function putBinaryImageMask(ctx, imgData) {
   }
 
   // Slow path: OffscreenCanvas isn't available in the worker.
-  const height = imgData.height,
-    width = imgData.width;
+  const { width, height } = imgData;
   const partialChunkHeight = height % FULL_CHUNK_HEIGHT;
   const fullChunks = (height - partialChunkHeight) / FULL_CHUNK_HEIGHT;
   const totalChunks = partialChunkHeight === 0 ? fullChunks : fullChunks + 1;
@@ -425,18 +416,14 @@ function putBinaryImageMask(ctx, imgData) {
   const dest = chunkImgData.data;
 
   for (let i = 0; i < totalChunks; i++) {
-    const thisChunkHeight =
-      i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight;
-
     // Expand the mask so it can be used by the canvas.  Any required
     // inversion has already been handled.
-
     ({ srcPos } = convertBlackAndWhiteToRGBA({
       src,
       srcPos,
       dest,
       width,
-      height: thisChunkHeight,
+      height: i < fullChunks ? FULL_CHUNK_HEIGHT : partialChunkHeight,
       nonBlackColor: 0,
     }));
 
