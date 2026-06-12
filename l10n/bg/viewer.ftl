@@ -386,3 +386,7 @@ pdfjs-editor-new-alt-text-not-now-button = Не сега
 ## Image alt-text settings
 
 pdfjs-editor-alt-text-settings-delete-model-button = Изтриване
+
+## Controls
+
+pdfjs-editor-add-signature-image-upload-error-description = Проверете мрежовата си връзка или опитайте с друго изображение.
