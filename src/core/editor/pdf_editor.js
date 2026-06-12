@@ -27,7 +27,15 @@ import {
   getNewAnnotationsMap,
   numberToString,
 } from "../core_utils.js";
-import { Dict, isName, Name, Ref, RefSet, RefSetCache } from "../primitives.js";
+import {
+  Dict,
+  isDict,
+  isName,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+} from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
 import { isArrayEqual, stringToBytes } from "../../shared/util.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
@@ -280,11 +288,7 @@ class PDFEditor {
       oldRefMapping.put(oldRef, newRef);
 
       if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-        if (
-          obj instanceof Dict &&
-          isName(obj.get("Type"), "Page") &&
-          !this.currentDocument.pagesMap.has(oldRef)
-        ) {
+        if (isDict(obj, "Page") && !this.currentDocument.pagesMap.has(oldRef)) {
           throw new Error(
             "Add a deleted page to the document is not supported."
           );
