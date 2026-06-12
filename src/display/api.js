@@ -479,7 +479,7 @@ function getDocument(src = {}) {
           networkStream,
           {
             ...transportParams,
-            rendererHandler: task._rendererWorker?.rendererHandler || null,
+            rendererWorker: task._rendererWorker,
           },
           transportFactory,
           pagesMapper
@@ -1557,7 +1557,7 @@ class PDFPageProxy {
       // Get the trackers from `gfx` into the task's. The worker path populates
       // them from the final `ExecuteOperatorList` response, so we don't need
       // this in that case.
-      if (!internalRenderTask._rendererHandler && internalRenderTask.gfx) {
+      if (!internalRenderTask.rendererHandler && internalRenderTask.gfx) {
         const { dependencyTracker, imagesTracker } = internalRenderTask.gfx;
         internalRenderTask.recordedBBoxes = dependencyTracker?.take() ?? null;
         internalRenderTask.debugMetadata = recordForDebugger
@@ -1637,7 +1637,7 @@ class PDFPageProxy {
       enableHWA: this._transport.enableHWA,
       enableWebGPU: this._transport.enableWebGPU,
       operationsFilter,
-      rendererHandler: this._transport.rendererHandler,
+      rendererWorker: this._transport.rendererWorker,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -1824,15 +1824,9 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    if (this._transport.rendererHandler) {
-      try {
-        this._transport.rendererHandler.send("cleanupPage", {
-          pageIndex: this._pageIndex,
-        });
-      } catch {
-        // Ignore errors if the renderer worker has been destroyed.
-      }
-    }
+    this._transport.rendererHandler?.send("cleanupPage", {
+      pageIndex: this._pageIndex,
+    });
     this.#pendingCleanup = false;
 
     return Promise.all(waitOn);
@@ -1873,16 +1867,10 @@ class PDFPageProxy {
     }
     this._intentStates.clear();
     this.objs.clear();
-    if (this._transport.rendererHandler) {
-      try {
-        this._transport.rendererHandler.send("cleanupPage", {
-          pageIndex: this._pageIndex,
-          keepCanvas: this.#keepRendererCanvas,
-        });
-      } catch {
-        // Ignore errors if the renderer worker has been destroyed.
-      }
-    }
+    this._transport.rendererHandler?.send("cleanupPage", {
+      pageIndex: this._pageIndex,
+      keepCanvas: this.#keepRendererCanvas,
+    });
     this.#keepRendererCanvas = false;
     this.#pendingCleanup = false;
     return true;
@@ -1949,15 +1937,9 @@ class PDFPageProxy {
     // Restore the page in the renderer worker before any `obj` message can
     // be forwarded, since the core worker emits each object only once and a
     // dropped one would hang `ExecuteOperatorList` on its dependency.
-    if (this._transport.rendererHandler) {
-      try {
-        this._transport.rendererHandler.send("restorePage", {
-          pageIndex: this._pageIndex,
-        });
-      } catch {
-        // Ignore errors if the renderer worker has been destroyed.
-      }
-    }
+    this._transport.rendererHandler?.send("restorePage", {
+      pageIndex: this._pageIndex,
+    });
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
@@ -2638,7 +2620,7 @@ class WorkerTransport {
     });
     this.enableHWA = params.enableHWA;
     this.enableWebGPU = params.enableWebGPU === true;
-    this.rendererHandler = params.rendererHandler || null;
+    this.rendererWorker = params.rendererWorker || null;
     this.loadingParams = params.loadingParams;
     this._params = params;
 
@@ -2702,6 +2684,15 @@ class WorkerTransport {
 
   get annotationStorage() {
     return shadow(this, "annotationStorage", new AnnotationStorage());
+  }
+
+  /**
+   * Reading through the `RendererWorker` ensures that destroying the renderer
+   * worker is observed here, without holding a stale handler reference.
+   * @type {MessageHandler | null}
+   */
+  get rendererHandler() {
+    return this.rendererWorker?.rendererHandler ?? null;
   }
 
   getRenderingIntent(
@@ -2817,6 +2808,7 @@ class WorkerTransport {
 
       this.messageHandler?.destroy();
       this.messageHandler = null;
+      this.rendererWorker = null;
 
       this.destroyCapability.resolve();
     }, this.destroyCapability.reject);
@@ -2824,7 +2816,7 @@ class WorkerTransport {
   }
 
   setupMessageHandler() {
-    const { messageHandler, loadingTask, rendererHandler } = this;
+    const { messageHandler, loadingTask } = this;
 
     messageHandler.on("GetReader", (data, sink) => {
       assert(
@@ -3002,7 +2994,7 @@ class WorkerTransport {
 
     // TODO: add a direct channel between the renderer worker and the core
     // worker so these main-thread forwarders can be removed.
-    rendererHandler?.on("FontFallback", data => {
+    this.rendererHandler?.on("FontFallback", data => {
       if (this.destroyed) {
         return null;
       }
@@ -3010,15 +3002,13 @@ class WorkerTransport {
     });
 
     const forwardToRenderer = (action, data) => {
+      const { rendererHandler } = this;
       if (!rendererHandler) {
         return;
       }
       try {
         rendererHandler.send(action, data);
       } catch (reason) {
-        if (rendererHandler.destroyed) {
-          return;
-        }
         warn(`forwardToRenderer("${action}") failed: ${reason}`);
         rendererHandler.send("objFailed", {
           id: data[0],
@@ -3497,7 +3487,7 @@ class InternalRenderTask {
     enableHWA = false,
     enableWebGPU = false,
     operationsFilter = null,
-    rendererHandler = null,
+    rendererWorker = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3533,7 +3523,7 @@ class InternalRenderTask {
     this._recordImages = !!params.recordImages;
     this._recordForDebugger = !!params.recordForDebugger;
     this._operationsFilter = operationsFilter;
-    this._rendererHandler = rendererHandler;
+    this._rendererWorker = rendererWorker;
     this._renderTaskId = InternalRenderTask.#renderTaskId++;
     this._sentOperatorListLength = 0;
     this._transferredAnnotationCanvasIds = new Set();
@@ -3552,7 +3542,7 @@ class InternalRenderTask {
   }
 
   get rendererHandler() {
-    return this._rendererHandler;
+    return this._rendererWorker?.rendererHandler ?? null;
   }
 
   // Transfer annotation canvases to the renderer worker which show up in the
@@ -3630,17 +3620,19 @@ class InternalRenderTask {
     // because OffscreenCanvas's OffscreenCanvasRenderingContext2D ignores
     // `.filter` values set from a data URL. See bug 2011237.
     let useWorkerRendering =
-      this._rendererHandler &&
+      this.rendererHandler &&
       this._canvasContext === null &&
       !hasCanvasFilters &&
       !this.pageColors &&
       !this._recordForDebugger;
 
-    if (!useWorkerRendering && this._rendererHandler) {
+    if (!useWorkerRendering && this._rendererWorker) {
       // Only warn when a renderer worker is actually available, but cannot be
       // used for this particular render
-      warn("Falling back to main-thread rendering.");
-      this._rendererHandler = null;
+      if (this.rendererHandler) {
+        warn("Falling back to main-thread rendering.");
+      }
+      this._rendererWorker = null;
     }
     let initPromise = null;
     if (useWorkerRendering) {
@@ -3669,17 +3661,18 @@ class InternalRenderTask {
           recordOperations: this._recordOperations,
           recordImages: this._recordImages,
         };
-        initPromise = this._rendererHandler.sendWithPromise(
+        initPromise = this.rendererHandler.sendWithPromise(
           "InitializeGraphics",
           initParams,
           initTransfers
         );
         // Mark the canvas as worker-rendered so that consumers (thumbnail
         // generation, test driver) can detect and clean up appropriately.
-        const rendererHandler = this._rendererHandler;
-        const renderTaskId = this._renderTaskId;
+        const { _rendererWorker, _renderTaskId } = this;
         this._canvas.resetWorkerCanvas = () => {
-          rendererHandler.send("CleanupRenderTask", { renderTaskId });
+          _rendererWorker.rendererHandler?.send("CleanupRenderTask", {
+            renderTaskId: _renderTaskId,
+          });
         };
       } catch (ex) {
         warn(
@@ -3689,7 +3682,7 @@ class InternalRenderTask {
         // Fallback to regular rendering. Only safe for synchronous failures
         // before transferControlToOffscreen detaches the canvas; an async
         // rejection from sendWithPromise is awaited below and propagates.
-        this._rendererHandler = null;
+        this._rendererWorker = null;
         useWorkerRendering = false;
       }
     }
@@ -3756,15 +3749,9 @@ class InternalRenderTask {
   cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
-    if (this._rendererHandler) {
-      try {
-        this._rendererHandler.send("CleanupRenderTask", {
-          renderTaskId: this._renderTaskId,
-        });
-      } catch {
-        // Ignore errors if the renderer worker has been destroyed.
-      }
-    }
+    this.rendererHandler?.send("CleanupRenderTask", {
+      renderTaskId: this._renderTaskId,
+    });
     this.gfx?.endDrawing();
     if (this.#rAF) {
       window.cancelAnimationFrame(this.#rAF);
@@ -3790,7 +3777,7 @@ class InternalRenderTask {
     // of the bbox/dependency tracker (sized inside `#appendOperatorList`).
     // The stepper is main-thread only and is mutually exclusive with worker
     // rendering, so there's nothing to update here in that case.
-    if (!this._rendererHandler) {
+    if (!this._rendererWorker) {
       this.gfx.dependencyTracker?.growOperationsCount(
         this.operatorList.fnArray.length
       );
@@ -3830,7 +3817,12 @@ class InternalRenderTask {
       return;
     }
     const { operatorList, operatorListIdx } = this;
-    if (this._rendererHandler) {
+    if (this._rendererWorker) {
+
+      const { rendererHandler } = this;
+      if (!rendererHandler) {
+        throw new Error("Renderer worker was destroyed during rendering.");
+      }
       const operatorListArgsArrayLen = operatorList.argsArray.length;
       const sentLength = Math.min(
         this._sentOperatorListLength,
@@ -3842,7 +3834,7 @@ class InternalRenderTask {
           operatorListArgsArrayLen
         );
       if (annotationCanvases.length > 0) {
-        this._rendererHandler.send(
+        rendererHandler.send(
           "UpdateAnnotationCanvases",
           {
             renderTaskId: this._renderTaskId,
@@ -3859,7 +3851,7 @@ class InternalRenderTask {
         sentLength < operatorListArgsArrayLen
           ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
           : null;
-      const response = await this._rendererHandler.sendWithPromise(
+      const response = await rendererHandler.sendWithPromise(
         "ExecuteOperatorList",
         {
           renderTaskId: this._renderTaskId,
