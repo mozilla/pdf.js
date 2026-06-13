@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, BaseException, warn } from "../shared/util.js";
+import { BaseException, warn } from "../shared/util.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DeviceCmykCS } from "./colorspace.js";
 import { grayToRGBA } from "../shared/image_utils.js";
@@ -1203,7 +1203,7 @@ class JpegImage {
     return undefined;
   }
 
-  _getLinearizedBlockData(width, height, isSourcePDF = false) {
+  #getLinearizedBlockData(width, height, isSourcePDF) {
     const scaleX = this.width / width,
       scaleY = this.height / height;
 
@@ -1257,11 +1257,18 @@ class JpegImage {
     //
     // Unfortunately it's not (always) possible to tell, from the image data
     // alone, if it needs to be inverted. Thus in an attempt to provide better
-    // out-of-box behaviour when `JpegImage` is used standalone, default to
+    // out-of-the-box behaviour when `JpegImage` is used standalone, default to
     // inverting JPEG (CMYK) images if and only if the image data does *not*
     // come from a PDF file and no `decodeTransform` was passed by the user.
-    if (!isSourcePDF && numComponents === 4 && !transform) {
-      transform = new Int32Array([-256, 255, -256, 255, -256, 255, -256, 255]);
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("IMAGE_DECODERS") &&
+      !isSourcePDF &&
+      numComponents === 4
+    ) {
+      transform ||= new Int32Array([
+        -256, 255, -256, 255, -256, 255, -256, 255,
+      ]);
     }
 
     if (transform) {
@@ -1308,7 +1315,7 @@ class JpegImage {
 
   _convertYccToRgb(data) {
     let Y, Cb, Cr;
-    for (let i = 0, length = data.length; i < length; i += 3) {
+    for (let i = 0, ii = data.length; i < ii; i += 3) {
       Y = data[i];
       Cb = data[i + 1];
       Cr = data[i + 2];
@@ -1320,7 +1327,7 @@ class JpegImage {
   }
 
   _convertYccToRgba(data, out) {
-    for (let i = 0, j = 0, length = data.length; i < length; i += 3, j += 4) {
+    for (let i = 0, j = 0, ii = data.length; i < ii; i += 3, j += 4) {
       const Y = data[i];
       const Cb = data[i + 1];
       const Cr = data[i + 2];
@@ -1344,7 +1351,7 @@ class JpegImage {
 
   _convertYcckToCmyk(data) {
     let Y, Cb, Cr;
-    for (let i = 0, length = data.length; i < length; i += 4) {
+    for (let i = 0, ii = data.length; i < ii; i += 4) {
       Y = data[i];
       Cb = data[i + 1];
       Cr = data[i + 2];
@@ -1379,19 +1386,14 @@ class JpegImage {
     height,
     forceRGBA = false,
     forceRGB = false,
-    isSourcePDF = false,
+    isSourcePDF = typeof PDFJSDev === "undefined" ||
+      !PDFJSDev.test("IMAGE_DECODERS"),
   }) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-      assert(
-        isSourcePDF === true,
-        'JpegImage.getData: Unexpected "isSourcePDF" value for PDF files.'
-      );
-    }
     if (this.numComponents > 4) {
       throw new JpegError("Unsupported color mode");
     }
     // Type of data: Uint8ClampedArray(width * height * numComponents)
-    const data = this._getLinearizedBlockData(width, height, isSourcePDF);
+    const data = this.#getLinearizedBlockData(width, height, isSourcePDF);
 
     if (this.numComponents === 1 && (forceRGBA || forceRGB)) {
       const len = data.length * (forceRGBA ? 4 : 3);
