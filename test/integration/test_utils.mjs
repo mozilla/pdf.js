@@ -164,6 +164,11 @@ async function closeSinglePage(page) {
       } catch {}
     }
 
+    // Collect coverage data from "previous" workers, which happens if
+    // `PDFViewerApplication.open` was invoked more than once during the test
+    // (e.g. the "Merge PDF" tests).
+    const previousWorkerCoverage = globalThis._previousWorkerCoverage;
+
     // Close the viewer gracefully, and clear local storage to avoid state
     // leaking from one test to another.
     await window.PDFViewerApplication.testingClose();
@@ -176,6 +181,9 @@ async function closeSinglePage(page) {
     return {
       page: window.__coverage__ ? JSON.stringify(window.__coverage__) : null,
       worker: workerCoverage ? JSON.stringify(workerCoverage) : null,
+      previousWorker: previousWorkerCoverage
+        ? previousWorkerCoverage.map(c => JSON.stringify(c))
+        : null,
     };
   });
 
@@ -185,6 +193,7 @@ async function closeSinglePage(page) {
   if (coverage.worker) {
     mergeCoverageIntoGlobal(JSON.parse(coverage.worker));
   }
+  coverage.previousWorker?.map(c => mergeCoverageIntoGlobal(JSON.parse(c)));
 
   await page.close({ runBeforeUnload: false });
 }

@@ -1219,6 +1219,22 @@ const PDFViewerApplication = {
    */
   async open(args) {
     if (this.pdfLoadingTask) {
+      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("COVERAGE")) {
+        // Ensure that we don't miss collecting coverage data for
+        // e.g. the "Merge PDF" integration-tests.
+        let workerCoverage = null;
+        const handler = this.pdfDocument?._transport?.messageHandler;
+        if (handler) {
+          try {
+            workerCoverage = await handler.sendWithPromise(
+              "GetWorkerCoverage",
+              null
+            );
+          } catch {}
+        }
+        (globalThis._previousWorkerCoverage ??= []).push(workerCoverage);
+      }
+
       // We need to destroy already opened document.
       await this.close();
     }
