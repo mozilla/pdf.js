@@ -228,6 +228,40 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("viewerContainer tabindex", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("uses tabindex -1 while still allowing programmatic focus", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const { tabIndex, focusWorks } = await page.evaluate(() => {
+            const container = document.getElementById("viewerContainer");
+            container.focus();
+            return {
+              tabIndex: container.tabIndex,
+              focusWorks: document.activeElement === container,
+            };
+          });
+
+          expect(tabIndex)
+            .withContext(`In ${browserName}`)
+            .toEqual(-1);
+          expect(focusWorks)
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+        })
+      );
+    });
+  });
+
   describe("CSS-only zoom", () => {
     function createPromiseForFirstPageRendered(page) {
       return createPromise(page, (resolve, reject) => {
