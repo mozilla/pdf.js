@@ -228,7 +228,7 @@ describe("PDF viewer", () => {
     });
   });
 
-  describe("viewerContainer tabindex", () => {
+  describe("viewerContainer tabindex (bug 20674)", () => {
     let pages;
 
     beforeEach(async () => {
@@ -239,7 +239,26 @@ describe("PDF viewer", () => {
       await closePages(pages);
     });
 
-    it("uses tabindex -1 while still allowing programmatic focus", async () => {
+    it("must not appear in sequential keyboard navigation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // Reproduce #20674: tab through the viewer UI and ensure the
+          // scroll container is never a silent tab stop between toolbar
+          // controls and page content.
+          for (let i = 0; i < 120; i++) {
+            await page.keyboard.press("Tab");
+            const activeId = await page.evaluate(
+              () => document.activeElement?.id ?? null,
+            );
+            expect(activeId)
+              .withContext(`Tab stop ${i} in ${browserName}`)
+              .not.toEqual("viewerContainer");
+          }
+        }),
+      );
+    });
+
+    it("must still allow programmatic focus for editor/viewer code paths", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const { tabIndex, focusWorks } = await page.evaluate(() => {
@@ -251,13 +270,9 @@ describe("PDF viewer", () => {
             };
           });
 
-          expect(tabIndex)
-            .withContext(`In ${browserName}`)
-            .toEqual(-1);
-          expect(focusWorks)
-            .withContext(`In ${browserName}`)
-            .toBeTrue();
-        })
+          expect(tabIndex).withContext(`In ${browserName}`).toEqual(-1);
+          expect(focusWorks).withContext(`In ${browserName}`).toBeTrue();
+        }),
       );
     });
   });
