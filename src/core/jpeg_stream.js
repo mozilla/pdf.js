@@ -128,7 +128,6 @@ class JpegStream extends DecodeStream {
       height: this.drawHeight,
       forceRGBA: this.forceRGBA,
       forceRGB: this.forceRGB,
-      isSourcePDF: true,
     });
     this.buffer = data;
     this.bufferLength = data.length;
