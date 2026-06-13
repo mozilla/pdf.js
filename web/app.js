@@ -1165,6 +1165,23 @@ const PDFViewerApplication = {
         // Ignoring errors, to ensure that document closing won't break.
       }
     }
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("COVERAGE")) {
+      // Collect coverage data from the worker before the document is closed.
+      //
+      // Note that `PDFViewerApplication.open` may be invoked multiple times
+      // during an integration-test (see e.g. the "Merge PDF" tests).
+      const handler = this.pdfDocument?._transport?.messageHandler;
+      if (handler) {
+        try {
+          const workerCoverage = await handler.sendWithPromise(
+            "GetWorkerCoverage",
+            null
+          );
+          (window.__worker_coverage__ ??= []).push(workerCoverage);
+        } catch {}
+      }
+    }
     const promises = [];
 
     promises.push(this.pdfLoadingTask.destroy());

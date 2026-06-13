@@ -151,19 +151,6 @@ function closePages(pages) {
 
 async function closeSinglePage(page) {
   const coverage = await page.evaluate(async () => {
-    // Collect coverage data from the worker before the document is closed.
-    let workerCoverage = null;
-    const handler =
-      window.PDFViewerApplication.pdfDocument?._transport?.messageHandler;
-    if (handler) {
-      try {
-        workerCoverage = await handler.sendWithPromise(
-          "GetWorkerCoverage",
-          null
-        );
-      } catch {}
-    }
-
     // Close the viewer gracefully, and clear local storage to avoid state
     // leaking from one test to another.
     await window.PDFViewerApplication.testingClose();
@@ -175,16 +162,14 @@ async function closeSinglePage(page) {
     // logic kicks in (see https://github.com/puppeteer/puppeteer/issues/2427).
     return {
       page: window.__coverage__ ? JSON.stringify(window.__coverage__) : null,
-      worker: workerCoverage ? JSON.stringify(workerCoverage) : null,
+      workers: window.__worker_coverage__?.map(c => JSON.stringify(c)) ?? null,
     };
   });
 
   if (coverage.page) {
     mergeCoverageIntoGlobal(JSON.parse(coverage.page));
   }
-  if (coverage.worker) {
-    mergeCoverageIntoGlobal(JSON.parse(coverage.worker));
-  }
+  coverage.workers?.map(c => mergeCoverageIntoGlobal(JSON.parse(c)));
 
   await page.close({ runBeforeUnload: false });
 }
