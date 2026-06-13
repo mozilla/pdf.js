@@ -579,16 +579,9 @@ class WorkerMessageHandler {
         const task = new WorkerTask(`GetAnnotations: page ${pageIndex}`);
         startWorkerTask(task);
 
-        return page.getAnnotationsData(handler, task, intent).then(
-          data => {
-            finishWorkerTask(task);
-            return data;
-          },
-          reason => {
-            finishWorkerTask(task);
-            throw reason;
-          }
-        );
+        return page.getAnnotationsData(handler, task, intent).finally(() => {
+          finishWorkerTask(task);
+        });
       });
     });
 
@@ -773,7 +766,7 @@ class WorkerMessageHandler {
                     imagePromises,
                     changes
                   )
-                  .finally(function () {
+                  .finally(() => {
                     finishWorkerTask(task);
                   });
               })
@@ -818,7 +811,7 @@ class WorkerMessageHandler {
 
                 return page
                   .save(handler, task, annotationStorage, changes)
-                  .finally(function () {
+                  .finally(() => {
                     finishWorkerTask(task);
                   });
               })
@@ -928,9 +921,7 @@ class WorkerMessageHandler {
             pageIndex,
           })
           .then(
-            function (operatorListInfo) {
-              finishWorkerTask(task);
-
+            operatorListInfo => {
               if (start) {
                 info(
                   `page=${pageIndex + 1} - getOperatorList: time=` +
@@ -939,8 +930,7 @@ class WorkerMessageHandler {
               }
               sink.close();
             },
-            function (reason) {
-              finishWorkerTask(task);
+            reason => {
               if (task.terminated) {
                 return; // ignoring errors from the terminated thread
               }
@@ -949,7 +939,10 @@ class WorkerMessageHandler {
               // TODO: Should `reason` be re-thrown here (currently that casues
               //       "Uncaught exception: ..." messages in the console)?
             }
-          );
+          )
+          .finally(() => {
+            finishWorkerTask(task);
+          });
       });
     });
 
@@ -973,9 +966,7 @@ class WorkerMessageHandler {
             disableNormalization,
           })
           .then(
-            function () {
-              finishWorkerTask(task);
-
+            () => {
               if (start) {
                 info(
                   `page=${pageIndex + 1} - getTextContent: time=` +
@@ -984,8 +975,7 @@ class WorkerMessageHandler {
               }
               sink.close();
             },
-            function (reason) {
-              finishWorkerTask(task);
+            reason => {
               if (task.terminated) {
                 return; // ignoring errors from the terminated thread
               }
@@ -994,7 +984,10 @@ class WorkerMessageHandler {
               // TODO: Should `reason` be re-thrown here (currently that casues
               //       "Uncaught exception: ..." messages in the console)?
             }
-          );
+          )
+          .finally(() => {
+            finishWorkerTask(task);
+          });
       });
     });
 
