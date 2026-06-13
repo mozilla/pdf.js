@@ -346,13 +346,13 @@ class ChunkedStreamManager {
 
     const chunksToRequest = [];
     for (const chunk of chunksNeeded) {
-      let requestIds = this._requestsByChunk.get(chunk);
-      if (!requestIds) {
-        requestIds = [];
-        this._requestsByChunk.set(chunk, requestIds);
-
-        chunksToRequest.push(chunk);
-      }
+      const requestIds = this._requestsByChunk.getOrInsertComputed(
+        chunk,
+        () => {
+          chunksToRequest.push(chunk);
+          return [];
+        }
+      );
       requestIds.push(requestId);
     }
 

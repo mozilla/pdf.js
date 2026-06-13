@@ -241,9 +241,10 @@ class AnnotationStorage {
         continue;
       }
       const { type } = editorStats;
-      if (!typeToEditor.has(type)) {
-        typeToEditor.set(type, Object.getPrototypeOf(value).constructor);
-      }
+      typeToEditor.getOrInsertComputed(
+        type,
+        () => Object.getPrototypeOf(value).constructor
+      );
       stats ||= Object.create(null);
       const map = (stats[type] ||= new Map());
       for (const [key, val] of Object.entries(editorStats)) {

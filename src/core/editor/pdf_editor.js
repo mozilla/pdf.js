@@ -37,7 +37,7 @@ import {
   RefSetCache,
 } from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
-import { isArrayEqual, stringToBytes } from "../../shared/util.js";
+import { isArrayEqual, makeArr, stringToBytes } from "../../shared/util.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
 import { AnnotationFactory } from "../annotation.js";
@@ -514,20 +514,15 @@ class PDFEditor {
     const bytes = this.#rawStreamBytes(stream);
     const key = this.#resourceStreamKey(dictStr, bytes);
 
-    let bucket = this.#resourceStreamCache.get(key);
-    if (bucket) {
-      // Same key only means "maybe equal": confirm with an exact comparison.
-      for (const entry of bucket) {
-        if (
-          entry.dictStr === dictStr &&
-          isArrayEqual(this.#rawStreamBytes(entry.stream), bytes)
-        ) {
-          return entry.ref;
-        }
+    const bucket = this.#resourceStreamCache.getOrInsertComputed(key, makeArr);
+    // Same key only means "maybe equal": confirm with an exact comparison.
+    for (const entry of bucket) {
+      if (
+        entry.dictStr === dictStr &&
+        isArrayEqual(this.#rawStreamBytes(entry.stream), bytes)
+      ) {
+        return entry.ref;
       }
-    } else {
-      bucket = [];
-      this.#resourceStreamCache.set(key, bucket);
     }
     const ref = this.newRef;
     this.xref[ref.num] = stream;
