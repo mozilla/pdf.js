@@ -691,13 +691,10 @@ class Type1Parser {
         subrs,
         this.seacAnalysisEnabled
       );
-      let output = charString.output;
-      if (error) {
-        // It seems when FreeType encounters an error while evaluating a glyph
-        // that it completely ignores the glyph so we'll mimic that behaviour
-        // here and put an endchar to make the validator happy.
-        output = [14];
-      }
+      // It seems when FreeType encounters an error while evaluating a glyph
+      // that it completely ignores the glyph so we'll mimic that behaviour
+      // here and put an endchar to make the validator happy.
+      const output = !error ? charString.output : [14];
       const charStringObject = {
         glyphName: glyph,
         charstring: output,

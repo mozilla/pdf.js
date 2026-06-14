@@ -255,11 +255,9 @@ class EventDispatcher {
       this.runCalculate(source, event);
 
       const savedValue = (event.value = source.obj._getValue());
-      let formattedValue = null;
-
-      if (this.runActions(source, source, event, "Format")) {
-        formattedValue = event.value?.toString?.();
-      }
+      const formattedValue = this.runActions(source, source, event, "Format")
+        ? event.value?.toString?.()
+        : null;
 
       source.obj._send({
         id: source.obj._id,
@@ -365,10 +363,9 @@ class EventDispatcher {
       }
 
       savedValue = target.obj._getValue();
-      let formattedValue = null;
-      if (this.runActions(target, target, event, "Format")) {
-        formattedValue = event.value?.toString?.();
-      }
+      const formattedValue = this.runActions(target, target, event, "Format")
+        ? event.value?.toString?.()
+        : null;
 
       target.obj._send({
         id: target.obj._id,

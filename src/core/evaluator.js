@@ -3535,10 +3535,7 @@ class PartialEvaluator {
             if (includeMarkedContent) {
               markedContentData.level++;
 
-              let mcid = null;
-              if (args[1] instanceof Dict) {
-                mcid = args[1].get("MCID");
-              }
+              const mcid = args[1] instanceof Dict ? args[1].get("MCID") : null;
               textContent.items.push({
                 type: "beginMarkedContentProps",
                 id: Number.isInteger(mcid)

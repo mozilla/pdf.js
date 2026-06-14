@@ -1030,10 +1030,7 @@ function createBuildNumber(done) {
       const version = config.versionPrefix + buildNumber;
 
       exec('git log --format="%h" -n 1', function (err2, stdout2, stderr2) {
-        let buildCommit = "";
-        if (!err2) {
-          buildCommit = stdout2.replace("\n", "");
-        }
+        const buildCommit = !err2 ? stdout2.replace("\n", "") : "";
 
         createStringSource(
           "version.json",

@@ -51,7 +51,7 @@ class XMLParserBase {
     return s.replaceAll(/&([^;]+);/g, (all, entity) => {
       if (entity.substring(0, 2) === "#x") {
         return String.fromCodePoint(parseInt(entity.substring(2), 16));
-      } else if (entity.substring(0, 1) === "#") {
+      } else if (entity.at(0) === "#") {
         return String.fromCodePoint(parseInt(entity.substring(1), 10));
       }
       switch (entity) {

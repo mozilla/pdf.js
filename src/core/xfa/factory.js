@@ -101,7 +101,6 @@ class XFAFactory {
     const missingFonts = [];
     for (let typeface of this.form[$globalData].usedTypefaces) {
       typeface = stripQuotes(typeface);
-      // eslint-disable-next-line unicorn/prefer-array-some
       const font = this.form[$globalData].fontFinder.find(typeface);
       if (!font) {
         missingFonts.push(typeface);

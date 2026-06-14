@@ -285,10 +285,9 @@ class RadialAxialShading extends BaseShading {
     }
     colorStops.push([1, Util.makeHexColor(rPrev, gPrev, bPrev)]);
 
-    let background = "transparent";
-    if (dict.has("Background")) {
-      background = cs.getRgbHex(dict.get("Background"), 0);
-    }
+    const background = dict.has("Background")
+      ? cs.getRgbHex(dict.get("Background"), 0)
+      : "transparent";
 
     if (!extendStart) {
       // Insert a color stop at the front and offset the first real color stop
