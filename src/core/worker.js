@@ -164,16 +164,7 @@ class WorkerMessageHandler {
     }
 
     async function loadDocument(recoveryMode) {
-      await pdfManager.ensureDoc("checkHeader");
-      await pdfManager.ensureDoc("parseStartXRef");
-      await pdfManager.ensureDoc("parse", [recoveryMode]);
-
-      // Check that at least the first page can be successfully loaded,
-      // since otherwise the XRef table is definitely not valid.
-      await pdfManager.ensureDoc("checkFirstPage", [recoveryMode]);
-      // Check that the last page can be successfully loaded, to ensure that
-      // `numPages` is correct, and fallback to walking the entire /Pages-tree.
-      await pdfManager.ensureDoc("checkLastPage", [recoveryMode]);
+      await pdfManager.initDocument(recoveryMode);
 
       const isPureXfa = await pdfManager.ensureDoc("isPureXfa");
       if (isPureXfa) {
@@ -629,9 +620,7 @@ class WorkerMessageHandler {
             while (true) {
               try {
                 await manager.requestLoadedStream();
-                await manager.ensureDoc("checkHeader");
-                await manager.ensureDoc("parseStartXRef");
-                await manager.ensureDoc("parse", [recoveryMode]);
+                await manager.initDocument(recoveryMode);
                 break;
               } catch (e) {
                 if (e instanceof XRefParseException) {

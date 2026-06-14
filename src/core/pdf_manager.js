@@ -116,6 +116,19 @@ class BasePdfManager {
     return this.ensure(this.pdfDocument.catalog, prop, args);
   }
 
+  async initDocument(recoveryMode) {
+    await this.ensureDoc("checkHeader");
+    await this.ensureDoc("parseStartXRef");
+    await this.ensureDoc("parse", [recoveryMode]);
+
+    // Check that at least the first page can be successfully loaded,
+    // since otherwise the XRef table is definitely not valid.
+    await this.ensureDoc("checkFirstPage", [recoveryMode]);
+    // Check that the last page can be successfully loaded, to ensure that
+    // `numPages` is correct, and fallback to walking the entire /Pages-tree.
+    await this.ensureDoc("checkLastPage", [recoveryMode]);
+  }
+
   getPage(pageIndex) {
     return this.pdfDocument.getPage(pageIndex);
   }
