@@ -25,6 +25,28 @@ import { parseQueryString } from "./ui_utils.js";
 
 const DEFAULT_LINK_REL = "noopener noreferrer nofollow";
 
+/**
+ * Returns true when a PDF external link URL uses an allowed scheme.
+ * Blocks javascript:, data:, vbscript:, and other non-navigational schemes
+ * that malicious PDFs use for script execution or exfiltration.
+ */
+function isSafeExternalLinkScheme(url) {
+  const parsed = URL.parse(url);
+  if (!parsed) {
+    // Relative URLs without a scheme are allowed.
+    return !/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(url);
+  }
+  switch (parsed.protocol) {
+    case "http:":
+    case "https:":
+    case "mailto:":
+    case "ftp:":
+      return true;
+    default:
+      return false;
+  }
+}
+
 const LinkTarget = {
   NONE: 0, // Default value.
   SELF: 1,
@@ -297,9 +319,13 @@ class PDFLinkService {
       displayUrl = parsedUrl.href;
     }
 
-    if (this.externalLinkEnabled) {
+    if (this.externalLinkEnabled && isSafeExternalLinkScheme(url)) {
       link.href = url;
       link.title = displayUrl;
+    } else if (this.externalLinkEnabled) {
+      link.href = "";
+      link.title = `Blocked: ${displayUrl}`;
+      link.onclick = () => false;
     } else {
       link.href = "";
       link.title = `Disabled: ${displayUrl}`;

@@ -111,5 +111,41 @@ describe("PDFLinkService", function () {
       expect(link.href).toEqual("");
       expect(link.title).toEqual("Disabled: https://attacker.example/path");
     });
+
+    it("blocks javascript: scheme links", function () {
+      const linkService = createLinkService();
+      const link = createLink();
+
+      linkService.addLinkAttributes(link, "javascript:alert(1)");
+
+      expect(link.href).toEqual("");
+      expect(link.title).toEqual("Blocked: javascript:alert(1)");
+      expect(typeof link.onclick).toEqual("function");
+    });
+
+    it("blocks data: scheme links", function () {
+      const linkService = createLinkService();
+      const link = createLink();
+
+      linkService.addLinkAttributes(
+        link,
+        "data:text/html,<script>alert(1)</script>"
+      );
+
+      expect(link.href).toEqual("");
+      expect(link.title).toEqual(
+        "Blocked: data:text/html,<script>alert(1)</script>"
+      );
+    });
+
+    it("allows mailto: links", function () {
+      const linkService = createLinkService();
+      const link = createLink();
+
+      linkService.addLinkAttributes(link, "mailto:user@example.com");
+
+      expect(link.href).toEqual("mailto:user@example.com");
+      expect(link.title).toEqual("mailto:user@example.com");
+    });
   });
 });
