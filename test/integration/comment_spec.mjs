@@ -537,7 +537,11 @@ describe("Comment", () => {
             await page.mouse.down();
 
             const steps = 20;
-            await page.mouse.move(startX - extraWidth, startY, { steps });
+            for (let i = 1; i <= steps; i++) {
+              const x = Math.round(startX - (extraWidth * i) / steps);
+              await page.mouse.move(x, startY);
+              await waitForBrowserTrip(page);
+            }
             await page.mouse.up();
 
             const rectAfter = await getRect(page, sidebarSelector);
