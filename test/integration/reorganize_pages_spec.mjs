@@ -127,9 +127,11 @@ async function waitForHavingContents(page, expected) {
   });
   return page.waitForFunction(
     ex => {
+      const textLayers = document.querySelectorAll(".textLayer");
       const buffer = [];
-      for (const textLayer of document.querySelectorAll(".textLayer")) {
-        buffer.push(parseInt(textLayer.textContent.trim(), 10));
+      for (const [i, textLayer] of textLayers.entries()) {
+        const text = textLayer.textContent.trim();
+        buffer.push(typeof ex[i] === "string" ? text : parseInt(text, 10));
       }
       return ex.length === buffer.length && ex.every((v, i) => v === buffer[i]);
     },
@@ -3392,6 +3394,58 @@ describe("Reorganize Pages View", () => {
             page,
             "#viewsManagerStatusActionLabel",
             `${FSI}6${PDI} selected`
+          );
+        })
+      );
+    });
+
+    it("should merge a corrupt PDF (with invalid pages /Count) after the current page", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          // Navigate to page 2 so the merged PDF is inserted after it.
+          await page.evaluate(() => {
+            window.PDFViewerApplication.page = 2;
+          });
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 2
+          );
+          await waitAndClick(page, getThumbnailSelector(2));
+
+          const handleMerged = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "thumbnailsloaded",
+              resolve,
+              { once: true }
+            );
+          });
+
+          const picker = await page.$("#viewsManagerAddFilePicker");
+          await picker.uploadFile(
+            path.join(__dirname, "../pdfs/poppler-91414-0-53.pdf")
+          );
+          await awaitPromise(handleMerged);
+
+          // Original 3 pages + 1 merged page = 4 pages total.
+          await page.waitForFunction(
+            () => parseInt(document.getElementById("pageNumber").max, 10) === 4
+          );
+
+          // Focus must move to the first newly inserted page (page 3, since
+          // we merged after page 2).
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 3
+          );
+
+          // Pages 1–2 come from the original document, then the page of
+          // the merged PDF, then page 3 of the original shifted to the end.
+          await waitForHavingContents(page, [1, 2, "foobar", 3]);
+
+          await waitForTextToBe(
+            page,
+            "#viewsManagerStatusActionLabel",
+            `${FSI}1${PDI} selected`
           );
         })
       );
