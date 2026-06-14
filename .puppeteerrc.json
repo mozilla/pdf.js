@@ -2,6 +2,9 @@
   "chrome": {
     "skipDownload": false
   },
+  "chrome-headless-shell": {
+    "skipDownload": true
+  },
   "firefox": {
     "skipDownload": false,
     "version": "nightly"
