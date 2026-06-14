@@ -1,6 +1,7 @@
 {
   "chrome": {
-    "skipDownload": false
+    "skipDownload": false,
+    "version": "stable"
   },
   "chrome-headless-shell": {
     "skipDownload": true
