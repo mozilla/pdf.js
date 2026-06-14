@@ -830,24 +830,29 @@ class OperatorList {
  * operations require being drawn in isolation (i.e. on a separate canvas).
  * A group/pattern needs isolation when it uses non-default compositing
  * (blend mode) or a soft mask. The result is exposed via `needsIsolation`.
+ *
+ * `hasSoftMask` separately flags the use of a soft mask: unlike a plain blend
+ * mode, which a non-isolated group can apply directly against its backdrop, a
+ * soft mask always requires a real intermediate canvas (see bug 1873345).
  */
 class CheckedOperatorList extends OperatorList {
   needsIsolation = false;
 
+  hasSoftMask = false;
+
   addOp(fn, args) {
-    if (!this.needsIsolation) {
+    if (!this.needsIsolation || !this.hasSoftMask) {
       if (fn === OPS.beginGroup) {
         // Propagate isolation only if the nested group itself needs it.
-        this.needsIsolation = args[0].needsIsolation;
+        this.needsIsolation ||= args[0].needsIsolation;
+        this.hasSoftMask ||= args[0].hasSoftMask;
       } else if (fn === OPS.setGState) {
         for (const [key, val] of args[0]) {
           if (key === "BM" && val !== "source-over") {
             this.needsIsolation = true;
-            break;
-          }
-          if (key === "SMask" && val !== false) {
+          } else if (key === "SMask" && val !== false) {
             this.needsIsolation = true;
-            break;
+            this.hasSoftMask = true;
           }
         }
       }
