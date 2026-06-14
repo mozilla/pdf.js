@@ -935,3 +935,12 @@
 !text_field_own_canvas_calc.pdf
 !bug1802506.pdf
 !checkbox_no_appearance.pdf
+!issue16752_reduced.pdf
+!issue18768_type3.pdf
+!issue18768_initial_narrow_gap.pdf
+!issue18768_stateful_spacing.pdf
+!issue18768_narrow_space_font.pdf
+!issue18768_text_matrix_spacing.pdf
+!issue18768_type3_wide_glyph.pdf
+!issue19954_reduced.pdf
+!issue1936_reduced.pdf

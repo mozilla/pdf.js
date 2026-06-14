@@ -28,7 +28,11 @@ class SingleIntersector {
 
   #text = [];
 
+  #textExtraCharIds = [];
+
   #extraChars = [];
+
+  #extraCharIds = [];
 
   #lastIntersectingQuadIndex = -1;
 
@@ -112,18 +116,39 @@ class SingleIntersector {
     }
 
     if (this.#extraChars.length > 0) {
-      this.#text.push(this.#extraChars.join(""));
+      for (let i = 0, ii = this.#extraChars.length; i < ii; i++) {
+        this.#text.push(this.#extraChars[i]);
+        this.#textExtraCharIds.push(this.#extraCharIds[i]);
+      }
       this.#extraChars.length = 0;
+      this.#extraCharIds.length = 0;
     }
     this.#text.push(glyph);
+    this.#textExtraCharIds.push(-1);
     this.#canTakeExtraChars = true;
 
     return true;
   }
 
-  addExtraChar(char) {
+  addExtraChar(char, id) {
     if (this.#canTakeExtraChars) {
       this.#extraChars.push(char);
+      this.#extraCharIds.push(id);
+    }
+  }
+
+  removeExtraChar(id) {
+    let index = this.#extraCharIds.lastIndexOf(id);
+    if (index >= 0) {
+      this.#extraChars.splice(index, 1);
+      this.#extraCharIds.splice(index, 1);
+      return;
+    }
+
+    index = this.#textExtraCharIds.lastIndexOf(id);
+    if (index >= 0) {
+      this.#text.splice(index, 1);
+      this.#textExtraCharIds.splice(index, 1);
     }
   }
 
@@ -133,6 +158,7 @@ class SingleIntersector {
     }
     this.#canTakeExtraChars = false;
     this.#extraChars.length = 0;
+    this.#extraCharIds.length = 0;
   }
 
   setText() {
@@ -147,6 +173,8 @@ class Intersector {
   #intersectors = [];
 
   #grid = [];
+
+  #extraCharId = 0;
 
   #minX;
 
@@ -221,8 +249,16 @@ class Intersector {
   }
 
   addExtraChar(char) {
+    const id = this.#extraCharId++;
     for (const intersector of this.#intersectors) {
-      intersector.addExtraChar(char);
+      intersector.addExtraChar(char, id);
+    }
+    return id;
+  }
+
+  removeExtraChar(id) {
+    for (const intersector of this.#intersectors) {
+      intersector.removeExtraChar(id);
     }
   }
 
