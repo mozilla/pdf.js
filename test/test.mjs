@@ -28,6 +28,7 @@ import {
   downloadManifestFiles,
   verifyManifestFiles,
 } from "./downloadutils.mjs";
+import { execSync } from "child_process";
 import fs from "fs";
 import istanbulCoverage from "istanbul-lib-coverage";
 import istanbulReportGenerator from "istanbul-reports";
@@ -1095,9 +1096,13 @@ async function startBrowser({
 }
 
 async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
-  // Remove old browser revisions from Puppeteer's cache. Updating Puppeteer can
-  // cause new browser revisions to be downloaded, so trimming the cache will
-  // prevent the disk from filling up over time.
+  // Install the browsers.
+  for (const browser of ["firefox@nightly", "chrome@stable"]) {
+    execSync(`npx puppeteer browsers install ${browser}`, { stdio: "inherit" });
+  }
+
+  // Remove old browser revisions from Puppeteer's cache. The commands above can
+  // download new browser revisions, so this prevents the disk from filling up.
   await puppeteer.trimCache();
 
   const browserNames = ["firefox", "chrome"];
