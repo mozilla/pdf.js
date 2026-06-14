@@ -4265,10 +4265,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
       totalWidth = Math.max(totalWidth, lineWidth);
     }
 
-    let hscale = 1;
-    if (totalWidth > w) {
-      hscale = w / totalWidth;
-    }
+    const hscale = totalWidth > w ? w / totalWidth : 1;
     let vscale = 1;
     const lineHeight = LINE_FACTOR * fontSize;
     const lineAscent = (LINE_FACTOR - LINE_DESCENT_FACTOR) * fontSize;

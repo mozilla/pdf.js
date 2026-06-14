@@ -555,10 +555,11 @@ window.onload = function () {
   window.addEventListener("keydown", function keydown(event) {
     if (event.which === 84) {
       // 't' switch test/ref images
-      let val = 0;
-      if (document.querySelector('input[name="which"][value="0"]:checked')) {
-        val = 1;
-      }
+      const val = document.querySelector(
+        'input[name="which"][value="0"]:checked'
+      )
+        ? 1
+        : 0;
       document
         .querySelector('input[name="which"][value="' + val + '"]')
         .click();

@@ -3171,10 +3171,7 @@ class Font {
     // there isn't enough room to duplicate, the glyph id is left the same. In
     // this case, glyph 0 may not work correctly, but that is better than
     // having the whole font fail.
-    let glyphZeroId = numGlyphsOut - 1;
-    if (!dupFirstEntry) {
-      glyphZeroId = 0;
-    }
+    const glyphZeroId = dupFirstEntry ? numGlyphsOut - 1 : 0;
 
     // When `cssFontInfo` is set, the font is used to render text in the HTML
     // view (e.g. with Xfa) so nothing must be moved in the private use area.
@@ -3248,10 +3245,7 @@ class Font {
     // Type 1 fonts have a notdef inserted at the beginning, so glyph 0
     // becomes glyph 1. In a CFF font glyph 0 is appended to the end of the
     // char strings.
-    let glyphZeroId = 1;
-    if (font instanceof CFFFont) {
-      glyphZeroId = font.numGlyphs - 1;
-    }
+    const glyphZeroId = font instanceof CFFFont ? font.numGlyphs - 1 : 1;
     const mapping = font.getGlyphMapping(properties);
     let newMapping = null;
     let newCharCodeToGlyphId = mapping;
