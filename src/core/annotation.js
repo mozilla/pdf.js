@@ -3346,7 +3346,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       value: value ? this.data.exportValue : "",
     };
 
-    const name = Name.get(value ? this.data.exportValue : "Off");
+    const name = Name.get(value ? this._onStateName : "Off");
     this.setValue(dict, name, evaluator.xref, changes);
 
     dict.set("AS", name);
@@ -3406,7 +3406,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       value: value ? this.data.buttonValue : "",
     };
 
-    const name = Name.get(value ? this.data.buttonValue : "Off");
+    const name = Name.get(value ? this._onStateName : "Off");
     if (value) {
       this.setValue(dict, name, evaluator.xref, changes);
     }
@@ -3485,6 +3485,107 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     this._streams.push(this.checkedAppearance);
   }
 
+  _getOnStateName(dict) {
+    const appearanceStates = dict.get("AP");
+    if (!(appearanceStates instanceof Dict)) {
+      return null;
+    }
+    const normalAppearance = appearanceStates.get("N");
+    if (!(normalAppearance instanceof Dict)) {
+      return null;
+    }
+    for (const key of normalAppearance.getKeys()) {
+      if (key !== "Off") {
+        return key;
+      }
+    }
+    return null;
+  }
+
+  _getExportValueForOptIndex(index, opt, xref) {
+    if (Number.isInteger(index) && index >= 0 && index < opt.length) {
+      const value = this._decodeFormValue(xref.fetchIfRef(opt[index]));
+      if (typeof value === "string") {
+        return value;
+      }
+    }
+    return null;
+  }
+
+  _getOptInfo(dict, onState, opt, xref) {
+    if (!Array.isArray(opt)) {
+      return null;
+    }
+    const stateToIndex = new Map();
+    let currentIndex = null;
+
+    const fieldParent = dict.get("Parent");
+    const kids = fieldParent instanceof Dict ? fieldParent.get("Kids") : null;
+    if (Array.isArray(kids)) {
+      for (let i = 0, ii = Math.min(kids.length, opt.length); i < ii; i++) {
+        const kid = kids[i];
+        if (kid instanceof Ref && isRefsEqual(kid, this.ref)) {
+          currentIndex = i;
+        }
+
+        const kidDict = xref.fetchIfRef(kid);
+        if (!(kidDict instanceof Dict)) {
+          continue;
+        }
+        if (kidDict === dict) {
+          currentIndex = i;
+        }
+
+        const kidOnState = this._getOnStateName(kidDict);
+        if (typeof kidOnState === "string" && !stateToIndex.has(kidOnState)) {
+          stateToIndex.set(kidOnState, i);
+        }
+      }
+    } else if (opt.length === 1 && typeof onState === "string") {
+      // A single widget is sometimes used as its own field dictionary.
+      currentIndex = 0;
+      stateToIndex.set(onState, 0);
+    }
+
+    return { currentIndex, opt, stateToIndex };
+  }
+
+  // The appearance state is a Name; its real export value can be overridden by
+  // the "Opt" array, whose entries are ordered like the field's "Kids".
+  _getExportValue(state, optInfo, xref) {
+    if (!optInfo || typeof state !== "string" || state === "Off") {
+      return state;
+    }
+
+    if (state === this._onStateName) {
+      const exportValue = this._getExportValueForOptIndex(
+        optInfo.currentIndex,
+        optInfo.opt,
+        xref
+      );
+      if (exportValue !== null) {
+        return exportValue;
+      }
+    }
+
+    if (optInfo.stateToIndex.has(state)) {
+      const exportValue = this._getExportValueForOptIndex(
+        optInfo.stateToIndex.get(state),
+        optInfo.opt,
+        xref
+      );
+      if (exportValue !== null) {
+        return exportValue;
+      }
+    }
+
+    const index = parseInt(state, 10);
+    if (Number.isInteger(index) && String(index) === state) {
+      return this._getExportValueForOptIndex(index, optInfo.opt, xref) || state;
+    }
+    return state;
+  }
+
   _processCheckBox(params) {
     const customAppearance = params.dict.get("AP");
     let normalAppearance =
@@ -3527,15 +3628,33 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       exportValues.push("Off", otherYes);
     }
 
+    const onState = exportValues[1];
+    this._onStateName = onState;
+
+    const opt = getInheritableProperty({ dict: params.dict, key: "Opt" });
+    const optInfo = this._getOptInfo(params.dict, onState, opt, params.xref);
+    this.data.exportValue = this._getExportValue(onState, optInfo, params.xref);
+
     // Don't use a "V" entry pointing to a non-existent appearance state,
     // see e.g. bug1720411.pdf where it's an *empty* Name-instance.
-    if (!exportValues.includes(this.data.fieldValue)) {
+    if (
+      !exportValues.includes(this.data.fieldValue) &&
+      this.data.fieldValue !== this.data.exportValue
+    ) {
       this.data.fieldValue = "Off";
     }
+    this.data.fieldValue = this._getExportValue(
+      this.data.fieldValue,
+      optInfo,
+      params.xref
+    );
+    this.data.defaultFieldValue = this._getExportValue(
+      this.data.defaultFieldValue,
+      optInfo,
+      params.xref
+    );
 
-    this.data.exportValue = exportValues[1];
-
-    const checkedAppearance = normalAppearance?.get(this.data.exportValue);
+    const checkedAppearance = normalAppearance?.get(onState);
     this.checkedAppearance =
       checkedAppearance instanceof BaseStream ? checkedAppearance : null;
     const uncheckedAppearance = normalAppearance?.get("Off");
@@ -3579,14 +3698,30 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     if (!(normalAppearance instanceof Dict)) {
       return;
     }
+    let onState = null;
     for (const key of normalAppearance.getKeys()) {
       if (key !== "Off") {
-        this.data.buttonValue = key;
+        onState = key;
         break;
       }
     }
+    this._onStateName = onState;
 
-    const checkedAppearance = normalAppearance.get(this.data.buttonValue);
+    const opt = getInheritableProperty({ dict: params.dict, key: "Opt" });
+    const optInfo = this._getOptInfo(params.dict, onState, opt, params.xref);
+    this.data.buttonValue = this._getExportValue(onState, optInfo, params.xref);
+    this.data.fieldValue = this._getExportValue(
+      this.data.fieldValue,
+      optInfo,
+      params.xref
+    );
+    this.data.defaultFieldValue = this._getExportValue(
+      this.data.defaultFieldValue,
+      optInfo,
+      params.xref
+    );
+
+    const checkedAppearance = normalAppearance.get(onState);
     this.checkedAppearance =
       checkedAppearance instanceof BaseStream ? checkedAppearance : null;
     const uncheckedAppearance = normalAppearance.get("Off");
