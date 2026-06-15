@@ -510,20 +510,17 @@ class WorkerMessageHandler {
               startWorkerTask(task);
             }
             pagePromises.push(
-              pdfManager.getPage(i).then(async page => {
-                if (!page) {
-                  return [];
-                }
-                return (
+              pdfManager
+                .getPage(i)
+                .then(page =>
                   page.collectAnnotationsByType(
                     handler,
                     task,
                     types,
                     annotationPromises,
                     annotationGlobals
-                  ) || []
-                );
-              })
+                  )
+                )
             );
           }
           await Promise.all(pagePromises);
