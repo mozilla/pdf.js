@@ -343,10 +343,6 @@ class HighlightOutline extends Outline {
   get box() {
     return this.#box;
   }
-
-  get classNamesForOutlining() {
-    return ["highlightOutline"];
-  }
 }
 
 class FreeHighlightOutliner extends FreeDrawOutliner {
