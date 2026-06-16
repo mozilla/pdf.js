@@ -332,10 +332,7 @@ class AnnotationLayerBuilder {
       let linkAreaRects;
 
       for (const annotation of this.#annotations) {
-        if (
-          annotation.annotationType !== AnnotationType.LINK ||
-          !annotation.url
-        ) {
+        if (annotation.annotationType !== AnnotationType.LINK) {
           continue;
         }
         // TODO: Add a test case to verify that we can find the intersection
