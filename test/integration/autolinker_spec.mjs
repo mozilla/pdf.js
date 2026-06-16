@@ -169,6 +169,43 @@ describe("autolinker", function () {
     });
   });
 
+  describe("issue21458.pdf", function () {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "issue21458.pdf",
+        ".page[data-page-number='1'] .annotationLayer",
+        null,
+        null,
+        { enableAutoLinking: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not add links that overlap internal destinations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForLinkAnnotations(page);
+          const linkIds = await page.$$eval(
+            ".page[data-page-number='1'] .annotationLayer > .linkAnnotation > a",
+            annotations =>
+              annotations.map(a => a.getAttribute("data-element-id"))
+          );
+          expect(linkIds.length).withContext(`In ${browserName}`).toEqual(42);
+          linkIds.forEach(id =>
+            expect(id)
+              .withContext(`In ${browserName}`)
+              .not.toContain("inferred_link_")
+          );
+        })
+      );
+    });
+  });
+
   describe("PR 19470", function () {
     let pages;
 
