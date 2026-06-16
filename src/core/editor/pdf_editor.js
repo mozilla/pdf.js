@@ -674,21 +674,13 @@ class PDFEditor {
     const classNames = node.get("C");
     if (classNames instanceof Name) {
       const newClassName = dedupClasses.get(classNames.name);
-      if (newClassName) {
-        newNode.set("C", Name.get(newClassName));
-      } else {
-        newNode.set("C", classNames);
-      }
+      newNode.set("C", newClassName ? Name.get(newClassName) : classNames);
     } else if (Array.isArray(classNames)) {
       const newClassNames = [];
       for (const className of classNames) {
         if (className instanceof Name) {
           const newClassName = dedupClasses.get(className.name);
-          if (newClassName) {
-            newClassNames.push(Name.get(newClassName));
-          } else {
-            newClassNames.push(className);
-          }
+          newClassNames.push(newClassName ? Name.get(newClassName) : className);
         }
       }
       newNode.set("C", newClassNames);
@@ -698,11 +690,7 @@ class PDFEditor {
     const roleName = node.get("S");
     if (roleName instanceof Name) {
       const newRoleName = dedupRoles.get(roleName.name);
-      if (newRoleName) {
-        newNode.set("S", Name.get(newRoleName));
-      } else {
-        newNode.set("S", roleName);
-      }
+      newNode.set("S", newRoleName ? Name.get(newRoleName) : roleName);
     }
 
     // Fix the ID.
@@ -710,11 +698,7 @@ class PDFEditor {
     if (typeof id === "string") {
       const stringId = stringToPDFString(id, /* keepEscapeSequence = */ false);
       const newId = dedupIDs.get(stringId);
-      if (newId) {
-        newNode.set("ID", stringToAsciiOrUTF16BE(newId));
-      } else {
-        newNode.set("ID", id);
-      }
+      newNode.set("ID", newId ? stringToAsciiOrUTF16BE(newId) : id);
     }
 
     // Table headers may contain IDs that need to be deduplicated.
