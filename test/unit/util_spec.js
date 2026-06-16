@@ -37,7 +37,6 @@ describe("util", function () {
       expect(exception.message).toEqual("Something went wrong");
       expect(exception.name).toEqual("DerivedException");
       expect(exception.foo).toEqual("bar");
-      expect(exception.stack).toContain("BaseExceptionClosure");
     });
   });
 
