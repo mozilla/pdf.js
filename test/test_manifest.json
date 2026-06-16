@@ -6787,6 +6787,13 @@
     "about": "Every blend mode that PDF supports."
   },
   {
+    "id": "bug1873345",
+    "file": "pdfs/bug1873345.pdf",
+    "md5": "03483b94a2c02ac5f98c17ccf14de8ea",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "transparency_group",
     "file": "pdfs/transparency_group.pdf",
     "md5": "10391f76434128e5da70cff5fc485ff0",

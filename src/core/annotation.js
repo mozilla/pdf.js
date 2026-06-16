@@ -5025,16 +5025,7 @@ class HighlightAnnotation extends MarkupAnnotation {
 
     const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
     if (quadPoints) {
-      const resources = this.appearance?.dict.get("Resources");
-
-      if (!this.appearance || !resources?.has("ExtGState")) {
-        if (this.appearance) {
-          // Workaround for cases where there's no /ExtGState-entry directly
-          // available, e.g. when the appearance stream contains a /XObject of
-          // the /Form-type, since that causes the highlighting to completely
-          // obscure the PDF content below it (fixes issue13242.pdf).
-          warn("HighlightAnnotation - ignoring built-in appearance stream.");
-        }
+      if (!this.appearance) {
         // Default color is yellow in Acrobat Reader
         const fillColor = getPdfColorArray(this.color, [1, 1, 0]);
         const fillAlpha = dict.get("CA");

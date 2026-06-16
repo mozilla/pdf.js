@@ -3210,12 +3210,13 @@ class CanvasGraphics {
     }
 
     const currentCtx = this.ctx;
-    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
-      info("TODO: Fully support non-isolated non-knockout groups.");
-    }
-
     if (
-      !group.needsIsolation &&
+      // A non-isolated group blends with its backdrop, so drawing it directly
+      // on the parent canvas (rather than on a transparent intermediate one)
+      // is correct even when it contains blend modes (bug 1873345). A soft
+      // mask still needs its own canvas though, and an isolated group requires
+      // a transparent backdrop, so both keep the intermediate canvas.
+      (!group.needsIsolation || (!group.isolated && !group.hasSoftMask)) &&
       !group.knockout &&
       !group.isGray &&
       this.#knockoutGroupLevel === 0 &&
@@ -3234,10 +3235,22 @@ class CanvasGraphics {
         }
         currentCtx.clip(clip);
       }
+      // Unlike the intermediate-canvas path below, the content is drawn
+      // straight onto the parent canvas with no later compositing step, so the
+      // inherited blend mode, alpha constants and transfer function must stay
+      // active here rather than being reset (issue 20722); the conditions
+      // above already guarantee a Normal blend and an opaque (ca === 1) state.
       this.groupStack.push(null); // null = no intermediate canvas
       this.#groupStackMeta.push(null);
       this.groupLevel++;
       return;
+    }
+
+    // Reached only when the direct path above didn't apply, e.g. a soft mask,
+    // non-default group alpha or blend mode: we still composite on a
+    // transparent intermediate canvas rather than the real backdrop.
+    if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
+      info("TODO: Fully support non-isolated non-knockout groups.");
     }
 
     const currentTransform = getCurrentTransform(currentCtx);
