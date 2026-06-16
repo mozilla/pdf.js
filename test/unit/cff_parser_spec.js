@@ -22,6 +22,9 @@ import {
   CFFStrings,
   CFFTopDict,
 } from "../../src/core/cff_parser.js";
+import { DefaultFileReaderFactory, TEST_PDFS_PATH } from "./test_utils.js";
+import { PDFDocument } from "../../src/core/document.js";
+import { Ref } from "../../src/core/primitives.js";
 import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
@@ -354,6 +357,35 @@ describe("CFFParser", function () {
 
     expect(reparsedCff.topDict.privateDict.getByName("BlueScale")).toEqual(
       0.039625
+    );
+  });
+
+  it("preserves the BlueScale of an embedded CID font with small zones", async function () {
+    // The embedded CID-keyed CFF pairs a near-default BlueScale of 0.037 with
+    // 12-unit zones; clamping it up to the lower bound breaks rendering on
+    // macOS only, so it's guarded here rather than with a reference image.
+    const data = await DefaultFileReaderFactory.fetch({
+      path: TEST_PDFS_PATH + "cff_bluescale_small_zones.pdf",
+    });
+    const pdfManager = {
+      evaluatorOptions: { isOffscreenCanvasSupported: false },
+      password: null,
+    };
+    const pdfDocument = new PDFDocument(pdfManager, new Stream(data));
+    pdfDocument.parseStartXRef();
+    pdfDocument.xref.parse();
+
+    // Object 8 is the `/FontFile3` (`/CIDFontType0C`) stream in the fixture.
+    const fontProgram = pdfDocument.xref.fetch(Ref.get(8, 0)).getBytes();
+    const embeddedCff = new CFFParser(
+      new Stream(fontProgram),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(embeddedCff.isCIDFont).toEqual(true);
+    expect(embeddedCff.fdArray[0].privateDict.getByName("BlueScale")).toEqual(
+      0.037
     );
   });
 
