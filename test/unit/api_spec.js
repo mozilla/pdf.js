@@ -3915,6 +3915,34 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets FileAttachment annotation content that stays readable after cleanup", async function () {
+      // The embedded files are reachable only via the annotations (no catalog
+      // `/Names` tree), so their content must survive `cleanup` by being
+      // re-derivable from the xref.
+      const loadingTask = getDocument(buildGetDocumentParams("bug1230933.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const annotations = await pdfPage.getAnnotations();
+
+      const fileAnnotation = annotations.find(
+        a => a.annotationType === AnnotationType.FILEATTACHMENT
+      );
+      const { fileId } = fileAnnotation;
+      expect(fileId.startsWith("attachmentRef:")).toEqual(true);
+
+      const before = await pdfDoc.getAttachmentContent(fileId);
+      expect(before).toBeInstanceOf(Uint8Array);
+      expect(before.length).toEqual(234414);
+
+      await pdfDoc.cleanup();
+
+      const after = await pdfDoc.getAttachmentContent(fileId);
+      expect(after).toBeInstanceOf(Uint8Array);
+      expect(after.length).toEqual(234414);
+
+      await loadingTask.destroy();
+    });
+
     it("gets annotations containing /Launch action with /FileSpec dictionary (issue 17846)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue17846.pdf"));
       const pdfDoc = await loadingTask.promise;
