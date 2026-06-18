@@ -902,10 +902,14 @@ class CFFParser {
         // BlueScale up only misaligns/collapses overshooting glyphs (notably
         // with macOS's Core Text rasterizer). Only apply the lower clamp when
         // its target does not exceed the default.
+        // Round the bound in order to avoid too long operand (issue 21466).
+        const PRECISION = 1e5;
         const lowerBound = 0.5 / maxZoneHeight;
         const minBlueScale =
-          lowerBound <= DEFAULT_BLUE_SCALE ? lowerBound : -Infinity;
-        const maxBlueScale = 1 / maxZoneHeight;
+          lowerBound <= DEFAULT_BLUE_SCALE
+            ? Math.ceil(lowerBound * PRECISION) / PRECISION
+            : -Infinity;
+        const maxBlueScale = Math.floor(PRECISION / maxZoneHeight) / PRECISION;
         const clamped = MathClamp(blueScale, minBlueScale, maxBlueScale);
         if (clamped !== blueScale) {
           privateDict.setByName("BlueScale", clamped);
