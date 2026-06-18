@@ -51,13 +51,6 @@ if (isNodeJS) {
         warn("Cannot polyfill `DOMMatrix`, rendering may be broken.");
       }
     }
-    if (!globalThis.ImageData) {
-      if (canvas?.ImageData) {
-        globalThis.ImageData = canvas.ImageData;
-      } else {
-        warn("Cannot polyfill `ImageData`, rendering may be broken.");
-      }
-    }
     if (!globalThis.Path2D) {
       if (canvas?.Path2D) {
         globalThis.Path2D = canvas.Path2D;
