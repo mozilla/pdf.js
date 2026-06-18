@@ -389,6 +389,29 @@ describe("CFFParser", function () {
     );
   });
 
+  it("clamps BlueScale to a short decimal so the recompiled operand stays compact", function () {
+    // maxZoneHeight = 13 gives lower bound (0.5 / 13 = 0.038461538461538464)
+    // which is too long (issue 21466).
+    cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
+    cff.topDict.privateDict.setByName(
+      "BlueValues",
+      [-13, 13, 530, 13, 220, 13, 30, 13]
+    );
+    cff.topDict.privateDict.setByName("BlueScale", 0.01);
+    cff.topDict.setByName("Private", [0, 0]);
+    const fontDataShortBlueScale = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataShortBlueScale),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    const blueScale = reparsedCff.topDict.privateDict.getByName("BlueScale");
+    expect(blueScale).toEqual(0.03847);
+    expect(new CFFCompiler(cff).encodeFloat(blueScale).length).toBeLessThan(6);
+  });
+
   it("refuses to add topDict key with invalid value (bug 1068432)", function () {
     const topDict = cff.topDict;
     const defaultValue = topDict.getByName("UnderlinePosition");
