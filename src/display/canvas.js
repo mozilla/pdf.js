@@ -3996,12 +3996,6 @@ class CanvasGraphics {
       const result = this.applyTransferMapsToBitmap(imgData);
       imgToPaint = result.img;
       inlineImgCanvas = result.canvasEntry;
-    } else if (
-      (typeof HTMLElement === "function" && imgData instanceof HTMLElement) ||
-      !imgData.data
-    ) {
-      // typeof check is needed due to node.js support, see issue #8489
-      imgToPaint = imgData;
     } else {
       const tmpCanvas = this.canvasFactory.create(width, height);
       putBinaryImageData(tmpCanvas.context, imgData);
