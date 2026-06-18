@@ -13502,6 +13502,13 @@
     "useWasm": false
   },
   {
+    "id": "floating-toolbar-positioning",
+    "file": "pdfs/floating-toolbar-positioning.pdf",
+    "md5": "bef4ff1ef3b51b1dffb3e84e60d1c900",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "jbig2_bitmap_initially_unknown_size",
     "file": "pdfs/bitmap-initially-unknown-size.pdf",
     "md5": "2841f0d2d16ec8357c7b1908dbbaf351",
