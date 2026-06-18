@@ -102,6 +102,11 @@ const defaultOptions = {
     value: true,
     kind: OptionKind.BROWSER,
   },
+  supportsDownloading: {
+    /** @type {boolean} */
+    value: true,
+    kind: OptionKind.BROWSER,
+  },
   supportsIntegratedFind: {
     /** @type {boolean} */
     value: false,

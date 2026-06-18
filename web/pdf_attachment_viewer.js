@@ -126,7 +126,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
         : fallbackContent;
 
       if (content) {
-        this.downloadManager.openOrDownloadData(content, filename);
+        this.downloadManager?.openOrDownloadData(content, filename);
       }
     };
 
