@@ -908,7 +908,12 @@ class CFFParser {
         const maxBlueScale = 1 / maxZoneHeight;
         const clamped = MathClamp(blueScale, minBlueScale, maxBlueScale);
         if (clamped !== blueScale) {
-          privateDict.setByName("BlueScale", clamped);
+          // Clamping can yield a non-terminating decimal (e.g. `0.5 / 13`)
+          // whose full-precision real operand exceeds what some CFF parsers
+          // accept in the Private DICT. The over-long operand desyncs the
+          // DICT and drops almost every glyph (issue 21466), so round to a
+          // short, safely-encodable value before writing it back.
+          privateDict.setByName("BlueScale", Math.round(clamped * 1e5) / 1e5);
         }
       }
     }

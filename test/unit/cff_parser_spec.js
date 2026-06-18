@@ -318,6 +318,30 @@ describe("CFFParser", function () {
     );
   });
 
+  it("rounds a clamped BlueScale to a short, encodable value (issue 21466)", function () {
+    cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
+    // maxZoneHeight = 13 -> minBlueScale = 0.5 / 13 = 0.0384615384615...,
+    // a non-terminating decimal. Writing it back at full precision produces a
+    // real operand long enough to desync the Private DICT in stricter CFF
+    // parsers (notably the browser's), dropping nearly every glyph.
+    cff.topDict.privateDict.setByName("BlueValues", [-13, 13, 530, 13]);
+    cff.topDict.privateDict.setByName("BlueScale", 0.01);
+    cff.topDict.setByName("Private", [0, 0]);
+    const fontDataWithClampedBlueScale = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithClampedBlueScale),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    // The clamped value is rounded to five decimals (0.5 / 13 -> 0.03846)
+    // rather than written as 0.038461538461538464.
+    expect(reparsedCff.topDict.privateDict.getByName("BlueScale")).toEqual(
+      0.03846
+    );
+  });
+
   it("preserves a BlueScale that is already inside the valid range", function () {
     cff.topDict.privateDict = new CFFPrivateDict(cff.strings);
     cff.topDict.privateDict.setByName(
