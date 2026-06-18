@@ -28,29 +28,6 @@ import { stringToPDFString } from "./string_utils.js";
  */
 
 /**
- * Get a platform-specific item from a file-spec dictionary.
- *
- * Search order follows the PDF platform keys: `UF`, `F`, `Unix`, `Mac`,
- * `DOS`.
- *
- * @param {Dict | null | undefined} dict
- *   Dictionary.
- * @returns {unknown}
- *   Matching dictionary value or `null` when no key is found.
- */
-function pickPlatformItem(dict) {
-  if (dict instanceof Dict) {
-    // Look for the filename in this order: UF, F, Unix, Mac, DOS
-    for (const key of ["UF", "F", "Unix", "Mac", "DOS"]) {
-      if (dict.has(key)) {
-        return dict.get(key);
-      }
-    }
-  }
-  return null;
-}
-
-/**
  * "A PDF file can refer to the contents of another file by using a File
  * Specification (PDF 1.1)", see the spec (7.11) for more details.
  * NOTE: Only embedded files are supported (as part of the attachments support)
@@ -76,7 +53,7 @@ class FileSpec {
   }
 
   get filename() {
-    const item = pickPlatformItem(this.root);
+    const item = FileSpec.pickPlatformItem(this.root);
     if (item && typeof item === "string") {
       // NOTE: The following replacement order is INTENTIONAL, regardless of
       //       what some static code analysers (e.g. CodeQL) may claim.
@@ -106,6 +83,31 @@ class FileSpec {
   }
 
   /**
+   * Get a platform-specific item from a file-spec dictionary.
+   *
+   * Search order follows the PDF platform keys: `UF`, `F`, `Unix`, `Mac`,
+   * `DOS`.
+   *
+   * @param {Dict | null | undefined} dict
+   *   Dictionary.
+   * @param {boolean} [raw]
+   *   Return the raw (possibly indirect) value rather than the resolved one.
+   * @returns {unknown}
+   *   Matching dictionary value or `null` when no key is found.
+   */
+  static pickPlatformItem(dict, raw = false) {
+    if (dict instanceof Dict) {
+      // Look for the filename in this order: UF, F, Unix, Mac, DOS
+      for (const key of ["UF", "F", "Unix", "Mac", "DOS"]) {
+        if (dict.has(key)) {
+          return raw ? dict.getRaw(key) : dict.get(key);
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
    * Read attachment bytes from a file-spec dictionary.
    *
    * @param {Dict | null | undefined} dict
@@ -119,24 +121,36 @@ class FileSpec {
     if (!(dict instanceof Dict)) {
       return null;
     }
-    const ef = pickPlatformItem(dict.get("EF"));
+    const ef = this.pickPlatformItem(dict.get("EF"));
     if (!(ef instanceof BaseStream)) {
       warn(
         "Embedded file specification points to non-existing/invalid content"
       );
       return null;
     }
+    return this.readStreamContent(ef);
+  }
 
+  /**
+   * Read the bytes of an embedded-file stream.
+   *
+   * @param {BaseStream} stream
+   *   Embedded-file stream.
+   * @returns {CatalogAttachmentContent}
+   *   Attachment bytes.
+   * @throws {PasswordException}
+   *   When the bytes are encrypted and no key is available.
+   */
+  static readStreamContent(stream) {
     // Throw if we need a password but don’t have one.
-    const encrypt = dict.xref?.encrypt;
+    const encrypt = stream.dict?.xref?.encrypt;
     if (encrypt?.encryptionKey === null) {
       throw new PasswordException(
         "No password given",
         PasswordResponses.NEED_PASSWORD
       );
     }
-
-    return ef.getBytes();
+    return stream.getBytes();
   }
 }
 
