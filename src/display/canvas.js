@@ -2670,13 +2670,13 @@ class CanvasGraphics {
       this.showType3Text(opIdx, glyphs);
       this.dependencyTracker?.recordShowTextOperation(opIdx);
       this.#endKnockoutElement(started);
-      return undefined;
+      return;
     }
 
     const fontSize = current.fontSize;
     if (fontSize === 0) {
       this.dependencyTracker?.recordOperation(opIdx);
-      return undefined;
+      return;
     }
 
     const started = this.#beginKnockoutElement(current.fillAlpha);
@@ -2794,7 +2794,7 @@ class CanvasGraphics {
       ctx.restore();
       this.compose();
       this.#endKnockoutElement(started);
-      return undefined;
+      return;
     }
 
     let x = 0,
@@ -2910,7 +2910,6 @@ class CanvasGraphics {
 
     this.dependencyTracker?.recordShowTextOperation(opIdx);
     this.#endKnockoutElement(started);
-    return undefined;
   }
 
   showType3Text(opIdx, glyphs) {
