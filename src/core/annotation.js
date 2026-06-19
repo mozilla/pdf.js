@@ -287,6 +287,9 @@ class AnnotationFactory {
       case "FileAttachment":
         return new FileAttachmentAnnotation(parameters);
 
+      case "RichMedia":
+        return new RichMediaAnnotation(parameters);
+
       default:
         if (!collectFields) {
           if (!subtype) {
@@ -5451,6 +5454,162 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
       typeof fillAlpha === "number" && fillAlpha >= 0 && fillAlpha <= 1
         ? fillAlpha
         : null;
+  }
+}
+
+class RichMediaAnnotation extends Annotation {
+  constructor(params) {
+    super(params);
+
+    this.data.noHTML = true;
+
+    const { dict, xref, annotationGlobals } = params;
+
+    const content = dict.get("RichMediaContent");
+    if (!(content instanceof Dict)) {
+      return;
+    }
+
+    const asset = RichMediaAnnotation.#findAsset(content, xref);
+    if (!asset) {
+      warn("RichMedia annotation has no playable asset.");
+      return;
+    }
+    const { assetRef, assetDict, filename, contentType } = asset;
+
+    let contentRef = assetRef;
+    if (!(contentRef instanceof Ref)) {
+      contentRef = FileSpec.pickPlatformItem(
+        assetDict.get("EF"),
+        /* raw = */ true
+      );
+    }
+    const fileId =
+      contentRef instanceof Ref
+        ? annotationGlobals.pdfManager.pdfDocument.catalog?.getAttachmentIdForAnnotation(
+            contentRef
+          )
+        : undefined;
+
+    this.data.noHTML = false;
+    this.data.richMedia = { fileId, filename, contentType };
+  }
+
+  /**
+   * Locate the primary playable embedded media asset.
+   *
+   * Per the spec (ISO 32000-2, 13.7), the asset to play is selected through
+   * `Configurations -> Instances -> Asset`. We pick the first instance with a
+   * natively playable asset rather than honoring the default configuration
+   * indicated by `RichMediaSettings`/activation; this keeps selection simple
+   * and matches the common single-configuration case. The `/Assets` name tree
+   * merely enumerates every embedded file; we don't use it as a fallback, since
+   * Acrobat itself won't play media that's only reachable that way. Flash
+   * instances are skipped, since they can't be played natively.
+   *
+   * @returns {{
+   *   assetRef: Ref | null,
+   *   assetDict: Dict,
+   *   filename: string,
+   *   contentType: string,
+   * } | null}
+   */
+  static #findAsset(content, xref) {
+    const configurations = content.get("Configurations");
+    if (!Array.isArray(configurations)) {
+      return null;
+    }
+    for (const configRef of configurations) {
+      const config = xref.fetchIfRef(configRef);
+      if (!(config instanceof Dict)) {
+        continue;
+      }
+      const instances = config.get("Instances");
+      if (!Array.isArray(instances)) {
+        continue;
+      }
+      for (const instanceRef of instances) {
+        const instance = xref.fetchIfRef(instanceRef);
+        if (!(instance instanceof Dict)) {
+          continue;
+        }
+        // Skip Flash instances: it's obsolete.
+        if (isName(instance.get("Subtype"), "Flash")) {
+          // Flash has been supported (see PDF 1.7 Extension Level 3).
+          continue;
+        }
+        const rawAsset = instance.getRaw("Asset");
+        const asset = xref.fetchIfRef(rawAsset);
+        if (!(asset instanceof Dict)) {
+          continue;
+        }
+        const { filename } = new FileSpec(asset).serializable;
+        const contentType = RichMediaAnnotation.#getContentType(
+          asset,
+          filename
+        );
+        if (!contentType) {
+          continue;
+        }
+        return {
+          assetRef: rawAsset instanceof Ref ? rawAsset : null,
+          assetDict: asset,
+          filename,
+          contentType,
+        };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Determine the MIME type used to build the `<video>`/`<audio>` element.
+   *
+   * Per the spec (ISO 32000-2, 7.11.4) an embedded file stream declares its
+   * MIME type through its own `/Subtype`, with characters not allowed in a
+   * name hex-escaped (e.g. `/video#2Fmp4` -> `video/mp4`). We trust that when
+   * it names an audio/video type, and otherwise fall back to mapping the
+   * filename extension. Returns `null` when the asset isn't a recognized
+   * audio/video type (e.g. Flash `.swf` or 3D models), so we don't build a
+   * player that can't play anything.
+   *
+   * @param {Dict} assetDict
+   * @param {string} filename
+   * @returns {string | null}
+   */
+  static #getContentType(assetDict, filename) {
+    // The embedded file stream is keyed like a file-spec platform item.
+    const stream = FileSpec.pickPlatformItem(assetDict.get("EF"));
+    const subtype =
+      stream instanceof BaseStream ? stream.dict?.get("Subtype") : null;
+    if (subtype instanceof Name && /^(?:video|audio)\//.test(subtype.name)) {
+      return subtype.name;
+    }
+
+    const ext = filename.split(".").at(-1)?.toLowerCase();
+    switch (ext) {
+      case "mp4":
+      case "m4v":
+        return "video/mp4";
+      case "webm":
+        return "video/webm";
+      case "ogv":
+        return "video/ogg";
+      case "mov":
+        return "video/quicktime";
+      case "mp3":
+        return "audio/mpeg";
+      case "m4a":
+        return "audio/mp4";
+      case "wav":
+        return "audio/wav";
+      case "oga":
+      case "ogg":
+        return "audio/ogg";
+      default:
+        return null;
+    }
   }
 }
 
