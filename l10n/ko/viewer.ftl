@@ -665,7 +665,7 @@ pdfjs-views-manager-pages-status-action-button-label = 관리
 pdfjs-views-manager-pages-status-copy-button-label = 복사
 pdfjs-views-manager-pages-status-cut-button-label = 잘라내기
 pdfjs-views-manager-pages-status-delete-button-label = 삭제
-pdfjs-views-manager-pages-status-export-selected-button-label = 선택 페이지 내보내기…
+pdfjs-views-manager-pages-status-export-selected-button-label = 선택한 페이지 내보내기…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
 pdfjs-views-manager-status-undo-cut-label = { $count }개 페이지 잘림
