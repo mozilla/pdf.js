@@ -2054,7 +2054,7 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 3.07 Tm" +
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 3.21 Tm" +
           " 2.61 0 Td (a) Tj 8 0 Td (a) Tj 8.56 0 Td (\\() Tj" +
           " 7.44 0 Td (a) Tj 8 0 Td (a) Tj" +
           " 8.56 0 Td (\\)) Tj 7.44 0 Td (a) Tj" +
@@ -2095,7 +2095,7 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 3.07 Tm" +
+        "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 2.5 Tm" +
           " 1.5 0 Td (\x30\x53) Tj 8 0 Td (\x30\x93) Tj 8 0 Td (\x30\x6b) Tj" +
           " 8 0 Td (\x30\x61) Tj 8 0 Td (\x30\x6f) Tj" +
           " 8 0 Td (\x4e\x16) Tj 8 0 Td (\x75\x4c) Tj" +

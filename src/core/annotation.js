@@ -2574,9 +2574,6 @@ class WidgetAnnotation extends Annotation {
         fontSize,
         totalWidth,
         totalHeight,
-        defaultVPadding,
-        descent,
-        lineHeight,
         alignment,
         bidi(lines[0]).dir === "rtl",
         annotationStorage
@@ -2938,9 +2935,6 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     fontSize,
     width,
     height,
-    vPadding,
-    descent,
-    lineHeight,
     alignment,
     isRTL,
     annotationStorage
@@ -2977,11 +2971,18 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       previousWidth = glyphWidth;
     }
     const renderedComb = buf.join(" ");
+
+    // Vertically center the glyphs within the field: comb fields are mostly
+    // filled with uppercase letters and/or digits, hence we use the cap height
+    // (with a fallback on the ascent or the font size) to center them.
+    const vShift =
+      (height - (font.capHeight || font.ascent || 1) * fontSize) / 2;
+
     return (
       `/Tx BMC q ${colors}BT ` +
       defaultAppearance +
       ` 1 0 0 1 ${numberToString(hShift)} ${numberToString(
-        vPadding + descent
+        vShift
       )} Tm ${renderedComb}` +
       " ET Q EMC"
     );
