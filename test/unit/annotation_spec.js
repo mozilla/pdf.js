@@ -933,6 +933,55 @@ describe("annotation", function () {
       }
     );
 
+    it(
+      "should correctly parse a URI action, with a (bad) relative URI and " +
+        'the "docBaseUrl" parameter specified',
+      async function () {
+        // Here the /URI entry is *incorrectly* specified as a Name,
+        // rather than a string (see issue 4159).
+        const actionStream = new StringStream(
+          `<<
+             /Type /Action
+             /S /URI
+             /URI /v#2findex.php#2fFile:Logo.png
+           >>`
+        );
+        const parser = new Parser({
+          lexer: new Lexer(actionStream),
+          xref: null,
+        });
+        const actionDict = parser.getObj();
+
+        const annotationDict = new Dict();
+        annotationDict.set("Type", Name.get("Annot"));
+        annotationDict.set("Subtype", Name.get("Link"));
+        annotationDict.set("A", actionDict);
+
+        const annotationRef = Ref.get(123, 0);
+        const xref = new XRefMock([
+          { ref: annotationRef, data: annotationDict },
+        ]);
+        const pdfManager = new PDFManagerMock({
+          docBaseUrl: "http://www.example.com/test/pdfs/qwerty.pdf",
+        });
+        const annotationGlobals =
+          await AnnotationFactory.createGlobals(pdfManager);
+
+        const { data } = await AnnotationFactory.create(
+          xref,
+          annotationRef,
+          annotationGlobals,
+          idFactoryMock
+        );
+        expect(data.annotationType).toEqual(AnnotationType.LINK);
+        expect(data.url).toEqual(
+          "http://www.example.com/v/index.php/File:Logo.png"
+        );
+        expect(data.unsafeUrl).toEqual("/v/index.php/File:Logo.png");
+        expect(data.dest).toBeUndefined();
+      }
+    );
+
     it("should correctly parse a GoTo action", async function () {
       const actionDict = new Dict();
       actionDict.set("Type", Name.get("Action"));
