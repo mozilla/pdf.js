@@ -55,6 +55,7 @@ class PageData {
     this.page = page;
     this.documentData = documentData;
     this.annotations = null;
+    this.rotationDelta = 0;
     // Named destinations which points to this page.
     this.pointingNamedDestinations = null;
 
@@ -745,6 +746,10 @@ class PDFEditor {
    * @property {PDFDocument} [document]
    * @property {ImageBitmap} [image]
    *  image to insert as a synthetic page.
+   * @property {{width: number, height: number}} [pageSize]
+   *  dimensions of an image-backed synthetic page in PDF points.
+   * @property {boolean} [fullPage]
+   *  whether the image fills the page without insertion margins.
    * @property {Array<Array<number>|number>} [includePages]
    *  included ranges (inclusive) or indices.
    * @property {Array<Array<number>|number>} [excludePages]
@@ -756,6 +761,8 @@ class PDFEditor {
    *  pages. When every contributing pageInfo has pageIndices, this is
    *  interpreted against that explicit layout. Cannot be combined with
    *  pageIndices on the same entry.
+   * @property {Array<number>} [rotationDeltas]
+   *  clockwise rotation added to each filtered page, in document order.
    */
 
   /**
@@ -992,8 +999,16 @@ class PDFEditor {
 
     const imageEntries = [];
     for (const pageInfo of pageInfos) {
-      const { document, image, includePages, excludePages, pageIndices } =
-        pageInfo;
+      const {
+        document,
+        image,
+        includePages,
+        excludePages,
+        fullPage,
+        pageIndices,
+        pageSize,
+        rotationDeltas,
+      } = pageInfo;
       if (image) {
         if (pageIndices) {
           newIndex = -1;
@@ -1019,7 +1034,7 @@ class PDFEditor {
           }
         }
         reservePageSlot(newPageIndex);
-        imageEntries.push({ image, slot: newPageIndex });
+        imageEntries.push({ fullPage, image, pageSize, slot: newPageIndex });
         continue;
       }
       if (!document) {
@@ -1040,7 +1055,9 @@ class PDFEditor {
       allDocumentData.push(documentData);
       promises.push(this.#collectDocumentData(documentData));
       let pageIndex = 0;
+      let filteredIndex = 0;
       for (const i of filteredPageIndices) {
+        const rotationDelta = rotationDeltas?.[filteredIndex++] || 0;
         let newPageIndex;
         if (pageIndices) {
           newPageIndex = pageIndices[pageIndex++];
@@ -1064,7 +1081,9 @@ class PDFEditor {
         reservePageSlot(newPageIndex);
         promises.push(
           document.getPage(i).then(page => {
-            this.oldPages[newPageIndex] = new PageData(page, documentData);
+            const pageData = new PageData(page, documentData);
+            pageData.rotationDelta = rotationDelta;
+            this.oldPages[newPageIndex] = pageData;
           })
         );
       }
@@ -1102,7 +1121,8 @@ class PDFEditor {
       if (imageEntry) {
         this.newPages[i] = await this.#makeImagePage(
           imageEntry.image,
-          modalPageSize
+          imageEntry.pageSize || modalPageSize,
+          imageEntry.fullPage
         );
       } else {
         this.newPages[i] = await this.#makePageCopy(i, null);
@@ -2354,8 +2374,13 @@ class PDFEditor {
    * @returns {Promise<Ref>} the page reference in the new PDF document.
    */
   async #makePageCopy(pageIndex) {
-    const { page, documentData, annotations, pointingNamedDestinations } =
-      this.oldPages[pageIndex];
+    const {
+      page,
+      documentData,
+      annotations,
+      pointingNamedDestinations,
+      rotationDelta,
+    } = this.oldPages[pageIndex];
     this.currentDocument = documentData;
     const { dedupNamedDestinations, oldRefMapping } = documentData;
     const { xref, rotate, mediaBox, resources, ref: oldPageRef } = page;
@@ -2390,7 +2415,7 @@ class PDFEditor {
     const lastRef = this.newRefCount;
     await this.#collectDependencies(pageDict, false, xref);
 
-    pageDict.set("Rotate", rotate);
+    pageDict.set("Rotate", (rotate + rotationDelta) % 360);
     pageDict.set("MediaBox", mediaBox);
     for (const boxName of ["CropBox", "BleedBox", "TrimBox", "ArtBox"]) {
       const box = page.getBoundingBox(boxName);
@@ -2516,18 +2541,20 @@ class PDFEditor {
 
   /**
    * Create a brand-new page that displays a single image, sized to the modal
-   * page dimensions with a margin equal to 10% of the page width on every
-   * side. The image is encoded as JPEG or lossless Flate depending on its
+   * page dimensions. Regular inserted images have a 10% margin; full-page
+   * images cover the entire page. The image is encoded as JPEG or lossless
+   * Flate depending on its
    * contents; when the source has transparency, an SMask carrying the alpha
    * channel is attached so the mask is preserved on render.
    * @param {ImageBitmap} bitmap
    * @param {{width: number, height: number}} pageSize
+   * @param {boolean} [fullPage]
    * @returns {Promise<Ref>}
    */
-  async #makeImagePage(bitmap, pageSize) {
+  async #makeImagePage(bitmap, pageSize, fullPage = false) {
     const { width: pageW, height: pageH } = pageSize;
     const DEFAULT_MARGIN_RATIO = 0.1;
-    const margin = pageW * DEFAULT_MARGIN_RATIO;
+    const margin = fullPage ? 0 : pageW * DEFAULT_MARGIN_RATIO;
     const availW = Math.max(1, pageW - 2 * margin);
     const availH = Math.max(1, pageH - 2 * margin);
 
@@ -2540,11 +2567,18 @@ class PDFEditor {
       height: imgH,
     } = await createImage(bitmap, this.xrefWrapper, { closeBitmap: true });
 
-    const scale = Math.min(availW / imgW, availH / imgH);
-    const drawW = imgW * scale;
-    const drawH = imgH * scale;
-    const tx = (pageW - drawW) / 2;
-    const ty = (pageH - drawH) / 2;
+    let drawW, drawH, tx, ty;
+    if (fullPage) {
+      drawW = pageW;
+      drawH = pageH;
+      tx = ty = 0;
+    } else {
+      const scale = Math.min(availW / imgW, availH / imgH);
+      drawW = imgW * scale;
+      drawH = imgH * scale;
+      tx = (pageW - drawW) / 2;
+      ty = (pageH - drawH) / 2;
+    }
 
     if (smaskStream) {
       const smaskRef = this.newRef;

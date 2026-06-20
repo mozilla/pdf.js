@@ -14,13 +14,58 @@
  */
 
 import {
+  AnnotationEditorParamsType,
+  AnnotationEditorType,
+  FeatureTest,
+  getFreeTextAnnotationFontStyle,
+} from "../../src/shared/util.js";
+import {
   CommandManager,
   KeyboardManager,
 } from "../../src/display/editor/tools.js";
-import { FeatureTest } from "../../src/shared/util.js";
+import { RedactionEditor } from "../../src/display/editor/redaction.js";
 import { SignatureExtractor } from "../../src/display/editor/drawers/signaturedraw.js";
+import { StampEditor } from "../../src/display/editor/stamp.js";
 
 describe("editor", function () {
+  it("should expose redaction and text formatting editor types", function () {
+    expect(RedactionEditor._editorType).toEqual(AnnotationEditorType.REDACTION);
+    expect(AnnotationEditorParamsType.FREETEXT_BOLD).toBeDefined();
+    expect(AnnotationEditorParamsType.FREETEXT_ITALIC).toBeDefined();
+    expect(AnnotationEditorParamsType.FREETEXT_UNDERLINE).toBeDefined();
+    expect(AnnotationEditorParamsType.FREETEXT_ALIGNMENT).toBeDefined();
+  });
+
+  it("should infer saved Base-14 font styles", function () {
+    expect(getFreeTextAnnotationFontStyle("HelvB")).toEqual({
+      bold: true,
+      italic: false,
+    });
+    expect(getFreeTextAnnotationFontStyle("TimesBI")).toEqual({
+      bold: true,
+      italic: true,
+    });
+  });
+
+  it("should store hardcoded stamp creation parameters", function () {
+    const params = {
+      bitmapUrl: "chrome-extension://test/stamp-check.svg",
+      initialWidth: 0.12,
+    };
+
+    StampEditor.updateDefaultParams(
+      AnnotationEditorParamsType.STAMP_IMAGE,
+      params
+    );
+    expect(StampEditor.getDefaultCreationParams()).toBe(params);
+
+    StampEditor.updateDefaultParams(
+      AnnotationEditorParamsType.STAMP_IMAGE,
+      null
+    );
+    expect(StampEditor.getDefaultCreationParams()).toBeNull();
+  });
+
   describe("Command Manager", function () {
     it("should check undo/redo", function () {
       const manager = new CommandManager(4);

@@ -137,6 +137,12 @@ class PDFThumbnailViewer {
 
   #manageCutButton = null;
 
+  #manageRotateButton = null;
+
+  #manageAddBlankButton = null;
+
+  #manageDuplicateButton = null;
+
   #copiedThumbnails = null;
 
   #savedThumbnails = null;
@@ -223,6 +229,9 @@ class PDFThumbnailViewer {
       const {
         button: menuButton,
         menu,
+        rotate,
+        addBlank,
+        duplicate,
         copy,
         cut,
         delete: del,
@@ -241,11 +250,16 @@ class PDFThumbnailViewer {
         "pagesloaded",
         () => {
           menuButton.disabled = false;
+          rotate.disabled = addBlank.disabled = duplicate.disabled = false;
+          del.disabled = !this.#canDelete();
         },
         { once: true, ...internalOpt }
       );
 
       this._manageMenu = new Menu(menu, menuButton, [
+        rotate,
+        addBlank,
+        duplicate,
         copy,
         cut,
         del,
@@ -262,6 +276,12 @@ class PDFThumbnailViewer {
       copy.addEventListener("click", this.#copyPages.bind(this));
       this.#manageCutButton = cut;
       cut.addEventListener("click", this.#cutPages.bind(this));
+      this.#manageRotateButton = rotate;
+      rotate.addEventListener("click", this.#rotatePages.bind(this));
+      this.#manageAddBlankButton = addBlank;
+      addBlank.addEventListener("click", this.#addBlankPage.bind(this));
+      this.#manageDuplicateButton = duplicate;
+      duplicate.addEventListener("click", this.#duplicatePages.bind(this));
 
       this.#toggleMenuEntries(false);
       menuButton.disabled = true;
@@ -383,6 +403,10 @@ class PDFThumbnailViewer {
       this.#toggleBar("status");
       return;
     }
+    this.#insertPageEntries(entries, insertAfter);
+  }
+
+  #insertPageEntries(entries, insertAfter) {
     const pagesCount = this.#pagesMapper.pagesNumber;
     const data = this.hasStructuralChanges()
       ? this.getStructuralChanges()
@@ -417,6 +441,83 @@ class PDFThumbnailViewer {
     this.eventBus.dispatch("saveandload", {
       source: this,
       data,
+    });
+  }
+
+  #getActionPageNumbers() {
+    if (this.#selectedPages?.size) {
+      return Uint32Array.from(this.#selectedPages).sort((a, b) => a - b);
+    }
+    return Uint32Array.of(this._currentPageNumber);
+  }
+
+  #rotatePages() {
+    const pageNumbers = this.#getActionPageNumbers();
+    const pagesMapper = this.#pagesMapper;
+    pagesMapper.rotatePages(pageNumbers, 90);
+    const rotations = [];
+    for (const pageNumber of pageNumbers) {
+      const rotationDelta = pagesMapper.getRotationDelta(pageNumber);
+      this._thumbnails[pageNumber - 1].update({
+        rotation: (this._pagesRotation + rotationDelta) % 360,
+      });
+      rotations.push({ pageNumber, rotationDelta });
+    }
+    this.#reportTelemetry({ action: "rotate" });
+    this.eventBus.dispatch("individualpagerotationchanged", {
+      source: this,
+      rotations,
+    });
+    this.eventBus.dispatch("pagesedited", {
+      source: this,
+      pagesMapper,
+      type: "rotate",
+    });
+  }
+
+  #addBlankPage() {
+    const canvas = new OffscreenCanvas(612, 792);
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    this.#reportTelemetry({ action: "addBlank" });
+    this.#toggleBar("waiting", "pdfjs-views-manager-waiting-for-file");
+    this.#insertPageEntries(
+      [
+        {
+          image: canvas.transferToImageBitmap(),
+          insertAfter: this._currentPageNumber - 1,
+        },
+      ],
+      this._currentPageNumber - 1
+    );
+  }
+
+  #duplicatePages() {
+    const pageNumbers = (this.#copiedPageNumbers =
+      this.#getActionPageNumbers());
+    const pagesMapper = this.#pagesMapper;
+    pagesMapper.copyPages(pageNumbers);
+    this.#copiedThumbnails = new Map();
+    for (const pageNumber of pageNumbers) {
+      this.#copiedThumbnails.set(pageNumber, this._thumbnails[pageNumber - 1]);
+    }
+    const insertIndex = pageNumbers.at(-1);
+    pagesMapper.pastePages(insertIndex);
+    this.#updateThumbnails(this._currentPageNumber);
+    this.#savedThumbnails = null;
+    this.#thumbnailsPositions = null;
+    this.#copiedThumbnails = null;
+    this.#copiedPageNumbers = null;
+    this.#selectedPages?.clear();
+    this.#updateMenuEntries();
+    this.#updateStatus("select");
+    this.#updateCurrentPage(insertIndex + 1, /* forceFocus = */ true);
+    this.#reportTelemetry({ action: "duplicate" });
+    this.eventBus.dispatch("pagesedited", {
+      source: this,
+      pagesMapper,
+      type: "paste",
     });
   }
 
@@ -494,9 +595,11 @@ class PDFThumbnailViewer {
     }
     this._pagesRotation = rotation;
 
-    const updateArgs = { rotation };
-    for (const thumbnail of this._thumbnails) {
-      thumbnail.update(updateArgs);
+    for (let i = 0, ii = this._thumbnails.length; i < ii; i++) {
+      const rotationDelta = this.#pagesMapper?.getRotationDelta(i + 1) || 0;
+      this._thumbnails[i].update({
+        rotation: (rotation + rotationDelta) % 360,
+      });
     }
   }
 
@@ -852,7 +955,7 @@ class PDFThumbnailViewer {
       draggedContainer.style.translate = "";
     }
 
-    const selectedPages = this.#selectedPages;
+    const selectedPages = (this.#selectedPages ??= new Set());
     if (
       !isNaN(lastDraggedOverIndex) &&
       isDropping &&
@@ -996,7 +1099,7 @@ class PDFThumbnailViewer {
   }
 
   #canDelete() {
-    const size = this.#selectedPages?.size || 0;
+    const size = this.#selectedPages?.size || (this._thumbnails.length ? 1 : 0);
     return size > 0 && size < this._thumbnails.length;
   }
 
@@ -1142,7 +1245,10 @@ class PDFThumbnailViewer {
       return;
     }
 
-    const selectedPages = this.#selectedPages;
+    const selectedPages = (this.#selectedPages ??= new Set());
+    if (selectedPages.size === 0) {
+      selectedPages.add(this._currentPageNumber);
+    }
     if (type === "delete") {
       this.#reportTelemetry({ action: "delete" });
       this.#updateStatus("delete");
@@ -1175,6 +1281,10 @@ class PDFThumbnailViewer {
     this.#manageExportButton.disabled = this.#manageCopyButton.disabled = !size;
     this.#manageDeleteButton.disabled = this.#manageCutButton.disabled =
       !this.#canDelete();
+    this.#manageRotateButton.disabled =
+      this.#manageAddBlankButton.disabled =
+      this.#manageDuplicateButton.disabled =
+        false;
   }
 
   #toggleMenuEntries(enable) {

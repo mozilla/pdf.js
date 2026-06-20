@@ -183,7 +183,7 @@ class AnnotationEditor {
     this.annotationElementId = parameters.annotationElementId || null;
     this.creationDate = parameters.creationDate || new Date();
     this.modificationDate = parameters.modificationDate || null;
-    this.canAddComment = true;
+    this.canAddComment = false;
 
     const {
       rotation,
@@ -252,6 +252,7 @@ class AnnotationEditor {
       ink: "pdfjs-editor-ink-added-alert",
       stamp: "pdfjs-editor-stamp-added-alert",
       signature: "pdfjs-editor-signature-added-alert",
+      redaction: "pdfjs-editor-redaction-added-alert",
     });
 
     AnnotationEditor._l10nResizer ??= Object.freeze({
@@ -1232,6 +1233,9 @@ class AnnotationEditor {
   }
 
   set comment(value) {
+    if (!this.canAddComment) {
+      return;
+    }
     this.#comment ||= new Comment(this);
     if (typeof value === "object" && value !== null) {
       // Restore full comment data (used for undo).
@@ -1251,7 +1255,7 @@ class AnnotationEditor {
   }
 
   setCommentData({ comment, popupRef, richText }) {
-    if (!popupRef) {
+    if (!this.canAddComment || !popupRef) {
       return;
     }
     this.#comment ||= new Comment(this);
@@ -1283,6 +1287,9 @@ class AnnotationEditor {
   }
 
   async editComment(options) {
+    if (!this.canAddComment) {
+      return;
+    }
     this.#comment ||= new Comment(this);
     this.#comment.edit(options);
   }
@@ -1298,6 +1305,9 @@ class AnnotationEditor {
   }
 
   addComment(serialized) {
+    if (!this.canAddComment) {
+      return;
+    }
     if (this.hasEditedComment) {
       const DEFAULT_POPUP_WIDTH = 180;
       const DEFAULT_POPUP_HEIGHT = 100;

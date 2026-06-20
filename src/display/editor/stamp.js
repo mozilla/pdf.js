@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { AnnotationEditorType, AnnotationPrefix } from "../../shared/util.js";
+import {
+  AnnotationEditorParamsType,
+  AnnotationEditorType,
+  AnnotationPrefix,
+} from "../../shared/util.js";
 import {
   ColorScheme,
   OutputScale,
@@ -22,6 +26,8 @@ import {
 } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
+
+const REDLINE_DEBUG_IMAGE_SIZING_KEY = "redlinePdfjsDebugImageSizing";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -47,22 +53,74 @@ class StampEditor extends AnnotationEditor {
 
   #isSvg = false;
 
+  #initialWidth = null;
+
   #hasBeenAddedInUndoStack = false;
 
   static _type = "stamp";
 
   static _editorType = AnnotationEditorType.STAMP;
 
+  static _defaultCreationParams = null;
+
   constructor(params) {
     super({ ...params, name: "stampEditor" });
     this.#bitmapUrl = params.bitmapUrl;
     this.#bitmapFile = params.bitmapFile;
+    this.#initialWidth = params.initialWidth || null;
+    if (params.altText) {
+      this.altTextData = { altText: params.altText, decorative: false };
+    }
     this.defaultL10nId = "pdfjs-editor-stamp-editor";
   }
 
   /** @inheritdoc */
   static initialize(l10n, uiManager) {
     AnnotationEditor.initialize(l10n, uiManager);
+  }
+
+  /** @inheritdoc */
+  static updateDefaultParams(type, value) {
+    if (type === AnnotationEditorParamsType.STAMP_IMAGE) {
+      this._defaultCreationParams = value;
+    }
+  }
+
+  static getDefaultCreationParams() {
+    return this._defaultCreationParams;
+  }
+
+  get #hasCanonicalDimensions() {
+    return typeof this.width === "number" && typeof this.height === "number";
+  }
+
+  #debugImageSizing(action, details = null) {
+    let enabled = false;
+    try {
+      enabled = localStorage.getItem(REDLINE_DEBUG_IMAGE_SIZING_KEY) === "1";
+    } catch {}
+    if (!enabled) {
+      return;
+    }
+    const { width: naturalWidth, height: naturalHeight } = this.#bitmap || {};
+    const [pageWidth, pageHeight] = this.pageDimensions;
+    const base = {
+      action,
+      naturalWidth,
+      naturalHeight,
+      pageWidth,
+      pageHeight,
+      zoomScale: this.scale,
+    };
+    if (this.#hasCanonicalDimensions) {
+      base.storedCanonicalWidth = this.width;
+      base.storedCanonicalHeight = this.height;
+    }
+    // eslint-disable-next-line no-console
+    console.debug(
+      "PDF.js stamp sizing",
+      details ? { ...base, ...details } : base
+    );
   }
 
   /** @inheritdoc */
@@ -413,6 +471,11 @@ class StampEditor extends AnnotationEditor {
     if (this.#resizeTimeoutId !== null) {
       clearTimeout(this.#resizeTimeoutId);
     }
+    if (this.#hasCanonicalDimensions) {
+      this.#debugImageSizing(
+        "skippedInitialFitBecauseCanonicalDimensionsExist"
+      );
+    }
     // The user's zooming the page, there is no need to redraw the bitmap at
     // each step, hence we wait a bit before redrawing it.
     const TIME_TO_WAIT = 200;
@@ -424,24 +487,42 @@ class StampEditor extends AnnotationEditor {
 
   #createCanvas() {
     const { div } = this;
-    let { width, height } = this.#bitmap;
+    const { width: naturalWidth, height: naturalHeight } = this.#bitmap;
+    let width = naturalWidth;
+    let height = naturalHeight;
     const [pageWidth, pageHeight] = this.pageDimensions;
-    const MAX_RATIO = 0.75;
-    if (this.width) {
+    const MAX_RATIO = 0.8;
+    let fitScale = 1;
+    let fitOnceApplied = false;
+    let usedCanonicalDimensions = false;
+    if (this.#hasCanonicalDimensions) {
       width = this.width * pageWidth;
       height = this.height * pageHeight;
+      usedCanonicalDimensions = true;
+    } else if (this.#initialWidth) {
+      width = Math.min(this.#initialWidth, MAX_RATIO) * pageWidth;
+      height = (width * naturalHeight) / naturalWidth;
+      if (height > MAX_RATIO * pageHeight) {
+        const heightScale = (MAX_RATIO * pageHeight) / height;
+        width *= heightScale;
+        height *= heightScale;
+      }
+      fitScale = width / naturalWidth;
+      fitOnceApplied = true;
+      this.#initialWidth = null;
     } else if (
       width > MAX_RATIO * pageWidth ||
       height > MAX_RATIO * pageHeight
     ) {
       // If the image is too big compared to the page dimensions
       // (more than MAX_RATIO) then we scale it down.
-      const factor = Math.min(
+      fitScale = Math.min(
         (MAX_RATIO * pageWidth) / width,
         (MAX_RATIO * pageHeight) / height
       );
-      width *= factor;
-      height *= factor;
+      width *= fitScale;
+      height *= fitScale;
+      fitOnceApplied = true;
     }
 
     this._uiManager.enableWaiting(false);
@@ -452,6 +533,13 @@ class StampEditor extends AnnotationEditor {
     this.width = width / pageWidth;
     this.height = height / pageHeight;
     this.setDims();
+    this.#debugImageSizing("createCanvas", {
+      initialFitScale: fitScale,
+      placedWidth: width,
+      placedHeight: height,
+      fitOnceApplied,
+      rerenderSkippedInitialFit: usedCanonicalDimensions,
+    });
 
     if (this._initialOptions?.isCentered) {
       this.center();
@@ -661,6 +749,10 @@ class StampEditor extends AnnotationEditor {
       !canvas ||
       (canvas.width === scaledWidth && canvas.height === scaledHeight)
     ) {
+      this.#debugImageSizing("drawBitmapSkipped", {
+        serializedWidth: width,
+        serializedHeight: height,
+      });
       return;
     }
 
@@ -684,6 +776,12 @@ class StampEditor extends AnnotationEditor {
       scaledWidth,
       scaledHeight
     );
+    this.#debugImageSizing("drawBitmap", {
+      serializedWidth: width,
+      serializedHeight: height,
+      canvasWidth: canvas.width,
+      canvasHeight: canvas.height,
+    });
   }
 
   #serializeBitmap(toUrl) {
@@ -818,6 +916,10 @@ class StampEditor extends AnnotationEditor {
     const [parentWidth, parentHeight] = editor.pageDimensions;
     editor.width = (rect[2] - rect[0]) / parentWidth;
     editor.height = (rect[3] - rect[1]) / parentHeight;
+    editor.#debugImageSizing("deserialize", {
+      deserializedWidth: rect[2] - rect[0],
+      deserializedHeight: rect[3] - rect[1],
+    });
 
     if (accessibilityData) {
       editor.altTextData = accessibilityData;
@@ -846,6 +948,12 @@ class StampEditor extends AnnotationEditor {
     const serialized = Object.assign(super.serialize(isForCopying), {
       bitmapId: this.#bitmapId,
       isSvg: this.#isSvg,
+    });
+    this.#debugImageSizing("serialize", {
+      serializedDimensions: [
+        serialized.rect[2] - serialized.rect[0],
+        serialized.rect[3] - serialized.rect[1],
+      ],
     });
     this.addComment(serialized);
 

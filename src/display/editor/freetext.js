@@ -20,7 +20,10 @@ import {
   AnnotationEditorParamsType,
   AnnotationEditorType,
   assert,
+  FreeTextAnnotationFontFamily,
+  getFreeTextAnnotationFontStyle,
   LINE_FACTOR,
+  normalizeFreeTextAnnotationFontFamily,
   shadow,
   Util,
 } from "../../shared/util.js";
@@ -30,6 +33,7 @@ import { BasicColorPicker } from "./color_picker.js";
 import { FreeTextAnnotationElement } from "../annotation_layer.js";
 
 const EOL_PATTERN = /\r\n?|\n/g;
+const REDLINE_DEFAULT_FONT_FAMILY_KEY = "redlineDefaultFreeTextFontFamily";
 
 /**
  * Basic text editor in order to create a FreeTex annotation.
@@ -43,6 +47,16 @@ class FreeTextEditor extends AnnotationEditor {
 
   #fontSize;
 
+  #fontFamily;
+
+  #bold;
+
+  #italic;
+
+  #underline;
+
+  #textAlign;
+
   _colorPicker = null;
 
   static _freeTextDefaultContent = "";
@@ -52,6 +66,16 @@ class FreeTextEditor extends AnnotationEditor {
   static _defaultColor = null;
 
   static _defaultFontSize = 10;
+
+  static _defaultFontFamily = FreeTextAnnotationFontFamily.DEFAULT;
+
+  static _defaultBold = false;
+
+  static _defaultItalic = false;
+
+  static _defaultUnderline = false;
+
+  static _defaultTextAlign = "left";
 
   static get _keyboardManager() {
     const proto = FreeTextEditor.prototype;
@@ -130,6 +154,13 @@ class FreeTextEditor extends AnnotationEditor {
       FreeTextEditor._defaultColor ||
       AnnotationEditor._defaultLineColor;
     this.#fontSize = params.fontSize || FreeTextEditor._defaultFontSize;
+    this.#fontFamily = normalizeFreeTextAnnotationFontFamily(
+      params.fontFamily || FreeTextEditor._defaultFontFamily
+    );
+    this.#bold = params.bold ?? FreeTextEditor._defaultBold;
+    this.#italic = params.italic ?? FreeTextEditor._defaultItalic;
+    this.#underline = params.underline ?? FreeTextEditor._defaultUnderline;
+    this.#textAlign = params.textAlign || FreeTextEditor._defaultTextAlign;
     if (!this.annotationElementId) {
       this._uiManager.a11yAlert(AnnotationEditor._l10nAlert.freetext);
     }
@@ -154,6 +185,11 @@ class FreeTextEditor extends AnnotationEditor {
     this._internalPadding = parseFloat(
       style.getPropertyValue("--freetext-padding")
     );
+    try {
+      FreeTextEditor._defaultFontFamily = normalizeFreeTextAnnotationFontFamily(
+        localStorage.getItem(REDLINE_DEFAULT_FONT_FAMILY_KEY)
+      );
+    } catch {}
   }
 
   /** @inheritdoc */
@@ -164,6 +200,28 @@ class FreeTextEditor extends AnnotationEditor {
         break;
       case AnnotationEditorParamsType.FREETEXT_COLOR:
         FreeTextEditor._defaultColor = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_FONT_FAMILY:
+        FreeTextEditor._defaultFontFamily =
+          normalizeFreeTextAnnotationFontFamily(value);
+        try {
+          localStorage.setItem(
+            REDLINE_DEFAULT_FONT_FAMILY_KEY,
+            FreeTextEditor._defaultFontFamily
+          );
+        } catch {}
+        break;
+      case AnnotationEditorParamsType.FREETEXT_BOLD:
+        FreeTextEditor._defaultBold = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_ITALIC:
+        FreeTextEditor._defaultItalic = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_UNDERLINE:
+        FreeTextEditor._defaultUnderline = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_ALIGNMENT:
+        FreeTextEditor._defaultTextAlign = value;
         break;
     }
   }
@@ -176,6 +234,21 @@ class FreeTextEditor extends AnnotationEditor {
         break;
       case AnnotationEditorParamsType.FREETEXT_COLOR:
         this.#updateColor(value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_FONT_FAMILY:
+        this.#updateFontFamily(value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_BOLD:
+        this.#updateTextFormat(type, value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_ITALIC:
+        this.#updateTextFormat(type, value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_UNDERLINE:
+        this.#updateTextFormat(type, value);
+        break;
+      case AnnotationEditorParamsType.FREETEXT_ALIGNMENT:
+        this.#updateTextFormat(type, value);
         break;
     }
   }
@@ -191,6 +264,23 @@ class FreeTextEditor extends AnnotationEditor {
         AnnotationEditorParamsType.FREETEXT_COLOR,
         FreeTextEditor._defaultColor || AnnotationEditor._defaultLineColor,
       ],
+      [
+        AnnotationEditorParamsType.FREETEXT_FONT_FAMILY,
+        FreeTextEditor._defaultFontFamily,
+      ],
+      [AnnotationEditorParamsType.FREETEXT_BOLD, FreeTextEditor._defaultBold],
+      [
+        AnnotationEditorParamsType.FREETEXT_ITALIC,
+        FreeTextEditor._defaultItalic,
+      ],
+      [
+        AnnotationEditorParamsType.FREETEXT_UNDERLINE,
+        FreeTextEditor._defaultUnderline,
+      ],
+      [
+        AnnotationEditorParamsType.FREETEXT_ALIGNMENT,
+        FreeTextEditor._defaultTextAlign,
+      ],
     ];
   }
 
@@ -199,6 +289,11 @@ class FreeTextEditor extends AnnotationEditor {
     return [
       [AnnotationEditorParamsType.FREETEXT_SIZE, this.#fontSize],
       [AnnotationEditorParamsType.FREETEXT_COLOR, this.color],
+      [AnnotationEditorParamsType.FREETEXT_FONT_FAMILY, this.#fontFamily],
+      [AnnotationEditorParamsType.FREETEXT_BOLD, this.#bold],
+      [AnnotationEditorParamsType.FREETEXT_ITALIC, this.#italic],
+      [AnnotationEditorParamsType.FREETEXT_UNDERLINE, this.#underline],
+      [AnnotationEditorParamsType.FREETEXT_ALIGNMENT, this.#textAlign],
     ];
   }
 
@@ -230,6 +325,84 @@ class FreeTextEditor extends AnnotationEditor {
       post: this._uiManager.updateUI.bind(this._uiManager, this),
       mustExec: true,
       type: AnnotationEditorParamsType.FREETEXT_SIZE,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  /**
+   * Update the font family and make this action undoable.
+   * @param {string} fontFamily
+   */
+  #updateFontFamily(fontFamily) {
+    const setFontFamily = family => {
+      this.#fontFamily = normalizeFreeTextAnnotationFontFamily(family);
+      this.#applyFontFamily();
+      this.#setEditorDimensions();
+    };
+    const savedFontFamily = this.#fontFamily;
+    this.addCommands({
+      cmd: setFontFamily.bind(this, fontFamily),
+      undo: setFontFamily.bind(this, savedFontFamily),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
+      mustExec: true,
+      type: AnnotationEditorParamsType.FREETEXT_FONT_FAMILY,
+      overwriteIfSameType: true,
+      keepUndo: true,
+    });
+  }
+
+  #applyFontFamily(element = this.editorDiv) {
+    if (element) {
+      element.style.fontFamily = this.#fontFamily;
+    }
+  }
+
+  #applyTextFormat(element = this.editorDiv) {
+    if (!element) {
+      return;
+    }
+    const { style } = element;
+    style.fontWeight = this.#bold ? "bold" : "normal";
+    style.fontStyle = this.#italic ? "italic" : "normal";
+    style.textDecoration = this.#underline ? "underline" : "none";
+    style.textAlign = this.#textAlign;
+  }
+
+  #setTextFormat(type, value) {
+    switch (type) {
+      case AnnotationEditorParamsType.FREETEXT_BOLD:
+        this.#bold = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_ITALIC:
+        this.#italic = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_UNDERLINE:
+        this.#underline = value;
+        break;
+      case AnnotationEditorParamsType.FREETEXT_ALIGNMENT:
+        this.#textAlign = value;
+        break;
+    }
+    this.#applyTextFormat();
+    this.#setEditorDimensions();
+  }
+
+  #updateTextFormat(type, value) {
+    let savedValue = this.#textAlign;
+    if (type === AnnotationEditorParamsType.FREETEXT_BOLD) {
+      savedValue = this.#bold;
+    } else if (type === AnnotationEditorParamsType.FREETEXT_ITALIC) {
+      savedValue = this.#italic;
+    } else if (type === AnnotationEditorParamsType.FREETEXT_UNDERLINE) {
+      savedValue = this.#underline;
+    }
+    this.addCommands({
+      cmd: this.#setTextFormat.bind(this, type, value),
+      undo: this.#setTextFormat.bind(this, type, savedValue),
+      post: this._uiManager.updateUI.bind(this._uiManager, this),
+      mustExec: true,
+      type,
       overwriteIfSameType: true,
       keepUndo: true,
     });
@@ -582,6 +755,8 @@ class FreeTextEditor extends AnnotationEditor {
     const { style } = this.editorDiv;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.color;
+    this.#applyFontFamily();
+    this.#applyTextFormat();
 
     this.div.append(this.editorDiv);
 
@@ -782,7 +957,7 @@ class FreeTextEditor extends AnnotationEditor {
     if (data instanceof FreeTextAnnotationElement) {
       const {
         data: {
-          defaultAppearanceData: { fontSize, fontColor },
+          defaultAppearanceData,
           rect,
           rotation,
           id,
@@ -791,6 +966,8 @@ class FreeTextEditor extends AnnotationEditor {
           contentsObj,
           creationDate,
           modificationDate,
+          textAlignment,
+          underline,
         },
         textContent,
         textPosition,
@@ -798,6 +975,10 @@ class FreeTextEditor extends AnnotationEditor {
           page: { pageNumber },
         },
       } = data;
+      const { fontSize, fontColor } = defaultAppearanceData;
+      const { bold, italic } = getFreeTextAnnotationFontStyle(
+        defaultAppearanceData.fontName
+      );
       // textContent is supposed to be an array of strings containing each line
       // of text. However, it can be null or empty.
       if (!textContent || textContent.length === 0) {
@@ -807,7 +988,14 @@ class FreeTextEditor extends AnnotationEditor {
       initialData = data = {
         annotationType: AnnotationEditorType.FREETEXT,
         color: Array.from(fontColor),
+        fontFamily: normalizeFreeTextAnnotationFontFamily(
+          defaultAppearanceData.fontName
+        ),
+        bold,
         fontSize,
+        italic,
+        textAlign: ["left", "center", "right"][textAlignment] || "left",
+        underline,
         value: textContent.join("\n"),
         position: textPosition,
         pageIndex: pageNumber - 1,
@@ -825,6 +1013,11 @@ class FreeTextEditor extends AnnotationEditor {
     }
     const editor = await super.deserialize(data, parent, uiManager);
     editor.#fontSize = data.fontSize;
+    editor.#fontFamily = normalizeFreeTextAnnotationFontFamily(data.fontFamily);
+    editor.#bold = !!data.bold;
+    editor.#italic = !!data.italic;
+    editor.#underline = !!data.underline;
+    editor.#textAlign = data.textAlign || "left";
     editor.color = Util.makeHexColor(...data.color);
     editor.#content = FreeTextEditor.#deserializeContent(data.value);
     editor._initialData = initialData;
@@ -849,8 +1042,13 @@ class FreeTextEditor extends AnnotationEditor {
       this.isAttachedToDOM ? getComputedStyle(this.editorDiv).color : this.color
     );
     const serialized = Object.assign(super.serialize(isForCopying), {
+      bold: this.#bold,
       color,
+      fontFamily: this.#fontFamily,
       fontSize: this.#fontSize,
+      italic: this.#italic,
+      textAlign: this.#textAlign,
+      underline: this.#underline,
       value: this.#serializeContent(),
     });
     this.addComment(serialized);
@@ -872,13 +1070,28 @@ class FreeTextEditor extends AnnotationEditor {
   }
 
   #hasElementChanged(serialized) {
-    const { value, fontSize, color, pageIndex } = this._initialData;
+    const {
+      bold,
+      color,
+      fontFamily,
+      fontSize,
+      italic,
+      pageIndex,
+      textAlign,
+      underline,
+      value,
+    } = this._initialData;
 
     return (
       this.hasEditedComment ||
       this._hasBeenMoved ||
       serialized.value !== value ||
+      serialized.fontFamily !== fontFamily ||
       serialized.fontSize !== fontSize ||
+      serialized.bold !== !!bold ||
+      serialized.italic !== !!italic ||
+      serialized.underline !== !!underline ||
+      serialized.textAlign !== (textAlign || "left") ||
       serialized.color.some((c, i) => c !== color[i]) ||
       serialized.pageIndex !== pageIndex
     );
@@ -893,6 +1106,8 @@ class FreeTextEditor extends AnnotationEditor {
     const { style } = content;
     style.fontSize = `calc(${this.#fontSize}px * var(--total-scale-factor))`;
     style.color = this.color;
+    this.#applyFontFamily(content);
+    this.#applyTextFormat(content);
 
     content.replaceChildren();
     for (const line of this.#content.split("\n")) {
@@ -905,10 +1120,7 @@ class FreeTextEditor extends AnnotationEditor {
 
     annotation.updateEdited({
       rect: this.getPDFRect(),
-      popup:
-        this._uiManager.hasCommentManager() || this.hasEditedComment
-          ? this.comment
-          : { text: this.#content },
+      popup: this.hasEditedComment ? this.comment : null,
     });
 
     return content;

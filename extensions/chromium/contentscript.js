@@ -23,6 +23,7 @@ function getViewerURL(pdf_url) {
 }
 
 document.addEventListener("animationstart", onAnimationStart, true);
+window.addEventListener("click", onPdfLinkClick, true);
 if (document.contentType === "application/pdf") {
   chrome.runtime.sendMessage({ action: "canRequestBody" }, maybeRenderPdfDoc);
 }
@@ -31,6 +32,50 @@ function onAnimationStart(event) {
   if (event.animationName === "pdfjs-detected-object-or-embed") {
     watchObjectOrEmbed(event.target);
   }
+}
+
+function onPdfLinkClick(event) {
+  if (
+    event.button !== 0 ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey
+  ) {
+    return;
+  }
+
+  const anchor = event
+    .composedPath()
+    .find(node => node instanceof HTMLAnchorElement && node.href);
+  if (!anchor || !isPdfAnchor(anchor)) {
+    return;
+  }
+  if (
+    anchor.download ||
+    (anchor.target && anchor.target.toLowerCase() !== "_self")
+  ) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  chrome.runtime.sendMessage({
+    action: "redlineOpenPdfInNewTab",
+    url: anchor.href,
+  });
+}
+
+function isPdfAnchor(anchor) {
+  const href = anchor.href;
+  if (!href || /^(?:blob|data|javascript):/i.test(href)) {
+    return false;
+  }
+  const type = anchor.getAttribute("type")?.trim().toLowerCase();
+  if (type === "application/pdf") {
+    return true;
+  }
+  return /\.pdf(?:$|[?#])/i.test(href);
 }
 
 // Called for every <object> or <embed> element in the page.

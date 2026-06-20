@@ -27,10 +27,16 @@ import { internalOpt } from "./internal_evt.js";
  * @typedef {Object} AnnotationEditorParamsOptions
  * @property {HTMLInputElement} editorFreeTextFontSize
  * @property {HTMLInputElement} editorFreeTextColor
+ * @property {HTMLSelectElement} editorFreeTextFontFamily
+ * @property {HTMLButtonElement} editorFreeTextBold
+ * @property {HTMLButtonElement} editorFreeTextItalic
+ * @property {HTMLButtonElement} editorFreeTextUnderline
+ * @property {NodeListOf<HTMLButtonElement>} editorFreeTextAlignments
  * @property {HTMLInputElement} editorInkColor
  * @property {HTMLInputElement} editorInkThickness
  * @property {HTMLInputElement} editorInkOpacity
  * @property {HTMLButtonElement} editorStampAddImage
+ * @property {NodeListOf<HTMLButtonElement>} editorStampChoices
  * @property {HTMLInputElement} editorFreeHighlightThickness
  * @property {HTMLButtonElement} editorHighlightShowAll
  * @property {HTMLButtonElement} editorSignatureAddSignature
@@ -52,10 +58,16 @@ class AnnotationEditorParams {
   #bindListeners({
     editorFreeTextFontSize,
     editorFreeTextColor,
+    editorFreeTextFontFamily,
+    editorFreeTextBold,
+    editorFreeTextItalic,
+    editorFreeTextUnderline,
+    editorFreeTextAlignments,
     editorInkColor,
     editorInkThickness,
     editorInkOpacity,
     editorStampAddImage,
+    editorStampChoices,
     editorFreeHighlightThickness,
     editorHighlightShowAll,
     editorSignatureAddSignature,
@@ -75,6 +87,27 @@ class AnnotationEditorParams {
     editorFreeTextColor.addEventListener("input", function () {
       dispatchEvent("FREETEXT_COLOR", this.value);
     });
+    editorFreeTextFontFamily.addEventListener("input", function () {
+      dispatchEvent("FREETEXT_FONT_FAMILY", this.value);
+    });
+    const bindTextToggle = (button, type) => {
+      button.addEventListener("click", function () {
+        const selected = this.getAttribute("aria-pressed") !== "true";
+        this.setAttribute("aria-pressed", selected);
+        dispatchEvent(type, selected);
+      });
+    };
+    bindTextToggle(editorFreeTextBold, "FREETEXT_BOLD");
+    bindTextToggle(editorFreeTextItalic, "FREETEXT_ITALIC");
+    bindTextToggle(editorFreeTextUnderline, "FREETEXT_UNDERLINE");
+    for (const button of editorFreeTextAlignments) {
+      button.addEventListener("click", function () {
+        for (const choice of editorFreeTextAlignments) {
+          choice.setAttribute("aria-pressed", choice === this);
+        }
+        dispatchEvent("FREETEXT_ALIGNMENT", this.dataset.alignment);
+      });
+    }
 
     // Handlers for INK_COLOR and INK_OPACITY sync-back, set up differently
     // depending on whether alpha is supported.
@@ -134,7 +167,24 @@ class AnnotationEditorParams {
     editorInkThickness.addEventListener("input", function () {
       dispatchEvent("INK_THICKNESS", this.valueAsNumber);
     });
+    const setStampChoiceSelected = (button, selected) => {
+      for (const choice of editorStampChoices) {
+        choice.setAttribute("aria-pressed", choice === button && selected);
+      }
+      dispatchEvent(
+        "STAMP_IMAGE",
+        selected
+          ? {
+              altText: button.dataset.stampAlt,
+              bitmapUrl: new URL(button.dataset.stampSrc, document.baseURI)
+                .href,
+              initialWidth: Number(button.dataset.stampWidth),
+            }
+          : null
+      );
+    };
     editorStampAddImage.addEventListener("click", () => {
+      setStampChoiceSelected(null, false);
       eventBus.dispatch("reporttelemetry", {
         source: this,
         details: {
@@ -144,6 +194,12 @@ class AnnotationEditorParams {
       });
       dispatchEvent("CREATE");
     });
+    for (const choice of editorStampChoices) {
+      choice.addEventListener("click", function () {
+        const selected = this.getAttribute("aria-pressed") !== "true";
+        setStampChoiceSelected(this, selected);
+      });
+    }
     editorFreeHighlightThickness.addEventListener("input", function () {
       dispatchEvent("HIGHLIGHT_THICKNESS", this.valueAsNumber);
     });
@@ -166,6 +222,26 @@ class AnnotationEditorParams {
               break;
             case AnnotationEditorParamsType.FREETEXT_COLOR:
               editorFreeTextColor.value = value;
+              break;
+            case AnnotationEditorParamsType.FREETEXT_FONT_FAMILY:
+              editorFreeTextFontFamily.value = value;
+              break;
+            case AnnotationEditorParamsType.FREETEXT_BOLD:
+              editorFreeTextBold.setAttribute("aria-pressed", value);
+              break;
+            case AnnotationEditorParamsType.FREETEXT_ITALIC:
+              editorFreeTextItalic.setAttribute("aria-pressed", value);
+              break;
+            case AnnotationEditorParamsType.FREETEXT_UNDERLINE:
+              editorFreeTextUnderline.setAttribute("aria-pressed", value);
+              break;
+            case AnnotationEditorParamsType.FREETEXT_ALIGNMENT:
+              for (const choice of editorFreeTextAlignments) {
+                choice.setAttribute(
+                  "aria-pressed",
+                  choice.dataset.alignment === value
+                );
+              }
               break;
             case AnnotationEditorParamsType.INK_COLOR:
               updateInkColor(value);

@@ -35,6 +35,7 @@ import { AnnotationEditor } from "./editor.js";
 import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
 import { InkEditor } from "./ink.js";
+import { RedactionEditor } from "./redaction.js";
 import { SignatureEditor } from "./signature.js";
 import { StampEditor } from "./stamp.js";
 
@@ -104,6 +105,7 @@ class AnnotationEditorLayer {
       StampEditor,
       HighlightEditor,
       SignatureEditor,
+      RedactionEditor,
     ].map(type => [type._editorType, type])
   );
 
@@ -182,6 +184,11 @@ class AnnotationEditorLayer {
         this.enableClick();
         break;
       case AnnotationEditorType.HIGHLIGHT:
+        this.enableTextSelection();
+        this.togglePointerEvents(false);
+        this.disableClick();
+        break;
+      case AnnotationEditorType.REDACTION:
         this.enableTextSelection();
         this.togglePointerEvents(false);
         this.disableClick();
@@ -461,6 +468,9 @@ class AnnotationEditorLayer {
     // Unselect all the editors in order to let the user select some text
     // without being annoyed by an editor toolbar.
     this.#uiManager.unselectAll();
+    if (this.#uiManager.getMode() !== AnnotationEditorType.HIGHLIGHT) {
+      return;
+    }
     const { target } = event;
     if (
       target === this.#textLayer.div ||
@@ -850,8 +860,15 @@ class AnnotationEditorLayer {
     }
 
     const currentMode = this.#uiManager.getMode();
+    if (currentMode === AnnotationEditorType.STAMP) {
+      const data = this.#currentEditorType?.getDefaultCreationParams?.();
+      this.#uiManager.unselectAll();
+      if (data) {
+        this.createAndAddNewEditor(event, /* isCentered = */ true, data);
+      }
+      return;
+    }
     if (
-      currentMode === AnnotationEditorType.STAMP ||
       currentMode === AnnotationEditorType.POPUP ||
       currentMode === AnnotationEditorType.SIGNATURE
     ) {
@@ -859,7 +876,10 @@ class AnnotationEditorLayer {
       return;
     }
 
-    this.createAndAddNewEditor(event, /* isCentered = */ false);
+    this.createAndAddNewEditor(
+      event,
+      /* isCentered = */ currentMode === AnnotationEditorType.REDACTION
+    );
   }
 
   /**

@@ -25,10 +25,12 @@ import {
   BASELINE_FACTOR,
   BBOX_INIT,
   F32_BBOX_INIT,
+  FreeTextAnnotationPdfFontMap,
   info,
   isArrayEqual,
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
+  normalizeFreeTextAnnotationFontFamily,
   OPS,
   RenderingIntentFlag,
   shadow,
@@ -369,7 +371,7 @@ class AnnotationFactory {
     imagePromises,
     changes
   ) {
-    let baseFontRef;
+    const freeTextBaseFontRefs = new Map();
     const promises = [];
     const { isOffscreenCanvasSupported } = evaluator.options;
 
@@ -379,13 +381,20 @@ class AnnotationFactory {
       }
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
+          const fontData = FreeTextAnnotation.getPdfFontData(
+            annotation.fontFamily,
+            annotation.bold,
+            annotation.italic
+          );
+          let baseFontRef = freeTextBaseFontRefs.get(fontData.pdfFontName);
           if (!baseFontRef) {
             const baseFont = new Dict(xref);
-            baseFont.setIfName("BaseFont", "Helvetica");
+            baseFont.setIfName("BaseFont", fontData.pdfFontName);
             baseFont.setIfName("Type", "Font");
             baseFont.setIfName("Subtype", "Type1");
             baseFont.setIfName("Encoding", "WinAnsiEncoding");
             baseFontRef = xref.getNewTemporaryRef();
+            freeTextBaseFontRefs.set(fontData.pdfFontName, baseFontRef);
             changes.put(baseFontRef, {
               data: baseFont,
             });
@@ -395,6 +404,7 @@ class AnnotationFactory {
               evaluator,
               task,
               baseFontRef,
+              fontData,
             })
           );
           break;
@@ -4250,16 +4260,25 @@ class FreeTextAnnotation extends MarkupAnnotation {
     this.data.noHTML = false;
 
     const { annotationGlobals, xref } = params;
+    const textAlignment = params.dict.get("Q");
+    this.data.textAlignment =
+      Number.isInteger(textAlignment) &&
+      textAlignment >= 0 &&
+      textAlignment <= 2
+        ? textAlignment
+        : 0;
+    this.data.underline = params.dict.get("RedlineUnderline") === true;
     this.setDefaultAppearance(params);
     this._hasAppearance = !!this.appearance;
 
     if (this._hasAppearance) {
-      const { fontColor, fontSize } = parseAppearanceStream(
+      const { fontColor, fontName, fontSize } = parseAppearanceStream(
         this.appearance,
         xref,
         annotationGlobals.globalColorSpaceCache
       );
       this.data.defaultAppearanceData.fontColor = fontColor;
+      this.data.defaultAppearanceData.fontName = fontName;
       this.data.defaultAppearanceData.fontSize = fontSize || 10;
     } else {
       this.data.defaultAppearanceData.fontSize ||= 10;
@@ -4299,17 +4318,58 @@ class FreeTextAnnotation extends MarkupAnnotation {
     return this._hasAppearance;
   }
 
+  static getPdfFontData(fontFamily, bold = false, italic = false) {
+    const normalized = normalizeFreeTextAnnotationFontFamily(fontFamily);
+    // PDF.js doesn't embed arbitrary system fonts for FreeText annotations
+    // here. Use deterministic Base-14 fallbacks instead.
+    const base =
+      FreeTextAnnotationPdfFontMap.get(normalized) ||
+      FreeTextAnnotationPdfFontMap.get("Helvetica");
+    if (!bold && !italic) {
+      return base;
+    }
+
+    let family = "Helvetica";
+    if (base.pdfFontName.startsWith("Times")) {
+      family = "Times";
+    } else if (base.pdfFontName.startsWith("Courier")) {
+      family = "Courier";
+    }
+    let suffix = "I";
+    let pdfStyle = family === "Times" ? "Italic" : "Oblique";
+    if (bold && italic) {
+      suffix = "BI";
+      pdfStyle = family === "Times" ? "BoldItalic" : "BoldOblique";
+    } else if (bold) {
+      suffix = "B";
+      pdfStyle = "Bold";
+    }
+    return {
+      pdfFontName: `${family}-${pdfStyle}`,
+      resourceName: `${base.resourceName}${suffix}`,
+    };
+  }
+
   static createNewDict(annotation, xref, { apRef, ap }) {
     const {
       color,
       date,
+      bold,
       fontSize,
+      italic,
       oldAnnotation,
       rect,
       rotation,
+      textAlign,
+      underline,
       user,
       value,
     } = annotation;
+    const { resourceName } = this.getPdfFontData(
+      annotation.fontFamily,
+      bold,
+      italic
+    );
     const freetext = oldAnnotation || new Dict(xref);
     freetext.setIfNotExists("Type", Name.get("Annot"));
     freetext.setIfNotExists("Subtype", Name.get("FreeText"));
@@ -4323,8 +4383,26 @@ class FreeTextAnnotation extends MarkupAnnotation {
       freetext.delete("RC");
     }
     freetext.setIfArray("Rect", rect);
-    const da = `/Helv ${fontSize} Tf ${getPdfColor(color, /* isFill */ true)}`;
+    const da = createDefaultAppearance({
+      fontSize,
+      fontName: resourceName,
+      fontColor: color,
+    });
     freetext.set("DA", da);
+    let alignment = 0;
+    if (textAlign === "center") {
+      alignment = 1;
+    } else if (textAlign === "right") {
+      alignment = 2;
+    }
+    if (textAlign) {
+      freetext.set("Q", alignment);
+    }
+    if (underline) {
+      freetext.set("RedlineUnderline", true);
+    } else {
+      freetext.delete("RedlineUnderline");
+    }
     freetext.setIfDefined("Contents", stringToAsciiOrUTF16BE(value));
     freetext.setIfNotExists("F", 4);
     freetext.setIfNotExists("Border", [0, 0, 0]);
@@ -4342,31 +4420,44 @@ class FreeTextAnnotation extends MarkupAnnotation {
 
   static async createNewAppearanceStream(annotation, xref, params) {
     const { baseFontRef, evaluator, task } = params;
-    const { color, fontSize, rect, rotation, value } = annotation;
+    const {
+      bold,
+      color,
+      fontFamily,
+      fontSize,
+      italic,
+      rect,
+      rotation,
+      textAlign,
+      underline,
+      value,
+    } = annotation;
     if (!color) {
       return null;
     }
+    const { pdfFontName, resourceName } =
+      params.fontData || this.getPdfFontData(fontFamily, bold, italic);
 
     const resources = new Dict(xref);
     const font = new Dict(xref);
 
     if (baseFontRef) {
-      font.set("Helv", baseFontRef);
+      font.set(resourceName, baseFontRef);
     } else {
       const baseFont = new Dict(xref);
-      baseFont.setIfName("BaseFont", "Helvetica");
+      baseFont.setIfName("BaseFont", pdfFontName);
       baseFont.setIfName("Type", "Font");
       baseFont.setIfName("Subtype", "Type1");
       baseFont.setIfName("Encoding", "WinAnsiEncoding");
-      font.set("Helv", baseFont);
+      font.set(resourceName, baseFont);
     }
     resources.set("Font", font);
 
-    const helv = await WidgetAnnotation._getFontData(
+    const pdfFont = await WidgetAnnotation._getFontData(
       evaluator,
       task,
       {
-        fontName: "Helv",
+        fontName: resourceName,
         fontSize,
       },
       resources
@@ -4384,8 +4475,9 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const scale = fontSize / 1000;
     let totalWidth = -Infinity;
     const encodedLines = [];
+    const lineWidths = [];
     for (let line of lines) {
-      const encoded = helv.encodeString(line);
+      const encoded = pdfFont.encodeString(line);
       if (encoded.length > 1) {
         // The font doesn't contain all the chars.
         return null;
@@ -4393,10 +4485,11 @@ class FreeTextAnnotation extends MarkupAnnotation {
       line = encoded.join("");
       encodedLines.push(line);
       let lineWidth = 0;
-      const glyphs = helv.charsToGlyphs(line);
+      const glyphs = pdfFont.charsToGlyphs(line);
       for (const glyph of glyphs) {
         lineWidth += glyph.width * scale;
       }
+      lineWidths.push(lineWidth);
       totalWidth = Math.max(totalWidth, lineWidth);
     }
 
@@ -4434,13 +4527,24 @@ class FreeTextAnnotation extends MarkupAnnotation {
         break;
     }
 
+    let alignmentFactor = 0;
+    if (textAlign === "center") {
+      alignmentFactor = 0.5;
+    } else if (textAlign === "right") {
+      alignmentFactor = 1;
+    }
+    const lineOffsets = lineWidths.map(
+      lineWidth => Math.max(0, w - lineWidth * fscale) * alignmentFactor
+    );
+    firstPoint[0] += lineOffsets[0];
+
     const buffer = [
       "q",
       `${matrix.join(" ")} 0 0 cm`,
       `${clipBox.join(" ")} re W n`,
       `BT`,
       `${getPdfColor(color, /* isFill */ true)}`,
-      `0 Tc /Helv ${numberToString(newFontSize)} Tf`,
+      `0 Tc /${resourceName} ${numberToString(newFontSize)} Tf`,
     ];
 
     buffer.push(
@@ -4449,9 +4553,26 @@ class FreeTextAnnotation extends MarkupAnnotation {
     const vShift = numberToString(lineHeight);
     for (let i = 1, ii = encodedLines.length; i < ii; i++) {
       const line = encodedLines[i];
-      buffer.push(`0 -${vShift} Td (${escapeString(line)}) Tj`);
+      const xShift = numberToString(lineOffsets[i] - lineOffsets[i - 1]);
+      buffer.push(`${xShift} -${vShift} Td (${escapeString(line)}) Tj`);
     }
-    buffer.push("ET", "Q");
+    buffer.push("ET");
+    if (underline) {
+      buffer.push(
+        getPdfColor(color, /* isFill */ false),
+        `${numberToString(Math.max(0.5, newFontSize / 16))} w`
+      );
+      for (let i = 0; i < lineWidths.length; ++i) {
+        const x = firstPoint[0] - lineOffsets[0] + lineOffsets[i];
+        const y =
+          firstPoint[1] - i * lineHeight - Math.max(1, newFontSize * 0.12);
+        buffer.push(
+          `${numberToString(x)} ${numberToString(y)} m ` +
+            `${numberToString(x + lineWidths[i] * fscale)} ${numberToString(y)} l S`
+        );
+      }
+    }
+    buffer.push("Q");
     const appearance = buffer.join("\n");
 
     const appearanceStreamDict = new Dict(xref);

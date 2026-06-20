@@ -4798,6 +4798,42 @@ describe("annotation", function () {
       ]);
     });
 
+    it("should save FreeText formatting in the PDF appearance", async () => {
+      const xref = (partialEvaluator.xref = new XRefMock());
+      const task = new WorkerTask("test styled FreeText creation");
+      const changes = new RefSetCache();
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        xref,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            bold: true,
+            color: [0, 0, 0],
+            fontFamily: "Times New Roman",
+            fontSize: 10,
+            italic: true,
+            rect: [12, 34, 120, 78],
+            rotation: 0,
+            textAlign: "center",
+            underline: true,
+            value: "Styled",
+          },
+        ],
+        null,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+      const output = data.map(({ data: chunk }) => chunk).join("\n");
+
+      expect(output).toContain("/BaseFont /Times-BoldItalic");
+      expect(output).toContain("/DA (/TimesBI 10 Tf 0 g)");
+      expect(output).toContain("/Q 1");
+      expect(output).toContain("/RedlineUnderline true");
+      expect(output).toContain(" l S");
+    });
+
     it("should update an existing FreeText annotation", async function () {
       const freeTextDict = new Dict();
       freeTextDict.set("Type", Name.get("Annot"));

@@ -61,6 +61,7 @@ function getViewerConfiguration() {
       editorHighlightColorPicker: document.getElementById(
         "editorHighlightColorPicker"
       ),
+      editorRedactionButton: document.getElementById("editorRedactionButton"),
       editorInkButton: document.getElementById("editorInkButton"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       editorStampButton: document.getElementById("editorStampButton"),
@@ -170,6 +171,9 @@ function getViewerConfiguration() {
       manageMenu: {
         button: document.getElementById("viewsManagerStatusActionButton"),
         menu: document.getElementById("viewsManagerStatusActionOptions"),
+        rotate: document.getElementById("viewsManagerStatusActionRotate"),
+        addBlank: document.getElementById("viewsManagerStatusActionAddBlank"),
+        duplicate: document.getElementById("viewsManagerStatusActionDuplicate"),
         copy: document.getElementById("viewsManagerStatusActionCopy"),
         cut: document.getElementById("viewsManagerStatusActionCut"),
         delete: document.getElementById("viewsManagerStatusActionDelete"),
@@ -315,10 +319,22 @@ function getViewerConfiguration() {
       ),
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),
+      editorFreeTextFontFamily: document.getElementById(
+        "editorFreeTextFontFamily"
+      ),
+      editorFreeTextBold: document.getElementById("editorFreeTextBold"),
+      editorFreeTextItalic: document.getElementById("editorFreeTextItalic"),
+      editorFreeTextUnderline: document.getElementById(
+        "editorFreeTextUnderline"
+      ),
+      editorFreeTextAlignments: document.querySelectorAll(
+        ".editorFreeTextAlignment"
+      ),
       editorInkColor: document.getElementById("editorInkColor"),
       editorInkThickness: document.getElementById("editorInkThickness"),
       editorInkOpacity: document.getElementById("editorInkOpacity"),
       editorStampAddImage: document.getElementById("editorStampAddImage"),
+      editorStampChoices: document.querySelectorAll(".editorStampChoice"),
       editorSignatureAddSignature: document.getElementById(
         "editorSignatureAddSignature"
       ),

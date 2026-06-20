@@ -309,6 +309,9 @@ pdfjs-editor-stamp-button-label = Add or edit images
 pdfjs-editor-highlight-button =
     .title = Highlight
 pdfjs-editor-highlight-button-label = Highlight
+pdfjs-editor-redaction-button =
+    .title = Permanently redact
+pdfjs-editor-redaction-button-label = Redact
 pdfjs-highlight-floating-button1 =
     .title = Highlight
     .aria-label = Highlight
@@ -342,6 +345,8 @@ pdfjs-editor-signature-editor1 =
 
 pdfjs-editor-stamp-editor =
     .aria-label = Image editor
+pdfjs-editor-redaction-editor =
+    .aria-label = Redaction area
 
 ## Remove button for the various kind of editor.
 
@@ -355,18 +360,53 @@ pdfjs-editor-remove-highlight-button =
     .title = Remove highlight
 pdfjs-editor-remove-signature-button =
     .title = Remove signature
+pdfjs-editor-remove-redaction-button =
+    .title = Remove redaction
 
 ##
 
 # Editor Parameters
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Size
+pdfjs-editor-free-text-font-family-input = Font
+pdfjs-editor-free-text-format-input = Format
+pdfjs-editor-free-text-alignment-input = Alignment
+pdfjs-editor-free-text-bold-button =
+    .title = Bold
+    .aria-label = Bold
+pdfjs-editor-free-text-italic-button =
+    .title = Italic
+    .aria-label = Italic
+pdfjs-editor-free-text-underline-button =
+    .title = Underline
+    .aria-label = Underline
+pdfjs-editor-free-text-align-left-button =
+    .title = Align left
+    .aria-label = Align left
+pdfjs-editor-free-text-align-center-button =
+    .title = Align center
+    .aria-label = Align center
+pdfjs-editor-free-text-align-right-button =
+    .title = Align right
+    .aria-label = Align right
 pdfjs-editor-ink-color-input = Color
 pdfjs-editor-ink-thickness-input = Thickness
 pdfjs-editor-ink-opacity-input = Opacity
 pdfjs-editor-stamp-add-image-button =
     .title = Add image
 pdfjs-editor-stamp-add-image-button-label = Add image
+pdfjs-editor-stamp-check-button =
+    .title = Select check mark symbol
+pdfjs-editor-stamp-x-button =
+    .title = Select X mark symbol
+pdfjs-editor-stamp-arrow-button =
+    .title = Select arrow symbol
+pdfjs-editor-stamp-circle-button =
+    .title = Select circle symbol
+pdfjs-editor-stamp-rectangle-button =
+    .title = Select rectangle symbol
+pdfjs-editor-stamp-triangle-button =
+    .title = Select triangle symbol
 # This refers to the thickness of the line used for free highlighting (not bound to text)
 pdfjs-editor-free-highlight-thickness-input = Thickness
 pdfjs-editor-free-highlight-thickness-title =
@@ -550,6 +590,7 @@ pdfjs-editor-freetext-added-alert = Text added
 pdfjs-editor-ink-added-alert = Drawing added
 pdfjs-editor-stamp-added-alert = Image added
 pdfjs-editor-signature-added-alert = Signature added
+pdfjs-editor-redaction-added-alert = Redaction added
 
 ## "Annotations removed" bar
 
@@ -559,6 +600,7 @@ pdfjs-editor-undo-bar-message-ink = Drawing removed
 pdfjs-editor-undo-bar-message-stamp = Image removed
 pdfjs-editor-undo-bar-message-signature = Signature removed
 pdfjs-editor-undo-bar-message-comment = Comment removed
+pdfjs-editor-undo-bar-message-redaction = Redaction removed
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -729,6 +771,10 @@ pdfjs-views-manager-pages-status-action-label =
     }
 pdfjs-views-manager-pages-status-none-action-label = Select pages
 pdfjs-views-manager-pages-status-action-button-label = Manage
+pdfjs-views-manager-pages-status-rotate-button-label = Rotate clockwise
+pdfjs-views-manager-pages-status-add-blank-button-label = Add blank page
+pdfjs-views-manager-pages-status-duplicate-button-label = Duplicate page
+pdfjs-views-manager-pages-status-remove-button-label = Remove page
 pdfjs-views-manager-pages-status-copy-button-label = Copy
 pdfjs-views-manager-pages-status-cut-button-label = Cut
 pdfjs-views-manager-pages-status-delete-button-label = Delete

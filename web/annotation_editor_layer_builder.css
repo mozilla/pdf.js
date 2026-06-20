@@ -148,10 +148,11 @@
 .annotationEditorLayer.disabled {
   pointer-events: none;
 
-  &.highlightEditing
+  &:is(.highlightEditing, .redactionEditing)
     :is(
       .freeTextEditor,
       .inkEditor,
+      .redactionEditor,
       .stampEditor,
       .signatureEditor,
       .commentPopup
@@ -168,12 +169,26 @@
   cursor: var(--editorInk-editing-cursor);
 }
 
+.annotationEditorLayer.stampEditing {
+  cursor: crosshair;
+}
+
+.annotationEditorLayer.redactionEditing {
+  cursor: crosshair;
+}
+
 .annotationEditorLayer .draw {
   box-sizing: border-box;
 }
 
 .annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
+  :is(
+    .freeTextEditor,
+    .inkEditor,
+    .redactionEditor,
+    .stampEditor,
+    .signatureEditor
+  ) {
   position: absolute;
   background: transparent;
   z-index: 1;
@@ -234,6 +249,7 @@
   :is(
     .freeTextEditor,
     .inkEditor,
+    .redactionEditor,
     .stampEditor,
     .highlightEditor,
     .signatureEditor
@@ -562,6 +578,12 @@
   height: 100%;
 }
 
+.annotationEditorLayer .redactionEditorBox {
+  position: absolute;
+  background: #000;
+  pointer-events: none;
+}
+
 .annotationEditorLayer .inkEditor.editing {
   cursor: inherit;
 }
@@ -627,7 +649,13 @@
 }
 
 .annotationEditorLayer {
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
+  :is(
+    .freeTextEditor,
+    .inkEditor,
+    .redactionEditor,
+    .stampEditor,
+    .signatureEditor
+  ) {
     & > .resizers {
       position: absolute;
       inset: 0;

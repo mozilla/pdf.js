@@ -84,6 +84,7 @@ const AnnotationEditorType = {
   POPUP: 16,
   SIGNATURE: 101,
   COMMENT: 102,
+  REDACTION: 103,
 };
 
 const AnnotationEditorParamsType = {
@@ -92,6 +93,11 @@ const AnnotationEditorParamsType = {
   FREETEXT_SIZE: 11,
   FREETEXT_COLOR: 12,
   FREETEXT_OPACITY: 13,
+  FREETEXT_FONT_FAMILY: 14,
+  FREETEXT_BOLD: 15,
+  FREETEXT_ITALIC: 16,
+  FREETEXT_UNDERLINE: 17,
+  FREETEXT_ALIGNMENT: 18,
   INK_COLOR: 21,
   INK_THICKNESS: 22,
   INK_OPACITY: 23,
@@ -101,7 +107,84 @@ const AnnotationEditorParamsType = {
   HIGHLIGHT_FREE: 33,
   HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41,
+  STAMP_IMAGE: 42,
 };
+
+const FreeTextAnnotationFontFamily = {
+  DEFAULT: "Helvetica",
+  HELVETICA: "Helvetica",
+  ARIAL: "Arial",
+  TIMES_NEW_ROMAN: "Times New Roman",
+  COURIER_NEW: "Courier New",
+  GEORGIA: "Georgia",
+  VERDANA: "Verdana",
+};
+
+const FreeTextAnnotationFontAliases = new Map([
+  ["Helv", FreeTextAnnotationFontFamily.HELVETICA],
+  ["Helvetica", FreeTextAnnotationFontFamily.HELVETICA],
+  ["HelvB", FreeTextAnnotationFontFamily.HELVETICA],
+  ["HelvI", FreeTextAnnotationFontFamily.HELVETICA],
+  ["HelvBI", FreeTextAnnotationFontFamily.HELVETICA],
+  ["Arial", FreeTextAnnotationFontFamily.ARIAL],
+  ["Times", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["Times-Roman", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["TimesNewRoman", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["Times New Roman", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["TimesB", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["TimesI", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["TimesBI", FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN],
+  ["Courier", FreeTextAnnotationFontFamily.COURIER_NEW],
+  ["CourierNew", FreeTextAnnotationFontFamily.COURIER_NEW],
+  ["Courier New", FreeTextAnnotationFontFamily.COURIER_NEW],
+  ["CourierB", FreeTextAnnotationFontFamily.COURIER_NEW],
+  ["CourierI", FreeTextAnnotationFontFamily.COURIER_NEW],
+  ["CourierBI", FreeTextAnnotationFontFamily.COURIER_NEW],
+  ["Georgia", FreeTextAnnotationFontFamily.GEORGIA],
+  ["Verdana", FreeTextAnnotationFontFamily.VERDANA],
+]);
+
+const FreeTextAnnotationPdfFontMap = new Map([
+  [
+    FreeTextAnnotationFontFamily.HELVETICA,
+    { resourceName: "Helv", pdfFontName: "Helvetica" },
+  ],
+  [
+    FreeTextAnnotationFontFamily.ARIAL,
+    { resourceName: "Helv", pdfFontName: "Helvetica" },
+  ],
+  [
+    FreeTextAnnotationFontFamily.TIMES_NEW_ROMAN,
+    { resourceName: "Times", pdfFontName: "Times-Roman" },
+  ],
+  [
+    FreeTextAnnotationFontFamily.COURIER_NEW,
+    { resourceName: "Courier", pdfFontName: "Courier" },
+  ],
+  [
+    FreeTextAnnotationFontFamily.GEORGIA,
+    { resourceName: "Times", pdfFontName: "Times-Roman" },
+  ],
+  [
+    FreeTextAnnotationFontFamily.VERDANA,
+    { resourceName: "Helv", pdfFontName: "Helvetica" },
+  ],
+]);
+
+function normalizeFreeTextAnnotationFontFamily(fontFamily) {
+  return (
+    FreeTextAnnotationFontAliases.get(fontFamily) ||
+    FreeTextAnnotationFontFamily.DEFAULT
+  );
+}
+
+function getFreeTextAnnotationFontStyle(fontName) {
+  const name = typeof fontName === "string" ? fontName : "";
+  return {
+    bold: /Bold|BI$|B$/i.test(name),
+    italic: /Italic|Oblique|BI$|I$/i.test(name),
+  };
+}
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.
 const PermissionFlag = {
@@ -1165,6 +1248,10 @@ export {
   FeatureTest,
   FONT_IDENTITY_MATRIX,
   FormatError,
+  FreeTextAnnotationFontAliases,
+  FreeTextAnnotationFontFamily,
+  FreeTextAnnotationPdfFontMap,
+  getFreeTextAnnotationFontStyle,
   getUuid,
   getVerbosityLevel,
   ImageKind,
@@ -1178,6 +1265,7 @@ export {
   makeMap,
   makeObj,
   MeshFigureType,
+  normalizeFreeTextAnnotationFontFamily,
   normalizeUnicode,
   objectSize,
   OPS,

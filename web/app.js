@@ -40,6 +40,7 @@ import {
 } from "./ui_utils.js";
 import {
   AnnotationEditorType,
+  AnnotationMode,
   build,
   FeatureTest,
   getDocument,
@@ -1393,23 +1394,165 @@ const PDFViewerApplication = {
     // a message and change PdfjsChild.sys.mjs to take it into account.
     const { classList } = this.appConfig.appContainer;
     classList.add("wait");
-
-    if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
-      this.externalServices.reportTelemetry({
-        type: "pageOrganization",
-        data: { action: "save" },
-      });
-      await this.onSavePages({
-        data: this.pdfThumbnailViewer.getStructuralChanges(),
-      });
-    } else {
-      await (this.pdfDocument?.annotationStorage.size > 0
-        ? this.save()
-        : this.download());
+    try {
+      const redactions = this._getRedactions();
+      if (redactions.length > 0) {
+        await this._saveWithRedactions(redactions);
+      } else if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
+        this.externalServices.reportTelemetry({
+          type: "pageOrganization",
+          data: { action: "save" },
+        });
+        await this.onSavePages({
+          data: this.pdfThumbnailViewer.getStructuralChanges(),
+        });
+      } else {
+        await (this.pdfDocument?.annotationStorage.size > 0
+          ? this.save()
+          : this.download());
+      }
+      delete this._mergedDocumentNeedsSaving;
+      this.setTitle();
+    } finally {
+      classList.remove("wait");
     }
-    delete this._mergedDocumentNeedsSaving;
-    this.setTitle();
-    classList.remove("wait");
+  },
+
+  _getRedactions() {
+    const redactions = [];
+    for (const [key, value] of this.pdfDocument?.annotationStorage || []) {
+      if (value?.mode !== AnnotationEditorType.REDACTION) {
+        continue;
+      }
+      const serialized = value.serialize?.(false);
+      if (serialized && !serialized.deleted) {
+        redactions.push({ key, serialized, value });
+      }
+    }
+    return redactions;
+  },
+
+  async _renderRedactedPage(pageIndex, redactions) {
+    const page = await this.pdfDocument.getPage(pageIndex + 1);
+    const rotation =
+      (page.rotate +
+        this.pdfDocument.pagesMapper.getRotationDelta(pageIndex + 1)) %
+      360;
+    let scale = window.devicePixelRatio || 1;
+    if (scale < 2) {
+      scale = 2;
+    } else if (scale > 3) {
+      scale = 3;
+    }
+    const viewport = page.getViewport({ rotation, scale });
+    const canvas = new OffscreenCanvas(
+      Math.ceil(viewport.width),
+      Math.ceil(viewport.height)
+    );
+    const canvasContext = canvas.getContext("2d", { alpha: false });
+
+    await page.render({
+      annotationMode: AnnotationMode.ENABLE_STORAGE,
+      background: "#ffffff",
+      canvasContext,
+      viewport,
+    }).promise;
+
+    canvasContext.fillStyle = "#000000";
+    for (const redaction of redactions) {
+      for (const rect of redaction.redactionRects || [redaction.rect]) {
+        const [x1, y1] = viewport.convertToViewportPoint(rect[0], rect[1]);
+        const [x2, y2] = viewport.convertToViewportPoint(rect[2], rect[3]);
+        const x = Math.min(x1, x2);
+        const y = Math.min(y1, y2);
+        const width = Math.abs(x2 - x1);
+        const height = Math.abs(y2 - y1);
+        canvasContext.fillRect(x - 1, y - 1, width + 2, height + 2);
+      }
+    }
+
+    return {
+      fullPage: true,
+      image: canvas.transferToImageBitmap(),
+      pageIndices: [pageIndex],
+      pageSize: {
+        width: viewport.width / scale,
+        height: viewport.height / scale,
+      },
+    };
+  },
+
+  async _saveWithRedactions(redactions) {
+    if (this._saveInProgress) {
+      return;
+    }
+    this._saveInProgress = true;
+    await this.pdfScriptingManager.dispatchWillSave();
+
+    const { annotationStorage, pagesMapper } = this.pdfDocument;
+    const removed = new Map();
+    let saved = false;
+    try {
+      const grouped = new Map();
+      for (const { key, serialized, value } of redactions) {
+        removed.set(key, value);
+        annotationStorage.remove(key);
+        const list = grouped.get(serialized.pageIndex) || [];
+        list.push(serialized);
+        grouped.set(serialized.pageIndex, list);
+      }
+
+      const imagePages = await Promise.all(
+        [...grouped].map(([pageIndex, pageRedactions]) =>
+          this._renderRedactedPage(pageIndex, pageRedactions)
+        )
+      );
+      const redactedPageIndices = new Set(grouped.keys());
+
+      for (const [key, value] of annotationStorage) {
+        const pageIndex = value?.pageIndex ?? value?.page?._pageIndex;
+        if (!redactedPageIndices.has(pageIndex)) {
+          continue;
+        }
+        removed.set(key, value);
+        annotationStorage.remove(key);
+      }
+
+      const usedIds = new Map();
+      for (
+        let pageNumber = 1;
+        pageNumber <= pagesMapper.pagesNumber;
+        ++pageNumber
+      ) {
+        if (redactedPageIndices.has(pageNumber - 1)) {
+          continue;
+        }
+        const id = pagesMapper.getPageId(pageNumber);
+        const pageNumbers = usedIds.get(id) || [];
+        pageNumbers.push(pageNumber);
+        usedIds.set(id, pageNumbers);
+      }
+      const extractParams = usedIds.size
+        ? pagesMapper.getPageMappingForSaving(usedIds)
+        : [];
+      extractParams.push(...imagePages);
+
+      const data = await this.pdfDocument.extractPages(extractParams);
+      this.downloadManager.download(data, this._downloadUrl, this._docFilename);
+      saved = true;
+    } catch (reason) {
+      console.error("Error when permanently redacting the document:", reason);
+      throw reason;
+    } finally {
+      for (const [key, value] of removed) {
+        annotationStorage.setValue(key, value);
+      }
+      if (saved) {
+        annotationStorage.resetModified();
+      }
+      await this.pdfScriptingManager.dispatchDidSave();
+      this._saveInProgress = false;
+    }
   },
 
   /**
@@ -2286,6 +2429,18 @@ const PDFViewerApplication = {
       );
     }
     eventBus.on("pagesedited", this.onPagesEdited.bind(this), opts);
+    eventBus.on(
+      "individualpagerotationchanged",
+      ({ rotations }) => {
+        for (const { pageNumber, rotationDelta } of rotations) {
+          pdfViewer.getPageView(pageNumber - 1)?.update({
+            rotation: (pdfViewer.pagesRotation + rotationDelta) % 360,
+          });
+        }
+        pdfViewer.update();
+      },
+      opts
+    );
     eventBus.on("saveextractedpages", this.onSavePages.bind(this), opts);
     eventBus.on("saveandload", this.onSaveAndLoad.bind(this), opts);
   },

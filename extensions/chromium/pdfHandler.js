@@ -360,6 +360,21 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
     }
     return undefined;
   }
+  if (message && message.action === "redlineOpenPdfInNewTab") {
+    if (typeof message.url !== "string") {
+      return undefined;
+    }
+    const createProperties = {
+      url: getViewerURL(message.url),
+    };
+    if (sender.tab) {
+      createProperties.windowId = sender.tab.windowId;
+      createProperties.index = sender.tab.index + 1;
+      createProperties.openerTabId = sender.tab.id;
+    }
+    chrome.tabs.create(createProperties);
+    return undefined;
+  }
   if (message && message.action === "canRequestBody") {
     sendResponse(canRequestBody(sender.tab.id, sender.frameId));
     return undefined;

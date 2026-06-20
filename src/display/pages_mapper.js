@@ -38,6 +38,9 @@ class PagesMapper {
    */
   #prevPageNumbers = null;
 
+  /** Rotation added to each page position, in clockwise degrees. */
+  #rotationDeltas = null;
+
   /** @type {number} */
   #pagesNumber = 0;
 
@@ -61,6 +64,7 @@ class PagesMapper {
     this.#pagesNumber = n;
     this.#pageNumberToId = null;
     this.#prevPageNumbers = null;
+    this.#rotationDeltas = null;
   }
 
   /**
@@ -77,6 +81,7 @@ class PagesMapper {
       pageNumberToId[i] = i + 1;
     }
     this.#prevPageNumbers = new Int32Array(pageNumberToId);
+    this.#rotationDeltas = new Int16Array(n);
   }
 
   /**
@@ -114,11 +119,13 @@ class PagesMapper {
     const prevIdToPageNumber = this.#buildIdToPageNumber();
     const movedCount = pagesToMove.length;
     const mappedPagesToMove = new Uint32Array(movedCount);
+    const movedRotations = new Int16Array(movedCount);
     let removedBeforeTarget = 0;
 
     for (let i = 0; i < movedCount; i++) {
       const pageIndex = pagesToMove[i] - 1;
       mappedPagesToMove[i] = pageNumberToId[pageIndex];
+      movedRotations[i] = this.#rotationDeltas[pageIndex];
       if (pageIndex < index) {
         removedBeforeTarget++;
       }
@@ -135,7 +142,8 @@ class PagesMapper {
     // Compact: keep only non-moved pages.
     for (let i = 0, r = 0; i < pagesNumber; i++) {
       if (!selectedPages.has(i + 1)) {
-        pageNumberToId[r++] = pageNumberToId[i];
+        pageNumberToId[r] = pageNumberToId[i];
+        this.#rotationDeltas[r++] = this.#rotationDeltas[i];
       }
     }
 
@@ -146,10 +154,19 @@ class PagesMapper {
       remainingLen
     );
     pageNumberToId.set(mappedPagesToMove, adjustedTarget);
+    this.#rotationDeltas.copyWithin(
+      adjustedTarget + movedCount,
+      adjustedTarget,
+      remainingLen
+    );
+    this.#rotationDeltas.set(movedRotations, adjustedTarget);
 
     this.#updatePrevPageNumbers(prevIdToPageNumber);
 
-    if (pageNumberToId.every((id, i) => id === i + 1)) {
+    if (
+      pageNumberToId.every((id, i) => id === i + 1) &&
+      this.#rotationDeltas.every(rotation => rotation === 0)
+    ) {
       this.#pageNumberToId = null;
     }
   }
@@ -168,12 +185,14 @@ class PagesMapper {
       pageNumberToId: pageNumberToId.slice(),
       pagesNumber: this.#pagesNumber,
       prevPageNumbers: this.#prevPageNumbers.slice(),
+      rotationDeltas: this.#rotationDeltas.slice(),
     };
 
     const newN = this.#pagesNumber - pagesToDelete.length;
     this.#pagesNumber = newN;
     const newPageNumberToId = (this.#pageNumberToId = new Uint32Array(newN));
     this.#prevPageNumbers = new Int32Array(newN);
+    const newRotationDeltas = new Int16Array(newN);
 
     let sourceIndex = 0;
     let destIndex = 0;
@@ -185,12 +204,21 @@ class PagesMapper {
           destIndex
         );
         destIndex += pageIndex - sourceIndex;
+        newRotationDeltas.set(
+          this.#rotationDeltas.subarray(sourceIndex, pageIndex),
+          destIndex - (pageIndex - sourceIndex)
+        );
       }
       sourceIndex = pageIndex + 1;
     }
     if (sourceIndex < pageNumberToId.length) {
       newPageNumberToId.set(pageNumberToId.subarray(sourceIndex), destIndex);
+      newRotationDeltas.set(
+        this.#rotationDeltas.subarray(sourceIndex),
+        destIndex
+      );
     }
+    this.#rotationDeltas = newRotationDeltas;
 
     this.#updatePrevPageNumbers(prevIdToPageNumber, new Set(pagesToDelete));
   }
@@ -200,6 +228,7 @@ class PagesMapper {
       this.#pageNumberToId = this.#savedData.pageNumberToId;
       this.#pagesNumber = this.#savedData.pagesNumber;
       this.#prevPageNumbers = this.#savedData.prevPageNumbers;
+      this.#rotationDeltas = this.#savedData.rotationDeltas;
       this.#savedData = null;
     }
   }
@@ -217,6 +246,7 @@ class PagesMapper {
     this.#clipboard = {
       pageNumbers: pagesToCopy,
       pageIds: pagesToCopy.map(n => this.#pageNumberToId[n - 1]),
+      rotationDeltas: pagesToCopy.map(n => this.#rotationDeltas[n - 1]),
     };
   }
 
@@ -232,13 +262,17 @@ class PagesMapper {
     this.#ensureInit();
     const pageNumberToId = this.#pageNumberToId;
     const prevIdToPageNumber = this.#buildIdToPageNumber();
-    const { pageNumbers: copiedPageNumbers, pageIds: copiedPageIds } =
-      this.#clipboard;
+    const {
+      pageNumbers: copiedPageNumbers,
+      pageIds: copiedPageIds,
+      rotationDeltas: copiedRotationDeltas,
+    } = this.#clipboard;
 
     const newN = this.#pagesNumber + copiedPageNumbers.length;
     this.#pagesNumber = newN;
     const newPageNumberToId = (this.#pageNumberToId = new Uint32Array(newN));
     this.#prevPageNumbers = new Int32Array(newN);
+    const newRotationDeltas = new Int16Array(newN);
 
     newPageNumberToId.set(pageNumberToId.subarray(0, index), 0);
     newPageNumberToId.set(copiedPageIds, index);
@@ -246,6 +280,13 @@ class PagesMapper {
       pageNumberToId.subarray(index),
       index + copiedPageNumbers.length
     );
+    newRotationDeltas.set(this.#rotationDeltas.subarray(0, index), 0);
+    newRotationDeltas.set(copiedRotationDeltas, index);
+    newRotationDeltas.set(
+      this.#rotationDeltas.subarray(index),
+      index + copiedPageNumbers.length
+    );
+    this.#rotationDeltas = newRotationDeltas;
 
     this.#updatePrevPageNumbers(
       prevIdToPageNumber,
@@ -303,11 +344,32 @@ class PagesMapper {
   }
 
   /**
+   * Add a clockwise rotation to the given page positions.
+   * @param {Iterable<number>} pageNumbers
+   * @param {number} delta
+   */
+  rotatePages(pageNumbers, delta) {
+    this.#ensureInit();
+    for (const pageNumber of pageNumbers) {
+      const index = pageNumber - 1;
+      this.#rotationDeltas[index] =
+        (this.#rotationDeltas[index] + delta + 360) % 360;
+    }
+  }
+
+  getRotationDelta(pageNumber) {
+    return this.#rotationDeltas?.[pageNumber - 1] || 0;
+  }
+
+  /**
    * Checks if the page mappings have been altered from their initial state.
    * @returns {boolean}
    */
   hasBeenAltered() {
-    return this.#pageNumberToId !== null;
+    return (
+      this.#pageNumberToId !== null ||
+      !!this.#rotationDeltas?.some(rotation => rotation !== 0)
+    );
   }
 
   /**
@@ -347,19 +409,26 @@ class PagesMapper {
         document: null,
         pageIndices: [],
         includePages: [],
+        rotationDeltas: [],
       };
     }
 
     for (const [id, pageNumbers] of idToPageNumber) {
       for (let i = 0, ii = pageNumbers.length; i < ii; i++) {
-        extractParams[i].includePages.push([id - 1, pageNumbers[i] - 1]);
+        const pageIndex = pageNumbers[i] - 1;
+        extractParams[i].includePages.push([
+          id - 1,
+          pageIndex,
+          this.#rotationDeltas?.[pageIndex] || 0,
+        ]);
       }
     }
 
-    for (const { includePages, pageIndices } of extractParams) {
+    for (const { includePages, pageIndices, rotationDeltas } of extractParams) {
       includePages.sort((a, b) => a[0] - b[0]);
       for (let i = 0, ii = includePages.length; i < ii; i++) {
         pageIndices.push(includePages[i][1]);
+        rotationDeltas.push(includePages[i][2]);
         includePages[i] = includePages[i][0];
       }
     }

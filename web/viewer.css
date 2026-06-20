@@ -80,6 +80,7 @@
   --toolbarButton-editorComment-icon: url(images/comment-editButton.svg);
   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
   --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
+  --toolbarButton-editorRedaction-icon: url(images/toolbarButton-editorRedaction.svg);
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
@@ -123,6 +124,9 @@
   );
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
+  --editorParams-alignLeft-icon: url(images/editor-align-left.svg);
+  --editorParams-alignCenter-icon: url(images/editor-align-center.svg);
+  --editorParams-alignRight-icon: url(images/editor-align-right.svg);
   --comment-edit-button-icon: url(images/comment-editButton.svg);
 }
 
@@ -467,6 +471,10 @@ body {
 
 #editorHighlightButton::before {
   mask-image: var(--toolbarButton-editorHighlight-icon);
+}
+
+#editorRedactionButton::before {
+  mask-image: var(--toolbarButton-editorRedaction-icon);
 }
 
 #editorInkButton::before {
@@ -898,6 +906,110 @@ dialog :link {
       mask-image: var(--editorParams-stampAddImage-icon);
     }
 
+    .editorStampChoice {
+      min-height: 58px;
+      gap: 8px;
+
+      &::before {
+        display: none;
+      }
+
+      &[aria-pressed="true"] {
+        background-color: var(--toggled-btn-bg-color);
+        color: var(--toggled-btn-color);
+      }
+
+      > img {
+        width: 116px;
+        height: 34px;
+        object-fit: contain;
+        background-color: white;
+      }
+    }
+
+    .stampChoiceGrid {
+      display: grid;
+      grid-template-columns: repeat(3, 36px);
+      gap: 6px;
+      padding: 6px 12px 10px;
+
+      .editorStampChoice {
+        display: grid;
+        place-items: center;
+        width: 36px;
+        height: 36px;
+        padding: 5px;
+        border: 1px solid var(--doorhanger-separator-color);
+        border-radius: 4px;
+        background: var(--doorhanger-bg-color);
+
+        &:hover {
+          border-color: var(--toolbar-icon-bg-color);
+        }
+
+        &[aria-pressed="true"] {
+          border: 2px solid var(--toggled-btn-bg-color);
+          background: var(--button-hover-color);
+        }
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+        }
+      }
+    }
+
+    .editorTextButtonGroup {
+      display: grid;
+      grid-template-columns: repeat(3, 32px);
+      gap: 4px;
+    }
+
+    .editorTextFormatButton {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 28px;
+      padding: 0;
+      border: 1px solid var(--doorhanger-separator-color);
+      border-radius: 3px;
+      color: var(--main-color);
+      background: var(--field-bg-color);
+      font-size: 14px;
+
+      &:hover {
+        background: var(--button-hover-color);
+      }
+
+      &[aria-pressed="true"] {
+        border-color: var(--toggled-btn-bg-color);
+        background: var(--toggled-btn-bg-color);
+        color: var(--toggled-btn-color);
+      }
+
+      &.editorFreeTextAlignment::before {
+        content: "";
+        width: 16px;
+        height: 16px;
+        background: currentColor;
+        mask-position: center;
+        mask-repeat: no-repeat;
+      }
+
+      &.alignLeft::before {
+        mask-image: var(--editorParams-alignLeft-icon);
+      }
+
+      &.alignCenter::before {
+        mask-image: var(--editorParams-alignCenter-icon);
+      }
+
+      &.alignRight::before {
+        mask-image: var(--editorParams-alignRight-icon);
+      }
+    }
+
     .editorParamsLabel {
       flex: none;
       font: menu;
@@ -935,6 +1047,12 @@ dialog :link {
         height: 32px;
         flex: none;
         padding: 0;
+      }
+
+      .editorParamsSelect {
+        min-width: 145px;
+        height: 32px;
+        flex: none;
       }
 
       .editorParamsSlider {

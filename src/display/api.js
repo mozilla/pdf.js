@@ -981,6 +981,10 @@ class PDFDocumentProxy {
    * @typedef {Object} PageInfo
    * @property {null|Uint8Array} [document]
    * @property {ImageBitmap} [image] Image to insert as a synthetic page.
+   * @property {{width: number, height: number}} [pageSize] Dimensions of an
+   *  image-backed synthetic page in PDF points.
+   * @property {boolean} [fullPage] Whether the image fills the synthetic page
+   *  without the normal image-insertion margins.
    * @property {Array<Array<number>|number>} [includePages]
    *  included ranges or indices.
    * @property {Array<Array<number>|number>} [excludePages]
@@ -1005,6 +1009,8 @@ class PDFDocumentProxy {
    *  everything. Values beyond the current layout are clamped so the pages
    *  are appended at the end. Cannot be combined with `pageIndices` on the
    *  same entry.
+   * @property {Array<number>} [rotationDeltas] Clockwise rotation added to each
+   *  filtered page, in document order.
    */
 
   /**

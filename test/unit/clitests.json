@@ -35,6 +35,7 @@
     "node_stream_spec.js",
     "obj_bin_transform_spec.js",
     "operator_list_dependencies_spec.js",
+    "pages_mapper_spec.js",
     "parser_spec.js",
     "pattern_spec.js",
     "pdf.image_decoders_spec.js",

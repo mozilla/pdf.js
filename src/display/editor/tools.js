@@ -1469,7 +1469,36 @@ class AnnotationEditorUIManager {
   }
 
   commentSelection(methodOfCreation = "") {
-    this.highlightSelection(methodOfCreation, /* comment */ true);
+    void methodOfCreation;
+  }
+
+  redactSelection(methodOfCreation = "") {
+    const selection = document.getSelection();
+    if (!selection || selection.isCollapsed) {
+      return;
+    }
+    const anchorElement = this.#getAnchorElementForSelection(selection);
+    const textLayer = anchorElement.closest(".textLayer");
+    const boxes =
+      this.getSelectionBoxes(textLayer, { granularity: "character" }) ||
+      this.getSelectionBoxes(textLayer);
+    if (!boxes) {
+      return;
+    }
+    selection.empty();
+
+    const layer = this.#getLayerForTextLayer(textLayer);
+    const callback = () => {
+      layer?.createAndAddNewEditor({ x: 0, y: 0 }, false, {
+        methodOfCreation,
+        boxes,
+      });
+    };
+    if (this.#mode === AnnotationEditorType.NONE) {
+      this.switchToMode(AnnotationEditorType.REDACTION, callback);
+      return;
+    }
+    callback();
   }
 
   #beforeUnload(e) {
@@ -1577,6 +1606,7 @@ class AnnotationEditorUIManager {
 
     if (
       this.#mode !== AnnotationEditorType.HIGHLIGHT &&
+      this.#mode !== AnnotationEditorType.REDACTION &&
       this.#mode !== AnnotationEditorType.NONE
     ) {
       return;
@@ -1589,7 +1619,8 @@ class AnnotationEditorUIManager {
     this.#highlightWhenShiftUp = this.isShiftKeyDown;
     if (!this.isShiftKeyDown) {
       const activeLayer =
-        this.#mode === AnnotationEditorType.HIGHLIGHT
+        this.#mode === AnnotationEditorType.HIGHLIGHT ||
+        this.#mode === AnnotationEditorType.REDACTION
           ? this.#getLayerForTextLayer(textLayer)
           : null;
       activeLayer?.toggleDrawing();
@@ -1624,6 +1655,8 @@ class AnnotationEditorUIManager {
   #onSelectEnd(methodOfCreation = "") {
     if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
       this.highlightSelection(methodOfCreation);
+    } else if (this.#mode === AnnotationEditorType.REDACTION) {
+      this.redactSelection(methodOfCreation);
     } else if (this.#enableHighlightFloatingButton) {
       this.#displayFloatingToolbar();
     }
@@ -2266,6 +2299,12 @@ class AnnotationEditorUIManager {
     switch (type) {
       case AnnotationEditorParamsType.CREATE:
         this.currentLayer.addNewEditor(value);
+        return;
+      case AnnotationEditorParamsType.STAMP_IMAGE:
+        for (const editorType of this.#editorTypes) {
+          editorType.updateDefaultParams(type, value);
+        }
+        this.unselectAll();
         return;
       case AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL:
         this._eventBus.dispatch("reporttelemetry", {
@@ -2951,7 +2990,75 @@ class AnnotationEditorUIManager {
     return shadow(this, "imageManager", new ImageManager());
   }
 
-  getSelectionBoxes(textLayer) {
+  #getSelectionCharacterBoxes(selection, textLayer, rotator) {
+    const { ownerDocument } = textLayer;
+    const boxes = [];
+    const charRange = ownerDocument.createRange();
+    const segmenter =
+      typeof Intl !== "undefined" && Intl.Segmenter
+        ? new Intl.Segmenter(undefined, { granularity: "grapheme" })
+        : null;
+
+    const collectSegments = text => {
+      if (segmenter) {
+        return Array.from(segmenter.segment(text), ({ index, segment }) => [
+          index,
+          index + segment.length,
+        ]);
+      }
+      const segments = [];
+      for (let i = 0, ii = text.length; i < ii; ) {
+        const length = text.codePointAt(i) > 0xffff ? 2 : 1;
+        segments.push([i, i + length]);
+        i += length;
+      }
+      return segments;
+    };
+
+    const walker = ownerDocument.createTreeWalker(
+      textLayer,
+      NodeFilter.SHOW_TEXT
+    );
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const text = node.nodeValue || "";
+      if (!text) {
+        continue;
+      }
+
+      for (let i = 0, ii = selection.rangeCount; i < ii; i++) {
+        const range = selection.getRangeAt(i);
+        if (!range.intersectsNode(node)) {
+          continue;
+        }
+
+        const start = range.startContainer === node ? range.startOffset : 0;
+        const end = range.endContainer === node ? range.endOffset : text.length;
+        if (start >= end) {
+          continue;
+        }
+
+        for (const [segmentStart, segmentEnd] of collectSegments(text)) {
+          const from = Math.max(segmentStart, start);
+          const to = Math.min(segmentEnd, end);
+          if (from >= to) {
+            continue;
+          }
+          charRange.setStart(node, from);
+          charRange.setEnd(node, to);
+          for (const { x, y, width, height } of charRange.getClientRects()) {
+            if (width === 0 || height === 0) {
+              continue;
+            }
+            boxes.push(rotator(x, y, width, height));
+          }
+        }
+      }
+    }
+    charRange.detach?.();
+    return boxes.length === 0 ? null : boxes;
+  }
+
+  getSelectionBoxes(textLayer, options = null) {
     if (!textLayer) {
       return null;
     }
@@ -3007,6 +3114,10 @@ class AnnotationEditorUIManager {
           height: h / parentHeight,
         });
         break;
+    }
+
+    if (options?.granularity === "character") {
+      return this.#getSelectionCharacterBoxes(selection, textLayer, rotator);
     }
 
     const boxes = [];

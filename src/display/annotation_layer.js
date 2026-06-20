@@ -43,6 +43,7 @@ import {
   FeatureTest,
   LINE_FACTOR,
   makeArr,
+  normalizeFreeTextAnnotationFontFamily,
   shadow,
   SVG_NS,
   unreachable,
@@ -3141,6 +3142,9 @@ class FreeTextAnnotationElement extends AnnotationElement {
       const content = (this.contentElement = document.createElement("div"));
       content.classList.add("annotationTextContent");
       content.setAttribute("role", "comment");
+      content.style.fontFamily = normalizeFreeTextAnnotationFontFamily(
+        this.data.defaultAppearanceData.fontName
+      );
       for (const line of this.textContent) {
         const lineSpan = document.createElement("span");
         lineSpan.textContent = line;
@@ -3149,10 +3153,8 @@ class FreeTextAnnotationElement extends AnnotationElement {
       this.container.append(content);
     }
 
-    if (!this.data.popupRef && this.hasPopupData) {
-      this.hasOwnCommentButton = true;
-      this._createPopup();
-    }
+    // /Contents is the visible FreeText value, not an implicit comment. An
+    // explicit /Popup annotation is still handled by AnnotationLayer.
 
     this._editOnDoubleClick();
 

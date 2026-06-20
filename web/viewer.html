@@ -229,6 +229,15 @@ See https://github.com/adobe-type-tools/cmap-resources
                             <span data-l10n-id="pdfjs-views-manager-pages-status-action-button-label"></span>
                           </button>
                           <menu id="viewsManagerStatusActionOptions" class="popupMenu">
+                            <button id="viewsManagerStatusActionRotate" class="noIcon" role="menuitem" type="button" tabindex="-1" disabled>
+                              <span data-l10n-id="pdfjs-views-manager-pages-status-rotate-button-label"></span>
+                            </button>
+                            <button id="viewsManagerStatusActionAddBlank" class="noIcon" role="menuitem" type="button" tabindex="-1" disabled>
+                              <span data-l10n-id="pdfjs-views-manager-pages-status-add-blank-button-label"></span>
+                            </button>
+                            <button id="viewsManagerStatusActionDuplicate" class="noIcon" role="menuitem" type="button" tabindex="-1" disabled>
+                              <span data-l10n-id="pdfjs-views-manager-pages-status-duplicate-button-label"></span>
+                            </button>
                             <button id="viewsManagerStatusActionCopy" class="noIcon" role="menuitem" type="button" tabindex="-1" disabled>
                               <span data-l10n-id="pdfjs-views-manager-pages-status-copy-button-label"></span>
                             </button>
@@ -236,7 +245,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                               <span data-l10n-id="pdfjs-views-manager-pages-status-cut-button-label"></span>
                             </button>
                             <button id="viewsManagerStatusActionDelete" class="noIcon" role="menuitem" type="button" tabindex="-1" disabled>
-                              <span data-l10n-id="pdfjs-views-manager-pages-status-delete-button-label"></span>
+                              <span data-l10n-id="pdfjs-views-manager-pages-status-remove-button-label"></span>
                             </button>
                             <button id="viewsManagerStatusActionExport" class="noIcon" role="menuitem" type="button" tabindex="-1" disabled>
                               <span data-l10n-id="pdfjs-views-manager-pages-status-export-selected-button-label"></span>
@@ -539,6 +548,19 @@ See https://github.com/adobe-type-tools/cmap-resources
                       </div>
                     </div>
                   </div>
+                  <div id="editorRedaction" class="toolbarButtonWithContainer">
+                    <button
+                      id="editorRedactionButton"
+                      class="toolbarButton"
+                      type="button"
+                      disabled="disabled"
+                      aria-expanded="false"
+                      tabindex="0"
+                      data-l10n-id="pdfjs-editor-redaction-button"
+                    >
+                      <span data-l10n-id="pdfjs-editor-redaction-button-label"></span>
+                    </button>
+                  </div>
                   <div id="editorFreeText" class="toolbarButtonWithContainer">
                     <button
                       id="editorFreeTextButton"
@@ -562,6 +584,81 @@ See https://github.com/adobe-type-tools/cmap-resources
                         <div class="editorParamsSetter">
                           <label for="editorFreeTextFontSize" class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-size-input"></label>
                           <input type="range" id="editorFreeTextFontSize" class="editorParamsSlider" value="10" min="5" max="100" step="1" tabindex="0" />
+                        </div>
+                        <div class="editorParamsSetter">
+                          <label for="editorFreeTextFontFamily" class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-font-family-input"></label>
+                          <select id="editorFreeTextFontFamily" class="editorParamsSelect" tabindex="0">
+                            <option value="Helvetica">Default / Helvetica</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Times New Roman">Times New Roman</option>
+                            <option value="Courier New">Courier New</option>
+                            <option value="Georgia">Georgia</option>
+                            <option value="Verdana">Verdana</option>
+                          </select>
+                        </div>
+                        <div class="editorParamsSetter">
+                          <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-format-input"></span>
+                          <div class="editorTextButtonGroup">
+                            <button
+                              id="editorFreeTextBold"
+                              class="editorTextFormatButton"
+                              type="button"
+                              aria-pressed="false"
+                              tabindex="0"
+                              data-l10n-id="pdfjs-editor-free-text-bold-button"
+                            >
+                              <strong>B</strong>
+                            </button>
+                            <button
+                              id="editorFreeTextItalic"
+                              class="editorTextFormatButton"
+                              type="button"
+                              aria-pressed="false"
+                              tabindex="0"
+                              data-l10n-id="pdfjs-editor-free-text-italic-button"
+                            >
+                              <em>I</em>
+                            </button>
+                            <button
+                              id="editorFreeTextUnderline"
+                              class="editorTextFormatButton"
+                              type="button"
+                              aria-pressed="false"
+                              tabindex="0"
+                              data-l10n-id="pdfjs-editor-free-text-underline-button"
+                            >
+                              <u>U</u>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="editorParamsSetter">
+                          <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-free-text-alignment-input"></span>
+                          <div class="editorTextButtonGroup">
+                            <button
+                              class="editorTextFormatButton editorFreeTextAlignment alignLeft"
+                              type="button"
+                              data-alignment="left"
+                              aria-pressed="true"
+                              tabindex="0"
+                              data-l10n-id="pdfjs-editor-free-text-align-left-button"
+                            ></button>
+                            <button
+                              class="editorTextFormatButton editorFreeTextAlignment alignCenter"
+                              type="button"
+                              data-alignment="center"
+                              aria-pressed="false"
+                              tabindex="0"
+                              data-l10n-id="pdfjs-editor-free-text-align-center-button"
+                            ></button>
+                            <button
+                              class="editorTextFormatButton editorFreeTextAlignment alignRight"
+                              type="button"
+                              data-alignment="right"
+                              aria-pressed="false"
+                              tabindex="0"
+                              data-l10n-id="pdfjs-editor-free-text-align-right-button"
+                            ></button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -588,7 +685,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                         </div>
                         <div class="editorParamsSetter">
                           <label for="editorInkThickness" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-thickness-input"></label>
-                          <input type="range" id="editorInkThickness" class="editorParamsSlider" value="1" min="1" max="20" step="1" tabindex="0" />
+                          <input type="range" id="editorInkThickness" class="editorParamsSlider" value="1" min="0.1" max="20" step="0.1" tabindex="0" />
                         </div>
                         <div class="editorParamsSetter">
                           <label for="editorInkOpacity" class="editorParamsLabel" data-l10n-id="pdfjs-editor-ink-opacity-input"></label>
@@ -622,6 +719,80 @@ See https://github.com/adobe-type-tools/cmap-resources
                         >
                           <span class="editorParamsLabel" data-l10n-id="pdfjs-editor-stamp-add-image-button-label"></span>
                         </button>
+                        <div class="stampChoiceGrid">
+                          <button
+                            class="editorStampChoice"
+                            type="button"
+                            tabindex="0"
+                            aria-pressed="false"
+                            data-stamp-src="images/stamp-check.svg"
+                            data-stamp-width="0.12"
+                            data-stamp-alt="Check mark"
+                            data-l10n-id="pdfjs-editor-stamp-check-button"
+                          >
+                            <img src="images/stamp-check.svg" alt="" />
+                          </button>
+                          <button
+                            class="editorStampChoice"
+                            type="button"
+                            tabindex="0"
+                            aria-pressed="false"
+                            data-stamp-src="images/stamp-x.svg"
+                            data-stamp-width="0.12"
+                            data-stamp-alt="X mark"
+                            data-l10n-id="pdfjs-editor-stamp-x-button"
+                          >
+                            <img src="images/stamp-x.svg" alt="" />
+                          </button>
+                          <button
+                            class="editorStampChoice"
+                            type="button"
+                            tabindex="0"
+                            aria-pressed="false"
+                            data-stamp-src="images/stamp-arrow.svg"
+                            data-stamp-width="0.2"
+                            data-stamp-alt="Arrow"
+                            data-l10n-id="pdfjs-editor-stamp-arrow-button"
+                          >
+                            <img src="images/stamp-arrow.svg" alt="" />
+                          </button>
+                          <button
+                            class="editorStampChoice"
+                            type="button"
+                            tabindex="0"
+                            aria-pressed="false"
+                            data-stamp-src="images/stamp-circle.svg"
+                            data-stamp-width="0.16"
+                            data-stamp-alt="Circle"
+                            data-l10n-id="pdfjs-editor-stamp-circle-button"
+                          >
+                            <img src="images/stamp-circle.svg" alt="" />
+                          </button>
+                          <button
+                            class="editorStampChoice"
+                            type="button"
+                            tabindex="0"
+                            aria-pressed="false"
+                            data-stamp-src="images/stamp-rectangle.svg"
+                            data-stamp-width="0.2"
+                            data-stamp-alt="Rectangle"
+                            data-l10n-id="pdfjs-editor-stamp-rectangle-button"
+                          >
+                            <img src="images/stamp-rectangle.svg" alt="" />
+                          </button>
+                          <button
+                            class="editorStampChoice"
+                            type="button"
+                            tabindex="0"
+                            aria-pressed="false"
+                            data-stamp-src="images/stamp-triangle.svg"
+                            data-stamp-width="0.16"
+                            data-stamp-alt="Triangle"
+                            data-l10n-id="pdfjs-editor-stamp-triangle-button"
+                          >
+                            <img src="images/stamp-triangle.svg" alt="" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

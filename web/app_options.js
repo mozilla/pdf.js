@@ -239,7 +239,8 @@ const defaultOptions = {
   },
   enableMerge: {
     /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || CHROME"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableNewAltTextWhenAddingImage: {
@@ -279,7 +280,8 @@ const defaultOptions = {
   },
   enableSplitMerge: {
     /** @type {boolean} */
-    value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || CHROME"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   enableUpdatedAddImage: {
@@ -297,7 +299,7 @@ const defaultOptions = {
   },
   externalLinkTarget: {
     /** @type {number} */
-    value: 0,
+    value: 2,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
   highlightEditorColors: {
