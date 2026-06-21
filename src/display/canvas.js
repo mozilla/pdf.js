@@ -2965,6 +2965,14 @@ class CanvasGraphics {
         warn(`Type3 character "${glyph.operatorListId}" is not available.`);
       } else if (this.contentVisible) {
         this.save();
+        // A d0 (setCharWidth) glyph is colored (see Table 113 in pdf 1.7 specs)
+        // unlike a d1 glyph painted as a stencil mask with the current fill
+        // color. The constant alphas (ca/CA) are the opacity of that current
+        // color, so they must not attenuate a d0 glyph.
+        if (operatorList.fnArray[0] === OPS.setCharWidth) {
+          current.fillAlpha = current.strokeAlpha = 1;
+          ctx.globalAlpha = 1;
+        }
         ctx.scale(fontSize, fontSize);
         ctx.transform(...fontMatrix);
         this.executeOperatorList(operatorList);
