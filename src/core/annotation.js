@@ -48,6 +48,7 @@ import {
   lookupMatrix,
   lookupNormalRect,
   lookupRect,
+  MissingDataException,
   numberToString,
   RESOURCES_KEYS_OPERATOR_LIST,
   RESOURCES_KEYS_TEXT_CONTENT,
@@ -1208,6 +1209,9 @@ class Annotation {
           /* resources = */ null
         );
       } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
         warn(`#setOptionalContent: ${ex}`);
       }
     }
