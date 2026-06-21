@@ -20,9 +20,10 @@ import {
   warn,
 } from "../shared/util.js";
 import { Dict, isDict, isName, Name, Ref, RefSetCache } from "./primitives.js";
+import { lookupNormalRect, MissingDataException } from "./core_utils.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "./string_utils.js";
 import { BaseStream } from "./base_stream.js";
-import { lookupNormalRect } from "./core_utils.js";
+import { FileSpec } from "./file_spec.js";
 import { NumberTree } from "./name_number_tree.js";
 
 const MAX_DEPTH = 40;
@@ -594,24 +595,18 @@ class StructElementNode {
     }
     for (let af of AFs) {
       af = this.xref.fetchIfRef(af);
-      if (!isDict(af, "Filespec")) {
+      if (
+        !isDict(af, "Filespec") ||
+        !isName(af.get("AFRelationship"), "Supplement")
+      ) {
         continue;
       }
-      if (!isName(af.get("AFRelationship"), "Supplement")) {
-        continue;
-      }
-      const ef = af.get("EF");
-      if (!(ef instanceof Dict)) {
-        continue;
-      }
-      const fileStream = ef.get("UF") || ef.get("F");
-      if (!(fileStream instanceof BaseStream)) {
-        continue;
-      }
-      if (!isName(fileStream.dict.get("Type"), "EmbeddedFile")) {
-        continue;
-      }
-      if (!isName(fileStream.dict.get("Subtype"), "application/mathml+xml")) {
+      const fileStream = FileSpec.pickPlatformItem(af.get("EF"));
+      if (
+        !(fileStream instanceof BaseStream) ||
+        !isDict(fileStream.dict, "EmbeddedFile") ||
+        !isName(fileStream.dict.get("Subtype"), "application/mathml+xml")
+      ) {
         continue;
       }
       // The default encoding for xml files is UTF-8.
@@ -909,9 +904,16 @@ class StructTreePage {
         obj.alt = stringToPDFString(alt);
       }
       if (obj.role === "Formula") {
-        const { mathML } = node;
-        if (mathML) {
-          obj.mathML = mathML;
+        try {
+          const { mathML } = node;
+          if (mathML) {
+            obj.mathML = mathML;
+          }
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
+          warn(`Ignoring mathML: "${ex}".`);
         }
       }
 
