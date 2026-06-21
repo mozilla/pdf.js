@@ -718,8 +718,7 @@ class Page {
         "_parseStructTree",
         [structTreeRoot]
       );
-      const data = await this.pdfManager.ensure(structTree, "serializable");
-      return data;
+      return await this.pdfManager.ensure(structTree, "serializable");
     } catch (ex) {
       warn(`getStructTree: "${ex}".`);
       return null;
