@@ -57,6 +57,7 @@ class PasswordPrompt {
     this.input.addEventListener("keydown", e => {
       if (e.keyCode === /* Enter = */ 13) {
         this.#verify();
+        e.preventDefault();
       }
     });
 
