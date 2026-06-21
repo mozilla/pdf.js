@@ -2545,14 +2545,6 @@ class AnnotationEditorUIManager {
     });
   }
 
-  /**
-   * Check if the editor is selected.
-   * @param {AnnotationEditor} editor
-   */
-  isSelected(editor) {
-    return this.#selectedEditors.has(editor);
-  }
-
   get firstSelectedEditor() {
     return this.#selectedEditors.values().next().value;
   }
