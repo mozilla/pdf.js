@@ -328,6 +328,47 @@
     width: 100%;
   }
 
+  .richMediaAnnotation {
+    pointer-events: auto;
+
+    .richMediaContent {
+      width: 100%;
+    }
+
+    video.richMediaContent {
+      height: 100%;
+      object-fit: contain;
+    }
+
+    audio.richMediaContent {
+      /* An `<audio>` element has a fixed-height control bar; pin it to the
+         bottom of the section so it lines up with where `<video>` shows its
+         own bar. */
+      position: absolute;
+      bottom: 0;
+    }
+
+    .richMediaPlayButton {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: none;
+      cursor: pointer;
+      background-color: transparent;
+
+      /* A centered, semi-transparent play triangle. */
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='rgba(0,0,0,0.55)'/%3E%3Cpath d='M40 32 L70 50 L40 68 Z' fill='white'/%3E%3C/svg%3E");
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: calc(48px * var(--total-scale-factor));
+
+      &:hover {
+        background-color: rgba(255 255 255 / 0.1);
+      }
+    }
+  }
+
   .popupAnnotation {
     position: absolute;
     font-size: calc(9px * var(--total-scale-factor));

@@ -4596,6 +4596,317 @@ describe("annotation", function () {
     });
   });
 
+  describe("RichMediaAnnotation", function () {
+    function createAssetDict(filename, mimeSubtype = null) {
+      let streamDict = null;
+      if (mimeSubtype) {
+        streamDict = new Dict();
+        streamDict.set("Type", Name.get("EmbeddedFile"));
+        streamDict.set("Subtype", Name.get(mimeSubtype));
+      }
+      const embeddedFileDict = new Dict();
+      embeddedFileDict.set("F", new StringStream("", streamDict));
+
+      const fileSpecDict = new Dict();
+      fileSpecDict.set("Type", Name.get("Filespec"));
+      fileSpecDict.set("EF", embeddedFileDict);
+      fileSpecDict.set("UF", filename);
+      return fileSpecDict;
+    }
+
+    function createAnnotation(contentDict, refNum) {
+      const dict = new Dict();
+      dict.set("Type", Name.get("Annot"));
+      dict.set("Subtype", Name.get("RichMedia"));
+      dict.set("RichMediaContent", contentDict);
+      return { ref: Ref.get(refNum, 0), data: dict };
+    }
+
+    it("should parse the media asset from Configurations -> Instances", async function () {
+      const assetRef = Ref.get(100, 0);
+      const assetDict = createAssetDict("demo.mp4");
+
+      const instanceDict = new Dict();
+      instanceDict.set("Type", Name.get("RichMediaInstance"));
+      instanceDict.set("Subtype", Name.get("Video"));
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Type", Name.get("RichMediaConfiguration"));
+      configDict.set("Subtype", Name.get("Video"));
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Type", Name.get("RichMediaContent"));
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 101);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
+      expect(data.noHTML).toEqual(false);
+      expect(data.richMedia).toEqual({
+        fileId: "attachmentRef:100R",
+        filename: "demo.mp4",
+        contentType: "video/mp4",
+      });
+    });
+
+    it("should derive the content type from the asset extension", async function () {
+      const assetRef = Ref.get(110, 0);
+      const assetDict = createAssetDict("clip.mp3");
+
+      const instanceDict = new Dict();
+      instanceDict.set("Subtype", Name.get("Sound"));
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Type", Name.get("RichMediaContent"));
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 111);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia).toEqual({
+        fileId: "attachmentRef:110R",
+        filename: "clip.mp3",
+        contentType: "audio/mpeg",
+      });
+    });
+
+    it("should prefer the MIME type declared on the embedded file stream", async function () {
+      const assetRef = Ref.get(150, 0);
+      // The extension is unhelpful, but the stream declares `video/webm`
+      // (in a real file as `/Subtype /video#2Fwebm`).
+      const assetDict = createAssetDict("movie.bin", "video/webm");
+
+      const instanceDict = new Dict();
+      instanceDict.set("Subtype", Name.get("Video"));
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 151);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia.filename).toEqual("movie.bin");
+      expect(data.richMedia.contentType).toEqual("video/webm");
+    });
+
+    it("should skip a Flash instance and prefer a playable one", async function () {
+      const flashAssetRef = Ref.get(120, 0);
+      const flashInstance = new Dict();
+      flashInstance.set("Subtype", Name.get("Flash"));
+      flashInstance.set("Asset", flashAssetRef);
+
+      const videoAssetRef = Ref.get(121, 0);
+      const videoAssetDict = createAssetDict("demo.mp4");
+      const videoInstance = new Dict();
+      videoInstance.set("Subtype", Name.get("Video"));
+      videoInstance.set("Asset", videoAssetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [flashInstance, videoInstance]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 122);
+      const xref = new XRefMock([
+        { ref: flashAssetRef, data: createAssetDict("movie.swf") },
+        { ref: videoAssetRef, data: videoAssetDict },
+        annotation,
+      ]);
+      videoAssetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia.filename).toEqual("demo.mp4");
+      expect(data.richMedia.contentType).toEqual("video/mp4");
+    });
+
+    it("should skip an unsupported instance and prefer a playable one", async function () {
+      const modelAssetRef = Ref.get(170, 0);
+      const modelInstance = new Dict();
+      modelInstance.set("Asset", modelAssetRef);
+
+      const videoAssetRef = Ref.get(171, 0);
+      const videoAssetDict = createAssetDict("demo.mp4");
+      const videoInstance = new Dict();
+      videoInstance.set("Subtype", Name.get("Video"));
+      videoInstance.set("Asset", videoAssetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [modelInstance, videoInstance]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 172);
+      const xref = new XRefMock([
+        { ref: modelAssetRef, data: createAssetDict("model.u3d") },
+        { ref: videoAssetRef, data: videoAssetDict },
+        annotation,
+      ]);
+      videoAssetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia.filename).toEqual("demo.mp4");
+      expect(data.richMedia.contentType).toEqual("video/mp4");
+    });
+
+    it("should not create media data for a Flash (.swf) asset", async function () {
+      const assetRef = Ref.get(130, 0);
+      const assetDict = createAssetDict("movie.swf");
+
+      // The instance isn't flagged `/Flash`, so it isn't skipped during
+      // selection; the `.swf` extension is what rejects it.
+      const instanceDict = new Dict();
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 131);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should reuse the media file id when parsed more than once", async function () {
+      const assetRef = Ref.get(160, 0);
+      const assetDict = createAssetDict("demo.mp4");
+
+      const instanceDict = new Dict();
+      instanceDict.set("Subtype", Name.get("Video"));
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 161);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const first = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const second = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      // The id is derived from the asset reference, so parsing twice reuses it
+      // rather than registering the asset under a second id.
+      expect(first.data.richMedia.fileId).toEqual("attachmentRef:160R");
+      expect(second.data.richMedia.fileId).toEqual(first.data.richMedia.fileId);
+    });
+
+    it("should not create media data for an unsupported asset type", async function () {
+      const assetRef = Ref.get(140, 0);
+      // A 3D model isn't playable through a `<video>`/`<audio>` element.
+      const assetDict = createAssetDict("model.u3d");
+
+      const instanceDict = new Dict();
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 141);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+  });
+
   describe("PopupAnnotation", function () {
     it("should inherit properties from its parent", async function () {
       const parentDict = new Dict();

@@ -236,7 +236,8 @@ body {
   user-select: none;
 }
 
-.pdfPresentationMode:fullscreen section:not([data-internal-link]) {
+.pdfPresentationMode:fullscreen
+  section:not([data-internal-link], .richMediaAnnotation) {
   pointer-events: none;
 }
 

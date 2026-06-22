@@ -167,6 +167,7 @@ const AnnotationType = {
   WATERMARK: 24,
   THREED: 25,
   REDACT: 26,
+  RICHMEDIA: 27,
 };
 
 const AnnotationReplyType = {

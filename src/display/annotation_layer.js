@@ -158,6 +158,9 @@ class AnnotationElementFactory {
       case AnnotationType.FILEATTACHMENT:
         return new FileAttachmentAnnotationElement(parameters);
 
+      case AnnotationType.RICHMEDIA:
+        return new RichMediaAnnotationElement(parameters);
+
       default:
         return new AnnotationElement(parameters);
     }
@@ -399,7 +402,8 @@ class AnnotationElement {
     container.setAttribute("data-annotation-id", data.id);
     if (
       !(this instanceof WidgetAnnotationElement) &&
-      !(this instanceof LinkAnnotationElement)
+      !(this instanceof LinkAnnotationElement) &&
+      !(this instanceof RichMediaAnnotationElement)
     ) {
       container.tabIndex = 0;
     }
@@ -908,6 +912,12 @@ class AnnotationElement {
   get height() {
     return this.data.rect[3] - this.data.rect[1];
   }
+
+  _setBackgroundColor(element) {
+    const color = this.data.backgroundColor || null;
+    element.style.backgroundColor =
+      color === null ? "transparent" : Util.makeHexColor(...color);
+  }
 }
 
 class EditorAnnotationElement extends AnnotationElement {
@@ -1389,12 +1399,6 @@ class WidgetAnnotationElement extends AnnotationElement {
         }
       }
     }
-  }
-
-  _setBackgroundColor(element) {
-    const color = this.data.backgroundColor || null;
-    element.style.backgroundColor =
-      color === null ? "transparent" : Util.makeHexColor(...color);
   }
 
   /**
@@ -3796,6 +3800,138 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   }
 }
 
+class RichMediaAnnotationElement extends AnnotationElement {
+  #abortController = new AbortController();
+
+  #contentUrl = null;
+
+  #media = null;
+
+  constructor(parameters) {
+    super(parameters, { isRenderable: !!parameters.data.richMedia });
+  }
+
+  render() {
+    this.container.classList.add("richMediaAnnotation");
+
+    const { filename } = this.data.richMedia;
+
+    // The annotation's appearance (a poster image) is painted on the canvas;
+    // overlay a play button that loads the embedded media on demand.
+    const button = document.createElement("button");
+    button.className = "richMediaPlayButton";
+    button.type = "button";
+    button.title = button.ariaLabel = filename;
+    button.addEventListener("click", () => this.#load(button), {
+      signal: this.#abortController.signal,
+    });
+
+    this.container.append(button);
+    return this.container;
+  }
+
+  async #load(button) {
+    const { fileId, filename, contentType } = this.data.richMedia;
+    button.disabled = true;
+
+    let content;
+    try {
+      content = await this.linkService.getAttachmentContent(fileId);
+    } catch {
+      // Leave the play button in place so the load can be retried.
+      return;
+    } finally {
+      button.disabled = false;
+    }
+    if (!content || !button.isConnected) {
+      return;
+    }
+
+    const { signal } = this.#abortController;
+    const url = URL.createObjectURL(new Blob([content], { type: contentType }));
+    this.#contentUrl = url;
+    const isAudio = contentType.startsWith("audio/");
+    const media = document.createElement(isAudio ? "audio" : "video");
+    this.#media = media;
+    media.className = "richMediaContent";
+    this._setBackgroundColor(media);
+    media.src = url;
+    media.title = filename;
+    media.controls = true;
+    media.autoplay = true;
+    media.tabIndex = 0;
+    if (isAudio) {
+      // An `<audio>` element's controls would otherwise always be visible;
+      // only show them while the section is hovered or focused.
+      let hovered = false;
+      let focused = false;
+      const updateControls = () => {
+        media.controls = hovered || focused;
+      };
+      this.container.addEventListener(
+        "pointerenter",
+        () => {
+          hovered = true;
+          updateControls();
+        },
+        { signal }
+      );
+      this.container.addEventListener(
+        "pointerleave",
+        () => {
+          hovered = false;
+          updateControls();
+        },
+        { signal }
+      );
+      this.container.addEventListener(
+        "focusin",
+        () => {
+          focused = true;
+          updateControls();
+        },
+        { signal }
+      );
+      this.container.addEventListener(
+        "focusout",
+        () => {
+          focused = false;
+          updateControls();
+        },
+        { signal }
+      );
+    }
+    // Release the object URL once the browser no longer needs the source.
+    media.addEventListener("emptied", () => this.#revokeContentUrl(url), {
+      once: true,
+      signal,
+    });
+
+    button.replaceWith(media);
+    media.play().catch(() => {});
+  }
+
+  #revokeContentUrl(url = this.#contentUrl) {
+    if (url && url === this.#contentUrl) {
+      URL.revokeObjectURL(url);
+      this.#contentUrl = null;
+    }
+  }
+
+  destroy() {
+    // Aborting also removes the `emptied` listener below, so revoke the object
+    // URL explicitly rather than relying on the teardown triggering it.
+    this.#abortController.abort();
+    if (this.#media) {
+      this.#media.pause();
+      this.#media.removeAttribute("src");
+      this.#media.load();
+      this.#media = null;
+    }
+    this.#revokeContentUrl();
+  }
+}
+
 /**
  * @typedef {Object} AnnotationLayerParameters
  * @property {PageViewport} viewport
@@ -4124,6 +4260,18 @@ class AnnotationLayer {
     }
     this.#setAnnotationCanvasMap();
     layer.hidden = false;
+  }
+
+  destroy() {
+    for (const element of this.#elements) {
+      element.destroy?.();
+      this.#accessibilityManager?.removePointerInTextLayer(
+        element.contentElement
+      );
+    }
+    this.#elements.length = 0;
+    this.#editableAnnotations.clear();
+    this.div.replaceChildren();
   }
 
   #setAnnotationCanvasMap() {

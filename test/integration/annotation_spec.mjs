@@ -967,3 +967,62 @@ a dynamic compiler for JavaScript based on our`);
     });
   });
 });
+
+describe("RichMedia annotation", () => {
+  describe("multimedia_annotations.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "multimedia_annotations.pdf",
+        getAnnotationSelector("4R")
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must play the embedded video when clicking the play button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const annotationSelector = getAnnotationSelector("4R");
+          const buttonSelector = `${annotationSelector} .richMediaPlayButton`;
+          const videoSelector = `${annotationSelector} video.richMediaContent`;
+
+          // Initially only the play button (over the poster) is shown.
+          await page.waitForSelector(buttonSelector, { timeout: 0 });
+          await page.click(buttonSelector);
+
+          // Clicking it loads the embedded media into a <video> element.
+          await page.waitForSelector(videoSelector, { timeout: 0 });
+          const hasSource = await page.$eval(videoSelector, el =>
+            el.src.startsWith("blob:")
+          );
+          expect(hasSource).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+
+    it("must play the embedded audio when clicking the play button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const annotationSelector = getAnnotationSelector("5R");
+          const buttonSelector = `${annotationSelector} .richMediaPlayButton`;
+          const audioSelector = `${annotationSelector} audio.richMediaContent`;
+
+          // Initially only the play button is shown.
+          await page.waitForSelector(buttonSelector, { timeout: 0 });
+          await page.click(buttonSelector);
+
+          // Clicking it loads the embedded media into an <audio> element.
+          await page.waitForSelector(audioSelector, { timeout: 0 });
+          const hasSource = await page.$eval(audioSelector, el =>
+            el.src.startsWith("blob:")
+          );
+          expect(hasSource).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+  });
+});

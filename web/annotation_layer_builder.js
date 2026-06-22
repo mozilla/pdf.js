@@ -222,6 +222,7 @@ class AnnotationLayerBuilder {
 
     this.#eventAC?.abort();
     this.#eventAC = null;
+    this.annotationLayer?.destroy();
   }
 
   refreshCanvases() {
@@ -282,7 +283,10 @@ class AnnotationLayerBuilder {
         return;
     }
     for (const section of this.div.childNodes) {
-      if (section.hasAttribute("data-internal-link")) {
+      if (
+        section.hasAttribute("data-internal-link") ||
+        section.classList.contains("richMediaAnnotation")
+      ) {
         continue;
       }
       section.inert = disableFormElements;
