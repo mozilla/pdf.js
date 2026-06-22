@@ -789,8 +789,6 @@ class Page {
           includeMarkedContent: false,
           disableNormalization: false,
           sink: null,
-          viewBox: this.view,
-          lang: null,
           intersector,
         }).then(() => {
           intersector.setText();
