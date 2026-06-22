@@ -597,6 +597,23 @@ describe("CipherTransformFactory", function () {
     expect(string).toEqual(decrypted);
   }
 
+  function ensureCrossCipherIsIdentity(
+    encryptDict,
+    decryptDict,
+    fileId,
+    password,
+    string
+  ) {
+    const encrypted = new CipherTransformFactory(encryptDict, fileId, password)
+      .createCipherTransform(123, 0)
+      .encryptString(string);
+    const decrypted = new CipherTransformFactory(decryptDict, fileId, password)
+      .createCipherTransform(123, 0)
+      .decryptString(encrypted);
+
+    expect(decrypted).toEqual(string);
+  }
+
   let fileId1, fileId2, dict1, dict2, dict3;
   let aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
 
@@ -852,6 +869,39 @@ describe("CipherTransformFactory", function () {
         "user",
         "aaaaaaaaaaaaaaaaaaaaaa"
       );
+    });
+    it("should decrypt V=5 with an AESV2 crypt filter using AES256", function () {
+      // Some producers wrongly set the crypt filter's CFM to AESV2 for V=5
+      // documents, which must still be decrypted with AES256 (bug 2046659).
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV3"),
+        }),
+      });
+      const aesv3Dict = buildDict(dict3);
+      dict3.CF = buildDict({
+        Identity: buildDict({
+          CFM: Name.get("AESV2"),
+        }),
+      });
+      const aesv2Dict = buildDict(dict3);
+
+      for (const string of ["", "aaaa", "aaaaa", "aaaaaaaaaaaaaaaa"]) {
+        ensureCrossCipherIsIdentity(
+          aesv3Dict,
+          aesv2Dict,
+          fileId1,
+          "user",
+          string
+        );
+        ensureCrossCipherIsIdentity(
+          aesv2Dict,
+          aesv3Dict,
+          fileId1,
+          "user",
+          string
+        );
+      }
     });
     it("should encrypt and have the correct length using AES128", function () {
       dict3.CF = buildDict({
