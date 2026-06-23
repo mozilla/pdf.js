@@ -108,6 +108,16 @@ class FileSpec {
   }
 
   /**
+   * Whether a file specification carries an embedded file we can read.
+   *
+   * @param {Dict} fileSpecDict
+   * @returns {boolean}
+   */
+  static hasEmbeddedFile(fileSpecDict) {
+    return this.pickPlatformItem(fileSpecDict.get("EF")) instanceof BaseStream;
+  }
+
+  /**
    * Read attachment bytes from a file-spec dictionary.
    *
    * @param {Dict | null | undefined} dict

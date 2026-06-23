@@ -328,19 +328,19 @@
     width: 100%;
   }
 
-  .richMediaAnnotation {
+  .mediaAnnotation {
     pointer-events: auto;
 
-    .richMediaContent {
+    .mediaContent {
       width: 100%;
     }
 
-    video.richMediaContent {
+    video.mediaContent {
       height: 100%;
       object-fit: contain;
     }
 
-    audio.richMediaContent {
+    audio.mediaContent {
       /* An `<audio>` element has a fixed-height control bar; pin it to the
          bottom of the section so it lines up with where `<video>` shows its
          own bar. */
@@ -348,7 +348,7 @@
       bottom: 0;
     }
 
-    .richMediaPlayButton {
+    .mediaPlayButton {
       height: 100%;
       width: 100%;
       margin: 0;

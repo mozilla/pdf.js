@@ -285,7 +285,7 @@ class AnnotationLayerBuilder {
     for (const section of this.div.childNodes) {
       if (
         section.hasAttribute("data-internal-link") ||
-        section.classList.contains("richMediaAnnotation")
+        section.classList.contains("mediaAnnotation")
       ) {
         continue;
       }

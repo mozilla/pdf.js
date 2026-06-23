@@ -25,6 +25,7 @@ import {
   AnnotationEditorType,
   AnnotationFieldFlag,
   AnnotationFlag,
+  AnnotationRenditionOperation,
   AnnotationType,
   bytesToString,
   DrawOPS,
@@ -144,6 +145,23 @@ describe("annotation", function () {
     idFactoryMock = null;
     partialEvaluator = null;
   });
+
+  function createAssetDict(filename, mimeSubtype = null) {
+    let streamDict = null;
+    if (mimeSubtype) {
+      streamDict = new Dict();
+      streamDict.set("Type", Name.get("EmbeddedFile"));
+      streamDict.set("Subtype", Name.get(mimeSubtype));
+    }
+    const embeddedFileDict = new Dict();
+    embeddedFileDict.set("F", new StringStream("", streamDict));
+
+    const fileSpecDict = new Dict();
+    fileSpecDict.set("Type", Name.get("Filespec"));
+    fileSpecDict.set("EF", embeddedFileDict);
+    fileSpecDict.set("UF", filename);
+    return fileSpecDict;
+  }
 
   describe("AnnotationFactory", function () {
     it("should get id for annotation", async function () {
@@ -4597,23 +4615,6 @@ describe("annotation", function () {
   });
 
   describe("RichMediaAnnotation", function () {
-    function createAssetDict(filename, mimeSubtype = null) {
-      let streamDict = null;
-      if (mimeSubtype) {
-        streamDict = new Dict();
-        streamDict.set("Type", Name.get("EmbeddedFile"));
-        streamDict.set("Subtype", Name.get(mimeSubtype));
-      }
-      const embeddedFileDict = new Dict();
-      embeddedFileDict.set("F", new StringStream("", streamDict));
-
-      const fileSpecDict = new Dict();
-      fileSpecDict.set("Type", Name.get("Filespec"));
-      fileSpecDict.set("EF", embeddedFileDict);
-      fileSpecDict.set("UF", filename);
-      return fileSpecDict;
-    }
-
     function createAnnotation(contentDict, refNum) {
       const dict = new Dict();
       dict.set("Type", Name.get("Annot"));
@@ -4902,6 +4903,336 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should not create media data for an external (non-embedded) asset", async function () {
+      const assetRef = Ref.get(180, 0);
+      // A URL file specification with no `/EF`: the bytes aren't embedded, so
+      // there's nothing pdf.js can serve.
+      const assetDict = new Dict();
+      assetDict.set("Type", Name.get("Filespec"));
+      assetDict.set("FS", Name.get("URL"));
+      assetDict.set("F", "https://example.com/demo.mp4");
+
+      const instanceDict = new Dict();
+      instanceDict.set("Subtype", Name.get("Video"));
+      instanceDict.set("Asset", assetRef);
+
+      const configDict = new Dict();
+      configDict.set("Instances", [instanceDict]);
+
+      const contentDict = new Dict();
+      contentDict.set("Configurations", [configDict]);
+
+      const annotation = createAnnotation(contentDict, 181);
+      const xref = new XRefMock([
+        { ref: assetRef, data: assetDict },
+        annotation,
+      ]);
+      assetDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+  });
+
+  describe("ScreenAnnotation", function () {
+    function createMediaClipDict(fileSpecRef, contentType = null) {
+      const clipDict = new Dict();
+      clipDict.set("Type", Name.get("MediaClip"));
+      clipDict.set("S", Name.get("MCD"));
+      if (contentType) {
+        clipDict.set("CT", contentType);
+      }
+      clipDict.set("D", fileSpecRef);
+      return clipDict;
+    }
+
+    function createRenditionDict(clipDict) {
+      const renditionDict = new Dict();
+      renditionDict.set("Type", Name.get("Rendition"));
+      renditionDict.set("S", Name.get("MR"));
+      renditionDict.set("C", clipDict);
+      return renditionDict;
+    }
+
+    function createRenditionAction(
+      renditionDict,
+      refNum,
+      op = AnnotationRenditionOperation.PLAY_OR_RESUME
+    ) {
+      const actionDict = new Dict();
+      actionDict.set("Type", Name.get("Action"));
+      actionDict.set("S", Name.get("Rendition"));
+      actionDict.set("OP", op);
+      actionDict.set("AN", Ref.get(refNum, 0));
+      actionDict.set("R", renditionDict);
+      return actionDict;
+    }
+
+    function createScreenAnnotation(refNum, { action = null, aa = null } = {}) {
+      const dict = new Dict();
+      dict.set("Type", Name.get("Annot"));
+      dict.set("Subtype", Name.get("Screen"));
+      if (action) {
+        dict.set("A", action);
+      }
+      if (aa) {
+        dict.set("AA", aa);
+      }
+      return { ref: Ref.get(refNum, 0), data: dict };
+    }
+
+    it("should parse the media clip from a rendition action", async function () {
+      const fileSpecRef = Ref.get(200, 0);
+      const fileSpecDict = createAssetDict("demo.mp3");
+      const clipDict = createMediaClipDict(fileSpecRef, "audio/mpeg");
+      const rendition = createRenditionDict(clipDict);
+      const annotation = createScreenAnnotation(201, {
+        action: createRenditionAction(rendition, 201),
+      });
+
+      const xref = new XRefMock([
+        { ref: fileSpecRef, data: fileSpecDict },
+        annotation,
+      ]);
+      fileSpecDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SCREEN);
+      expect(data.noHTML).toEqual(false);
+      expect(data.richMedia).toEqual({
+        fileId: "attachmentRef:200R",
+        filename: "demo.mp3",
+        contentType: "audio/mpeg",
+      });
+    });
+
+    it("should derive the content type from the file extension", async function () {
+      const fileSpecRef = Ref.get(210, 0);
+      const fileSpecDict = createAssetDict("demo.mp4");
+      // No `/CT`, so the type is inferred from the filename extension.
+      const clipDict = createMediaClipDict(fileSpecRef);
+      const rendition = createRenditionDict(clipDict);
+      const annotation = createScreenAnnotation(211, {
+        action: createRenditionAction(rendition, 211),
+      });
+
+      const xref = new XRefMock([
+        { ref: fileSpecRef, data: fileSpecDict },
+        annotation,
+      ]);
+      fileSpecDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia).toEqual({
+        fileId: "attachmentRef:210R",
+        filename: "demo.mp4",
+        contentType: "video/mp4",
+      });
+    });
+
+    it("should derive the content type from a direct media stream's Subtype", async function () {
+      // `/D` is the embedded media stream itself (not a file spec), and `/N` is
+      // a display label with no extension, so the type comes from the stream's
+      // own `/Subtype`.
+      const streamRef = Ref.get(250, 0);
+      const streamDict = new Dict();
+      streamDict.set("Subtype", Name.get("video/mp4"));
+      const mediaStream = new StringStream("", streamDict);
+
+      const clipDict = new Dict();
+      clipDict.set("Type", Name.get("MediaClip"));
+      clipDict.set("S", Name.get("MCD"));
+      clipDict.set("N", "Intro clip");
+      clipDict.set("D", streamRef);
+
+      const rendition = createRenditionDict(clipDict);
+      const annotation = createScreenAnnotation(251, {
+        action: createRenditionAction(rendition, 251),
+      });
+
+      const xref = new XRefMock([
+        { ref: streamRef, data: mediaStream },
+        annotation,
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia).toEqual({
+        fileId: "attachmentRef:250R",
+        filename: "Intro clip",
+        contentType: "video/mp4",
+      });
+    });
+
+    it("should unwrap a selector rendition to the first playable media", async function () {
+      // An empty media rendition (no clip) followed by a playable one.
+      const emptyRendition = new Dict();
+      emptyRendition.set("S", Name.get("MR"));
+
+      const fileSpecRef = Ref.get(220, 0);
+      const fileSpecDict = createAssetDict("demo.mp4");
+      const rendition = createRenditionDict(
+        createMediaClipDict(fileSpecRef, "video/mp4")
+      );
+
+      const selectorDict = new Dict();
+      selectorDict.set("Type", Name.get("Rendition"));
+      selectorDict.set("S", Name.get("SR"));
+      selectorDict.set("R", [emptyRendition, rendition]);
+
+      const annotation = createScreenAnnotation(221, {
+        action: createRenditionAction(selectorDict, 221),
+      });
+
+      const xref = new XRefMock([
+        { ref: fileSpecRef, data: fileSpecDict },
+        annotation,
+      ]);
+      fileSpecDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia.filename).toEqual("demo.mp4");
+      expect(data.richMedia.contentType).toEqual("video/mp4");
+    });
+
+    it("should find a rendition action in the additional-actions dictionary", async function () {
+      const fileSpecRef = Ref.get(230, 0);
+      const fileSpecDict = createAssetDict("demo.mp4");
+      const rendition = createRenditionDict(
+        createMediaClipDict(fileSpecRef, "video/mp4")
+      );
+
+      // No `/A`; the rendition action is a page-visible additional action.
+      const aa = new Dict();
+      aa.set("PV", createRenditionAction(rendition, 231));
+
+      const annotation = createScreenAnnotation(231, { aa });
+
+      const xref = new XRefMock([
+        { ref: fileSpecRef, data: fileSpecDict },
+        annotation,
+      ]);
+      fileSpecDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.richMedia.filename).toEqual("demo.mp4");
+      expect(data.richMedia.contentType).toEqual("video/mp4");
+    });
+
+    it("should ignore a non-play rendition action", async function () {
+      const fileSpecRef = Ref.get(235, 0);
+      const fileSpecDict = createAssetDict("demo.mp4");
+      const rendition = createRenditionDict(
+        createMediaClipDict(fileSpecRef, "video/mp4")
+      );
+
+      const annotation = createScreenAnnotation(236, {
+        action: createRenditionAction(
+          rendition,
+          236,
+          AnnotationRenditionOperation.PAUSE
+        ),
+      });
+
+      const xref = new XRefMock([
+        { ref: fileSpecRef, data: fileSpecDict },
+        annotation,
+      ]);
+      fileSpecDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SCREEN);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should not create media data for an external file specification", async function () {
+      const fileSpecRef = Ref.get(237, 0);
+      const fileSpecDict = new Dict();
+      fileSpecDict.set("Type", Name.get("Filespec"));
+      fileSpecDict.set("FS", Name.get("URL"));
+      fileSpecDict.set("F", "https://example.com/demo.mp4");
+
+      const rendition = createRenditionDict(
+        createMediaClipDict(fileSpecRef, "video/mp4")
+      );
+      const annotation = createScreenAnnotation(238, {
+        action: createRenditionAction(rendition, 238),
+      });
+
+      const xref = new XRefMock([
+        { ref: fileSpecRef, data: fileSpecDict },
+        annotation,
+      ]);
+      fileSpecDict.assignXref(xref);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SCREEN);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should not create media data without a rendition action", async function () {
+      // A URI action, not a rendition; the Screen carries no playable media.
+      const uriAction = new Dict();
+      uriAction.set("S", Name.get("URI"));
+      uriAction.set("URI", "https://example.com");
+      const annotation = createScreenAnnotation(241, { action: uriAction });
+
+      const xref = new XRefMock([annotation]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SCREEN);
       expect(data.noHTML).toEqual(true);
       expect(data.richMedia).toBeUndefined();
     });
