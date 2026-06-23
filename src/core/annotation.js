@@ -687,6 +687,8 @@ function getTransformMatrix(rect, bbox, matrix) {
 }
 
 class Annotation {
+  appearance = null;
+
   _oc = undefined;
 
   constructor(params) {
@@ -1175,8 +1177,6 @@ class Annotation {
    * @param {Dict} dict - The annotation's data dictionary
    */
   setAppearance(dict) {
-    this.appearance = null;
-
     const appearanceStates = dict.get("AP");
     if (!(appearanceStates instanceof Dict)) {
       return;
@@ -1195,7 +1195,7 @@ class Annotation {
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
     const as = dict.get("AS");
-    if (!(as instanceof Name) || !normalAppearanceState.has(as.name)) {
+    if (!(as instanceof Name)) {
       return;
     }
     const appearance = normalAppearanceState.get(as.name);
