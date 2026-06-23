@@ -16,6 +16,28 @@
 import { Dict, Name, Ref } from "./primitives.js";
 import { FormatError, warn } from "../shared/util.js";
 
+function textSinkWrapper(sink) {
+  const TEXT_CONTENT_CHUNK_SIZE = 100; // Same as in `src/display/api.js`.
+  const resolved = sink ? null : Promise.resolve();
+
+  return {
+    enqueueInvoked: false,
+
+    enqueue(chunk, size) {
+      this.enqueueInvoked = true;
+      sink?.enqueue(chunk, size);
+    },
+
+    get desiredSize() {
+      return sink?.desiredSize ?? TEXT_CONTENT_CHUNK_SIZE;
+    },
+
+    get ready() {
+      return sink?.ready ?? resolved;
+    },
+  };
+}
+
 function _parseVisibilityExpression(
   xref,
   array,
@@ -120,4 +142,4 @@ function parseMarkedContentProps(xref, contentProperties, resources) {
   return null;
 }
 
-export { parseMarkedContentProps };
+export { parseMarkedContentProps, textSinkWrapper };
