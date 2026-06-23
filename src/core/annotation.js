@@ -81,10 +81,6 @@ import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { StringStream } from "./stream.js";
 import { XFAFactory } from "./xfa/factory.js";
 
-/**
- * @import { Catalog } from "./catalog.js";
- */
-
 class AnnotationFactory {
   static createGlobals(pdfManager) {
     return Promise.all([
@@ -108,6 +104,7 @@ class AnnotationFactory {
         globalColorSpaceCache,
       ]) => ({
         pdfManager,
+        catalog: pdfManager.pdfDocument.catalog,
         acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
         xfaDatasets,
         structTreeRoot,
@@ -5421,10 +5418,6 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
 
     const { annotationGlobals, dict } = params;
     const fsDict = dict.get("FS");
-    const file = new FileSpec(fsDict);
-    /** @type {{catalog?: Catalog}} */
-    const { catalog } = annotationGlobals.pdfManager.pdfDocument;
-
     // Encode the embedded content's reference in the id so it can be
     // re-fetched from the xref on demand (see `Catalog.attachmentContent`)
     // instead of being cached where `cleanup` would wipe it. The file-spec is
@@ -5440,14 +5433,15 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
         );
       }
       if (contentRef instanceof Ref) {
-        fileId = catalog?.getAttachmentIdForAnnotation(contentRef);
+        fileId =
+          annotationGlobals.catalog.getAttachmentIdForAnnotation(contentRef);
       }
     }
 
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
     this.data.fileId = fileId;
-    this.data.file = file.serializable;
+    this.data.file = new FileSpec(fsDict).serializable;
 
     const name = dict.get("Name");
     this.data.name =
@@ -5490,7 +5484,7 @@ class MediaAnnotation extends Annotation {
    *   when `assetRef` isn't itself a reference.
    * @param {string} asset.filename
    * @param {string} asset.contentType
-   * @param {Catalog} [catalog]
+   * @param {Catalog} catalog
    */
   _setMediaData({ assetRef, assetDict, filename, contentType }, catalog) {
     let contentRef = assetRef;
@@ -5502,7 +5496,7 @@ class MediaAnnotation extends Annotation {
     }
     const fileId =
       contentRef instanceof Ref
-        ? catalog?.getAttachmentIdForAnnotation(contentRef)
+        ? catalog.getAttachmentIdForAnnotation(contentRef)
         : undefined;
 
     this.data.noHTML = false;
@@ -5577,8 +5571,6 @@ class RichMediaAnnotation extends MediaAnnotation {
     super(params);
 
     const { dict, xref, annotationGlobals } = params;
-    /** @type {{catalog?: Catalog}} */
-    const { catalog } = annotationGlobals.pdfManager.pdfDocument;
 
     const content = dict.get("RichMediaContent");
     if (!(content instanceof Dict)) {
@@ -5590,8 +5582,7 @@ class RichMediaAnnotation extends MediaAnnotation {
       warn("RichMedia annotation has no playable asset.");
       return;
     }
-
-    this._setMediaData(asset, catalog);
+    this._setMediaData(asset, annotationGlobals.catalog);
   }
 
   /**
@@ -5675,7 +5666,7 @@ class ScreenAnnotation extends MediaAnnotation {
       // a /Movie); such ones simply render their appearance, so don't warn.
       return;
     }
-    this._setMediaData(asset, annotationGlobals.pdfManager.pdfDocument.catalog);
+    this._setMediaData(asset, annotationGlobals.catalog);
   }
 
   /**
