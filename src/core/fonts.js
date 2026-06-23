@@ -1860,7 +1860,6 @@ class Font {
       }
 
       // removing duplicate entries
-      mappings.sort((a, b) => a.charCode - b.charCode);
       const finalMappings = [],
         seenCharCodes = new Set();
       for (const map of mappings) {
@@ -1876,7 +1875,7 @@ class Font {
       return {
         platformId: potentialTable.platformId,
         encodingId: potentialTable.encodingId,
-        mappings: finalMappings,
+        mappings: finalMappings.sort((a, b) => a.charCode - b.charCode),
         hasShortCmap,
       };
     }
