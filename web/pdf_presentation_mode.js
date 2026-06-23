@@ -126,7 +126,7 @@ class PDFPresentationMode {
     if (!this.active) {
       return;
     }
-    if (evt.target.closest?.(".richMediaAnnotation")) {
+    if (evt.target.closest?.(".mediaAnnotation")) {
       return;
     }
     evt.preventDefault();
@@ -250,7 +250,7 @@ class PDFPresentationMode {
       return;
     }
     // Allow interacting with embedded media controls rather than advancing.
-    if (evt.target.closest?.(".richMediaAnnotation")) {
+    if (evt.target.closest?.(".mediaAnnotation")) {
       return;
     }
     // Unless an internal link was clicked, advance one page.
@@ -300,7 +300,7 @@ class PDFPresentationMode {
     if (!this.active) {
       return;
     }
-    if (evt.target.closest?.(".richMediaAnnotation")) {
+    if (evt.target.closest?.(".mediaAnnotation")) {
       this.touchSwipeState = null;
       return;
     }

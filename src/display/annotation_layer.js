@@ -158,8 +158,11 @@ class AnnotationElementFactory {
       case AnnotationType.FILEATTACHMENT:
         return new FileAttachmentAnnotationElement(parameters);
 
+      // A Screen annotation with a rendition action plays embedded media the
+      // same way RichMedia does (see `MediaAnnotation` in the core layer).
       case AnnotationType.RICHMEDIA:
-        return new RichMediaAnnotationElement(parameters);
+      case AnnotationType.SCREEN:
+        return new MediaAnnotationElement(parameters);
 
       default:
         return new AnnotationElement(parameters);
@@ -403,7 +406,7 @@ class AnnotationElement {
     if (
       !(this instanceof WidgetAnnotationElement) &&
       !(this instanceof LinkAnnotationElement) &&
-      !(this instanceof RichMediaAnnotationElement)
+      !(this instanceof MediaAnnotationElement)
     ) {
       container.tabIndex = 0;
     }
@@ -3800,7 +3803,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
   }
 }
 
-class RichMediaAnnotationElement extends AnnotationElement {
+class MediaAnnotationElement extends AnnotationElement {
   #abortController = new AbortController();
 
   #contentUrl = null;
@@ -3812,14 +3815,14 @@ class RichMediaAnnotationElement extends AnnotationElement {
   }
 
   render() {
-    this.container.classList.add("richMediaAnnotation");
+    this.container.classList.add("mediaAnnotation");
 
     const { filename } = this.data.richMedia;
 
     // The annotation's appearance (a poster image) is painted on the canvas;
     // overlay a play button that loads the embedded media on demand.
     const button = document.createElement("button");
-    button.className = "richMediaPlayButton";
+    button.className = "mediaPlayButton";
     button.type = "button";
     button.title = button.ariaLabel = filename;
     button.addEventListener("click", () => this.#load(button), {
@@ -3853,7 +3856,7 @@ class RichMediaAnnotationElement extends AnnotationElement {
     const isAudio = contentType.startsWith("audio/");
     const media = document.createElement(isAudio ? "audio" : "video");
     this.#media = media;
-    media.className = "richMediaContent";
+    media.className = "mediaContent";
     this._setBackgroundColor(media);
     media.src = url;
     media.title = filename;

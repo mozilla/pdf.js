@@ -987,8 +987,8 @@ describe("RichMedia annotation", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const annotationSelector = getAnnotationSelector("4R");
-          const buttonSelector = `${annotationSelector} .richMediaPlayButton`;
-          const videoSelector = `${annotationSelector} video.richMediaContent`;
+          const buttonSelector = `${annotationSelector} .mediaPlayButton`;
+          const videoSelector = `${annotationSelector} video.mediaContent`;
 
           // Initially only the play button (over the poster) is shown.
           await page.waitForSelector(buttonSelector, { timeout: 0 });
@@ -1008,8 +1008,8 @@ describe("RichMedia annotation", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const annotationSelector = getAnnotationSelector("5R");
-          const buttonSelector = `${annotationSelector} .richMediaPlayButton`;
-          const audioSelector = `${annotationSelector} audio.richMediaContent`;
+          const buttonSelector = `${annotationSelector} .mediaPlayButton`;
+          const audioSelector = `${annotationSelector} audio.mediaContent`;
 
           // Initially only the play button is shown.
           await page.waitForSelector(buttonSelector, { timeout: 0 });
@@ -1017,6 +1017,61 @@ describe("RichMedia annotation", () => {
 
           // Clicking it loads the embedded media into an <audio> element.
           await page.waitForSelector(audioSelector, { timeout: 0 });
+          const hasSource = await page.$eval(audioSelector, el =>
+            el.src.startsWith("blob:")
+          );
+          expect(hasSource).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+  });
+});
+
+describe("Screen annotation (rendition)", () => {
+  describe("multimedia_annotations.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "multimedia_annotations.pdf",
+        getAnnotationSelector("30R")
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must play the rendition video when clicking the play button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const annotationSelector = getAnnotationSelector("30R");
+          const buttonSelector = `${annotationSelector} .mediaPlayButton`;
+          const videoSelector = `${annotationSelector} video.mediaContent`;
+
+          await page.waitForSelector(buttonSelector, { visible: true });
+          await page.click(buttonSelector);
+
+          await page.waitForSelector(videoSelector, { visible: true });
+          const hasSource = await page.$eval(videoSelector, el =>
+            el.src.startsWith("blob:")
+          );
+          expect(hasSource).withContext(`In ${browserName}`).toEqual(true);
+        })
+      );
+    });
+
+    it("must play the rendition audio when clicking the play button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const annotationSelector = getAnnotationSelector("6R");
+          const buttonSelector = `${annotationSelector} .mediaPlayButton`;
+          const audioSelector = `${annotationSelector} audio.mediaContent`;
+
+          await page.waitForSelector(buttonSelector, { visible: true });
+          await page.click(buttonSelector);
+
+          await page.waitForSelector(audioSelector, { visible: true });
           const hasSource = await page.$eval(audioSelector, el =>
             el.src.startsWith("blob:")
           );

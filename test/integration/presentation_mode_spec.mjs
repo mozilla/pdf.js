@@ -214,7 +214,7 @@ describe("PDFPresentationMode", () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           const annotationSelector = getAnnotationSelector("4R");
-          const videoSelector = `${annotationSelector} video.richMediaContent`;
+          const videoSelector = `${annotationSelector} video.mediaContent`;
 
           await page.evaluate(() => {
             window.__richMediaNavigationCalls = 0;
@@ -229,11 +229,10 @@ describe("PDFPresentationMode", () => {
           });
 
           await enterPresentationMode(page);
-          await page.waitForSelector(
-            `${annotationSelector} .richMediaPlayButton`,
-            { visible: true }
-          );
-          await page.click(`${annotationSelector} .richMediaPlayButton`);
+          await page.waitForSelector(`${annotationSelector} .mediaPlayButton`, {
+            visible: true,
+          });
+          await page.click(`${annotationSelector} .mediaPlayButton`);
           await page.waitForSelector(videoSelector, { timeout: 0 });
 
           const result = await page.$eval(videoSelector, el => ({

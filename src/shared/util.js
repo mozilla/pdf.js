@@ -175,6 +175,16 @@ const AnnotationReplyType = {
   REPLY: "R",
 };
 
+// Rendition action operations from Table 214, Section 12.6.4.13 of the PDF
+// specification (ISO 32000-1).
+const AnnotationRenditionOperation = {
+  PLAY_OR_RESUME: 0,
+  STOP: 1,
+  PAUSE: 2,
+  RESUME: 3,
+  PLAY: 4,
+};
+
 const AnnotationFlag = {
   INVISIBLE: 0x01,
   HIDDEN: 0x02,
@@ -1152,6 +1162,7 @@ export {
   AnnotationFlag,
   AnnotationMode,
   AnnotationPrefix,
+  AnnotationRenditionOperation,
   AnnotationReplyType,
   AnnotationType,
   assert,

@@ -19,6 +19,7 @@ import {
   AnnotationEditorType,
   AnnotationFieldFlag,
   AnnotationFlag,
+  AnnotationRenditionOperation,
   AnnotationReplyType,
   AnnotationType,
   assert,
@@ -289,6 +290,9 @@ class AnnotationFactory {
 
       case "RichMedia":
         return new RichMediaAnnotation(parameters);
+
+      case "Screen":
+        return new ScreenAnnotation(parameters);
 
       default:
         if (!collectFields) {
@@ -5457,13 +5461,124 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
   }
 }
 
-class RichMediaAnnotation extends Annotation {
+/**
+ * Shared base for annotations that play an embedded audio/video clip:
+ * `RichMedia` (via `RichMediaContent`) and `Screen` (via a rendition action).
+ * Both resolve a single embedded media file and expose it identically through
+ * `data.richMedia`, so the display layer can render them with one element.
+ */
+class MediaAnnotation extends Annotation {
+  // The MIME types we can build a `<video>`/`<audio>` element for.
+  static #MEDIA_MIME_TYPE_RE = /^(?:video|audio)\//;
+
   constructor(params) {
     super(params);
 
+    // No HTML element until a playable asset is found below by the subclass.
     this.data.noHTML = true;
+  }
+
+  /**
+   * Expose a resolved embedded media asset as `data.richMedia`.
+   *
+   * @param {Object} asset
+   * @param {Ref | null} asset.assetRef
+   *   Reference to the file-spec dictionary (or, for an inline file-spec, the
+   *   embedded-file stream); used to lazily fetch the bytes on the main thread.
+   * @param {Dict} asset.assetDict
+   *   The file-spec (or stream) dictionary, used to locate the embedded file
+   *   when `assetRef` isn't itself a reference.
+   * @param {string} asset.filename
+   * @param {string} asset.contentType
+   * @param {Catalog} [catalog]
+   */
+  _setMediaData({ assetRef, assetDict, filename, contentType }, catalog) {
+    let contentRef = assetRef;
+    if (!(contentRef instanceof Ref)) {
+      contentRef = FileSpec.pickPlatformItem(
+        assetDict.get("EF"),
+        /* raw = */ true
+      );
+    }
+    const fileId =
+      contentRef instanceof Ref
+        ? catalog?.getAttachmentIdForAnnotation(contentRef)
+        : undefined;
+
+    this.data.noHTML = false;
+    this.data.richMedia = { fileId, filename, contentType };
+  }
+
+  /**
+   * Determine the MIME type used to build the `<video>`/`<audio>` element.
+   *
+   * When the media dictionary provides an explicit type (e.g. a MediaClip
+   * `/CT`), it's honored if it names an audio/video type. Otherwise, per the
+   * spec (ISO 32000-2, 7.11.4) an embedded file stream declares its MIME type
+   * through its own `/Subtype`, with characters not allowed in a name
+   * hex-escaped (e.g. `/video#2Fmp4` -> `video/mp4`). We trust that when it
+   * names an audio/video type, and otherwise fall back to mapping the filename
+   * extension. Returns `null` when the asset isn't a recognized audio/video
+   * type (e.g. Flash `.swf` or 3D models), so we don't build a player that
+   * can't play anything.
+   *
+   * @param {Dict} assetDict
+   * @param {string} filename
+   * @param {string | null} [contentType]
+   * @returns {string | null}
+   */
+  static _getContentType(assetDict, filename, contentType = null) {
+    if (
+      typeof contentType === "string" &&
+      MediaAnnotation.#MEDIA_MIME_TYPE_RE.test(contentType)
+    ) {
+      return contentType;
+    }
+
+    // The embedded file stream is keyed like a file-spec platform item.
+    const stream = FileSpec.pickPlatformItem(assetDict.get("EF"));
+    const subtype =
+      stream instanceof BaseStream ? stream.dict?.get("Subtype") : null;
+    if (
+      subtype instanceof Name &&
+      MediaAnnotation.#MEDIA_MIME_TYPE_RE.test(subtype.name)
+    ) {
+      return subtype.name;
+    }
+
+    const ext = filename.split(".").at(-1)?.toLowerCase();
+    switch (ext) {
+      case "mp4":
+      case "m4v":
+        return "video/mp4";
+      case "webm":
+        return "video/webm";
+      case "ogv":
+        return "video/ogg";
+      case "mov":
+        return "video/quicktime";
+      case "mp3":
+        return "audio/mpeg";
+      case "m4a":
+        return "audio/mp4";
+      case "wav":
+        return "audio/wav";
+      case "oga":
+      case "ogg":
+        return "audio/ogg";
+      default:
+        return null;
+    }
+  }
+}
+
+class RichMediaAnnotation extends MediaAnnotation {
+  constructor(params) {
+    super(params);
 
     const { dict, xref, annotationGlobals } = params;
+    /** @type {{catalog?: Catalog}} */
+    const { catalog } = annotationGlobals.pdfManager.pdfDocument;
 
     const content = dict.get("RichMediaContent");
     if (!(content instanceof Dict)) {
@@ -5475,24 +5590,8 @@ class RichMediaAnnotation extends Annotation {
       warn("RichMedia annotation has no playable asset.");
       return;
     }
-    const { assetRef, assetDict, filename, contentType } = asset;
 
-    let contentRef = assetRef;
-    if (!(contentRef instanceof Ref)) {
-      contentRef = FileSpec.pickPlatformItem(
-        assetDict.get("EF"),
-        /* raw = */ true
-      );
-    }
-    const fileId =
-      contentRef instanceof Ref
-        ? annotationGlobals.pdfManager.pdfDocument.catalog?.getAttachmentIdForAnnotation(
-            contentRef
-          )
-        : undefined;
-
-    this.data.noHTML = false;
-    this.data.richMedia = { fileId, filename, contentType };
+    this._setMediaData(asset, catalog);
   }
 
   /**
@@ -5543,11 +5642,12 @@ class RichMediaAnnotation extends Annotation {
         if (!(asset instanceof Dict)) {
           continue;
         }
+        // Skip assets that only reference an external file we can't read.
+        if (!FileSpec.hasEmbeddedFile(asset)) {
+          continue;
+        }
         const { filename } = new FileSpec(asset).serializable;
-        const contentType = RichMediaAnnotation.#getContentType(
-          asset,
-          filename
-        );
+        const contentType = MediaAnnotation._getContentType(asset, filename);
         if (!contentType) {
           continue;
         }
@@ -5562,54 +5662,177 @@ class RichMediaAnnotation extends Annotation {
 
     return null;
   }
+}
+
+class ScreenAnnotation extends MediaAnnotation {
+  constructor(params) {
+    super(params);
+
+    const { dict, xref, annotationGlobals } = params;
+    const asset = ScreenAnnotation.#findAsset(dict, xref);
+    if (!asset) {
+      // Not every Screen annotation plays embedded media (e.g. a URL stream or
+      // a /Movie); such ones simply render their appearance, so don't warn.
+      return;
+    }
+    this._setMediaData(asset, annotationGlobals.pdfManager.pdfDocument.catalog);
+  }
 
   /**
-   * Determine the MIME type used to build the `<video>`/`<audio>` element.
+   * Locate the embedded media played by the annotation's rendition action.
    *
-   * Per the spec (ISO 32000-2, 7.11.4) an embedded file stream declares its
-   * MIME type through its own `/Subtype`, with characters not allowed in a
-   * name hex-escaped (e.g. `/video#2Fmp4` -> `video/mp4`). We trust that when
-   * it names an audio/video type, and otherwise fall back to mapping the
-   * filename extension. Returns `null` when the asset isn't a recognized
-   * audio/video type (e.g. Flash `.swf` or 3D models), so we don't build a
-   * player that can't play anything.
+   * Per the spec (ISO 32000-1, 12.6.4.13 and 13.2) the chain is:
+   *   Screen `/A` (or `/AA`) rendition action -> `/R` rendition (`/MR`)
+   *   -> `/C` media clip (`/MCD`) -> `/D` file-spec -> `/EF` embedded file.
+   * Selector renditions (`/SR`) are unwrapped to their first playable media
+   * rendition. This mirrors `RichMediaAnnotation`, which also targets the
+   * common single embedded-media case.
    *
-   * @param {Dict} assetDict
-   * @param {string} filename
-   * @returns {string | null}
+   * @returns {{
+   *   assetRef: Ref | null,
+   *   assetDict: Dict,
+   *   filename: string,
+   *   contentType: string,
+   * } | null}
    */
-  static #getContentType(assetDict, filename) {
-    // The embedded file stream is keyed like a file-spec platform item.
-    const stream = FileSpec.pickPlatformItem(assetDict.get("EF"));
-    const subtype =
-      stream instanceof BaseStream ? stream.dict?.get("Subtype") : null;
-    if (subtype instanceof Name && /^(?:video|audio)\//.test(subtype.name)) {
-      return subtype.name;
+  static #findAsset(dict, xref) {
+    for (const action of this.#renditionActions(dict, xref)) {
+      const asset = this.#findRenditionAsset(
+        action.get("R"),
+        xref,
+        new RefSet()
+      );
+      if (asset) {
+        return asset;
+      }
+    }
+    return null;
+  }
+
+  static *#renditionActions(dict, xref) {
+    // The rendition action may be the activation action (/A) or one of the
+    // additional actions (/AA), e.g. page-open.
+    const action = xref.fetchIfRef(dict.getRaw("A"));
+    if (
+      action instanceof Dict &&
+      isName(action.get("S"), "Rendition") &&
+      this.#isPlayAction(action)
+    ) {
+      yield action;
+    }
+    const additionalActions = dict.get("AA");
+    if (additionalActions instanceof Dict) {
+      for (const key of additionalActions.getKeys()) {
+        const aa = xref.fetchIfRef(additionalActions.getRaw(key));
+        if (
+          aa instanceof Dict &&
+          isName(aa.get("S"), "Rendition") &&
+          this.#isPlayAction(aa)
+        ) {
+          yield aa;
+        }
+      }
+    }
+  }
+
+  static #isPlayAction(action) {
+    // Rendition action /OP (ISO 32000-1, Table 214): PLAY_OR_RESUME and PLAY
+    // play; STOP/PAUSE/RESUME don't start playback. When absent, the action is
+    // JS-driven (/JS), which we can't run, so assume play.
+    const operation = action.get("OP");
+    return (
+      operation === undefined ||
+      operation === AnnotationRenditionOperation.PLAY_OR_RESUME ||
+      operation === AnnotationRenditionOperation.PLAY
+    );
+  }
+
+  static #findRenditionAsset(rendition, xref, seen) {
+    if (!(rendition instanceof Dict)) {
+      return null;
+    }
+    const subtype = rendition.get("S");
+    if (isName(subtype, "MR")) {
+      return this.#findClipAsset(rendition.get("C"), xref);
+    }
+    if (isName(subtype, "SR")) {
+      // A selector rendition lists candidate renditions; play the first that
+      // resolves to embedded media.
+      const renditions = rendition.get("R");
+      if (Array.isArray(renditions)) {
+        for (const ref of renditions) {
+          // Guard against renditions referencing each other in a cycle.
+          if (ref instanceof Ref) {
+            if (seen.has(ref)) {
+              continue;
+            }
+            seen.put(ref);
+          }
+          const asset = this.#findRenditionAsset(
+            xref.fetchIfRef(ref),
+            xref,
+            seen
+          );
+          if (asset) {
+            return asset;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  static #findClipAsset(clip, xref) {
+    if (!(clip instanceof Dict) || !isName(clip.get("S"), "MCD")) {
+      return null;
+    }
+    const rawData = clip.getRaw("D");
+    const data = xref.fetchIfRef(rawData);
+    const contentTypeHint = clip.get("CT");
+    let explicitType =
+      typeof contentTypeHint === "string" ? contentTypeHint : null;
+
+    let assetDict, filename;
+    if (data instanceof BaseStream) {
+      // `/D` is the embedded media stream directly.
+      assetDict = data.dict;
+      // `/N` is a human-readable label, not a filename, so it's an unreliable
+      // source for a file extension. When `/CT` is absent, prefer the stream's
+      // own `/Subtype` if it declares a media MIME type (as embedded-file
+      // streams do); `_getContentType` ignores a non-media value.
+      const name = clip.get("N");
+      filename = typeof name === "string" ? stringToPDFString(name) : "";
+      if (!explicitType) {
+        const subtype = data.dict.get("Subtype");
+        if (subtype instanceof Name) {
+          explicitType = subtype.name;
+        }
+      }
+    } else if (data instanceof Dict) {
+      // `/D` is a file specification; require a readable embedded file.
+      if (!FileSpec.hasEmbeddedFile(data)) {
+        return null;
+      }
+      assetDict = data;
+      ({ filename } = new FileSpec(data).serializable);
+    } else {
+      return null;
     }
 
-    const ext = filename.split(".").at(-1)?.toLowerCase();
-    switch (ext) {
-      case "mp4":
-      case "m4v":
-        return "video/mp4";
-      case "webm":
-        return "video/webm";
-      case "ogv":
-        return "video/ogg";
-      case "mov":
-        return "video/quicktime";
-      case "mp3":
-        return "audio/mpeg";
-      case "m4a":
-        return "audio/mp4";
-      case "wav":
-        return "audio/wav";
-      case "oga":
-      case "ogg":
-        return "audio/ogg";
-      default:
-        return null;
+    const contentType = MediaAnnotation._getContentType(
+      assetDict,
+      filename,
+      explicitType
+    );
+    if (!contentType) {
+      return null;
     }
+    return {
+      assetRef: rawData instanceof Ref ? rawData : null,
+      assetDict,
+      filename,
+      contentType,
+    };
   }
 }
 
