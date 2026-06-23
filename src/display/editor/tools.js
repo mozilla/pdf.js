@@ -134,9 +134,6 @@ class IdManager {
 
   constructor() {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
-      Object.defineProperty(this, "reset", {
-        value: () => (this.#id = 0),
-      });
       Object.defineProperty(this, "getNextId", {
         value: () => this.#id,
       });
@@ -1067,13 +1064,6 @@ class AnnotationEditorUIManager {
     commentManager?.setSidebarUiManager(this);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
-      Object.defineProperty(this, "reset", {
-        value: () => {
-          this.selectAll();
-          this.delete();
-          this.#idManager.reset();
-        },
-      });
       Object.defineProperty(this, "getNextEditorId", {
         value: () => this.#idManager.getNextId(),
       });
