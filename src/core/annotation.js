@@ -3124,7 +3124,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     if (startChunk < line.length) {
-      chunks.push(line.substring(startChunk, line.length));
+      chunks.push(line.substring(startChunk));
     }
 
     return chunks;
