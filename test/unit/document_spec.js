@@ -73,6 +73,8 @@ describe("document", function () {
       const pdfDocument = new PDFDocument(pdfManager, stream);
       pdfDocument.xref = xref;
       pdfDocument.catalog = catalog;
+
+      pdfManager.pdfDocument = pdfDocument;
       return pdfDocument;
     }
 

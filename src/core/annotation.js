@@ -81,10 +81,6 @@ import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { StringStream } from "./stream.js";
 import { XFAFactory } from "./xfa/factory.js";
 
-/**
- * @import { Catalog } from "./catalog.js";
- */
-
 class AnnotationFactory {
   static createGlobals(pdfManager) {
     return Promise.all([
@@ -108,6 +104,7 @@ class AnnotationFactory {
         globalColorSpaceCache,
       ]) => ({
         pdfManager,
+        catalog: pdfManager.pdfDocument.catalog,
         acroForm: acroForm instanceof Dict ? acroForm : Dict.empty,
         xfaDatasets,
         structTreeRoot,
@@ -690,6 +687,8 @@ function getTransformMatrix(rect, bbox, matrix) {
 }
 
 class Annotation {
+  appearance = null;
+
   _oc = undefined;
 
   constructor(params) {
@@ -1178,8 +1177,6 @@ class Annotation {
    * @param {Dict} dict - The annotation's data dictionary
    */
   setAppearance(dict) {
-    this.appearance = null;
-
     const appearanceStates = dict.get("AP");
     if (!(appearanceStates instanceof Dict)) {
       return;
@@ -1198,7 +1195,7 @@ class Annotation {
     // In case the normal appearance is a dictionary, the `AS` entry provides
     // the key of the stream in this dictionary.
     const as = dict.get("AS");
-    if (!(as instanceof Name) || !normalAppearanceState.has(as.name)) {
+    if (!(as instanceof Name)) {
       return;
     }
     const appearance = normalAppearanceState.get(as.name);
@@ -1503,6 +1500,25 @@ class Annotation {
       }
     }
     return fieldName.join(".");
+  }
+
+  /**
+   * Encode the embedded content's reference in the id so it can be
+   * re-fetched from the xref on demand (see `Catalog.attachmentContent`)
+   * instead of being cached where `cleanup` would wipe it. The file-spec is
+   * usually indirect; when it's inline its embedded-file stream still isn't
+   * (streams are always indirect), so fall back to that ref.
+   */
+  _getAttachmentId(fsDict, fsRef, annotationGlobals) {
+    if (!(fsDict instanceof Dict)) {
+      return undefined;
+    }
+    if (!(fsRef instanceof Ref)) {
+      fsRef = FileSpec.pickPlatformItem(fsDict.get("EF"), /* raw = */ true);
+    }
+    return fsRef instanceof Ref
+      ? annotationGlobals.catalog.getAttachmentIdForAnnotation(fsRef)
+      : undefined;
   }
 
   get width() {
@@ -5421,33 +5437,15 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
 
     const { annotationGlobals, dict } = params;
     const fsDict = dict.get("FS");
-    const file = new FileSpec(fsDict);
-    /** @type {{catalog?: Catalog}} */
-    const { catalog } = annotationGlobals.pdfManager.pdfDocument;
-
-    // Encode the embedded content's reference in the id so it can be
-    // re-fetched from the xref on demand (see `Catalog.attachmentContent`)
-    // instead of being cached where `cleanup` would wipe it. The file-spec is
-    // usually indirect; when it's inline its embedded-file stream still isn't
-    // (streams are always indirect), so fall back to that ref.
-    let fileId;
-    if (fsDict instanceof Dict) {
-      let contentRef = dict.getRaw("FS");
-      if (!(contentRef instanceof Ref)) {
-        contentRef = FileSpec.pickPlatformItem(
-          fsDict.get("EF"),
-          /* raw = */ true
-        );
-      }
-      if (contentRef instanceof Ref) {
-        fileId = catalog?.getAttachmentIdForAnnotation(contentRef);
-      }
-    }
 
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
-    this.data.fileId = fileId;
-    this.data.file = file.serializable;
+    this.data.fileId = this._getAttachmentId(
+      fsDict,
+      dict.getRaw("FS"),
+      annotationGlobals
+    );
+    this.data.file = new FileSpec(fsDict).serializable;
 
     const name = dict.get("Name");
     this.data.name =
@@ -5490,23 +5488,18 @@ class MediaAnnotation extends Annotation {
    *   when `assetRef` isn't itself a reference.
    * @param {string} asset.filename
    * @param {string} asset.contentType
-   * @param {Catalog} [catalog]
+   * @param {Object} annotationGlobals
    */
-  _setMediaData({ assetRef, assetDict, filename, contentType }, catalog) {
-    let contentRef = assetRef;
-    if (!(contentRef instanceof Ref)) {
-      contentRef = FileSpec.pickPlatformItem(
-        assetDict.get("EF"),
-        /* raw = */ true
-      );
-    }
-    const fileId =
-      contentRef instanceof Ref
-        ? catalog?.getAttachmentIdForAnnotation(contentRef)
-        : undefined;
-
+  _setMediaData(
+    { assetRef, assetDict, filename, contentType },
+    annotationGlobals
+  ) {
     this.data.noHTML = false;
-    this.data.richMedia = { fileId, filename, contentType };
+    this.data.richMedia = {
+      fileId: this._getAttachmentId(assetDict, assetRef, annotationGlobals),
+      filename,
+      contentType,
+    };
   }
 
   /**
@@ -5577,8 +5570,6 @@ class RichMediaAnnotation extends MediaAnnotation {
     super(params);
 
     const { dict, xref, annotationGlobals } = params;
-    /** @type {{catalog?: Catalog}} */
-    const { catalog } = annotationGlobals.pdfManager.pdfDocument;
 
     const content = dict.get("RichMediaContent");
     if (!(content instanceof Dict)) {
@@ -5590,8 +5581,7 @@ class RichMediaAnnotation extends MediaAnnotation {
       warn("RichMedia annotation has no playable asset.");
       return;
     }
-
-    this._setMediaData(asset, catalog);
+    this._setMediaData(asset, annotationGlobals);
   }
 
   /**
@@ -5675,7 +5665,7 @@ class ScreenAnnotation extends MediaAnnotation {
       // a /Movie); such ones simply render their appearance, so don't warn.
       return;
     }
-    this._setMediaData(asset, annotationGlobals.pdfManager.pdfDocument.catalog);
+    this._setMediaData(asset, annotationGlobals);
   }
 
   /**
@@ -5696,7 +5686,7 @@ class ScreenAnnotation extends MediaAnnotation {
    * } | null}
    */
   static #findAsset(dict, xref) {
-    for (const action of this.#renditionActions(dict, xref)) {
+    for (const action of this.#renditionActions(dict)) {
       const asset = this.#findRenditionAsset(
         action.get("R"),
         xref,
@@ -5709,10 +5699,10 @@ class ScreenAnnotation extends MediaAnnotation {
     return null;
   }
 
-  static *#renditionActions(dict, xref) {
+  static *#renditionActions(dict) {
     // The rendition action may be the activation action (/A) or one of the
     // additional actions (/AA), e.g. page-open.
-    const action = xref.fetchIfRef(dict.getRaw("A"));
+    const action = dict.get("A");
     if (
       action instanceof Dict &&
       isName(action.get("S"), "Rendition") &&
@@ -5722,8 +5712,7 @@ class ScreenAnnotation extends MediaAnnotation {
     }
     const additionalActions = dict.get("AA");
     if (additionalActions instanceof Dict) {
-      for (const key of additionalActions.getKeys()) {
-        const aa = xref.fetchIfRef(additionalActions.getRaw(key));
+      for (const [, aa] of additionalActions) {
         if (
           aa instanceof Dict &&
           isName(aa.get("S"), "Rendition") &&
