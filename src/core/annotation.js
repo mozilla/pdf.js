@@ -5686,7 +5686,7 @@ class ScreenAnnotation extends MediaAnnotation {
    * } | null}
    */
   static #findAsset(dict, xref) {
-    for (const action of this.#renditionActions(dict, xref)) {
+    for (const action of this.#renditionActions(dict)) {
       const asset = this.#findRenditionAsset(
         action.get("R"),
         xref,
@@ -5699,10 +5699,10 @@ class ScreenAnnotation extends MediaAnnotation {
     return null;
   }
 
-  static *#renditionActions(dict, xref) {
+  static *#renditionActions(dict) {
     // The rendition action may be the activation action (/A) or one of the
     // additional actions (/AA), e.g. page-open.
-    const action = xref.fetchIfRef(dict.getRaw("A"));
+    const action = dict.get("A");
     if (
       action instanceof Dict &&
       isName(action.get("S"), "Rendition") &&
@@ -5712,8 +5712,7 @@ class ScreenAnnotation extends MediaAnnotation {
     }
     const additionalActions = dict.get("AA");
     if (additionalActions instanceof Dict) {
-      for (const key of additionalActions.getKeys()) {
-        const aa = xref.fetchIfRef(additionalActions.getRaw(key));
+      for (const [, aa] of additionalActions) {
         if (
           aa instanceof Dict &&
           isName(aa.get("S"), "Rendition") &&
