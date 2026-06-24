@@ -1502,6 +1502,25 @@ class Annotation {
     return fieldName.join(".");
   }
 
+  /**
+   * Encode the embedded content's reference in the id so it can be
+   * re-fetched from the xref on demand (see `Catalog.attachmentContent`)
+   * instead of being cached where `cleanup` would wipe it. The file-spec is
+   * usually indirect; when it's inline its embedded-file stream still isn't
+   * (streams are always indirect), so fall back to that ref.
+   */
+  _getAttachmentId(fsDict, fsRef, annotationGlobals) {
+    if (!(fsDict instanceof Dict)) {
+      return undefined;
+    }
+    if (!(fsRef instanceof Ref)) {
+      fsRef = FileSpec.pickPlatformItem(fsDict.get("EF"), /* raw = */ true);
+    }
+    return fsRef instanceof Ref
+      ? annotationGlobals.catalog.getAttachmentIdForAnnotation(fsRef)
+      : undefined;
+  }
+
   get width() {
     return this.data.rect[2] - this.data.rect[0];
   }
@@ -5418,29 +5437,14 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
 
     const { annotationGlobals, dict } = params;
     const fsDict = dict.get("FS");
-    // Encode the embedded content's reference in the id so it can be
-    // re-fetched from the xref on demand (see `Catalog.attachmentContent`)
-    // instead of being cached where `cleanup` would wipe it. The file-spec is
-    // usually indirect; when it's inline its embedded-file stream still isn't
-    // (streams are always indirect), so fall back to that ref.
-    let fileId;
-    if (fsDict instanceof Dict) {
-      let contentRef = dict.getRaw("FS");
-      if (!(contentRef instanceof Ref)) {
-        contentRef = FileSpec.pickPlatformItem(
-          fsDict.get("EF"),
-          /* raw = */ true
-        );
-      }
-      if (contentRef instanceof Ref) {
-        fileId =
-          annotationGlobals.catalog.getAttachmentIdForAnnotation(contentRef);
-      }
-    }
 
     this.data.hasOwnCanvas = this.data.noRotate;
     this.data.noHTML = false;
-    this.data.fileId = fileId;
+    this.data.fileId = this._getAttachmentId(
+      fsDict,
+      dict.getRaw("FS"),
+      annotationGlobals
+    );
     this.data.file = new FileSpec(fsDict).serializable;
 
     const name = dict.get("Name");
@@ -5484,23 +5488,18 @@ class MediaAnnotation extends Annotation {
    *   when `assetRef` isn't itself a reference.
    * @param {string} asset.filename
    * @param {string} asset.contentType
-   * @param {Catalog} catalog
+   * @param {Object} annotationGlobals
    */
-  _setMediaData({ assetRef, assetDict, filename, contentType }, catalog) {
-    let contentRef = assetRef;
-    if (!(contentRef instanceof Ref)) {
-      contentRef = FileSpec.pickPlatformItem(
-        assetDict.get("EF"),
-        /* raw = */ true
-      );
-    }
-    const fileId =
-      contentRef instanceof Ref
-        ? catalog.getAttachmentIdForAnnotation(contentRef)
-        : undefined;
-
+  _setMediaData(
+    { assetRef, assetDict, filename, contentType },
+    annotationGlobals
+  ) {
     this.data.noHTML = false;
-    this.data.richMedia = { fileId, filename, contentType };
+    this.data.richMedia = {
+      fileId: this._getAttachmentId(assetDict, assetRef, annotationGlobals),
+      filename,
+      contentType,
+    };
   }
 
   /**
@@ -5582,7 +5581,7 @@ class RichMediaAnnotation extends MediaAnnotation {
       warn("RichMedia annotation has no playable asset.");
       return;
     }
-    this._setMediaData(asset, annotationGlobals.catalog);
+    this._setMediaData(asset, annotationGlobals);
   }
 
   /**
@@ -5666,7 +5665,7 @@ class ScreenAnnotation extends MediaAnnotation {
       // a /Movie); such ones simply render their appearance, so don't warn.
       return;
     }
-    this._setMediaData(asset, annotationGlobals.catalog);
+    this._setMediaData(asset, annotationGlobals);
   }
 
   /**
