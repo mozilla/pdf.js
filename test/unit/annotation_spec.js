@@ -30,12 +30,15 @@ import {
   bytesToString,
   DrawOPS,
   OPS,
+  PasswordException,
+  PasswordResponses,
   RenderingIntentFlag,
   stringToUTF8String,
 } from "../../src/shared/util.js";
 import {
   CMAP_URL,
   createIdFactory,
+  createSoundDict,
   DefaultBinaryDataFactory,
   fetchBuiltInCMapHelper,
   STANDARD_FONT_DATA_URL,
@@ -5235,6 +5238,139 @@ describe("annotation", function () {
       expect(data.annotationType).toEqual(AnnotationType.SCREEN);
       expect(data.noHTML).toEqual(true);
       expect(data.richMedia).toBeUndefined();
+    });
+  });
+
+  describe("SoundAnnotation", function () {
+    function createSoundAnnotation(refNum, soundRef) {
+      const dict = new Dict();
+      dict.set("Type", Name.get("Annot"));
+      dict.set("Subtype", Name.get("Sound"));
+      if (soundRef) {
+        dict.set("Sound", soundRef);
+      }
+      return { ref: Ref.get(refNum, 0), data: dict };
+    }
+
+    it("should expose the embedded sound as a playable WAV asset", async function () {
+      const soundRef = Ref.get(300, 0);
+      const soundStream = new StringStream(
+        "\x00\x00\x01\x00",
+        createSoundDict({ type: true })
+      );
+      const annotation = createSoundAnnotation(301, soundRef);
+
+      const xref = new XRefMock([
+        { ref: soundRef, data: soundStream },
+        annotation,
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SOUND);
+      expect(data.noHTML).toEqual(false);
+      expect(data.richMedia).toEqual({
+        fileId: "attachmentRef:300R",
+        filename: "sound.wav",
+        contentType: "audio/wav",
+      });
+    });
+
+    it("should not create media data for a compressed sound", async function () {
+      const soundRef = Ref.get(310, 0);
+      const soundStream = new StringStream(
+        "\x00\x00",
+        createSoundDict({ type: true, CO: "ADPCM" })
+      );
+      const annotation = createSoundAnnotation(311, soundRef);
+
+      const xref = new XRefMock([
+        { ref: soundRef, data: soundStream },
+        annotation,
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SOUND);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should not create media data for an unsupported bit depth", async function () {
+      const soundRef = Ref.get(320, 0);
+      const soundStream = new StringStream(
+        "\x00\x00\x00",
+        createSoundDict({ type: true, B: 24 })
+      );
+      const annotation = createSoundAnnotation(321, soundRef);
+
+      const xref = new XRefMock([
+        { ref: soundRef, data: soundStream },
+        annotation,
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SOUND);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should not create media data without a sound object", async function () {
+      const annotation = createSoundAnnotation(331, null);
+      const xref = new XRefMock([annotation]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotation.ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.SOUND);
+      expect(data.noHTML).toEqual(true);
+      expect(data.richMedia).toBeUndefined();
+    });
+
+    it("should request a password before wrapping encrypted sound content", function () {
+      const soundRef = Ref.get(340, 0);
+      const soundDict = createSoundDict({ type: true });
+      const soundStream = new StringStream("\x00\x00", soundDict);
+      const pagesDict = new Dict();
+      const catalogDict = new Dict();
+      catalogDict.set("Pages", pagesDict);
+
+      const xref = new XRefMock([{ ref: soundRef, data: soundStream }]);
+      xref.encrypt = { encryptionKey: null };
+      xref.getCatalogObj = () => catalogDict;
+      for (const dict of [soundDict, pagesDict, catalogDict]) {
+        dict.assignXref(xref);
+      }
+
+      const catalog = new Catalog(pdfManagerMock, xref);
+      const soundId = catalog.getAttachmentIdForAnnotation(
+        soundRef,
+        /* isSound = */ true
+      );
+
+      try {
+        catalog.attachmentContent(soundId);
+        expect(false).toEqual(true);
+      } catch (ex) {
+        expect(ex).toBeInstanceOf(PasswordException);
+        expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
+      }
     });
   });
 

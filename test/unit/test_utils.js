@@ -14,6 +14,7 @@
  */
 
 import { assert, isNodeJS } from "../../src/shared/util.js";
+import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import {
   fetchData as fetchDataNode,
   NodeBinaryDataFactory,
@@ -22,7 +23,6 @@ import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { DOMBinaryDataFactory } from "../../src/display/binary_data_factory.js";
 import { fetchData as fetchDataDOM } from "../../src/display/display_utils.js";
-import { Ref } from "../../src/core/primitives.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
@@ -72,6 +72,39 @@ function buildGetDocumentParams(filename, options) {
     params[option] = options[option];
   }
   return params;
+}
+
+// Builds a PDF sound object's stream dictionary (ISO 32000-1, 12.5.6.16). Pass
+// a key as `null` to omit it (to exercise defaults/missing entries); pass
+// `type: true` to add the optional `/Type /Sound` entry.
+function createSoundDict({
+  R = 22050,
+  C = 1,
+  B = 16,
+  E = "Signed",
+  CO,
+  type = false,
+} = {}) {
+  const dict = new Dict();
+  if (type) {
+    dict.set("Type", Name.get("Sound"));
+  }
+  if (R !== null) {
+    dict.set("R", R);
+  }
+  if (C !== null) {
+    dict.set("C", C);
+  }
+  if (B !== null) {
+    dict.set("B", B);
+  }
+  if (E !== null) {
+    dict.set("E", Name.get(E));
+  }
+  if (CO) {
+    dict.set("CO", Name.get(CO));
+  }
+  return dict;
 }
 
 function getCrossOriginHostname(hostname) {
@@ -254,6 +287,7 @@ export {
   buildGetDocumentParams,
   CMAP_URL,
   createIdFactory,
+  createSoundDict,
   DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
   fetchBuiltInCMapHelper,

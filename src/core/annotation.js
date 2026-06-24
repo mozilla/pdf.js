@@ -74,6 +74,7 @@ import { Catalog } from "./catalog.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { createImage } from "./editor/pdf_images.js";
 import { FileSpec } from "./file_spec.js";
+import { getSoundFormat } from "./sound.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
@@ -290,6 +291,9 @@ class AnnotationFactory {
 
       case "Screen":
         return new ScreenAnnotation(parameters);
+
+      case "Sound":
+        return new SoundAnnotation(parameters);
 
       default:
         if (!collectFields) {
@@ -1509,7 +1513,7 @@ class Annotation {
    * usually indirect; when it's inline its embedded-file stream still isn't
    * (streams are always indirect), so fall back to that ref.
    */
-  _getAttachmentId(fsDict, fsRef, annotationGlobals) {
+  _getAttachmentId(fsDict, fsRef, annotationGlobals, isSound = false) {
     if (!(fsDict instanceof Dict)) {
       return undefined;
     }
@@ -1517,7 +1521,7 @@ class Annotation {
       fsRef = FileSpec.pickPlatformItem(fsDict.get("EF"), /* raw = */ true);
     }
     return fsRef instanceof Ref
-      ? annotationGlobals.catalog.getAttachmentIdForAnnotation(fsRef)
+      ? annotationGlobals.catalog.getAttachmentIdForAnnotation(fsRef, isSound)
       : undefined;
   }
 
@@ -5488,15 +5492,23 @@ class MediaAnnotation extends Annotation {
    *   when `assetRef` isn't itself a reference.
    * @param {string} asset.filename
    * @param {string} asset.contentType
+   * @param {boolean} [asset.wrapSound]
+   *   When set, the embedded bytes are raw PDF sound samples that the catalog
+   *   wraps in a WAV container when fetched (see `soundStreamToWav`).
    * @param {Object} annotationGlobals
    */
   _setMediaData(
-    { assetRef, assetDict, filename, contentType },
+    { assetRef, assetDict, filename, contentType, wrapSound = false },
     annotationGlobals
   ) {
     this.data.noHTML = false;
     this.data.richMedia = {
-      fileId: this._getAttachmentId(assetDict, assetRef, annotationGlobals),
+      fileId: this._getAttachmentId(
+        assetDict,
+        assetRef,
+        annotationGlobals,
+        wrapSound
+      ),
       filename,
       contentType,
     };
@@ -5822,6 +5834,45 @@ class ScreenAnnotation extends MediaAnnotation {
       filename,
       contentType,
     };
+  }
+}
+
+class SoundAnnotation extends MediaAnnotation {
+  constructor(params) {
+    super(params);
+
+    const { dict, xref, annotationGlobals } = params;
+    const soundRef = dict.getRaw("Sound");
+    if (!(soundRef instanceof Ref)) {
+      return;
+    }
+    let sound;
+    try {
+      sound = xref.fetch(soundRef);
+    } catch (ex) {
+      if (ex instanceof MissingDataException) {
+        throw ex;
+      }
+      // A corrupt sound stream: fall back to rendering the appearance.
+      warn(`SoundAnnotation: "${ex}".`);
+      return;
+    }
+    if (!(sound instanceof BaseStream) || !getSoundFormat(sound.dict)) {
+      // No embedded samples, or an encoding we can't turn into a playable WAV
+      // (compressed, or an unusual bit depth); just render the appearance.
+      return;
+    }
+
+    this._setMediaData(
+      {
+        assetRef: soundRef,
+        assetDict: sound.dict,
+        filename: "sound.wav",
+        contentType: "audio/wav",
+        wrapSound: true,
+      },
+      annotationGlobals
+    );
   }
 }
 
