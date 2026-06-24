@@ -1082,6 +1082,72 @@ describe("Text layer", () => {
           );
         });
       });
+
+      describe("when `backdrop-filter` is unsupported", () => {
+        let pages;
+
+        beforeEach(async () => {
+          pages = await loadAndWait(
+            "tracemonkey.pdf",
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            {
+              prePageSetup: page =>
+                page.evaluateOnNewDocument(() => {
+                  const { supports } = CSS;
+                  CSS.supports = (property, value) =>
+                    property === "backdrop-filter"
+                      ? false
+                      : supports.call(CSS, property, value);
+                }),
+            },
+            (_page, browserName) => ({
+              imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,
+            })
+          );
+        });
+
+        afterEach(async () => {
+          await closePages(pages);
+        });
+
+        it("does not render a selection overlay in the draw layer", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const [positionStart, positionEnd] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "(frequently executed) bytecode sequences, records"
+                ).then(middlePosition),
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "them, and compiles them to fast native code. We call such a se-"
+                ).then(belowEndPosition),
+              ]);
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              await moveInSteps(page, positionStart, positionEnd, 20);
+              await page.mouse.up();
+
+              // Text should still be selectable.
+              const selectedText = await getSelectionText(page);
+              expect(selectedText.length)
+                .withContext(`In ${browserName}, text is still selectable`)
+                .toBeGreaterThan(0);
+
+              // But no selection overlay should appear in the draw layer.
+              expect(await hasDrawnSelection(page))
+                .withContext(
+                  `In ${browserName}, no selection drawn without backdrop-filter`
+                )
+                .toBeFalse();
+            })
+          );
+        });
+      });
     });
 
     describe("using selection carets", () => {

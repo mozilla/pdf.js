@@ -711,6 +711,14 @@ class FeatureTest {
       input.value !== "#ff0000"
     );
   }
+
+  static get isBackdropFilterSupported() {
+    return shadow(
+      this,
+      "isBackdropFilterSupported",
+      typeof CSS !== "undefined" && CSS.supports("backdrop-filter", "blur(1px)")
+    );
+  }
 }
 
 class Util {
