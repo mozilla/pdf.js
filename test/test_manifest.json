@@ -11308,9 +11308,9 @@
     "md5": "f81c617e5113e0c510a4cfe8b012798e",
     "rounds": 1,
     "link": true,
-    "firstPage": 1,
     "lastPage": 1,
-    "type": "eq"
+    "type": "eq",
+    "forms": true
   },
   {
     "id": "issue17929",
