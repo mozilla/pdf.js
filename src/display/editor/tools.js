@@ -1445,7 +1445,13 @@ class AnnotationEditorUIManager {
         text,
       });
       if (isNoneMode) {
-        this.showAllEditors("highlight", true, /* updateButton = */ true);
+        this.showAllEditors(
+          "highlight",
+          this.#showAllStates?.get(
+            AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL
+          ) ?? true,
+          /* updateButton = */ true
+        );
       }
       if (comment) {
         editor?.editComment();
@@ -1573,7 +1579,13 @@ class AnnotationEditorUIManager {
     }
 
     if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
-      this.showAllEditors("highlight", true, /* updateButton = */ true);
+      this.showAllEditors(
+        "highlight",
+        this.#showAllStates?.get(
+          AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL
+        ) ?? true,
+        /* updateButton = */ true
+      );
     }
 
     this.#highlightWhenShiftUp = this.isShiftKeyDown;
