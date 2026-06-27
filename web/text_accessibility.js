@@ -138,7 +138,7 @@ class TextAccessibilityManager {
     }
 
     const children = this.#textChildren;
-    if (!children || children.length === 0) {
+    if (!children?.length) {
       return;
     }
 
@@ -198,7 +198,7 @@ class TextAccessibilityManager {
     }
 
     const children = this.#textChildren;
-    if (!children || children.length === 0) {
+    if (!children?.length) {
       return null;
     }
 

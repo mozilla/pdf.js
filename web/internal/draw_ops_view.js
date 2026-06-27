@@ -237,7 +237,7 @@ class DrawOpDetailView {
     header.textContent = name;
     argsContainer.append(header);
 
-    if (!args || args.length === 0) {
+    if (!args?.length) {
       const none = document.createElement("div");
       none.className = "detail-empty";
       none.textContent = "(no arguments)";

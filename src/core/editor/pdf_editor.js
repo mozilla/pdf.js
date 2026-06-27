@@ -2688,7 +2688,7 @@ class PDFEditor {
    */
   #makePageLabelsTree() {
     const { pageLabels } = this;
-    if (!pageLabels || pageLabels.length === 0) {
+    if (!pageLabels?.length) {
       return;
     }
     const { rootDict } = this;
@@ -2776,7 +2776,7 @@ class PDFEditor {
 
   #makeStructTree() {
     const { structTreeKids } = this;
-    if (!structTreeKids || structTreeKids.length === 0) {
+    if (!structTreeKids?.length) {
       return;
     }
     const { rootDict } = this;

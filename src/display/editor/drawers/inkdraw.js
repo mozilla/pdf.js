@@ -72,7 +72,7 @@ class InkDrawOutliner {
   }
 
   isEmpty() {
-    return !this.#lines || this.#lines.length === 0;
+    return !this.#lines?.length;
   }
 
   isCancellable() {
