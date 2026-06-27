@@ -800,7 +800,7 @@ class FreeTextEditor extends AnnotationEditor {
       } = data;
       // textContent is supposed to be an array of strings containing each line
       // of text. However, it can be null or empty.
-      if (!textContent || textContent.length === 0) {
+      if (!textContent?.length) {
         // Empty annotation.
         return null;
       }
