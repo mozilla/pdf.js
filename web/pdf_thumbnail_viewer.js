@@ -1854,9 +1854,7 @@ class PDFThumbnailViewer {
           break;
         }
       }
-      if (!nextThumbnail) {
-        nextThumbnail = firstWithDifferentY;
-      }
+      nextThumbnail ??= firstWithDifferentY;
     }
     if (nextThumbnail) {
       this.#focusThumbnailElement(nextThumbnail, navigateCheckboxes);

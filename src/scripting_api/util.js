@@ -119,9 +119,7 @@ class Util extends PDFObject {
         }
         cFlags = flags;
 
-        if (nWidth) {
-          nWidth = parseInt(nWidth);
-        }
+        nWidth &&= parseInt(nWidth);
 
         let intPart = Math.trunc(arg);
 
@@ -136,9 +134,7 @@ class Util extends PDFObject {
           return hex;
         }
 
-        if (nPrecision) {
-          nPrecision = parseInt(nPrecision.substring(1));
-        }
+        nPrecision &&= parseInt(nPrecision.substring(1));
 
         nDecSep = nDecSep ? nDecSep.substring(1) : "0";
         const separators = {

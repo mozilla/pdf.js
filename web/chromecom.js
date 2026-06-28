@@ -272,11 +272,10 @@ let port;
 // 4. Page: Invoke callback.
 function setReferer(url, callback) {
   dnrRequestId ??= crypto.getRandomValues(new Uint32Array(1))[0] % 0x80000000;
-  if (!port) {
-    // The background page will accept the port, and keep adding the Referer
-    // request header to requests to |url| until the port is disconnected.
-    port = chrome.runtime.connect({ name: "chromecom-referrer" });
-  }
+  // The background page will accept the port, and keep adding the Referer
+  // request header to requests to |url| until the port is disconnected.
+  port ??= chrome.runtime.connect({ name: "chromecom-referrer" });
+
   port.onDisconnect.addListener(onDisconnect);
   port.onMessage.addListener(onMessage);
   // Initiate the information exchange.

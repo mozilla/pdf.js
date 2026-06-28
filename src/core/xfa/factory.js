@@ -160,11 +160,9 @@ class XFAFactory {
       const { html } = result;
       const { attributes } = html;
       if (attributes) {
-        if (attributes.class) {
-          attributes.class = attributes.class.filter(
-            attr => !attr.startsWith("xfa")
-          );
-        }
+        attributes.class &&= attributes.class.filter(
+          attr => !attr.startsWith("xfa")
+        );
         attributes.dir = "auto";
       }
 

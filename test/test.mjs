@@ -801,9 +801,8 @@ async function handleWsBinaryResult(data) {
   if (!taskResults) {
     return;
   }
-  if (!taskResults[round]) {
-    taskResults[round] = [];
-  }
+  taskResults[round] ||= [];
+
   if (taskResults[round][page - 1]) {
     console.error(
       `Results for ${browser}:${id}:${round}:${page - 1} were already submitted`
@@ -1010,9 +1009,7 @@ async function startBrowser({
     protocolTimeout: 0.75 * /* jasmine.DEFAULT_TIMEOUT_INTERVAL = */ 30000,
   };
 
-  if (!tempDir) {
-    tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "pdfjs-"));
-  }
+  tempDir ||= fs.mkdtempSync(path.join(os.tmpdir(), "pdfjs-"));
   const printFile = path.join(tempDir, "print.pdf");
 
   if (browserName === "chrome") {

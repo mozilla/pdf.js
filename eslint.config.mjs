@@ -181,7 +181,7 @@ export default [
       "unicorn/logical-assignment-operators": [
         "error",
         "always",
-        { enforceForIfStatements: false },
+        { enforceForIfStatements: true },
       ],
       "unicorn/prefer-logical-operator-over-ternary": "error",
       "unicorn/prefer-modern-dom-apis": "error",
