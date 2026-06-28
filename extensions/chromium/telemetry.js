@@ -150,7 +150,7 @@ limitations under the License.
    */
   function didUpdateSinceLastCheck() {
     var chromeVersion = /Chrome\/(\d+)\./.exec(navigator.userAgent);
-    chromeVersion = chromeVersion && chromeVersion[1];
+    chromeVersion &&= chromeVersion[1];
     if (!chromeVersion || localStorage.telemetryLastVersion === chromeVersion) {
       return false;
     }

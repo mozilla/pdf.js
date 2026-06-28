@@ -178,6 +178,11 @@ export default [
       "unicorn/prefer-dom-node-remove": "error",
       "unicorn/prefer-import-meta-properties": "error",
       "unicorn/prefer-includes": "error",
+      "unicorn/logical-assignment-operators": [
+        "error",
+        "always",
+        { enforceForIfStatements: false },
+      ],
       "unicorn/prefer-logical-operator-over-ternary": "error",
       "unicorn/prefer-modern-dom-apis": "error",
       "unicorn/prefer-modern-math-apis": "error",
