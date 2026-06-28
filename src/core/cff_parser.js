@@ -775,14 +775,12 @@ class CFFParser {
       } else if (localSubrIndex) {
         localSubrToUse = localSubrIndex;
       }
-      if (valid) {
-        valid = this.parseCharString(
-          state,
-          charstring,
-          localSubrToUse,
-          globalSubrIndex
-        );
-      }
+      valid &&= this.parseCharString(
+        state,
+        charstring,
+        localSubrToUse,
+        globalSubrIndex
+      );
       if (state.width !== null) {
         const nominalWidth = privateDictToUse.getByName("nominalWidthX");
         widths[i] = nominalWidth + state.width;

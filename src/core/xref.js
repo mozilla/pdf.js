@@ -740,9 +740,7 @@ class XRef {
         if (isCmd(obj, "xref")) {
           // Parse end-of-file XRef
           dict = this.processXRefTable(parser);
-          if (!this.topDict) {
-            this.topDict = dict;
-          }
+          this.topDict ||= dict;
 
           // Recursively get other XRefs 'XRefStm', if any
           obj = dict.get("XRefStm");
@@ -762,9 +760,8 @@ class XRef {
             throw new FormatError("Invalid XRef stream");
           }
           dict = this.processXRefStream(obj);
-          if (!this.topDict) {
-            this.topDict = dict;
-          }
+          this.topDict ||= dict;
+
           if (!dict) {
             throw new FormatError("Failed to read XRef stream");
           }
