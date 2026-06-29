@@ -49,6 +49,7 @@
     "postscript_spec.js",
     "primitives_spec.js",
     "scripting_utils_spec.js",
+    "sound_spec.js",
     "stream_spec.js",
     "string_utils_spec.js",
     "struct_tree_spec.js",

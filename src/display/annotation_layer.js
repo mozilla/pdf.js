@@ -158,10 +158,12 @@ class AnnotationElementFactory {
       case AnnotationType.FILEATTACHMENT:
         return new FileAttachmentAnnotationElement(parameters);
 
-      // A Screen annotation with a rendition action plays embedded media the
-      // same way RichMedia does (see `MediaAnnotation` in the core layer).
+      // RichMedia, Screen (rendition action) and Sound annotations all expose a
+      // single embedded audio/video clip and play it the same way (see
+      // `MediaAnnotation` in the core layer).
       case AnnotationType.RICHMEDIA:
       case AnnotationType.SCREEN:
+      case AnnotationType.SOUND:
         return new MediaAnnotationElement(parameters);
 
       default:

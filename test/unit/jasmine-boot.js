@@ -96,6 +96,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/primitives_spec.js",
       "pdfjs-test/unit/scripting_spec.js",
       "pdfjs-test/unit/scripting_utils_spec.js",
+      "pdfjs-test/unit/sound_spec.js",
       "pdfjs-test/unit/stream_spec.js",
       "pdfjs-test/unit/string_utils_spec.js",
       "pdfjs-test/unit/struct_tree_spec.js",
