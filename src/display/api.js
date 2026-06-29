@@ -2113,11 +2113,11 @@ class PDFPageProxy {
  *   parameters.
  */
 class RendererWorker {
-  #worker = null;
+  #capability = Promise.withResolvers();
 
   #rendererHandler = null;
 
-  #capability = Promise.withResolvers();
+  #worker = null;
 
   constructor({ name = null, verbosity = getVerbosityLevel() } = {}) {
     this.name = name;
@@ -2157,8 +2157,20 @@ class RendererWorker {
       );
       return;
     }
+    let { rendererSrc } = RendererWorker;
+
     try {
-      const { rendererSrc } = RendererWorker;
+      // Wraps rendererSrc path into blob URL, if the former does not belong
+      // to the same origin.
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("GENERIC") &&
+        !PDFWorker._isSameOrigin(window.location, rendererSrc)
+      ) {
+        rendererSrc = PDFWorker._createCDNWrapper(
+          new URL(rendererSrc, window.location).href
+        );
+      }
       const worker = new Worker(rendererSrc, { type: "module" });
       const rendererHandler = new MessageHandler("main", "renderer", worker);
 
@@ -3560,7 +3572,7 @@ class InternalRenderTask {
     this._rendererWorker = rendererWorker;
     this._renderTaskId = InternalRenderTask.#renderTaskId++;
     this._sentOperatorListLength = 0;
-    // Maps an annotation id to the set of canvas names that have 
+    // Maps an annotation id to the set of canvas names that have
     // already been transferred to the worker.
     this._transferredAnnotationCanvasIds = new Map();
     // We get the recordedBBoxes and debugMetadata from the worker
@@ -3879,7 +3891,6 @@ class InternalRenderTask {
     }
     const { operatorList, operatorListIdx } = this;
     if (this._rendererWorker) {
-
       const { rendererHandler } = this;
       if (!rendererHandler) {
         throw new Error("Renderer worker was destroyed during rendering.");

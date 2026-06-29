@@ -3710,7 +3710,7 @@ class CanvasGraphics {
           );
           if (index !== -1) {
             // Reuse a canvas that was already transferred from the main
-            // thread. 
+            // thread.
             canvas = canvases[index];
             canvas.width = canvasWidth;
             canvas.height = canvasHeight;

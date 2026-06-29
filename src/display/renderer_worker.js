@@ -128,8 +128,10 @@ class RendererMessageHandler {
   static #appendOperatorList(renderTaskState, fnArray, argsArray, lastChunk) {
     const { operatorList } = renderTaskState;
     if (fnArray) {
-      operatorList.fnArray.push(...fnArray);
-      operatorList.argsArray.push(...argsArray);
+      for (let i = 0, ii = fnArray.length; i < ii; i++) {
+        operatorList.fnArray.push(fnArray[i]);
+        operatorList.argsArray.push(argsArray[i]);
+      }
     }
     operatorList.lastChunk = lastChunk;
     renderTaskState.gfx.dependencyTracker?.growOperationsCount(
