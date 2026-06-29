@@ -1,0 +1,184 @@
+name: Publish per-test coverage index
+# Builds the per-test coverage index (which ref test exercises which source
+# line/function) and publishes it to the gh-pages branch of mozilla/pdf.js.refs,
+# where it's served at:
+#   https://mozilla.github.io/pdf.js.refs/per-test-index.json
+# The index can then be queried with `npx gulp coverage_search`.
+#
+# This only runs when something is merged into master (push event); the build is
+# heavy (a full browser test run), so it's deliberately kept off pull requests.
+on:
+  push:
+    paths:
+      - 'gulpfile.mjs'
+      - 'external/**'
+      - 'src/**'
+      - 'test/images/**'
+      - 'test/pdfs/**'
+      - 'test/resources/**'
+      - 'test/*.css'
+      - 'test/driver.js'
+      - 'test/test.mjs'
+      - 'test/test_manifest.json'
+      - 'test/test_slave.html'
+      - 'web/**'
+      - '.github/workflows/publish_coverage_index.yml'
+    branches:
+      - master
+  workflow_dispatch:
+concurrency:
+  group: publish-coverage-index-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/master'
+
+    runs-on: ubuntu-latest
+    environment: sync_pdfs
+
+    strategy:
+      matrix:
+        node-version: [lts/*]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore cached PDF files
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: test/pdfs/*.pdf
+          key: cached-pdf-files-${{ hashFiles('test/pdfs/*.pdf') }}
+          restore-keys: |
+            cached-pdf-files-
+          enableCrossOsArchive: true
+
+      - name: Build the per-test coverage index
+        run: npx gulp botbrowsertest --headless -j$(nproc) --coverage-per-test --coverage-output build/coverage/browser --noChrome
+
+      - name: Save cached PDF files
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: test/pdfs/*.pdf
+          key: cached-pdf-files-${{ hashFiles('test/pdfs/*.pdf') }}
+          enableCrossOsArchive: true
+
+      - name: Check current master
+        id: current-master
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin master:refs/remotes/origin/master
+          current_master="$(git rev-parse refs/remotes/origin/master)"
+          if [ "$GITHUB_SHA" = "$current_master" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Skipping publish because ${GITHUB_SHA} is no longer origin/master (${current_master})"
+            echo "current=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Generate app token for pdf.js.refs
+        if: steps.current-master.outputs.current == 'true'
+        id: refs-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mozilla
+          repositories: pdf.js.refs
+          # Least privilege: the token only needs to push to gh-pages.
+          permission-contents: write
+
+      - name: Publish per-test coverage index
+        if: steps.current-master.outputs.current == 'true'
+        env:
+          GH_TOKEN: ${{ steps.refs-token.outputs.token }}
+          INDEX_FILE: build/coverage/browser/per-test-index.json
+        run: |
+          set -euo pipefail
+          if [ ! -f "$INDEX_FILE" ]; then
+            # A successful per-test run always writes the index; test.mjs only
+            # skips it when no per-test coverage was collected at all, so a
+            # missing file here means a broken build, not "nothing to publish".
+            echo "::error::Per-test coverage index not found at $INDEX_FILE"
+            exit 1
+          fi
+          repo_url="https://github.com/mozilla/pdf.js.refs.git"
+          # Authenticate with a short-lived header rather than embedding the
+          # token in the remote URL, so it never persists in .git/config.
+          auth_header="Authorization: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 | tr -d '\n')"
+          git_refs() { git -c http.extraheader="$auth_header" "$@"; }
+          stage_index() {
+            cp "$GITHUB_WORKSPACE/$INDEX_FILE" per-test-index.json
+            git add per-test-index.json
+          }
+          commit_index() {
+            git \
+              -c user.name="github-actions[bot]" \
+              -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+              commit -q -m "Update per-test coverage index for ${GITHUB_SHA}"
+          }
+          work="$(mktemp -d)"
+          # Does gh-pages already exist? Probe explicitly so a transient network
+          # error isn't mistaken for "first run" (the orphan path below discards
+          # whatever else the branch holds).
+          ls_status=0
+          git_refs ls-remote --exit-code --heads "$repo_url" gh-pages >/dev/null 2>&1 || ls_status=$?
+          case "$ls_status" in
+            0)
+              # Reuse gh-pages, keeping any other files it holds.
+              git_refs clone --depth=1 --branch gh-pages "$repo_url" "$work"
+              cd "$work"
+              ;;
+            2)
+              # First run: start a fresh orphan branch without cloning history.
+              git init -q "$work"
+              cd "$work"
+              git remote add origin "$repo_url"
+              git checkout -q --orphan gh-pages
+              ;;
+            *)
+              echo "::error::Could not query gh-pages on pdf.js.refs (git ls-remote exit ${ls_status})"
+              exit 1
+              ;;
+          esac
+          stage_index
+          if git diff --cached --quiet; then
+            echo "No changes to publish"
+            exit 0
+          fi
+          commit_index
+          # Retry against a concurrent update to gh-pages: re-sync onto the new
+          # tip, re-apply our index (latest build wins), and push again.
+          for attempt in 1 2 3; do
+            if git_refs push origin gh-pages; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Failed to push the per-test coverage index after ${attempt} attempts"
+              exit 1
+            fi
+            echo "gh-pages advanced during the run; re-syncing and retrying (attempt ${attempt})"
+            git_refs fetch --depth=1 origin gh-pages
+            git reset --hard FETCH_HEAD
+            stage_index
+            if git diff --cached --quiet; then
+              echo "No changes after re-sync"
+              exit 0
+            fi
+            commit_index
+          done
