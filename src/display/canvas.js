@@ -451,6 +451,15 @@ function copyCtxState(sourceCtx, destCtx) {
   }
 }
 
+function setAnnotationCanvasName(canvas, canvasName) {
+  canvas.setAttribute?.("data-canvas-name", canvasName);
+  canvas._pdfjsCanvasName = canvasName;
+}
+
+function getAnnotationCanvasName(canvas) {
+  return canvas._pdfjsCanvasName ?? canvas.getAttribute?.("data-canvas-name");
+}
+
 function resetCtxToDefault(ctx) {
   ctx.strokeStyle = ctx.fillStyle = "#000000";
   ctx.fillRule = "nonzero";
@@ -3690,25 +3699,34 @@ class CanvasGraphics {
 
         let canvas, context;
         if (canvasName) {
-          this.annotationCanvas = this.canvasFactory.create(
-            canvasWidth,
-            canvasHeight
-          );
-          ({ canvas, context } = this.annotationCanvas);
           const canvases = this.annotationCanvasMap.getOrInsertComputed(
             id,
             makeArr
           );
-          canvas.setAttribute("data-canvas-name", canvasName);
           // Replace any same-named canvas from a previous render so stale
           // low-resolution canvases don't pile up across zooms.
           const index = canvases.findIndex(
-            c => c.getAttribute("data-canvas-name") === canvasName
+            c => getAnnotationCanvasName(c) === canvasName
           );
-          if (index === -1) {
-            canvases.push(canvas);
+          if (index !== -1) {
+            // Reuse a canvas that was already transferred from the main
+            // thread. 
+            canvas = canvases[index];
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            context = canvas.getContext("2d");
+            if (!context) {
+              throw new Error("Unable to initialize annotation canvas.");
+            }
+            this.annotationCanvas = { canvas, context };
           } else {
-            canvases[index] = canvas;
+            this.annotationCanvas = this.canvasFactory.create(
+              canvasWidth,
+              canvasHeight
+            );
+            ({ canvas, context } = this.annotationCanvas);
+            setAnnotationCanvasName(canvas, canvasName);
+            canvases.push(canvas);
           }
         } else {
           canvas = this.annotationCanvasMap.get(id);

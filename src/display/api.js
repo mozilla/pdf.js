@@ -3526,7 +3526,9 @@ class InternalRenderTask {
     this._rendererWorker = rendererWorker;
     this._renderTaskId = InternalRenderTask.#renderTaskId++;
     this._sentOperatorListLength = 0;
-    this._transferredAnnotationCanvasIds = new Set();
+    // Maps an annotation id to the set of canvas names that have 
+    // already been transferred to the worker.
+    this._transferredAnnotationCanvasIds = new Map();
     // We get the recordedBBoxes and debugMetadata from the worker
     // when recording is enabled,
     this.recordedBBoxes = null;
@@ -3562,24 +3564,49 @@ class InternalRenderTask {
       if (fnArray[i] !== OPS.beginAnnotation) {
         continue;
       }
-      const [id, , , , hasOwnCanvas] = argsArray[i];
-      if (!hasOwnCanvas || this._transferredAnnotationCanvasIds.has(id)) {
+      const [id, , , , hasOwnCanvas, canvasName] = argsArray[i];
+      if (!hasOwnCanvas) {
+        continue;
+      }
+      const transferredNames = this._transferredAnnotationCanvasIds.get(id);
+      if (transferredNames?.has(canvasName)) {
         continue;
       }
 
-      let canvas = this.annotationCanvasMap.get(id);
-      if (!canvas) {
-        canvas = this._canvas.ownerDocument.createElement("canvas");
-        this.annotationCanvasMap.set(id, canvas);
+      let canvas;
+      if (canvasName) {
+        let canvases = this.annotationCanvasMap.get(id);
+        if (!canvases) {
+          canvases = [];
+          this.annotationCanvasMap.set(id, canvases);
+        }
+        canvas = canvases.find(
+          c => c.getAttribute("data-canvas-name") === canvasName
+        );
+        if (!canvas) {
+          canvas = this._canvas.ownerDocument.createElement("canvas");
+          canvas.setAttribute("data-canvas-name", canvasName);
+          canvases.push(canvas);
+        }
+      } else {
+        canvas = this.annotationCanvasMap.get(id);
+        if (!canvas) {
+          canvas = this._canvas.ownerDocument.createElement("canvas");
+          this.annotationCanvasMap.set(id, canvas);
+        }
       }
       if (typeof canvas.transferControlToOffscreen !== "function") {
         continue;
       }
       try {
         const offscreen = canvas.transferControlToOffscreen();
-        annotationCanvases.push([id, offscreen]);
+        annotationCanvases.push([id, canvasName, offscreen]);
         transfers.push(offscreen);
-        this._transferredAnnotationCanvasIds.add(id);
+        if (!transferredNames) {
+          this._transferredAnnotationCanvasIds.set(id, new Set([canvasName]));
+        } else {
+          transferredNames.add(canvasName);
+        }
       } catch (ex) {
         warn(`Failed to transfer annotation canvas to worker: ${ex.message}.`);
       }
