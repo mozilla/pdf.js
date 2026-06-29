@@ -43,6 +43,30 @@ class RendererMessageHandler {
 
   static #cleanedPages = new Set();
 
+  // Merges `[id, canvasName, canvas]` tuples sent from the main thread into
+  // `map`, mirroring the tagging/matching convention `canvas.js` uses so a
+  // pre-transferred canvas can be found and reused instead of orphaned.
+  static #mergeAnnotationCanvases(map, tuples) {
+    for (const [id, canvasName, canvas] of tuples) {
+      if (!canvasName) {
+        map.set(id, canvas);
+        continue;
+      }
+      canvas._pdfjsCanvasName = canvasName;
+      let canvases = map.get(id);
+      if (!Array.isArray(canvases)) {
+        canvases = [];
+        map.set(id, canvases);
+      }
+      const index = canvases.findIndex(c => c._pdfjsCanvasName === canvasName);
+      if (index === -1) {
+        canvases.push(canvas);
+      } else {
+        canvases[index] = canvas;
+      }
+    }
+  }
+
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis,
   });
@@ -245,9 +269,10 @@ class RendererMessageHandler {
       });
       const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
       const filterFactory = new WorkerFilterFactory();
-      const annotationCanvases = annotationCanvasMap
-        ? new Map(annotationCanvasMap)
-        : null;
+      const annotationCanvases = annotationCanvasMap ? new Map() : null;
+      if (annotationCanvasMap) {
+        this.#mergeAnnotationCanvases(annotationCanvases, annotationCanvasMap);
+      }
       let bboxTracker = null;
       let dependencyTracker = null;
       let imagesTracker = null;
@@ -312,9 +337,10 @@ class RendererMessageHandler {
       if (!renderTaskState || !renderTaskState.gfx.annotationCanvasMap) {
         return;
       }
-      for (const [id, canvas] of annotationCanvasMap) {
-        renderTaskState.gfx.annotationCanvasMap.set(id, canvas);
-      }
+      this.#mergeAnnotationCanvases(
+        renderTaskState.gfx.annotationCanvasMap,
+        annotationCanvasMap
+      );
     });
 
     handler.on("ExecuteOperatorList", async data => {
