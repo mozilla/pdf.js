@@ -27,6 +27,7 @@ const PDFPresentationMode = null;
 const PDFThumbnailViewer = null;
 const SecondaryToolbar = null;
 const SignatureManager = null;
+const SignaturePropertiesManager = null;
 const ViewsManager = null;
 
 export {
@@ -44,5 +45,6 @@ export {
   PDFThumbnailViewer,
   SecondaryToolbar,
   SignatureManager,
+  SignaturePropertiesManager,
   ViewsManager,
 };

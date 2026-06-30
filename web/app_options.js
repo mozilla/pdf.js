@@ -277,6 +277,15 @@ const defaultOptions = {
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  enableSignatureVerification: {
+    // On in MOZCENTRAL (NSS provides the verification path) and in
+    // local dev builds; off in shipping GENERIC builds, where no
+    // verifier is wired up by default.
+    /** @type {boolean} */
+    value:
+      typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING || MOZCENTRAL"),
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
   enableSplitMerge: {
     /** @type {boolean} */
     value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),

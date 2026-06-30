@@ -1,0 +1,9 @@
+// Append this line to your dev Firefox profile's user.js to make
+// the embedded test PDF-signing trust anchors participate in chain
+// validation.
+//
+// DO NOT add this to a profile you use for normal browsing — it
+// allows any PDF signed with the publicly known mozilla-central
+// test CA private key to verify as "trusted" until those certs
+// expire (2027-01-01 for pdf-sign-ca).
+user_pref("security.pdf_signature_verification.enable_test_trust_anchors", true);
