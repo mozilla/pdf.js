@@ -264,7 +264,7 @@ class TextLayerBuilder {
 
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
       // eslint-disable-next-line no-var
-      var isFirefox, prevRange;
+      var isFirefoxOrModernChromium, prevRange;
     }
 
     document.addEventListener(
@@ -304,22 +304,38 @@ class TextLayerBuilder {
         if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
           return;
         }
-        if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
-          isFirefox ??=
-            getComputedStyle(
-              this.#textLayers.values().next().value
-            ).getPropertyValue("-moz-user-select") === "none";
+        if (isFirefoxOrModernChromium === undefined) {
+          if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
+            isFirefoxOrModernChromium =
+              getComputedStyle(
+                this.#textLayers.values().next().value
+              ).getPropertyValue("-moz-user-select") === "none";
+          }
+          if (
+            (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) ||
+            !isFirefoxOrModernChromium
+          ) {
+            // navigator.userAgentData is only available in secure contexts
+            const chromiumVersion = navigator.userAgentData
+              ? navigator.userAgentData.brands.find(
+                  ({ brand }) => brand === "Chromium"
+                )?.version
+              : /\bChrome\/(\d+)\b/.exec(navigator.userAgent)?.[1];
 
-          if (isFirefox) {
-            return;
+            isFirefoxOrModernChromium =
+              !!chromiumVersion && parseInt(chromiumVersion, 10) >= 148;
           }
         }
-        // In non-Firefox browsers, when hovering over an empty space (thus,
-        // on .endOfContent), the selection will expand to cover all the
-        // text between the current selection and .endOfContent. By moving
-        // .endOfContent to right after (or before, depending on which side
-        // of the selection the user is moving), we limit the selection jump
-        // to at most cover the enteirety of the <span> where the selection
+        if (isFirefoxOrModernChromium) {
+          return;
+        }
+
+        // In browsers other than Firefox or Chromium 148+, when hovering over
+        // an empty space (thus, on .endOfContent), the selection will expand to
+        // cover all the text between the current selection and .endOfContent.
+        // By moving .endOfContent to right after (or before, depending on which
+        // side of the selection the user is moving), we limit the selection
+        // jump to at most cover the entirety of the <span> where the selection
         // is being modified.
         const range = selection.getRangeAt(0);
         const modifyStart =
