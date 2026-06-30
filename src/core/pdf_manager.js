@@ -228,6 +228,11 @@ class NetworkPdfManager extends BasePdfManager {
         throw ex;
       }
       await this.requestRange(ex.begin, ex.end);
+      if (ex.objectStreamOffset) {
+        await this.pdfDocument.xref.decompressObjectStreams(
+          ex.objectStreamOffset
+        );
+      }
       return this.ensure(obj, prop, args);
     }
   }
