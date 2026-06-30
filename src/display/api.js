@@ -1078,6 +1078,29 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @returns {Promise<Array<Object> | null>} A promise that is resolved
+   *   with an {Array} of digital signature metadata (signerName, reason,
+   *   signingTime, byteRange, subFilter, …), or `null` when the document
+   *   has no signatures. The PKCS#7 blob and signed-data byte spans
+   *   needed for verification are fetched separately via
+   *   {@link PDFDocumentProxy.getSignatureData} so they don't ride the
+   *   worker boundary unless verification is actually requested.
+   */
+  getSignatures() {
+    return this._transport.getSignatures();
+  }
+
+  /**
+   * @param {string} id Signature `id` from a {@link getSignatures} entry.
+   * @returns {Promise<{ data: Uint8Array[], pkcs7: Uint8Array } | null>}
+   *   The byte payload needed to verify the signature, or `null` if the
+   *   id is unknown.
+   */
+  getSignatureData(id) {
+    return this._transport.getSignatureData(id);
+  }
+
+  /**
    * @returns {Promise<boolean>} A promise that is resolved with `true`
    *   if some /AcroForm fields have JavaScript actions.
    */
@@ -3033,6 +3056,17 @@ class WorkerTransport {
 
   getFieldObjects() {
     return this.#cacheSimpleMethod("GetFieldObjects");
+  }
+
+  getSignatures() {
+    return this.#cacheSimpleMethod("GetSignatures");
+  }
+
+  getSignatureData(id) {
+    // Not cached: bytes should be one-shot. Holding them in the
+    // `#methodPromises` map would keep them alive for the document's
+    // lifetime, which defeats the metadata/data split.
+    return this.messageHandler.sendWithPromise("GetSignatureData", id);
   }
 
   hasJSActions() {

@@ -14,6 +14,7 @@
  */
 
 @import url(pdf_viewer.css);
+@import url(digital_signature_properties.css);
 
 :root {
   --dir-factor: 1;
@@ -83,6 +84,10 @@
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
+  --toolbarButton-signaturePropertiesVerified-icon: url(images/toolbarButton-signaturePropertiesVerified.svg);
+  --toolbarButton-signaturePropertiesWarn-icon: url(images/toolbarButton-signaturePropertiesWarn.svg);
+  --toolbarButton-signaturePropertiesError-icon: url(images/toolbarButton-signaturePropertiesError.svg);
+  --signatureProperties-rowCheck-icon: url(images/signature-properties-row-check.svg);
   --toolbarButton-menuArrow-icon: url(images/toolbarButton-menuArrow.svg);
   --toolbarButton-viewsManagerToggle-icon: url(images/toolbarButton-viewsManagerToggle.svg);
   --toolbarButton-secondaryToolbarToggle-icon: url(images/toolbarButton-secondaryToolbarToggle.svg);

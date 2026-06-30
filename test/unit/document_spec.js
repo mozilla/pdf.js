@@ -45,7 +45,11 @@ describe("document", function () {
   });
 
   describe("PDFDocument", function () {
-    const stream = new StringStream("Dummy_PDF_data");
+    // Padded to 1024 bytes so signature ByteRange tests using offsets
+    // like `[0, 100, 200, 800]` stay within `stream.end` (the new
+    // `#parseSignatureDict` validation rejects ByteRanges that exceed
+    // the file length).
+    const stream = new StringStream("Dummy_PDF_data".padEnd(1024, " "));
 
     function getDocument(acroForm, xref = new XRefMock()) {
       const catalog = { acroForm };
@@ -185,6 +189,221 @@ describe("document", function () {
         hasSignatures: true,
         hasXfa: false,
         hasFields: true,
+      });
+    });
+
+    describe("getSignatures", function () {
+      function makeSigDict({
+        byteRange,
+        contents = "00".repeat(8),
+        subFilter = "adbe.pkcs7.detached",
+        name = null,
+        reason = null,
+        location = null,
+        m = null,
+      }) {
+        const dict = new Dict();
+        dict.set("Type", Name.get("Sig"));
+        dict.set("Filter", Name.get("Adobe.PPKLite"));
+        dict.set("SubFilter", Name.get(subFilter));
+        dict.set("ByteRange", byteRange);
+        dict.set("Contents", contents);
+        if (name !== null) {
+          dict.set("Name", name);
+        }
+        if (reason !== null) {
+          dict.set("Reason", reason);
+        }
+        if (location !== null) {
+          dict.set("Location", location);
+        }
+        if (m !== null) {
+          dict.set("M", m);
+        }
+        return dict;
+      }
+
+      function makeSigField({ T, sigRef }) {
+        const dict = new Dict();
+        dict.set("FT", Name.get("Sig"));
+        dict.set("T", T);
+        dict.set("V", sigRef);
+        return dict;
+      }
+
+      it("returns null when no signatures are present", async function () {
+        const acroForm = new Dict();
+        const pdfDocument = getDocument(acroForm);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures).toBeNull();
+      });
+
+      it("extracts metadata for a single signature", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        const sigRef = Ref.get(20, 0);
+        const fieldRef = Ref.get(21, 0);
+        const sigDict = makeSigDict({
+          byteRange: [0, 100, 200, 300],
+          name: "Alice Becker",
+          reason: "Approved for release",
+          m: "D:20251014103200+00'00'",
+        });
+        const fieldDict = makeSigField({ T: "sig_alice", sigRef });
+
+        const xref = new XRefMock([
+          { ref: sigRef, data: sigDict },
+          { ref: fieldRef, data: fieldDict },
+        ]);
+        acroForm.set("Fields", [fieldRef]);
+
+        const pdfDocument = getDocument(acroForm, xref);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures.length).toEqual(1);
+        const [sig] = signatures;
+        expect(sig.signerName).toEqual("Alice Becker");
+        expect(sig.reason).toEqual("Approved for release");
+        expect(sig.signingTime).toEqual("D:20251014103200+00'00'");
+        expect(sig.fieldName).toEqual("sig_alice");
+        expect(sig.subFilter).toEqual("adbe.pkcs7.detached");
+        expect(sig.signatureType).toEqual(0);
+        expect(sig.byteRange).toEqual([0, 100, 200, 300]);
+        expect(sig.parentId).toEqual(null);
+        expect(sig.revisionIndex).toEqual(0);
+        // The bytes (pkcs7 + signed-data spans) are no longer attached
+        // to the metadata array — they're fetched on demand via
+        // `getSignatureData(id)` so the worker→main message stays
+        // small.
+        expect(sig.pkcs7).toBeUndefined();
+        expect(sig.data).toBeUndefined();
+        const bytes = await pdfDocument.getSignatureData(sig.id);
+        expect(bytes.pkcs7).toBeInstanceOf(Uint8Array);
+        expect(Array.isArray(bytes.data)).toBeTrue();
+        expect(bytes.data.length).toEqual(2);
+      });
+
+      it("walks Kids recursively to find nested signature fields", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        const sigRef = Ref.get(30, 0);
+        const sigFieldRef = Ref.get(31, 0);
+        const containerRef = Ref.get(32, 0);
+
+        const sigDict = makeSigDict({
+          byteRange: [0, 50, 100, 150],
+          name: "John Smith",
+        });
+        const sigField = makeSigField({ T: "sig_john", sigRef });
+        const container = new Dict();
+        container.set("Kids", [sigFieldRef]);
+
+        const xref = new XRefMock([
+          { ref: sigRef, data: sigDict },
+          { ref: sigFieldRef, data: sigField },
+          { ref: containerRef, data: container },
+        ]);
+        acroForm.set("Fields", [containerRef]);
+
+        const pdfDocument = getDocument(acroForm, xref);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures.length).toEqual(1);
+        expect(signatures[0].signerName).toEqual("John Smith");
+      });
+
+      it("skips signatures with malformed ByteRange", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        const sigRef = Ref.get(40, 0);
+        const fieldRef = Ref.get(41, 0);
+        const sigDict = makeSigDict({ byteRange: [0, 100] }); // wrong length
+        const fieldDict = makeSigField({ T: "bad", sigRef });
+
+        const xref = new XRefMock([
+          { ref: sigRef, data: sigDict },
+          { ref: fieldRef, data: fieldDict },
+        ]);
+        acroForm.set("Fields", [fieldRef]);
+
+        const pdfDocument = getDocument(acroForm, xref);
+        expect(await pdfDocument.signatures).toBeNull();
+      });
+
+      it("groups sub-signatures under the outer revision", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        // Outer covers more bytes (c+d larger) → parent.
+        // Inner covers fewer bytes → sub-signature of outer.
+        const outerSigRef = Ref.get(50, 0);
+        const outerFieldRef = Ref.get(51, 0);
+        const innerSigRef = Ref.get(52, 0);
+        const innerFieldRef = Ref.get(53, 0);
+
+        const outerSig = makeSigDict({
+          byteRange: [0, 100, 200, 800],
+          name: "Outer",
+        });
+        const innerSig = makeSigDict({
+          byteRange: [0, 50, 100, 200],
+          name: "Inner",
+        });
+
+        const xref = new XRefMock([
+          { ref: outerSigRef, data: outerSig },
+          {
+            ref: outerFieldRef,
+            data: makeSigField({ T: "outer", sigRef: outerSigRef }),
+          },
+          { ref: innerSigRef, data: innerSig },
+          {
+            ref: innerFieldRef,
+            data: makeSigField({ T: "inner", sigRef: innerSigRef }),
+          },
+        ]);
+        acroForm.set("Fields", [outerFieldRef, innerFieldRef]);
+
+        const pdfDocument = getDocument(acroForm, xref);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures.length).toEqual(2);
+        // Sorted descending by c+d, so outer comes first.
+        expect(signatures[0].signerName).toEqual("Outer");
+        expect(signatures[0].parentId).toEqual(null);
+        expect(signatures[0].revisionIndex).toEqual(0);
+        expect(signatures[1].signerName).toEqual("Inner");
+        expect(signatures[1].parentId).toEqual(signatures[0].id);
+        expect(signatures[1].revisionIndex).toEqual(1);
+      });
+
+      it("maps SubFilter to the PDFSignatureAlgorithm enum", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        async function signatureType(subFilter) {
+          const sigRef = Ref.get(60, 0);
+          const fieldRef = Ref.get(61, 0);
+          const sigDict = makeSigDict({
+            byteRange: [0, 10, 20, 30],
+            subFilter,
+          });
+          const xref = new XRefMock([
+            { ref: sigRef, data: sigDict },
+            {
+              ref: fieldRef,
+              data: makeSigField({ T: "sig", sigRef }),
+            },
+          ]);
+          acroForm.set("Fields", [fieldRef]);
+          const pdfDocument = getDocument(acroForm, xref);
+          const [sig] = await pdfDocument.signatures;
+          return sig.signatureType;
+        }
+
+        expect(await signatureType("adbe.pkcs7.detached")).toEqual(0);
+        expect(await signatureType("adbe.pkcs7.sha1")).toEqual(1);
+        expect(await signatureType("ETSI.CAdES.detached")).toEqual(null);
       });
     });
 

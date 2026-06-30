@@ -1,0 +1,412 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* Digital signature properties panel.
+ *
+ * Floating doorhanger anchored to #signaturePropertiesButton. Lists every
+ * signature in the open PDF as a card, with a banner summarising the
+ * overall verification state.
+ */
+
+:root {
+  --sig-card-border: light-dark(rgb(228 228 232), rgb(82 82 86));
+  --sig-card-bg: var(--field-bg-color, light-dark(white, rgb(64 64 68)));
+  --sig-card-nested-bg: light-dark(rgb(252 252 253), rgb(72 72 76));
+  --sig-row-color: light-dark(rgb(58 58 60), rgb(228 228 232));
+  --sig-detail-color: light-dark(rgb(96 96 96), rgb(180 180 184));
+  --sig-divider-color: light-dark(rgb(228 228 232), rgb(82 82 86));
+  --sig-summary-hover-color: light-dark(rgb(28 67 138), rgb(126 169 255));
+  --sig-link-color: light-dark(rgb(28 113 216), rgb(126 169 255));
+  --sig-link-hover-bg: light-dark(
+    rgb(28 113 216 / 0.1),
+    rgb(126 169 255 / 0.15)
+  );
+  --sig-banner-verified-bg: light-dark(rgb(228 247 235), rgb(28 84 49));
+  --sig-banner-verified-color: light-dark(rgb(16 92 47), rgb(176 232 196));
+  --sig-banner-warn-bg: light-dark(rgb(255 247 217), rgb(95 67 9));
+  --sig-banner-warn-color: light-dark(rgb(124 84 9), rgb(255 222 153));
+  --sig-banner-error-bg: light-dark(rgb(254 226 235), rgb(122 21 51));
+  --sig-banner-error-color: light-dark(rgb(167 26 70), rgb(255 188 207));
+
+  /* Tint colours for the row / toolbar icons. These are paired with
+   * `mask-image` so the icons recolour for light/dark/HCM. The four
+   * semantics map to: default = grey (signature crypto verified but
+   * not endorsed), warn = orange (cert trust/validity issue),
+   * error = red (signature itself failed or could not be checked),
+   * verified = green (only used for the top-level "everything fine"
+   * row and the toolbar's verified badge). */
+  --sig-icon-default: light-dark(rgb(150 150 150), rgb(180 180 184));
+  --sig-icon-warn: light-dark(rgb(217 142 27), rgb(255 178 77));
+  --sig-icon-error: light-dark(rgb(196 31 71), rgb(255 117 145));
+  --sig-icon-verified: light-dark(rgb(29 142 61), rgb(106 210 126));
+
+  @media screen and (forced-colors: active) {
+    /* HCM keywords are picked by *semantic role*, not by hue — the
+     * user's high-contrast theme resolves them to whatever palette it
+     * ships. The same role-vocabulary as alt-text
+     * (annotation_editor_layer_builder.css:261-275) is used here so
+     * the two panels read consistently:
+     *   - ButtonFace / ButtonText: "control surface + text"
+     *     (banner background + body text inside it).
+     *   - AccentColor: the user's accent — used as a saturated
+     *     emphasis foreground for severity icons and the banner's
+     *     left stripe (same role alt-text uses for its hover
+     *     foreground).
+     *   - ButtonBorder: dedicated control-border keyword for the
+     *     outer card frame.
+     *   - GrayText: muted text (detail rows, divider, default
+     *     "everything OK" row icon).
+     *   - LinkText: link colour.
+     * Background-typed keywords are never used as foregrounds. */
+    --sig-card-border: ButtonBorder;
+    --sig-card-bg: Canvas;
+    --sig-card-nested-bg: ButtonFace;
+    --sig-row-color: ButtonText;
+    --sig-detail-color: GrayText;
+    --sig-divider-color: GrayText;
+    --sig-summary-hover-color: AccentColor;
+    --sig-link-color: LinkText;
+    --sig-link-hover-bg: transparent;
+    --sig-banner-verified-bg: ButtonFace;
+    --sig-banner-verified-color: ButtonText;
+    --sig-banner-warn-bg: ButtonFace;
+    --sig-banner-warn-color: ButtonText;
+    --sig-banner-error-bg: ButtonFace;
+    --sig-banner-error-color: ButtonText;
+    /* Severities collapse to the same emphasis keyword (AccentColor)
+     * in HCM — same trick as alt-text where `done` and `warning`
+     * share their hover colour. The glyph shape (check vs `!` vs `✕`)
+     * carries the remaining distinction. The neutral "row crypto
+     * verified" check stays muted (GrayText). */
+    --sig-icon-default: GrayText;
+    --sig-icon-warn: AccentColor;
+    --sig-icon-error: AccentColor;
+    --sig-icon-verified: AccentColor;
+  }
+}
+
+#signaturePropertiesButton {
+  /* Default (no state class yet): use the regular signature icon.
+   * Mirror under RTL via the shared --dir-factor so the icon stays
+   * visually aligned with the rest of the toolbar (same pattern as
+   * the comment button). The state-* rules below override
+   * `mask-image` only — the transform is inherited. */
+  &::before {
+    mask-image: var(--toolbarButton-editorSignature-icon);
+    transform: scaleX(var(--dir-factor));
+  }
+
+  /* When a verification state is set, switch the mask to the matching
+   * state badge and tint via background-color so the badge inherits
+   * light/dark/HCM via the `--sig-icon-*` vars. */
+  &.state-verified::before,
+  &.state-warn::before,
+  &.state-error::before {
+    opacity: 1;
+  }
+  &.state-verified::before {
+    mask-image: var(--toolbarButton-signaturePropertiesVerified-icon);
+    background-color: var(--sig-icon-verified);
+  }
+  &.state-warn::before {
+    mask-image: var(--toolbarButton-signaturePropertiesWarn-icon);
+    background-color: var(--sig-icon-warn);
+  }
+  &.state-error::before {
+    mask-image: var(--toolbarButton-signaturePropertiesError-icon);
+    background-color: var(--sig-icon-error);
+  }
+
+  /* Loading state: three .loadingDot spans pulse in sequence via
+   * `animation-delay`. The spans are injected once at construction (see
+   * SignaturePropertiesManager) and are width/height 0 by default thanks
+   * to the `.toolbarButton > span` rule — they only become visible when
+   * this `state-loading` modifier is set. */
+  &.state-loading {
+    &::before {
+      display: none;
+    }
+    .loadingDot {
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      margin: 0 1px;
+      border-radius: 50%;
+      background: var(--toolbar-icon-bg-color);
+      animation: signaturePropertiesDot 1.2s ease-in-out infinite both;
+
+      &:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      &:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+    }
+  }
+}
+
+@keyframes signaturePropertiesDot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.85);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+#signaturePropertiesPanel {
+  width: 320px;
+  padding: 0;
+}
+
+.signaturePropertiesContainer {
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  overflow: hidden;
+}
+
+.sigBanner {
+  margin: 12px 12px 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  /* The left stripe reuses the per-severity icon tint so the banner
+   * keeps a meaningful accent in HCM (where the bg/fg both flatten to
+   * Canvas/CanvasText). The icon tint vars are themed semantically
+   * ("danger" / "accent" / "muted"), so the stripe colour follows the
+   * user's high-contrast palette without us hard-coding any hue. */
+  border-inline-start: 3px solid currentcolor;
+
+  &.verified {
+    background: var(--sig-banner-verified-bg);
+    color: var(--sig-banner-verified-color);
+    border-inline-start-color: var(--sig-icon-verified);
+  }
+  &.warn {
+    background: var(--sig-banner-warn-bg);
+    color: var(--sig-banner-warn-color);
+    border-inline-start-color: var(--sig-icon-warn);
+  }
+  &.error {
+    background: var(--sig-banner-error-bg);
+    color: var(--sig-banner-error-color);
+    border-inline-start-color: var(--sig-icon-error);
+  }
+}
+
+.signaturePropertiesList {
+  list-style: none;
+  margin: 0;
+  padding: 0 12px 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sigCard {
+  border: 1px solid var(--sig-card-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  background: var(--sig-card-bg);
+
+  .signer {
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.1px;
+    margin-bottom: 1px;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px 6px;
+    /* Icon aligns to the first line of multi-line text, not the centre
+     * of the wrapped block. */
+    align-items: flex-start;
+    font-size: 12px;
+    color: var(--sig-row-color);
+    min-height: 18px;
+
+    > span {
+      flex: 1 1 auto;
+      /* Allow the span to shrink below its intrinsic min-content width
+       * so long text wraps inside the row instead of pushing the whole
+       * label below the icon. */
+      min-width: 0;
+      overflow-wrap: break-word;
+    }
+
+    &::before {
+      content: "";
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      /* Keep the icon at the same vertical rhythm as a single line of
+       * text so it visually pairs with the first row of the wrapped
+       * label. */
+      margin-top: 1px;
+      /* The icon shape is a mask-image; the tint comes from
+       * `background-color`, which lets every row icon adapt to
+       * light/dark/HCM via the `--sig-icon-*` vars in `:root`. */
+      mask-position: center;
+      mask-repeat: no-repeat;
+      mask-size: contain;
+      mask-image: var(--signatureProperties-rowCheck-icon);
+      background-color: var(--sig-icon-default);
+      /* Mirror under RTL — the per-status modifiers below override
+       * `mask-image` only, so the transform applies uniformly. */
+      transform: scaleX(var(--dir-factor));
+    }
+
+    /* "Everything-OK" rows (signature crypto verified, even if the
+     * cert chain is untrusted/expired/etc.) and the trusted-cert row
+     * keep the muted grey check. */
+    &.status--verified::before,
+    &.status--untrusted::before,
+    &.status--expired::before,
+    &.status--revoked::before,
+    &.cert--trusted::before {
+      mask-image: var(--signatureProperties-rowCheck-icon);
+      background-color: var(--sig-icon-default);
+    }
+    &.cert--untrusted::before,
+    &.cert--expired::before {
+      mask-image: var(--toolbarButton-signaturePropertiesWarn-icon);
+      background-color: var(--sig-icon-warn);
+    }
+    &.cert--revoked::before,
+    &.status--invalid::before,
+    &.status--unknown::before,
+    &.cert--unknown::before {
+      mask-image: var(--toolbarButton-signaturePropertiesError-icon);
+      background-color: var(--sig-icon-error);
+    }
+  }
+
+  /* Promote to a real green tick only on the top-level card AND only
+   * when every signature in the document is verified. The
+   * `.sigCard--top-allfine` modifier is set in #render. */
+  &.sigCard--top-allfine > .row.status--verified::before,
+  &.sigCard--top-allfine > .row.cert--trusted::before {
+    mask-image: var(--toolbarButton-signaturePropertiesVerified-icon);
+    background-color: var(--sig-icon-verified);
+  }
+
+  .detail {
+    font-size: 11.5px;
+    color: var(--sig-detail-color);
+    margin-inline-start: 20px;
+    line-height: 1.35;
+  }
+
+  .viewCert {
+    align-self: center;
+    margin-top: 4px;
+    color: var(--sig-link-color);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+
+    &:hover {
+      background: var(--sig-link-hover-bg);
+      text-decoration: underline;
+    }
+    &:focus-visible {
+      outline: 2px solid var(--sig-link-color);
+      outline-offset: 1px;
+    }
+  }
+
+  .subSignatures {
+    margin-top: 4px;
+    border-top: 1px dashed var(--sig-divider-color);
+    padding-top: 4px;
+    font-size: 12px;
+
+    > summary {
+      cursor: pointer;
+      user-select: none;
+      list-style: none;
+      color: var(--sig-detail-color);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 0;
+
+      &:hover {
+        color: var(--sig-summary-hover-color);
+      }
+      &::-webkit-details-marker {
+        display: none;
+      }
+      &::before {
+        content: "";
+        display: inline-block;
+        width: 0;
+        height: 0;
+        border-top: 4px solid transparent;
+        border-bottom: 4px solid transparent;
+        border-inline-start: 5px solid currentcolor;
+        transition: transform 0.15s;
+      }
+    }
+    &[open] > summary::before {
+      transform: rotate(90deg);
+    }
+  }
+
+  .nested,
+  .subSignatures > .signaturePropertiesList {
+    padding: 4px 0 2px;
+    margin-inline-start: 0;
+    gap: 4px;
+  }
+
+  .nested {
+    margin-top: 4px;
+  }
+
+  /* Cosmetics for cards nested inside another (sub-)signature. */
+  .subSignatures .sigCard,
+  .nested .sigCard {
+    padding: 6px 8px;
+    background: var(--sig-card-nested-bg);
+    gap: 2px;
+  }
+
+  .subSignatures .signer,
+  .nested .signer {
+    font-size: 12px;
+    font-weight: 500;
+  }
+}

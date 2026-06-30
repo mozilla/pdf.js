@@ -532,6 +532,140 @@ class SignatureStorage {
   }
 }
 
+// `nsresult` codes from PSM/NSS that we recognize. Names mirror
+// Firefox's nsINSSErrorsService and security/nss codes; values aren't
+// stable, so we compare strings instead of integers.
+const NSS_ERR_CODES = {
+  EXPIRED: new Set([
+    "SEC_ERROR_EXPIRED_CERTIFICATE",
+    "SEC_ERROR_EXPIRED_ISSUER_CERTIFICATE",
+    "MOZILLA_PKIX_ERROR_NOT_YET_VALID_CERTIFICATE",
+    "MOZILLA_PKIX_ERROR_NOT_YET_VALID_ISSUER_CERTIFICATE",
+  ]),
+  // Only definite-revoked codes belong here. We intentionally do NOT
+  // include OCSP-response-missing-style codes (e.g.
+  // MOZILLA_PKIX_ERROR_OCSP_RESPONSE_FOR_CERT_MISSING), since those
+  // mean "we couldn't reach the responder" — they fall through to the
+  // generic untrusted bucket.
+  REVOKED: new Set([
+    "SEC_ERROR_REVOKED_CERTIFICATE",
+    "SEC_ERROR_REVOKED_KEY",
+    "MOZILLA_PKIX_ERROR_REVOKED_CERTIFICATE",
+  ]),
+  UNTRUSTED: new Set([
+    "SEC_ERROR_UNKNOWN_ISSUER",
+    "SEC_ERROR_UNTRUSTED_CERT",
+    "SEC_ERROR_UNTRUSTED_ISSUER",
+    "MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT",
+    "MOZILLA_PKIX_ERROR_ADDITIONAL_POLICY_CONSTRAINT_FAILED",
+  ]),
+  CMS_NOT_YET_ATTEMPTED: "NS_ERROR_CMS_VERIFY_NOT_YET_ATTEMPTED",
+};
+
+function mapVerificationStatus(signatureCode, certificateCode) {
+  if (signatureCode === NSS_ERR_CODES.CMS_NOT_YET_ATTEMPTED) {
+    return { status: "unknown", errorCode: signatureCode };
+  }
+  if (signatureCode && signatureCode !== "NS_OK") {
+    return { status: "invalid", errorCode: signatureCode };
+  }
+  if (!certificateCode || certificateCode === "NS_OK") {
+    return { status: "verified", errorCode: null };
+  }
+  if (NSS_ERR_CODES.REVOKED.has(certificateCode)) {
+    return { status: "revoked", errorCode: certificateCode };
+  }
+  if (NSS_ERR_CODES.EXPIRED.has(certificateCode)) {
+    return { status: "expired", errorCode: certificateCode };
+  }
+  if (NSS_ERR_CODES.UNTRUSTED.has(certificateCode)) {
+    return { status: "untrusted", errorCode: certificateCode };
+  }
+  return { status: "untrusted", errorCode: certificateCode };
+}
+
+class SignatureVerifier {
+  async verify(signature) {
+    if (signature.signatureType === null) {
+      return {
+        status: "unknown",
+        errorCode: "SUBFILTER_NOT_SUPPORTED",
+        message: signature.subFilter,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument,
+      };
+    }
+
+    let response;
+    try {
+      response = await FirefoxCom.requestAsync("verifyPdfSignature", {
+        pkcs7: signature.pkcs7,
+        data: signature.data,
+        signatureType: signature.signatureType,
+      });
+    } catch (ex) {
+      return {
+        status: "unknown",
+        errorCode: "BRIDGE_ERROR",
+        message: ex?.message ?? null,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument,
+      };
+    }
+    if (!response || response.error) {
+      return {
+        status: "unknown",
+        errorCode: response?.error ?? "EMPTY_RESPONSE",
+        message: null,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument,
+      };
+    }
+
+    // The chrome side returns an Array<nsIPDFVerificationResult>, but for
+    // a single PKCS#7 input it has exactly one entry.
+    const entry = Array.isArray(response) ? response[0] : response;
+    if (!entry) {
+      return {
+        status: "unknown",
+        errorCode: "EMPTY_RESPONSE",
+        message: null,
+        certificate: null,
+        documentModifiedAfterSigning: !signature.coversWholeDocument,
+      };
+    }
+    const { status, errorCode } = mapVerificationStatus(
+      entry.signatureResult,
+      entry.certificateResult
+    );
+    return {
+      status,
+      errorCode,
+      message: entry.message ?? null,
+      certificate: entry.certificate ?? null,
+      documentModifiedAfterSigning: !signature.coversWholeDocument,
+    };
+  }
+
+  async viewCertificate(certificate) {
+    if (!certificate) {
+      return false;
+    }
+    const certs =
+      Array.isArray(certificate.chain) && certificate.chain.length
+        ? certificate.chain.map(c => c.derBase64).filter(Boolean)
+        : [certificate.derBase64].filter(Boolean);
+    if (certs.length === 0) {
+      return false;
+    }
+    try {
+      return await FirefoxCom.requestAsync("viewPdfCertificate", { certs });
+    } catch {
+      return false;
+    }
+  }
+}
+
 class ExternalServices extends BaseExternalServices {
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
@@ -621,6 +755,10 @@ class ExternalServices extends BaseExternalServices {
 
   createSignatureStorage(eventBus, signal) {
     return new SignatureStorage(eventBus, signal);
+  }
+
+  createSignatureVerifier() {
+    return new SignatureVerifier();
   }
 
   dispatchGlobalEvent(event) {

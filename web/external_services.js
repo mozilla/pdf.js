@@ -48,6 +48,28 @@ class BaseExternalServices {
     throw new Error("Not implemented: createSignatureStorage");
   }
 
+  /**
+   * Build a signature verifier for the Digital signature properties panel.
+   *
+   * The MOZCENTRAL build returns a verifier that calls into NSS via
+   * the chrome bridge. The default GENERIC implementation returns
+   * `null` — there is no portable cryptographic verification path
+   * outside Firefox, so the toolbar button stays hidden and the
+   * worker is never asked for `getSignatures()`.
+   *
+   * Downstream consumers of `pdfjs-dist` that want the Signature
+   * Properties UI should subclass `BaseExternalServices` and return
+   * an object exposing `verify(signature)` (and optionally
+   * `viewCertificate(certificate)`) that resolves to a
+   * `VerificationResult` — see `web/firefoxcom.js` for the exact
+   * shape.
+   *
+   * @returns {Object|null}
+   */
+  createSignatureVerifier() {
+    return null;
+  }
+
   updateEditorStates(data) {
     throw new Error("Not implemented: updateEditorStates");
   }
