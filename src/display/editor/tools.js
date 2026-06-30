@@ -2162,6 +2162,13 @@ class AnnotationEditorUIManager {
       layer.updateMode(mode);
     }
 
+    const highlightShowAllState = this.#showAllStates?.get(
+      AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL
+    );
+    if (highlightShowAllState !== undefined) {
+      this.showAllEditors("highlight", highlightShowAllState);
+    }
+
     if (mode === AnnotationEditorType.POPUP) {
       this.#allEditableAnnotations ||=
         await this.#pdfDocument.getAnnotationsByType(
@@ -2294,6 +2301,10 @@ class AnnotationEditorUIManager {
       this.#showAllStates?.get(AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL) ??
       true;
     if (state !== visible) {
+      (this.#showAllStates ||= new Map()).set(
+        AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL,
+        visible
+      );
       this.#dispatchUpdateUI([
         [AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL, visible],
       ]);
