@@ -15,103 +15,45 @@
 
 import { FeatureTest } from "pdfjs-lib";
 
-const CharacterType = {
-  SPACE: 0,
-  ALPHA_LETTER: 1,
-  PUNCT: 2,
-  HAN_LETTER: 3,
-  KATAKANA_LETTER: 4,
-  HIRAGANA_LETTER: 5,
-  HALFWIDTH_KATAKANA_LETTER: 6,
-  THAI_LETTER: 7,
-};
+let wordSegmenter = null;
+let graphemeSegmenter = null;
 
-function isAlphabeticalScript(charCode) {
-  return charCode < 0x2e80;
-}
-
-function isAscii(charCode) {
-  return (charCode & 0xff80) === 0;
-}
-
-function isAsciiAlpha(charCode) {
+function isWordBreakAt(content, pos) {
+  // `pos` must be a grapheme boundary (so a combining mark stays attached to
+  // its base, and a surrogate pair isn't split) as well as a word boundary,
+  // the latter tested on the two adjacent grapheme clusters in isolation like
+  // Firefox's find (see `nsFind::BreakInBetween`).
+  const graphemes = graphemeSegmenter.segment(content);
+  const after = graphemes.containing(pos);
+  if (after.index !== pos) {
+    return false;
+  }
+  const before = graphemes.containing(pos - 1).segment;
   return (
-    (charCode >= /* a = */ 0x61 && charCode <= /* z = */ 0x7a) ||
-    (charCode >= /* A = */ 0x41 && charCode <= /* Z = */ 0x5a)
+    wordSegmenter.segment(before + after.segment).containing(before.length)
+      .index === before.length
   );
-}
-
-function isAsciiDigit(charCode) {
-  return charCode >= /* 0 = */ 0x30 && charCode <= /* 9 = */ 0x39;
-}
-
-function isAsciiSpace(charCode) {
-  return (
-    charCode === /* SPACE = */ 0x20 ||
-    charCode === /* TAB = */ 0x09 ||
-    charCode === /* CR = */ 0x0d ||
-    charCode === /* LF = */ 0x0a
-  );
-}
-
-function isHan(charCode) {
-  return (
-    (charCode >= 0x3400 && charCode <= 0x9fff) ||
-    (charCode >= 0xf900 && charCode <= 0xfaff)
-  );
-}
-
-function isKatakana(charCode) {
-  return charCode >= 0x30a0 && charCode <= 0x30ff;
-}
-
-function isHiragana(charCode) {
-  return charCode >= 0x3040 && charCode <= 0x309f;
-}
-
-function isHalfwidthKatakana(charCode) {
-  return charCode >= 0xff60 && charCode <= 0xff9f;
-}
-
-function isThai(charCode) {
-  return (charCode & 0xff80) === 0x0e00;
 }
 
 /**
- * This function is based on the word-break detection implemented in:
- * https://hg.mozilla.org/mozilla-central/file/tip/intl/lwbrk/WordBreaker.cpp
+ * Determine if the match spanning `[startIdx, startIdx + length)` in `content`
+ * is a whole word, i.e. there's a word break on each side of it. Each boundary
+ * is tested on its two adjacent characters in isolation rather than on the
+ * whole string, so a contraction such as "can't" doesn't prevent "can" from
+ * being an entire word, matching Firefox's find:
+ * https://searchfox.org/firefox-main/source/toolkit/components/find/nsFind.cpp
  */
-function getCharacterType(charCode) {
-  if (isAlphabeticalScript(charCode)) {
-    if (isAscii(charCode)) {
-      if (isAsciiSpace(charCode)) {
-        return CharacterType.SPACE;
-      } else if (
-        isAsciiAlpha(charCode) ||
-        isAsciiDigit(charCode) ||
-        charCode === /* UNDERSCORE = */ 0x5f
-      ) {
-        return CharacterType.ALPHA_LETTER;
-      }
-      return CharacterType.PUNCT;
-    } else if (isThai(charCode)) {
-      return CharacterType.THAI_LETTER;
-    } else if (charCode === /* NBSP = */ 0xa0) {
-      return CharacterType.SPACE;
-    }
-    return CharacterType.ALPHA_LETTER;
-  }
+function isEntireWord(content, startIdx, length) {
+  wordSegmenter ||= new Intl.Segmenter(undefined, { granularity: "word" });
+  graphemeSegmenter ||= new Intl.Segmenter(undefined, {
+    granularity: "grapheme",
+  });
 
-  if (isHan(charCode)) {
-    return CharacterType.HAN_LETTER;
-  } else if (isKatakana(charCode)) {
-    return CharacterType.KATAKANA_LETTER;
-  } else if (isHiragana(charCode)) {
-    return CharacterType.HIRAGANA_LETTER;
-  } else if (isHalfwidthKatakana(charCode)) {
-    return CharacterType.HALFWIDTH_KATAKANA_LETTER;
-  }
-  return CharacterType.ALPHA_LETTER;
+  const endIdx = startIdx + length;
+  return (
+    (startIdx === 0 || isWordBreakAt(content, startIdx)) &&
+    (endIdx === content.length || isWordBreakAt(content, endIdx))
+  );
 }
 
 let NormalizeWithNFKC;
@@ -191,4 +133,4 @@ function getNormalizeWithNFKC() {
   return NormalizeWithNFKC;
 }
 
-export { CharacterType, getCharacterType, getNormalizeWithNFKC };
+export { getNormalizeWithNFKC, isEntireWord };
