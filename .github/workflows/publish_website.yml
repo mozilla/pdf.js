@@ -6,6 +6,12 @@ on:
 permissions:
   contents: read
 
+# Allow only one concurrent deployment, without cancelling in-progress runs, so
+# that an in-flight Pages deployment is allowed to finish before the next starts.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
 jobs:
   build:
     name: Build
