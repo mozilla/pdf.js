@@ -183,6 +183,7 @@ const PDFViewerApplication = {
   _contentDispositionFilename: null,
   _contentLength: null,
   _saveInProgress: false,
+  _downloadOrSavePromise: null,
   _wheelUnusedTicks: 0,
   _wheelUnusedFactor: 1,
   _touchManager: null,
@@ -1381,7 +1382,14 @@ const PDFViewerApplication = {
     }
   },
 
-  async downloadOrSave() {
+  downloadOrSave() {
+    this._downloadOrSavePromise ??= this._downloadOrSave().finally(() => {
+      this._downloadOrSavePromise = null;
+    });
+    return this._downloadOrSavePromise;
+  },
+
+  async _downloadOrSave() {
     if (!this.downloadManager) {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
         this.eventBus.dispatch("downloadskipped", { source: this });
@@ -1398,22 +1406,25 @@ const PDFViewerApplication = {
     const { classList } = this.appConfig.appContainer;
     classList.add("wait");
 
-    if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
-      this.externalServices.reportTelemetry({
-        type: "pageOrganization",
-        data: { action: "save" },
-      });
-      await this.onSavePages({
-        data: this.pdfThumbnailViewer.getStructuralChanges(),
-      });
-    } else {
-      await (this.pdfDocument?.annotationStorage.size > 0
-        ? this.save()
-        : this.download());
+    try {
+      if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
+        this.externalServices.reportTelemetry({
+          type: "pageOrganization",
+          data: { action: "save" },
+        });
+        await this.onSavePages({
+          data: this.pdfThumbnailViewer.getStructuralChanges(),
+        });
+      } else {
+        await (this.pdfDocument?.annotationStorage.size > 0
+          ? this.save()
+          : this.download());
+      }
+      delete this._mergedDocumentNeedsSaving;
+      this.setTitle();
+    } finally {
+      classList.remove("wait");
     }
-    delete this._mergedDocumentNeedsSaving;
-    this.setTitle();
-    classList.remove("wait");
   },
 
   /**
@@ -2180,9 +2191,20 @@ const PDFViewerApplication = {
     this.pdfPresentationMode?.request();
   },
 
-  async triggerPrinting() {
-    if (this.supportsPrinting && (await this._printPermissionPromise)) {
+  async triggerPrinting({ onPrintCancelled } = {}) {
+    try {
+      if (!this.supportsPrinting || !(await this._printPermissionPromise)) {
+        onPrintCancelled?.();
+        return;
+      }
+
       window.print();
+      if (!this.printService) {
+        onPrintCancelled?.();
+      }
+    } catch (ex) {
+      onPrintCancelled?.();
+      throw ex;
     }
   },
 

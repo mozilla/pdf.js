@@ -41,6 +41,7 @@ async function runTests(results) {
       "ink_editor_spec.mjs",
       "presentation_mode_spec.mjs",
       "reorganize_pages_spec.mjs",
+      "scripting_commands_spec.mjs",
       "scripting_spec.mjs",
       "signature_editor_spec.mjs",
       "simple_viewer_spec.mjs",
