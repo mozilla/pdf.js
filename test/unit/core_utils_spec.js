@@ -290,6 +290,11 @@ describe("core_utils", function () {
         "#23#28#29#3c#3e#5b#5d#7b#7d#2f#25"
       );
     });
+
+    it("should escape control characters using two hexadecimal digits", function () {
+      expect(escapePDFName("\x00\x09\x0a\x1f")).toEqual("#00#09#0a#1f");
+      expect(escapePDFName("a\tb")).toEqual("a#09b");
+    });
   });
 
   describe("escapeString", function () {
