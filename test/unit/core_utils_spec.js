@@ -312,6 +312,11 @@ describe("core_utils", function () {
       const str = "hello world";
       expect(encodeToXmlString(str)).toEqual(str);
     });
+
+    it("should keep the character after U+FFFE or U+FFFF", function () {
+      expect(encodeToXmlString("￿A")).toEqual("&#xFFFF;A");
+      expect(encodeToXmlString("￾B")).toEqual("&#xFFFE;B");
+    });
   });
 
   describe("validateCSSFont", function () {
