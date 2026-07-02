@@ -1207,7 +1207,7 @@ const PDFViewerApplication = {
       this.pdfViewer.setDocument(null);
       this.pdfLinkService.setDocument(null);
       this.pdfDocumentProperties?.setDocument(null);
-      this.signaturePropertiesManager?.reset();
+      this.signaturePropertiesManager?.setDocument(null);
     }
     this.pdfLinkService.externalLinkEnabled = true;
     this.store = null;
@@ -1905,7 +1905,7 @@ const PDFViewerApplication = {
       verifier,
       eventBus: this.eventBus,
     });
-    this.signaturePropertiesManager.loadFromDocument(pdfDocument);
+    this.signaturePropertiesManager.setDocument(pdfDocument);
     return true;
   },
 
