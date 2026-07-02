@@ -57,7 +57,6 @@ import {
   PresentationModeState,
   removeNullCharacters,
   SCROLLBAR_PADDING,
-  scrollIntoView,
   ScrollMode,
   SpreadMode,
   TextLayerMode,
@@ -1493,7 +1492,18 @@ class PDFViewer {
         pageSpot = { left: 0, top: 0 };
       }
     }
-    scrollIntoView(div, pageSpot);
+
+    div.scrollIntoView({
+      behavior: "auto",
+      block: "start",
+      inline: pageSpot ? "start" : "nearest",
+    });
+    if (pageSpot?.top) {
+      this.container.scrollTop += pageSpot.top;
+    }
+    if (pageSpot?.left) {
+      this.container.scrollLeft += pageSpot.left;
+    }
 
     // Ensure that the correct *initial* document position is set, when any
     // OpenParameters are used, for documents with non-default Scroll/Spread

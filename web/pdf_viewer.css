@@ -30,8 +30,8 @@
 
   --viewer-container-height: 0;
   --pdfViewer-padding-bottom: 0;
-  --page-margin: 1px auto -8px;
-  --page-border: 9px solid transparent;
+  --page-margin-top: 10px;
+  --page-outline: none;
   --spreadHorizontalWrapped-margin-LR: -3.5px;
   --loading-icon-delay: 400ms;
   --focus-ring-color: light-dark(#0060df, #0df);
@@ -42,8 +42,7 @@
 
   @media screen and (forced-colors: active) {
     --pdfViewer-padding-bottom: 9px;
-    --page-margin: 8px auto -1px;
-    --page-border: 1px solid CanvasText;
+    --page-outline: 1px solid CanvasText;
     --spreadHorizontalWrapped-margin-LR: 3.5px;
     --focus-ring-color: CanvasText;
     --new-badge-bg: AccentColor;
@@ -145,12 +144,18 @@
   direction: ltr;
   width: 816px;
   height: 1056px;
-  margin: var(--page-margin);
+  margin-inline: auto;
+  margin-block: var(--page-margin-top) 0;
   position: relative;
   overflow: visible;
-  border: var(--page-border);
+  outline: var(--page-outline);
   background-clip: content-box;
   background-color: var(--page-bg-color, rgb(255 255 255));
+  scroll-margin-top: calc(0 - var(--page-margin-top));
+
+  &:last-child {
+    margin-block-end: var(--page-margin-top);
+  }
 }
 
 .pdfViewer .dummyPage {
