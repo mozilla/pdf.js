@@ -154,7 +154,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
               result.fontName = fontName.name;
             }
             if (typeof fontSize === "number" && fontSize > 0) {
-              result.fontSize = fontSize * result.scaleFactor;
+              result.fontSize = fontSize;
             }
             break;
           case OPS.setFillColorSpace:
@@ -184,6 +184,10 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
           case OPS.showSpacedText:
           case OPS.nextLineShowText:
           case OPS.nextLineSetSpacingShowText:
+            // The font (Tf) and the text matrix (Tm) can be set in any order,
+            // so the scale factor is applied here, when text is actually shown
+            // and both are known to be in effect.
+            result.fontSize *= result.scaleFactor;
             breakLoop = true;
             break;
         }
