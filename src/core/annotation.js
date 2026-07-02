@@ -966,6 +966,16 @@ class Annotation {
   }
 
   /**
+   * Set the subject.
+   *
+   * @param {string} subject - The subject of the annotation (PDF /Subj entry),
+   *   displayed alongside the title in annotation popups.
+   */
+  setSubject(subject) {
+    this._subject = this._parseStringHelper(subject);
+  }
+
+  /**
    * Set the contents.
    *
    * @param {string} contents - Text to display for the annotation or, if the
@@ -1732,6 +1742,9 @@ class MarkupAnnotation extends Annotation {
       this.setTitle(parent.get("T"));
       this.data.titleObj = this._title;
 
+      this.setSubject(parent.get("Subj"));
+      this.data.subjectObj = this._subject;
+
       this.setContents(parent.get("Contents"));
       this.data.contentsObj = this._contents;
 
@@ -1760,6 +1773,9 @@ class MarkupAnnotation extends Annotation {
       }
     } else {
       this.data.titleObj = this._title;
+
+      this.setSubject(dict.get("Subj"));
+      this.data.subjectObj = this._subject;
 
       this.setCreationDate(dict.get("CreationDate"));
       this.data.creationDate = this.creationDate;
@@ -4248,6 +4264,9 @@ class PopupAnnotation extends Annotation {
 
     this.setTitle(parentItem.get("T"));
     this.data.titleObj = this._title;
+
+    this.setSubject(parentItem.get("Subj"));
+    this.data.subjectObj = this._subject;
 
     this.setContents(parentItem.get("Contents"));
     this.data.contentsObj = this._contents;
