@@ -533,7 +533,7 @@ function encodeToXmlString(str) {
         buffer.push(str.substring(start, i));
       }
       buffer.push(`&#x${char.toString(16).toUpperCase()};`);
-      if (char > 0xd7ff && (char < 0xe000 || char > 0xfffd)) {
+      if (char > 0xffff) {
         // char is represented by two u16
         i++;
       }
