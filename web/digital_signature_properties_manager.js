@@ -87,8 +87,7 @@ function bannerStateForResults(results) {
   let worst = "verified";
   for (const r of results) {
     if (
-      r &&
-      r.status &&
+      r?.status &&
       STATUS_INFO[r.status].priority > STATUS_INFO[worst].priority
     ) {
       worst = r.status;
@@ -193,15 +192,6 @@ class SignaturePropertiesManager {
   // is updated via #updateButtonState().
   #needsRender = false;
 
-  // Identifies the current `loadFromDocument` call. Each load rotates the
-  // token; in-flight `#verify()` promises capture the value at start and
-  // bail on resolve if the manager has since switched to another document.
-  // Prevents a stale verification for doc A from writing into doc B's
-  // results map after a fast doc-switch.
-  #loadToken = null;
-
-  // Held only to ferry per-signature byte payloads from the worker into
-  // `#verify`. Cleared in `reset()` so we don't pin a closed document.
   #pdfDocument = null;
 
   constructor({ appConfig, verifier, eventBus }) {
@@ -258,10 +248,21 @@ class SignaturePropertiesManager {
     );
   }
 
-  async loadFromDocument(pdfDocument) {
-    const token = Symbol("sig-load");
-    this.#loadToken = token;
+  async setDocument(pdfDocument) {
+    if (this.#pdfDocument) {
+      this.#signatures = [];
+      this.#results.clear();
+      this.#pendingVerify.clear();
+      this.#needsRender = false;
+      this.#hideButton();
+      this.#close();
+      this.#updateButtonState();
+    }
     this.#pdfDocument = pdfDocument;
+
+    if (!pdfDocument) {
+      return;
+    }
     this.#signatures = [];
     this.#results.clear();
     this.#pendingVerify.clear();
@@ -275,8 +276,7 @@ class SignaturePropertiesManager {
       console.warn("getSignatures failed:", ex);
       signatures = [];
     }
-    if (this.#loadToken !== token) {
-      // A newer document load (or reset) raced ahead — drop this result.
+    if (pdfDocument !== this.#pdfDocument) {
       return;
     }
     this.#signatures = signatures || [];
@@ -305,25 +305,9 @@ class SignaturePropertiesManager {
     // Kick off verification automatically — the toolbar button reflects the
     // aggregate state and updates as each signature resolves.
     for (const sig of this.#signatures) {
-      this.#verify(sig, token);
+      this.#verify(sig, pdfDocument);
     }
   }
-
-  reset() {
-    // Rotate the token so any in-flight verify from the previous document
-    // sees a mismatch and bails before mutating state.
-    this.#loadToken = null;
-    this.#pdfDocument = null;
-    this.#signatures = [];
-    this.#results.clear();
-    this.#pendingVerify.clear();
-    this.#needsRender = false;
-    this.#hideButton();
-    this.#close();
-    this.#updateButtonState();
-  }
-
-  // --- internal ---
 
   #showButton() {
     const root = this.#appConfig.signaturePropertiesButton.parentElement;
@@ -635,7 +619,7 @@ class SignaturePropertiesManager {
     return total;
   }
 
-  async #verify(signature, loadToken) {
+  async #verify(signature, pdfDocument) {
     if (!this.#verifier || this.#pendingVerify.has(signature.id)) {
       return;
     }
@@ -648,8 +632,8 @@ class SignaturePropertiesManager {
       // lazily, one signature at a time, so the bytes never sit in main
       // thread memory for the document's lifetime. `bytes` goes out of
       // scope as soon as the verifier returns.
-      const bytes = await this.#pdfDocument?.getSignatureData(signature.id);
-      if (this.#loadToken !== loadToken) {
+      const bytes = await pdfDocument.getSignatureData(signature.id);
+      if (pdfDocument !== this.#pdfDocument) {
         return;
       }
       if (!bytes) {
@@ -667,7 +651,7 @@ class SignaturePropertiesManager {
       };
     }
     this.#pendingVerify.delete(signature.id);
-    if (this.#loadToken !== loadToken) {
+    if (pdfDocument !== this.#pdfDocument) {
       // The user switched documents while this verify was in flight; the
       // result belongs to a defunct load and would corrupt the new doc.
       return;
