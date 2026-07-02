@@ -968,9 +968,7 @@ class Driver {
     if (task.type === "other" || task.enableXfa) {
       return;
     }
-    if (!task._prefetchedLoadingTask) {
-      task._prefetchedLoadingTask = getDocument(this._getDocumentOptions(task));
-    }
+    task._prefetchedLoadingTask ??= getDocument(this._getDocumentOptions(task));
   }
 
   _cleanup() {
