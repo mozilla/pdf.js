@@ -263,9 +263,6 @@ class SignaturePropertiesManager {
     if (!pdfDocument) {
       return;
     }
-    this.#signatures = [];
-    this.#results.clear();
-    this.#pendingVerify.clear();
     this.#isLoading = true;
     this.#render();
 
@@ -274,7 +271,6 @@ class SignaturePropertiesManager {
       signatures = await pdfDocument.getSignatures();
     } catch (ex) {
       console.warn("getSignatures failed:", ex);
-      signatures = [];
     }
     if (pdfDocument !== this.#pdfDocument) {
       return;
