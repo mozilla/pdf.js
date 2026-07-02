@@ -564,6 +564,7 @@ class Page {
           resources,
           this.nonBlendModesSet
         ),
+        hasCanvasFilters: partialEvaluator.hasCanvasFilters(resources),
         pageIndex,
         cacheKey,
       });
