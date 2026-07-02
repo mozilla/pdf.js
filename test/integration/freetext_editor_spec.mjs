@@ -1876,6 +1876,49 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (open existing generated with Skia)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "issue20504_skia.pdf",
+        ".annotationEditorLayer",
+        100
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must extract the font size when Tf comes before Tm", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const id = "24R";
+          await page.waitForSelector(getAnnotationSelector(id), {
+            visible: true,
+          });
+
+          await switchToFreeText(page);
+
+          // The Skia appearance stream sets the font (Tf) before the text
+          // matrix (Tm), and the text matrix is scaled by 0.5 through a cm
+          // operator: 20 * 0.5 = 10.
+          const fontSize = await page.evaluate(() => {
+            const editorDiv = document.getElementById(
+              `pdfjs_internal_editor_0-editor`
+            );
+            const match = editorDiv?.style.fontSize.match(/calc\((\d+)px/);
+            return match ? parseInt(match[1], 10) : 0;
+          });
+          expect(fontSize)
+            .withContext(`In ${browserName}, editor 0 fontSize`)
+            .toEqual(10);
+        })
+      );
+    });
+  });
+
   describe("Keyboard shortcuts when the editor layer isn't focused", () => {
     let pages;
 
