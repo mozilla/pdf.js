@@ -80,30 +80,6 @@ const CERT_L10N_IDS = {
 const CERT_EXPIRED_WITH_DATE_L10N_ID =
   "pdfjs-digital-signature-properties-certificate-expired-with-date";
 
-function bannerStateForResults(results) {
-  if (results.length === 0) {
-    return { worst: "unknown", severity: "error", count: 0 };
-  }
-  let worst = "verified";
-  for (const r of results) {
-    if (
-      r?.status &&
-      STATUS_INFO[r.status].priority > STATUS_INFO[worst].priority
-    ) {
-      worst = r.status;
-    }
-  }
-  // Count how many signatures are at the worst level — this drives the
-  // singular/plural variant of the banner message.
-  let count = 0;
-  for (const r of results) {
-    if (r?.status === worst) {
-      count++;
-    }
-  }
-  return { worst, severity: STATUS_INFO[worst].severity, count };
-}
-
 // For an `untrusted` certificate, pick the most specific Fluent label.
 // When the error code matches one of the recognised cases we have a
 // structured "Certificate: <reason> (<issuer>)" string; otherwise we
@@ -365,6 +341,35 @@ class SignaturePropertiesManager {
     );
   }
 
+  get #worst() {
+    let worst = "verified";
+    for (const r of this.#results.values()) {
+      if (
+        r?.status &&
+        STATUS_INFO[r.status].priority > STATUS_INFO[worst].priority
+      ) {
+        worst = r.status;
+      }
+    }
+    return worst;
+  }
+
+  get #bannerState() {
+    if (this.#results.size === 0) {
+      return { worst: "unknown", severity: "error", count: 0 };
+    }
+    const worst = this.#worst;
+    let count = 0;
+    // Count how many signatures are at the worst level — this drives the
+    // singular/plural variant of the banner message.
+    for (const r of this.#results.values()) {
+      if (r?.status === worst) {
+        count++;
+      }
+    }
+    return { worst, severity: STATUS_INFO[worst].severity, count };
+  }
+
   #render() {
     if (!this.#isOpen) {
       // Defer DOM work until the user actually opens the panel.
@@ -387,9 +392,7 @@ class SignaturePropertiesManager {
     }
 
     // Banner.
-    const { worst, severity, count } = bannerStateForResults([
-      ...this.#results.values(),
-    ]);
+    const { worst, severity, count } = this.#bannerState;
     banner.replaceChildren();
     banner.hidden = false;
     banner.className = `sigBanner ${severity}`;
@@ -672,16 +675,7 @@ class SignaturePropertiesManager {
       button.classList.add("state-loading");
       return;
     }
-    let worst = "verified";
-    for (const r of this.#results.values()) {
-      if (!r) {
-        continue;
-      }
-      if (STATUS_INFO[r.status].priority > STATUS_INFO[worst].priority) {
-        worst = r.status;
-      }
-    }
-    switch (worst) {
+    switch (this.#worst) {
       case "invalid":
       case "revoked":
       case "unknown":
