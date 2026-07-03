@@ -171,12 +171,7 @@ class PDFThumbnailView extends RenderableView {
       "data-l10n-id",
       "pdfjs-views-manager-paste-button-after"
     );
-    pasteButton.setAttribute(
-      "data-l10n-args",
-      JSON.stringify({
-        page: this.pageLabel ?? this.id,
-      })
-    );
+    pasteButton.setAttribute("data-l10n-args", this.#getPageL10nArgs());
     const span = document.createElement("span");
     span.setAttribute("data-l10n-id", "pdfjs-views-manager-paste-button-label");
     pasteButton.append(span);
