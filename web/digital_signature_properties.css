@@ -121,7 +121,7 @@
     background-color: var(--sig-icon-verified);
   }
   &.state-warn::before {
-    mask-image: var(--toolbarButton-signaturePropertiesWarn-icon);
+    mask-image: var(--toolbarButton-signaturePropertiesError-icon);
     background-color: var(--sig-icon-warn);
   }
   &.state-error::before {
@@ -297,7 +297,7 @@
     }
     &.cert--untrusted::before,
     &.cert--expired::before {
-      mask-image: var(--toolbarButton-signaturePropertiesWarn-icon);
+      mask-image: var(--toolbarButton-signaturePropertiesError-icon);
       background-color: var(--sig-icon-warn);
     }
     &.cert--revoked::before,
