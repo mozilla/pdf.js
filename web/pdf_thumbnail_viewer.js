@@ -1215,19 +1215,14 @@ class PDFThumbnailViewer {
     }
     this.#toggleBar("undo", l10nId, { count });
 
-    if (type === "copy") {
-      this.#undoButton.firstElementChild.setAttribute(
-        "data-l10n-id",
-        "pdfjs-views-manager-status-done-button-label"
-      );
-      this.#undoCloseButton.classList.toggle("hidden", true);
-    } else {
-      this.#undoButton.firstElementChild.setAttribute(
-        "data-l10n-id",
-        "pdfjs-views-manager-status-undo-button-label"
-      );
-      this.#undoCloseButton.classList.toggle("hidden", false);
-    }
+    const isCopy = type === "copy";
+    this.#undoButton.firstElementChild.setAttribute(
+      "data-l10n-id",
+      isCopy
+        ? "pdfjs-views-manager-status-done-button-label"
+        : "pdfjs-views-manager-status-undo-button-label"
+    );
+    this.#undoCloseButton.classList.toggle("hidden", isCopy);
   }
 
   #moveDraggedContainer(dx, dy) {
