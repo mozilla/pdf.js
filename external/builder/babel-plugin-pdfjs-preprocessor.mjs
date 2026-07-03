@@ -319,6 +319,16 @@ function babelPluginStripSrcPath() {
   };
 }
 
+function babelPluginAddHeaderComment(babel, { header }) {
+  return {
+    visitor: {
+      Program(path) {
+        path.addComment("leading", header);
+      },
+    },
+  };
+}
+
 function preprocessPDFJSCode(ctx, content) {
   return transformSync(content, {
     configFile: false,
@@ -327,6 +337,7 @@ function preprocessPDFJSCode(ctx, content) {
 }
 
 export {
+  babelPluginAddHeaderComment,
   babelPluginPDFJSPreprocessor,
   babelPluginStripSrcPath,
   preprocessPDFJSCode,

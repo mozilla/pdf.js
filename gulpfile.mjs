@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
+import * as babel from "@babel/core";
 import {
+  babelPluginAddHeaderComment,
   babelPluginPDFJSPreprocessor,
   babelPluginStripSrcPath,
   preprocessPDFJSCode,
@@ -24,7 +26,6 @@ import {
 } from "./external/ccov/coverage_format.mjs";
 import { exec, execSync, spawn, spawnSync } from "child_process";
 import autoprefixer from "autoprefixer";
-import babel from "@babel/core";
 import { buildPrefsSchema } from "./external/chromium/prefs.mjs";
 import crypto from "crypto";
 import { finished } from "stream/promises";
@@ -104,11 +105,11 @@ const AUTOPREFIXER_CONFIG = {
 // Default Babel targets used for generic, components, minified-pre
 const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
-const BABEL_PRESET_ENV_OPTS = Object.freeze({
-  corejs: "3.49.0",
+const BABEL_COREJS_OPTS = Object.freeze({
+  method: "usage-global",
+  version: "3.49.0",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
-  useBuiltIns: "usage",
 });
 
 const DEFINES = Object.freeze({
@@ -327,9 +328,7 @@ function createWebpackConfig(
     /node_modules[\\/]core-js/,
   ];
 
-  const babelPresets = skipBabel
-    ? undefined
-    : [["@babel/preset-env", BABEL_PRESET_ENV_OPTS]];
+  const babelPresets = skipBabel ? undefined : ["@babel/preset-env"];
   const babelPlugins = [
     [
       babelPluginPDFJSPreprocessor,
@@ -339,6 +338,9 @@ function createWebpackConfig(
       },
     ],
   ];
+  if (!skipBabel) {
+    babelPlugins.push(["babel-plugin-polyfill-corejs3", BABEL_COREJS_OPTS]);
+  }
   if (bundleDefines.COVERAGE) {
     babelPlugins.push("babel-plugin-istanbul");
   }
@@ -1685,9 +1687,9 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
   const licenseHeader = fs
     .readFileSync("./src/license_header.js")
     .toString()
-    .split("\n")
-    .slice(1, -2)
-    .map(line => line.replace(/^\s*\*\s?/, ""));
+    .trim()
+    .replace(/^\/\*/, "")
+    .replace(/\*\/$/, "");
 
   const ctx = {
     rootPath: __dirname,
@@ -1727,6 +1729,9 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
         [babelPluginPDFJSPreprocessor, ctx],
         [babelPluginStripSrcPath],
       ];
+      if (!skipBabel) {
+        plugins.push(["babel-plugin-polyfill-corejs3", BABEL_COREJS_OPTS]);
+      }
       if (enableCoverage) {
         plugins.push([
           "babel-plugin-istanbul",
@@ -1736,28 +1741,16 @@ function buildLibHelper(bundleDefines, inputStream, outputDir) {
           },
         ]);
       }
-      plugins.push([
-        "add-header-comment",
-        {
-          header: licenseHeader,
-        },
-      ]);
+      plugins.push([babelPluginAddHeaderComment, { header: licenseHeader }]);
 
-      const result = babel.transform(file.contents.toString(), {
+      const result = babel.transformSync(file.contents.toString(), {
         ...(enableCoverage && {
           filename: file.path,
           babelrc: false,
           configFile: false,
         }),
         sourceType: "module",
-        presets: skipBabel
-          ? undefined
-          : [
-              [
-                "@babel/preset-env",
-                { ...BABEL_PRESET_ENV_OPTS, loose: false, modules: false },
-              ],
-            ],
+        presets: skipBabel ? undefined : ["@babel/preset-env"],
         plugins,
         targets: BABEL_TARGETS,
         sourceMaps: enableSourceMaps,
