@@ -2133,12 +2133,10 @@ class PDFDocument {
       .ensureDoc("formInfo")
       .then(async formInfo => {
         if (!formInfo.hasSignatures || !formInfo.hasFields) {
-          this.#signatureData = null;
           return null;
         }
         const annotationGlobals = await this.annotationGlobals;
         if (!annotationGlobals) {
-          this.#signatureData = null;
           return null;
         }
         const fields = annotationGlobals.acroForm.get("Fields");
