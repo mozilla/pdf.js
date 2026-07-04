@@ -75,7 +75,7 @@ function calculateMD5(data, offset, length) {
   i += 3;
   const w = new Int32Array(16);
   const { k, r } = PARAMS;
-  for (i = 0; i < paddedLength; ) {
+  for (i = 0; i < paddedLength;) {
     for (j = 0; j < 16; ++j, i += 4) {
       w[j] =
         padded[i] |

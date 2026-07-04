@@ -48,7 +48,7 @@ const jpegData = jpegImage.getData({
 //
 const imageData = jpegCtx.createImageData(width, height);
 const imageBytes = imageData.data;
-for (let j = 0, k = 0, jj = width * height * 4; j < jj; ) {
+for (let j = 0, k = 0, jj = width * height * 4; j < jj;) {
   imageBytes[j++] = jpegData[k++];
   imageBytes[j++] = jpegData[k++];
   imageBytes[j++] = jpegData[k++];

@@ -524,7 +524,7 @@ addState(
       const newBBox = F32_BBOX_INIT.slice();
       Util.axialAlignedBoundingBox(minMax, transform, newBBox);
       minMax.set(newBBox);
-      for (let k = 0, kk = buffer.length; k < kk; ) {
+      for (let k = 0, kk = buffer.length; k < kk;) {
         switch (buffer[k++]) {
           case DrawOPS.moveTo:
           case DrawOPS.lineTo:

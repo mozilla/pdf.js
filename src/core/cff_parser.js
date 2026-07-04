@@ -546,7 +546,7 @@ class CFFParser {
 
     let length = data.length;
 
-    for (let j = 0; j < length; ) {
+    for (let j = 0; j < length;) {
       const value = data[j++];
       let validationCommand = null;
       if (value === 12) {

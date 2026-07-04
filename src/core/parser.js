@@ -1467,16 +1467,14 @@ class Linearization {
     const obj3 = parser.getObj();
     const linDict = parser.getObj();
     let obj, length;
-    if (
-      !(
-        Number.isInteger(obj1) &&
-        Number.isInteger(obj2) &&
-        isCmd(obj3, "obj") &&
-        linDict instanceof Dict &&
-        typeof (obj = linDict.get("Linearized")) === "number" &&
-        obj > 0
-      )
-    ) {
+    if (!(
+      Number.isInteger(obj1) &&
+      Number.isInteger(obj2) &&
+      isCmd(obj3, "obj") &&
+      linDict instanceof Dict &&
+      typeof (obj = linDict.get("Linearized")) === "number" &&
+      obj > 0
+    )) {
       return null; // No valid linearization dictionary found.
     } else if ((length = getInt(linDict, "L")) !== stream.length) {
       throw new Error(
