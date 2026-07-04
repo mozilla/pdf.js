@@ -118,7 +118,11 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *
  *   NOTE: If TypedArrays are used they will generally be transferred to the
  *   worker-thread. This will help reduce main-thread memory usage, however
- *   it will take ownership of the TypedArrays.
+ *   it will take ownership of the TypedArrays. In Node.js, avoid passing a
+ *   `Uint8Array` view over a `Buffer`'s underlying `ArrayBuffer`, such as
+ *   `new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)`,
+ *   when the original `Buffer` must be reused. Use `new Uint8Array(buffer)`
+ *   to copy the data in that case.
  * @property {Object} [httpHeaders] - Basic authentication headers.
  * @property {boolean} [withCredentials] - Indicates whether or not
  *   cross-site Access-Control requests should be made using credentials such

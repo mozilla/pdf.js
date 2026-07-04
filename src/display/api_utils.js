@@ -63,7 +63,9 @@ function getDataProp(val) {
     val instanceof Buffer // eslint-disable-line no-undef
   ) {
     throw new Error(
-      "Please provide binary data as `Uint8Array`, rather than `Buffer`."
+      "Please provide binary data as `Uint8Array`, rather than `Buffer`. " +
+        "If the original `Buffer` must be reused, pass `new Uint8Array(buffer)` " +
+        "rather than a view over `buffer.buffer`."
     );
   }
   if (val instanceof Uint8Array && val.byteLength === val.buffer.byteLength) {
