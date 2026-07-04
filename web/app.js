@@ -2068,11 +2068,9 @@ const PDFViewerApplication = {
     );
     this.secondaryToolbar?.setPageNumber(this.pdfViewer.currentPageNumber);
 
-    if (!this.pdfViewer.currentScaleValue) {
-      // Scale was not initialized: invalid bookmark or scale was not specified.
-      // Setting the default one.
-      this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
-    }
+    // Scale was not initialized: invalid bookmark or scale was not specified.
+    // Setting the default one.
+    this.pdfViewer.currentScaleValue ||= DEFAULT_SCALE_VALUE;
   },
 
   /**

@@ -58,11 +58,9 @@ class CCITTFaxStream extends DecodeStream {
     if (this.eof) {
       return this.buffer;
     }
-    if (!bytes) {
-      bytes = this.stream.isAsync
-        ? (await this.stream.asyncGetBytes()) || this.bytes
-        : this.bytes;
-    }
+    bytes ??= this.stream.isAsync
+      ? (await this.stream.asyncGetBytes()) || this.bytes
+      : this.bytes;
 
     this.buffer = await JBig2CCITTFaxImage.instance.decode(
       bytes,

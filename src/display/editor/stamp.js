@@ -488,12 +488,10 @@ class StampEditor extends AnnotationEditor {
   }
 
   copyCanvas(maxDataDimension, maxPreviewDimension, createImageData = false) {
-    if (!maxDataDimension) {
-      // TODO: get this value from Firefox
-      //   (https://bugzilla.mozilla.org/show_bug.cgi?id=1908184)
-      // It's the maximum dimension that the AI can handle.
-      maxDataDimension = 224;
-    }
+    // TODO: get this value from Firefox
+    //   (https://bugzilla.mozilla.org/show_bug.cgi?id=1908184)
+    // It's the maximum dimension that the AI can handle.
+    maxDataDimension ||= 224;
 
     const { width: bitmapWidth, height: bitmapHeight } = this.#bitmap;
     const outputScale = new OutputScale();

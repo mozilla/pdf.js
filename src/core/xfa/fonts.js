@@ -31,9 +31,7 @@ class FontFinder {
       this.addPdfFont(pdfFont);
     }
     for (const pdfFont of this.fonts.values()) {
-      if (!pdfFont.regular) {
-        pdfFont.regular = pdfFont.italic || pdfFont.bold || pdfFont.bolditalic;
-      }
+      pdfFont.regular ||= pdfFont.italic || pdfFont.bold || pdfFont.bolditalic;
     }
 
     if (!reallyMissingFonts || reallyMissingFonts.size === 0) {
@@ -72,10 +70,7 @@ class FontFinder {
         property += "italic";
       }
     }
-
-    if (!property) {
-      property = "regular";
-    }
+    property ||= "regular";
 
     font[property] = pdfFont;
   }

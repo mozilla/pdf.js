@@ -518,9 +518,7 @@ class XFAObject {
         true /* = dotDotAllowed */,
         false /* = useCache */
       );
-      if (proto) {
-        proto = proto[0];
-      }
+      proto &&= proto[0];
     }
 
     if (!proto) {

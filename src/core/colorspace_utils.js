@@ -243,9 +243,7 @@ class ColorSpaceUtils {
           break;
         case "Pattern":
           baseCS = cs[1] || null;
-          if (baseCS) {
-            baseCS = this.#subParse(baseCS, options);
-          }
+          baseCS &&= this.#subParse(baseCS, options);
           return new PatternCS(baseCS);
         case "I":
         case "Indexed":

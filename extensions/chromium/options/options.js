@@ -192,7 +192,7 @@ function renderDefaultZoomValue(shortDescription) {
   document.getElementById("settings-boxes").append(wrapper);
 
   function renderPreference(value) {
-    value = value || "auto";
+    value ||= "auto";
     select.value = value;
     var customOption = select.querySelector("option.custom-zoom");
     if (select.selectedIndex === -1 && value) {

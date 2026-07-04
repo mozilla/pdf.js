@@ -3000,7 +3000,7 @@ class Field extends XFAObject {
     }
 
     if (!this.ui.imageEdit && ui.children?.[0] && this.h) {
-      borderDims = borderDims || getBorderDims(this.ui[$getExtra]());
+      borderDims ||= getBorderDims(this.ui[$getExtra]());
 
       let captionHeight = 0;
       if (this.caption && ["top", "bottom"].includes(this.caption.placement)) {
