@@ -3710,7 +3710,7 @@ class Font {
 
     for (let i = 0, ii = str.length; i < ii; i++) {
       const unicode = str.codePointAt(i);
-      if (unicode > 0xd7ff && (unicode < 0xe000 || unicode > 0xfffd)) {
+      if (unicode > 0xffff) {
         // unicode is represented by two uint16
         i++;
       }
