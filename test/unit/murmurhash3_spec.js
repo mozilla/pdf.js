@@ -43,6 +43,12 @@ describe("MurmurHash3_64", function () {
     hash.update(new Uint32Array(new Uint8Array(sourceCharCodes).buffer));
     expect(hash.hexdigest()).toEqual(hexDigestExpected);
   });
+  it("throws an exception for unsupported input types", function () {
+    const hash = new MurmurHash3_64();
+    expect(() => hash.update(42)).toThrow(
+      new Error("Invalid data format, must be a string or TypedArray.")
+    );
+  });
 
   it("changes the hash after update without seed", function () {
     const hash = new MurmurHash3_64();
