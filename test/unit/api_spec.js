@@ -2109,6 +2109,90 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets non-existent signatures and signatureData", async function () {
+      const signatures = await pdfDocument.getSignatures();
+      expect(signatures).toBeNull();
+
+      const signatureData = await pdfDocument.getSignatureData("qwerty");
+      expect(signatureData).toBeNull();
+    });
+
+    it("gets signatures and signatureData", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue20433.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const signatures = await pdfDoc.getSignatures();
+
+      expect(signatures).toEqual([
+        {
+          id: "70R:0-435961-437515-34098",
+          fieldName: "Sig2",
+          signerName: null,
+          reason: null,
+          location: null,
+          contactInfo: null,
+          signingTime: "D:20251101152937Z",
+          filter: "Adobe.PPKLite",
+          subFilter: "ETSI.CAdES.detached",
+          signatureType: null,
+          byteRange: [0, 435961, 437515, 34098],
+          revisionIndex: 0,
+          parentId: null,
+          coversWholeDocument: true,
+        },
+        {
+          id: "49R:0-60285-74083-357914",
+          fieldName: "Sig1",
+          signerName: "Richard III",
+          reason: "Royal Seal of Approval",
+          location: null,
+          contactInfo: null,
+          signingTime: "D:20251101162754+01'00'",
+          filter: "Adobe.PPKLite",
+          subFilter: "ETSI.CAdES.detached",
+          signatureType: null,
+          byteRange: [0, 60285, 74083, 357914],
+          revisionIndex: 1,
+          parentId: "70R:0-435961-437515-34098",
+          coversWholeDocument: false,
+        },
+      ]);
+
+      const sigIds = signatures.map(s => s.id);
+      const sigData = await Promise.all(
+        sigIds.map(id => pdfDoc.getSignatureData(id))
+      );
+      expect(sigData.length).toEqual(2);
+
+      const expectedLengths = [
+        {
+          data0Len: 435961,
+          data1Len: 34098,
+          pkcs7Len: 776,
+        },
+        {
+          data0Len: 60285,
+          data1Len: 357914,
+          pkcs7Len: 6898,
+        },
+      ];
+
+      for (const [i, s] of sigData.entries()) {
+        const { data, pkcs7 } = s;
+        const { data0Len, data1Len, pkcs7Len } = expectedLengths[i];
+
+        expect(data.length).toEqual(2);
+        expect(data[0]).toBeInstanceOf(Uint8Array);
+        expect(data[0].length).toEqual(data0Len);
+        expect(data[1]).toBeInstanceOf(Uint8Array);
+        expect(data[1].length).toEqual(data1Len);
+
+        expect(pkcs7).toBeInstanceOf(Uint8Array);
+        expect(pkcs7.length).toEqual(pkcs7Len);
+      }
+
+      await loadingTask.destroy();
+    });
+
     it("gets non-existent calculationOrder", async function () {
       const calculationOrder = await pdfDocument.getCalculationOrderIds();
       expect(calculationOrder).toEqual(null);
