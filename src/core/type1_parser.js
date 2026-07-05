@@ -565,7 +565,7 @@ class Type1Parser {
         privateData,
       },
     };
-    let token, length, data, lenIV;
+    let token, length, data;
     // Some fonts (e.g. those embedded in issue18548.pdf) define a second
     // `/Subrs` and `/CharStrings` block that the PostScript runtime selects
     // conditionally (e.g. high-resolution variants). Testing with other
@@ -603,8 +603,10 @@ class Type1Parser {
             length = this.readInt();
             this.getToken(); // read in 'RD' or '-|'
             data = length > 0 ? stream.getBytes(length) : new Uint8Array(0);
-            lenIV = privateData.get("lenIV");
-            const encoded = this.readCharStrings(data, lenIV);
+            const encoded = this.readCharStrings(
+              data,
+              privateData.get("lenIV")
+            );
             this.nextChar();
             token = this.getToken(); // read in 'ND' or '|-'
             if (token === "noaccess") {
@@ -632,8 +634,10 @@ class Type1Parser {
             length = this.readInt();
             this.getToken(); // read in 'RD' or '-|'
             data = length > 0 ? stream.getBytes(length) : new Uint8Array(0);
-            lenIV = privateData.get("lenIV");
-            const encoded = this.readCharStrings(data, lenIV);
+            const encoded = this.readCharStrings(
+              data,
+              privateData.get("lenIV")
+            );
             this.nextChar();
             token = this.getToken(); // read in 'NP' or '|'
             if (token === "noaccess") {
@@ -650,9 +654,9 @@ class Type1Parser {
           // *Blue* values may contain invalid data: disables reading of
           // those values when hinting is disabled.
           if (
+            HINTING_ENABLED &&
             blueArray.length > 0 &&
-            blueArray.length % 2 === 0 &&
-            HINTING_ENABLED
+            blueArray.length % 2 === 0
           ) {
             privateData.set(token, blueArray);
           }
