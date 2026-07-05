@@ -61,8 +61,7 @@ class BaseExternalServices {
    * Properties UI should subclass `BaseExternalServices` and return
    * an object exposing `verify(signature)` (and optionally
    * `viewCertificate(certificate)`) that resolves to a
-   * `VerificationResult` — see `web/firefoxcom.js` for the exact
-   * shape.
+   * `VerificationResult` — see `web/firefoxcom.js` for the exact shape.
    *
    * @returns {Object|null}
    */

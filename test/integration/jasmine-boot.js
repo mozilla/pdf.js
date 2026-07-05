@@ -34,6 +34,7 @@ async function runTests(results) {
       "comment_spec.mjs",
       "copy_paste_spec.mjs",
       "cursor_tools_spec.mjs",
+      "digital_signature_spec.mjs",
       "document_properties_spec.mjs",
       "find_spec.mjs",
       "freetext_editor_spec.mjs",
