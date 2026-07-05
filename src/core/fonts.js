@@ -550,7 +550,7 @@ function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
   // Split the sorted codes into ranges.
   const ranges = [];
   const length = codes.length;
-  for (let n = 0; n < length; ) {
+  for (let n = 0; n < length;) {
     const start = codes[n].fontCharCode;
     const codeIndices = [codes[n].glyphId];
     ++n;
@@ -2449,7 +2449,7 @@ class Font {
       let inFDEF = false,
         ifLevel = 0,
         inELSE = 0;
-      for (let ii = data.length; i < ii; ) {
+      for (let ii = data.length; i < ii;) {
         const op = data[i++];
         // The TrueType instruction set docs can be found at
         // https://developer.apple.com/fonts/TTRefMan/RM05/Chap5.html

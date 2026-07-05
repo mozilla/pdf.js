@@ -303,7 +303,7 @@ function calculateSHA512(data, offset, length, mode384 = false) {
   let tmp3;
 
   // for each 1024 bit block
-  for (i = 0; i < paddedLength; ) {
+  for (i = 0; i < paddedLength;) {
     for (j = 0; j < 16; ++j) {
       w[j].high =
         (padded[i] << 24) |

@@ -782,7 +782,7 @@ function makePathFromDrawOPS(data) {
   if (!data) {
     return path;
   }
-  for (let i = 0, ii = data.length; i < ii; ) {
+  for (let i = 0, ii = data.length; i < ii;) {
     switch (data[i++]) {
       case DrawOPS.moveTo:
         path.moveTo(data[i++], data[i++]);

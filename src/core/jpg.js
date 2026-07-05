@@ -1046,7 +1046,7 @@ class JpegImage {
         case 0xffc4: // DHT (Define Huffman Tables)
           const huffmanLength = view.getUint16(offset);
           offset += 2;
-          for (i = 2; i < huffmanLength; ) {
+          for (i = 2; i < huffmanLength;) {
             const huffmanTableSpec = data[offset++];
             const codeLengths = new Uint8Array(16);
             let codeLengthSum = 0;
@@ -1272,7 +1272,7 @@ class JpegImage {
     }
 
     if (transform) {
-      for (i = 0; i < dataLength; ) {
+      for (i = 0; i < dataLength;) {
         for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
           data[i] = ((data[i] * transform[k]) >> 8) + transform[k + 1];
         }

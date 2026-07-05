@@ -76,28 +76,24 @@ class SingleIntersector {
 
     if (this.#lastIntersectingQuadIndex >= 0) {
       const i = this.#lastIntersectingQuadIndex;
-      if (
-        !(
-          quadPoints[i] >= x ||
-          quadPoints[i + 2] <= x ||
-          quadPoints[i + 5] >= y ||
-          quadPoints[i + 1] <= y
-        )
-      ) {
+      if (!(
+        quadPoints[i] >= x ||
+        quadPoints[i + 2] <= x ||
+        quadPoints[i + 5] >= y ||
+        quadPoints[i + 1] <= y
+      )) {
         return true;
       }
       this.#lastIntersectingQuadIndex = -1;
     }
 
     for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
-      if (
-        !(
-          quadPoints[i] >= x ||
-          quadPoints[i + 2] <= x ||
-          quadPoints[i + 5] >= y ||
-          quadPoints[i + 1] <= y
-        )
-      ) {
+      if (!(
+        quadPoints[i] >= x ||
+        quadPoints[i + 2] <= x ||
+        quadPoints[i + 5] >= y ||
+        quadPoints[i + 1] <= y
+      )) {
         this.#lastIntersectingQuadIndex = i;
         return true;
       }

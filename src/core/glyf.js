@@ -610,24 +610,20 @@ class CompositeGlyph {
     size += 2;
     if (this.flags & 2) {
       // Arguments are signed.
-      if (
-        !(
-          this.argument1 >= -128 &&
-          this.argument1 <= 127 &&
-          this.argument2 >= -128 &&
-          this.argument2 <= 127
-        )
-      ) {
+      if (!(
+        this.argument1 >= -128 &&
+        this.argument1 <= 127 &&
+        this.argument2 >= -128 &&
+        this.argument2 <= 127
+      )) {
         size += 2;
       }
-    } else if (
-      !(
-        this.argument1 >= 0 &&
-        this.argument1 <= 255 &&
-        this.argument2 >= 0 &&
-        this.argument2 <= 255
-      )
-    ) {
+    } else if (!(
+      this.argument1 >= 0 &&
+      this.argument1 <= 255 &&
+      this.argument2 >= 0 &&
+      this.argument2 <= 255
+    )) {
       size += 2;
     }
 
@@ -639,24 +635,20 @@ class CompositeGlyph {
 
     if (this.flags & ARGS_ARE_XY_VALUES) {
       // Arguments are signed.
-      if (
-        !(
-          this.argument1 >= -128 &&
-          this.argument1 <= 127 &&
-          this.argument2 >= -128 &&
-          this.argument2 <= 127
-        )
-      ) {
+      if (!(
+        this.argument1 >= -128 &&
+        this.argument1 <= 127 &&
+        this.argument2 >= -128 &&
+        this.argument2 <= 127
+      )) {
         this.flags |= ARG_1_AND_2_ARE_WORDS;
       }
-    } else if (
-      !(
-        this.argument1 >= 0 &&
-        this.argument1 <= 255 &&
-        this.argument2 >= 0 &&
-        this.argument2 <= 255
-      )
-    ) {
+    } else if (!(
+      this.argument1 >= 0 &&
+      this.argument1 <= 255 &&
+      this.argument2 >= 0 &&
+      this.argument2 <= 255
+    )) {
       this.flags |= ARG_1_AND_2_ARE_WORDS;
     }
 

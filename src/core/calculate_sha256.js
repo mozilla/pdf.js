@@ -96,7 +96,7 @@ function calculateSHA256(data, offset, length) {
   const w = new Uint32Array(64);
   const { k } = PARAMS;
   // for each 512 bit block
-  for (i = 0; i < paddedLength; ) {
+  for (i = 0; i < paddedLength;) {
     for (j = 0; j < 16; ++j) {
       w[j] =
         (padded[i] << 24) |

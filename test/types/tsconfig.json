@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "outDir": "../../build/tmp",
+    "rootDir": ".",
     "sourceMap": true,
     "declaration": false,
     "moduleResolution": "bundler",

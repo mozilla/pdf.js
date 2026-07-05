@@ -119,7 +119,7 @@ async function drawInkLine(page, pageNumber) {
 async function waitForHavingContents(page, expected) {
   await page.evaluate(() => {
     // Make sure all the pages will be visible.
-    window.PDFViewerApplication.pdfViewer.scrollMode = 2 /* = ScrollMode.WRAPPED = */;
+    window.PDFViewerApplication.pdfViewer.scrollMode = 2; /* = ScrollMode.WRAPPED = */
     window.PDFViewerApplication.pdfViewer.updateScale({
       drawingDelay: 0,
       scaleFactor: 0.01,

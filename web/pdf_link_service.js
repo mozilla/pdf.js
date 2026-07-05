@@ -221,13 +221,11 @@ class PDFLinkService {
     const pageNumber =
       (typeof val === "string" && this.pdfViewer.pageLabelToPageNumber(val)) ||
       val | 0;
-    if (
-      !(
-        Number.isInteger(pageNumber) &&
-        pageNumber > 0 &&
-        pageNumber <= this.pagesCount
-      )
-    ) {
+    if (!(
+      Number.isInteger(pageNumber) &&
+      pageNumber > 0 &&
+      pageNumber <= this.pagesCount
+    )) {
       console.error(`PDFLinkService.goToPage: "${val}" is not a valid page.`);
       return;
     }
