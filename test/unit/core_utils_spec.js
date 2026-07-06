@@ -21,6 +21,7 @@ import {
   escapeString,
   getInheritableProperty,
   getModificationDate,
+  getRotationMatrix,
   getSizeInBytes,
   isWhiteSpace,
   numberToString,
@@ -563,6 +564,20 @@ describe("core_utils", function () {
       const date = new Date(Date.UTC(3141, 5, 9, 2, 6, 53));
       expect(getModificationDate(date)).toEqual("31410609020653");
       expect(getModificationDate(date.toString())).toEqual("31410609020653");
+    });
+  });
+
+  describe("getRotationMatrix", function () {
+    it("should get a rotation matrix for valid rotation values", function () {
+      expect(getRotationMatrix(90, 10, 20)).toEqual([0, 1, -1, 0, 10, 0]);
+      expect(getRotationMatrix(180, 10, 20)).toEqual([-1, 0, 0, -1, 10, 20]);
+      expect(getRotationMatrix(270, 10, 20)).toEqual([0, -1, 1, 0, 0, 20]);
+    });
+
+    it("throws an exception for invalid rotation values", function () {
+      expect(() => getRotationMatrix(42, 10, 20)).toThrow(
+        new Error("Invalid rotation")
+      );
     });
   });
 
