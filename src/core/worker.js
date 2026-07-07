@@ -915,11 +915,10 @@ class WorkerMessageHandler {
             pageIndex,
           })
           .then(
-            operatorListInfo => {
+            opListInfo => {
               if (start) {
                 info(
-                  `page=${pageIndex + 1} - getOperatorList: time=` +
-                    `${Date.now() - start}ms, len=${operatorListInfo.length}`
+                  `${task.name}; time=${Date.now() - start}ms, len=${opListInfo.length}`
                 );
               }
               sink.close();
@@ -959,10 +958,7 @@ class WorkerMessageHandler {
           .then(
             () => {
               if (start) {
-                info(
-                  `page=${pageIndex + 1} - getTextContent: time=` +
-                    `${Date.now() - start}ms`
-                );
+                info(`${task.name}; time=${Date.now() - start}ms`);
               }
               sink.close();
             },
