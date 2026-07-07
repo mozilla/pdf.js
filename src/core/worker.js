@@ -391,23 +391,22 @@ class WorkerMessageHandler {
         .then(pdfManagerReady, onFailure);
     }
 
-    handler.on("GetPage", function ({ pageIndex }) {
-      return pdfManager.getPage(pageIndex).then(function (page) {
-        return Promise.all([
-          pdfManager.ensure(page, "rotate"),
-          pdfManager.ensure(page, "ref"),
-          pdfManager.ensure(page, "userUnit"),
-          pdfManager.ensure(page, "view"),
-        ]).then(function ([rotate, ref, userUnit, view]) {
-          return {
-            rotate,
-            ref,
-            refStr: ref?.toString() ?? null,
-            userUnit,
-            view,
-          };
-        });
-      });
+    handler.on("GetPage", async function ({ pageIndex }) {
+      const page = await pdfManager.getPage(pageIndex);
+
+      const [rotate, ref, userUnit, view] = await Promise.all([
+        pdfManager.ensure(page, "rotate"),
+        pdfManager.ensure(page, "ref"),
+        pdfManager.ensure(page, "userUnit"),
+        pdfManager.ensure(page, "view"),
+      ]);
+      return {
+        rotate,
+        ref,
+        refStr: ref?.toString() ?? null,
+        userUnit,
+        view,
+      };
     });
 
     handler.on("GetPageIndex", function ({ num, gen }) {
@@ -472,10 +471,9 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("jsActions");
     });
 
-    handler.on("GetPageJSActions", function ({ pageIndex }) {
-      return pdfManager
-        .getPage(pageIndex)
-        .then(page => pdfManager.ensure(page, "jsActions"));
+    handler.on("GetPageJSActions", async function ({ pageIndex }) {
+      const page = await pdfManager.getPage(pageIndex);
+      return pdfManager.ensure(page, "jsActions");
     });
 
     handler.on(
@@ -550,25 +548,27 @@ class WorkerMessageHandler {
       return pdfManager.ensureCatalog("markInfo");
     });
 
-    handler.on("GetData", function () {
-      return pdfManager.requestLoadedStream().then(stream => stream.bytes);
+    handler.on("GetData", async function () {
+      const stream = await pdfManager.requestLoadedStream();
+      return stream.bytes;
     });
 
-    handler.on("GetAnnotations", function ({ pageIndex, intent }) {
-      return pdfManager.getPage(pageIndex).then(function (page) {
-        const task = new WorkerTask(`GetAnnotations: page ${pageIndex}`);
-        startWorkerTask(task);
+    handler.on("GetAnnotations", async function ({ pageIndex, intent }) {
+      const page = await pdfManager.getPage(pageIndex);
 
-        return page.getAnnotationsData(handler, task, intent).finally(() => {
-          finishWorkerTask(task);
-        });
-      });
+      const task = new WorkerTask(`GetAnnotations: page ${pageIndex}`);
+      startWorkerTask(task);
+
+      try {
+        return await page.getAnnotationsData(handler, task, intent);
+      } finally {
+        finishWorkerTask(task);
+      }
     });
 
-    handler.on("GetFieldObjects", function () {
-      return pdfManager
-        .ensureDoc("fieldObjects")
-        .then(fieldObjects => fieldObjects?.allFields || null);
+    handler.on("GetFieldObjects", async function () {
+      const fieldObjects = await pdfManager.ensureDoc("fieldObjects");
+      return fieldObjects?.allFields || null;
     });
 
     handler.on("GetSignatures", function () {
@@ -975,10 +975,9 @@ class WorkerMessageHandler {
       }
     );
 
-    handler.on("GetStructTree", function ({ pageIndex }) {
-      return pdfManager
-        .getPage(pageIndex)
-        .then(page => pdfManager.ensure(page, "getStructTree"));
+    handler.on("GetStructTree", async function ({ pageIndex }) {
+      const page = await pdfManager.getPage(pageIndex);
+      return pdfManager.ensure(page, "getStructTree");
     });
 
     handler.on("FontFallback", function ({ id }) {
@@ -1049,10 +1048,9 @@ class WorkerMessageHandler {
       handler.on("GetStartXRefPos", function () {
         return pdfManager.ensureDoc("startXRef");
       });
-      handler.on("GetAnnotArray", function ({ pageIndex }) {
-        return pdfManager
-          .getPage(pageIndex)
-          .then(page => page.annotations.map(a => a.toString()));
+      handler.on("GetAnnotArray", async function ({ pageIndex }) {
+        const page = await pdfManager.getPage(pageIndex);
+        return page.annotations.map(a => a.toString());
       });
       handler.on("GetWorkerCoverage", function () {
         return globalThis.__coverage__ ?? {};
