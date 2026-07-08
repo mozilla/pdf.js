@@ -378,11 +378,13 @@ class Toolbar {
 
     if (resetNumPages) {
       if (this.hasPageLabels) {
-        opts.pageNumber.type = "text";
+        opts.pageNumber.pattern = undefined;
+        opts.pageNumber.inputMode = undefined;
 
         opts.numPages.setAttribute("data-l10n-id", "pdfjs-page-of-pages");
       } else {
-        opts.pageNumber.type = "number";
+        opts.pageNumber.pattern = "\\d+";
+        opts.pageNumber.inputMode = "numeric";
 
         opts.numPages.setAttribute("data-l10n-id", "pdfjs-of-pages");
         opts.numPages.setAttribute(
