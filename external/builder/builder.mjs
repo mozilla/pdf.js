@@ -113,16 +113,9 @@ function preprocess(inFilename, outFilename, defines) {
     const realPath = fs.realpathSync(inFilename);
     const dir = path.dirname(realPath);
     try {
-      let fullpath;
-      if (file.indexOf("$ROOT/") === 0) {
-        fullpath = path.join(
-          __dirname,
-          "../..",
-          file.substring("$ROOT/".length)
-        );
-      } else {
-        fullpath = path.join(dir, file);
-      }
+      const fullpath = file.startsWith("$ROOT/")
+        ? path.join(__dirname, "../..", file.substring("$ROOT/".length))
+        : path.join(dir, file);
       preprocess(fullpath, writeLine, defines);
     } catch (e) {
       if (e.code === "ENOENT") {
