@@ -259,7 +259,7 @@ class DOMFilterFactory extends BaseFilterFactory {
     fgColor = Util.makeHexColor(...fgRGB);
     const bgRGB = this.#getRGB(bgColor);
     bgColor = Util.makeHexColor(...bgRGB);
-    this.#defs.style.color = "";
+    this.#resetDefsColor();
 
     if (
       (fgColor === "#000000" && bgColor === "#ffffff") ||
@@ -507,7 +507,7 @@ class DOMFilterFactory extends BaseFilterFactory {
         newFgRGB,
       ];
     }
-    this.#defs.style.color = "";
+    this.#resetDefsColor();
 
     // Now we can create the filters to highlight some canvas parts.
     // The colors in the pdf will almost be Canvas and CanvasText, hence we
@@ -635,13 +635,8 @@ class DOMFilterFactory extends BaseFilterFactory {
     this.#appendFeFunc(feComponentTransfer, "feFuncA", aTable);
   }
 
-  #getRGB(color) {
-    this.#defs.style.color = color;
-    return getRGB(getComputedStyle(this.#defs).getPropertyValue("color"));
-  }
-
   /**
-   * Get the RGBA channels of a color.
+   * Get the RGB channels of a color.
    *
    * @param {string} color
    *   Color in any valid CSS format (such as `x` in `color: x`).
@@ -650,9 +645,31 @@ class DOMFilterFactory extends BaseFilterFactory {
    *   the RGB channels are in the range `[0, 255]`;
    *   the alpha channel is in the range `[0, 1]`.
    */
+  #getRGB(color) {
+    // Some colors on some OSes (e.g. HighlightText in Firefox on macOS)
+    // are affected by the current text color. Ensure consistent behavior by
+    // setting it to CanvasText.
+    this.#defs.style.color = "CanvasText";
+    this.#defs.style.backgroundColor = color;
+    return getRGB(
+      getComputedStyle(this.#defs).getPropertyValue("background-color")
+    );
+  }
+
   #getRGBA(color) {
-    this.#defs.style.color = color;
-    return getRGBA(getComputedStyle(this.#defs).getPropertyValue("color"));
+    // Some colors on some OSes (e.g. HighlightText in Firefox on macOS)
+    // are affected by the current text color. Ensure consistent behavior by
+    // setting it to CanvasText.
+    this.#defs.style.color = "CanvasText";
+    this.#defs.style.backgroundColor = color;
+    return getRGBA(
+      getComputedStyle(this.#defs).getPropertyValue("background-color")
+    );
+  }
+
+  #resetDefsColor() {
+    this.#defs.style.color = "";
+    this.#defs.style.backgroundColor = "";
   }
 
   /**
