@@ -2079,9 +2079,18 @@ class PDFWorker {
           : "./pdf.worker.mjs";
       }
 
-      // Check if URLs have the same origin. For non-HTTP based URLs, returns
-      // false.
-      this._isSameOrigin = (baseUrl, otherUrl) => {
+      // Check if URL has the same origin as the document of the window given.
+      // For about:blank, window parent or opener is used to determine the origin.
+      // For non-HTTP based URLs, returns false.
+      this._isSameOrigin = (wnd, otherUrl) => {
+        const baseUrl = wnd.location.href;
+        if (baseUrl === "about:blank") {
+          if (window.parent) {
+            return this._isSameOrigin(window.parent, otherUrl);
+          } else if (window.opener) {
+            return this._isSameOrigin(window.opener, otherUrl);
+          }
+        }
         const base = URL.parse(baseUrl);
         if (!base?.origin || base.origin === "null") {
           return false; // non-HTTP url
@@ -2202,7 +2211,7 @@ class PDFWorker {
       if (
         typeof PDFJSDev !== "undefined" &&
         PDFJSDev.test("GENERIC") &&
-        !PDFWorker._isSameOrigin(window.location, workerSrc)
+        !PDFWorker._isSameOrigin(window, workerSrc)
       ) {
         workerSrc = PDFWorker._createCDNWrapper(
           new URL(workerSrc, window.location).href
