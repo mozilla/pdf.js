@@ -153,6 +153,7 @@ pdfjs-document-properties-linearized = Rychlé zobrazování z webu:
 pdfjs-document-properties-linearized-yes = Ano
 pdfjs-document-properties-linearized-no = Ne
 pdfjs-document-properties-close-button = Zavřít
+pdfjs-digital-signature-properties-view-certificate = Zobrazit certifikát
 
 ## Print
 
@@ -747,6 +748,18 @@ pdfjs-new-badge-content = NOVÉ
 pdfjs-views-manager-waiting-for-file = Nahrávání souboru…
 pdfjs-toggle-views-manager-button1 =
     .title = Spravovat strany
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-unknown = Certifikát: nedostupný
+pdfjs-digital-signature-properties-certificate-untrusted = Certifikát: nedůvěryhodný
+pdfjs-digital-signature-properties-certificate-expired = Certifikát: vypršel
+pdfjs-digital-signature-properties-certificate-revoked = Certifikát: zneplatněn
 
 ## Main menu for adding/removing signatures
 

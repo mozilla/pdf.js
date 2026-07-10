@@ -153,6 +153,23 @@ pdfjs-document-properties-linearized = 快速 Web 檢視：
 pdfjs-document-properties-linearized-yes = 是
 pdfjs-document-properties-linearized-no = 否
 pdfjs-document-properties-close-button = 關閉
+pdfjs-digital-signature-properties-view-certificate = 檢視憑證
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = 原因：{ $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = 時間戳記：{ DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures = 子簽章（{ $count }）
 
 ## Print
 
@@ -699,6 +716,54 @@ pdfjs-new-badge-content = 新功能
 pdfjs-views-manager-waiting-for-file = 正在上傳檔案…
 pdfjs-toggle-views-manager-button1 =
     .title = 管理頁面
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = 數位簽章屬性
+    .aria-label = 數位簽章屬性
+pdfjs-digital-signature-properties-button-label = 數位簽章屬性
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = 文件使用有效的數位簽章進行簽署
+pdfjs-digital-signature-properties-banner-unknown = 文件已進行簽署，但無法驗證當中的 { $count } 筆數位簽章
+pdfjs-digital-signature-properties-banner-untrusted = 文件已進行簽署，但當中的 { $count } 筆數位簽章不受信任
+pdfjs-digital-signature-properties-banner-expired = 文件已進行簽署，但當中的 { $count } 筆數位簽章已過期
+pdfjs-digital-signature-properties-banner-invalid = 文件中有 { $count } 筆無效的數位簽章
+pdfjs-digital-signature-properties-banner-revoked = 文件已進行簽署，但當中的 { $count } 筆數位簽章已廢止
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = 狀態：已驗證簽章
+pdfjs-digital-signature-properties-status-invalid = 狀態：簽章無效
+pdfjs-digital-signature-properties-status-unknown = 狀態：無法驗證（不支援）
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = 憑證：受信任（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-unknown = 憑證：無法使用
+pdfjs-digital-signature-properties-certificate-untrusted = 憑證：未受信任
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = 憑證：未知的簽發者（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = 憑證：自行簽署（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = 憑證：未受信任的簽發者（{ $issuer }）
+pdfjs-digital-signature-properties-certificate-expired = 憑證：已過期
+pdfjs-digital-signature-properties-certificate-expired-with-date = 憑證：已過期（{ DATETIME($dateObj, dateStyle: "medium") }）
+pdfjs-digital-signature-properties-certificate-revoked = 憑證：已廢止
 
 ## Main menu for adding/removing signatures
 

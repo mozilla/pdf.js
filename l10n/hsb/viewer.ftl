@@ -153,6 +153,29 @@ pdfjs-document-properties-linearized = Fast Web View:
 pdfjs-document-properties-linearized-yes = Haj
 pdfjs-document-properties-linearized-no = Ně
 pdfjs-document-properties-close-button = Začinić
+pdfjs-digital-signature-properties-view-certificate = Certifikat pokazać
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Přičina: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Časowy kołk: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] { $count } podsignatura
+        [two] { $count } podsignaturje
+        [few] { $count } podsignatury
+       *[other] { $count } podsignaturow
+    }
 
 ## Print
 
@@ -747,6 +770,84 @@ pdfjs-new-badge-content = NOWY
 pdfjs-views-manager-waiting-for-file = Dataja so nahrawa…
 pdfjs-toggle-views-manager-button1 =
     .title = Strony rjadować
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = Kajkosće digitalneje signatury
+    .aria-label = Kajkosće digitalneje signatury
+pdfjs-digital-signature-properties-button-label = Kajkosće digitalneje signatury
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Dokument je so z płaćiwej digitalnej signaturu signował
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Dokument je so signował, ale { $count } digitalna signatura njeda so wobkrućić
+        [two] Dokument je so signował, ale { $count } digitalnej signaturje njedatej so wobkrućić
+        [few] Dokument je so signował, ale { $count } digitalne signatury njedachu so wobkrućić
+       *[other] Dokument je so signował, ale { $count } digitalnych signaturow njeda so wobkrućić
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Dokument je z { $count } certifikatom signowany, kotryž dowěry hódny njeje
+        [two] Dokument je z { $count } certifikatomaj signowany, kotrejž dowěry hódnej njejstej
+        [few] Dokument je z { $count } certifikatami signowany, kotrež dowěry hódne njejsu
+       *[other] Dokument je z { $count } certifikatami signowany, kotrež dowěry hódne njejsu
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Dokument je z { $count } spadnjenym certifikatom signowany
+        [two] Dokument je z { $count } spadnjenymaj certifikatomaj signowany
+        [few] Dokument je z { $count } spadnjenymi certifikatami signowany
+       *[other] Dokument je z { $count } spadnjenymi certifikatami signowany
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Dokument ma { $count } njepłaćiwu digitalnu signaturu
+        [two] Dokument ma { $count } njepłaćiwej digitalnej signaturje
+        [few] Dokument ma { $count } njepłaćiwe digitalne signatury
+       *[other] Dokument ma { $count } njepłaćiwych digitalnych signaturow
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Dokument je z { $count } wotwołanym certifikatom signowany
+        [two] Dokument je z { $count } wotwołanymaj certifikatomaj signowany
+        [few] Dokument je z { $count } wotwołanymi certifikatami signowany
+       *[other] Dokument je z { $count } wotwołanymi certifikatami signowany
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Status: Signatura je wobkrućena
+pdfjs-digital-signature-properties-status-invalid = Status: Signatura je njepłaćiwa
+pdfjs-digital-signature-properties-status-unknown = Status: Njeda so wobkrućić (njepodpěruje so)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Certifikat: Dowěry hódny ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Certifikat: Nic k dispoziciji
+pdfjs-digital-signature-properties-certificate-untrusted = Certifikat: Dowěry njehódny
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certifikat: Njeznaty wudawar ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certifikat: Samsignowany ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certifikat: Dowěry njehódny wudawar ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Certifikat: Spadnjeny
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certifikat: Spadnjeny ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Certifikat: Wotwołany
 
 ## Main menu for adding/removing signatures
 

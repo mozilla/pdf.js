@@ -153,6 +153,14 @@ pdfjs-document-properties-linearized = Gyors webes nézet:
 pdfjs-document-properties-linearized-yes = Igen
 pdfjs-document-properties-linearized-no = Nem
 pdfjs-document-properties-close-button = Bezárás
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Részaláírás ({ $count })
+       *[other] Részaláírások ({ $count })
+    }
 
 ## Print
 
@@ -731,6 +739,13 @@ pdfjs-new-badge-content = ÚJ
 pdfjs-views-manager-waiting-for-file = Fájl feltöltése…
 pdfjs-toggle-views-manager-button1 =
     .title = Oldalak kezelése
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = Digitális aláírás tulajdonságai
+    .aria-label = Digitális aláírás tulajdonságai
+pdfjs-digital-signature-properties-button-label = Digitális aláírás tulajdonságai
 
 ## Main menu for adding/removing signatures
 

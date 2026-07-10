@@ -153,6 +153,23 @@ pdfjs-document-properties-linearized = 빠른 웹 보기:
 pdfjs-document-properties-linearized-yes = 예
 pdfjs-document-properties-linearized-no = 아니요
 pdfjs-document-properties-close-button = 닫기
+pdfjs-digital-signature-properties-view-certificate = 인증서 보기
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = 이유: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = 타임스탬프: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures = 하위 서명 ({ $count }개)
 
 ## Print
 
@@ -699,6 +716,54 @@ pdfjs-new-badge-content = 신규
 pdfjs-views-manager-waiting-for-file = 파일 업로드 중…
 pdfjs-toggle-views-manager-button1 =
     .title = 페이지 관리
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = 디지털 서명 속성
+    .aria-label = 디지털 서명 속성
+pdfjs-digital-signature-properties-button-label = 디지털 서명 속성
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = 유효한 디지털 서명으로 문서에 서명되었습니다
+pdfjs-digital-signature-properties-banner-unknown = 문서에 서명되었지만 { $count }개의 디지털 서명을 확인할 수 없음
+pdfjs-digital-signature-properties-banner-untrusted = 신뢰할 수 없는 { $count }개의 인증서로 서명된 문서
+pdfjs-digital-signature-properties-banner-expired = { $count }개의 만료된 인증서로 서명된 문서
+pdfjs-digital-signature-properties-banner-invalid = 문서에 잘못된 { $count }개의 디지털 서명이 있음
+pdfjs-digital-signature-properties-banner-revoked = 폐기된 인증서 { $count }개로 서명된 문서
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = 상태: 서명 확인됨
+pdfjs-digital-signature-properties-status-invalid = 상태: 유효하지 않은 서명
+pdfjs-digital-signature-properties-status-unknown = 상태: 확인할 수 없음 (지원되지 않음)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = 인증서: 신뢰할 수 있음 ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = 인증서: 사용할 수 없음
+pdfjs-digital-signature-properties-certificate-untrusted = 인증서: 신뢰할 수 없음
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = 인증서: 알 수 없는 발급자 ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = 인증서: 자체 서명 ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = 인증서: 신뢰할 수 없는 발급자 ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = 인증서: 만료됨
+pdfjs-digital-signature-properties-certificate-expired-with-date = 인증서: 만료됨 ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = 인증서: 폐기됨
 
 ## Main menu for adding/removing signatures
 
