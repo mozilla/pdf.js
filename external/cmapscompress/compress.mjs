@@ -386,7 +386,7 @@ function writeNumber(n) {
     if (buffer > 0) {
       s = writeByte((buffer & 0x7f) | (s.length > 0 ? 0x80 : 0)) + s;
     }
-    while (s.indexOf("80") === 0) {
+    while (s.startsWith("80")) {
       s = s.substring(2);
     }
     return s;
