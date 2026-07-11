@@ -20,8 +20,82 @@ import {
   getUuid,
   stringToBytes,
 } from "../../src/shared/util.js";
+import { installReadableStreamAsyncIterator } from "../../src/shared/readable_stream_polyfill.js";
 
 describe("util", function () {
+  describe("installReadableStreamAsyncIterator", function () {
+    class FakeReadableStream {
+      constructor(chunks) {
+        this.chunks = chunks;
+        this.cancelCount = 0;
+        this.releaseLockCount = 0;
+      }
+
+      getReader() {
+        return {
+          cancel: async () => {
+            this.cancelCount++;
+          },
+          read: async () =>
+            this.chunks.length > 0
+              ? { done: false, value: this.chunks.shift() }
+              : { done: true, value: undefined },
+          releaseLock: () => {
+            this.releaseLockCount++;
+          },
+        };
+      }
+    }
+
+    beforeAll(function () {
+      installReadableStreamAsyncIterator(FakeReadableStream);
+    });
+
+    it("installs the missing iterator methods", function () {
+      expect(typeof FakeReadableStream.prototype.values).toEqual("function");
+      expect(FakeReadableStream.prototype[Symbol.asyncIterator]).toBe(
+        FakeReadableStream.prototype.values
+      );
+    });
+
+    it("releases the reader after normal completion", async function () {
+      const stream = new FakeReadableStream([1, 2]);
+      const values = [];
+
+      for await (const value of stream) {
+        values.push(value);
+      }
+
+      expect(values).toEqual([1, 2]);
+      expect(stream.cancelCount).toEqual(0);
+      expect(stream.releaseLockCount).toEqual(1);
+    });
+
+    it("cancels and releases the reader after early exit", async function () {
+      const stream = new FakeReadableStream([1, 2]);
+
+      for await (const value of stream) {
+        expect(value).toEqual(1);
+        break;
+      }
+
+      expect(stream.cancelCount).toEqual(1);
+      expect(stream.releaseLockCount).toEqual(1);
+    });
+
+    it("does not cancel after early exit when requested", async function () {
+      const stream = new FakeReadableStream([1, 2]);
+
+      for await (const value of stream.values({ preventCancel: true })) {
+        expect(value).toEqual(1);
+        break;
+      }
+
+      expect(stream.cancelCount).toEqual(0);
+      expect(stream.releaseLockCount).toEqual(1);
+    });
+  });
+
   describe("BaseException", function () {
     it("can initialize exception classes derived from BaseException", function () {
       class DerivedException extends BaseException {
