@@ -4061,6 +4061,63 @@ Paragraph 1.1 ...................................................... 3
 page 1 / 3`);
     });
 
+    it("gets text content from all stream chunks", async function () {
+      const reader = {
+        read: jasmine.createSpy().and.returnValues(
+          Promise.resolve({
+            value: {
+              items: [{ str: "first" }],
+              styles: { font1: { fontFamily: "serif" } },
+              lang: null,
+            },
+            done: false,
+          }),
+          Promise.resolve({
+            value: {
+              items: [{ str: "second" }],
+              styles: { font2: { fontFamily: "sans-serif" } },
+              lang: "en",
+            },
+            done: false,
+          }),
+          Promise.resolve({ value: undefined, done: true })
+        ),
+        releaseLock: jasmine.createSpy(),
+      };
+      spyOn(page, "streamTextContent").and.returnValue({
+        getReader() {
+          return reader;
+        },
+      });
+
+      const { items, styles, lang } = await page.getTextContent();
+
+      expect(items).toEqual([{ str: "first" }, { str: "second" }]);
+      expect(styles).toEqual({
+        font1: { fontFamily: "serif" },
+        font2: { fontFamily: "sans-serif" },
+      });
+      expect(lang).toEqual("en");
+      expect(reader.read).toHaveBeenCalledTimes(3);
+      expect(reader.releaseLock).toHaveBeenCalledTimes(1);
+    });
+
+    it("releases the text content stream reader after an error", async function () {
+      const reason = new Error("text content stream failed");
+      const reader = {
+        read: jasmine.createSpy().and.rejectWith(reason),
+        releaseLock: jasmine.createSpy(),
+      };
+      spyOn(page, "streamTextContent").and.returnValue({
+        getReader() {
+          return reader;
+        },
+      });
+
+      await expectAsync(page.getTextContent()).toBeRejectedWith(reason);
+      expect(reader.releaseLock).toHaveBeenCalledTimes(1);
+    });
+
     it("gets text content, with correct properties (issue 8276)", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("issue8276_reduced.pdf")

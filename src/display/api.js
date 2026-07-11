@@ -1766,10 +1766,19 @@ class PDFPageProxy {
       lang: null,
     };
 
-    for await (const value of readableStream) {
-      textContent.lang ??= value.lang;
-      Object.assign(textContent.styles, value.styles);
-      textContent.items.push(...value.items);
+    const reader = readableStream.getReader();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) {
+          break;
+        }
+        textContent.lang ??= value.lang;
+        Object.assign(textContent.styles, value.styles);
+        textContent.items.push(...value.items);
+      }
+    } finally {
+      reader.releaseLock();
     }
     return textContent;
   }
