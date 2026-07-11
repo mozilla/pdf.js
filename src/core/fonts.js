@@ -1525,9 +1525,9 @@ class Font {
         }
         const [nameTable] = readNameTable(potentialTables.name);
 
-        for (let j = 0, jj = nameTable.length; j < jj; j++) {
-          for (let k = 0, kk = nameTable[j].length; k < kk; k++) {
-            const nameEntry = nameTable[j][k]?.replaceAll(/\s/g, "");
+        for (const nameArr of nameTable) {
+          for (const entry of nameArr) {
+            const nameEntry = entry?.replaceAll(/\s/g, "");
             if (!nameEntry) {
               continue;
             }

@@ -3517,10 +3517,10 @@ class InkAnnotationElement extends AnnotationElement {
     g.setAttribute("fill", "transparent");
     g.setAttribute("transform", transform);
 
-    for (let i = 0, ii = inkLists.length; i < ii; i++) {
+    for (const inkList of inkLists) {
       const polyline = this.svgFactory.createElement(this.svgElementName);
       this.#polylines.push(polyline);
-      polyline.setAttribute("points", inkLists[i].join(","));
+      polyline.setAttribute("points", inkList.join(","));
       g.append(polyline);
     }
 

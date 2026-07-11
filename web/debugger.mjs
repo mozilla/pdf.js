@@ -517,8 +517,7 @@ class Stepper {
       return 0;
     });
 
-    for (let i = 0; i < operatorsGroupsByZindex.length; i++) {
-      const group = operatorsGroupsByZindex[i];
+    for (const group of operatorsGroupsByZindex) {
       if (group.minX !== null) {
         const el = this.#c("div");
         el.style.left = `${group.minX * 100}%`;

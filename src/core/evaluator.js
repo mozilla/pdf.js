@@ -3273,9 +3273,7 @@ class PartialEvaluator {
 
             const spaceFactor =
               ((textState.font.vertical ? 1 : -1) * textState.fontSize) / 1000;
-            const elements = args[0];
-            for (let i = 0, ii = elements.length; i < ii; i++) {
-              const item = elements[i];
+            for (const item of args[0]) {
               if (typeof item === "string") {
                 showSpacedTextBuffer.push(item);
               } else if (typeof item === "number" && item !== 0) {
