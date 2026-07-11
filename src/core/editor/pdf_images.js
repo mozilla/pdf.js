@@ -200,8 +200,7 @@ async function createImage(bitmap, xref, { closeBitmap = false } = {}) {
   const colorCounter = new Set();
   let hasAlpha = false;
   let useFlate = true;
-  for (let i = 0, ii = buf32.length; i < ii; i++) {
-    const v = buf32[i];
+  for (const v of buf32) {
     if ((isLE ? v >>> 24 : v & 0xff) !== 0xff) {
       hasAlpha = true;
       break;

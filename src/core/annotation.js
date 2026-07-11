@@ -4792,19 +4792,19 @@ class InkAnnotation extends MarkupAnnotation {
     if (!Array.isArray(rawInkLists)) {
       return;
     }
-    for (let i = 0, ii = rawInkLists.length; i < ii; ++i) {
+    for (const rawInkList of rawInkLists) {
       // The raw ink lists array contains arrays of numbers representing
       // the alternating horizontal and vertical coordinates, respectively,
       // of each vertex. Convert this to an array of objects with x and y
       // coordinates.
-      if (!Array.isArray(rawInkLists[i])) {
+      if (!Array.isArray(rawInkList)) {
         continue;
       }
-      const inkList = new Float32Array(rawInkLists[i].length);
+      const inkList = new Float32Array(rawInkList.length);
       this.data.inkLists.push(inkList);
-      for (let j = 0, jj = rawInkLists[i].length; j < jj; j += 2) {
-        const x = xref.fetchIfRef(rawInkLists[i][j]),
-          y = xref.fetchIfRef(rawInkLists[i][j + 1]);
+      for (let j = 0, jj = rawInkList.length; j < jj; j += 2) {
+        const x = xref.fetchIfRef(rawInkList[j]),
+          y = xref.fetchIfRef(rawInkList[j + 1]);
         if (typeof x === "number" && typeof y === "number") {
           inkList[j] = x;
           inkList[j + 1] = y;
