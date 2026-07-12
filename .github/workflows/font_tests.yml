@@ -8,6 +8,7 @@ on:
       - 'src/**'
       - 'test/test.mjs'
       - 'test/font/**'
+      - '.github/font_tests_requirements.txt'
       - '.github/workflows/font_tests.yml'
     branches:
       - master
@@ -19,6 +20,7 @@ on:
       - 'src/**'
       - 'test/test.mjs'
       - 'test/font/**'
+      - '.github/font_tests_requirements.txt'
       - '.github/workflows/font_tests.yml'
     branches:
       - master
