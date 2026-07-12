@@ -4,6 +4,7 @@ on:
     paths:
       - 'gulpfile.mjs'
       - 'external/**'
+      - 'package-lock.json'
       - 'src/**'
       - 'test/test.mjs'
       - 'test/font/**'
@@ -14,6 +15,7 @@ on:
     paths:
       - 'gulpfile.mjs'
       - 'external/**'
+      - 'package-lock.json'
       - 'src/**'
       - 'test/test.mjs'
       - 'test/font/**'

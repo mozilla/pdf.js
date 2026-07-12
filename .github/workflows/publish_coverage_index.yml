@@ -12,6 +12,7 @@ on:
     paths:
       - 'gulpfile.mjs'
       - 'external/**'
+      - 'package-lock.json'
       - 'src/**'
       - 'test/images/**'
       - 'test/pdfs/**'
