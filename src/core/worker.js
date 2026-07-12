@@ -664,14 +664,14 @@ class WorkerMessageHandler {
           const pdfEditor = new PDFEditor();
           task = new WorkerTask(`ExtractPages: ${pageInfos.length} page(s)`);
           startWorkerTask(task);
-          const buffer = await pdfEditor.extractPages(
+
+          return await pdfEditor.extractPages(
             pageInfos,
             annotationStorage,
             pdfManager.pdfDocument,
             handler,
             task
           );
-          return buffer;
         } catch (reason) {
           warn(`extractPages: "${reason}".`);
           return null;
