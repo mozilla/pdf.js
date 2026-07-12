@@ -42,8 +42,30 @@ class PredictorStream extends DecodeStream {
     const bits = (this.bits = params.get("BPC", "BitsPerComponent") || 8);
     const columns = (this.columns = params.get("Columns") || 1);
 
-    this.pixBytes = (colors * bits + 7) >> 3;
-    this.rowBytes = (columns * colors * bits + 7) >> 3;
+    // The existing `|| fallback` above only guards against zero/falsy values;
+    // negative or non-integer values (e.g. `/Colors -1`) pass through, and a
+    // very large `Columns` overflows the `>> 3` arithmetic below (which coerces
+    // to a signed int32), yielding a negative or zero row length. Both produce
+    // silently corrupted output instead of an error, so reject them up front.
+    if (
+      !Number.isInteger(colors) ||
+      colors < 1 ||
+      !Number.isInteger(bits) ||
+      bits < 1 ||
+      bits > 16 ||
+      !Number.isInteger(columns) ||
+      columns < 1
+    ) {
+      throw new FormatError(
+        `Invalid predictor parameters: Colors=${colors}, ` +
+          `BitsPerComponent=${bits}, Columns=${columns}`
+      );
+    }
+
+    // Use `Math.ceil(.../ 8)` rather than `(... + 7) >> 3` so the byte counts
+    // are not truncated to a signed int32 for large `columns` values.
+    this.pixBytes = Math.ceil((colors * bits) / 8);
+    this.rowBytes = Math.ceil((columns * colors * bits) / 8);
 
     return this;
   }

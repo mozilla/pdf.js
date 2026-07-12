@@ -74,5 +74,28 @@ describe("stream", function () {
       }
       expect(decoded).toEqual(expected);
     });
+
+    it("should reject invalid predictor parameters", function () {
+      const makeStream = (key, value) => {
+        const dict = new Dict();
+        dict.set("Predictor", 12);
+        dict.set("Colors", 1);
+        dict.set("BitsPerComponent", 8);
+        dict.set("Columns", 2);
+        dict.set(key, value);
+
+        const input = new Stream(new Uint8Array([0, 0, 0]), 0, 3, dict);
+        return () => new PredictorStream(input, /* length = */ 3, dict);
+      };
+
+      // Negative values slip past the `|| fallback` because they are truthy.
+      expect(makeStream("Colors", -1)).toThrowError(/Invalid predictor/);
+      expect(makeStream("BitsPerComponent", -8)).toThrowError(
+        /Invalid predictor/
+      );
+      // A large `Columns` used to overflow `(... + 7) >> 3` to a negative
+      // row length; it must now be handled without truncation.
+      expect(makeStream("Columns", 2147483647)).not.toThrow();
+    });
   });
 });
