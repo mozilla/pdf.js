@@ -319,10 +319,7 @@ class AnnotationFactory {
       const pageRef = annotDict.getRaw("P");
       if (pageRef instanceof Ref) {
         try {
-          const pageIndex = await pdfManager.ensureCatalog("getPageIndex", [
-            pageRef,
-          ]);
-          return pageIndex;
+          return await pdfManager.ensureCatalog("getPageIndex", [pageRef]);
         } catch (ex) {
           info(`_getPageIndex -- not a valid page reference: "${ex}".`);
         }
