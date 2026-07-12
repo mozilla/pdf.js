@@ -1165,28 +1165,48 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
     Object.defineProperty(ReadableStream.prototype, "values", {
       configurable: true,
       writable: true,
-      async *value({ preventCancel = false } = {}) {
+      value({ preventCancel = false } = {}) {
         const reader = this.getReader();
-        let completed = false;
+        let finished = false;
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) {
-              completed = true;
-              return;
+        return {
+          async next() {
+            if (finished) {
+              return { value: undefined, done: true };
             }
-            yield value;
-          }
-        } finally {
-          try {
-            if (!completed && !preventCancel) {
-              await reader.cancel();
+
+            try {
+              const result = await reader.read();
+              if (result.done) {
+                finished = true;
+                reader.releaseLock();
+              }
+              return result;
+            } catch (reason) {
+              finished = true;
+              reader.releaseLock();
+              throw reason;
             }
-          } finally {
-            reader.releaseLock();
-          }
-        }
+          },
+
+          async return(value) {
+            if (!finished) {
+              finished = true;
+              if (!preventCancel) {
+                const cancelPromise = reader.cancel(value);
+                reader.releaseLock();
+                await cancelPromise;
+              } else {
+                reader.releaseLock();
+              }
+            }
+            return { value, done: true };
+          },
+
+          [Symbol.asyncIterator]() {
+            return this;
+          },
+        };
       },
     });
   }
