@@ -1168,39 +1168,52 @@ if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
       value({ preventCancel = false } = {}) {
         const reader = this.getReader();
         let finished = false;
+        let ongoingPromise = null;
 
         return {
-          async next() {
-            if (finished) {
-              return { value: undefined, done: true };
-            }
+          next() {
+            const nextSteps = async () => {
+              if (finished) {
+                return { value: undefined, done: true };
+              }
 
-            try {
-              const result = await reader.read();
-              if (result.done) {
+              try {
+                const result = await reader.read();
+                if (result.done) {
+                  finished = true;
+                  reader.releaseLock();
+                }
+                return result;
+              } catch (reason) {
                 finished = true;
                 reader.releaseLock();
+                throw reason;
               }
-              return result;
-            } catch (reason) {
-              finished = true;
-              reader.releaseLock();
-              throw reason;
-            }
+            };
+            ongoingPromise = ongoingPromise
+              ? ongoingPromise.then(nextSteps, nextSteps)
+              : nextSteps();
+            return ongoingPromise;
           },
 
-          async return(value) {
-            if (!finished) {
-              finished = true;
-              if (!preventCancel) {
-                const cancelPromise = reader.cancel(value);
-                reader.releaseLock();
-                await cancelPromise;
-              } else {
-                reader.releaseLock();
+          return(value) {
+            const returnSteps = async () => {
+              if (!finished) {
+                finished = true;
+                if (!preventCancel) {
+                  const cancelPromise = reader.cancel(value);
+                  reader.releaseLock();
+                  await cancelPromise;
+                } else {
+                  reader.releaseLock();
+                }
               }
-            }
-            return { value, done: true };
+              return { value, done: true };
+            };
+            ongoingPromise = ongoingPromise
+              ? ongoingPromise.then(returnSteps, returnSteps)
+              : returnSteps();
+            return ongoingPromise;
           },
 
           [Symbol.asyncIterator]() {
