@@ -14,8 +14,6 @@
  */
 /* globals process */
 
-import { installReadableStreamAsyncIterator } from "./readable_stream_polyfill.js";
-
 // NW.js / Electron is a browser context, but copies some Node.js objects; see
 // http://docs.nwjs.io/en/latest/For%20Users/Advanced/JavaScript%20Contexts%20in%20NW.js/#access-nodejs-and-nwjs-api-in-browser-context
 // https://www.electronjs.org/docs/api/process#processversionselectron-readonly
@@ -1160,13 +1158,45 @@ if (
   };
 }
 
-// See https://github.com/mozilla/pdf.js/issues/21557
-if (
-  typeof PDFJSDev !== "undefined" &&
-  !PDFJSDev.test("SKIP_BABEL") &&
-  typeof ReadableStream !== "undefined"
-) {
-  installReadableStreamAsyncIterator(ReadableStream);
+// Safari 18 through 26.3 lack async iteration support for `ReadableStream`;
+// see https://github.com/mozilla/pdf.js/issues/20973.
+if (typeof PDFJSDev !== "undefined" && !PDFJSDev.test("SKIP_BABEL")) {
+  if (typeof ReadableStream.prototype.values !== "function") {
+    Object.defineProperty(ReadableStream.prototype, "values", {
+      configurable: true,
+      writable: true,
+      async *value({ preventCancel = false } = {}) {
+        const reader = this.getReader();
+        let completed = false;
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) {
+              completed = true;
+              return;
+            }
+            yield value;
+          }
+        } finally {
+          try {
+            if (!completed && !preventCancel) {
+              await reader.cancel();
+            }
+          } finally {
+            reader.releaseLock();
+          }
+        }
+      },
+    });
+  }
+  if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
+    Object.defineProperty(ReadableStream.prototype, Symbol.asyncIterator, {
+      configurable: true,
+      writable: true,
+      value: ReadableStream.prototype.values,
+    });
+  }
 }
 
 export {
