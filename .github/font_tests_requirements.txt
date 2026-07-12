@@ -1,1 +1,3 @@
-fonttools==4.*
+# The requirements below can be regenerated with the following one-liner:
+# `python3 -m venv venv; source venv/bin/activate; pip install -q fonttools; pip freeze; deactivate; rm -rf venv`
+fonttools==4.63.0
