@@ -1,1 +1,7 @@
-moz-fluent-linter==0.4.*
+# The requirements below can be regenerated with the following one-liner:
+# `python3 -m venv venv; source venv/bin/activate; pip install -q moz-fluent-linter; pip freeze; deactivate; rm -rf venv`
+fluent.syntax==0.19.0
+moz-fluent-linter==0.4.10
+PyYAML==6.0.3
+six==1.17.0
+typing_extensions==4.16.0

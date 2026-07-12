@@ -4,6 +4,7 @@ on:
     paths:
       - 'l10n/en-US/**.ftl'
       - '.github/fluent_linter_config.yml'
+      - '.github/fluent_linter_requirements.txt'
       - '.github/workflows/fluent_linter.yml'
     branches:
       - master
@@ -11,6 +12,7 @@ on:
     paths:
       - 'l10n/en-US/**.ftl'
       - '.github/fluent_linter_config.yml'
+      - '.github/fluent_linter_requirements.txt'
       - '.github/workflows/fluent_linter.yml'
     branches:
       - master
