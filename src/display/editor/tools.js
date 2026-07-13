@@ -748,6 +748,8 @@ class AnnotationEditorUIManager {
 
   #savedAllLayers = null;
 
+  #savedEditorsByPage = null;
+
   #altTextManager = null;
 
   #annotationStorage = null;
@@ -1913,7 +1915,7 @@ class AnnotationEditorUIManager {
   }
 
   updatePageIndex(oldPageIndex, newPageIndex) {
-    for (const editor of this.getEditors(oldPageIndex)) {
+    for (const editor of this.#savedEditorsByPage.get(oldPageIndex) || []) {
       editor.pageIndex = newPageIndex;
     }
     const layer = this.#savedAllLayers.get(oldPageIndex);
@@ -1931,10 +1933,32 @@ class AnnotationEditorUIManager {
   startUpdatePages() {
     this.#savedAllLayers = new Map(this.#allLayers);
     this.#allLayers.clear();
+
+    const savedEditorsByPage = (this.#savedEditorsByPage = new Map());
+    const saveEditor = editor => {
+      savedEditorsByPage
+        .getOrInsertComputed(editor.pageIndex, makeArr)
+        .push(editor);
+    };
+    for (const editor of this.#allEditors.values()) {
+      saveEditor(editor);
+    }
+    // Clones are initially kept serialized until their editor layer is
+    // rendered, hence they're not present in #allEditors yet.
+    for (const [id, editor] of this.#annotationStorage) {
+      if (
+        id.startsWith(AnnotationEditorPrefix) &&
+        !this.#allEditors.has(id) &&
+        Number.isInteger(editor?.pageIndex)
+      ) {
+        saveEditor(editor);
+      }
+    }
   }
 
   endUpdatePages() {
     this.#savedAllLayers = null;
+    this.#savedEditorsByPage = null;
   }
 
   clonePage(pageIndex, newPageIndex) {

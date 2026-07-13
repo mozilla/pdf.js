@@ -2563,7 +2563,7 @@ const PDFViewerApplication = {
     this.pdfViewer.onPagesEdited(data);
   },
 
-  async onSavePages({ data: extractParams }) {
+  async onSavePages({ data: { pageInfos, copyLevels } }) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       return;
     }
@@ -2573,7 +2573,10 @@ const PDFViewerApplication = {
     if (!this.pdfDocument) {
       return;
     }
-    const modifiedPdfBytes = await this.pdfDocument.extractPages(extractParams);
+    const modifiedPdfBytes = await this.pdfDocument.extractPages(
+      pageInfos,
+      copyLevels
+    );
     if (!modifiedPdfBytes) {
       console.error(
         "Something wrong happened when saving the edited PDF.\nPlease file a bug."
@@ -2587,11 +2590,14 @@ const PDFViewerApplication = {
     );
   },
 
-  async onSaveAndLoad({ data: extractParams }) {
+  async onSaveAndLoad({ data: { pageInfos, copyLevels } }) {
     if (!this.pdfDocument) {
       return;
     }
-    const modifiedPdfBytes = await this.pdfDocument.extractPages(extractParams);
+    const modifiedPdfBytes = await this.pdfDocument.extractPages(
+      pageInfos,
+      copyLevels
+    );
     if (!modifiedPdfBytes) {
       console.error(
         "Something wrong happened when saving the edited PDF.\nPlease file a bug."
