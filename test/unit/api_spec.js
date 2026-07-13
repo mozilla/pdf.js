@@ -7629,6 +7629,34 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("preserves indirect AcroForm default resources", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx /T (field) " +
+            "/Rect [0 0 20 10] >>\nendobj\n",
+          "5 0 obj\n<< /Font << /Helv 7 0 R >> >>\nendobj\n",
+          "6 0 obj\n<< /Fields [4 0 R] /DR 5 0 R " +
+            "/DA (/Helv 10 Tf) >>\nendobj\n",
+          "7 0 obj\n<< /Type /Font /Subtype /Type1 " +
+            "/BaseFont /Helvetica >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data: pdfData });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        expect(countMarker(data, "/DR ")).toEqual(1);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(Object.keys(await pdfDoc.getFieldObjects())).toEqual(["field"]);
+        await loadingTask.destroy();
+      });
+
       it("extract page 2 and check AcroForm Fields T entries", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("form_two_pages.pdf")
