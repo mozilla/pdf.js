@@ -1388,6 +1388,7 @@ const PDFViewerApplication = {
       }
       return;
     }
+    this.pdfViewer._layerProperties.annotationEditorUIManager?.endCurrentEditing();
 
     // In the Firefox case, this method MUST always trigger a download.
     // When the user is closing a modified and unsaved document, we display a
