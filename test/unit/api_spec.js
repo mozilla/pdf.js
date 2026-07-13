@@ -7468,6 +7468,39 @@ small scripts as well as for`);
     });
 
     describe("AcroForm", function () {
+      const buildTextFieldPdf = (
+        fieldName,
+        fontKey = "Helv",
+        baseFont = "Helvetica"
+      ) => {
+        const appearance = `BT /${fontKey} 10 Tf (x) Tj ET`;
+        return assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Resources << >> /Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx " +
+            `/T (${fieldName}) /Rect [0 0 20 10] /AP << /N 5 0 R >> >>\nendobj\n`,
+          `5 0 obj\n<< /Subtype /Form /BBox [0 0 20 10] /Resources 7 0 R ` +
+            `/Length ${appearance.length} >>\n` +
+            `stream\n${appearance}\nendstream\nendobj\n`,
+          `6 0 obj\n<< /Fields [4 0 R] /DR << /Font << ` +
+            `/${fontKey} 8 0 R >> >> /DA (/${fontKey} 10 Tf) >>\nendobj\n`,
+          "7 0 obj\n<< >>\nendobj\n",
+          `8 0 obj\n<< /Type /Font /Subtype /Type1 ` +
+            `/BaseFont /${baseFont} >>\nendobj\n`,
+        ]);
+      };
+
+      const getAppearanceFontName = async (pdfDoc, pageNumber) => {
+        const page = await pdfDoc.getPage(pageNumber);
+        const operatorList = await page.getOperatorList({
+          annotationMode: AnnotationMode.ENABLE,
+        });
+        const fontIndex = operatorList.fnArray.indexOf(OPS.setFont);
+        return fontIndex < 0 ? null : operatorList.argsArray[fontIndex][0];
+      };
+
       it("extract page 2 and check AcroForm Fields T entries", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("form_two_pages.pdf")
@@ -7622,6 +7655,116 @@ small scripts as well as for`);
         const newPdfDoc = await newLoadingTask.promise;
         expect(newPdfDoc.numPages).toEqual(2);
         await newLoadingTask.destroy();
+      });
+
+      it("merges appearance resources from conflicting AcroForms", async function () {
+        let loadingTask = getDocument({
+          data: buildTextFieldPdf("first", "F1", "Helvetica"),
+        });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: buildTextFieldPdf("second", "F2", "Courier") },
+        ]);
+        expect(data).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(2);
+        expect(
+          Object.keys((await pdfDoc.getFieldObjects()) ?? {}).sort()
+        ).toEqual(["first", "second"]);
+        for (const pageNumber of [1, 2]) {
+          const fontName = await getAppearanceFontName(pdfDoc, pageNumber);
+          expect(fontName).not.toBeNull();
+          expect(fontName).not.toEqual("g_font_error");
+        }
+        await loadingTask.destroy();
+      });
+
+      it("replaces invalid appearance resources with default resources", async function () {
+        const appearance = "BT /Cour 10 Tf (x) Tj ET";
+        const broken = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Resources << >> /Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx /T (broken) " +
+            "/Rect [0 0 20 10] /AP << /N 5 0 R >> >>\nendobj\n",
+          "5 0 obj\n<< /Subtype /Form /BBox [0 0 20 10] " +
+            `/Resources /Nope /Length ${appearance.length} >>\n` +
+            `stream\n${appearance}\nendstream\nendobj\n`,
+          "6 0 obj\n<< /Fields [4 0 R] /DR << /Font << /Cour 7 0 R >> >> " +
+            "/DA (/Cour 10 Tf) >>\nendobj\n",
+          "7 0 obj\n<< /Type /Font /Subtype /Type1 " +
+            "/BaseFont /Courier >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data: buildTextFieldPdf("main") });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: broken },
+        ]);
+        expect(data).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(2);
+        expect(
+          Object.keys((await pdfDoc.getFieldObjects()) ?? {}).sort()
+        ).toEqual(["broken", "main"]);
+        const fontName = await getAppearanceFontName(pdfDoc, 2);
+        expect(fontName).not.toBeNull();
+        expect(fontName).not.toEqual("g_font_error");
+        await loadingTask.destroy();
+      });
+
+      it("merges default resources into checkbox appearance streams", async function () {
+        const on = "/Tx BMC q BT /ZaDb 12 Tf (4) Tj ET Q EMC";
+        const withCheckbox = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 7 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Resources << >> /Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Btn /T (check) " +
+            "/Rect [0 0 20 20] /AS /On " +
+            "/AP << /N << /On 5 0 R /Off 6 0 R >> >> >>\nendobj\n",
+          `5 0 obj\n<< /Subtype /Form /BBox [0 0 20 20] /Resources 8 0 R ` +
+            `/Length ${on.length} >>\nstream\n${on}\nendstream\nendobj\n`,
+          "6 0 obj\n<< /Subtype /Form /BBox [0 0 20 20] /Resources 8 0 R " +
+            "/Length 1 >>\nstream\n \nendstream\nendobj\n",
+          "7 0 obj\n<< /Fields [4 0 R] /DR << " +
+            "/Font << /ZaDb 9 0 R >> " +
+            "/ColorSpace << /CsDefault /DeviceRGB >> >> " +
+            "/DA (/ZaDb 0 Tf) >>\nendobj\n",
+          "8 0 obj\n<< >>\nendobj\n",
+          "9 0 obj\n<< /Type /Font /Subtype /Type1 " +
+            "/BaseFont /ZapfDingbats >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data: buildTextFieldPdf("main") });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: withCheckbox },
+        ]);
+        expect(data).not.toBeNull();
+        expect(countMarker(data, "/CsDefault")).toEqual(1);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(2);
+        expect(
+          Object.keys((await pdfDoc.getFieldObjects()) ?? {}).sort()
+        ).toEqual(["check", "main"]);
+        const fontName = await getAppearanceFontName(pdfDoc, 2);
+        expect(fontName).not.toBeNull();
+        expect(fontName).not.toEqual("g_font_error");
+        await loadingTask.destroy();
       });
     });
 
