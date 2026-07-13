@@ -997,13 +997,6 @@ class PDFEditor {
       // async.
       this.oldPages[newPageIndex] = null;
     };
-    // Image entries don't carry document identity, so ignore them when
-    // deciding whether we're operating on a single source PDF.
-    const docPageInfos = pageInfos.filter(info => !!info.document);
-    this.isSingleFile =
-      docPageInfos.length === 1 ||
-      (docPageInfos.length > 0 &&
-        docPageInfos.every(info => info.document === docPageInfos[0].document));
     const allDocumentData = [];
 
     if (annotationStorage) {
@@ -1099,7 +1092,11 @@ class PDFEditor {
       }
     }
     await Promise.all(promises);
+    if (this.oldPages.length === 0) {
+      throw new Error("extractPages: nothing to extract.");
+    }
     const copyCounts = new Map();
+    const documents = new Set();
     for (let i = 0, ii = this.oldPages.length; i < ii; i++) {
       const pageData = this.oldPages[i];
       if (pageData === undefined) {
@@ -1110,8 +1107,10 @@ class PDFEditor {
         const copyLevel = copyCounts.get(page) ?? 0;
         copyCounts.set(page, copyLevel + 1);
         pageData.copyLevel = copyLevel;
+        documents.add(pageData.documentData.document);
       }
     }
+    this.isSingleFile = documents.size === 1;
     promises.length = 0;
 
     this.#collectValidDestinations(allDocumentData);
