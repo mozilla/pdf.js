@@ -103,25 +103,7 @@ describe("api", function () {
     return count;
   }
 
-  function buildSharedImageResourcePdf() {
-    const streamObject = (num, dict, data) =>
-      `${num} 0 obj\n<< ${dict} /Length ${data.length} >>\n` +
-      `stream\n${data}\nendstream\nendobj\n`;
-    const objects = [
-      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] " +
-        "/Resources << /XObject << /Im0 4 0 R /Im1 4 0 R >> >> " +
-        "/Contents 5 0 R >>\nendobj\n",
-      streamObject(
-        4,
-        "/Type /XObject /Subtype /Image /Width 1 /Height 1 " +
-          "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode",
-        "FF0000>"
-      ),
-      streamObject(5, "", "q 10 0 0 10 0 0 cm /Im0 Do Q"),
-    ];
-
+  function assemblePdf(objects) {
     let pdf = "%PDF-1.7\n";
     const offsets = [];
     for (const obj of objects) {
@@ -138,6 +120,26 @@ describe("api", function () {
       `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n` +
       `startxref\n${xrefOffset}\n%%EOF\n`;
     return stringToBytes(pdf);
+  }
+
+  function buildSharedImageResourcePdf() {
+    const streamObject = (num, dict, data) =>
+      `${num} 0 obj\n<< ${dict} /Length ${data.length} >>\n` +
+      `stream\n${data}\nendstream\nendobj\n`;
+    return assemblePdf([
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] " +
+        "/Resources << /XObject << /Im0 4 0 R /Im1 4 0 R >> >> " +
+        "/Contents 5 0 R >>\nendobj\n",
+      streamObject(
+        4,
+        "/Type /XObject /Subtype /Image /Width 1 /Height 1 " +
+          "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode",
+        "FF0000>"
+      ),
+      streamObject(5, "", "q 10 0 0 10 0 0 cm /Im0 Do Q"),
+    ]);
   }
 
   function getNamedNodeInXML(node, path) {
@@ -6404,23 +6406,7 @@ small scripts as well as for`);
           "5 0 obj\n<< /Type /Annot /Subtype /Link /Rect [10 0 20 10] " +
             "/A << /S /GoToR /F (other.pdf) /D (target) >> >>\nendobj\n",
         ];
-        let pdfData = "%PDF-1.7\n";
-        const offsets = [];
-        for (const object of objects) {
-          offsets.push(pdfData.length);
-          pdfData += object;
-        }
-        const xrefOffset = pdfData.length;
-        pdfData += `xref\n0 ${objects.length + 1}\n`;
-        pdfData += "0000000000 65535 f \n";
-        for (const offset of offsets) {
-          pdfData += `${offset.toString().padStart(10, "0")} 00000 n \n`;
-        }
-        pdfData +=
-          `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n` +
-          `startxref\n${xrefOffset}\n%%EOF\n`;
-
-        let loadingTask = getDocument({ data: stringToBytes(pdfData) });
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
         let pdfDoc = await loadingTask.promise;
         const data = await pdfDoc.extractPages([{ document: null }]);
         await loadingTask.destroy();
@@ -6432,6 +6418,33 @@ small scripts as well as for`);
         expect(annotations[0].dest).toEqual("foo");
         expect(annotations[1].unsafeUrl).toEqual("other.pdf#target");
         expect(Object.keys(await pdfDoc.getDestinations())).toEqual(["foo"]);
+        await loadingTask.destroy();
+      });
+
+      it("preserves Unicode destination names", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/Names << /Dests 4 0 R >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Annots [5 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Names [<FEFF540D> [3 0 R /Fit]] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] " +
+            "/Dest <FEFF540D> >>\nendobj\n",
+        ];
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        expect(Object.keys(await pdfDoc.getDestinations()))
+          .withContext("before extraction")
+          .toEqual(["名"]);
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(Object.keys(await pdfDoc.getDestinations()))
+          .withContext("after extraction")
+          .toEqual(["名"]);
         await loadingTask.destroy();
       });
 
@@ -7246,6 +7259,31 @@ small scripts as well as for`);
         const dedupedContent = await pdfDoc.getAttachmentContent("foo.txt_1");
         expect(dedupedContent).toEqual(expectedContent);
 
+        await loadingTask.destroy();
+      });
+
+      it("preserves Unicode EmbeddedFiles (attachments) names when deduplicating", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/Names << /EmbeddedFiles 4 0 R >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+          "4 0 obj\n<< /Names [<FEFF540D> 5 0 R] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Filespec /F (file) /UF <FEFF540D> >>\nendobj\n",
+        ];
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: null },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const attachments = await pdfDoc.getAttachments();
+        expect(Array.from(attachments.keys()).sort()).toEqual(["名", "名_1"]);
         await loadingTask.destroy();
       });
     });

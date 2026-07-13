@@ -2652,7 +2652,15 @@ class PDFEditor {
   #makeNameNumTree(map, areNames) {
     const allEntries = map.sort(
       areNames
-        ? ([keyA], [keyB]) => keyA.localeCompare(keyB)
+        ? ([keyA], [keyB]) => {
+            if (keyA < keyB) {
+              return -1;
+            }
+            if (keyA > keyB) {
+              return 1;
+            }
+            return 0;
+          }
         : ([keyA], [keyB]) => keyA - keyB
     );
     const maxLeaves =
@@ -2729,7 +2737,7 @@ class PDFEditor {
             /* keepEscapeSequence = */ true
           );
           for (let i = 1; ; i++) {
-            const deduped = `${displayName}_${i}`;
+            const deduped = stringToAsciiOrUTF16BE(`${displayName}_${i}`);
             if (!embeddedFiles.has(deduped)) {
               name = deduped;
               break;
@@ -2775,7 +2783,10 @@ class PDFEditor {
     this.namesDict.set(
       "Dests",
       this.#makeNameNumTree(
-        Array.from(namedDestinations.entries()),
+        Array.from(namedDestinations, ([name, dest]) => [
+          stringToAsciiOrUTF16BE(name),
+          dest,
+        ]),
         /* areNames = */ true
       )
     );
