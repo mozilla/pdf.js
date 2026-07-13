@@ -17,6 +17,7 @@ import {
   AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
+  bytesToString,
   DrawOPS,
   ImageKind,
   InvalidPDFException,
@@ -6715,6 +6716,88 @@ small scripts as well as for`);
         expect(tree.children.length).toEqual(1);
         expect(tree.children[0].role).toEqual("Span");
         expect(tree.children[0].children[0].type).toEqual("content");
+        await loadingTask.destroy();
+      });
+
+      it("preserves OBJR structure children", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/StructTreeRoot 4 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+            "/MediaBox [0 0 100 100] /Annots [8 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /StructTreeRoot /K [5 0 R] " +
+            "/ParentTree 7 0 R /ParentTreeNextKey 2 >>\nendobj\n",
+          "5 0 obj\n<< /Type /StructElem /S /Document /P 4 0 R " +
+            "/K 6 0 R >>\nendobj\n",
+          "6 0 obj\n<< /Type /StructElem /S /Link /P 5 0 R /Pg 3 0 R " +
+            "/K 9 0 R >>\nendobj\n",
+          "7 0 obj\n<< /Nums [0 [6 0 R] 1 6 0 R] >>\nendobj\n",
+          "8 0 obj\n<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] " +
+            "/StructParent 1 >>\nendobj\n",
+          "9 0 obj\n<< /Type /OBJR /Obj 8 0 R /Pg 3 0 R >>\nendobj\n",
+        ];
+
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        let page = await pdfDoc.getPage(1);
+        let tree = await page.getStructTree();
+        expect(tree.children[0].children[0].children[0].type).toEqual(
+          "annotation"
+        );
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        page = await pdfDoc.getPage(1);
+        tree = await page.getStructTree();
+        expect(tree.children.length).toEqual(1);
+        expect(tree.children[0].role).toEqual("Document");
+        expect(tree.children[0].children[0].role).toEqual("Link");
+        expect(tree.children[0].children[0].children[0].type).toEqual(
+          "annotation"
+        );
+        await loadingTask.destroy();
+      });
+
+      it("doesn't resurrect removed pages referenced through an OBJR", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/StructTreeRoot 4 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R 10 0 R] " +
+            "/Count 2 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+            "/MediaBox [0 0 100 100] /Annots [8 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /StructTreeRoot /K [5 0 R] " +
+            "/ParentTree 7 0 R /ParentTreeNextKey 2 >>\nendobj\n",
+          "5 0 obj\n<< /Type /StructElem /S /Document /P 4 0 R " +
+            "/K 6 0 R >>\nendobj\n",
+          "6 0 obj\n<< /Type /StructElem /S /Link /P 5 0 R /Pg 3 0 R " +
+            "/K 9 0 R >>\nendobj\n",
+          "7 0 obj\n<< /Nums [0 [6 0 R] 1 6 0 R] >>\nendobj\n",
+          "8 0 obj\n<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] " +
+            "/StructParent 1 /A << /S /GoTo /D [10 0 R /Fit] >> >>\nendobj\n",
+          "9 0 obj\n<< /Type /OBJR /Obj 8 0 R /Pg 3 0 R >>\nendobj\n",
+          "10 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+        ];
+
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        expect(data).toBeInstanceOf(Uint8Array);
+        const output = bytesToString(data);
+        const pageObjects = output.match(/\/Type\s*\/Page(?![A-Za-z])/g) || [];
+        expect(pageObjects.length).toEqual(1);
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
         await loadingTask.destroy();
       });
 
