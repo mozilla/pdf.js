@@ -1222,6 +1222,13 @@ class PDFEditor {
             return;
           }
           const action = annotationDict.get("A");
+          if (action instanceof Dict && !isName(action.get("S"), "GoTo")) {
+            // Only GoTo actions point to pages in the current document. Other
+            // actions, such as GoToR, must not be filtered using the current
+            // document's page map.
+            newAnnotations[newAnnotationIndex] = annotationRef;
+            return;
+          }
           const dest =
             action instanceof Dict
               ? action.get("D")
@@ -1233,9 +1240,9 @@ class PDFEditor {
           ) {
             // Keep the annotation as is: it isn't linking to a deleted page.
             newAnnotations[newAnnotationIndex] = annotationRef;
-          } else if (typeof dest === "string") {
+          } else if (dest instanceof Name || typeof dest === "string") {
             const destString = stringToPDFString(
-              dest,
+              dest instanceof Name ? dest.name : dest,
               /* keepEscapeSequence = */ true
             );
             if (destinations.has(destString)) {

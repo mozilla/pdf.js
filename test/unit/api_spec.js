@@ -6392,6 +6392,49 @@ small scripts as well as for`);
     });
 
     describe("Named destinations", function () {
+      it("preserves name destinations and remote actions", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/Dests << /foo [3 0 R /Fit] >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Annots [4 0 R 5 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] " +
+            "/Dest /foo >>\nendobj\n",
+          "5 0 obj\n<< /Type /Annot /Subtype /Link /Rect [10 0 20 10] " +
+            "/A << /S /GoToR /F (other.pdf) /D (target) >> >>\nendobj\n",
+        ];
+        let pdfData = "%PDF-1.7\n";
+        const offsets = [];
+        for (const object of objects) {
+          offsets.push(pdfData.length);
+          pdfData += object;
+        }
+        const xrefOffset = pdfData.length;
+        pdfData += `xref\n0 ${objects.length + 1}\n`;
+        pdfData += "0000000000 65535 f \n";
+        for (const offset of offsets) {
+          pdfData += `${offset.toString().padStart(10, "0")} 00000 n \n`;
+        }
+        pdfData +=
+          `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n` +
+          `startxref\n${xrefOffset}\n%%EOF\n`;
+
+        let loadingTask = getDocument({ data: stringToBytes(pdfData) });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations.length).toEqual(2);
+        expect(annotations[0].dest).toEqual("foo");
+        expect(annotations[1].unsafeUrl).toEqual("other.pdf#target");
+        expect(Object.keys(await pdfDoc.getDestinations())).toEqual(["foo"]);
+        await loadingTask.destroy();
+      });
+
       it("keeps colliding deduplicated destination names unique", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("named_dest_collision_for_editor.pdf")
