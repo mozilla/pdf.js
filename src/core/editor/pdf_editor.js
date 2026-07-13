@@ -263,7 +263,7 @@ class PDFEditor {
   ) {
     if (obj instanceof Ref) {
       const {
-        currentDocument: { oldRefMapping },
+        currentDocument: { fieldToParent, oldRefMapping },
       } = this;
       const existingRef = oldRefMapping.get(obj);
       if (existingRef) {
@@ -299,9 +299,17 @@ class PDFEditor {
         }
       }
 
+      let cloneSource = true;
+      if (fieldToParent.has(oldRef) && obj instanceof Dict) {
+        // Avoid following a widget's field hierarchy while cloning the page,
+        // without mutating the source dictionary cached by its XRef.
+        obj = this.cloneDict(obj);
+        obj.delete("Parent");
+        cloneSource = false;
+      }
       this.xref[newRef.num] = await this.#collectDependencies(
         obj,
-        true,
+        cloneSource,
         xref,
         resourceStreamPath
       );
@@ -1223,11 +1231,8 @@ class PDFEditor {
                 "Sig"
               );
               const parentRef = annotationDict.getRaw("Parent") || null;
-              // We remove the parent to avoid visiting it when cloning the
-              // annotation.
-              // It'll be fixed later in #mergeAcroForms when merging the
-              // AcroForms.
-              annotationDict.delete("Parent");
+              // The parent will be omitted from the annotation clone to avoid
+              // visiting it, then restored by #mergeAcroForms.
               fieldToParent.put(annotationRef, parentRef);
             }
 
