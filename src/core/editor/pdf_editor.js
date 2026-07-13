@@ -620,10 +620,15 @@ class PDFEditor {
         if (!kidRef) {
           continue;
         }
-        const newKidRef = oldRefMapping.get(kidRef);
-        if (!newKidRef) {
+        // Only keep the reference when its target was actually copied. A link
+        // annotation targeting a removed page is dropped, so skip its OBJR.
+        const oldObjRef = kid.getRaw("Obj");
+        if (oldObjRef instanceof Ref && !oldRefMapping.get(oldObjRef)) {
           continue;
         }
+        const newKidRef =
+          oldRefMapping.get(kidRef) ||
+          (await this.#collectDependencies(kidRef, true, xref));
         const newKid = this.xref[newKidRef.num];
         // Fix the missing StructParent entry in the referenced object.
         const objRef = newKid.getRaw("Obj");
