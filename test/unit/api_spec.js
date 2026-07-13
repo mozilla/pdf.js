@@ -7501,6 +7501,32 @@ small scripts as well as for`);
         return fontIndex < 0 ? null : operatorList.argsArray[fontIndex][0];
       };
 
+      it("rebuilds a missing AcroForm Fields array", async function () {
+        const data = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 20 10] " +
+            "/Parent 5 0 R >>\nendobj\n",
+          "5 0 obj\n<< /FT /Tx /T (group) /Kids [4 0 R] >>\nendobj\n",
+          "6 0 obj\n<< /DA (/Helv 10 Tf) >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data });
+        let pdfDoc = await loadingTask.promise;
+        const extracted = await pdfDoc.extractPages([{ document: null }]);
+        expect(extracted).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data: extracted });
+        pdfDoc = await loadingTask.promise;
+        expect(Object.keys(await pdfDoc.getFieldObjects())).toEqual(["group"]);
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations[0].fieldName).toEqual("group");
+        await loadingTask.destroy();
+      });
+
       it("extract page 2 and check AcroForm Fields T entries", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("form_two_pages.pdf")
