@@ -18,6 +18,7 @@ import {
   clearEditors,
   closePages,
   countStorageEntries,
+  createPromise,
   dragAndDrop,
   getAnnotationSelector,
   getEditors,
@@ -26,6 +27,7 @@ import {
   getSerialized,
   isCanvasMonochrome,
   kbRedo,
+  kbSave,
   kbUndo,
   loadAndWait,
   moveEditor,
@@ -41,6 +43,7 @@ import {
   waitForStorageEntries,
   waitForTimeout,
 } from "./test_utils.mjs";
+import { AnnotationEditorType } from "../../src/shared/util.js";
 
 const selectAll = selectEditors.bind(null, "ink");
 
@@ -1344,6 +1347,62 @@ describe("Ink must committed when leaving the tab", () => {
 
         const countAfter = await countStorageEntries(page);
         expect(countAfter).withContext(`In ${browserName}`).toEqual(1);
+      })
+    );
+  });
+});
+
+describe("Ink must be committed when the document is saved", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that an in-progress drawing is committed and saved", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+
+        const x = rect.x + 20;
+        const y = rect.y + 20;
+        await drawLine(page, x, y, x + 50, y + 50);
+
+        // The drawing session is still open, hence nothing has been committed
+        // to the annotation storage yet.
+        const count = await countStorageEntries(page);
+        expect(count).withContext(`In ${browserName}`).toEqual(0);
+
+        // `saveDocument` is only called when the annotation storage isn't
+        // empty. If the in-progress drawing weren't committed first, then
+        // `downloadOrSave` would take the "download" path and `saveDocument`
+        // would never run.
+        const saveDocumentCalled = await createPromise(page, resolve => {
+          window.PDFViewerApplication.pdfDocument.saveDocument = () =>
+            resolve();
+        });
+
+        // Save the document with the keyboard shortcut (Ctrl/Cmd+S).
+        await kbSave(page);
+
+        // The in-progress drawing must have been committed to the storage...
+        await waitForStorageEntries(page, 1);
+
+        // ...as an ink annotation...
+        const serialized = await getSerialized(page);
+        expect(serialized.length).withContext(`In ${browserName}`).toEqual(1);
+        expect(serialized[0].annotationType)
+          .withContext(`In ${browserName}`)
+          .toEqual(AnnotationEditorType.INK);
+
+        // ...and the document must have been saved (and not merely downloaded).
+        await awaitPromise(saveDocumentCalled);
       })
     );
   });
