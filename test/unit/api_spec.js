@@ -6622,6 +6622,102 @@ small scripts as well as for`);
     });
 
     describe("Struct trees", function () {
+      it("preserves an indirect StructTreeRoot kid", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/StructTreeRoot 4 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+          "4 0 obj\n<< /Type /StructTreeRoot /K 5 0 R " +
+            "/ParentTree 6 0 R /ParentTreeNextKey 1 >>\nendobj\n",
+          "5 0 obj\n<< /Type /StructElem /S /P /P 4 0 R /Pg 3 0 R " +
+            "/K 0 >>\nendobj\n",
+          "6 0 obj\n<< /Nums [0 [5 0 R]] >>\nendobj\n",
+        ];
+
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        let page = await pdfDoc.getPage(1);
+        expect((await page.getStructTree()).children[0].role).toEqual("P");
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        page = await pdfDoc.getPage(1);
+        const tree = await page.getStructTree();
+        expect(tree.children.length).toEqual(1);
+        expect(tree.children[0].role).toEqual("P");
+        expect(tree.children[0].children[0].type).toEqual("content");
+        await loadingTask.destroy();
+      });
+
+      it("extracts pages when the StructTreeRoot /K is dangling", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/StructTreeRoot 4 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+          "4 0 obj\n<< /Type /StructTreeRoot /K 99 0 R >>\nendobj\n",
+        ];
+
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        expect(data).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+        const page = await pdfDoc.getPage(1);
+        expect((await page.getStructTree())?.children.length ?? 0).toEqual(0);
+        await loadingTask.destroy();
+      });
+
+      it("preserves a root Link when its annotation is removed", async function () {
+        const objects = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/StructTreeRoot 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] " +
+            "/Count 2 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+            "/Annots [5 0 R] /MediaBox [0 0 100 100] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Annot /Subtype /Link /Rect [0 0 10 10] " +
+            "/StructParent 1 /Dest [4 0 R /Fit] >>\nendobj\n",
+          "6 0 obj\n<< /Type /StructTreeRoot /K 7 0 R " +
+            "/ParentTree 8 0 R /ParentTreeNextKey 2 >>\nendobj\n",
+          "7 0 obj\n<< /Type /StructElem /S /Link /P 6 0 R /Pg 3 0 R " +
+            "/K 0 >>\nendobj\n",
+          "8 0 obj\n<< /Nums [0 [7 0 R] 1 7 0 R] >>\nendobj\n",
+        ];
+
+        let loadingTask = getDocument({ data: assemblePdf(objects) });
+        let pdfDoc = await loadingTask.promise;
+        let page = await pdfDoc.getPage(1);
+        expect((await page.getStructTree()).children[0].role).toEqual("Link");
+
+        const data = await pdfDoc.extractPages([
+          { document: null, excludePages: [1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+        page = await pdfDoc.getPage(1);
+        expect((await page.getAnnotations()).length).toEqual(0);
+        const tree = await page.getStructTree();
+        expect(tree.children.length).toEqual(1);
+        expect(tree.children[0].role).toEqual("Span");
+        expect(tree.children[0].children[0].type).toEqual("content");
+        await loadingTask.destroy();
+      });
+
       it("extract pages and merge struct trees", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("two_paragraphs.pdf")
