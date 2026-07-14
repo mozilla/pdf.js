@@ -16,9 +16,27 @@
 class GlobalWorkerOptions {
   static #port = null;
 
+  static #rendererSrc = "";
+
   static #src = "";
 
-  static #rendererSrc = "";
+  /**
+   * @type {string}
+   */
+  static get rendererSrc() {
+    return this.#rendererSrc;
+  }
+
+  /**
+   * @param {string} rendererSrc - A string containing the path and
+   *   filename of the renderer worker file.
+   */
+  static set rendererSrc(val) {
+    if (typeof val !== "string") {
+      throw new Error("Invalid `rendererSrc` type.");
+    }
+    this.#rendererSrc = val;
+  }
 
   /**
    * @type {Worker | null}
@@ -60,24 +78,6 @@ class GlobalWorkerOptions {
       throw new Error("Invalid `workerSrc` type.");
     }
     this.#src = val;
-  }
-
-  /**
-   * @type {string}
-   */
-  static get rendererSrc() {
-    return this.#rendererSrc;
-  }
-
-  /**
-   * @param {string} rendererSrc - A string containing the path and
-   *   filename of the renderer worker file.
-   */
-  static set rendererSrc(val) {
-    if (typeof val !== "string") {
-      throw new Error("Invalid `rendererSrc` type.");
-    }
-    this.#rendererSrc = val;
   }
 }
 
