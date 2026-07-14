@@ -3719,7 +3719,7 @@ class InternalRenderTask {
     // `.filter` values set from a data URL. See bug 2011237.
     let useWorkerRendering =
       this.rendererHandler &&
-      this._canvasContext === null &&
+      !this.params.canvasContext &&
       !hasCanvasFilters &&
       !this.pageColors &&
       !this._recordForDebugger;
