@@ -2117,7 +2117,7 @@ class RendererWorker {
 
   #messageHandler = null;
 
-  #worker = null;
+  #webWorker = null;
 
   constructor({ name = null, verbosity = getVerbosityLevel() } = {}) {
     this.name = name;
@@ -2173,20 +2173,6 @@ class RendererWorker {
       }
       const worker = new Worker(rendererSrc, { type: "module" });
       const messageHandler = new MessageHandler("main", "renderer", worker);
-
-      messageHandler.on("ready", () => {
-        ac.abort();
-        if (this.destroyed) {
-          terminateEarly("Worker was destroyed.");
-          return;
-        }
-        try {
-          sendTest();
-        } catch (reason) {
-          terminateEarly(reason);
-        }
-      });
-
       const terminateEarly = reason => {
         ac.abort();
         messageHandler.destroy();
@@ -2203,7 +2189,7 @@ class RendererWorker {
       worker.addEventListener(
         "error",
         event => {
-          if (!this.#worker) {
+          if (!this.#webWorker) {
             // Worker failed to initialize due to an error.
             terminateEarly(event.error || event.message);
           }
@@ -2218,9 +2204,22 @@ class RendererWorker {
           return;
         }
         this.#messageHandler = messageHandler;
-        this.#worker = worker;
+        this.#webWorker = worker;
 
         this.#resolve();
+      });
+
+      messageHandler.on("ready", data => {
+        ac.abort();
+        if (this.destroyed) {
+          terminateEarly("Worker was destroyed.");
+          return;
+        }
+        try {
+          sendTest();
+        } catch (reason) {
+          terminateEarly(reason);
+        }
       });
 
       const sendTest = () => {
@@ -2245,8 +2244,8 @@ class RendererWorker {
     this.destroyed = true;
 
     // We need to terminate only web worker created resource.
-    this.#worker?.terminate();
-    this.#worker = null;
+    this.#webWorker?.terminate();
+    this.#webWorker = null;
 
     this.#messageHandler?.destroy();
     this.#messageHandler = null;
