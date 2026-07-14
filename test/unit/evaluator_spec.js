@@ -17,6 +17,7 @@ import { createIdFactory, XRefMock } from "./test_utils.js";
 import { Dict, Name } from "../../src/core/primitives.js";
 import { FormatError, OPS } from "../../src/shared/util.js";
 import { Stream, StringStream } from "../../src/core/stream.js";
+import { GlobalColorSpaceCache } from "../../src/core/image_utils.js";
 import { OperatorList } from "../../src/core/operator_list.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { WorkerTask } from "../../src/core/worker.js";
@@ -57,6 +58,7 @@ describe("evaluator", function () {
       handler: new HandlerMock(),
       pageIndex: 0,
       idFactory: createIdFactory(/* pageIndex = */ 0),
+      globalColorSpaceCache: new GlobalColorSpaceCache(),
     });
   });
 
@@ -356,6 +358,32 @@ describe("evaluator", function () {
       );
       expect(result.argsArray).toEqual([]);
       expect(result.fnArray).toEqual([]);
+    });
+
+    it("should skip empty set fill/stroke color operators", async function () {
+      const colorOps = [
+        "SC",
+        "SCN",
+        "sc",
+        "scn",
+        "G",
+        "g",
+        "RG",
+        "rg",
+        "K",
+        "k",
+      ];
+
+      for (const op of colorOps) {
+        const stream = new StringStream(`/DeviceRGB CS /DeviceRGB cs ${op}`);
+        const result = await runOperatorListCheck(
+          partialEvaluator,
+          stream,
+          new ResourcesMock()
+        );
+        expect(result.argsArray).toEqual([]);
+        expect(result.fnArray).toEqual([]);
+      }
     });
 
     it("should handle invalid dash stuff", async function () {
