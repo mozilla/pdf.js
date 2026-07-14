@@ -1208,18 +1208,14 @@ class Driver {
               }
             }
             // Render into a separate canvas to allow
-            // `transferControlToOffscreen`
-            if (partialCrop) {
-              // Rendering directly into `this.canvas` is required to support
-              // `recordOperations` and cropping operations.
-              this.renderCanvas = this.canvas;
-            } else {
-              this.renderCanvas = document.createElement("canvas");
-              this.renderCanvas.width = pixelWidth;
-              this.renderCanvas.height = pixelHeight;
-              this.renderCanvas.style.width = this.canvas.style.width;
-              this.renderCanvas.style.height = this.canvas.style.height;
-            }
+            // `transferControlToOffscreen`; `recordOperations` is tracked
+            // by the worker independently of which canvas receives the
+            // pixels, so `partialCrop` doesn't need `this.canvas` directly.
+            this.renderCanvas = document.createElement("canvas");
+            this.renderCanvas.width = pixelWidth;
+            this.renderCanvas.height = pixelHeight;
+            this.renderCanvas.style.width = this.canvas.style.width;
+            this.renderCanvas.style.height = this.canvas.style.height;
             const renderCanvas = this.renderCanvas;
 
             const renderContext = {
@@ -1293,7 +1289,14 @@ class Driver {
                 await renderTask.promise;
 
                 if (partialCrop) {
-                  ctx = this.canvas.getContext("2d", { alpha: false });
+                  if (renderCanvas !== this.canvas) {
+                    try {
+                      ctx.drawImage(renderCanvas, 0, 0);
+                    } catch (ex) {
+                      this._info(`Unable to copy the render canvas: ${ex}`);
+                    }
+                    renderCanvas.resetWorkerCanvas?.();
+                  }
                   const clearOutsidePartial = () => {
                     const { width, height } = ctx.canvas;
                     // Everything above the partial area
