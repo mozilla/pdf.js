@@ -2115,7 +2115,7 @@ class PDFPageProxy {
 class RendererWorker {
   #capability = Promise.withResolvers();
 
-  #rendererHandler = null;
+  #messageHandler = null;
 
   #worker = null;
 
@@ -2138,14 +2138,14 @@ class RendererWorker {
    * The current MessageHandler-instance.
    * @type {MessageHandler | null}
    */
-  get rendererHandler() {
-    return this.#rendererHandler;
+  get messageHandler() {
+    return this.#messageHandler;
   }
 
   #resolve() {
     this.#capability.resolve();
     // Send global setting, e.g. verbosity level.
-    this.#rendererHandler.send("configure", {
+    this.#messageHandler.send("configure", {
       verbosity: this.verbosity,
     });
   }
@@ -2172,9 +2172,9 @@ class RendererWorker {
         );
       }
       const worker = new Worker(rendererSrc, { type: "module" });
-      const rendererHandler = new MessageHandler("main", "renderer", worker);
+      const messageHandler = new MessageHandler("main", "renderer", worker);
 
-      rendererHandler.on("ready", () => {
+      messageHandler.on("ready", () => {
         ac.abort();
         if (this.destroyed) {
           terminateEarly("Worker was destroyed.");
@@ -2189,7 +2189,7 @@ class RendererWorker {
 
       const terminateEarly = reason => {
         ac.abort();
-        rendererHandler.destroy();
+        messageHandler.destroy();
         worker.terminate();
 
         this.#capability.reject(
@@ -2211,13 +2211,13 @@ class RendererWorker {
         { signal: ac.signal }
       );
 
-      rendererHandler.on("test", data => {
+      messageHandler.on("test", data => {
         ac.abort();
         if (this.destroyed || !data) {
           terminateEarly("TypedArray transfer test failed.");
           return;
         }
-        this.#rendererHandler = rendererHandler;
+        this.#messageHandler = messageHandler;
         this.#worker = worker;
 
         this.#resolve();
@@ -2226,7 +2226,7 @@ class RendererWorker {
       const sendTest = () => {
         const testObj = new Uint8Array();
         // Ensure that we can use `postMessage` transfers.
-        rendererHandler.send("test", testObj, [testObj.buffer]);
+        messageHandler.send("test", testObj, [testObj.buffer]);
       };
 
       // It might take time for the worker to initialize. We will try to send
@@ -2248,8 +2248,8 @@ class RendererWorker {
     this.#worker?.terminate();
     this.#worker = null;
 
-    this.#rendererHandler?.destroy();
-    this.#rendererHandler = null;
+    this.#messageHandler?.destroy();
+    this.#messageHandler = null;
   }
 
   /**
@@ -2727,7 +2727,7 @@ class WorkerTransport {
    * @type {MessageHandler | null}
    */
   get rendererHandler() {
-    return this.rendererWorker?.rendererHandler ?? null;
+    return this.rendererWorker?.messageHandler ?? null;
   }
 
   getRenderingIntent(
@@ -3615,7 +3615,7 @@ class InternalRenderTask {
   }
 
   get rendererHandler() {
-    return this._rendererWorker?.rendererHandler ?? null;
+    return this._rendererWorker?.messageHandler ?? null;
   }
 
   // Transfer annotation canvases to the renderer worker which show up in the
@@ -3768,7 +3768,7 @@ class InternalRenderTask {
         // generation, test driver) can detect and clean up appropriately.
         const { _rendererWorker, _renderTaskId } = this;
         this._canvas.resetWorkerCanvas = () => {
-          _rendererWorker.rendererHandler?.send("CleanupRenderTask", {
+          _rendererWorker.messageHandler?.send("CleanupRenderTask", {
             renderTaskId: _renderTaskId,
           });
         };
