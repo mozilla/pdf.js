@@ -3058,6 +3058,31 @@ class WorkerTransport {
         return null; // Ignore any pending requests if the worker was terminated.
       }
 
+      if (type === "CopyLocalImage") {
+        const dataLen = this.commonObjs.has(id)
+          ? null
+          : objectHandler.resolveCommonObject(id, type, exportedData);
+        const { rendererHandler } = this;
+        if (!dataLen || !rendererHandler) {
+          return dataLen;
+        }
+        // If the core worker doesn't re-send the image data, ensure that
+        // the renderer worker has a copy too
+        return rendererHandler
+          .sendWithPromise("commonobj", [id, type, exportedData])
+          .catch(() => null)
+          .then(rendererDataLen => {
+            if (!rendererDataLen) {
+              forwardToRenderer("commonobj", [
+                id,
+                "Image",
+                this.commonObjs.get(id),
+              ]);
+            }
+            return dataLen;
+          });
+      }
+
       forwardToRenderer("commonobj", [id, type, exportedData]);
 
       if (this.commonObjs.has(id)) {
