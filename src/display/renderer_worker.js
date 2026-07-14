@@ -114,6 +114,7 @@ class RendererMessageHandler {
 
   static #cleanupPage(pageIndex, keepCanvas = false) {
     this.#cleanedPages.add(pageIndex);
+    this.#objsMap.get(pageIndex)?.clear();
     this.#objsMap.delete(pageIndex);
     for (const [renderTaskId, renderTaskState] of this.#renderTaskStates) {
       if (renderTaskState.pageIndex === pageIndex) {
