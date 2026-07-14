@@ -13060,6 +13060,13 @@
     }
   },
   {
+    "id": "issue21570",
+    "file": "pdfs/issue21570.pdf",
+    "md5": "3065e65224901203e708e3dacad2d99a",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue2856",
     "file": "pdfs/issue2856.pdf",
     "md5": "a13033722b99d7b24a1383ac793d2b51",
