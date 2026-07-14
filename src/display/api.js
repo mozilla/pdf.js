@@ -3948,6 +3948,18 @@ class InternalRenderTask {
         sentLength < operatorListArgsArrayLen
           ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
           : null;
+      // Since operationsFilter is a function and cannot be structured-cloned,
+      // precomputing the results for the ops being sent as a mask that the
+      // worker can index into.
+      let operationsFilterMask = null;
+      if (fnArray && this._operationsFilter) {
+        operationsFilterMask = new Uint8Array(fnArray.length);
+        for (let i = 0, ii = fnArray.length; i < ii; i++) {
+          operationsFilterMask[i] = this._operationsFilter(sentLength + i)
+            ? 1
+            : 0;
+        }
+      }
       const response = await rendererHandler.sendWithPromise(
         "ExecuteOperatorList",
         {
@@ -3955,10 +3967,7 @@ class InternalRenderTask {
           fnArray,
           argsArray,
           operatorListIdx,
-          operationsFilter:
-            typeof this._operationsFilter === "function"
-              ? null
-              : this._operationsFilter,
+          operationsFilterMask,
           lastChunk: operatorList.lastChunk,
         }
       );

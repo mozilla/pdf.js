@@ -126,12 +126,24 @@ class RendererMessageHandler {
     }
   }
 
-  static #appendOperatorList(renderTaskState, fnArray, argsArray, lastChunk) {
+  static #appendOperatorList(
+    renderTaskState,
+    fnArray,
+    argsArray,
+    operationsFilterMask,
+    lastChunk
+  ) {
     const { operatorList } = renderTaskState;
     if (fnArray) {
       for (let i = 0, ii = fnArray.length; i < ii; i++) {
         operatorList.fnArray.push(fnArray[i]);
         operatorList.argsArray.push(argsArray[i]);
+      }
+      if (operationsFilterMask) {
+        const mask = (renderTaskState.operationsFilterMask ||= []);
+        for (let i = 0, ii = operationsFilterMask.length; i < ii; i++) {
+          mask.push(operationsFilterMask[i]);
+        }
       }
     }
     operatorList.lastChunk = lastChunk;
@@ -140,8 +152,11 @@ class RendererMessageHandler {
     );
   }
 
-  static async #executeOperatorList(renderTaskState, operationsFilter) {
-    const { operatorList, gfx } = renderTaskState;
+  static async #executeOperatorList(renderTaskState) {
+    const { operatorList, gfx, operationsFilterMask } = renderTaskState;
+    const operationsFilter = operationsFilterMask
+      ? i => operationsFilterMask[i]
+      : null;
     while (!renderTaskState.aborted) {
       const { promise, resolve, reject } = Promise.withResolvers();
       renderTaskState.continueResolve = resolve;
@@ -267,6 +282,7 @@ class RendererMessageHandler {
           lastChunk: false,
         },
         operatorListIdx: 0,
+        operationsFilterMask: null,
         continueResolve: null,
         aborted: false,
       };
@@ -358,7 +374,7 @@ class RendererMessageHandler {
         fnArray,
         argsArray,
         operatorListIdx,
-        operationsFilter,
+        operationsFilterMask,
         lastChunk,
       } = data;
       const renderTaskState = this.#renderTaskStates.get(renderTaskId);
@@ -369,12 +385,16 @@ class RendererMessageHandler {
       }
 
       renderTaskState.operatorListIdx = operatorListIdx;
-      this.#appendOperatorList(renderTaskState, fnArray, argsArray, lastChunk);
-
-      const currentOperatorListIdx = await this.#executeOperatorList(
+      this.#appendOperatorList(
         renderTaskState,
-        operationsFilter
+        fnArray,
+        argsArray,
+        operationsFilterMask,
+        lastChunk
       );
+
+      const currentOperatorListIdx =
+        await this.#executeOperatorList(renderTaskState);
 
       let recordedBBoxesBuffer = null;
       let imageCoordinates = null;
