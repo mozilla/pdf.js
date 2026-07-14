@@ -2157,9 +2157,9 @@ class RendererWorker {
       );
       return;
     }
-    let { rendererSrc } = RendererWorker;
-
     try {
+      let { rendererSrc } = RendererWorker;
+
       // Wraps rendererSrc path into blob URL, if the former does not belong
       // to the same origin.
       if (
