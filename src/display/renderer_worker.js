@@ -258,8 +258,25 @@ class RendererMessageHandler {
         recordOperations = false,
         recordImages = false,
       } = data;
+      const renderTaskState = {
+        pageIndex,
+        gfx: null,
+        operatorList: {
+          fnArray: [],
+          argsArray: [],
+          lastChunk: false,
+        },
+        operatorListIdx: 0,
+        continueResolve: null,
+        aborted: false,
+      };
+      this.#renderTaskStates.set(renderTaskId, renderTaskState);
+
       if (enableWebGPU) {
         await initGPU();
+        if (renderTaskState.aborted) {
+          return;
+        }
       }
       const objs = this.#getPageObjs(pageIndex);
       const optionalContentConfig = OptionalContentConfig.fromSerializable(
@@ -317,18 +334,7 @@ class RendererMessageHandler {
       // `cleanupPage` (when `keepCanvas` is true).
       this.#canvasMap.set(pageIndex, canvas);
 
-      this.#renderTaskStates.set(renderTaskId, {
-        pageIndex,
-        gfx,
-        operatorList: {
-          fnArray: [],
-          argsArray: [],
-          lastChunk: false,
-        },
-        operatorListIdx: 0,
-        continueResolve: null,
-        aborted: false,
-      });
+      renderTaskState.gfx = gfx;
     });
 
     handler.on("UpdateAnnotationCanvases", data => {
