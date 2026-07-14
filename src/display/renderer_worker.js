@@ -30,18 +30,36 @@ import { PDFObjects } from "./pdf_objects.js";
 import { WorkerFilterFactory } from "./filter_factory.js";
 
 class RendererMessageHandler {
-  static #commonObjs = new PDFObjects();
-
-  static #objsMap = new Map();
-
-  static #renderTaskStates = new Map();
-
   // Holds references to `OffscreenCanvas` instances transferred from the
   // main thread. This is used to preserve the placeholder `<canvas>` bitmap
   // across page cleanup (e.g. during scrolling/idle cleanup in the viewer).
   static #canvasMap = new Map();
 
   static #cleanedPages = new Set();
+
+  static #commonObjs = new PDFObjects();
+
+  static #fontLoader = new FontLoader({
+    ownerDocument: globalThis,
+  });
+
+  static #objsMap = new Map();
+
+  static #renderTaskStates = new Map();
+
+  static {
+    // Worker thread (and not Node.js)?
+    if (
+      typeof window === "undefined" &&
+      !isNodeJS &&
+      typeof self !== "undefined" &&
+      /* isMessagePort = */
+      typeof self.postMessage === "function" &&
+      "onmessage" in self
+    ) {
+      this.initializeFromPort(self);
+    }
+  }
 
   // Merges `[id, canvasName, canvas]` tuples sent from the main thread into
   // `map`, mirroring the tagging/matching convention `canvas.js` uses so a
@@ -65,30 +83,6 @@ class RendererMessageHandler {
         canvases[index] = canvas;
       }
     }
-  }
-
-  static #fontLoader = new FontLoader({
-    ownerDocument: globalThis,
-  });
-
-  static {
-    // Worker thread (and not Node.js)?
-    if (
-      typeof window === "undefined" &&
-      !isNodeJS &&
-      typeof self !== "undefined" &&
-      /* isMessagePort = */
-      typeof self.postMessage === "function" &&
-      "onmessage" in self
-    ) {
-      this.initializeFromPort(self);
-    }
-  }
-
-  static initializeFromPort(port) {
-    const handler = new MessageHandler("renderer", "main", port);
-    this.setup(handler);
-    handler.send("ready", null);
   }
 
   static #getPageObjs(pageIndex) {
@@ -414,6 +408,12 @@ class RendererMessageHandler {
         imageCoordinates,
       };
     });
+  }
+
+  static initializeFromPort(port) {
+    const handler = new MessageHandler("renderer", "main", port);
+    this.setup(handler);
+    handler.send("ready", null);
   }
 }
 
