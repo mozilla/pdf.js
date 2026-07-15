@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, unreachable, warn } from "../shared/util.js";
+import { assert, makeSet, unreachable, warn } from "../shared/util.js";
 import { RefSet, RefSetCache } from "./primitives.js";
 
 class BaseLocalCache {
@@ -228,7 +228,7 @@ class GlobalImageCache {
   }
 
   shouldCache(ref, pageIndex) {
-    const pageIndexSet = this._refCache.getOrPutComputed(ref, () => new Set());
+    const pageIndexSet = this._refCache.getOrPutComputed(ref, makeSet);
     pageIndexSet.add(pageIndex);
 
     if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
