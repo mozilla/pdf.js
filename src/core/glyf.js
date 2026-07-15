@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { makeSet } from "../shared/util.js";
+
 const ON_CURVE_POINT = 1 << 0;
 const X_SHORT_VECTOR = 1 << 1;
 const Y_SHORT_VECTOR = 1 << 2;
@@ -756,13 +758,7 @@ function pruneCompositeGlyphCycles(glyfTable, locaEntries, numGlyphs) {
         stack.push({ node: next, idx: 0 });
         continue;
       }
-
-      let removeSet = backEdges.get(top.node);
-      if (!removeSet) {
-        removeSet = new Set();
-        backEdges.set(top.node, removeSet);
-      }
-      removeSet.add(compIdx);
+      backEdges.getOrInsertComputed(top.node, makeSet).add(compIdx);
     }
   }
 

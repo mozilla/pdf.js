@@ -93,12 +93,7 @@ class StructTreeRoot {
       return;
     }
     this.structParentIds ||= new RefSetCache();
-    let ids = this.structParentIds.get(pageRef);
-    if (!ids) {
-      ids = [];
-      this.structParentIds.put(pageRef, ids);
-    }
-    ids.push([id, type]);
+    this.structParentIds.getOrPutComputed(pageRef, makeArr).push([id, type]);
   }
 
   addAnnotationIdToPage(pageRef, id) {
@@ -537,11 +532,9 @@ class StructTreeRoot {
       return;
     }
 
-    let cachedParentDict = cache.get(parentRef);
-    if (!cachedParentDict) {
-      cachedParentDict = parentDict.clone();
-      cache.put(parentRef, cachedParentDict);
-    }
+    const cachedParentDict = cache.getOrPutComputed(parentRef, () =>
+      parentDict.clone()
+    );
     const parentKidsRaw = cachedParentDict.getRaw("K");
     let cachedParentKids =
       parentKidsRaw instanceof Ref ? cache.get(parentKidsRaw) : null;

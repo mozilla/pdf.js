@@ -1135,6 +1135,7 @@ function _isValidExplicitDest(validRef, validName, dest) {
 const makeArr = () => [];
 const makeMap = () => new Map();
 const makeObj = () => Object.create(null);
+const makeSet = () => new Set();
 
 // See https://developer.mozilla.org/en-US/docs/Web/API/Blob/bytes#browser_compatibility
 if (
@@ -1197,6 +1198,7 @@ export {
   makeArr,
   makeMap,
   makeObj,
+  makeSet,
   MeshFigureType,
   normalizeUnicode,
   objectSize,

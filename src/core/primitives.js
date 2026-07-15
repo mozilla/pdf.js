@@ -398,6 +398,16 @@ class RefSetCache {
     this._map.set(ref.toString(), this.get(aliasRef));
   }
 
+  getOrPutComputed(ref, callback) {
+    const map = this._map,
+      refStr = ref.toString();
+
+    if (!map.has(refStr)) {
+      map.set(refStr, callback(ref));
+    }
+    return map.get(refStr);
+  }
+
   [Symbol.iterator]() {
     return this._map.values();
   }
