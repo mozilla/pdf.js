@@ -455,12 +455,7 @@ class PDFEditor {
     // Re-entry means a (malformed) cycle back to this stream: allocate its
     // reference now to break the loop, like the generic path's eager alloc.
     if (resourceStreamPath.has(oldRef)) {
-      let ref = oldRefMapping.get(oldRef);
-      if (!ref) {
-        ref = this.newRef;
-        oldRefMapping.put(oldRef, ref);
-      }
-      return ref;
+      return oldRefMapping.getOrPutComputed(oldRef, () => this.newRef);
     }
 
     const key = oldRef.toString();

@@ -568,6 +568,12 @@ describe("primitives", function () {
       cache.put(ref2, obj2);
       expect([...cache.keys()]).toEqual([ref1, ref2]);
     });
+
+    it("should handle getOrPutComputed correctly", function () {
+      expect(cache.getOrPutComputed(ref1, () => obj1)).toEqual(obj1);
+      // Trying to set it again should be ignored.
+      expect(cache.getOrPutComputed(ref1, () => obj2)).toEqual(obj1);
+    });
   });
 
   describe("isName", function () {
