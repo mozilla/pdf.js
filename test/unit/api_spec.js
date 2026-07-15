@@ -4977,6 +4977,21 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("gets operatorList, with marked content lang", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("marked_content_lang.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const opList = await pdfPage.getOperatorList();
+      expect(opList.fnArray[0]).toEqual(OPS.beginMarkedContentProps);
+      expect(opList.argsArray[0][0]).toEqual("P");
+      expect(opList.argsArray[0][2]?.lang).toEqual("en-US");
+      expect(opList.fnArray[10]).toEqual(OPS.beginMarkedContentProps);
+      expect(opList.argsArray[10][0]).toEqual("P");
+      expect(opList.argsArray[10][2]?.lang).toEqual("es-ES");
+    });
+
     it("gets operatorList, with page resources containing corrupt /CCITTFaxDecode data", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("poppler-90-0-fuzzed.pdf")
