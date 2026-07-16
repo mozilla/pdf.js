@@ -312,6 +312,39 @@ describe("document", function () {
         expect(signatures[0].signerName).toEqual("John Smith");
       });
 
+      it("extracts signature fields with Widget children", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        const sigRef = Ref.get(33, 0);
+        const sigFieldRef = Ref.get(34, 0);
+        const widgetRef = Ref.get(35, 0);
+
+        const sigDict = makeSigDict({
+          byteRange: [0, 50, 100, 150],
+          name: "Alice",
+        });
+        const sigField = makeSigField({ T: "sig_alice", sigRef });
+        sigField.set("Kids", [widgetRef]);
+
+        const widget = new Dict();
+        widget.set("Subtype", Name.get("Widget"));
+        widget.set("Parent", sigFieldRef);
+
+        const xref = new XRefMock([
+          { ref: sigRef, data: sigDict },
+          { ref: sigFieldRef, data: sigField },
+          { ref: widgetRef, data: widget },
+        ]);
+        acroForm.set("Fields", [sigFieldRef]);
+
+        const pdfDocument = getDocument(acroForm, xref);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures.length).toEqual(1);
+        expect(signatures[0].fieldName).toEqual("sig_alice");
+        expect(signatures[0].signerName).toEqual("Alice");
+      });
+
       it("skips signatures with malformed ByteRange", async function () {
         const acroForm = new Dict();
         acroForm.set("SigFlags", 3);

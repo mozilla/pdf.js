@@ -2009,20 +2009,19 @@ class PDFDocument {
       if (!(field instanceof Dict)) {
         continue;
       }
+      if (isName(field.get("FT"), "Sig")) {
+        const sigDict = this.xref.fetchIfRef(field.get("V"));
+        if (sigDict instanceof Dict) {
+          const parsed = this.#parseSignatureDict(field, sigDict, fieldRef);
+          if (parsed) {
+            out.push(parsed);
+          }
+        }
+      }
       if (field.has("Kids")) {
+        // A terminal field can have Widget annotations as children, so its
+        // own signature must be collected before walking the field tree.
         this.#collectSignatureFields(field.get("Kids"), out, visitedRefs);
-        continue;
-      }
-      if (!isName(field.get("FT"), "Sig")) {
-        continue;
-      }
-      const sigDict = this.xref.fetchIfRef(field.get("V"));
-      if (!(sigDict instanceof Dict)) {
-        continue;
-      }
-      const parsed = this.#parseSignatureDict(field, sigDict, fieldRef);
-      if (parsed) {
-        out.push(parsed);
       }
     }
   }
