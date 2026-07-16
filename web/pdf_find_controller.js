@@ -217,11 +217,10 @@ function normalize(text, options = {}) {
 
       if (p2) {
         // Use the NFKC representation to normalize the char.
-        let replacement = NFKC_CHARS_TO_NORMALIZE.get(p2);
-        if (!replacement) {
-          replacement = p2.normalize("NFKC");
-          NFKC_CHARS_TO_NORMALIZE.set(p2, replacement);
-        }
+        const replacement = NFKC_CHARS_TO_NORMALIZE.getOrInsertComputed(
+          p2,
+          () => p2.normalize("NFKC")
+        );
         const jj = replacement.length;
         for (let j = 1; j < jj; j++) {
           positions.push(i - shift + j, shift - j);
