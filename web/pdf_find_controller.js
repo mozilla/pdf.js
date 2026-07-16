@@ -28,20 +28,20 @@ const FindState = {
   PENDING: 3,
 };
 
-const CHARACTERS_TO_NORMALIZE = {
-  "\u2010": "-", // Hyphen
-  "\u2018": "'", // Left single quotation mark
-  "\u2019": "'", // Right single quotation mark
-  "\u201A": "'", // Single low-9 quotation mark
-  "\u201B": "'", // Single high-reversed-9 quotation mark
-  "\u201C": '"', // Left double quotation mark
-  "\u201D": '"', // Right double quotation mark
-  "\u201E": '"', // Double low-9 quotation mark
-  "\u201F": '"', // Double high-reversed-9 quotation mark
-  "\u00BC": "1/4", // Vulgar fraction one quarter
-  "\u00BD": "1/2", // Vulgar fraction one half
-  "\u00BE": "3/4", // Vulgar fraction three quarters
-};
+const CHARACTERS_TO_NORMALIZE = new Map([
+  ["\u2010", "-"], // Hyphen
+  ["\u2018", "'"], // Left single quotation mark
+  ["\u2019", "'"], // Right single quotation mark
+  ["\u201A", "'"], // Single low-9 quotation mark
+  ["\u201B", "'"], // Single high-reversed-9 quotation mark
+  ["\u201C", '"'], // Left double quotation mark
+  ["\u201D", '"'], // Right double quotation mark
+  ["\u201E", '"'], // Double low-9 quotation mark
+  ["\u201F", '"'], // Double high-reversed-9 quotation mark
+  ["\u00BC", "1/4"], // Vulgar fraction one quarter
+  ["\u00BD", "1/2"], // Vulgar fraction one half
+  ["\u00BE", "3/4"], // Vulgar fraction three quarters
+]);
 
 // These diacritics aren't considered as combining diacritics
 // when searching in a document:
@@ -121,7 +121,7 @@ function normalize(text, options = {}) {
     normalizationRegex = withSyllablesRegExp;
   } else {
     // Compile the regular expression for text normalization once.
-    const replace = Object.keys(CHARACTERS_TO_NORMALIZE).join("");
+    const replace = CHARACTERS_TO_NORMALIZE.keys().join("");
     const toNormalizeWithNFKC = getNormalizeWithNFKC();
 
     // 3040-309F: Hiragana
@@ -206,7 +206,7 @@ function normalize(text, options = {}) {
       i -= shiftOrigin;
       if (p1) {
         // Maybe fractions or quotations mark...
-        const replacement = CHARACTERS_TO_NORMALIZE[p1];
+        const replacement = CHARACTERS_TO_NORMALIZE.get(p1);
         const jj = replacement.length;
         for (let j = 1; j < jj; j++) {
           positions.push(i - shift + j, shift - j);

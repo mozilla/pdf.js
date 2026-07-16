@@ -132,10 +132,7 @@ class XFAFactory {
   }
 
   static _createDocument(data) {
-    if (!data["/xdp:xdp"]) {
-      return data["xdp:xdp"];
-    }
-    return Object.values(data).join("");
+    return !data.get("/xdp:xdp") ? data.get("xdp:xdp") : data.values().join("");
   }
 
   static getRichTextAsHtml(rc) {
