@@ -14463,5 +14463,13 @@
     "rounds": 1,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue21579",
+    "file": "pdfs/issue21579.pdf",
+    "md5": "3e067e3d08edfcb84b70b50937cf247f",
+    "rounds": 1,
+    "type": "eq",
+    "password": "pässwört"
   }
 ]
