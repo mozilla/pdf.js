@@ -34,6 +34,7 @@ import { Dict, isDict, isName, Name } from "./primitives.js";
 import { calculateMD5 } from "./calculate_md5.js";
 import { calculateSHA256 } from "./calculate_sha256.js";
 import { DecryptStream } from "./decrypt_stream.js";
+import { saslPrep } from "./sasl_prep.js";
 
 /**
  * @typedef {typeof AES128Cipher | typeof AES256Cipher | typeof ARCFourCipher
@@ -853,6 +854,15 @@ class CipherTransform {
   }
 }
 
+function utf8PasswordToBytes(password) {
+  try {
+    password = utf8StringToString(password);
+  } catch {
+    warn("CipherTransformFactory: Unable to convert UTF8 encoded password.");
+  }
+  return stringToBytes(password);
+}
+
 class CipherTransformFactory {
   #fileId;
 
@@ -1128,18 +1138,19 @@ class CipherTransformFactory {
     this.encryptMetadata = encryptMetadata;
 
     const fileIdBytes = stringToBytes(fileId);
-    let passwordBytes;
+    let passwordBytes, rawPasswordBytes;
     if (password) {
-      if (algorithm === 5) {
-        try {
-          password = utf8StringToString(password);
-        } catch {
-          warn(
-            "CipherTransformFactory: Unable to convert UTF8 encoded password."
-          );
+      if (revision === 6) {
+        const preppedPassword = saslPrep(password);
+        passwordBytes = utf8PasswordToBytes(preppedPassword);
+        if (preppedPassword !== password) {
+          rawPasswordBytes = utf8PasswordToBytes(password);
         }
+      } else if (algorithm === 5) {
+        passwordBytes = utf8PasswordToBytes(password);
+      } else {
+        passwordBytes = stringToBytes(password);
       }
-      passwordBytes = stringToBytes(password);
     }
 
     let encryptionKey;
@@ -1163,20 +1174,27 @@ class CipherTransformFactory {
       const ownerEncryption = stringToBytes(dict.get("OE"));
       const userEncryption = stringToBytes(dict.get("UE"));
       const perms = stringToBytes(dict.get("Perms"));
-      encryptionKey = this.#createEncryptionKey20(
-        revision,
-        passwordBytes,
-        ownerPassword,
-        ownerValidationSalt,
-        ownerKeySalt,
-        uBytes,
-        userPassword,
-        userValidationSalt,
-        userKeySalt,
-        ownerEncryption,
-        userEncryption,
-        perms
-      );
+      for (const candidate of rawPasswordBytes
+        ? [passwordBytes, rawPasswordBytes]
+        : [passwordBytes]) {
+        encryptionKey = this.#createEncryptionKey20(
+          revision,
+          candidate,
+          ownerPassword,
+          ownerValidationSalt,
+          ownerKeySalt,
+          uBytes,
+          userPassword,
+          userValidationSalt,
+          userKeySalt,
+          ownerEncryption,
+          userEncryption,
+          perms
+        );
+        if (encryptionKey) {
+          break;
+        }
+      }
     }
     if (!encryptionKey) {
       if (!password) {

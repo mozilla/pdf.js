@@ -33,6 +33,7 @@ import {
 } from "../../src/shared/util.js";
 import { calculateMD5 } from "../../src/core/calculate_md5.js";
 import { calculateSHA256 } from "../../src/core/calculate_sha256.js";
+import { saslPrep } from "../../src/core/sasl_prep.js";
 
 describe("crypto", function () {
   // RFC 1321, A.5 Test suite
@@ -519,6 +520,47 @@ describe("crypto", function () {
   });
 });
 
+describe("saslPrep", function () {
+  it("should leave ASCII strings unchanged", function () {
+    expect(saslPrep("")).toEqual("");
+    expect(saslPrep("password")).toEqual("password");
+  });
+
+  it("should map non-ASCII space characters to U+0020", function () {
+    expect(saslPrep("a\u00A0b")).toEqual("a b");
+    expect(saslPrep("a\u2003b")).toEqual("a b");
+    expect(saslPrep("a\u3000b")).toEqual("a b");
+  });
+
+  it("should remove characters commonly mapped to nothing", function () {
+    expect(saslPrep("pass\u00ADword")).toEqual("password");
+    expect(saslPrep("a\u200Db")).toEqual("ab");
+    expect(saslPrep("a\uFEFFb")).toEqual("ab");
+  });
+
+  it("should apply NFKC normalization", function () {
+    expect(saslPrep("\u00AA")).toEqual("a");
+    expect(saslPrep("\u2168")).toEqual("IX");
+    expect(saslPrep("\uFB01")).toEqual("fi");
+  });
+
+  it("should tolerate bidirectional text rejected by SASLprep", function () {
+    // A RandALCat character followed by a non-RandALCat character would fail
+    // the SASLprep bidirectional-text check, which we intentionally omit.
+    expect(saslPrep("\u0627\u0031")).toEqual("\u0627\u0031");
+  });
+
+  it("should normalize using the runtime Unicode version", function () {
+    // U+1D2C was unassigned in Unicode 3.2, on which SASLprep is based, but
+    // current Unicode normalization maps it to LATIN CAPITAL LETTER A.
+    expect(saslPrep("\u1D2C")).toEqual("A");
+  });
+
+  it("should prepare the password `SªSL­prep`", function () {
+    expect(saslPrep("SªSL­prep")).toEqual("SaSLprep");
+  });
+});
+
 describe("CipherTransformFactory", function () {
   function buildDict(map) {
     const dict = new Dict();
@@ -617,6 +659,7 @@ describe("CipherTransformFactory", function () {
   let fileId1, fileId2, dict1, dict2, dict3;
   let aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
   let aes256UnicodeDict;
+  let aes256SaslPrepDict, aes256SaslPrepFallbackDict;
 
   beforeAll(function () {
     fileId1 = unescape("%F6%C6%AF%17%F3rR%8DRM%9A%80%D1%EF%DF%18");
@@ -780,12 +823,63 @@ describe("CipherTransformFactory", function () {
       P: -1084,
       R: 5,
     });
+    aes256SaslPrepDict = buildDict({
+      Filter: Name.get("Standard"),
+      V: 5,
+      Length: 256,
+      O: unescape(
+        "%21%14%DF%F5%89%2A%5F%97%B6%B7%EB%F8P%02%7DY%FD%95%82%CA%BD" +
+          "%1C%A6T%5E%8Bq%01%FC%9D%D2%00%84z%F4%89%E8%3EX%DFq%CF%CE%F2F" +
+          "%A6%B2%95"
+      ),
+      U: unescape(
+        "%98%1E%80%12%14Y%93D%0By%2F%07q%5E%CC%7B%D1%CDg%2C%5B2%DD%B7" +
+          "%C0%7D%C7%D5%1F5Q%23%BD%CA1%FDm%7B%B7%D1%60%29v%91%D23%E1%B4"
+      ),
+      OE: unescape(
+        "A%F1%BF%91%AA%8B%F03%D8m%CF%0B%14%19%D6%BF%8B%2AO%FAln%AAb%85" +
+          "%F2SB%7C%CF%FBX"
+      ),
+      UE: unescape(
+        "w%20v%EF%AD%EC%02%AD%C6%1B%06%DEP%DE%BE8%DD%A5%DB%C77%8E%035L" +
+          "%1D%FD%DD%13%83%AC%9B"
+      ),
+      Perms: unescape("%0E%FE%02%22%FB5f%A68t%0Ca%11%17Jf"),
+      P: -4,
+      R: 6,
+    });
+    aes256SaslPrepFallbackDict = buildDict({
+      Filter: Name.get("Standard"),
+      V: 5,
+      Length: 256,
+      O: unescape(
+        "%B1O%A6A%BD%E9%19%09%EC%FFuG%3C%BEWZ%2CN%F6%C7Cz%9A%E1%84%15" +
+          "%0C66%AE%B4%E6%C0%C1%C2%C3%C4%C5%C6%C7%D0%D1%D2%D3%D4%D5%D6%D7"
+      ),
+      U: unescape(
+        "i%0C%B0%B9%B7%90%AAXN%C916E%2E%C2%CF%BEG%DE%1Dqf%8F%3A%BF%92" +
+          "%FB%FA%C8o%23%11%A0%A1%A2%A3%A4%A5%A6%A7%B0%B1%B2%B3%B4%B5%B6" +
+          "%B7"
+      ),
+      OE: unescape(
+        "%0BE%22%A4%AAX%DA%C5%D4%DAL%A0%91Q%3E%3AE%EE%B7%97W%CFm%B8%AC" +
+          "%8Ak%80%B4%5D%EB%0F"
+      ),
+      UE: unescape(
+        "%D0%C0%E4rM%F7%E7%D2%FA%A0%90%7B%BC%BE%86p5%B5%27%A1%10%8A%86" +
+          "%86%95%2B%92%B4%E1%F4%A5%9A"
+      ),
+      Perms: unescape("%ED%D4%5FM%ED%9E%DE%F9%82%C8%A9%7F%C1%CC%C4%B4"),
+      P: -4,
+      R: 6,
+    });
   });
 
   afterAll(function () {
     fileId1 = fileId2 = dict1 = dict2 = dict3 = null;
     aes256Dict = aes256IsoDict = aes256BlankDict = aes256IsoBlankDict = null;
     aes256UnicodeDict = null;
+    aes256SaslPrepDict = aes256SaslPrepFallbackDict = null;
   });
 
   describe("#ctor", function () {
@@ -841,6 +935,29 @@ describe("CipherTransformFactory", function () {
       });
       it("should accept blank password", function () {
         ensurePasswordCorrect(aes256IsoBlankDict, fileId1);
+      });
+    });
+
+    describe("AES256 Revision 6 with SASLprep", function () {
+      it("should accept a password requiring SASLprep", function () {
+        ensurePasswordCorrect(
+          aes256SaslPrepDict,
+          fileId1,
+          "S\u00AASL\u00ADprep"
+        );
+      });
+      it("should accept an already prepared password", function () {
+        ensurePasswordCorrect(aes256SaslPrepDict, fileId1, "SaSLprep");
+      });
+      it("should not accept wrong password", function () {
+        ensurePasswordIncorrect(aes256SaslPrepDict, fileId1, "wrong");
+      });
+      it("should fall back to the raw password", function () {
+        ensurePasswordCorrect(
+          aes256SaslPrepFallbackDict,
+          fileId1,
+          "pass\u00ADword"
+        );
       });
     });
 

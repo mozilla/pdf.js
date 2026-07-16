@@ -14471,5 +14471,13 @@
     "rounds": 1,
     "type": "eq",
     "password": "pässwört"
+  },
+  {
+    "id": "saslprep-r6",
+    "file": "pdfs/saslprep-r6.pdf",
+    "md5": "2aee2434f164a00a52b98f29b6f9758c",
+    "rounds": 1,
+    "type": "eq",
+    "password": "S\u00AASL\u00ADprep"
   }
 ]
