@@ -2259,47 +2259,51 @@ class PDFEditor {
       }
     }
     const resourcesValuesCache = new Map();
+    const fixAppearanceResources = async stream => {
+      let resources = stream.dict.getRaw("Resources");
+      resources &&= this.xrefWrapper.fetchIfRef(resources);
+      if (!(resources instanceof Dict)) {
+        const newResourcesRef = await resourcesValuesCache.getOrInsertComputed(
+          acroFormDefaultResources,
+          () => this.#cloneObject(acroFormDefaultResources, xref)
+        );
+        stream.dict.set("Resources", newResourcesRef);
+        return;
+      }
+      for (const [
+        resKey,
+        resValue,
+      ] of acroFormDefaultResources.getRawEntries()) {
+        if (resources.has(resKey)) {
+          continue;
+        }
+        let newResValue = resValue;
+        if (resValue instanceof Ref) {
+          newResValue = await this.#collectDependencies(resValue, true, xref);
+        } else if (
+          resValue instanceof Dict ||
+          resValue instanceof BaseStream ||
+          Array.isArray(resValue)
+        ) {
+          newResValue = await resourcesValuesCache.getOrInsertComputed(
+            resValue,
+            () => this.#cloneObject(resValue, xref)
+          );
+        }
+        resources.set(resKey, newResValue);
+      }
+    };
+
     for (const field of drToFix) {
       const ap = field.get("AP");
       for (const [, value] of ap) {
-        if (!(value instanceof BaseStream)) {
-          continue;
-        }
-        let resources = value.dict.getRaw("Resources");
-        if (!resources) {
-          const newResourcesRef =
-            await resourcesValuesCache.getOrInsertComputed(
-              acroFormDefaultResources,
-              () => this.#cloneObject(acroFormDefaultResources, xref)
-            );
-          value.dict.set("Resources", newResourcesRef);
-          continue;
-        }
-
-        resources = xref.fetchIfRef(resources);
-        for (const [
-          resKey,
-          resValue,
-        ] of acroFormDefaultResources.getRawEntries()) {
-          if (!resources.has(resKey)) {
-            let newResValue = resValue;
-            if (resValue instanceof Ref) {
-              newResValue = await this.#collectDependencies(
-                resValue,
-                true,
-                xref
-              );
-            } else if (
-              resValue instanceof Dict ||
-              resValue instanceof BaseStream ||
-              Array.isArray(resValue)
-            ) {
-              newResValue = await resourcesValuesCache.getOrInsertComputed(
-                resValue,
-                () => this.#cloneObject(resValue, xref)
-              );
+        if (value instanceof BaseStream) {
+          await fixAppearanceResources(value);
+        } else if (value instanceof Dict) {
+          for (const [, stream] of value) {
+            if (stream instanceof BaseStream) {
+              await fixAppearanceResources(stream);
             }
-            resources.set(resKey, newResValue);
           }
         }
       }
