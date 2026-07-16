@@ -733,11 +733,9 @@ class TreeView {
         spinner.textContent = "Loading…";
         childrenEl.append(spinner);
         this.#onMarkLoading(1);
-        if (!this.#refCache.has(cacheKey)) {
-          this.#refCache.set(cacheKey, doc.getRawData({ ref }));
-        }
+
         this.#refCache
-          .get(cacheKey)
+          .getOrInsertComputed(cacheKey, () => doc.getRawData({ ref }))
           .then(result => {
             childrenEl.replaceChildren();
             this.#buildChildren(result, doc, childrenEl);
