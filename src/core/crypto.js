@@ -1280,7 +1280,7 @@ class CipherTransformFactory {
             PasswordResponses.NEED_PASSWORD
           );
         }
-        if (this.algorithm === 5) {
+        if (this.algorithm === 5 || cfm.name === "AESV3") {
           // V=5 always uses 256-bit AES with the file encryption key, even
           // when a producer wrongly sets the crypt filter's CFM to AESV2
           // (bug 2046659).
@@ -1307,9 +1307,6 @@ class CipherTransformFactory {
               /* isAes = */ true
             )
           );
-        }
-        if (cfm.name === "AESV3") {
-          return AES256Cipher.bind(null, this.encryptionKey);
         }
         throw new FormatError("Unknown crypto method");
       };
