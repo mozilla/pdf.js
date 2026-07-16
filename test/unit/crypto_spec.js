@@ -616,6 +616,7 @@ describe("CipherTransformFactory", function () {
 
   let fileId1, fileId2, dict1, dict2, dict3;
   let aes256Dict, aes256IsoDict, aes256BlankDict, aes256IsoBlankDict;
+  let aes256UnicodeDict;
 
   beforeAll(function () {
     fileId1 = unescape("%F6%C6%AF%17%F3rR%8DRM%9A%80%D1%EF%DF%18");
@@ -753,11 +754,38 @@ describe("CipherTransformFactory", function () {
       P: -1084,
       R: 6,
     });
+    aes256UnicodeDict = buildDict({
+      Filter: Name.get("Standard"),
+      V: 5,
+      Length: 256,
+      O: unescape(
+        "%07%E7%C3%30%6B%EE%F5%54%BD%69%11%AC%82%48%76%0C%9D%F0%5A%5C" +
+          "%9E%63%29%9A%24%A0%C2%A1%5B%22%90%30%33%33%33%33%33%33%33%33" +
+          "%44%44%44%44%44%44%44%44"
+      ),
+      U: unescape(
+        "%B0%B5%E1%DA%16%13%4D%FE%F0%0C%4D%09%F2%EE%F2%6A%38%67%49%85" +
+          "%81%10%8D%A0%4F%3E%5D%24%B9%B5%F3%78%11%11%11%11%11%11%11%11" +
+          "%22%22%22%22%22%22%22%22"
+      ),
+      OE: unescape(
+        "%7A%2C%97%53%F5%6C%7C%7C%CA%2F%83%3E%2D%32%33%90%57%DB%21%B9" +
+          "%ED%D2%4B%6F%7D%D9%71%9B%4B%9B%65%42"
+      ),
+      UE: unescape(
+        "%8C%EE%2C%8A%D2%16%82%DC%BB%DF%65%52%72%96%07%C4%AB%6C%99%54" +
+          "%A7%42%BE%BA%43%9F%66%47%F2%68%66%B8"
+      ),
+      Perms: unescape("%E9%4D%1D%8D%96%BE%D3%A9%8D%BD%A6%BE%3E%1A%2A%AD"),
+      P: -1084,
+      R: 5,
+    });
   });
 
   afterAll(function () {
     fileId1 = fileId2 = dict1 = dict2 = dict3 = null;
     aes256Dict = aes256IsoDict = aes256BlankDict = aes256IsoBlankDict = null;
+    aes256UnicodeDict = null;
   });
 
   describe("#ctor", function () {
@@ -776,6 +804,25 @@ describe("CipherTransformFactory", function () {
       });
       it("should accept blank password", function () {
         ensurePasswordCorrect(aes256BlankDict, fileId1);
+      });
+    });
+
+    describe("AES256 Revision 5 with a non-ASCII password", function () {
+      it("should accept UTF-8 user password", function () {
+        ensurePasswordCorrect(aes256UnicodeDict, fileId1, "pässwört");
+      });
+      it("should accept UTF-8 owner password", function () {
+        ensurePasswordCorrect(aes256UnicodeDict, fileId1, "Öwner");
+      });
+      it("should not accept the UTF-8 bytes as a Latin-1 password", function () {
+        ensurePasswordIncorrect(
+          aes256UnicodeDict,
+          fileId1,
+          unescape("p%C3%A4ssw%C3%B6rt")
+        );
+      });
+      it("should not accept wrong password", function () {
+        ensurePasswordIncorrect(aes256UnicodeDict, fileId1, "wrong");
       });
     });
 

@@ -1130,7 +1130,7 @@ class CipherTransformFactory {
     const fileIdBytes = stringToBytes(fileId);
     let passwordBytes;
     if (password) {
-      if (revision === 6) {
+      if (algorithm === 5) {
         try {
           password = utf8StringToString(password);
         } catch {
