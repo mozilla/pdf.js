@@ -3092,13 +3092,9 @@ class CanvasGraphics {
   }
 
   _getPattern(opIdx, objId, matrix = null) {
-    let pattern;
-    if (this.cachedPatterns.has(objId)) {
-      pattern = this.cachedPatterns.get(objId);
-    } else {
-      pattern = getShadingPattern(this.getObject(opIdx, objId));
-      this.cachedPatterns.set(objId, pattern);
-    }
+    const pattern = this.cachedPatterns.getOrInsertComputed(objId, () =>
+      getShadingPattern(this.getObject(opIdx, objId))
+    );
     if (matrix) {
       pattern.matrix = matrix;
     }
