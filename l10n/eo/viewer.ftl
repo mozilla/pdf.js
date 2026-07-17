@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = Rapida tekstaĵa vido:
 pdfjs-document-properties-linearized-yes = Jes
 pdfjs-document-properties-linearized-no = Ne
 pdfjs-document-properties-close-button = Fermi
+pdfjs-digital-signature-properties-view-certificate = Vidi atestilon
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Kialo: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Tempindiko: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Duaranga subskribo ({ $count })
+       *[other] Duarangaj subskriboj ({ $count })
+    }
 
 ## Print
 
@@ -731,6 +752,74 @@ pdfjs-new-badge-content = NOVA
 pdfjs-views-manager-waiting-for-file = Dosiero alŝutata…
 pdfjs-toggle-views-manager-button1 =
     .title = Administri paĝojn
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = Atributoj de cifereca subskribo
+    .aria-label = Atributoj de cifereca subskribo
+pdfjs-digital-signature-properties-button-label = Atributoj de cifereca subskribo
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = La dokumento estis subskribita de valida cifereca subskribo
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Dokumento subskribita, tamen { $count } cifereca subskribo ne povis esti kontrolita
+       *[other] Dokumento subskribita, tamen { $count } ciferecaj subskriboj ne povis esti kontrolita
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Dokumento subskribita de { $count } nefidata atestilo
+       *[other] Dokumento subskribita de { $count } nefidataj atestiloj
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Dokumento subskribita de { $count } senvalidiĝinta atestilo
+       *[other] Dokumento subskribita de { $count } senvalidiĝintaj atestiloj
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] La dokumento havas { $count } nevalidan ciferecan subskribon
+       *[other] La dokumento havas { $count } nevalidajn ciferecajn subskribojn
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Dokumento subskribita de { $count } senvalidigita atestilo
+       *[other] Dokumento subskribita de { $count } senvalidigitaj atestiloj
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Stato: Subskribo kontrolita
+pdfjs-digital-signature-properties-status-invalid = Stato: Subskribo nevalida
+pdfjs-digital-signature-properties-status-unknown = Stato: Ne eblas kontroli (nesubtenata)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Atestilo: Fidata ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Atestilo: Nedisponebla
+pdfjs-digital-signature-properties-certificate-untrusted = Atestilo: Ne fidata
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Atestilo: Nekonata eldoninto ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Atestilo: Memsubskribita ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Atestilo: Nefidata eldoninto ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Atestilo: Senvalidiĝinta
+pdfjs-digital-signature-properties-certificate-expired-with-date = Atestilo: Senvalidiĝinta ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Atestilo: Senvalidigita
 
 ## Main menu for adding/removing signatures
 

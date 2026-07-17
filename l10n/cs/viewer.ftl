@@ -154,6 +154,28 @@ pdfjs-document-properties-linearized-yes = Ano
 pdfjs-document-properties-linearized-no = Ne
 pdfjs-document-properties-close-button = Zavřít
 pdfjs-digital-signature-properties-view-certificate = Zobrazit certifikát
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Důvod: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Časové razítko: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Podpis ({ $count })
+        [few] Podpisy ({ $count })
+        [many] Podpisy ({ $count })
+       *[other] Podpisy ({ $count })
+    }
 
 ## Print
 
@@ -749,6 +771,67 @@ pdfjs-views-manager-waiting-for-file = Nahrávání souboru…
 pdfjs-toggle-views-manager-button1 =
     .title = Spravovat strany
 
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = Vlastnosti digitálního podpisu
+    .aria-label = Vlastnosti digitálního podpisu
+pdfjs-digital-signature-properties-button-label = Vlastnosti digitálního podpisu
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Dokument byl podepsán platným digitálním podpisem
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Dokument je podepsán, ale { $count } elektronický podpis se nepodařilo ověřit
+        [few] Dokument je podepsán, ale { $count } elektronické podpisy se nepodařilo ověřit
+        [many] Dokument je podepsán, ale { $count } elektronických podpisů se nepodařilo ověřit
+       *[other] Dokument je podepsán, ale { $count } elektronických podpisů se nepodařilo ověřit
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Dokument podepsaný { $count } certifikátem, který není důvěryhodný
+        [few] Dokument podepsaný { $count } certifikáty, které nejsou důvěryhodné
+        [many] Dokument podepsaný { $count } certifikáty, které nejsou důvěryhodné
+       *[other] Dokument podepsaný { $count } certifikáty, které nejsou důvěryhodné
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Dokument je podepsaný { $count } prošlým certifikátem
+        [few] Dokument je podepsaný { $count } prošlými certifikáty
+        [many] Dokument je podepsaný { $count } prošlými certifikáty
+       *[other] Dokument je podepsaný { $count } prošlými certifikáty
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Dokument má { $count } neplatný elektronický podpis
+        [few] Dokument má { $count } neplatné elektronické podpisy
+        [many] Dokument má { $count } neplatných elektronických podpisů
+       *[other] Dokument má { $count } neplatných elektronických podpisů
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Dokument je podepsaný { $count } zneplatněným certifikátem
+        [few] Dokument je podepsaný { $count } zneplatněnými certifikáty
+        [many] Dokument je podepsaný { $count } zneplatněnými certifikáty
+       *[other] Dokument je podepsaný { $count } zneplatněnými certifikáty
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Stav: Podpis ověřen
+pdfjs-digital-signature-properties-status-invalid = Stav: Podpis je neplatný
+pdfjs-digital-signature-properties-status-unknown = Stav: Nelze ověřit (nepodporováno)
+
 ## Per-signature certificate row. The variants with an issuer / date in
 ## parentheses embed fully-localized context — no English fall-through.
 ##
@@ -756,9 +839,14 @@ pdfjs-toggle-views-manager-button1 =
 ##   $issuer (String) - issuer or subject common name from the cert.
 ##   $dateObj (Date)  - notAfter date for the expired-with-date form.
 
+pdfjs-digital-signature-properties-certificate-trusted = Certifikát: Důvěryhodný ({ $issuer })
 pdfjs-digital-signature-properties-certificate-unknown = Certifikát: nedostupný
 pdfjs-digital-signature-properties-certificate-untrusted = Certifikát: nedůvěryhodný
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certifikát: Neznámý vydavatel ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certifikát: Self-signed ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certifikát: Nedůvěryhodný vydavatel ({ $issuer })
 pdfjs-digital-signature-properties-certificate-expired = Certifikát: vypršel
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certifikát: Vypršel ({ DATETIME($dateObj, dateStyle: "medium") })
 pdfjs-digital-signature-properties-certificate-revoked = Certifikát: zneplatněn
 
 ## Main menu for adding/removing signatures

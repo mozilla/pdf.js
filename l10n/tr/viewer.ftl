@@ -153,6 +153,24 @@ pdfjs-document-properties-linearized = Hızlı web görünümü:
 pdfjs-document-properties-linearized-yes = Evet
 pdfjs-document-properties-linearized-no = Hayır
 pdfjs-document-properties-close-button = Kapat
+pdfjs-digital-signature-properties-view-certificate = Sertifikayı göster
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Neden: { $reason }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Alt imza ({ $count })
+       *[other] Alt imzalar ({ $count })
+    }
 
 ## Print
 
@@ -731,6 +749,49 @@ pdfjs-new-badge-content = YENİ
 pdfjs-views-manager-waiting-for-file = Dosya yükleniyor…
 pdfjs-toggle-views-manager-button1 =
     .title = Sayfaları yönet
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = Dijital imza özellikleri
+    .aria-label = Dijital imza özellikleri
+pdfjs-digital-signature-properties-button-label = Dijital imza özellikleri
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Belge geçerli bir dijital imza ile imzalanmıştır
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Durum: İmza doğrulandı
+pdfjs-digital-signature-properties-status-invalid = Durum: İmza geçersiz
+pdfjs-digital-signature-properties-status-unknown = Durum: Doğrulanamadı (desteklenmiyor)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Sertifika: Güvenilir ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Sertifika: Kullanılamıyor
+pdfjs-digital-signature-properties-certificate-untrusted = Sertifika: Güvensiz
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Sertifika: Bilinmeyen yayıncı ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Sertifika: Kendi kendine imzalanmış ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Sertifika: Güvenilmeyen yayıncı ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Sertifika: Süresi dolmuş
+pdfjs-digital-signature-properties-certificate-expired-with-date = Sertifika: Süresi dolmuş ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Sertifika: İptal edilmiş
 
 ## Main menu for adding/removing signatures
 

@@ -769,6 +769,40 @@ pdfjs-digital-signature-properties-button-label = Propiedades de firma digital
 ##   $count (Number) - number of signatures at the worst level.
 
 pdfjs-digital-signature-properties-banner-verified = El documento fue firmado con una firma digital válida
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Documento firmado pero { $count } firma digital no pudo ser verificada
+       *[other] Documento firmado pero { $count } firmas digitales no pudieron ser verificadas
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Documento firmado con { $count } certificado que no es confiable
+       *[other] Documento firmado con { $count } certificados que no son confiables
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Documento firmado con { $count } certificado expirado
+       *[other] Documento firmado con { $count } certificado expirado
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] El documento tiene { $count } firmas digital inválida
+       *[other] El documento tiene { $count } firmas digitales inválidas
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Documento firmado con { $count } certificado revocado
+       *[other] Documento firmado con { $count } certificados revocados
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Estado: Firma verificada
+pdfjs-digital-signature-properties-status-invalid = Estado: Firma inválida
+pdfjs-digital-signature-properties-status-unknown = Estado: No se puede verificar (no soportada)
 
 ## Per-signature certificate row. The variants with an issuer / date in
 ## parentheses embed fully-localized context — no English fall-through.
@@ -777,6 +811,11 @@ pdfjs-digital-signature-properties-banner-verified = El documento fue firmado co
 ##   $issuer (String) - issuer or subject common name from the cert.
 ##   $dateObj (Date)  - notAfter date for the expired-with-date form.
 
+pdfjs-digital-signature-properties-certificate-trusted = Certificado: Confiable ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Certificado: No disponible
+pdfjs-digital-signature-properties-certificate-untrusted = Certificado: No confiable
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certificado: Emisor desconocido ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certificado: Autofirmado ({ $issuer })
 pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certificado: Emisor no confiable ({ $issuer })
 pdfjs-digital-signature-properties-certificate-expired = Certificado: Vencido
 pdfjs-digital-signature-properties-certificate-expired-with-date = Certificado: Vencido ({ DATETIME($dateObj, dateStyle: "medium") })
