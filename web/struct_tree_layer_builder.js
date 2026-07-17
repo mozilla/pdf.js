@@ -113,7 +113,7 @@ class MathMLSanitizer {
       "sanitizer",
       FeatureTest.isSanitizerSupported
         ? new Sanitizer({
-            elements: [...MathMLElements].map(name => ({
+            elements: Array.from(MathMLElements.keys(), name => ({
               name,
               namespace: MathMLNamespace,
             })),

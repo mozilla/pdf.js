@@ -366,8 +366,10 @@ class DrawLayer {
    *   Connected text layers sorted in document order.
    */
   static #getOrderedTextLayers() {
-    return [...this.#textLayerSet]
+    return this.#textLayerSet
+      .keys()
       .filter(textLayer => textLayer.isConnected)
+      .toArray()
       .sort(compareTextLayers);
   }
 
