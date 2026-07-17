@@ -747,6 +747,17 @@ pdfjs-digital-signature-properties-button =
     .aria-label = Digitális aláírás tulajdonságai
 pdfjs-digital-signature-properties-button-label = Digitális aláírás tulajdonságai
 
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-expired = Tanúsítvány: lejárt
+pdfjs-digital-signature-properties-certificate-expired-with-date = Tanúsítvány: lejárt ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Tanúsítvány: visszavonva
+
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =

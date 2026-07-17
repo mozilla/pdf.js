@@ -776,12 +776,12 @@ pdfjs-digital-signature-properties-banner-unknown =
     }
 pdfjs-digital-signature-properties-banner-untrusted =
     { $count ->
-        [one] Dokument signerat med certifikat { $count } som inte är tillförlitligt
+        [one] Dokument signerat med { $count } certifikat som inte är tillförlitligt
        *[other] Dokument signerat med { $count } certifikat som inte är tillförlitliga
     }
 pdfjs-digital-signature-properties-banner-expired =
     { $count ->
-        [one] Dokument signerat med { $count } upphört certifikat
+        [one] Dokument signerat med { $count } utgånget certifikat
        *[other] Dokument signerat med { $count } utgångna certifikat
     }
 pdfjs-digital-signature-properties-banner-invalid =
@@ -817,8 +817,8 @@ pdfjs-digital-signature-properties-certificate-untrusted = Certifikat: Otillför
 pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certifikat: Okänd utfärdare ({ $issuer })
 pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certifikat: Självsignerat ({ $issuer })
 pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certifikat: Otillförlitlig utfärdare ({ $issuer })
-pdfjs-digital-signature-properties-certificate-expired = Certifikat: Förfallit
-pdfjs-digital-signature-properties-certificate-expired-with-date = Certifikat: Upphörd ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-expired = Certifikat: Utgånget
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certifikat: Utgånget ({ DATETIME($dateObj, dateStyle: "medium") })
 pdfjs-digital-signature-properties-certificate-revoked = Certifikat: Återkallat
 
 ## Main menu for adding/removing signatures

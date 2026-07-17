@@ -153,6 +153,27 @@ pdfjs-document-properties-linearized = Nopea web-katselu:
 pdfjs-document-properties-linearized-yes = Kyllä
 pdfjs-document-properties-linearized-no = Ei
 pdfjs-document-properties-close-button = Sulje
+pdfjs-digital-signature-properties-view-certificate = Näytä varmenne
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Syy: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Aikaleima: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Aliallekirjoitus ({ $count })
+       *[other] Aliallekirjoitukset ({ $count })
+    }
 
 ## Print
 
@@ -731,6 +752,74 @@ pdfjs-new-badge-content = UUTTA
 pdfjs-views-manager-waiting-for-file = Lähetetään tiedostoa…
 pdfjs-toggle-views-manager-button1 =
     .title = Hallitse sivuja
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .title = Digitaalisen allekirjoituksen ominaisuudet
+    .aria-label = Digitaalisen allekirjoituksen ominaisuudet
+pdfjs-digital-signature-properties-button-label = Digitaalisen allekirjoituksen ominaisuudet
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Asiakirja allekirjoitettiin kelvollisella digitaalisella allekirjoituksella
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Asiakirja allekirjoitettu, mutta { $count } digitaalista allekirjoitusta ei voitu vahvistaa
+       *[other] Asiakirja allekirjoitettu, mutta { $count } digitaalista allekirjoitusta ei voitu vahvistaa
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Asiakirja on allekirjoitettu { $count } varmenteella, johon ei luoteta
+       *[other] Asiakirja on allekirjoitettu { $count } varmenteella, joihin ei luoteta
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Asiakirja allekirjoitettu { $count } vanhentuneella varmenteella
+       *[other] Asiakirja allekirjoitettu { $count } vanhentuneella varmenteella
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Asiakirjassa on { $count } virheellinen digitaalinen allekirjoitus
+       *[other] Asiakirjassa on { $count } virheellistä digitaalista allekirjoitusta
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Asiakirja allekirjoitettu { $count } kumotulla varmenteella
+       *[other] Asiakirja allekirjoitettu { $count } kumotulla varmenteella
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Tila: Allekirjoitus vahvistettu
+pdfjs-digital-signature-properties-status-invalid = Tila: Allekirjoitus virheellinen
+pdfjs-digital-signature-properties-status-unknown = Tila: Vahvistus epäonnistui (ei tuettu)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Varmenne: Luotettu ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Varmenne: Ei saatavilla
+pdfjs-digital-signature-properties-certificate-untrusted = Varmenne: Ei-luotettu
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Varmenne: Tuntematon myöntäjä ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Varmenne: Itse allekirjoitettu ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Varmenne: Ei-luotettu myöntäjä ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Varmenne: Vanhentunut
+pdfjs-digital-signature-properties-certificate-expired-with-date = Varmenne: Vanhentunut ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Varmenne: Kumottu
 
 ## Main menu for adding/removing signatures
 

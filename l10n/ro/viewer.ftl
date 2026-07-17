@@ -412,8 +412,9 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title =
     { $count ->
-        [one] Comentariu
-       *[other] Comentarii
+        [one] comentariu
+        [few] comentarii
+       *[other] de comentarii
     }
 pdfjs-editor-comments-sidebar-close-button =
     .title = Închide bara laterală
