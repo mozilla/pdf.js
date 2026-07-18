@@ -36,6 +36,8 @@ function applyBoundingBox(ctx, bbox) {
 }
 
 class BaseShadingPattern {
+  matrix = null;
+
   constructor() {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
@@ -64,7 +66,6 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     this._p1 = IR[5];
     this._r0 = IR[6];
     this._r1 = IR[7];
-    this.matrix = null;
   }
 
   isOriginBased() {
@@ -381,7 +382,6 @@ class MeshShadingPattern extends BaseShadingPattern {
     this._bounds = IR[5];
     this._bbox = IR[6];
     this._background = IR[7];
-    this.matrix = null;
     // Pre-compile the mesh pipeline now that we know GPU-renderable content
     // is present; no-op if the GPU is not available or already compiled.
     loadMeshShader();
