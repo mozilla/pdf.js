@@ -1,23 +1,24 @@
 # Force Unix line endings for most file formats (except binary files)
-*.js         text eol=lf
-*.jsm        text eol=lf
-*.css        text eol=lf
-*.html       text eol=lf
-*.md         text eol=lf
-*.ftl        text eol=lf
-*.yml        text eol=lf
-*.json       text eol=lf
 *.config     text eol=lf
-*.inc        text eol=lf
-*.manifest   text eol=lf
-*.rdf        text eol=lf
-*.jade       text eol=lf
-*.coffee     text eol=lf
+*.css        text eol=lf
+*.example    text eol=lf
+*.ftl        text eol=lf
+*.html       text eol=lf
+*.js         text eol=lf
+*.json       text eol=lf
+*.link       text eol=lf
+*.md         text eol=lf
+*.mjs        text eol=lf
+*.mts        text eol=lf
+*.njk        text eol=lf
+*.py         text eol=lf
+*.svg        text eol=lf
+*.ts         text eol=lf
+*.txt        text eol=lf
+*.yml        text eol=lf
 
 # PDF files shall not modify CRLF line endings
 *.pdf -crlf
 
 # Linguist language overrides
 *.js linguist-language=JavaScript
-*.jsm linguist-language=JavaScript
-*.inc linguist-language=XML
