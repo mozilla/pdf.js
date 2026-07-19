@@ -34,10 +34,6 @@ import { CheckedOperatorList, OperatorList } from "./operator_list.js";
 import { CMapFactory, IdentityCMap } from "./cmap.js";
 import { Cmd, Dict, EOF, isName, Name, Ref, RefSet } from "./primitives.js";
 import {
-  compileFontPathInfo,
-  compilePatternInfo,
-} from "./obj_bin_transform_core.js";
-import {
   compileType3Glyph,
   FontFlags,
   normalizeFontName,
@@ -83,6 +79,7 @@ import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
+import { compilePatternInfo } from "./obj_bin_transform_core.js";
 import { getFontSubstitution } from "./font_substitutions.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
@@ -4809,10 +4806,10 @@ class PartialEvaluator {
     function buildPath(fontChar) {
       const glyphName = `${font.loadedName}_path_${fontChar}`;
       try {
-        if (font.renderer.hasBuiltPath(fontChar)) {
-          return;
+        const buffer = font.renderer.getPath(fontChar);
+        if (!buffer) {
+          return; // Previously compiled, and sent to the main-thread.
         }
-        const buffer = compileFontPathInfo(font.renderer.getPathJs(fontChar));
         handler.send("commonobj", [glyphName, "FontPath", buffer], [buffer]);
       } catch (reason) {
         if (evaluatorOptions.ignoreErrors) {
