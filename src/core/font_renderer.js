@@ -781,6 +781,10 @@ class Commands {
 }
 
 class CompiledFont {
+  #compiledGlyphs = new Map();
+
+  #compiledCharCodeToGlyphId = new Map();
+
   constructor(fontMatrix) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
@@ -789,9 +793,6 @@ class CompiledFont {
       unreachable("Cannot initialize CompiledFont.");
     }
     this.fontMatrix = fontMatrix;
-
-    this.compiledGlyphs = Object.create(null);
-    this.compiledCharCodeToGlyphId = Object.create(null);
   }
 
   static get NOOP() {
@@ -807,24 +808,20 @@ class CompiledFont {
 
   getPathJs(unicode) {
     const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
-    let fn = this.compiledGlyphs[glyphId],
-      compileEx;
-    if (fn === undefined) {
+
+    const path = this.#compiledGlyphs.getOrInsertComputed(glyphId, () => {
       try {
-        fn = this.compileGlyph(this.glyphs[glyphId], glyphId);
+        return this.compileGlyph(this.glyphs[glyphId], glyphId);
       } catch (ex) {
-        fn = CompiledFont.NOOP; // Avoid attempting to re-compile a corrupt glyph.
-
-        compileEx = ex;
+        return ex; // Avoid attempting to re-compile a corrupt glyph.
       }
-      this.compiledGlyphs[glyphId] = fn;
-    }
-    this.compiledCharCodeToGlyphId[charCode] ??= glyphId;
+    });
+    this.#compiledCharCodeToGlyphId.getOrInsert(charCode, glyphId);
 
-    if (compileEx) {
-      throw compileEx;
+    if (path instanceof Error) {
+      throw path;
     }
-    return fn;
+    return path;
   }
 
   compileGlyph(code, glyphId) {
@@ -861,8 +858,8 @@ class CompiledFont {
   hasBuiltPath(unicode) {
     const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
     return (
-      this.compiledGlyphs[glyphId] !== undefined &&
-      this.compiledCharCodeToGlyphId[charCode] !== undefined
+      this.#compiledGlyphs.has(glyphId) &&
+      this.#compiledCharCodeToGlyphId.has(charCode)
     );
   }
 }
