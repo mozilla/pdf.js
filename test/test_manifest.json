@@ -14479,5 +14479,12 @@
     "rounds": 1,
     "type": "eq",
     "password": "S\u00AASL\u00ADprep"
+  },
+  {
+    "id": "jpx_smaskindata",
+    "file": "pdfs/jpx_smaskindata.pdf",
+    "md5": "f7a8628b14ca176700247f106c16812a",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

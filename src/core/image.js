@@ -119,7 +119,7 @@ class PDFImage {
         this.jpxDecoderOptions = {
           numComponents: 0,
           isIndexedColormap: false,
-          smaskInData: dict.has("SMaskInData"),
+          smaskInData: dict.get("SMaskInData") >= 1,
           reducePower,
         };
         if (reducePower) {
@@ -196,6 +196,25 @@ class PDFImage {
     if (!this.imageMask) {
       let colorSpace = dict.getRaw("CS") || dict.getRaw("ColorSpace");
       const hasColorSpace = !!colorSpace;
+
+      if (
+        this.jpxDecoderOptions?.smaskInData &&
+        dict.get("SMaskInData") === 2
+      ) {
+        this.jpxPremultiplied = true;
+        if (this.matte) {
+          const matteColorSpace = ColorSpaceUtils.parse({
+            cs: hasColorSpace ? colorSpace : Name.get("DeviceRGB"),
+            xref,
+            resources: isInline ? res : null,
+            pdfFunctionFactory,
+            globalColorSpaceCache,
+            localColorSpaceCache,
+          });
+          this.preblendMatte = matteColorSpace.getRgb(this.matte, 0);
+        }
+      }
+
       if (!hasColorSpace) {
         if (this.jpxDecoderOptions) {
           colorSpace = Name.get("DeviceRGBA");
@@ -654,22 +673,7 @@ class PDFImage {
     });
   }
 
-  undoPreblend(buffer, width, height) {
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-      assert(
-        buffer instanceof Uint8ClampedArray,
-        'PDFImage.undoPreblend: Unsupported "buffer" type.'
-      );
-    }
-    const matte = this.smask?.matte;
-    if (!matte) {
-      return;
-    }
-    const matteRgb = this.colorSpace.getRgb(matte, 0);
-    const matteR = matteRgb[0];
-    const matteG = matteRgb[1];
-    const matteB = matteRgb[2];
-    const length = width * height * 4;
+  static #undoPreblend(buffer, length, matteR, matteG, matteB) {
     for (let i = 0; i < length; i += 4) {
       const alpha = buffer[i + 3];
       if (alpha === 0) {
@@ -685,6 +689,27 @@ class PDFImage {
       buffer[i + 1] = (buffer[i + 1] - matteG) * k + matteG;
       buffer[i + 2] = (buffer[i + 2] - matteB) * k + matteB;
     }
+  }
+
+  undoPreblend(buffer, width, height) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(
+        buffer instanceof Uint8ClampedArray,
+        'PDFImage.undoPreblend: Unsupported "buffer" type.'
+      );
+    }
+    const matte = this.smask?.matte;
+    if (!matte) {
+      return;
+    }
+    const matteRgb = this.colorSpace.getRgb(matte, 0);
+    PDFImage.#undoPreblend(
+      buffer,
+      width * height * 4,
+      matteRgb[0],
+      matteRgb[1],
+      matteRgb[2]
+    );
   }
 
   async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
@@ -716,6 +741,17 @@ class PDFImage {
         originalHeight * originalWidth * 4,
         { internal: isOffscreenCanvasSupported && mustBeResized }
       ));
+
+      if (this.jpxPremultiplied) {
+        const matteRgb = this.preblendMatte;
+        PDFImage.#undoPreblend(
+          imgArray,
+          imgArray.length,
+          matteRgb?.[0] ?? 0,
+          matteRgb?.[1] ?? 0,
+          matteRgb?.[2] ?? 0
+        );
+      }
 
       if (isOffscreenCanvasSupported) {
         if (!mustBeResized) {
