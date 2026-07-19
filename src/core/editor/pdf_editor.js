@@ -709,12 +709,21 @@ class PDFEditor {
       }
       for (let attr of attributes) {
         attr = this.xrefWrapper.fetchIfRef(attr);
+        if (!(attr instanceof Dict)) {
+          // An attribute array may interleave dictionaries and revision
+          // numbers (ISO 32000-2, 14.7.6.3).
+          continue;
+        }
         if (isName(attr.get("O"), "Table") && attr.has("Headers")) {
           const headers = this.xrefWrapper.fetchIfRef(attr.getRaw("Headers"));
           if (Array.isArray(headers)) {
             for (let i = 0, ii = headers.length; i < ii; i++) {
+              const header = this.xrefWrapper.fetchIfRef(headers[i]);
+              if (typeof header !== "string") {
+                continue;
+              }
               const newId = dedupIDs.get(
-                stringToPDFString(headers[i], /* keepEscapeSequence = */ false)
+                stringToPDFString(header, /* keepEscapeSequence = */ false)
               );
               if (newId) {
                 headers[i] = newId;
