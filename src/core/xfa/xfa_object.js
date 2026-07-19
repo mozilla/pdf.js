@@ -447,7 +447,10 @@ class XFAObject {
   [_getUnsetAttributes](protoAttributes) {
     const allAttr = this[_attributeNames];
     const setAttr = this[_setAttributes];
-    return [...protoAttributes].filter(x => allAttr.has(x) && !setAttr.has(x));
+    return protoAttributes
+      .keys()
+      .filter(x => allAttr.has(x) && !setAttr.has(x))
+      .toArray();
   }
 
   /**
