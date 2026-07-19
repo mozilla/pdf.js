@@ -1159,6 +1159,14 @@ if (
   };
 }
 
+// TODO: Remove this once `Iterator.prototype.join` is generally available.
+if (typeof Iterator.prototype.join !== "function") {
+  // eslint-disable-next-line no-extend-native
+  Iterator.prototype.join = function (separator) {
+    return [...this].join(separator);
+  };
+}
+
 export {
   _isValidExplicitDest,
   AbortException,
