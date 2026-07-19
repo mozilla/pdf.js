@@ -108,19 +108,19 @@ async function refreshIndex() {
     process.exit(1);
   };
 
-  const headers = {};
+  const headers = new Headers();
   if (hasCached && fs.existsSync(etagPath)) {
     const etag = fs.readFileSync(etagPath, "utf8").trim();
     // Only forward a syntactically valid HTTP ETag (RFC 7232), so the cached
     // file's contents can't be used to inject arbitrary data into the request.
     if (/^(?:W\/)?"[\x21\x23-\x7e]*"$/.test(etag)) {
-      headers["If-None-Match"] = etag;
+      headers.set("If-None-Match", etag);
     }
   }
 
   let response;
   try {
-    console.error(`Fetching per-test index from ${PER_TEST_INDEX_URL} ...`);
+    console.log(`Fetching per-test index from ${PER_TEST_INDEX_URL} ...`);
     response = await fetch(PER_TEST_INDEX_URL, { headers });
   } catch (error) {
     fallbackOrFail(error.message);
@@ -128,7 +128,7 @@ async function refreshIndex() {
   }
 
   if (response.status === 304) {
-    console.error("Per-test index is up to date.");
+    console.log("Per-test index is up to date.");
     return;
   }
   if (!response.ok) {
@@ -174,7 +174,7 @@ async function refreshIndex() {
     fallbackOrFail(error.message);
     return;
   }
-  console.error(`Per-test index updated (${serialized.length} bytes).`);
+  console.log(`Per-test index updated (${serialized.length} bytes).`);
 }
 
 await refreshIndex();
