@@ -111,7 +111,9 @@ async function refreshIndex() {
   const headers = {};
   if (hasCached && fs.existsSync(etagPath)) {
     const etag = fs.readFileSync(etagPath, "utf8").trim();
-    if (etag) {
+    // Only forward a syntactically valid HTTP ETag (RFC 7232), so the cached
+    // file's contents can't be used to inject arbitrary data into the request.
+    if (/^(?:W\/)?"[\x21\x23-\x7e]*"$/.test(etag)) {
       headers["If-None-Match"] = etag;
     }
   }
@@ -134,17 +136,20 @@ async function refreshIndex() {
     return;
   }
 
-  let data;
+  let text;
   try {
-    data = Buffer.from(await response.arrayBuffer());
+    text = await response.text();
   } catch (error) {
     fallbackOrFail(error.message);
     return;
   }
 
-  // Validate the payload before caching it.
+  // Parse the payload before caching it, and cache the re-serialized result
+  // rather than the raw response body: only well-formed JSON produced by our
+  // own JSON.stringify is ever written to disk.
+  let serialized;
   try {
-    JSON.parse(data.toString("utf8"));
+    serialized = JSON.stringify(JSON.parse(text));
   } catch {
     fallbackOrFail("the downloaded index is not valid JSON");
     return;
@@ -154,7 +159,7 @@ async function refreshIndex() {
   try {
     fs.mkdirSync(path.dirname(indexPath), { recursive: true });
     const tmpPath = `${indexPath}.${process.pid}.tmp`;
-    fs.writeFileSync(tmpPath, data);
+    fs.writeFileSync(tmpPath, serialized);
     fs.renameSync(tmpPath, indexPath);
 
     const etag = response.headers.get("etag");
@@ -169,7 +174,7 @@ async function refreshIndex() {
     fallbackOrFail(error.message);
     return;
   }
-  console.error(`Per-test index updated (${data.length} bytes).`);
+  console.error(`Per-test index updated (${serialized.length} bytes).`);
 }
 
 await refreshIndex();
