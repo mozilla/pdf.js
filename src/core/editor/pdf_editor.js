@@ -1624,7 +1624,7 @@ class PDFEditor {
       }
       const { destinations, pagesMap } = documentData;
       const newDestinations = (documentData.destinations = new Map());
-      for (const [key, dest] of Object.entries(destinations)) {
+      for (const [key, dest] of destinations) {
         const pageRef = dest[0];
         const pageData = pageRef instanceof Ref && pagesMap.get(pageRef);
         if (!pageData) {
