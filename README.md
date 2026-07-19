@@ -136,13 +136,30 @@ browsable HTML report instead, or pass several formats at once, e.g.
 
 ### Finding which tests cover a given line
 
-Run a browser test task with `--coverage-per-test` to build an index
-(`per-test-index.json`) in the coverage directory, then query it to list the
-tests that exercised a specific source line or function:
+`coverage_search` lists the ref tests that exercised a specific source line or
+function. It uses the per-test index (`per-test-index.json`) that is rebuilt on
+every push to `master` and published to the
+[`pdf.js.refs`](https://github.com/mozilla/pdf.js.refs/tree/gh-pages)
+repository. The index is downloaded on demand, cached locally, and only
+re-downloaded when it has changed, so no local coverage build is required:
 
-    $ npx gulp botbrowsertest --coverage-per-test
     $ npx gulp coverage_search --code="canvas.js::205"
     $ npx gulp coverage_search --code="canvas.js::drawImageAtIntegerCoords"
+
+To run — or regenerate the reference images for — only the ref tests that touch
+a given line or function, pass the same `--code` option to a browser test or
+`makeref` task:
+
+    $ npx gulp browsertest --code="canvas.js::205"
+    $ npx gulp makeref --code="canvas.js::205"
+
+Pass `--no-download` to reuse the locally cached index without contacting the
+network. The index can also be built and queried locally (the CI job that
+publishes it builds it the same way):
+
+    $ npx gulp botbrowsertest --coverage-per-test
+    $ npx gulp coverage_search --code="canvas.js::205" \
+        --index=build/coverage/per-test-index.json --no-download
 
 ### Continuous integration
 

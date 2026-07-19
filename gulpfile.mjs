@@ -793,35 +793,17 @@ function runTests(testsName, { bot = false } = {}) {
       args.push("--coveragePerTest");
     }
 
-    const codeArg = testsName === "browser" ? getArgValue("--code") : null;
-    if (codeArg) {
-      const coverageDir =
-        getArgValue("--coverage-output") || BUILD_DIR + "coverage";
-      const result = spawnSync(
-        "node",
-        [
-          path.join(__dirname, "external/ccov/coverage_search.mjs"),
-          `--code=${codeArg}`,
-          `--coverage-dir=${coverageDir}`,
-        ],
-        { encoding: "utf8" }
-      );
-      if (result.status !== 0) {
-        reject(new Error(result.stderr?.trim() || "coverage_search failed"));
+    if (testsName === "browser") {
+      let shouldRun;
+      try {
+        shouldRun = applyCodeTestFilter(args);
+      } catch (error) {
+        reject(error);
         return;
       }
-      const testIds = result.stdout.trim().split("\n").filter(Boolean);
-      if (testIds.length === 0) {
-        console.log(`\n### No tests found covering "${codeArg}"`);
+      if (!shouldRun) {
         resolve();
         return;
-      }
-      console.log(
-        `\n### Found ${testIds.length} test(s) covering "${codeArg}":\n` +
-          testIds.map(id => `  ${id}`).join("\n")
-      );
-      for (const id of testIds) {
-        args.push(`-t=${id}`);
       }
     }
 
@@ -888,6 +870,136 @@ function collectArgs(options, args) {
   }
 }
 
+// Builds the coverage_search command line. By default the published index is
+// downloaded; an explicit --index=<path> selects a local index instead, used
+// read-only so it's never overwritten by the published copy.
+function getCoverageSearchArgs(codeArg) {
+  const searchArgs = [
+    path.join(__dirname, "external/ccov/coverage_search.mjs"),
+    `--code=${codeArg}`,
+  ];
+  const indexArg = getArgValue("--index");
+  if (indexArg === "") {
+    // An explicit but empty value (e.g. an unset shell variable expanding to
+    // `--index=`) almost certainly isn't intended; fail loudly rather than
+    // silently falling back to the downloaded index.
+    throw new Error("--index was given without a value");
+  }
+  if (indexArg) {
+    searchArgs.push(`--index=${indexArg}`, "--no-download");
+  } else if (process.argv.includes("--no-download")) {
+    searchArgs.push("--no-download");
+  }
+  return searchArgs;
+}
+
+// Returns the set of test IDs defined in the local ref-test manifest, or null
+// when it can't be read. Used to drop coverage-derived IDs that don't exist on
+// this branch (e.g. a test renamed since the published index was built), which
+// would otherwise make test.mjs reject the entire run.
+function readManifestTestIds() {
+  try {
+    const manifestFile = process.env.PDF_TEST || "test_manifest.json";
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(__dirname, TEST_DIR, manifestFile), "utf8")
+    );
+    return new Set(manifest.map(entry => entry.id));
+  } catch {
+    return null;
+  }
+}
+
+// For a --code=<file>::<line|function> argument, runs coverage_search to find
+// the ref tests that exercise that location and returns their IDs (an empty
+// array when none match locally). Returns null when --code wasn't given; throws
+// when the search itself fails.
+function resolveCodeTestIds() {
+  const codeArg = getArgValue("--code");
+  if (!codeArg) {
+    return null;
+  }
+  // Inherit stderr so the index download progress is visible; stdout is
+  // captured because it carries the matching test IDs.
+  const result = spawnSync("node", getCoverageSearchArgs(codeArg), {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "inherit"],
+  });
+  if (result.status !== 0) {
+    // status is null when the child couldn't be spawned or was killed by a
+    // signal; surface the real cause instead of a generic message.
+    throw new Error(
+      result.error
+        ? `coverage_search failed: ${result.error.message}`
+        : `coverage_search failed (exit code ${result.status})`
+    );
+  }
+  let testIds = result.stdout.trim().split("\n").filter(Boolean);
+
+  // The published index is built from master, so some covering tests may not
+  // exist on this branch. Drop them (with a note) rather than letting test.mjs
+  // reject the whole run — and silently exit 0 — on the first unknown ID.
+  const knownIds = readManifestTestIds();
+  if (knownIds) {
+    const missing = testIds.filter(id => !knownIds.has(id));
+    if (missing.length) {
+      console.log(
+        `\n### Ignoring ${missing.length} covered test(s) not in the manifest:\n` +
+          missing.map(id => `  ${id}`).join("\n")
+      );
+      testIds = testIds.filter(id => knownIds.has(id));
+    }
+  }
+
+  if (testIds.length === 0) {
+    console.log(`\n### No tests found covering "${codeArg}"`);
+  } else {
+    console.log(
+      `\n### Found ${testIds.length} test(s) covering "${codeArg}":\n` +
+        testIds.map(id => `  ${id}`).join("\n")
+    );
+  }
+  return testIds;
+}
+
+function appendTestFilters(args, testIds) {
+  const existingIds = new Set();
+
+  // collectArgs always normalizes filters to the space-separated
+  // `-t <id>` / `--testfilter <id>` form, so that's the only shape to read.
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "-t" || args[i] === "--testfilter") {
+      if (i + 1 < args.length) {
+        existingIds.add(args[++i]);
+      }
+    }
+  }
+  for (const id of testIds) {
+    if (!existingIds.has(id)) {
+      // Pass the id as a separate argument: node's parseArgs parses the short
+      // form `-t=<id>` as the literal value "=<id>", which matches no test and
+      // aborts the run with "Unrecognized test IDs".
+      args.push("-t", id);
+      existingIds.add(id);
+    }
+  }
+}
+
+// Applies the --code coverage filter to `args`. Returns false when the run
+// should be skipped (--code was given but resolved to no runnable tests), and
+// true otherwise (no --code, or matching tests were appended). Throws when the
+// coverage search itself fails.
+function applyCodeTestFilter(args) {
+  const codeTestIds = resolveCodeTestIds();
+  if (codeTestIds === null) {
+    return true; // No --code argument; run normally.
+  }
+  if (codeTestIds.length === 0) {
+    return false; // Nothing (runnable) covers the requested location.
+  }
+  appendTestFilters(args, codeTestIds);
+  return true;
+}
+
 function makeRef(done, bot) {
   console.log("\n### Creating reference images");
 
@@ -936,6 +1048,18 @@ function makeRef(done, bot) {
     args
   );
 
+  let shouldRun;
+  try {
+    shouldRun = applyCodeTestFilter(args);
+  } catch (error) {
+    done(error);
+    return;
+  }
+  if (!shouldRun) {
+    done();
+    return;
+  }
+
   const testProcess = startNode(args, { cwd: TEST_DIR, stdio: "inherit" });
   testProcess.on("close", function (code) {
     if (code !== 0) {
@@ -946,34 +1070,33 @@ function makeRef(done, bot) {
   });
 }
 
-// Queries the per-test coverage index built by --coverage-per-test and prints
-// the IDs of tests that exercised a given source file location. Run with
-// --code=<file>::<line|function>, e.g. --code=canvas.js::205
+// Prints the IDs of tests that exercised a given source file location, using
+// the per-test coverage index published to the pdf.js.refs repository. The
+// index is downloaded on demand, cached locally, and only re-downloaded when
+// it has changed. Run with --code=<file>::<line|function>, e.g.
+// --code=canvas.js::205 (add --no-download to reuse the cached index offline).
 gulp.task("coverage_search", function (done) {
   const codeArg = getArgValue("--code");
   if (!codeArg) {
     done(new Error('Missing --code argument, e.g. --code="canvas.js::205"'));
     return;
   }
-  const coverageDir =
-    getArgValue("--coverage-output") || BUILD_DIR + "coverage";
-  const result = spawnSync(
-    "node",
-    [
-      path.join(__dirname, "external/ccov/coverage_search.mjs"),
-      `--code=${codeArg}`,
-      `--coverage-dir=${coverageDir}`,
-    ],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
-  );
-  if (result.stderr) {
-    process.stderr.write(result.stderr);
+  let searchArgs;
+  try {
+    searchArgs = getCoverageSearchArgs(codeArg);
+  } catch (error) {
+    done(error);
+    return;
   }
-  if (result.stdout) {
-    process.stdout.write(result.stdout);
-  }
+  const result = spawnSync("node", searchArgs, { stdio: "inherit" });
   if (result.status !== 0) {
-    done(new Error("coverage_search failed"));
+    done(
+      new Error(
+        result.error
+          ? `coverage_search failed: ${result.error.message}`
+          : `coverage_search failed (exit code ${result.status})`
+      )
+    );
     return;
   }
   done();
