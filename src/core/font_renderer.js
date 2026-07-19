@@ -26,6 +26,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { CFFParser } from "./cff_parser.js";
+import { compileFontPathInfo } from "./obj_bin_transform_core.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { isNumberArray } from "./core_utils.js";
 import { StandardEncoding } from "./encodings.js";
@@ -781,9 +782,9 @@ class Commands {
 }
 
 class CompiledFont {
-  #compiledGlyphs = new Map();
+  #compiledCharCodes = new Set();
 
-  #compiledCharCodeToGlyphId = new Map();
+  #compiledGlyphs = new Map();
 
   constructor(fontMatrix) {
     if (
@@ -806,8 +807,15 @@ class CompiledFont {
     );
   }
 
-  getPathJs(unicode) {
+  getPath(unicode) {
     const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
+
+    if (
+      this.#compiledGlyphs.has(glyphId) &&
+      this.#compiledCharCodes.has(charCode)
+    ) {
+      return null; // Previously compiled.
+    }
 
     const path = this.#compiledGlyphs.getOrInsertComputed(glyphId, () => {
       try {
@@ -816,12 +824,12 @@ class CompiledFont {
         return ex; // Avoid attempting to re-compile a corrupt glyph.
       }
     });
-    this.#compiledCharCodeToGlyphId.getOrInsert(charCode, glyphId);
+    this.#compiledCharCodes.add(charCode);
 
     if (path instanceof Error) {
       throw path;
     }
-    return path;
+    return compileFontPathInfo(path);
   }
 
   compileGlyph(code, glyphId) {
@@ -853,14 +861,6 @@ class CompiledFont {
 
   compileGlyphImpl() {
     unreachable("Children classes should implement this.");
-  }
-
-  hasBuiltPath(unicode) {
-    const { charCode, glyphId } = lookupCmap(this.cmap, unicode);
-    return (
-      this.#compiledGlyphs.has(glyphId) &&
-      this.#compiledCharCodeToGlyphId.has(charCode)
-    );
   }
 }
 
