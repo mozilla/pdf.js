@@ -14486,5 +14486,12 @@
     "md5": "f7a8628b14ca176700247f106c16812a",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "nonisolated_blend_smask",
+    "file": "pdfs/nonisolated_blend_smask.pdf",
+    "md5": "4b87611416be34894eeb19c158fafbad",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
