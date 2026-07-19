@@ -89,11 +89,11 @@ const etagPath = `${indexPath}.etag`;
 // only when it has changed since the last run. When the network is unavailable
 // a previously cached copy is reused if present.
 async function refreshIndex() {
-  const hasCached = fs.existsSync(indexPath);
-
   if (values["no-download"]) {
     return; // Freshness check disabled; the read below validates existence.
   }
+
+  const hasCached = fs.existsSync(indexPath);
 
   // On any download failure, fall back to a previously cached copy when one
   // exists; otherwise there's nothing to search, so fail.
