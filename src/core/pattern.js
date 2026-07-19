@@ -667,25 +667,25 @@ class MeshStreamReader {
   }
 }
 
-let bCache = Object.create(null);
+let bCache = null;
 
-function buildB(count) {
-  const lut = [];
-  for (let i = 0; i <= count; i++) {
-    const t = i / count,
-      t_ = 1 - t;
-    lut.push(
-      new Float32Array([t_ ** 3, 3 * t * t_ ** 2, 3 * t ** 2 * t_, t ** 3])
-    );
-  }
-  return lut;
-}
 function getB(count) {
-  return (bCache[count] ||= buildB(count));
+  return (bCache ??= new Map()).getOrInsertComputed(count, () =>
+    Array.from({ length: count + 1 }, (_, i) => {
+      const t = i / count,
+        t_ = 1 - t;
+      return new Float32Array([
+        t_ ** 3,
+        3 * t * t_ ** 2,
+        3 * t ** 2 * t_,
+        t ** 3,
+      ]);
+    })
+  );
 }
 
 function clearPatternCaches() {
-  bCache = Object.create(null);
+  bCache?.clear();
 }
 
 class MeshShading extends BaseShading {
