@@ -775,7 +775,7 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Object<string, Array<any>>>} A promise that is resolved
+   * @returns {Promise<Map<string, Array<any>>>} A promise that is resolved
    *   with a mapping from named destinations to references.
    *
    * This can be slow for large documents. Use `getDestination` instead.
@@ -3085,9 +3085,7 @@ class WorkerTransport {
     if (typeof id !== "string") {
       return Promise.reject(new Error("Invalid destination request."));
     }
-    return this.messageHandler.sendWithPromise("GetDestination", {
-      id,
-    });
+    return this.messageHandler.sendWithPromise("GetDestination", { id });
   }
 
   getPageLabels() {

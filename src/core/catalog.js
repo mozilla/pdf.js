@@ -763,15 +763,17 @@ class Catalog {
   }
 
   get destinations() {
-    const rawDests = this.#readDests(),
-      dests = Object.create(null);
-    for (const obj of rawDests) {
+    const dests = new Map();
+
+    for (const obj of this.#readDests()) {
       if (obj instanceof NameTree) {
         for (const [key, value] of obj.getAll()) {
           const dest = fetchDest(value);
           if (dest) {
-            dests[stringToPDFString(key, /* keepEscapeSequence = */ true)] =
-              dest;
+            dests.set(
+              stringToPDFString(key, /* keepEscapeSequence = */ true),
+              dest
+            );
           }
         }
       } else if (obj instanceof Dict) {
@@ -779,8 +781,10 @@ class Catalog {
           const dest = fetchDest(value);
           if (dest) {
             // Always let the NameTree take precedence.
-            dests[stringToPDFString(key, /* keepEscapeSequence = */ true)] ||=
-              dest;
+            dests.getOrInsert(
+              stringToPDFString(key, /* keepEscapeSequence = */ true),
+              dest
+            );
           }
         }
       }
@@ -791,11 +795,10 @@ class Catalog {
   getDestination(id) {
     // Avoid extra lookup/parsing when all destinations are already available.
     if (Object.hasOwn(this, "destinations")) {
-      return this.destinations[id] ?? null;
+      return this.destinations.get(id) ?? null;
     }
 
-    const rawDests = this.#readDests();
-    for (const obj of rawDests) {
+    for (const obj of this.#readDests()) {
       if (obj instanceof NameTree || obj instanceof Dict) {
         const dest = fetchDest(obj.get(id));
         if (dest) {
@@ -807,13 +810,7 @@ class Catalog {
     // Always fallback to checking all destinations, in order to support:
     //  - PDF documents with out-of-order NameTrees (fixes issue 10272).
     //  - Destination keys that use PDFDocEncoding (fixes issue 19835).
-    if (rawDests.length) {
-      const dest = this.destinations[id];
-      if (dest) {
-        return dest;
-      }
-    }
-    return null;
+    return this.destinations.get(id) ?? null;
   }
 
   #readDests() {
