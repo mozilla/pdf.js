@@ -1,0 +1,137 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 320 240]
+       /Group << /Type /Group /S /Transparency /CS /DeviceRGB >>
+       /Resources <<
+         /Font << /F1 5 0 R >>
+         /ExtGState << /Half 7 0 R >>
+         /XObject << /FxText 6 0 R /FxAlpha 12 0 R >>
+       >>
+       /Contents 4 0 R >>
+endobj
+4 0 obj
+<<  /Length 419 >>
+stream
+q
+/Half gs
+0.10 0.35 1 rg
+20 160 120 35 re f
+180 160 120 35 re f
+Q
+BT /F1 17 Tf 0 0 0 rg 48 213 Td (The two blue boxes should match) Tj ET
+BT /F1 12 Tf 0 0 0 rg 61 140 Td (control) Tj ET
+BT /F1 12 Tf 0 0 0 rg 203 140 Td (inside group) Tj ET
+BT /F1 12 Tf 0 0 0 rg 58 108 Td (Original issue: text should stay visible) Tj ET
+1 1 1 rg
+10 15 300 80 re f
+BT /F1 30 Tf 0 0 0 rg 105 39 Td (Hidden) Tj ET
+/FxText Do
+/FxAlpha Do
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 320 100]
+     /Group << /Type /Group /S /Transparency /CS /DeviceRGB /I false >>
+     /Resources <<
+       /ExtGState << /Blend 8 0 R /Masked 9 0 R >>
+       /XObject << /Paint 10 0 R >>
+     >> /Length 35 >>
+stream
+/Blend gs
+q /Masked gs /Paint Do Q
+endstream
+endobj
+7 0 obj
+<< /Type /ExtGState /ca 0.5 /CA 0.5 >>
+endobj
+8 0 obj
+<< /Type /ExtGState /BM /Multiply >>
+endobj
+9 0 obj
+<< /Type /ExtGState /ca 1 /CA 1
+       /SMask << /Type /Mask /S /Alpha /G 11 0 R >> >>
+endobj
+10 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 320 100]
+     /Group << /Type /Group /S /Transparency /CS /DeviceRGB /I true >>
+     /Resources << >> /Length 36 >>
+stream
+0.55 0.35 0.95 rg
+30 25 260 55 re f
+endstream
+endobj
+11 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [0 0 320 100]
+     /Group << /Type /Group /S /Transparency /CS /DeviceGray /I true >>
+     /Resources << >> /Length 22 >>
+stream
+1 g
+30 25 260 55 re f
+endstream
+endobj
+12 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [170 150 310 200]
+     /Group << /Type /Group /S /Transparency /CS /DeviceRGB /I false >>
+     /Resources <<
+       /ExtGState << /Blend 8 0 R /Masked 13 0 R >>
+       /XObject << /Paint 14 0 R >>
+     >> /Length 35 >>
+stream
+/Blend gs
+q /Masked gs /Paint Do Q
+endstream
+endobj
+13 0 obj
+<< /Type /ExtGState /ca 1 /CA 1
+       /SMask << /Type /Mask /S /Alpha /G 15 0 R >> >>
+endobj
+14 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [170 150 310 200]
+     /Group << /Type /Group /S /Transparency /CS /DeviceRGB /I true >>
+     /Resources << >> /Length 29 >>
+stream
+1 0 0 rg
+170 150 140 50 re f
+endstream
+endobj
+15 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [170 150 310 200]
+     /Group << /Type /Group /S /Transparency /CS /DeviceGray /I true >>
+     /Resources << >> /Length 1 >>
+stream
+
+endstream
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000434 00000 n 
+0000000904 00000 n 
+0000000974 00000 n 
+0000001306 00000 n 
+0000001360 00000 n 
+0000001412 00000 n 
+0000001514 00000 n 
+0000001755 00000 n 
+0000001983 00000 n 
+0000002321 00000 n 
+0000002424 00000 n 
+0000002662 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+2872
+%%EOF
