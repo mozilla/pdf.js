@@ -122,6 +122,7 @@ function getViewerConfiguration() {
         "imageAltTextSettingsSeparator"
       ),
       documentPropertiesButton: document.getElementById("documentProperties"),
+      pageDarkModeButton: document.getElementById("pageDarkMode"),
     },
     viewsManager: {
       outerContainer: document.getElementById("outerContainer"),

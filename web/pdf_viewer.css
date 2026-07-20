@@ -89,6 +89,8 @@
   --hcm-highlight-filter: none;
   --hcm-highlight-selected-filter: none;
 
+  --page-dark-mode-filter: none;
+
   @media screen and (forced-colors: active) {
     --hcm-highlight-filter: invert(100%);
   }
@@ -111,6 +113,7 @@
       width: 100%;
       height: 100%;
       contain: content;
+      filter: var(--page-dark-mode-filter);
 
       .structTree {
         contain: strict;
@@ -254,4 +257,11 @@
 .pdfPresentationMode .pdfViewer .page {
   margin: 0 auto;
   border: 2px solid transparent;
+}
+
+/* Page dark mode filter for thumbnail images.
+   The CSS variable --page-dark-mode-filter is set on the thumbnails container
+   by the app and inherited here. */
+.thumbnailsView .thumbnailImageContainer img {
+  filter: var(--page-dark-mode-filter);
 }

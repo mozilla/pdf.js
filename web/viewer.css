@@ -126,6 +126,7 @@
     --toolbarButton-editorStamp-icon
   );
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
+  --secondaryToolbarButton-pageDarkMode-icon: url(images/secondaryToolbarButton-pageDarkMode.svg);
   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
   --comment-edit-button-icon: url(images/comment-editButton.svg);
 }
@@ -1060,6 +1061,10 @@ dialog :link {
 
     #documentProperties::before {
       mask-image: var(--secondaryToolbarButton-documentProperties-icon);
+    }
+
+    #pageDarkMode::before {
+      mask-image: var(--secondaryToolbarButton-pageDarkMode-icon);
     }
   }
 }

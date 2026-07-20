@@ -104,6 +104,12 @@ pdfjs-spread-even-button =
     .title = Join page spreads starting with even-numbered pages
 pdfjs-spread-even-button-label = Even Spreads
 
+## Page Dark Mode
+
+pdfjs-page-dark-mode-button =
+    .title = Page Dark Mode
+pdfjs-page-dark-mode-button-label = Page Dark Mode
+
 ## Document properties dialog
 
 pdfjs-document-properties-button =

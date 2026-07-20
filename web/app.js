@@ -630,6 +630,9 @@ const PDFViewerApplication = {
       renderingQueue.setThumbnailViewer(this.pdfThumbnailViewer);
     }
 
+    // Apply the saved page dark mode preference.
+    this._applyPageDarkMode(AppOptions.get("pageDarkMode"));
+
     // The browsing history is only enabled when the viewer is standalone,
     // i.e. not when it is embedded in a web page.
     if (!this.isViewerEmbedded && !AppOptions.get("disableHistory")) {
@@ -2175,6 +2178,45 @@ const PDFViewerApplication = {
     // in the 'rotationchanging' event handler.
   },
 
+  _togglePageDarkMode() {
+    const newMode = (AppOptions.get("pageDarkMode") + 1) % 3;
+    AppOptions.set("pageDarkMode", newMode);
+  },
+
+  _applyPageDarkMode(mode) {
+    const filterMap = {
+      0: "none",
+      1: "brightness(0.85) contrast(0.95)",
+      2: "invert(0.88) hue-rotate(180deg)",
+    };
+    const viewer = this.pdfViewer?.viewer;
+    if (viewer) {
+      viewer.style.setProperty(
+        "--page-dark-mode-filter",
+        filterMap[mode] || "none"
+      );
+    }
+    // Update thumbnail viewer too
+    const thumbnailContainer = this.pdfThumbnailViewer?.container;
+    if (thumbnailContainer) {
+      thumbnailContainer.style.setProperty(
+        "--page-dark-mode-filter",
+        filterMap[mode] || "none"
+      );
+    }
+    // Update button label
+    const button = this.appConfig?.secondaryToolbar?.pageDarkModeButton;
+    if (button) {
+      const labelMap = { 0: "Off", 1: "Soft", 2: "Full" };
+      const label = labelMap[mode] || "Off";
+      button.setAttribute("data-page-dark-mode", mode);
+      const span = button.querySelector("span");
+      if (span) {
+        span.textContent = `Page Dark Mode: ${label}`;
+      }
+    }
+  },
+
   requestPresentationMode() {
     this.pdfPresentationMode?.request();
   },
@@ -2245,6 +2287,16 @@ const PDFViewerApplication = {
     );
     eventBus.on("rotatecw", this.rotatePages.bind(this, 90), opts);
     eventBus.on("rotateccw", this.rotatePages.bind(this, -90), opts);
+    eventBus.on(
+      "togglepagedarkmode",
+      this._togglePageDarkMode.bind(this),
+      opts
+    );
+    eventBus.on(
+      "pagedarkmode",
+      evt => this._applyPageDarkMode(evt.value),
+      opts
+    );
     eventBus.on(
       "optionalcontentconfig",
       evt => (pdfViewer.optionalContentConfigPromise = evt.promise),

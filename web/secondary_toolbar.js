@@ -146,6 +146,11 @@ class SecondaryToolbar {
         close: true,
       },
       {
+        element: options.pageDarkModeButton,
+        eventName: "togglepagedarkmode",
+        close: false,
+      },
+      {
         element: options.documentPropertiesButton,
         eventName: "documentproperties",
         close: true,

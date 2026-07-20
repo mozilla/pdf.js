@@ -363,6 +363,11 @@ const defaultOptions = {
     value: 500, // ms
     kind: OptionKind.VIEWER,
   },
+  pageDarkMode: {
+    /** @type {number} */
+    value: 0,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
+  },
   forcePageColors: {
     /** @type {boolean} */
     value: false,
