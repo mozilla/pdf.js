@@ -283,6 +283,21 @@ class PsWasmCompiler {
     } while (n !== 0);
   }
 
+  // `i32.const` immediates are signed LEB128 (Wasm spec), so they must be
+  // emitted with sign extension — the unsigned encoder mis-encodes any value
+  // whose final 7-bit group has bit 0x40 set (e.g. 64 → 0x40 → decoded as −64).
+  _emitSLEB128(n) {
+    for (;;) {
+      const b = n & 0x7f;
+      n >>= 7; // arithmetic shift keeps the sign bit
+      if ((n === 0 && (b & 0x40) === 0) || (n === -1 && (b & 0x40) !== 0)) {
+        this._code.push(b);
+        return;
+      }
+      this._code.push(b | 0x80);
+    }
+  }
+
   _emitF64Const(value) {
     this._code.push(OP.f64_const);
     PsWasmCompiler.#f64View.setFloat64(0, value, true /* little-endian */);
@@ -532,11 +547,11 @@ class PsWasmCompiler {
     const shift = first.value;
     if (shift > 0) {
       code.push(OP.i32_const);
-      this._emitULEB128(shift);
+      this._emitSLEB128(shift);
       code.push(OP.i32_shl);
     } else if (shift < 0) {
       code.push(OP.i32_const);
-      this._emitULEB128(-shift);
+      this._emitSLEB128(-shift);
       code.push(OP.i32_shr_s);
     }
     code.push(OP.f64_convert_i32_s);
@@ -870,7 +885,7 @@ class PsWasmCompiler {
       const min = this._range[i * 2];
       const max = this._range[i * 2 + 1];
       code.push(OP.i32_const);
-      this._emitULEB128(i * 8);
+      this._emitSLEB128(i * 8);
       if (!this._compileNode(outputs[i])) {
         return null;
       }

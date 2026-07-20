@@ -1,5 +1,12 @@
 [
   {
+    "id": "postscript-type4-many-outputs",
+    "file": "pdfs/postscript_type4_many_outputs.pdf",
+    "md5": "90c1ebd35acc6c7d01f4fdb0ae0bef82",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "bug1755201",
     "file": "pdfs/bug1755201.pdf",
     "md5": "cece14097812d8a1f69e86a51e4a3804",

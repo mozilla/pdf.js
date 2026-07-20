@@ -1049,6 +1049,26 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       );
       expect(r2).toBeCloseTo(0.5, 9);
     });
+
+    it("compiles functions with 9+ outputs (signed i32.const store offset)", async function () {
+      // Regression: each output's f64.store address is emitted as
+      // `i32.const (i * 8)`. i32.const immediates are *signed* LEB128, so the
+      // 9th output offset (64) must not be written with the unsigned encoder,
+      // which yields the byte 0x40 that Wasm decodes as -64 → out-of-bounds
+      // store → runtime trap. compileAndRun throws if the Wasm function traps.
+      for (const nOut of [9, 10, 16, 20]) {
+        const range = [];
+        for (let i = 0; i < nOut; i++) {
+          range.push(0, 1000);
+        }
+        const src = "{" + " dup".repeat(nOut - 1) + " }";
+        const out = compileAndRun(src, [0, 1], range, [0.5]);
+        expect(out.length).toBe(nOut);
+        for (const value of out) {
+          expect(value).toBeCloseTo(0.5, 10);
+        }
+      }
+    });
   });
 
   // PSStackToTree
