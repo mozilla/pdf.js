@@ -18,6 +18,7 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../../web/pdf_link_service.js").PDFLinkService} PDFLinkService */
 
+import { shadow, SVG_NS } from "../shared/util.js";
 import { PageViewport } from "./page_viewport.js";
 import { XfaText } from "./xfa_text.js";
 
@@ -31,7 +32,122 @@ import { XfaText } from "./xfa_text.js";
  * @property {string} [intent] - (default value is 'display').
  */
 
+const disallowedRichTextStyleRegExp = /url\(|image-set\(/i;
+
+const disallowedEventHandlerAttrRegExp = /^on/i;
+
 class XfaLayer {
+  static get _allowedHtmlElements() {
+    return shadow(
+      this,
+      "_allowedHtmlElements",
+      new Set([
+        "a",
+        "b",
+        "br",
+        "button",
+        "div",
+        "i",
+        "img",
+        "input",
+        "label",
+        "li",
+        "ol",
+        "option",
+        "p",
+        "select",
+        "span",
+        "sub",
+        "sup",
+        "textarea",
+        "ul",
+      ])
+    );
+  }
+
+  static get _allowedSvgElements() {
+    return shadow(
+      this,
+      "_allowedSvgElements",
+      new Set(["ellipse", "line", "path", "rect", "svg"])
+    );
+  }
+
+  // The elements the rich text renderer is allowed to create: this matches the
+  // (much smaller) set the worker can emit for rich text, see
+  // `src/core/xfa/xhtml.js`. In particular no SVG and no interactive/form
+  // elements are allowed here.
+  static get _allowedRichTextElements() {
+    return shadow(
+      this,
+      "_allowedRichTextElements",
+      new Set([
+        "a",
+        "b",
+        "br",
+        "div",
+        "i",
+        "li",
+        "ol",
+        "p",
+        "span",
+        "sub",
+        "sup",
+        "ul",
+      ])
+    );
+  }
+
+  static get _allowedRichTextAttributes() {
+    return shadow(
+      this,
+      "_allowedRichTextAttributes",
+      new Set(["class", "dir", "style"])
+    );
+  }
+
+  // The CSS properties the rich text renderer is allowed to set (camel-cased,
+  // as produced by `mapStyle` in `src/core/xfa/xhtml.js`). This mirrors that
+  // file's `VALID_STYLES`, so it excludes anything that could load a remote
+  // resource or escape the layout (e.g. `position`, `zIndex`, `background`).
+  static get _allowedRichTextStyles() {
+    return shadow(
+      this,
+      "_allowedRichTextStyles",
+      new Set([
+        "color",
+        "font",
+        "fontFamily",
+        "fontSize",
+        "fontStretch",
+        "fontStyle",
+        "fontWeight",
+        "kerningMode",
+        "letterSpacing",
+        "lineHeight",
+        "margin",
+        "marginBottom",
+        "marginLeft",
+        "marginRight",
+        "marginTop",
+        "orphans",
+        "paddingLeft",
+        "paddingRight",
+        "breakAfter",
+        "breakBefore",
+        "breakInside",
+        "tabInterval",
+        "tabStop",
+        "textAlign",
+        "textDecoration",
+        "textIndent",
+        "transform",
+        "verticalAlign",
+        "widows",
+      ])
+    );
+  }
+
   static setupStorage(html, id, element, storage, intent) {
     const storedData = storage.getValue(id, { value: null });
     switch (element.name) {
@@ -117,6 +233,14 @@ class XfaLayer {
         continue;
       }
 
+      if (disallowedEventHandlerAttrRegExp.test(key)) {
+        continue;
+      }
+
+      if (intent === "richText" && !this._allowedRichTextAttributes.has(key)) {
+        continue;
+      }
+
       switch (key) {
         case "class":
           if (value.length) {
@@ -132,7 +256,19 @@ class XfaLayer {
           html.setAttribute("data-element-id", value);
           break;
         case "style":
-          Object.assign(html.style, value);
+          if (intent === "richText") {
+            const allowedStyles = this._allowedRichTextStyles;
+            for (const [styleName, styleValue] of Object.entries(value)) {
+              if (
+                allowedStyles.has(styleName) &&
+                !disallowedRichTextStyleRegExp.test(styleValue)
+              ) {
+                html.style[styleName] = styleValue;
+              }
+            }
+          } else {
+            Object.assign(html.style, value);
+          }
           break;
         case "textContent":
           html.textContent = value;
@@ -145,7 +281,7 @@ class XfaLayer {
     }
 
     if (isHTMLAnchorElement) {
-      linkService.addLinkAttributes(
+      linkService?.addLinkAttributes(
         html,
         attributes.href,
         attributes.newWindow
@@ -158,6 +294,22 @@ class XfaLayer {
     }
   }
 
+  static #createElement(name, xmlns, intent) {
+    if (intent === "richText") {
+      return !xmlns && this._allowedRichTextElements.has(name)
+        ? document.createElement(name)
+        : null;
+    }
+    if (xmlns) {
+      return xmlns === SVG_NS && this._allowedSvgElements.has(name)
+        ? document.createElementNS(SVG_NS, name)
+        : null;
+    }
+    return this._allowedHtmlElements.has(name)
+      ? document.createElement(name)
+      : null;
+  }
+
   /**
    * Render the XFA layer.
    *
@@ -168,7 +320,9 @@ class XfaLayer {
     const linkService = parameters.linkService;
     const root = parameters.xfaHtml;
     const intent = parameters.intent || "display";
-    const rootHtml = document.createElement(root.name);
+    const rootHtml =
+      this.#createElement(root.name, root.attributes?.xmlns, intent) ??
+      document.createElement("div");
     if (root.attributes) {
       this.setAttributes({
         html: rootHtml,
@@ -230,9 +384,14 @@ class XfaLayer {
         continue;
       }
 
-      const childHtml = child?.attributes?.xmlns
-        ? document.createElementNS(child.attributes.xmlns, name)
-        : document.createElement(name);
+      const childHtml = this.#createElement(
+        name,
+        child.attributes?.xmlns,
+        intent
+      );
+      if (!childHtml) {
+        continue;
+      }
 
       html.append(childHtml);
       if (child.attributes) {
