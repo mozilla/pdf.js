@@ -813,6 +813,22 @@ class DrawLayer {
     }
   }
 
+  /**
+   * The SVGs live in the canvas wrapper whereas the editor divs live in the
+   * annotation editor layer: both are siblings, hence the SVGs must carry the
+   * same z-index as their editor in order to be stacked with them.
+   *
+   * @param {number} id
+   * @param {number} zIndex
+   * @returns {undefined}
+   */
+  updateZIndex(id, zIndex) {
+    const root = this.#mapping.get(id);
+    if (root) {
+      root.style.zIndex = zIndex;
+    }
+  }
+
   updateParent(id, layer) {
     if (layer === this) {
       return;
