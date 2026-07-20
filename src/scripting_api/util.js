@@ -602,7 +602,11 @@ class Util extends PDFObject {
         function (match, patternElement) {
           const { pattern, action } = handlers[patternElement];
           actions.push(action);
-          return pattern;
+          // If the format is "Hm", then /\d{1,2}\d{1,2}/ is ambiguous so we use
+          // a lookahead to ensure that we match the longest possible sequence.
+          return pattern.includes(",")
+            ? `(?=${pattern})\\${actions.length}`
+            : pattern;
         }
       );
 
