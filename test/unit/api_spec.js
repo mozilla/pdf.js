@@ -2805,6 +2805,16 @@ describe("api", function () {
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
 
+    it("saving should ignore Annotations with null `fieldValue` (issue 21582)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue21582.pdf"));
+      const pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument();
+      expect(data).toBeInstanceOf(Uint8Array);
+
+      await loadingTask.destroy();
+    });
+
     it("write a value in an annotation, save the pdf and load it", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
       let pdfDoc = await loadingTask.promise;

@@ -224,7 +224,7 @@ function writeXFADataForAcroform(str, changes) {
       continue;
     }
     const { path, value } = xfa;
-    if (!path) {
+    if (!path || value === null) {
       continue;
     }
     const nodePath = parseXFAPath(path);
