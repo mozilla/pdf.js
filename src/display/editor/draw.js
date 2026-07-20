@@ -139,6 +139,7 @@ class DrawingEditor extends AnnotationEditor {
         drawOutlines.defaultProperties
       );
       this.#createFocusOutline(this.parent);
+      this.parent.drawLayer.updateZIndex(drawId, this.zIndex);
     } else {
       // We create a new drawing.
       this._drawId = this.#createDrawing(drawOutlines, this.parent);
@@ -160,6 +161,11 @@ class DrawingEditor extends AnnotationEditor {
       this._clipPathId = clipPathId;
     }
     this.#createFocusOutline(parent);
+
+    // The SVG lives in the canvas wrapper, which is a sibling of the annotation
+    // editor layer containing the editor divs, so it must share their z-index
+    // in order to be stacked with the other editors.
+    parent.drawLayer.updateZIndex(id, this.zIndex);
 
     return id;
   }
@@ -201,6 +207,22 @@ class DrawingEditor extends AnnotationEditor {
     parent.drawLayer.updateProperties(_drawId, { rootClass });
     if (_focusDrawId !== null) {
       parent.drawLayer.updateProperties(_focusDrawId, { rootClass });
+    }
+  }
+
+  /** @inheritdoc */
+  setInBackground() {
+    super.setInBackground();
+    if (this._drawId !== null) {
+      this.parent?.drawLayer.updateZIndex(this._drawId, 0);
+    }
+  }
+
+  /** @inheritdoc */
+  setInForeground() {
+    super.setInForeground();
+    if (this._drawId !== null) {
+      this.parent?.drawLayer.updateZIndex(this._drawId, this.zIndex);
     }
   }
 
@@ -429,6 +451,30 @@ class DrawingEditor extends AnnotationEditor {
         }
       )
     );
+  }
+
+  /** @inheritdoc */
+  select() {
+    super.select();
+    // The `.selectedEditor` rule raises the editor div, but the drawing itself
+    // lives in a separate SVG, which must be raised along with it.
+    this.parent?.drawLayer.updateProperties(this._drawId, {
+      rootClass: {
+        selected: true,
+      },
+    });
+    this.#toggleFocusOutlineClass({ hovered: false, selected: true });
+  }
+
+  /** @inheritdoc */
+  unselect() {
+    super.unselect();
+    this.parent?.drawLayer.updateProperties(this._drawId, {
+      rootClass: {
+        selected: false,
+      },
+    });
+    this.#toggleFocusOutlineClass({ selected: false });
   }
 
   _onStartDragging() {
@@ -764,18 +810,6 @@ class DrawingEditor extends AnnotationEditor {
     this.#updateVisibility();
   }
 
-  /** @inheritdoc */
-  select() {
-    super.select();
-    this.#toggleFocusOutlineClass({ hovered: false, selected: true });
-  }
-
-  /** @inheritdoc */
-  unselect() {
-    super.unselect();
-    this.#toggleFocusOutlineClass({ selected: false });
-  }
-
   pointerover() {
     if (!this.isSelected) {
       this.#toggleFocusOutlineClass({ hovered: true });
@@ -1033,6 +1067,12 @@ class DrawingEditor extends AnnotationEditor {
     );
     this._currentDrawId = id;
     DrawingEditor.#currentClipPathId = this._hasClipPath ? clipPathId : null;
+    // The editor isn't created until the drawing session ends, so use the
+    // z-index it will be given in order to draw on top of the existing editors.
+    parent.drawLayer.updateZIndex(
+      this._currentDrawId,
+      AnnotationEditor._zIndex
+    );
   }
 
   static _drawMove(event) {
