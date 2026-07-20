@@ -251,6 +251,15 @@ describe("Scripting", function () {
         value = await myeval(`util.scand("mmddyyyy", "07a15b2007").toString()`);
         expect(new Date(value)).toEqual(new Date("07/15/2007 12:00:00"));
       });
+
+      it("should handle a format with repeated specifiers", async () => {
+        const cFormat = "Hm".repeat(40);
+        const cDate = `${"1".repeat(84)}x`;
+        const value = await myeval(
+          `util.scand("${cFormat}", "${cDate}")?.toString() ?? "null"`
+        );
+        expect(value).toEqual("null");
+      });
     });
 
     describe("printf", function () {
