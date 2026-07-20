@@ -1760,7 +1760,7 @@ describe("api", function () {
 
     it("gets non-default viewer preferences", async function () {
       const prefs = await pdfDocument.getViewerPreferences();
-      expect(prefs).toEqual({ Direction: "L2R" });
+      expect(prefs).toEqual(new Map([["Direction", "L2R"]]));
     });
 
     it("gets default open action", async function () {

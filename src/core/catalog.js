@@ -1076,17 +1076,18 @@ class Catalog {
           break;
         case "PrintPageRange":
           // The number of elements must be even.
-          if (Array.isArray(value) && value.length % 2 === 0) {
-            const isValid = value.every(
+          if (
+            Array.isArray(value) &&
+            value.length % 2 === 0 &&
+            value.every(
               (page, i, arr) =>
                 Number.isInteger(page) &&
                 page > 0 &&
                 (i === 0 || page >= arr[i - 1]) &&
                 page <= this.numPages
-            );
-            if (isValid) {
-              prefValue = value;
-            }
+            )
+          ) {
+            prefValue = value;
           }
           break;
         case "NumCopies":
@@ -1103,8 +1104,7 @@ class Catalog {
         warn(`Bad value, for key "${key}", in ViewerPreferences: ${value}.`);
         continue;
       }
-      prefs ??= Object.create(null);
-      prefs[key] = prefValue;
+      (prefs ??= new Map()).set(key, prefValue);
     }
     return shadow(this, "viewerPreferences", prefs);
   }
