@@ -55,8 +55,7 @@ class Binder {
   constructor(root) {
     this.root = root;
     this.datasets = root.datasets;
-    this.data =
-      root.datasets?.data || new XmlObject(NamespaceIds.datasets.id, "data");
+    this.data = root.datasets?.data || new XmlObject(NS_DATASETS, "data");
     this.emptyMerge = this.data[$getChildren]().length === 0;
 
     this.root.form = this.form = root.template[$clone]();
@@ -137,7 +136,7 @@ class Binder {
         }
       }
       if (
-        dataNode[$namespaceId] === NamespaceIds.datasets.id &&
+        dataNode[$namespaceId] === NS_DATASETS &&
         dataNode[$nodeName] === "data"
       ) {
         break;
