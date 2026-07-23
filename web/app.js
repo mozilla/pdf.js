@@ -1589,7 +1589,7 @@ const PDFViewerApplication = {
           this._initializePdfHistory({
             fingerprint: pdfDocument.fingerprints[0],
             viewOnLoad,
-            initialDest: openAction?.dest,
+            initialDest: openAction?.get("dest"),
           });
           const initialBookmark = this.initialBookmark;
 
@@ -1788,7 +1788,7 @@ const PDFViewerApplication = {
     if (pdfDocument !== this.pdfDocument) {
       return; // The document was closed while the auto print data resolved.
     }
-    let triggerAutoPrint = openAction?.action === "Print";
+    let triggerAutoPrint = openAction?.get("action") === "Print";
 
     if (jsActions) {
       console.warn("Warning: JavaScript support is not enabled");

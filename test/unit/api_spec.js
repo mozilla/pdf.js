@@ -1774,11 +1774,9 @@ describe("api", function () {
 
     it("gets non-default open action (with destination)", async function () {
       const openAction = await pdfDocument.getOpenAction();
-      expect(openAction.dest).toEqual([
-        { num: 15, gen: 0 },
-        { name: "FitH" },
-        null,
-      ]);
+      expect(openAction).toEqual(
+        new Map([["dest", [{ num: 15, gen: 0 }, { name: "FitH" }, null]]])
+      );
       expect(openAction.action).toBeUndefined();
     });
 
@@ -1796,16 +1794,14 @@ describe("api", function () {
       const promise1 = loadingTask1.promise
         .then(pdfDoc => pdfDoc.getOpenAction())
         .then(function (openAction) {
-          expect(openAction.dest).toBeUndefined();
-          expect(openAction.action).toEqual("Print");
+          expect(openAction).toEqual(new Map([["action", "Print"]]));
 
           return loadingTask1.destroy();
         });
       const promise2 = loadingTask2.promise
         .then(pdfDoc => pdfDoc.getOpenAction())
         .then(function (openAction) {
-          expect(openAction.dest).toBeUndefined();
-          expect(openAction.action).toEqual("Print");
+          expect(openAction).toEqual(new Map([["action", "Print"]]));
 
           return loadingTask2.destroy();
         });

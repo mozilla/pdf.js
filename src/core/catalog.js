@@ -19,7 +19,6 @@ import {
   DocumentActionEventType,
   FormatError,
   info,
-  objectSize,
   PermissionFlag,
   shadow,
   stringToUTF8String,
@@ -1111,7 +1110,7 @@ class Catalog {
 
   get openAction() {
     const obj = this.#catDict.get("OpenAction");
-    const openAction = Object.create(null);
+    const openAction = new Map();
 
     if (obj instanceof Dict) {
       // Convert the OpenAction dictionary into a format that works with
@@ -1123,18 +1122,14 @@ class Catalog {
       Catalog.parseDestDictionary({ destDict, resultObj });
 
       if (Array.isArray(resultObj.dest)) {
-        openAction.dest = resultObj.dest;
+        openAction.set("dest", resultObj.dest);
       } else if (resultObj.action) {
-        openAction.action = resultObj.action;
+        openAction.set("action", resultObj.action);
       }
     } else if (isValidExplicitDest(obj)) {
-      openAction.dest = obj;
+      openAction.set("dest", obj);
     }
-    return shadow(
-      this,
-      "openAction",
-      objectSize(openAction) > 0 ? openAction : null
-    );
+    return shadow(this, "openAction", openAction.size ? openAction : null);
   }
 
   /**
