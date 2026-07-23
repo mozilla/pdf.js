@@ -270,6 +270,7 @@ class SignaturePropertiesManager {
         message: null,
         certificate: null,
         documentModifiedAfterSigning: !sig.coversWholeDocument,
+        modificationsAfterSignature: sig.modificationsAfterSignature,
       });
     }
     this.#render();
@@ -647,6 +648,7 @@ class SignaturePropertiesManager {
         message: ex?.message ?? null,
         certificate: null,
         documentModifiedAfterSigning: !signature.coversWholeDocument,
+        modificationsAfterSignature: signature.modificationsAfterSignature,
       };
     }
     this.#pendingVerify.delete(signature.id);

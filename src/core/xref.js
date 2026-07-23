@@ -38,6 +38,9 @@ class XRef {
     this.pdfManager = pdfManager;
     this.entries = [];
     this._xrefStms = new Set();
+    this._xrefSectionOffsets = new Set();
+    this._xrefSectionsComplete = true;
+    this._parsedWithRecovery = false;
     this._cacheMap = new Map(); // Prepare the XRef cache.
     this._pendingRefs = new RefSet();
     this._newPersistentRefNum = null;
@@ -97,6 +100,7 @@ class XRef {
   }
 
   parse(recoveryMode = false) {
+    this._parsedWithRecovery = recoveryMode;
     let trailerDict;
     if (!recoveryMode) {
       trailerDict = this.readXRef();
@@ -769,6 +773,8 @@ class XRef {
           throw new FormatError("Invalid XRef stream header");
         }
 
+        this._xrefSectionOffsets.add(startXRef);
+
         // Recursively get previous dictionary, if any
         obj = dict.get("Prev");
         if (Number.isInteger(obj)) {
@@ -782,6 +788,7 @@ class XRef {
         if (e instanceof MissingDataException) {
           throw e;
         }
+        this._xrefSectionsComplete = false;
         info("(while reading XRef): " + e);
       }
       this.startXRefQueue.shift();
@@ -794,6 +801,23 @@ class XRef {
       return undefined;
     }
     throw new XRefParseException();
+  }
+
+  countUpdatesAfter(offset) {
+    if (this._parsedWithRecovery || !this._xrefSectionsComplete) {
+      return null;
+    }
+    const relativeOffset = offset - this.stream.start;
+    let count = 0;
+    for (const sectionOffset of this._xrefSectionOffsets) {
+      if (
+        sectionOffset >= relativeOffset &&
+        !this._xrefStms.has(sectionOffset)
+      ) {
+        count++;
+      }
+    }
+    return count;
   }
 
   getEntry(i) {

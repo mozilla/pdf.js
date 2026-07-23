@@ -81,6 +81,7 @@ import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
 
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
+const SIGNATURE_TAIL_CHUNK_SIZE = 65536;
 
 class Page {
   #resourcesPromise = null;
@@ -1004,11 +1005,10 @@ function find(stream, signature, limit = 1024, backwards = false) {
 class PDFDocument {
   #pagePromises = new Map();
 
-  // Map<id, {data: Uint8Array[2], pkcs7: Uint8Array}> — populated by the
+  // Map<id, {byteRange: number[4], pkcs7: Uint8Array}> — populated by the
   // `signatures` getter, consumed by `getSignatureData`. We deliberately
-  // keep the byte payload out of the metadata array so it doesn't ride
-  // the worker→main `postMessage` boundary unless the viewer actually
-  // asks to verify (one shot per signature).
+  // keep the signed byte spans out of the metadata array and only slice
+  // them out of the stream when the viewer actually asks to verify.
   #signatureData = null;
 
   #version = null;
@@ -2026,12 +2026,47 @@ class PDFDocument {
     }
   }
 
-  // The /ByteRange of a signature that covers the whole document usually
-  // ends a few bytes before the file's actual end — the trailer,
-  // `startxref` offset and `%%EOF` marker are conventionally left outside
-  // the signed range. 100 bytes covers the worst case (large
-  // `startxref` offsets, optional whitespace) without false positives.
-  static #WHOLE_DOCUMENT_TAIL_FUZZ = 100;
+  async #getByteRange(begin, end) {
+    try {
+      return this.stream.getByteRange(begin, end);
+    } catch (ex) {
+      if (!(ex instanceof MissingDataException)) {
+        throw ex;
+      }
+      await this.pdfManager.requestRange(begin, end);
+      return this.#getByteRange(begin, end);
+    }
+  }
+
+  async #coversWholeDocument(signedEnd, modificationsAfterSignature) {
+    if (modificationsAfterSignature > 0) {
+      return false;
+    }
+
+    const fileLength = this.stream.end;
+    for (
+      let begin = signedEnd;
+      begin < fileLength;
+      begin += SIGNATURE_TAIL_CHUNK_SIZE
+    ) {
+      const end = Math.min(begin + SIGNATURE_TAIL_CHUNK_SIZE, fileLength);
+      const tail = await this.#getByteRange(begin, end);
+
+      for (const byte of tail) {
+        if (
+          byte !== 0x00 && // null
+          byte !== 0x09 && // horizontal tab
+          byte !== 0x0a && // line feed
+          byte !== 0x0c && // form feed
+          byte !== 0x0d && // carriage return
+          byte !== 0x20 // space
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
 
   #parseSignatureDict(field, sigDict, fieldRef) {
     const byteRange = sigDict.get("ByteRange");
@@ -2075,15 +2110,12 @@ class PDFDocument {
     if (
       a !== 0 ||
       b <= 0 ||
-      d < 0 ||
       a + b > c ||
       c + d > fileLength ||
       fileLength === 0
     ) {
       return null;
     }
-    const data = [stream.getByteRange(a, a + b), stream.getByteRange(c, c + d)];
-
     const pkcs7 = stringToBytes(contents);
 
     const t = field.get("T");
@@ -2096,13 +2128,6 @@ class PDFDocument {
 
     const refKey = fieldRef instanceof Ref ? fieldRef.toString() : "inline";
     const id = `${refKey}:${a}-${b}-${c}-${d}`;
-
-    // A signature "covers the whole document" iff the gap between the
-    // last signed byte and EOF is no more than the conventional
-    // trailer-slack window. Compare on the gap (not on the absolute
-    // lastSignedByte) so a tiny file with a tiny ByteRange isn't
-    // mis-flagged as full-coverage.
-    const tailGap = fileLength - (c + d);
 
     return {
       id,
@@ -2119,11 +2144,8 @@ class PDFDocument {
       signatureType,
       byteRange,
       pkcs7,
-      data,
       revisionIndex: 0,
       parentId: null,
-      coversWholeDocument:
-        tailGap >= 0 && tailGap <= PDFDocument.#WHOLE_DOCUMENT_TAIL_FUZZ,
     };
   }
 
@@ -2142,6 +2164,18 @@ class PDFDocument {
 
         const collected = [];
         this.#collectSignatureFields(fields, collected, new RefSet());
+
+        await Promise.all(
+          collected.map(async signature => {
+            const signedEnd = signature.byteRange[2] + signature.byteRange[3];
+            signature.modificationsAfterSignature =
+              this.xref.countUpdatesAfter?.(signedEnd) ?? null;
+            signature.coversWholeDocument = await this.#coversWholeDocument(
+              signedEnd,
+              signature.modificationsAfterSignature
+            );
+          })
+        );
 
         // Group sub-signatures by ByteRange containment: outer revision is
         // the largest covering signature (largest c + d). Sort descending,
@@ -2165,14 +2199,14 @@ class PDFDocument {
             }
           }
         }
-        // Split bytes (`data`, `pkcs7`) out of the metadata so the array
-        // we ship to the main thread stays small. The viewer fetches the
-        // bytes on demand via `getSignatureData(id)`, one signature at a
-        // time, only when verification is about to run.
+        // Keep the PKCS#7 blob and byte-range information worker-side so the
+        // metadata array stays small. The viewer fetches the signed bytes on
+        // demand via `getSignatureData(id)`, one signature at a time, only
+        // when verification is about to run.
         const signatureData = new Map();
         const metadata = collected.map(sig => {
-          const { data, pkcs7, ...rest } = sig;
-          signatureData.set(sig.id, { data, pkcs7 });
+          const { pkcs7, ...rest } = sig;
+          signatureData.set(sig.id, { byteRange: sig.byteRange, pkcs7 });
           return rest;
         });
         this.#signatureData = signatureData;
@@ -2185,7 +2219,17 @@ class PDFDocument {
   async getSignatureData(id) {
     // Ensure parsing is finished and `#signatureData` is populated.
     await this.signatures;
-    return this.#signatureData?.get(id) ?? null;
+    const signature = this.#signatureData?.get(id);
+    if (!signature) {
+      return null;
+    }
+    const { byteRange, pkcs7 } = signature;
+    const [a, b, c, d] = byteRange;
+    const data = await Promise.all([
+      this.#getByteRange(a, a + b),
+      this.#getByteRange(c, c + d),
+    ]);
+    return { data, pkcs7 };
   }
 
   get hasJSActions() {

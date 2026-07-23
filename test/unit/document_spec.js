@@ -17,6 +17,7 @@ import { createIdFactory, XRefMock } from "./test_utils.js";
 import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import { PDFDocument } from "../../src/core/document.js";
 import { StringStream } from "../../src/core/stream.js";
+import { XRef } from "../../src/core/xref.js";
 
 describe("document", function () {
   describe("Page", function () {
@@ -44,6 +45,35 @@ describe("document", function () {
     });
   });
 
+  describe("XRef", function () {
+    it("compares xref sections with absolute file offsets", function () {
+      const stream = new StringStream(" ".repeat(200));
+      stream.pos = 10;
+      stream.moveStart();
+
+      const xref = new XRef(stream, {});
+      xref._xrefSectionOffsets.add(100);
+
+      expect(xref.countUpdatesAfter(105)).toEqual(1);
+      expect(xref.countUpdatesAfter(111)).toEqual(0);
+    });
+
+    it("returns an unknown update count for an incomplete xref chain", function () {
+      const stream = new StringStream(
+        "xref\n" +
+          "0 1\n" +
+          "0000000000 65535 f \n" +
+          "trailer\n" +
+          "<< /Size 1 /Prev 999 >>\n"
+      );
+      const xref = new XRef(stream, {});
+      xref.setStartXRef(0);
+
+      expect(xref.readXRef()).toBeInstanceOf(Dict);
+      expect(xref.countUpdatesAfter(0)).toBeNull();
+    });
+  });
+
   describe("PDFDocument", function () {
     // Padded to 1024 bytes so signature ByteRange tests using offsets
     // like `[0, 100, 200, 800]` stay within `stream.end` (the new
@@ -51,7 +81,11 @@ describe("document", function () {
     // the file length).
     const stream = new StringStream("Dummy_PDF_data".padEnd(1024, " "));
 
-    function getDocument(acroForm, xref = new XRefMock()) {
+    function getDocument(
+      acroForm,
+      xref = new XRefMock(),
+      documentStream = stream
+    ) {
       const catalog = { acroForm };
       const pdfManager = {
         get docId() {
@@ -74,7 +108,7 @@ describe("document", function () {
           return { isOffscreenCanvasSupported: false };
         },
       };
-      const pdfDocument = new PDFDocument(pdfManager, stream);
+      const pdfDocument = new PDFDocument(pdfManager, documentStream);
       pdfDocument.xref = xref;
       pdfDocument.catalog = catalog;
 
@@ -281,6 +315,54 @@ describe("document", function () {
         expect(bytes.pkcs7).toBeInstanceOf(Uint8Array);
         expect(Array.isArray(bytes.data)).toBeTrue();
         expect(bytes.data.length).toEqual(2);
+      });
+
+      it("reports whole-document coverage when only whitespace trails the signed range", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        const sigRef = Ref.get(40, 0);
+        const fieldRef = Ref.get(41, 0);
+        const sigDict = makeSigDict({ byteRange: [0, 20, 30, 20] });
+        const fieldDict = makeSigField({ T: "sig_full", sigRef });
+
+        const xref = new XRefMock([
+          { ref: sigRef, data: sigDict },
+          { ref: fieldRef, data: fieldDict },
+        ]);
+        acroForm.set("Fields", [fieldRef]);
+
+        const documentStream = new StringStream(
+          "A".repeat(50) + " ".repeat(150)
+        );
+        const pdfDocument = getDocument(acroForm, xref, documentStream);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures.length).toEqual(1);
+        expect(signatures[0].coversWholeDocument).toBeTrue();
+      });
+
+      it("clears whole-document coverage when non-whitespace trails the signed range", async function () {
+        const acroForm = new Dict();
+        acroForm.set("SigFlags", 3);
+
+        const sigRef = Ref.get(42, 0);
+        const fieldRef = Ref.get(43, 0);
+        const sigDict = makeSigDict({ byteRange: [0, 20, 30, 20] });
+        const fieldDict = makeSigField({ T: "sig_partial", sigRef });
+
+        const xref = new XRefMock([
+          { ref: sigRef, data: sigDict },
+          { ref: fieldRef, data: fieldDict },
+        ]);
+        acroForm.set("Fields", [fieldRef]);
+
+        const documentStream = new StringStream(
+          "A".repeat(50) + "MODIFIED" + " ".repeat(142)
+        );
+        const pdfDocument = getDocument(acroForm, xref, documentStream);
+        const signatures = await pdfDocument.signatures;
+        expect(signatures.length).toEqual(1);
+        expect(signatures[0].coversWholeDocument).toBeFalse();
       });
 
       it("walks Kids recursively to find nested signature fields", async function () {
