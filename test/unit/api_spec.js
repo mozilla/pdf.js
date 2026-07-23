@@ -2143,6 +2143,7 @@ describe("api", function () {
           revisionIndex: 0,
           parentId: null,
           coversWholeDocument: true,
+          modificationsAfterSignature: 0,
         },
         {
           id: "49R:0-60285-74083-357914",
@@ -2159,6 +2160,7 @@ describe("api", function () {
           revisionIndex: 1,
           parentId: "70R:0-435961-437515-34098",
           coversWholeDocument: false,
+          modificationsAfterSignature: 1,
         },
       ]);
 
@@ -2194,6 +2196,81 @@ describe("api", function () {
         expect(pkcs7).toBeInstanceOf(Uint8Array);
         expect(pkcs7.length).toEqual(pkcs7Len);
       }
+
+      await loadingTask.destroy();
+    });
+
+    it("gets signature metadata without fetching later revisions", async function () {
+      const baseData = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "signed_verified.pdf",
+      });
+      const payload = new Uint8Array(2 * 65536).fill(0x41);
+      const objectHeader = stringToBytes(
+        `\n9 0 obj\n<< /Length ${payload.length} >>\nstream\n`
+      );
+      const objectFooter = stringToBytes("\nendstream\nendobj\n");
+      const objectOffset = baseData.length + 1;
+      const xrefOffset =
+        baseData.length +
+        objectHeader.length +
+        payload.length +
+        objectFooter.length;
+      const xref = stringToBytes(
+        "xref\n" +
+          "9 1\n" +
+          `${objectOffset.toString().padStart(10, "0")} 00000 n \n` +
+          "trailer\n" +
+          "<< /Size 10 /Root 1 0 R /Prev 10007 >>\n" +
+          "startxref\n" +
+          `${xrefOffset}\n` +
+          "%%EOF\n"
+      );
+      const data = new Uint8Array(
+        baseData.length +
+          objectHeader.length +
+          payload.length +
+          objectFooter.length +
+          xref.length
+      );
+      let position = 0;
+      for (const part of [
+        baseData,
+        objectHeader,
+        payload,
+        objectFooter,
+        xref,
+      ]) {
+        data.set(part, position);
+        position += part.length;
+      }
+
+      const initialData = new Uint8Array(data.subarray(0, 65536));
+      const transport = new PDFDataRangeTransport(data.length, initialData);
+      let fetches = 0;
+      transport.requestDataRange = (begin, end) => {
+        fetches++;
+        waitSome(() => {
+          transport.onDataRange(
+            begin,
+            new Uint8Array(data.subarray(begin, end))
+          );
+        });
+      };
+
+      const loadingTask = getDocument({
+        range: transport,
+        rangeChunkSize: 65536,
+        disableAutoFetch: true,
+        disableStream: true,
+      });
+      const pdfDoc = await loadingTask.promise;
+      const fetchesAfterLoading = fetches;
+      const signatures = await pdfDoc.getSignatures();
+
+      expect(signatures.length).toEqual(1);
+      expect(signatures[0].coversWholeDocument).toEqual(false);
+      expect(signatures[0].modificationsAfterSignature).toEqual(1);
+      expect(fetches).toEqual(fetchesAfterLoading);
 
       await loadingTask.destroy();
     });

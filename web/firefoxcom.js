@@ -593,6 +593,7 @@ class SignatureVerifier {
         message: signature.subFilter,
         certificate: null,
         documentModifiedAfterSigning: !signature.coversWholeDocument,
+        modificationsAfterSignature: signature.modificationsAfterSignature,
       };
     }
 
@@ -610,6 +611,7 @@ class SignatureVerifier {
         message: ex?.message ?? null,
         certificate: null,
         documentModifiedAfterSigning: !signature.coversWholeDocument,
+        modificationsAfterSignature: signature.modificationsAfterSignature,
       };
     }
     if (!response || response.error) {
@@ -619,6 +621,7 @@ class SignatureVerifier {
         message: null,
         certificate: null,
         documentModifiedAfterSigning: !signature.coversWholeDocument,
+        modificationsAfterSignature: signature.modificationsAfterSignature,
       };
     }
 
@@ -632,6 +635,7 @@ class SignatureVerifier {
         message: null,
         certificate: null,
         documentModifiedAfterSigning: !signature.coversWholeDocument,
+        modificationsAfterSignature: signature.modificationsAfterSignature,
       };
     }
     const { status, errorCode } = mapVerificationStatus(
@@ -644,6 +648,7 @@ class SignatureVerifier {
       message: entry.message ?? null,
       certificate: entry.certificate ?? null,
       documentModifiedAfterSigning: !signature.coversWholeDocument,
+      modificationsAfterSignature: signature.modificationsAfterSignature,
     };
   }
 

@@ -184,6 +184,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
           message: signature.subFilter,
           certificate: null,
           documentModifiedAfterSigning: !signature.coversWholeDocument,
+          modificationsAfterSignature: signature.modificationsAfterSignature,
         };
       }
 
@@ -193,6 +194,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
         message: null,
         certificate: null,
         documentModifiedAfterSigning: !signature.coversWholeDocument,
+        modificationsAfterSignature: signature.modificationsAfterSignature,
       };
     }
 
