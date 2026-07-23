@@ -303,6 +303,10 @@ class CanvasBBoxTracker {
 
   /**
    * @param {number} idx
+   * @param {boolean} [preserve=false] - When false, the pending bounding box is
+   *   cleared once recorded; pass true to keep it for subsequent operations.
+   * @param {Iterable<Iterable<number>>} [dependencyLists] - Groups of operation
+   *   indices whose bounding boxes are also expanded to cover this operation.
    */
   recordOperation(idx, preserve = false, dependencyLists) {
     if (this._pendingBBoxIdx !== idx) {
@@ -735,6 +739,8 @@ class CanvasDependencyTracker {
 
   /**
    * @param {number} idx
+   * @param {boolean} [preserve=false] - When false, the pending dependencies
+   *   are cleared once recorded; pass true to keep them for later operations.
    */
   recordOperation(idx, preserve = false) {
     this.recordDependencies(idx, [FORCED_DEPENDENCY_LABEL]);
