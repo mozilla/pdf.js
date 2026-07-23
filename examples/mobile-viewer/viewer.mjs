@@ -77,7 +77,7 @@ const PDFViewerApplication = {
         });
 
         this.loadingBar.hide();
-        this.setTitleUsingMetadata(pdfDocument); // TODO: check for option to disable this. I'd add if (!AppOptions.get("ignorePdfTitle")) but IDK if it's available in this context 
+        this.setTitleUsingMetadata(pdfDocument);
       },
       reason => {
         let key = "pdfjs-loading-error";
