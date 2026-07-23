@@ -100,7 +100,9 @@ class EventDispatcher {
       }
       if (id === "doc") {
         const eventName = event.name;
+        let nonce;
         if (eventName === "Open") {
+          nonce = baseEvent.nonce;
           // The user has decided to open this pdf, hence we enable
           // userActivation.
           this.userActivation();
@@ -119,6 +121,9 @@ class EventDispatcher {
           this.userActivation();
         }
         this._document.obj._dispatchDocEvent(event.name);
+        if (nonce) {
+          this._externalCall("send", [{ command: "OpenFinished", nonce }]);
+        }
       } else if (id === "page") {
         this.userActivation();
         this._document.obj._dispatchPageEvent(
