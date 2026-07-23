@@ -288,7 +288,10 @@ class Dict {
 }
 
 class Ref {
-  constructor(num, gen) {
+  #str;
+
+  constructor(str, num, gen) {
+    this.#str = str;
     this.num = num;
     this.gen = gen;
   }
@@ -296,10 +299,7 @@ class Ref {
   toString() {
     // This function is hot, so we make the string as compact as possible.
     // |this.gen| is almost always zero, so we treat that case specially.
-    if (this.gen === 0) {
-      return `${this.num}R`;
-    }
-    return `${this.num}R${this.gen}`;
+    return this.#str;
   }
 
   static fromString(str) {
@@ -311,18 +311,16 @@ class Ref {
     if (!m || m[1] === "0") {
       return null;
     }
-
+    const num = parseInt(m[1], 10),
+      gen = !m[2] ? 0 : parseInt(m[2], 10);
     // eslint-disable-next-line no-restricted-syntax
-    return (RefCache[str] = new Ref(
-      parseInt(m[1], 10),
-      !m[2] ? 0 : parseInt(m[2], 10)
-    ));
+    return (RefCache[str] = new Ref(str, num, gen));
   }
 
   static get(num, gen) {
-    const key = gen === 0 ? `${num}R` : `${num}R${gen}`;
+    const str = gen === 0 ? `${num}R` : `${num}R${gen}`;
     // eslint-disable-next-line no-restricted-syntax
-    return (RefCache[key] ||= new Ref(num, gen));
+    return (RefCache[str] ||= new Ref(str, num, gen));
   }
 }
 
