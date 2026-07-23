@@ -1848,7 +1848,7 @@ const PDFViewerApplication = {
     );
     const pdfTitle = this._docTitle;
 
-    if (pdfTitle) {
+    if (pdfTitle && !AppOptions.get("ignorePdfTitle")) {
       this.setTitle(
         `${pdfTitle} - ${this._contentDispositionFilename || this._title}`
       );

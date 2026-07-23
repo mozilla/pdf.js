@@ -423,6 +423,11 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  ignorePdfTitle: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+  },
 
   cMapPacked: {
     /** @type {boolean} */
