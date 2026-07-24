@@ -766,6 +766,8 @@ class AnnotationEditorUIManager {
 
   #deletedAnnotationsElementIds = new Set();
 
+  #selectedUnrenderedAnnotationIds = new Set();
+
   #draggingEditors = null;
 
   #editorTypes = null;
@@ -2618,33 +2620,54 @@ class AnnotationEditorUIManager {
     return false;
   }
 
-  /**
-   * Delete the current editor or all.
-   */
   delete() {
     this.commitOrRemove();
     const drawingEditor = this.currentLayer?.endDrawingSession(
       /* isAborted = */ true
     );
-    if (!this.hasSelection && !drawingEditor) {
+    if (
+      !this.hasSelection &&
+      !drawingEditor &&
+      !(this.#selectedUnrenderedAnnotationIds?.size > 0)
+    ) {
       return;
     }
 
     const editors = drawingEditor
       ? [drawingEditor]
       : [...this.#selectedEditors];
+
+    // Capture unrendered annotation IDs that were selected via Ctrl+A
+    const unrenderedIds = this.#selectedUnrenderedAnnotationIds
+      ? Array.from(this.#selectedUnrenderedAnnotationIds)
+      : [];
+
     const cmd = () => {
       this._editorUndoBar?.show(
         undo,
-        editors.length === 1 ? editors[0].editorType : editors.length
+        editors.length === 1
+          ? editors[0].editorType
+          : editors.length + unrenderedIds.length
       );
       for (const editor of editors) {
         editor.remove();
+      }
+      for (const id of unrenderedIds) {
+        this.#deletedAnnotationsElementIds.add(id);
+      }
+      if (unrenderedIds.length > 0) {
+        this.#dispatchUpdateStates({ hasChangedAnnotations: true });
       }
     };
     const undo = () => {
       for (const editor of editors) {
         this.#addEditorToLayer(editor);
+      }
+      for (const id of unrenderedIds) {
+        this.#deletedAnnotationsElementIds.delete(id);
+      }
+      if (unrenderedIds.length > 0) {
+        this.#dispatchUpdateStates({ hasChangedAnnotations: true });
       }
     };
 
@@ -2662,12 +2685,9 @@ class AnnotationEditorUIManager {
 
   /**
    * Select the editors.
-   * @param {Array<AnnotationEditor>} editors
+   * @param {Iterable<AnnotationEditor>} editors
    */
   #selectEditors(editors) {
-    for (const editor of this.#selectedEditors) {
-      editor.unselect();
-    }
     this.#selectedEditors.clear();
     for (const editor of editors) {
       if (editor.isEmpty()) {
@@ -2676,13 +2696,62 @@ class AnnotationEditorUIManager {
       this.#selectedEditors.add(editor);
       editor.select();
     }
-    this.#dispatchUpdateStates({ hasSelectedEditor: this.hasSelection });
+    this.#dispatchUpdateStates({
+      hasSelectedEditor:
+        this.hasSelection || this.#selectedUnrenderedAnnotationIds?.size > 0,
+    });
   }
 
   /**
    * Select all the editors.
    */
-  selectAll() {
+  async selectAll() {
+    const pdfDocument =
+      typeof window !== "undefined"
+        ? window.PDFViewerApplication?.pdfDocument
+        : null;
+
+    if (pdfDocument) {
+      this.#selectedUnrenderedAnnotationIds = new Set();
+      const totalPages = pdfDocument.numPages;
+      for (let i = 1; i <= totalPages; i++) {
+        try {
+          const pdfPage = await pdfDocument.getPage(i);
+          const annotations = await pdfPage.getAnnotations({
+            intent: "display",
+          });
+
+          if (annotations && annotations.length > 0) {
+            for (const ann of annotations) {
+              // We only care about editable annotations (like
+              // Highlights/Ink/Text)
+              // Check if the annotation corresponds to an editor we ALREADY
+              // have loaded
+              let hasMatch = false;
+              for (const editor of this.#allEditors.values()) {
+                if (editor.annotationElementId === ann.id) {
+                  hasMatch = true;
+                  break;
+                }
+              }
+              // If it's an unrendered annotation, cache its ID so we can
+              // mass-delete it.
+              if (
+                !hasMatch &&
+                (ann.isEditable ||
+                  ann.annotationType === 8 ||
+                  ann.annotationType === 3)
+              ) {
+                this.#selectedUnrenderedAnnotationIds.add(ann.id);
+              }
+            }
+          }
+        } catch {
+          // ignore error fetching metadata
+        }
+      }
+    }
+
     for (const editor of this.#selectedEditors) {
       editor.commit();
     }
