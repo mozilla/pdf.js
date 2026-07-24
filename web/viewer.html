@@ -69,6 +69,8 @@ See https://github.com/adobe-type-tools/cmap-resources
 
     <!--#if MOZCENTRAL-->
     <!--<script src="resource://pdf.js/web/viewer.mjs" type="module"></script>-->
+
+    <!--<script src="resource://pdf.js/pdfFeaturesNotification.mjs" type="module"></script>-->
     <!--#elif !MOZCENTRAL-->
     <!--<script src="viewer.mjs" type="module"></script>-->
     <!--#elif /* Development mode. */-->
@@ -879,6 +881,10 @@ See https://github.com/adobe-type-tools/cmap-resources
             </div>
           </div>
         </div>
+
+        <!--#if MOZCENTRAL-->
+        <!--<pdf-features-notification id="pdfFeaturesNotification" data-focus-target="#viewerContainer" hidden></pdf-features-notification>-->
+        <!--#endif-->
 
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
