@@ -70,49 +70,6 @@ const CursorTool = {
 const AutoPrintRegExp = /\bprint\s*\(/;
 
 /**
- * Scrolls specified element into view of its parent.
- * @param {HTMLElement} element - The element to be visible.
- * @param {Object} [spot] - An object with optional top and left properties,
- *   specifying the offset from the top left edge.
- * @param {number} [spot.left]
- * @param {number} [spot.top]
- */
-function scrollIntoView(element, spot) {
-  // Assuming offsetParent is available (it's not available when viewer is in
-  // hidden iframe or object). We have to scroll: if the offsetParent is not set
-  // producing the error. See also animationStarted.
-  let parent = element.offsetParent;
-  if (!parent) {
-    console.error("offsetParent is not set -- cannot scroll");
-    return;
-  }
-  let offsetY = element.offsetTop + element.clientTop;
-  let offsetX = element.offsetLeft + element.clientLeft;
-  while (
-    parent.clientHeight === parent.scrollHeight &&
-    parent.clientWidth === parent.scrollWidth
-  ) {
-    offsetY += parent.offsetTop;
-    offsetX += parent.offsetLeft;
-
-    parent = parent.offsetParent;
-    if (!parent) {
-      return; // no need to scroll
-    }
-  }
-  if (spot) {
-    if (spot.top !== undefined) {
-      offsetY += spot.top;
-    }
-    if (spot.left !== undefined) {
-      offsetX += spot.left;
-      parent.scrollLeft = offsetX;
-    }
-  }
-  parent.scrollTop = offsetY;
-}
-
-/**
  * Helper function to start monitoring the scroll event and converting them into
  * PDF.js friendly one: with scroll debounce and scroll direction.
  */
@@ -888,7 +845,6 @@ export {
   ProgressBar,
   removeNullCharacters,
   SCROLLBAR_PADDING,
-  scrollIntoView,
   ScrollMode,
   SidebarView,
   SpreadMode,
