@@ -45,6 +45,23 @@ function bindEvents(obj, element, names) {
   }
 }
 
+// The `type` values of the `<input>` elements which don't hold editable text.
+// The keyboard events must only be handled by the editor when the focused
+// element isn't a text input, hence any type not listed here (text, number,
+// password, email, ...) is treated as a text input.
+const NON_TEXT_INPUT_TYPES = new Set([
+  "button",
+  "checkbox",
+  "color",
+  "file",
+  "hidden",
+  "image",
+  "radio",
+  "range",
+  "reset",
+  "submit",
+]);
+
 /**
  * Class to store current pointers used by the editor to be able to handle
  * multiple pointers (e.g. two fingers, a pen, a mouse, ...).
@@ -861,13 +878,8 @@ class AnnotationEditorUIManager {
       document.activeElement.tagName !== "BUTTON" &&
       self.hasSomethingToControl();
 
-    const textInputChecker = (_self, { target: el }) => {
-      if (el instanceof HTMLInputElement) {
-        const { type } = el;
-        return type !== "text" && type !== "number";
-      }
-      return true;
-    };
+    const textInputChecker = (_self, { target: el }) =>
+      !(el instanceof HTMLInputElement) || NON_TEXT_INPUT_TYPES.has(el.type);
 
     const small = this.TRANSLATE_SMALL;
     const big = this.TRANSLATE_BIG;

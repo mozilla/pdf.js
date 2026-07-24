@@ -2750,6 +2750,84 @@ describe("FreeText Editor", () => {
         })
       );
     });
+
+    it("must check that the shortcuts depend on the focused input type", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+
+          // Add two editors so that the "select all" shortcut has something to
+          // select.
+          await createFreeTextEditor({
+            page,
+            x: rect.x + 100,
+            y: rect.y + 100,
+            data: "Hello",
+          });
+          await createFreeTextEditor({
+            page,
+            x: rect.x + 100,
+            y: rect.y + 200,
+            data: "PDF.js World",
+          });
+
+          // Nothing must be selected before triggering the shortcut.
+          await page.keyboard.press("Escape");
+          await page.waitForFunction(
+            () => !document.querySelector(".freeTextEditor.selectedEditor")
+          );
+
+          const addInput = type =>
+            page.evaluate(inputType => {
+              const input = document.createElement("input");
+              input.type = inputType;
+              input.id = "testInputForShortcuts";
+              input.value = "abc";
+              document.body.append(input);
+              input.focus();
+            }, type);
+          const removeInput = () =>
+            page.evaluate(() => {
+              document.getElementById("testInputForShortcuts").remove();
+            });
+          const countSelectedEditors = () =>
+            page.$$eval(".freeTextEditor.selectedEditor", els => els.length);
+
+          // When the focus is in a text input, the editor mustn't handle the
+          // "select all" shortcut, hence no editor must be selected.
+          for (const type of ["text", "number", "password", "email"]) {
+            await addInput(type);
+            await page.waitForSelector("#testInputForShortcuts:focus");
+            await kbSelectAll(page);
+            expect(await countSelectedEditors())
+              .withContext(`In ${browserName} for type=${type}`)
+              .toEqual(0);
+            await removeInput();
+          }
+
+          // When the focus is in a non-text input, the editor must handle the
+          // "select all" shortcut, hence all the editors must be selected.
+          for (const type of ["checkbox", "button"]) {
+            await addInput(type);
+            await page.waitForSelector("#testInputForShortcuts:focus");
+            await kbSelectAll(page);
+            await page.waitForFunction(
+              () =>
+                !document.querySelector(".freeTextEditor:not(.selectedEditor)")
+            );
+            await removeInput();
+
+            // Reset the selection for the next iteration.
+            await page.keyboard.press("Escape");
+            await page.waitForFunction(
+              () => !document.querySelector(".freeTextEditor.selectedEditor")
+            );
+          }
+        })
+      );
+    });
   });
 
   describe("Delete a freetext in using the delete button", () => {
