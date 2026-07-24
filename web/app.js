@@ -504,6 +504,70 @@ const PDFViewerApplication = {
       this.editorUndoBar = new EditorUndoBar(appConfig.editorUndoBar, eventBus);
     }
 
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("MOZCENTRAL && !GECKOVIEW")) &&
+      !this.isViewerEmbedded &&
+      appConfig.featuresNotification &&
+      !AppOptions.get("featuresNotificationDismissed")
+    ) {
+      const { featuresNotification } = appConfig;
+      customElements.whenDefined("pdf-features-notification").then(() => {
+        if (AppOptions.get("featuresNotificationDismissed")) {
+          return;
+        }
+
+        featuresNotification.addEventListener(
+          "click",
+          event => {
+            if (!event.target.closest(".cta")) {
+              return;
+            }
+            event.preventDefault();
+            externalServices.openAboutPdfFeatures();
+          },
+          { signal: abortSignal }
+        );
+
+        const barResizeObserver = new ResizeObserver(entries => {
+          const box = entries[0]?.borderBoxSize?.[0];
+          const height = box
+            ? box.blockSize
+            : (entries[0]?.contentRect.height ?? 0);
+          docStyle.setProperty("--pfn-bar-height", `${Math.ceil(height)}px`);
+        });
+        barResizeObserver.observe(featuresNotification);
+
+        const hideBar = () => {
+          barResizeObserver.disconnect();
+          docStyle.setProperty("--pfn-bar-height", "0px");
+          featuresNotification.hidden = true;
+        };
+        featuresNotification.addEventListener(
+          "pdf-features-notification:dismissed",
+          () => {
+            hideBar();
+            eventBus.dispatch("setpreference", {
+              source: this,
+              name: "featuresNotificationDismissed",
+              value: true,
+            });
+          },
+          { once: true }
+        );
+        window.addEventListener(
+          "updatedPreference",
+          ({ detail: { name, value } }) => {
+            if (name === "featuresNotificationDismissed" && value) {
+              hideBar();
+            }
+          },
+          { signal: abortSignal }
+        );
+        featuresNotification.show();
+      });
+    }
+
     const signatureManager =
       AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog
         ? new SignatureManager(

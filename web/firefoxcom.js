@@ -771,4 +771,13 @@ class ExternalServices extends BaseExternalServices {
   }
 }
 
+if (
+  typeof PDFJSDev === "undefined" ||
+  PDFJSDev.test("MOZCENTRAL && !GECKOVIEW")
+) {
+  ExternalServices.prototype.openAboutPdfFeatures = () => {
+    FirefoxCom.request("openAboutPdfFeatures", null);
+  };
+}
+
 export { DownloadManager, ExternalServices, initCom, MLManager, Preferences };
