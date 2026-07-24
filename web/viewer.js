@@ -352,6 +352,14 @@ function getViewerConfiguration() {
       undoButton: document.getElementById("editorUndoBarUndoButton"),
       closeButton: document.getElementById("editorUndoBarCloseButton"),
     },
+    ...(typeof PDFJSDev === "undefined" ||
+    PDFJSDev.test("MOZCENTRAL && !GECKOVIEW")
+      ? {
+          featuresNotification: document.getElementById(
+            "pdfFeaturesNotification"
+          ),
+        }
+      : {}),
     editCommentDialog: {
       dialog: document.getElementById("commentManagerDialog"),
       toolbar: document.getElementById("commentManagerToolbar"),

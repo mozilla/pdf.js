@@ -309,6 +309,19 @@ const defaultOptions = {
     value: 0,
     kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
   },
+  ...(typeof PDFJSDev === "undefined" ||
+  PDFJSDev.test("MOZCENTRAL && !GECKOVIEW")
+    ? {
+        featuresNotificationDismissed: {
+          /** @type {boolean} */
+          value: false,
+          kind:
+            OptionKind.VIEWER +
+            OptionKind.PREFERENCE +
+            OptionKind.EVENT_DISPATCH,
+        },
+      }
+    : {}),
   highlightEditorColors: {
     /** @type {string} */
     value:

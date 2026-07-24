@@ -769,6 +769,13 @@ class ExternalServices extends BaseExternalServices {
   dispatchGlobalEvent(event) {
     FirefoxCom.request("dispatchGlobalEvent", event);
   }
+
+  openAboutPdfFeatures() {
+    if (PDFJSDev.test("GECKOVIEW")) {
+      throw new Error("Not implemented: openAboutPdfFeatures");
+    }
+    FirefoxCom.request("openAboutPdfFeatures", null);
+  }
 }
 
 export { DownloadManager, ExternalServices, initCom, MLManager, Preferences };
