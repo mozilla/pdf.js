@@ -7729,6 +7729,39 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("preserves conflicting DAs for inherited text fields", async function () {
+        const makePdf = (fontName, fieldName) =>
+          assemblePdf([
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+              "/AcroForm 6 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+              "/MediaBox [0 0 100 100] /Annots [4 0 R] >>\nendobj\n",
+            "4 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 20 10] " +
+              "/Parent 5 0 R >>\nendobj\n",
+            `5 0 obj\n<< /FT /Tx /T (${fieldName}) ` +
+              "/Kids [4 0 R] >>\nendobj\n",
+            `6 0 obj\n<< /Fields [5 0 R] ` +
+              `/DA (/${fontName} 10 Tf) >>\nendobj\n`,
+          ]);
+
+        let loadingTask = getDocument({ data: makePdf("F1", "first") });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: makePdf("F2", "second") },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const first = await (await pdfDoc.getPage(1)).getAnnotations();
+        const second = await (await pdfDoc.getPage(2)).getAnnotations();
+        expect(first[0].defaultAppearanceData.fontName).toEqual("F1");
+        expect(second[0].defaultAppearanceData.fontName).toEqual("F2");
+        await loadingTask.destroy();
+      });
+
       it("extract page 2 and check AcroForm Fields T entries", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("form_two_pages.pdf")

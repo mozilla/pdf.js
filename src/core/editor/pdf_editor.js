@@ -2239,11 +2239,7 @@ class PDFEditor {
       if (data.parentRef) {
         newKid.set("Parent", data.parentRef);
       }
-      if (
-        acroFormDefaultAppearance &&
-        isName(newKid.get("FT"), "Tx") &&
-        !newKid.has("DA")
-      ) {
+      if (acroFormDefaultAppearance && !newKid.has("DA")) {
         // Fix the DA later since we need to have all the fields tree.
         daToFix.push(newKid);
       }
@@ -2261,6 +2257,10 @@ class PDFEditor {
     }
 
     for (const field of daToFix) {
+      const fieldType = getInheritableProperty({ dict: field, key: "FT" });
+      if (!isName(fieldType, "Tx")) {
+        continue;
+      }
       const da = getInheritableProperty({ dict: field, key: "DA" });
       if (!da) {
         // No DA in a parent field, we can set the default one.
