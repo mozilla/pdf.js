@@ -17,6 +17,7 @@ import {
   awaitPromise,
   clearEditors,
   closePages,
+  copyToClipboard,
   countStorageEntries,
   createPromise,
   dragAndDrop,
@@ -26,15 +27,18 @@ import {
   getRect,
   getSerialized,
   isCanvasMonochrome,
+  kbBigMoveDown,
   kbRedo,
   kbSave,
   kbUndo,
   loadAndWait,
   moveEditor,
+  pasteFromClipboard,
   scrollIntoView,
   selectEditor,
   selectEditors,
   switchToEditor,
+  unselectEditor,
   waitForAnnotationModeChanged,
   waitForNoElement,
   waitForPointerUp,
@@ -44,6 +48,10 @@ import {
   waitForTimeout,
 } from "./test_utils.mjs";
 import { AnnotationEditorType } from "../../src/shared/util.js";
+import fs from "fs";
+import path from "path";
+
+const __dirname = import.meta.dirname;
 
 const selectAll = selectEditors.bind(null, "ink");
 
@@ -55,6 +63,29 @@ const commit = async page => {
 };
 
 const switchToInk = switchToEditor.bind(null, "Ink");
+
+const switchToStamp = switchToEditor.bind(null, "Stamp");
+
+const copyImage = async (page, imagePath, selector) => {
+  const data = fs
+    .readFileSync(path.join(__dirname, imagePath))
+    .toString("base64");
+
+  await copyToClipboard(page, { "image/png": `data:image/png;base64,${data}` });
+  await pasteFromClipboard(page);
+
+  await page.waitForSelector(`${selector} canvas`);
+  await page.waitForSelector(`${selector} .altText`);
+};
+
+// The drawings are in SVGs living in the canvas wrapper, whereas the other
+// editors are divs living in the annotation editor layer. Both layers are
+// siblings, so the z-index is what decides which one is on top.
+const getZIndex = (page, selector) =>
+  page.evaluate(sel => {
+    const { zIndex } = getComputedStyle(document.querySelector(sel));
+    return zIndex === "auto" ? 0 : parseInt(zIndex, 10);
+  }, selector);
 
 const drawLine = async (page, x0, y0, x1, y1) => {
   const clickHandle = await waitForPointerUp(page);
@@ -1405,5 +1436,66 @@ describe("Ink must be committed when the document is saved", () => {
         await awaitPromise(saveDocumentCalled);
       })
     );
+  });
+});
+
+describe("Ink stacking with a stamp", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must draw on top of a stamp added before", async () => {
+    // Run sequentially to avoid clipboard issues.
+    for (const [browserName, page] of pages) {
+      await switchToStamp(page);
+      const stampSelector = getEditorSelector(0);
+      await copyImage(page, "../images/firefox_logo.png", stampSelector);
+      // A pasted stamp is centered, so move it away in order to draw on an
+      // empty area: the stamp would otherwise intercept the pointer events.
+      await moveEditor(page, stampSelector, 10, () => kbBigMoveDown(page));
+      await unselectEditor(page, stampSelector);
+
+      await switchToInk(page);
+      const rect = await getRect(page, ".annotationEditorLayer");
+      const x = rect.x + 100;
+      const y = rect.y + 100;
+      await drawLine(page, x, y, x + 50, y + 50);
+      await commit(page);
+      // Unselect: a selected editor is always brought to the front, which
+      // would hide the stacking we want to check here.
+      await unselectEditor(page, getEditorSelector(1));
+
+      expect(await getZIndex(page, ".canvasWrapper .draw"))
+        .withContext(`In ${browserName}`)
+        .toBeGreaterThan(await getZIndex(page, stampSelector));
+    }
+  });
+
+  it("must be under a stamp added after", async () => {
+    // Run sequentially to avoid clipboard issues.
+    for (const [browserName, page] of pages) {
+      await switchToInk(page);
+      const rect = await getRect(page, ".annotationEditorLayer");
+      const x = rect.x + 100;
+      const y = rect.y + 100;
+      await drawLine(page, x, y, x + 50, y + 50);
+      await commit(page);
+      await unselectEditor(page, getEditorSelector(0));
+
+      await switchToStamp(page);
+      const stampSelector = getEditorSelector(1);
+      await copyImage(page, "../images/firefox_logo.png", stampSelector);
+      await unselectEditor(page, stampSelector);
+
+      expect(await getZIndex(page, ".canvasWrapper .draw"))
+        .withContext(`In ${browserName}`)
+        .toBeLessThan(await getZIndex(page, stampSelector));
+    }
   });
 });
