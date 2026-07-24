@@ -164,6 +164,9 @@ pdfjs-digital-signature-properties-view-certificate = Sertifikayı göster
 #                      could not be verified.
 pdfjs-digital-signature-properties-reason = Neden: { $reason }
 # Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Zaman damgası: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
 #   $count (Number) - number of nested sub-signatures (one per earlier
 #                     incremental revision of the document).
 pdfjs-digital-signature-properties-sub-signatures =
@@ -514,11 +517,11 @@ pdfjs-editor-new-alt-text-added-button =
 pdfjs-editor-new-alt-text-added-button-label = Alt metin eklendi
 # This is a button that users can click to open the alt text editor and add alt text when it is not present.
 pdfjs-editor-new-alt-text-missing-button =
-    .aria-label = Alternatif metin eksik
+    .aria-label = Alt metin eksik
 pdfjs-editor-new-alt-text-missing-button-label = Alt metin eksik
 # This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
 pdfjs-editor-new-alt-text-to-review-button =
-    .aria-label = Alternatif metni incele
+    .aria-label = Alt metni incele
 pdfjs-editor-new-alt-text-to-review-button-label = Alt metni incele
 # "Created automatically" is a prefix that will be added to the beginning of any alt text that has been automatically generated. After the colon, the user will see/hear the actual alt text description. If the alt text has been edited by a human, this prefix will not appear.
 # Variables:
@@ -766,6 +769,31 @@ pdfjs-digital-signature-properties-button-label = Dijital imza özellikleri
 ##   $count (Number) - number of signatures at the worst level.
 
 pdfjs-digital-signature-properties-banner-verified = Belge geçerli bir dijital imza ile imzalanmıştır
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Belge imzalanmış ancak { $count } dijital imza doğrulanamadı
+       *[other] Belge imzalanmış ancak { $count } dijital imza doğrulanamadı
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Belge, güvenilmeyen { $count } sertifikayla imzalanmış
+       *[other] Belge, güvenilmeyen { $count } sertifikayla imzalanmış
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Belge, süresi dolmuş { $count } sertifika ile imzalanmış
+       *[other] Belge, süresi dolmuş { $count } sertifika ile imzalanmış
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Belge { $count } geçersiz dijital imza içeriyor
+       *[other] Belge { $count } geçersiz dijital imza içeriyor
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Belge, iptal edilmiş { $count } sertifika ile imzalanmış
+       *[other] Belge, iptal edilmiş { $count } sertifika ile imzalanmış
+    }
 
 ## Per-signature status row. Only three distinct strings are needed:
 ## the signature crypto either verified (the cert chain may still be
