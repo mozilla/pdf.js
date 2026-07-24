@@ -586,7 +586,7 @@ pdfjs-editor-add-signature-draw-thickness-range-label = 두께
 #   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
 pdfjs-editor-add-signature-draw-thickness-range =
     .title = 그리기 두께: { $thickness }
-pdfjs-editor-add-signature-image-placeholder = 이미지 파일을 여기에 끌어서 놓으세요
+pdfjs-editor-add-signature-image-placeholder = 이미지 파일을 여기에 끌어다 놓으세요
 pdfjs-editor-add-signature-image-browse-link =
     { PLATFORM() ->
         [macos] 또는 이미지 파일 찾아보기
