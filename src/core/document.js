@@ -1194,7 +1194,10 @@ class PDFDocument {
           recursionDepth
         );
       }
-      const isSignature = isName(field.get("FT"), "Sig");
+      const isSignature = isName(
+        getInheritableProperty({ dict: field, key: "FT" }),
+        "Sig"
+      );
       const rectangle = field.get("Rect");
       const isInvisible =
         Array.isArray(rectangle) && rectangle.every(value => value === 0);
