@@ -615,10 +615,6 @@ function stringToBytes(str) {
   return bytes;
 }
 
-function objectSize(obj) {
-  return Object.keys(obj).length;
-}
-
 class FeatureTest {
   static get isLittleEndian() {
     const buffer8 = new Uint8Array(4);
@@ -1209,7 +1205,6 @@ export {
   makeSet,
   MeshFigureType,
   normalizeUnicode,
-  objectSize,
   OPS,
   PageActionEventType,
   PasswordException,

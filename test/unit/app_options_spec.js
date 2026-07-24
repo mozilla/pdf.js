@@ -15,7 +15,6 @@
 
 import { AppOptions, OptionKind } from "../../web/app_options.js";
 import { BasePreferences } from "../../web/preferences.js";
-import { objectSize } from "../../src/shared/util.js";
 
 describe("AppOptions", function () {
   it("checks that getAll returns data, for every OptionKind", function () {
@@ -32,7 +31,7 @@ describe("AppOptions", function () {
       expect(typeof kind).toEqual("number");
 
       const options = AppOptions.getAll(kind);
-      expect(objectSize(options)).toBeGreaterThan(0);
+      expect(Object.keys(options).length).toBeGreaterThan(0);
     }
   });
 
@@ -43,7 +42,9 @@ describe("AppOptions", function () {
     const MAX_NUMBER_OF_PREFS = 50;
 
     const options = AppOptions.getAll(OptionKind.PREFERENCE);
-    expect(objectSize(options)).toBeLessThanOrEqual(MAX_NUMBER_OF_PREFS);
+    expect(Object.keys(options).length).toBeLessThanOrEqual(
+      MAX_NUMBER_OF_PREFS
+    );
   });
 });
 

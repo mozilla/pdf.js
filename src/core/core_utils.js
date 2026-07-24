@@ -18,7 +18,6 @@ import {
   assert,
   BaseException,
   makeArr,
-  objectSize,
   Util,
   warn,
 } from "../shared/util.js";
@@ -491,7 +490,7 @@ function collectActions(xref, dict, eventType) {
       actions.Action = list;
     }
   }
-  return objectSize(actions) > 0 ? actions : null;
+  return Object.keys(actions).length ? actions : null;
 }
 
 const XMLEntities = {
