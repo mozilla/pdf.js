@@ -544,23 +544,74 @@ describe("PDF viewer", () => {
       };
     }
 
-    function extractCanvases(pageNumber) {
+    async function extractCanvases(pageNumber) {
       const pageOne = document.querySelector(
         `.page[data-page-number='${pageNumber}']`
       );
-      return Array.from(pageOne.querySelectorAll("canvas"), canvas => {
+      async function getContextFromCanvas(canvas) {
+        try {
+          return canvas.getContext("2d", { willReadFrequently: true });
+        } catch {
+          // Can happen when the canvas has been transferred to OffscreenCanvas.
+        }
+
+        const bitmap = await createImageBitmap(canvas);
+        let tempCanvas;
+        if (typeof OffscreenCanvas === "function") {
+          tempCanvas = new OffscreenCanvas(canvas.width, canvas.height);
+        } else {
+          tempCanvas = document.createElement("canvas");
+          tempCanvas.width = canvas.width;
+          tempCanvas.height = canvas.height;
+        }
+        const tempCtx = tempCanvas.getContext("2d", {
+          willReadFrequently: true,
+        });
+        tempCtx.drawImage(bitmap, 0, 0);
+        bitmap.close();
+        return tempCtx;
+      }
+
+      if (!pageOne) {
+        return [];
+      }
+
+      const canvases = pageOne.querySelectorAll("canvas");
+      const results = [];
+      for (const canvas of canvases) {
         const { width, height } = canvas;
-        const ctx = canvas.getContext("2d");
-        const topLeft = ctx.getImageData(2, 2, 1, 1).data;
-        const bottomRight = ctx.getImageData(width - 3, height - 3, 1, 1).data;
-        return {
+        if (width === 0 || height === 0) {
+          results.push({
+            size: 0,
+            width,
+            height,
+            topLeft: null,
+            bottomRight: null,
+          });
+          continue;
+        }
+        const ctx = await getContextFromCanvas(canvas);
+        const topLeft = ctx.getImageData(
+          Math.min(2, width - 1),
+          Math.min(2, height - 1),
+          1,
+          1
+        ).data;
+        const bottomRight = ctx.getImageData(
+          Math.max(0, width - 3),
+          Math.max(0, height - 3),
+          1,
+          1
+        ).data;
+        results.push({
           size: width * height,
           width,
           height,
           topLeft: globalThis.pdfjsLib.Util.makeHexColor(...topLeft),
           bottomRight: globalThis.pdfjsLib.Util.makeHexColor(...bottomRight),
-        };
-      });
+        });
+      }
+      return results;
     }
 
     function waitForDetailRendered(page) {
@@ -577,6 +628,35 @@ describe("PDF viewer", () => {
           { signal: controller.signal }
         );
       });
+    }
+
+    // Wait for canvas pixels to be available
+    function waitForCanvasPixels(page, pageNumber, canvasIndex = 1) {
+      return page.waitForFunction(
+        async (pgNum, idx) => {
+          const pageEl = document.querySelector(
+            `.page[data-page-number='${pgNum}']`
+          );
+          if (!pageEl) {
+            return false;
+          }
+          const canvas = pageEl.querySelectorAll("canvas")[idx];
+          if (!canvas || canvas.width === 0 || canvas.height === 0) {
+            return false;
+          }
+          const bitmap = await createImageBitmap(canvas, 2, 2, 1, 1);
+          const tmp = document.createElement("canvas");
+          tmp.width = tmp.height = 1;
+          const ctx = tmp.getContext("2d");
+          ctx.drawImage(bitmap, 0, 0);
+          bitmap.close();
+          const { data } = ctx.getImageData(0, 0, 1, 1);
+          return data[0] !== 0 || data[1] !== 0 || data[2] !== 0;
+        },
+        { timeout: 5000 },
+        pageNumber,
+        canvasIndex
+      );
     }
 
     for (const pixelRatio of [1, 2]) {
@@ -620,6 +700,7 @@ describe("PDF viewer", () => {
                 });
               }, factor);
               await awaitPromise(handle);
+              await waitForCanvasPixels(page, 1);
 
               const after = await page.evaluate(extractCanvases, 1);
               // The page dimensions are 595x841, so the base canvas is a scale
@@ -660,6 +741,10 @@ describe("PDF viewer", () => {
               await page.waitForSelector(
                 ".page[data-page-number='1'] .textLayer"
               );
+              // Wait for the canvas to have actual pixels before reading
+              // colors; with the renderer worker, the first frame may not
+              // have been committed to the placeholder yet.
+              await waitForCanvasPixels(page, 1, 0);
 
               const before = await page.evaluate(extractCanvases, 1);
 
@@ -692,6 +777,7 @@ describe("PDF viewer", () => {
                 });
               }, factor);
               await awaitPromise(handle);
+              await waitForCanvasPixels(page, 1);
 
               const after = await page.evaluate(extractCanvases, 1);
 
@@ -732,6 +818,7 @@ describe("PDF viewer", () => {
               await page.waitForSelector(
                 ".page[data-page-number='1'] canvas:nth-child(2)"
               );
+              await waitForCanvasPixels(page, 1);
 
               const canvases = await page.evaluate(extractCanvases, 1);
 
@@ -778,6 +865,7 @@ describe("PDF viewer", () => {
                 container.scrollLeft += 1100;
               });
               await awaitPromise(handle);
+              await waitForCanvasPixels(page, 1);
 
               const canvases = await page.evaluate(extractCanvases, 1);
 
@@ -874,6 +962,8 @@ describe("PDF viewer", () => {
                 container.scrollTop += 3000;
               });
               await awaitPromise(handle);
+              await waitForCanvasPixels(page, 1);
+              await waitForCanvasPixels(page, 2);
 
               const [canvases1, canvases2] = await Promise.all([
                 page.evaluate(extractCanvases, 1),

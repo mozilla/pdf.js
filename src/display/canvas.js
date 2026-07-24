@@ -451,6 +451,15 @@ function copyCtxState(sourceCtx, destCtx) {
   }
 }
 
+function setAnnotationCanvasName(canvas, canvasName) {
+  canvas.setAttribute?.("data-canvas-name", canvasName);
+  canvas._pdfjsCanvasName = canvasName;
+}
+
+function getAnnotationCanvasName(canvas) {
+  return canvas._pdfjsCanvasName ?? canvas.getAttribute?.("data-canvas-name");
+}
+
 function resetCtxToDefault(ctx) {
   ctx.strokeStyle = ctx.fillStyle = "#000000";
   ctx.fillRule = "nonzero";
@@ -663,11 +672,16 @@ class CanvasGraphics {
     operatorList,
     executionStartIdx,
     continueCallback,
+    errorCallback,
     stepper,
     operationsFilter
   ) {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
+    // Cache materialized Path2D objects on the operatorList itself rather
+    // than by mutating `argsArray[i][0]`, so the op list stays structured-
+    // cloneable for postMessage to the renderer worker.
+    this._pathCache = operatorList.pathCache ||= new Map();
     let i = executionStartIdx || 0;
     const argsArrayLen = argsArray.length;
 
@@ -719,7 +733,7 @@ class CanvasGraphics {
             // If the promise isn't resolved yet, add the continueCallback
             // to the promise and bail out.
             if (!objsPool.has(depObjId)) {
-              objsPool.get(depObjId, continueCallback);
+              objsPool.get(depObjId, continueCallback, errorCallback);
               return i;
             }
           }
@@ -2064,10 +2078,12 @@ class CanvasGraphics {
 
   // Path
   constructPath(opIdx, op, data, minMax) {
-    let [path] = data;
+    let path = this._pathCache.get(opIdx);
     if (!minMax) {
-      // The path is empty, so no need to update the current minMax.
-      path ||= data[0] = new Path2D();
+      if (!path) {
+        path = new Path2D();
+        this._pathCache.set(opIdx, path);
+      }
       if (op !== OPS.stroke && op !== OPS.closeStroke) {
         this.current.tilingPatternDims = null;
       }
@@ -2090,8 +2106,9 @@ class CanvasGraphics {
         .recordDependencies(opIdx, ["transform"]);
     }
 
-    if (!(path instanceof Path2D)) {
-      path = data[0] = makePathFromDrawOPS(path);
+    if (!path) {
+      path = makePathFromDrawOPS(data[0]);
+      this._pathCache.set(opIdx, path);
     }
     Util.axialAlignedBoundingBox(
       minMax,
@@ -2944,11 +2961,12 @@ class CanvasGraphics {
     ctx.scale(textHScale, fontDirection);
 
     // Type3 fonts have their own operator list. Avoid mixing it up with the
-    // dependency tracker of the main operator list.
+    // dependency tracker and `pathCache` of the main operator list.
     const dependencyTracker = this.dependencyTracker;
     this.dependencyTracker = dependencyTracker
       ? new CanvasNestedDependencyTracker(dependencyTracker, opIdx)
       : null;
+    const prevPathCache = this._pathCache;
 
     for (i = 0; i < glyphsLength; ++i) {
       glyph = glyphs[i];
@@ -2987,6 +3005,7 @@ class CanvasGraphics {
       current.x += width * textHScale;
     }
     ctx.restore();
+    this._pathCache = prevPathCache;
     if (dependencyTracker) {
       this.dependencyTracker = dependencyTracker;
     }
@@ -3718,29 +3737,55 @@ class CanvasGraphics {
           height * this.outputScaleY * viewportScale
         );
 
-        this.annotationCanvas = this.canvasFactory.create(
-          canvasWidth,
-          canvasHeight
-        );
-        const { canvas, context } = this.annotationCanvas;
+        let canvas, context;
         if (canvasName) {
           const canvases = this.annotationCanvasMap.getOrInsertComputed(
             id,
             makeArr
           );
-          canvas.setAttribute("data-canvas-name", canvasName);
           // Replace any same-named canvas from a previous render so stale
           // low-resolution canvases don't pile up across zooms.
           const index = canvases.findIndex(
-            c => c.getAttribute("data-canvas-name") === canvasName
+            c => getAnnotationCanvasName(c) === canvasName
           );
-          if (index === -1) {
-            canvases.push(canvas);
+          if (index !== -1) {
+            // Reuse a canvas that was already transferred from the main
+            // thread.
+            canvas = canvases[index];
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            context = canvas.getContext("2d");
+            if (!context) {
+              throw new Error("Unable to initialize annotation canvas.");
+            }
+            this.annotationCanvas = { canvas, context };
           } else {
-            canvases[index] = canvas;
+            this.annotationCanvas = this.canvasFactory.create(
+              canvasWidth,
+              canvasHeight
+            );
+            ({ canvas, context } = this.annotationCanvas);
+            setAnnotationCanvasName(canvas, canvasName);
+            canvases.push(canvas);
           }
         } else {
-          this.annotationCanvasMap.set(id, canvas);
+          canvas = this.annotationCanvasMap.get(id);
+          if (canvas) {
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+            context = canvas.getContext("2d");
+            if (!context) {
+              throw new Error("Unable to initialize annotation canvas.");
+            }
+            this.annotationCanvas = { canvas, context };
+          } else {
+            this.annotationCanvas = this.canvasFactory.create(
+              canvasWidth,
+              canvasHeight
+            );
+            ({ canvas, context } = this.annotationCanvas);
+            this.annotationCanvasMap.set(id, canvas);
+          }
         }
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;

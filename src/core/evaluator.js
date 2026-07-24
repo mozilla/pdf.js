@@ -395,6 +395,121 @@ class PartialEvaluator {
     return false;
   }
 
+  _hasTransferMaps(transferObj) {
+    let transferArray;
+    if (Array.isArray(transferObj)) {
+      transferArray = transferObj;
+    } else if (isPDFFunction(transferObj)) {
+      transferArray = [transferObj];
+    } else {
+      return false;
+    }
+
+    const numFns = transferArray.length;
+    if (!(numFns === 1 || numFns === 4)) {
+      return false;
+    }
+
+    let numEffectfulFns = 0;
+    for (const entry of transferArray) {
+      const transfer = this.xref.fetchIfRef(entry);
+      if (isName(transfer, "Identity")) {
+        continue;
+      }
+      if (!isPDFFunction(transfer)) {
+        return false;
+      }
+      numEffectfulFns++;
+    }
+    return numEffectfulFns > 0;
+  }
+
+  hasCanvasFilters(resources) {
+    if (!(resources instanceof Dict)) {
+      return false;
+    }
+
+    const processed = new RefSet();
+    if (resources.objId) {
+      processed.put(resources.objId);
+    }
+    const xref = this.xref;
+    const nodes = [resources];
+    while (nodes.length) {
+      const node = nodes.shift();
+
+      const graphicStates = node.get("ExtGState");
+      if (graphicStates instanceof Dict) {
+        for (let graphicState of graphicStates.getRawValues()) {
+          if (graphicState instanceof Ref) {
+            if (processed.has(graphicState)) {
+              continue;
+            }
+            try {
+              graphicState = xref.fetch(graphicState);
+            } catch (ex) {
+              info(`hasCanvasFilters - failed to fetch ExtGState: "${ex}".`);
+              // A fetch failure means we can't inspect the resource, so fall
+              // back to main-thread rendering rather than misclassify a corrupt
+              // PDF as filter-free.
+              return true;
+            }
+          }
+          if (!(graphicState instanceof Dict)) {
+            continue;
+          }
+          if (graphicState.objId) {
+            processed.put(graphicState.objId);
+          }
+          try {
+            if (this._hasTransferMaps(graphicState.get("TR"))) {
+              return true;
+            }
+          } catch (ex) {
+            info(`hasCanvasFilters - failed to inspect filter data: "${ex}".`);
+            return true;
+          }
+        }
+      }
+
+      const xObjects = node.get("XObject");
+      if (xObjects instanceof Dict) {
+        for (let xObject of xObjects.getRawValues()) {
+          if (xObject instanceof Ref) {
+            if (processed.has(xObject)) {
+              continue;
+            }
+            try {
+              xObject = xref.fetch(xObject);
+            } catch (ex) {
+              info(`hasCanvasFilters - failed to fetch XObject: "${ex}".`);
+              return true;
+            }
+          }
+          if (!(xObject instanceof BaseStream)) {
+            continue;
+          }
+          if (xObject.dict.objId) {
+            processed.put(xObject.dict.objId);
+          }
+          const xResources = xObject.dict.get("Resources");
+          if (!(xResources instanceof Dict)) {
+            continue;
+          }
+          if (xResources.objId && processed.has(xResources.objId)) {
+            continue;
+          }
+
+          nodes.push(xResources);
+          if (xResources.objId) {
+            processed.put(xResources.objId);
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {

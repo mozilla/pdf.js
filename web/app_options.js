@@ -460,6 +460,11 @@ const defaultOptions = {
     value: false,
     kind: OptionKind.API + OptionKind.PREFERENCE,
   },
+  disableWorkerRendering: {
+    /** @type {boolean} */
+    value: false,
+    kind: OptionKind.API + OptionKind.PREFERENCE,
+  },
   docBaseUrl: {
     /** @type {string} */
     value:
@@ -573,6 +578,17 @@ const defaultOptions = {
         : PDFJSDev.test("MOZCENTRAL")
           ? "resource://pdf.js/build/pdf.worker.mjs"
           : "../build/pdf.worker.mjs",
+    kind: OptionKind.WORKER,
+  },
+  rendererSrc: {
+    /** @type {string} */
+    value:
+      // eslint-disable-next-line no-nested-ternary
+      typeof PDFJSDev === "undefined"
+        ? "../src/pdf.renderer.js"
+        : PDFJSDev.test("MOZCENTRAL")
+          ? "resource://pdf.js/build/pdf.renderer.mjs"
+          : "../build/pdf.renderer.mjs",
     kind: OptionKind.WORKER,
   },
 };

@@ -1289,6 +1289,11 @@ class PDFPageView extends BasePDFPageView {
   get thumbnailCanvas() {
     const { directDrawing, initialOptionalContent, regularAnnotations } =
       this.#useThumbnailCanvas;
+    // When worker rendering is used, we cannot use the OffScreen canvas
+    // for thumbnail generation.
+    if (this.canvas?.resetWorkerCanvas) {
+      return null;
+    }
     return directDrawing && initialOptionalContent && regularAnnotations
       ? this.canvas
       : null;
