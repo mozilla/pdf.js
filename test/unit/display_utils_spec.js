@@ -217,20 +217,20 @@ describe("display_utils", function () {
 
   describe("isValidFetchUrl", function () {
     it("handles invalid Fetch URLs", function () {
-      expect(isValidFetchUrl(null)).toEqual(false);
-      expect(isValidFetchUrl(100)).toEqual(false);
-      expect(isValidFetchUrl("foo")).toEqual(false);
-      expect(isValidFetchUrl("/foo", 100)).toEqual(false);
+      expect(isValidFetchUrl(null)).toBeFalse();
+      expect(isValidFetchUrl(100)).toBeFalse();
+      expect(isValidFetchUrl("foo")).toBeFalse();
+      expect(isValidFetchUrl("/foo", 100)).toBeFalse();
     });
 
     it("handles relative Fetch URLs", function () {
-      expect(isValidFetchUrl("/foo", "file://www.example.com")).toEqual(false);
+      expect(isValidFetchUrl("/foo", "file://www.example.com")).toBeFalse();
       expect(isValidFetchUrl("/foo", "http://www.example.com")).toEqual(true);
     });
 
     it("handles unsupported Fetch protocols", function () {
-      expect(isValidFetchUrl("file://www.example.com")).toEqual(false);
-      expect(isValidFetchUrl("ftp://www.example.com")).toEqual(false);
+      expect(isValidFetchUrl("file://www.example.com")).toBeFalse();
+      expect(isValidFetchUrl("ftp://www.example.com")).toBeFalse();
     });
 
     it("handles supported Fetch protocols", function () {

@@ -73,7 +73,7 @@ describe("Annotation highlight", () => {
             getAnnotationSelector("21R"),
             el => el.hidden
           );
-          expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+          expect(hidden).withContext(`In ${browserName}`).toBeFalse();
         })
       );
     });
@@ -346,10 +346,10 @@ describe("Annotation and storage", () => {
             expect(checked).toEqual(true);
 
             checked = await page.$eval(getSelector(radio1Id), el => el.checked);
-            expect(checked).toEqual(false);
+            expect(checked).toBeFalse();
 
             checked = await page.$eval(getSelector(radio2Id), el => el.checked);
-            expect(checked).toEqual(false);
+            expect(checked).toBeFalse();
           }
 
           // Change data on page 5 and check that other pages changed.
@@ -384,13 +384,13 @@ describe("Annotation and storage", () => {
               getSelector(checkId),
               el => el.checked
             );
-            expect(checked).toEqual(false);
+            expect(checked).toBeFalse();
 
             checked = await page.$eval(getSelector(radio1Id), el => el.checked);
-            expect(checked).toEqual(false);
+            expect(checked).toBeFalse();
 
             checked = await page.$eval(getSelector(radio2Id), el => el.checked);
-            expect(checked).toEqual(false);
+            expect(checked).toBeFalse();
           }
         })
       );
@@ -442,7 +442,7 @@ describe("ResetForm action", () => {
               getSelector(`${id}R`),
               el => el.checked
             );
-            expect(checked).withContext(`In ${browserName}`).toEqual(false);
+            expect(checked).withContext(`In ${browserName}`).toBeFalse();
           }
 
           let selected = await page.$eval(
@@ -495,7 +495,7 @@ describe("ResetForm action", () => {
             );
             expect(checked)
               .withContext(`In ${browserName + id}`)
-              .toEqual(false);
+              .toBeFalse();
           }
 
           ids = [71, 75];
@@ -644,7 +644,7 @@ describe("ResetForm action", () => {
               `document.querySelector('${selector}').hidden !== true`
             );
             hidden = await page.$eval(selector, el => el.hidden);
-            expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+            expect(hidden).withContext(`In ${browserName}`).toBeFalse();
 
             await page.keyboard.press("Enter");
             await page.waitForFunction(
@@ -658,7 +658,7 @@ describe("ResetForm action", () => {
               `document.querySelector('${selector}').hidden !== true`
             );
             hidden = await page.$eval(selector, el => el.hidden);
-            expect(hidden).withContext(`In ${browserName}`).toEqual(false);
+            expect(hidden).withContext(`In ${browserName}`).toBeFalse();
 
             await page.keyboard.press("Escape");
             await page.waitForFunction(

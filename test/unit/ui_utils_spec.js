@@ -61,17 +61,17 @@ describe("ui_utils", function () {
 
   describe("isValidRotation", function () {
     it("should reject non-integer angles", function () {
-      expect(isValidRotation()).toEqual(false);
-      expect(isValidRotation(null)).toEqual(false);
-      expect(isValidRotation(NaN)).toEqual(false);
-      expect(isValidRotation([90])).toEqual(false);
-      expect(isValidRotation("90")).toEqual(false);
-      expect(isValidRotation(90.5)).toEqual(false);
+      expect(isValidRotation()).toBeFalse();
+      expect(isValidRotation(null)).toBeFalse();
+      expect(isValidRotation(NaN)).toBeFalse();
+      expect(isValidRotation([90])).toBeFalse();
+      expect(isValidRotation("90")).toBeFalse();
+      expect(isValidRotation(90.5)).toBeFalse();
     });
 
     it("should reject non-multiple of 90 degree angles", function () {
-      expect(isValidRotation(45)).toEqual(false);
-      expect(isValidRotation(-123)).toEqual(false);
+      expect(isValidRotation(45)).toBeFalse();
+      expect(isValidRotation(-123)).toBeFalse();
     });
 
     it("should accept valid angles", function () {
@@ -105,7 +105,7 @@ describe("ui_utils", function () {
           width: 600,
           height: 300,
         })
-      ).toEqual(false);
+      ).toBeFalse();
     });
   });
 

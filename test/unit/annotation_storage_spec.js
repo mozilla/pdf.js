@@ -81,7 +81,7 @@ describe("AnnotationStorage", function () {
       // not changing value
       called = false;
       annotationStorage.setValue("asdf", { value: "modified" });
-      expect(called).toBe(false);
+      expect(called).toBeFalse();
     });
   });
 
@@ -101,7 +101,7 @@ describe("AnnotationStorage", function () {
       // not changing value
       annotationStorage.setValue("asdf", { value: "original" });
       annotationStorage.resetModified();
-      expect(called).toBe(false);
+      expect(called).toBeFalse();
 
       // changing value
       annotationStorage.setValue("asdf", { value: "modified" });

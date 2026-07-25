@@ -886,7 +886,7 @@ describe("Highlight Editor", () => {
           });
           expect(editingEvent.isEditing)
             .withContext(`In ${browserName}`)
-            .toBe(false);
+            .toBeFalse();
           expect(editingEvent.hasSelectedText)
             .withContext(`In ${browserName}`)
             .toBe(true);
@@ -901,7 +901,7 @@ describe("Highlight Editor", () => {
           });
           expect(editingEvent.hasSelectedText)
             .withContext(`In ${browserName}`)
-            .toBe(false);
+            .toBeFalse();
 
           await page.mouse.click(x, y, { count: 2, delay: 100 });
           await page.waitForFunction(() => window.editingEvents.length > 0);

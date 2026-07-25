@@ -1062,12 +1062,12 @@ describe("api", function () {
       await worker.promise;
       expect(worker.name).toEqual("test1");
       expect(!!worker.port).toEqual(true);
-      expect(worker.destroyed).toEqual(false);
+      expect(worker.destroyed).toBeFalse();
       expect(!!worker._webWorker).toEqual(true);
       expect(worker.port === worker._webWorker).toEqual(true);
 
       worker.destroy();
-      expect(!!worker.port).toEqual(false);
+      expect(!!worker.port).toBeFalse();
       expect(worker.destroyed).toEqual(true);
     });
 
@@ -1089,7 +1089,7 @@ describe("api", function () {
       await destroyPromise;
 
       const destroyedWorker = loadingTask._worker;
-      expect(!!destroyedWorker).toEqual(false);
+      expect(!!destroyedWorker).toBeFalse();
       expect(worker.destroyed).toEqual(true);
     });
 
@@ -1106,7 +1106,7 @@ describe("api", function () {
       );
       loadingTask.promise.then(function () {
         const docWorker = loadingTask._worker;
-        expect(!!docWorker).toEqual(false);
+        expect(!!docWorker).toBeFalse();
         // checking is the same port is used in the MessageHandler
         const messageHandlerPort = loadingTask._transport.messageHandler.comObj;
         expect(messageHandlerPort === worker.port).toEqual(true);
@@ -1117,7 +1117,7 @@ describe("api", function () {
       );
       await destroyPromise;
 
-      expect(worker.destroyed).toEqual(false);
+      expect(worker.destroyed).toBeFalse();
       worker.destroy();
     });
 
@@ -1154,10 +1154,10 @@ describe("api", function () {
     describe("isSameOrigin", function () {
       it("handles invalid base URLs", function () {
         // The base URL is not valid.
-        expect(PDFWorker._isSameOrigin("/foo", "/bar")).toEqual(false);
+        expect(PDFWorker._isSameOrigin("/foo", "/bar")).toBeFalse();
 
         // The base URL has no origin.
-        expect(PDFWorker._isSameOrigin("blob:foo", "/bar")).toEqual(false);
+        expect(PDFWorker._isSameOrigin("blob:foo", "/bar")).toBeFalse();
       });
 
       it("correctly checks if the origin of both URLs matches", function () {
@@ -1172,7 +1172,7 @@ describe("api", function () {
             "https://www.mozilla.org/foo",
             "https://www.example.com/bar"
           )
-        ).toEqual(false);
+        ).toBeFalse();
       });
     });
   });
@@ -1956,7 +1956,7 @@ describe("api", function () {
     it("gets hasJSActions, in document without javaScript", async function () {
       const hasJSActions = await pdfDocument.hasJSActions();
 
-      expect(hasJSActions).toEqual(false);
+      expect(hasJSActions).toBeFalse();
     });
 
     it("gets hasJSActions, in document with javaScript", async function () {
@@ -2265,7 +2265,7 @@ describe("api", function () {
       const signatures = await pdfDoc.getSignatures();
 
       expect(signatures.length).toEqual(1);
-      expect(signatures[0].coversWholeDocument).toEqual(false);
+      expect(signatures[0].coversWholeDocument).toBeFalse();
       expect(signatures[0].modificationsAfterSignature).toEqual(1);
       expect(fetches).toEqual(fetchesAfterLoading);
 
@@ -2330,7 +2330,7 @@ describe("api", function () {
       expect(outlineItem.newWindow).toBeUndefined();
 
       expect(outlineItem.bold).toEqual(true);
-      expect(outlineItem.italic).toEqual(false);
+      expect(outlineItem.italic).toBeFalse();
       expect(outlineItem.color).toEqual(new Uint8ClampedArray([0, 64, 128]));
 
       expect(outlineItem.items.length).toEqual(1);
@@ -2352,7 +2352,7 @@ describe("api", function () {
       expect(outlineItemTwo.newWindow).toBeUndefined();
 
       const outlineItemOne = outline[1];
-      expect(outlineItemOne.bold).toEqual(false);
+      expect(outlineItemOne.bold).toBeFalse();
       expect(outlineItemOne.italic).toEqual(true);
       expect(outlineItemOne.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
 
@@ -2701,11 +2701,11 @@ describe("api", function () {
       expect(info.PDFFormatVersion).toEqual("1.7");
       expect(info.Language).toEqual("en");
       expect(info.EncryptFilterName).toBeNull();
-      expect(info.IsLinearized).toEqual(false);
-      expect(info.IsAcroFormPresent).toEqual(false);
-      expect(info.IsXFAPresent).toEqual(false);
-      expect(info.IsCollectionPresent).toEqual(false);
-      expect(info.IsSignaturesPresent).toEqual(false);
+      expect(info.IsLinearized).toBeFalse();
+      expect(info.IsAcroFormPresent).toBeFalse();
+      expect(info.IsXFAPresent).toBeFalse();
+      expect(info.IsCollectionPresent).toBeFalse();
+      expect(info.IsSignaturesPresent).toBeFalse();
 
       expect(metadata).toBeInstanceOf(Metadata);
       expect(metadata.get("dc:title")).toEqual("Basic API Test");
@@ -2735,11 +2735,11 @@ describe("api", function () {
       expect(info.PDFFormatVersion).toEqual("1.4");
       expect(info.Language).toBeNull();
       expect(info.EncryptFilterName).toBeNull();
-      expect(info.IsLinearized).toEqual(false);
-      expect(info.IsAcroFormPresent).toEqual(false);
-      expect(info.IsXFAPresent).toEqual(false);
-      expect(info.IsCollectionPresent).toEqual(false);
-      expect(info.IsSignaturesPresent).toEqual(false);
+      expect(info.IsLinearized).toBeFalse();
+      expect(info.IsAcroFormPresent).toBeFalse();
+      expect(info.IsXFAPresent).toBeFalse();
+      expect(info.IsCollectionPresent).toBeFalse();
+      expect(info.IsSignaturesPresent).toBeFalse();
 
       expect(metadata).toBeNull();
       expect(contentDispositionFilename).toBeNull();
@@ -2760,11 +2760,11 @@ describe("api", function () {
       expect(info.PDFFormatVersion).toBeNull();
       expect(info.Language).toBeNull();
       expect(info.EncryptFilterName).toBeNull();
-      expect(info.IsLinearized).toEqual(false);
-      expect(info.IsAcroFormPresent).toEqual(false);
-      expect(info.IsXFAPresent).toEqual(false);
-      expect(info.IsCollectionPresent).toEqual(false);
-      expect(info.IsSignaturesPresent).toEqual(false);
+      expect(info.IsLinearized).toBeFalse();
+      expect(info.IsAcroFormPresent).toBeFalse();
+      expect(info.IsXFAPresent).toBeFalse();
+      expect(info.IsCollectionPresent).toBeFalse();
+      expect(info.IsSignaturesPresent).toBeFalse();
 
       expect(metadata).toBeNull();
       expect(contentDispositionFilename).toBeNull();
@@ -2787,11 +2787,11 @@ describe("api", function () {
       expect(info.PDFFormatVersion).toEqual("1.6");
       expect(info.Language).toBeNull();
       expect(info.EncryptFilterName).toBeNull();
-      expect(info.IsLinearized).toEqual(false);
+      expect(info.IsLinearized).toBeFalse();
       expect(info.IsAcroFormPresent).toEqual(true);
-      expect(info.IsXFAPresent).toEqual(false);
-      expect(info.IsCollectionPresent).toEqual(false);
-      expect(info.IsSignaturesPresent).toEqual(false);
+      expect(info.IsXFAPresent).toBeFalse();
+      expect(info.IsCollectionPresent).toBeFalse();
+      expect(info.IsSignaturesPresent).toBeFalse();
 
       expect(metadata).toBeNull();
       expect(contentDispositionFilename).toBeNull();
@@ -2808,8 +2808,8 @@ describe("api", function () {
       const markInfo = await pdfDoc.getMarkInfo();
 
       expect(markInfo.Marked).toEqual(true);
-      expect(markInfo.UserProperties).toEqual(false);
-      expect(markInfo.Suspects).toEqual(false);
+      expect(markInfo.UserProperties).toBeFalse();
+      expect(markInfo.Suspects).toBeFalse();
 
       await loadingTask.destroy();
     });
@@ -3645,7 +3645,7 @@ describe("api", function () {
                 // For ease of debugging.
                 expect(error).toEqual("There should not be any error");
               }
-              expect(expectSuccess).toEqual(false);
+              expect(expectSuccess).toBeFalse();
             }
           );
       }
@@ -4437,7 +4437,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       });
       const text = mergeText(items);
 
-      expect(/win aisle/.test(text)).toEqual(false);
+      expect(/win aisle/.test(text)).toBeFalse();
 
       await loadingTask.destroy();
     });
@@ -5011,7 +5011,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         OPS.beginAnnotation
       );
       let isUsingOwnCanvas = opListAnnotEnable.argsArray[firstAnnotIndex][4];
-      expect(isUsingOwnCanvas).toEqual(false);
+      expect(isUsingOwnCanvas).toBeFalse();
 
       const opListAnnotEnableForms = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE_FORMS,
@@ -5045,7 +5045,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         OPS.beginAnnotation
       );
       isUsingOwnCanvas = opListAnnotEnableStorage.argsArray[firstAnnotIndex][4];
-      expect(isUsingOwnCanvas).toEqual(false);
+      expect(isUsingOwnCanvas).toBeFalse();
 
       // Sanity check to ensure that the `annotationMode` is correctly applied.
       expect(opListAnnotDisable.fnArray.length).toBeLessThan(
@@ -5147,7 +5147,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(renderTask).toBeInstanceOf(RenderTask);
 
       await renderTask.promise;
-      expect(renderTask.separateAnnots).toEqual(false);
+      expect(renderTask.separateAnnots).toBeFalse();
 
       const { stats } = pdfPage;
       expect(stats).toBeInstanceOf(StatTimer);
@@ -5231,7 +5231,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(reRenderTask).toBeInstanceOf(RenderTask);
 
       await reRenderTask.promise;
-      expect(reRenderTask.separateAnnots).toEqual(false);
+      expect(reRenderTask.separateAnnots).toBeFalse();
 
       canvasFactory.destroy(canvasAndCtx);
     });
@@ -5299,7 +5299,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(renderTask).toBeInstanceOf(RenderTask);
 
       await renderTask.promise;
-      expect(renderTask.separateAnnots).toEqual(false);
+      expect(renderTask.separateAnnots).toBeFalse();
 
       await pdfDoc.cleanup();
       expect(true).toEqual(true);
@@ -5345,7 +5345,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         );
       }
       await renderTask.promise;
-      expect(renderTask.separateAnnots).toEqual(false);
+      expect(renderTask.separateAnnots).toBeFalse();
 
       // Use the red background-color to, more easily, tell that the page was
       // actually rendered successfully.
@@ -5398,13 +5398,13 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(objId).toEqual(`img_p${i - 1}_1`);
 
           expect(objs.has(objId)).toEqual(true);
-          expect(commonObjs.has(objId)).toEqual(false);
+          expect(commonObjs.has(objId)).toBeFalse();
         } else {
           expect(objId).toEqual(
             `g_${loadingTask.docId}_img_p${NUM_PAGES_THRESHOLD - 1}_1`
           );
 
-          expect(objs.has(objId)).toEqual(false);
+          expect(objs.has(objId)).toBeFalse();
           expect(commonObjs.has(objId)).toEqual(true);
         }
         expect(width).toEqual(EXPECTED_WIDTH);
@@ -5478,9 +5478,9 @@ have written that much by now. So, here’s to squashing bugs.`);
         if (i < NUM_PAGES_THRESHOLD) {
           // Image decoded in the worker-thread; stored as a page-level object.
           expect(objs.has(objId)).toEqual(true);
-          expect(commonObjs.has(objId)).toEqual(false);
+          expect(commonObjs.has(objId)).toBeFalse();
         } else if (i === NUM_PAGES_THRESHOLD) {
-          expect(objs.has(objId)).toEqual(false);
+          expect(objs.has(objId)).toBeFalse();
           expect(commonObjs.has(objId)).toEqual(true);
 
           // Ensure that the image was copied in the main-thread (into
@@ -5531,13 +5531,13 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(objId).toEqual(`img_p${i - 1}_1`);
 
           expect(objs.has(objId)).toEqual(true);
-          expect(commonObjs.has(objId)).toEqual(false);
+          expect(commonObjs.has(objId)).toBeFalse();
         } else {
           expect(objId).toEqual(
             `g_${loadingTask.docId}_img_p${NUM_PAGES_THRESHOLD - 1}_1`
           );
 
-          expect(objs.has(objId)).toEqual(false);
+          expect(objs.has(objId)).toBeFalse();
           expect(commonObjs.has(objId)).toEqual(true);
         }
 
@@ -5571,7 +5571,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         });
 
         await renderTask.promise;
-        expect(renderTask.separateAnnots).toEqual(false);
+        expect(renderTask.separateAnnots).toBeFalse();
 
         const printData = canvasAndCtx.canvas.toDataURL();
         canvasFactory.destroy(canvasAndCtx);
@@ -5682,7 +5682,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         viewport,
       });
       await renderTask.promise;
-      expect(renderTask.separateAnnots).toEqual(false);
+      expect(renderTask.separateAnnots).toBeFalse();
 
       const data = canvasAndCtx.canvas.toDataURL();
       canvasFactory.destroy(canvasAndCtx);

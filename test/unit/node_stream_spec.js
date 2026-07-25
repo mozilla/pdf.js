@@ -58,8 +58,8 @@ describe("node_stream", function () {
 
     await Promise.all([read(), promise]);
 
-    expect(isStreamingSupported).toEqual(false);
-    expect(isRangeSupported).toEqual(false);
+    expect(isStreamingSupported).toBeFalse();
+    expect(isRangeSupported).toBeFalse();
     expect(len).toEqual(pdfLength);
   });
 
@@ -113,7 +113,7 @@ describe("node_stream", function () {
 
     expect(result1.value).toEqual(rangeSize);
     expect(result2.value).toEqual(tailSize);
-    expect(isStreamingSupported).toEqual(false);
+    expect(isStreamingSupported).toBeFalse();
     expect(isRangeSupported).toEqual(true);
     expect(fullReaderCancelled).toEqual(true);
   });
@@ -150,8 +150,8 @@ describe("node_stream", function () {
 
     await Promise.all([read(), promise]);
 
-    expect(isStreamingSupported).toEqual(false);
-    expect(isRangeSupported).toEqual(false);
+    expect(isStreamingSupported).toBeFalse();
+    expect(isRangeSupported).toBeFalse();
     expect(len).toEqual(smallLength);
   });
 });

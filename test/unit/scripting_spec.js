@@ -464,7 +464,7 @@ describe("Scripting", function () {
         name: "test",
         willCommit: true,
       });
-      expect(send_queue.has(refId)).toEqual(false);
+      expect(send_queue.has(refId)).toBeFalse();
     });
 
     it("should trigger a valid commit Keystroke event", async () => {
@@ -660,7 +660,7 @@ describe("Scripting", function () {
         name: "Keystroke",
         willCommit: true,
       });
-      expect(send_queue.has("alert")).toEqual(false);
+      expect(send_queue.has("alert")).toBeFalse();
       send_queue.delete(refId);
     });
   });
@@ -2006,13 +2006,13 @@ describe("Scripting", function () {
     describe("eMailValidate", function () {
       it("should validate an e-mail address", async () => {
         let value = await myeval(`eMailValidate(123)`);
-        expect(value).toEqual(false);
+        expect(value).toBeFalse();
 
         value = await myeval(`eMailValidate("foo@bar.com")`);
         expect(value).toEqual(true);
 
         value = await myeval(`eMailValidate("foo bar")`);
-        expect(value).toEqual(false);
+        expect(value).toBeFalse();
       });
     });
 

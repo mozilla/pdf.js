@@ -112,7 +112,7 @@ describe("obj_bin_transform", function () {
           const buffer = compileSystemFontInfo(systemFontInfo);
           expect(buffer.byteLength).toEqual(sizeEstimate);
           const deserialized = new SystemFontInfo(buffer);
-          expect(deserialized.guessFallback).toEqual(false);
+          expect(deserialized.guessFallback).toBeFalse();
           expect(deserialized.css).toEqual("some string");
           expect(deserialized.loadedName).toEqual("another string");
           expect(deserialized.baseFontName).toEqual("base name");

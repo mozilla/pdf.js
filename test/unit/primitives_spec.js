@@ -581,7 +581,7 @@ describe("primitives", function () {
 
     it("handles non-names", function () {
       const nonName = {};
-      expect(isName(nonName)).toEqual(false);
+      expect(isName(nonName)).toBeFalse();
     });
 
     it("handles names", function () {
@@ -592,7 +592,7 @@ describe("primitives", function () {
     it("handles names with name check", function () {
       const name = Name.get("Font");
       expect(isName(name, "Font")).toEqual(true);
-      expect(isName(name, "Subtype")).toEqual(false);
+      expect(isName(name, "Subtype")).toBeFalse();
     });
 
     it("handles *empty* names, with name check", function () {
@@ -600,7 +600,7 @@ describe("primitives", function () {
 
       expect(isName(emptyName)).toEqual(true);
       expect(isName(emptyName, "")).toEqual(true);
-      expect(isName(emptyName, "string")).toEqual(false);
+      expect(isName(emptyName, "string")).toBeFalse();
     });
 
     /* eslint-enable no-restricted-syntax */
@@ -611,7 +611,7 @@ describe("primitives", function () {
 
     it("handles non-commands", function () {
       const nonCmd = {};
-      expect(isCmd(nonCmd)).toEqual(false);
+      expect(isCmd(nonCmd)).toBeFalse();
     });
 
     it("handles commands", function () {
@@ -622,7 +622,7 @@ describe("primitives", function () {
     it("handles commands with cmd check", function () {
       const cmd = Cmd.get("BT");
       expect(isCmd(cmd, "BT")).toEqual(true);
-      expect(isCmd(cmd, "ET")).toEqual(false);
+      expect(isCmd(cmd, "ET")).toBeFalse();
     });
 
     /* eslint-enable no-restricted-syntax */
@@ -633,20 +633,20 @@ describe("primitives", function () {
 
     it("handles non-dictionaries", function () {
       const nonDict = {};
-      expect(isDict(nonDict)).toEqual(false);
+      expect(isDict(nonDict)).toBeFalse();
     });
 
     it("handles empty dictionaries with type check", function () {
       const dict = Dict.empty;
       expect(isDict(dict)).toEqual(true);
-      expect(isDict(dict, "Page")).toEqual(false);
+      expect(isDict(dict, "Page")).toBeFalse();
     });
 
     it("handles dictionaries with type check", function () {
       const dict = new Dict();
       dict.set("Type", Name.get("Page"));
       expect(isDict(dict, "Page")).toEqual(true);
-      expect(isDict(dict, "Contents")).toEqual(false);
+      expect(isDict(dict, "Contents")).toBeFalse();
     });
 
     /* eslint-enable no-restricted-syntax */
@@ -662,7 +662,7 @@ describe("primitives", function () {
     it("should handle Refs pointing to different objects", function () {
       const ref1 = Ref.get(1, 0);
       const ref2 = Ref.get(2, 0);
-      expect(isRefsEqual(ref1, ref2)).toEqual(false);
+      expect(isRefsEqual(ref1, ref2)).toBeFalse();
     });
   });
 });

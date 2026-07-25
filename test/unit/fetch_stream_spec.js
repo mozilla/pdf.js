@@ -64,7 +64,7 @@ describe("fetch_stream", function () {
 
     expect(len).toEqual(pdfLength);
     expect(isStreamingSupported).toEqual(true);
-    expect(isRangeSupported).toEqual(false);
+    expect(isRangeSupported).toBeFalse();
   });
 
   it("read ranges with streaming", async function () {
