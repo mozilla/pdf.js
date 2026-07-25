@@ -218,10 +218,10 @@ describe("core_utils", function () {
 
   describe("isWhiteSpace", function () {
     it("handles space characters", function () {
-      expect(isWhiteSpace(0x20)).toEqual(true);
-      expect(isWhiteSpace(0x09)).toEqual(true);
-      expect(isWhiteSpace(0x0d)).toEqual(true);
-      expect(isWhiteSpace(0x0a)).toEqual(true);
+      expect(isWhiteSpace(0x20)).toBeTrue();
+      expect(isWhiteSpace(0x09)).toBeTrue();
+      expect(isWhiteSpace(0x0d)).toBeTrue();
+      expect(isWhiteSpace(0x0a)).toBeTrue();
     });
 
     it("handles non-space characters", function () {
@@ -336,13 +336,13 @@ describe("core_utils", function () {
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `"blah blah \\" blah blah"`;
-      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+      expect(validateCSSFont(cssFontInfo)).toBeTrue();
 
       cssFontInfo.fontFamily = `'blah blah ' blah blah'`;
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `'blah blah \\' blah blah'`;
-      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+      expect(validateCSSFont(cssFontInfo)).toBeTrue();
 
       cssFontInfo.fontFamily = `"blah blah `;
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
@@ -357,7 +357,7 @@ describe("core_utils", function () {
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = "blah blah blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+      expect(validateCSSFont(cssFontInfo)).toBeTrue();
 
       cssFontInfo.fontFamily = "blah 0blah blah";
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
@@ -369,10 +369,10 @@ describe("core_utils", function () {
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = "blah blah -blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+      expect(validateCSSFont(cssFontInfo)).toBeTrue();
 
       cssFontInfo.fontFamily = "blah fdqAJqjHJK23kl23__--Kj blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(true);
+      expect(validateCSSFont(cssFontInfo)).toBeTrue();
 
       cssFontInfo.fontFamily = "blah fdqAJqjH$JK23kl23__--Kj blah";
       expect(validateCSSFont(cssFontInfo)).toBeFalse();

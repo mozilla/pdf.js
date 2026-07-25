@@ -247,7 +247,7 @@ describe("FormCalc expression parser", function () {
         operand: { id: "こんにちは世界" },
         index: -0,
       });
-      expect(Object.is(-0, dump.index)).toBe(true);
+      expect(Object.is(-0, dump.index)).toBeTrue();
 
       parser = new Parser(`こんにちは世界[+0]`);
       dump = parser.parse().dump()[0];
@@ -255,7 +255,7 @@ describe("FormCalc expression parser", function () {
         operand: { id: "こんにちは世界" },
         index: +0,
       });
-      expect(Object.is(+0, dump.index)).toBe(true);
+      expect(Object.is(+0, dump.index)).toBeTrue();
 
       parser = new Parser(`こんにちは世界[*]`);
       expect(parser.parse().dump()[0]).toEqual({
@@ -267,7 +267,7 @@ describe("FormCalc expression parser", function () {
     it("should parse basic expression with dots", function () {
       const parser = new Parser("a.b.c.#d..e.f..g.*");
       const exprlist = parser.parse();
-      expect(exprlist.expressions[0].isDotExpression()).toEqual(true);
+      expect(exprlist.expressions[0].isDotExpression()).toBeTrue();
       expect(exprlist.dump()[0]).toEqual({
         operator: ".",
         left: { id: "a" },
@@ -733,8 +733,8 @@ endfunc
     it("should parse som predicate", () => {
       const parser = new Parser("a.b <= 3");
       const expr = parser.parse().expressions[0];
-      expect(expr.isSomPredicate()).toEqual(true);
-      expect(expr.left.isSomPredicate()).toEqual(true);
+      expect(expr.isSomPredicate()).toBeTrue();
+      expect(expr.left.isSomPredicate()).toBeTrue();
     });
   });
 });

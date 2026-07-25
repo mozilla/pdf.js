@@ -181,7 +181,7 @@ describe("display_utils", function () {
         new Blob([typedArray], { type: "application/pdf" })
       );
       // Sanity check to ensure that a "blob:" URL was returned.
-      expect(blobUrl.startsWith("blob:")).toEqual(true);
+      expect(blobUrl.startsWith("blob:")).toBeTrue();
 
       expect(getPdfFilenameFromUrl(blobUrl + "?file.pdf")).toEqual("file.pdf");
     });
@@ -225,7 +225,7 @@ describe("display_utils", function () {
 
     it("handles relative Fetch URLs", function () {
       expect(isValidFetchUrl("/foo", "file://www.example.com")).toBeFalse();
-      expect(isValidFetchUrl("/foo", "http://www.example.com")).toEqual(true);
+      expect(isValidFetchUrl("/foo", "http://www.example.com")).toBeTrue();
     });
 
     it("handles unsupported Fetch protocols", function () {
@@ -234,8 +234,8 @@ describe("display_utils", function () {
     });
 
     it("handles supported Fetch protocols", function () {
-      expect(isValidFetchUrl("http://www.example.com")).toEqual(true);
-      expect(isValidFetchUrl("https://www.example.com")).toEqual(true);
+      expect(isValidFetchUrl("http://www.example.com")).toBeTrue();
+      expect(isValidFetchUrl("https://www.example.com")).toBeTrue();
     });
   });
 

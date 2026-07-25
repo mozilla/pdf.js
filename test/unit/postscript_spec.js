@@ -1189,7 +1189,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("true and false become PsConstNode", function () {
       const out = toTree("{ true false }", 0);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(true);
+      expect(out[0].value).toBeTrue();
       expect(out[1]).toBeInstanceOf(PsConstNode);
       expect(out[1].value).toBeFalse();
     });
@@ -1427,7 +1427,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("x or true → true", function () {
       const out = toTree("{ true or }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(true);
+      expect(out[0].value).toBeTrue();
     });
 
     // not(comparison) → negated comparison
@@ -1508,7 +1508,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("x eq x → true (reflexive eq)", function () {
       const out = toTree("{ dup eq }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(true);
+      expect(out[0].value).toBeTrue();
     });
 
     it("x and x → x (reflexive and)", function () {
@@ -1626,7 +1626,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("true or x → true (second=true or)", function () {
       const out = toTree("{ true exch or }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(true);
+      expect(out[0].value).toBeTrue();
     });
 
     it("no simplification when second operand is a non-special constant", function () {
@@ -1812,18 +1812,18 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     });
 
     it("constant-folds comparison operators", function () {
-      expect(toTree("{ 1 1 eq }", 0)[0].value).toBe(true);
-      expect(toTree("{ 1 2 ne }", 0)[0].value).toBe(true);
-      expect(toTree("{ 2 1 gt }", 0)[0].value).toBe(true); // a=2 > b=1
-      expect(toTree("{ 1 1 ge }", 0)[0].value).toBe(true);
-      expect(toTree("{ 1 2 lt }", 0)[0].value).toBe(true); // a=1 < b=2
-      expect(toTree("{ 1 2 le }", 0)[0].value).toBe(true);
+      expect(toTree("{ 1 1 eq }", 0)[0].value).toBeTrue();
+      expect(toTree("{ 1 2 ne }", 0)[0].value).toBeTrue();
+      expect(toTree("{ 2 1 gt }", 0)[0].value).toBeTrue(); // a=2 > b=1
+      expect(toTree("{ 1 1 ge }", 0)[0].value).toBeTrue();
+      expect(toTree("{ 1 2 lt }", 0)[0].value).toBeTrue(); // a=1 < b=2
+      expect(toTree("{ 1 2 le }", 0)[0].value).toBeTrue();
     });
 
     it("constant-folds boolean and, or, xor and bitshift", function () {
       expect(toTree("{ true false and }", 0)[0].value).toBeFalse();
-      expect(toTree("{ false true or }", 0)[0].value).toBe(true);
-      expect(toTree("{ true false xor }", 0)[0].value).toBe(true);
+      expect(toTree("{ false true or }", 0)[0].value).toBeTrue();
+      expect(toTree("{ true false xor }", 0)[0].value).toBeTrue();
       expect(toTree("{ 4 2 bitshift }", 0)[0].value).toBe(16); // 4 << 2
     });
 

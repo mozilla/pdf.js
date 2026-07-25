@@ -133,9 +133,9 @@ describe("font_glyf", function () {
       verifyTtxOutput(output);
       expect(
         /<OS_2>\s*(?:<!--[\s\S]*?-->\s*)?<version value="3"\/>/.test(output)
-      ).toEqual(true);
-      expect(/<sCapHeight\b/.test(output)).toEqual(true);
-      expect(/<usMaxContext\b/.test(output)).toEqual(true);
+      ).toBeTrue();
+      expect(/<sCapHeight\b/.test(output)).toBeTrue();
+      expect(/<usMaxContext\b/.test(output)).toBeTrue();
     });
   });
 });

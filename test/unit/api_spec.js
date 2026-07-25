@@ -261,9 +261,9 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch {
-        expect(true).toEqual(true);
+        expect(true).toBeTrue();
         await destroyed;
       }
     });
@@ -394,7 +394,7 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual("Invalid PDF structure.");
@@ -413,11 +413,11 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(ResponseException);
         expect(reason.status).toEqual(isNodeJS ? 0 : 404);
-        expect(reason.missing).toEqual(true);
+        expect(reason.missing).toBeTrue();
       }
 
       await loadingTask.destroy();
@@ -459,7 +459,7 @@ describe("api", function () {
           return;
         }
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       };
 
       const data = await Promise.all([
@@ -485,7 +485,7 @@ describe("api", function () {
       const result1 = passwordNeededLoadingTask.promise.then(
         function () {
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
           throw new Error("loadingTask should be rejected");
         },
         function (data) {
@@ -507,7 +507,7 @@ describe("api", function () {
       const result2 = passwordIncorrectLoadingTask.promise.then(
         function () {
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
           throw new Error("loadingTask should be rejected");
         },
         function (data) {
@@ -563,12 +563,12 @@ describe("api", function () {
             return;
           }
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         };
         const result1 = passwordNeededLoadingTask.promise.then(
           function () {
             // Shouldn't get here.
-            expect(false).toEqual(true);
+            expect(false).toBeTrue();
             throw new Error("loadingTask should be rejected");
           },
           function (reason) {
@@ -583,12 +583,12 @@ describe("api", function () {
             throw new Error("Incorrect password");
           }
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         };
         const result2 = passwordIncorrectLoadingTask.promise.then(
           function () {
             // Shouldn't get here.
-            expect(false).toEqual(true);
+            expect(false).toBeTrue();
             throw new Error("loadingTask should be rejected");
           },
           function (reason) {
@@ -622,7 +622,7 @@ describe("api", function () {
         await loadingTask.promise.then(
           function () {
             // Shouldn't get here.
-            expect(false).toEqual(true);
+            expect(false).toBeTrue();
           },
           function (reason) {
             expect(reason).toBeInstanceOf(PasswordException);
@@ -642,7 +642,7 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual(
@@ -705,7 +705,7 @@ describe("api", function () {
       const opList = await page.getOperatorList();
       expect(opList.fnArray.length).toEqual(0);
       expect(opList.argsArray.length).toEqual(0);
-      expect(opList.lastChunk).toEqual(true);
+      expect(opList.lastChunk).toBeTrue();
       expect(opList.separateAnnots).toBeNull();
 
       await loadingTask.destroy();
@@ -726,7 +726,7 @@ describe("api", function () {
       const opList = await page.getOperatorList();
       expect(opList.fnArray.length).toEqual(0);
       expect(opList.argsArray.length).toEqual(0);
-      expect(opList.lastChunk).toEqual(true);
+      expect(opList.lastChunk).toBeTrue();
       expect(opList.separateAnnots).toBeNull();
 
       await loadingTask.destroy();
@@ -743,7 +743,7 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual("Invalid Root reference.");
@@ -762,7 +762,7 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(InvalidPDFException);
         expect(reason.message).toEqual("Invalid Root reference.");
@@ -800,7 +800,7 @@ describe("api", function () {
       const opListA = await pageA.getOperatorList();
       expect(opListA.fnArray.length).toBeGreaterThan(5);
       expect(opListA.argsArray.length).toBeGreaterThan(5);
-      expect(opListA.lastChunk).toEqual(true);
+      expect(opListA.lastChunk).toBeTrue();
       expect(opListA.separateAnnots).toBeNull();
 
       const pageB = await pdfDocument2.getPage(1);
@@ -809,14 +809,14 @@ describe("api", function () {
       const opListB = await pageB.getOperatorList();
       expect(opListB.fnArray.length).toBe(0);
       expect(opListB.argsArray.length).toBe(0);
-      expect(opListB.lastChunk).toEqual(true);
+      expect(opListB.lastChunk).toBeTrue();
       expect(opListB.separateAnnots).toBeNull();
 
       try {
         await pdfDocument3.getPage(1);
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("Bad (uncompressed) XRef entry: 3R");
@@ -850,7 +850,7 @@ describe("api", function () {
       const opListA = await pageA.getOperatorList();
       expect(opListA.fnArray.length).toEqual(19);
       expect(opListA.argsArray.length).toEqual(19);
-      expect(opListA.lastChunk).toEqual(true);
+      expect(opListA.lastChunk).toBeTrue();
       expect(opListA.separateAnnots).toBeNull();
 
       const pageB = await pdfDocument2.getPage(1);
@@ -859,7 +859,7 @@ describe("api", function () {
       const opListB = await pageB.getOperatorList();
       expect(opListB.fnArray.length).toEqual(1);
       expect(opListB.argsArray.length).toEqual(1);
-      expect(opListB.lastChunk).toEqual(true);
+      expect(opListB.lastChunk).toBeTrue();
       expect(opListB.separateAnnots).toBeNull();
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
@@ -893,7 +893,7 @@ describe("api", function () {
       ]) {
         expect(opList.fnArray.length).toBeGreaterThan(5);
         expect(opList.argsArray.length).toBeGreaterThan(5);
-        expect(opList.lastChunk).toEqual(true);
+        expect(opList.lastChunk).toBeTrue();
         expect(opList.separateAnnots).toBeNull();
       }
 
@@ -920,7 +920,7 @@ describe("api", function () {
         await pdfDocument1.getPage(1);
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("Illegal character: 41");
@@ -929,7 +929,7 @@ describe("api", function () {
         await pdfDocument2.getPage(1);
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(UnknownErrorException);
         expect(reason.message).toEqual("End of file inside array.");
@@ -973,7 +973,7 @@ describe("api", function () {
           new Float32Array([0, 9.75, 0.5, 9.75]),
         ],
       ]);
-      expect(opList.lastChunk).toEqual(true);
+      expect(opList.lastChunk).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -1021,7 +1021,7 @@ describe("api", function () {
         await loadingTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (ex) {
         expect(ex).toBeInstanceOf(PasswordException);
         expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
@@ -1061,14 +1061,14 @@ describe("api", function () {
       const worker = new PDFWorker({ name: "test1" });
       await worker.promise;
       expect(worker.name).toEqual("test1");
-      expect(!!worker.port).toEqual(true);
+      expect(!!worker.port).toBeTrue();
       expect(worker.destroyed).toBeFalse();
-      expect(!!worker._webWorker).toEqual(true);
-      expect(worker.port === worker._webWorker).toEqual(true);
+      expect(!!worker._webWorker).toBeTrue();
+      expect(worker.port === worker._webWorker).toBeTrue();
 
       worker.destroy();
       expect(!!worker.port).toBeFalse();
-      expect(worker.destroyed).toEqual(true);
+      expect(worker.destroyed).toBeTrue();
     });
 
     it("worker created or destroyed by getDocument", async function () {
@@ -1080,7 +1080,7 @@ describe("api", function () {
       let worker;
       loadingTask.promise.then(function () {
         worker = loadingTask._worker;
-        expect(!!worker).toEqual(true);
+        expect(!!worker).toBeTrue();
       });
 
       const destroyPromise = loadingTask.promise.then(() =>
@@ -1090,7 +1090,7 @@ describe("api", function () {
 
       const destroyedWorker = loadingTask._worker;
       expect(!!destroyedWorker).toBeFalse();
-      expect(worker.destroyed).toEqual(true);
+      expect(worker.destroyed).toBeTrue();
     });
 
     it("worker created and can be used in getDocument", async function () {
@@ -1109,7 +1109,7 @@ describe("api", function () {
         expect(!!docWorker).toBeFalse();
         // checking is the same port is used in the MessageHandler
         const messageHandlerPort = loadingTask._transport.messageHandler.comObj;
-        expect(messageHandlerPort === worker.port).toEqual(true);
+        expect(messageHandlerPort === worker.port).toBeTrue();
       });
 
       const destroyPromise = loadingTask.promise.then(() =>
@@ -1135,7 +1135,7 @@ describe("api", function () {
         worker1.port !== worker2.port &&
           worker1.port !== worker3.port &&
           worker2.port !== worker3.port
-      ).toEqual(true);
+      ).toBeTrue();
       worker1.destroy();
       worker2.destroy();
       worker3.destroy();
@@ -1166,7 +1166,7 @@ describe("api", function () {
             "https://www.mozilla.org/foo",
             "https://www.mozilla.org/bar"
           )
-        ).toEqual(true);
+        ).toBeTrue();
         expect(
           PDFWorker._isSameOrigin(
             "https://www.mozilla.org/foo",
@@ -1350,7 +1350,7 @@ describe("api", function () {
           await pdfDocument.getPage(pageNumber);
 
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         } catch (reason) {
           expect(reason).toBeInstanceOf(Error);
           expect(reason.message).toEqual("Invalid page request.");
@@ -1452,7 +1452,7 @@ describe("api", function () {
           await pdfDocument.getPageIndex(pageRefs[i]);
 
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         } catch (reason) {
           const { exception, message } = expectedErrors[i];
 
@@ -1966,7 +1966,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const hasJSActions = await pdfDoc.hasJSActions();
 
-      expect(hasJSActions).toEqual(true);
+      expect(hasJSActions).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -2318,18 +2318,18 @@ describe("api", function () {
       const outline = await pdfDocument.getOutline();
 
       // Two top level entries.
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(2);
 
       // Make sure some basic attributes are set.
       const outlineItem = outline[1];
       expect(outlineItem.title).toEqual("Chapter 1");
-      expect(Array.isArray(outlineItem.dest)).toEqual(true);
+      expect(Array.isArray(outlineItem.dest)).toBeTrue();
       expect(outlineItem.url).toBeNull();
       expect(outlineItem.unsafeUrl).toBeUndefined();
       expect(outlineItem.newWindow).toBeUndefined();
 
-      expect(outlineItem.bold).toEqual(true);
+      expect(outlineItem.bold).toBeTrue();
       expect(outlineItem.italic).toBeFalse();
       expect(outlineItem.color).toEqual(new Uint8ClampedArray([0, 64, 128]));
 
@@ -2341,7 +2341,7 @@ describe("api", function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue3214.pdf"));
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(5);
 
       const outlineItemTwo = outline[2];
@@ -2353,7 +2353,7 @@ describe("api", function () {
 
       const outlineItemOne = outline[1];
       expect(outlineItemOne.bold).toBeFalse();
-      expect(outlineItemOne.italic).toEqual(true);
+      expect(outlineItemOne.italic).toBeTrue();
       expect(outlineItemOne.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
 
       await loadingTask.destroy();
@@ -2364,7 +2364,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
 
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(9);
 
       expect(outline[0]).toEqual({
@@ -2392,7 +2392,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
 
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(6);
 
       expect(outline[4]).toEqual({
@@ -2420,7 +2420,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
 
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(4);
 
       expect(outline[1]).toEqual({
@@ -2448,7 +2448,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
 
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(1);
 
       expect(outline[0]).toEqual({
@@ -2475,7 +2475,7 @@ describe("api", function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue14267.pdf"));
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
-      expect(Array.isArray(outline)).toEqual(true);
+      expect(Array.isArray(outline)).toBeTrue();
       expect(outline.length).toEqual(1);
 
       const outlineItem = outline[0];
@@ -2725,7 +2725,7 @@ describe("api", function () {
       expect(info.CreationDate).toEqual("D:20090401163925-07'00'");
       // Custom, non-standard, information dictionary entries.
       const custom = info.Custom;
-      expect(typeof custom === "object" && custom !== null).toEqual(true);
+      expect(typeof custom === "object" && custom !== null).toBeTrue();
 
       expect(custom["PTEX.Fullbanner"]).toEqual(
         "This is pdfeTeX, " +
@@ -2788,7 +2788,7 @@ describe("api", function () {
       expect(info.Language).toBeNull();
       expect(info.EncryptFilterName).toBeNull();
       expect(info.IsLinearized).toBeFalse();
-      expect(info.IsAcroFormPresent).toEqual(true);
+      expect(info.IsAcroFormPresent).toBeTrue();
       expect(info.IsXFAPresent).toBeFalse();
       expect(info.IsCollectionPresent).toBeFalse();
       expect(info.IsSignaturesPresent).toBeFalse();
@@ -2807,7 +2807,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const markInfo = await pdfDoc.getMarkInfo();
 
-      expect(markInfo.Marked).toEqual(true);
+      expect(markInfo.Marked).toBeTrue();
       expect(markInfo.UserProperties).toBeFalse();
       expect(markInfo.Suspects).toBeFalse();
 
@@ -2851,7 +2851,7 @@ describe("api", function () {
     it("cleans up document resources", async function () {
       await pdfDocument.cleanup();
 
-      expect(true).toEqual(true);
+      expect(true).toBeTrue();
     });
 
     it("checks that fingerprints are unique", async function () {
@@ -2901,7 +2901,7 @@ describe("api", function () {
       const annotations = await pdfPage.getAnnotations();
 
       const field = annotations.find(annotation => annotation.id === "55R");
-      expect(!!field).toEqual(true);
+      expect(!!field).toBeTrue();
       expect(field.fieldValue).toEqual(value);
 
       await loadingTask.destroy();
@@ -3613,7 +3613,7 @@ describe("api", function () {
       const annotations = await pdfPage.getAnnotations();
 
       const field = annotations.find(annotation => annotation.id === "144R");
-      expect(!!field).toEqual(true);
+      expect(!!field).toBeTrue();
       expect(field.fieldValue).toEqual("Several\n\nOther\nJobs");
       expect(field.textContent).toEqual(["Several", "", "Other", "Jobs"]);
 
@@ -3638,7 +3638,7 @@ describe("api", function () {
           .then(() => loadingTask.destroy())
           .then(
             function () {
-              expect(expectSuccess).toEqual(true);
+              expect(expectSuccess).toBeTrue();
             },
             function (error) {
               if (expectSuccess) {
@@ -4099,7 +4099,7 @@ describe("api", function () {
         a => a.annotationType === AnnotationType.FILEATTACHMENT
       );
       const { fileId } = fileAnnotation;
-      expect(fileId.startsWith("attachmentRef:")).toEqual(true);
+      expect(fileId.startsWith("attachmentRef:")).toBeTrue();
 
       const before = await pdfDoc.getAttachmentContent(fileId);
       expect(before).toBeInstanceOf(Uint8Array);
@@ -4129,7 +4129,7 @@ describe("api", function () {
       expect(unsafeUrl).toEqual(
         "对不起/没关系/1_1_模块1行政文件和药品信息目录.pdf"
       );
-      expect(newWindow).toEqual(true);
+      expect(newWindow).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4200,7 +4200,7 @@ page 1 / 3`);
       // `commonObjs` property being populated below.
       canvasFactory.destroy(canvasAndCtx);
 
-      expect(pdfPage.commonObjs.has(fontName)).toEqual(true);
+      expect(pdfPage.commonObjs.has(fontName)).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4234,7 +4234,7 @@ page 1 / 3`);
         text.includes(
           "Engang var der i Samvirke en opskrift på en fiskelagkage, som jeg med"
         )
-      ).toBe(true);
+      ).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4252,17 +4252,17 @@ page 1 / 3`);
         text.includes(
           "Abstract. A purely peer-to-peer version of electronic cash would allow online"
         )
-      ).toEqual(true);
+      ).toBeTrue();
       expect(
         text.includes(
           "avoid mediating disputes. The cost of mediation increases transaction costs, limiting the"
         )
-      ).toEqual(true);
+      ).toBeTrue();
       expect(
         text.includes(
           "system is secure as long as honest nodes collectively control more CPU power than any"
         )
-      ).toEqual(true);
+      ).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4280,12 +4280,12 @@ page 1 / 3`);
         text.includes(
           "1. The first of these cases arises from the tragic handicap which has blighted the life of the Plaintiff, and from the response of the"
         )
-      ).toEqual(true);
+      ).toBeTrue();
       expect(
         text.includes(
           "argued in this Court the appeal raises narrower, but important, issues which may be summarised as follows:-"
         )
-      ).toEqual(true);
+      ).toBeTrue();
       await loadingTask.destroy();
     });
 
@@ -4305,7 +4305,7 @@ page 1 / 3`);
 1,485.1 1,582.7 1,629.2 1,633.7
 114.2 121.7 125.3 130.7
 13.0x 13.0x 13.0x 12.5x`)
-      ).toEqual(true);
+      ).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4328,7 +4328,7 @@ This package provides support for this font in LATEX. It includes Type \x81
 versions of the fonts, converted for this package using FontForge from its
 sources, for full support with Dvips.`;
 
-      expect(text.includes(expected)).toEqual(true);
+      expect(text.includes(expected)).toBeTrue();
 
       ({ items } = await pdfPage.getTextContent({
         disableNormalization: false,
@@ -4343,7 +4343,7 @@ Directory [\x81] as TrueType files licensed under the Apache License version \x8
 This package provides support for this font in LATEX. It includes Type \x81
 versions of the fonts, converted for this package using FontForge from its
 sources, for full support with Dvips.`;
-      expect(text.includes(expected)).toEqual(true);
+      expect(text.includes(expected)).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4369,7 +4369,7 @@ Innovationsabteilung. Seit 2009 ist sie Frank Stronachs Büroleiterin in Österr
 Kanada. Zusätzlich ist sie seit 2012 Vice President, Business Development der
 Stronach Group und Vizepräsidentin und Institutsleiterin des Stronach Institut für
 sozialökonomische Gerechtigkeit.`)
-      ).toEqual(true);
+      ).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4390,7 +4390,7 @@ FAMILY TRUST /u/a dated October 31, 1980 as amended, and STUART W. EPPERSON, not
 individually but solely as Trustee of the STUART W. EPPERSON REVOCABLE LIVING
 TRUST /u/a dated January 14th 1993 as amended, collectively referred to herein as “Lessor”, and
 Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
-      ).toEqual(true);
+      ).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4525,7 +4525,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
 
       // No item should carry a hasEOL flag between the superscript and the
       // text that follows it.
-      expect(items.every(i => !i.hasEOL)).toEqual(true);
+      expect(items.every(i => !i.hasEOL)).toBeTrue();
 
       // Full sentence must be reconstructable without a newline.
       const text = mergeText(items);
@@ -4872,7 +4872,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       expect(operatorList.fnArray.length).toBeGreaterThan(100);
       expect(operatorList.argsArray.length).toBeGreaterThan(100);
-      expect(operatorList.lastChunk).toEqual(true);
+      expect(operatorList.lastChunk).toBeTrue();
       expect(operatorList.separateAnnots).toEqual({
         form: false,
         canvas: false,
@@ -4921,7 +4921,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
           expect(opList.fnArray.length).toBeGreaterThan(100);
           expect(opList.argsArray.length).toBeGreaterThan(100);
-          expect(opList.lastChunk).toEqual(true);
+          expect(opList.lastChunk).toBeTrue();
           expect(opList.separateAnnots).toBeNull();
 
           await loadingTask1.destroy();
@@ -4933,7 +4933,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
           expect(opList.fnArray.length).toEqual(0);
           expect(opList.argsArray.length).toEqual(0);
-          expect(opList.lastChunk).toEqual(true);
+          expect(opList.lastChunk).toBeTrue();
           expect(opList.separateAnnots).toBeNull();
 
           await loadingTask2.destroy();
@@ -4951,7 +4951,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfPage = await pdfDoc.getPage(1);
 
       const operatorList = await pdfPage.getOperatorList();
-      expect(operatorList.lastChunk).toEqual(true);
+      expect(operatorList.lastChunk).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4966,7 +4966,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       expect(operatorList.fnArray.length).toBeGreaterThan(20);
       expect(operatorList.argsArray.length).toBeGreaterThan(20);
-      expect(operatorList.lastChunk).toEqual(true);
+      expect(operatorList.lastChunk).toBeTrue();
       expect(operatorList.separateAnnots).toEqual({
         form: false,
         canvas: false,
@@ -4974,8 +4974,8 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       // The `getOperatorList` method, similar to the `render` method,
       // is supposed to include any existing Annotation-operatorLists.
-      expect(operatorList.fnArray.includes(OPS.beginAnnotation)).toEqual(true);
-      expect(operatorList.fnArray.includes(OPS.endAnnotation)).toEqual(true);
+      expect(operatorList.fnArray.includes(OPS.beginAnnotation)).toBeTrue();
+      expect(operatorList.fnArray.includes(OPS.endAnnotation)).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -4993,7 +4993,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       });
       expect(opListAnnotDisable.fnArray.length).toEqual(0);
       expect(opListAnnotDisable.argsArray.length).toEqual(0);
-      expect(opListAnnotDisable.lastChunk).toEqual(true);
+      expect(opListAnnotDisable.lastChunk).toBeTrue();
       expect(opListAnnotDisable.separateAnnots).toBeNull();
 
       const opListAnnotEnable = await pdfPage.getOperatorList({
@@ -5001,7 +5001,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       });
       expect(opListAnnotEnable.fnArray.length).toBeGreaterThan(130);
       expect(opListAnnotEnable.argsArray.length).toBeGreaterThan(130);
-      expect(opListAnnotEnable.lastChunk).toEqual(true);
+      expect(opListAnnotEnable.lastChunk).toBeTrue();
       expect(opListAnnotEnable.separateAnnots).toEqual({
         form: false,
         canvas: true,
@@ -5018,7 +5018,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       });
       expect(opListAnnotEnableForms.fnArray.length).toBeGreaterThan(30);
       expect(opListAnnotEnableForms.argsArray.length).toBeGreaterThan(30);
-      expect(opListAnnotEnableForms.lastChunk).toEqual(true);
+      expect(opListAnnotEnableForms.lastChunk).toBeTrue();
       expect(opListAnnotEnableForms.separateAnnots).toEqual({
         form: true,
         canvas: true,
@@ -5028,14 +5028,14 @@ have written that much by now. So, here’s to squashing bugs.`);
         OPS.beginAnnotation
       );
       isUsingOwnCanvas = opListAnnotEnableForms.argsArray[firstAnnotIndex][4];
-      expect(isUsingOwnCanvas).toEqual(true);
+      expect(isUsingOwnCanvas).toBeTrue();
 
       const opListAnnotEnableStorage = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE_STORAGE,
       });
       expect(opListAnnotEnableStorage.fnArray.length).toBeGreaterThan(150);
       expect(opListAnnotEnableStorage.argsArray.length).toBeGreaterThan(150);
-      expect(opListAnnotEnableStorage.lastChunk).toEqual(true);
+      expect(opListAnnotEnableStorage.lastChunk).toBeTrue();
       expect(opListAnnotEnableStorage.separateAnnots).toEqual({
         form: false,
         canvas: true,
@@ -5076,7 +5076,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const opList = await pdfPage.getOperatorList();
       expect(opList.fnArray.length).toBeGreaterThan(25);
       expect(opList.argsArray.length).toBeGreaterThan(25);
-      expect(opList.lastChunk).toEqual(true);
+      expect(opList.lastChunk).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -5188,7 +5188,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         await renderTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(RenderingCancelledException);
         expect(reason.message).toEqual("Rendering cancelled, page 1");
@@ -5219,7 +5219,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         await renderTask.promise;
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(RenderingCancelledException);
       }
@@ -5267,11 +5267,11 @@ have written that much by now. So, here’s to squashing bugs.`);
         renderTask2.promise.then(
           () => {
             // Shouldn't get here.
-            expect(false).toEqual(true);
+            expect(false).toBeTrue();
           },
           reason => {
             // It fails because we are already using this canvas.
-            expect(/multiple render\(\)/.test(reason.message)).toEqual(true);
+            expect(/multiple render\(\)/.test(reason.message)).toBeTrue();
           }
         ),
       ]);
@@ -5302,7 +5302,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(renderTask.separateAnnots).toBeFalse();
 
       await pdfDoc.cleanup();
-      expect(true).toEqual(true);
+      expect(true).toBeTrue();
 
       canvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
@@ -5337,7 +5337,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         await pdfDoc.cleanup();
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(Error);
         expect(reason.message).toEqual(
@@ -5397,7 +5397,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         if (i < NUM_PAGES_THRESHOLD) {
           expect(objId).toEqual(`img_p${i - 1}_1`);
 
-          expect(objs.has(objId)).toEqual(true);
+          expect(objs.has(objId)).toBeTrue();
           expect(commonObjs.has(objId)).toBeFalse();
         } else {
           expect(objId).toEqual(
@@ -5405,7 +5405,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           );
 
           expect(objs.has(objId)).toBeFalse();
-          expect(commonObjs.has(objId)).toEqual(true);
+          expect(commonObjs.has(objId)).toBeTrue();
         }
         expect(width).toEqual(EXPECTED_WIDTH);
         expect(height).toEqual(EXPECTED_HEIGHT);
@@ -5477,11 +5477,11 @@ have written that much by now. So, here’s to squashing bugs.`);
 
         if (i < NUM_PAGES_THRESHOLD) {
           // Image decoded in the worker-thread; stored as a page-level object.
-          expect(objs.has(objId)).toEqual(true);
+          expect(objs.has(objId)).toBeTrue();
           expect(commonObjs.has(objId)).toBeFalse();
         } else if (i === NUM_PAGES_THRESHOLD) {
           expect(objs.has(objId)).toBeFalse();
-          expect(commonObjs.has(objId)).toEqual(true);
+          expect(commonObjs.has(objId)).toBeTrue();
 
           // Ensure that the image was copied in the main-thread (into
           // commonObjs), rather than being re-parsed in the worker-thread.
@@ -5530,7 +5530,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         if (i < NUM_PAGES_THRESHOLD) {
           expect(objId).toEqual(`img_p${i - 1}_1`);
 
-          expect(objs.has(objId)).toEqual(true);
+          expect(objs.has(objId)).toBeTrue();
           expect(commonObjs.has(objId)).toBeFalse();
         } else {
           expect(objId).toEqual(
@@ -5538,7 +5538,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           );
 
           expect(objs.has(objId)).toBeFalse();
-          expect(commonObjs.has(objId)).toEqual(true);
+          expect(commonObjs.has(objId)).toBeTrue();
         }
 
         // Ensure that the actual image data is identical for all pages.
@@ -5645,7 +5645,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         canvasAndCtx.context
           .getImageData(0, 0, viewport.width, viewport.height)
           .data.some(channel => channel !== 0)
-      ).toEqual(true);
+      ).toBeTrue();
 
       canvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
@@ -7881,7 +7881,7 @@ small scripts as well as for`);
         pdfDoc = await loadingTask.promise;
 
         const calculationOrder = await pdfDoc.getCalculationOrderIds();
-        expect(Array.isArray(calculationOrder)).toEqual(true);
+        expect(Array.isArray(calculationOrder)).toBeTrue();
         expect(calculationOrder.length).toEqual(1);
         expect(calculationOrder[0]).not.toEqual("6R");
         expect(Object.keys((await pdfDoc.getFieldObjects()) || {})).toEqual([
@@ -8054,12 +8054,12 @@ small scripts as well as for`);
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
-        expect(Array.isArray(outline)).toEqual(true);
+        expect(Array.isArray(outline)).toBeTrue();
         expect(outline.length).toEqual(7);
 
         // Item [0]: explicit array dest
         expect(outline[0].title).toEqual("Page 1 - explicit dest");
-        expect(Array.isArray(outline[0].dest)).toEqual(true);
+        expect(Array.isArray(outline[0].dest)).toBeTrue();
         expect(outline[0].dest[1].name).toEqual("XYZ");
 
         // Item [1]: named string dest
@@ -8091,15 +8091,15 @@ small scripts as well as for`);
 
         // Section 1: explicit FitH dest
         expect(chapter.items[0].title).toEqual("Section 1");
-        expect(Array.isArray(chapter.items[0].dest)).toEqual(true);
+        expect(Array.isArray(chapter.items[0].dest)).toBeTrue();
         expect(chapter.items[0].dest[1].name).toEqual("FitH");
 
         // Section 2: named dest + bold + italic + red color
         const section2 = chapter.items[1];
         expect(section2.title).toEqual("Section 2");
         expect(typeof section2.dest).toEqual("string");
-        expect(section2.bold).toEqual(true);
-        expect(section2.italic).toEqual(true);
+        expect(section2.bold).toBeTrue();
+        expect(section2.italic).toBeTrue();
         expect(section2.color).toEqual(new Uint8ClampedArray([255, 0, 0]));
 
         // Subsection: parent with own dest + one child
@@ -8134,7 +8134,7 @@ small scripts as well as for`);
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
-        expect(Array.isArray(outline)).toEqual(true);
+        expect(Array.isArray(outline)).toBeTrue();
         // 6 items: all except "No dest parent" (its child dest was on page 5).
         expect(outline.length).toEqual(6);
 
@@ -8172,7 +8172,7 @@ small scripts as well as for`);
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
-        expect(Array.isArray(outline)).toEqual(true);
+        expect(Array.isArray(outline)).toBeTrue();
         // 5 items: explicit dest (page1) and named dest (page2dest) are gone;
         // the 3 external-link items + "Chapter" + "No dest parent" remain.
         expect(outline.length).toEqual(5);
@@ -8241,13 +8241,13 @@ small scripts as well as for`);
         expect(newPdfDoc.numPages).toEqual(2);
 
         const outline = await newPdfDoc.getOutline();
-        expect(Array.isArray(outline)).toEqual(true);
+        expect(Array.isArray(outline)).toBeTrue();
         // 5 items from copy A + 4 items from copy B = 9 total.
         expect(outline.length).toEqual(9);
 
         // ---- Copy A items ----
         expect(outline[0].title).toEqual("Page 1 - explicit dest");
-        expect(Array.isArray(outline[0].dest)).toEqual(true);
+        expect(Array.isArray(outline[0].dest)).toBeTrue();
         expect(outline[1].title).toEqual("External URL");
         expect(outline[2].title).toEqual("Next Page action");
         expect(outline[3].title).toEqual("Remote PDF link");
@@ -8329,7 +8329,7 @@ small scripts as well as for`);
         expect(newPdfDoc.numPages).toEqual(2);
 
         const outline = await newPdfDoc.getOutline();
-        expect(Array.isArray(outline)).toEqual(true);
+        expect(Array.isArray(outline)).toBeTrue();
         // Copy A: "Page 1 - explicit dest", "External URL", "Next Page
         //   action", "Remote PDF link", "Chapter" (dest=page1dest)
         // Copy B: same 5 items but "Chapter" dest is renamed.
@@ -8343,7 +8343,7 @@ small scripts as well as for`);
         const chapterDests = chapterItems.map(i => i.dest);
         expect(chapterDests[0]).not.toEqual(chapterDests[1]);
         // One of them is the original name.
-        expect(chapterDests.includes("page1dest")).toEqual(true);
+        expect(chapterDests.includes("page1dest")).toBeTrue();
         // The other is a renamed version that still exists in the doc.
         const renamedDest = chapterDests.find(d => d !== "page1dest");
         expect(typeof renamedDest).toEqual("string");
@@ -8354,8 +8354,8 @@ small scripts as well as for`);
           i => i.title === "Page 1 - explicit dest"
         );
         expect(page1Items.length).toEqual(2);
-        expect(Array.isArray(page1Items[0].dest)).toEqual(true);
-        expect(Array.isArray(page1Items[1].dest)).toEqual(true);
+        expect(Array.isArray(page1Items[0].dest)).toBeTrue();
+        expect(Array.isArray(page1Items[1].dest)).toBeTrue();
 
         await newLoadingTask.destroy();
       });
@@ -8378,7 +8378,7 @@ small scripts as well as for`);
         expect(newPdfDoc.numPages).toEqual(1);
 
         const outline = await newPdfDoc.getOutline();
-        expect(Array.isArray(outline)).toEqual(true);
+        expect(Array.isArray(outline)).toBeTrue();
         expect(outline.length).toEqual(1);
 
         // "Parent" is kept as a plain container (dest cleared, no action).
@@ -8390,7 +8390,7 @@ small scripts as well as for`);
         // "Child" keeps its explicit dest pointing to the (only) kept page.
         const child = parent.items[0];
         expect(child.title).toEqual("Child");
-        expect(Array.isArray(child.dest)).toEqual(true);
+        expect(Array.isArray(child.dest)).toBeTrue();
 
         await newLoadingTask.destroy();
       });
@@ -8432,7 +8432,7 @@ small scripts as well as for`);
         await passwordNeededLoadingTask.promise.then(
           function () {
             // Shouldn't get here.
-            expect(false).toEqual(true);
+            expect(false).toBeTrue();
           },
           function (err) {
             expect(err).toBeInstanceOf(PasswordException);

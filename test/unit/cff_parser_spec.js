@@ -154,7 +154,7 @@ describe("CFFParser", function () {
     ]);
     expect(properties.ascent).toEqual(900);
     expect(properties.descent).toEqual(-300);
-    expect(properties.ascentScaled).toEqual(true);
+    expect(properties.ascentScaled).toBeTrue();
   });
 
   it("repairs a FontBBox with unsigned-encoded negative coordinates", function () {
@@ -177,7 +177,7 @@ describe("CFFParser", function () {
     ]);
     expect(properties.ascent).toEqual(989);
     expect(properties.descent).toEqual(-305);
-    expect(properties.ascentScaled).toEqual(true);
+    expect(properties.ascentScaled).toBeTrue();
   });
 
   it("doesn't replace a repairable FontBBox with an empty descriptor bbox", function () {
@@ -198,7 +198,7 @@ describe("CFFParser", function () {
     ]);
     expect(properties.ascent).toEqual(989);
     expect(properties.descent).toEqual(-305);
-    expect(properties.ascentScaled).toEqual(true);
+    expect(properties.ascentScaled).toBeTrue();
   });
 
   it("repairs unsigned-encoded negative FontBBox without descriptor data", function () {
@@ -217,7 +217,7 @@ describe("CFFParser", function () {
     ]);
     expect(properties.ascent).toEqual(989);
     expect(properties.descent).toEqual(-305);
-    expect(properties.ascentScaled).toEqual(true);
+    expect(properties.ascentScaled).toBeTrue();
   });
 
   it("preserves large positive upper FontBBox coordinates", function () {
@@ -238,7 +238,7 @@ describe("CFFParser", function () {
     ]);
     expect(properties.ascent).toEqual(989);
     expect(properties.descent).toEqual(-305);
-    expect(properties.ascentScaled).toEqual(true);
+    expect(properties.ascentScaled).toBeTrue();
   });
 
   it("repairs likely Ghostscript-zeroed FDArray private defaults", function () {
@@ -383,7 +383,7 @@ describe("CFFParser", function () {
       SEAC_ANALYSIS_ENABLED
     ).parse();
 
-    expect(embeddedCff.isCIDFont).toEqual(true);
+    expect(embeddedCff.isCIDFont).toBeTrue();
     expect(embeddedCff.fdArray[0].privateDict.getByName("BlueScale")).toEqual(
       0.037
     );
@@ -542,7 +542,7 @@ describe("CFFParser", function () {
 
   it("parses predefined charsets", function () {
     const charset = parser.parseCharsets(0, 0, null, true);
-    expect(charset.predefined).toEqual(true);
+    expect(charset.predefined).toBeTrue();
   });
 
   it("parses charset format 0", function () {

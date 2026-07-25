@@ -650,7 +650,7 @@ describe("document", function () {
 
       pdfDocument = getDocument(acroForm, xref);
       hasJSActions = await pdfDocument.hasJSActions;
-      expect(hasJSActions).toEqual(true);
+      expect(hasJSActions).toBeTrue();
     });
   });
 });

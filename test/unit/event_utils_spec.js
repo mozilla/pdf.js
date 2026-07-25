@@ -209,7 +209,7 @@ describe("event_utils", function () {
       });
       function domEventListener() {
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       }
       document.addEventListener("test", domEventListener);
 
@@ -240,7 +240,7 @@ describe("event_utils", function () {
       }).then(
         function () {
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         },
         function (reason) {
           expect(reason).toBeInstanceOf(Error);
@@ -253,7 +253,7 @@ describe("event_utils", function () {
       }).then(
         function () {
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         },
         function (reason) {
           expect(reason).toBeInstanceOf(Error);
@@ -267,7 +267,7 @@ describe("event_utils", function () {
       }).then(
         function () {
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         },
         function (reason) {
           expect(reason).toBeInstanceOf(Error);

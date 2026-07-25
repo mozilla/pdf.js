@@ -72,11 +72,11 @@ describe("AnnotationStorage", function () {
       annotationStorage.onSetModified = callback;
 
       annotationStorage.setValue("asdf", { value: "original" });
-      expect(called).toBe(true);
+      expect(called).toBeTrue();
 
       // changing value
       annotationStorage.setValue("asdf", { value: "modified" });
-      expect(called).toBe(true);
+      expect(called).toBeTrue();
 
       // not changing value
       called = false;
@@ -95,7 +95,7 @@ describe("AnnotationStorage", function () {
       annotationStorage.onResetModified = callback;
       annotationStorage.setValue("asdf", { value: "original" });
       annotationStorage.resetModified();
-      expect(called).toBe(true);
+      expect(called).toBeTrue();
       called = false;
 
       // not changing value
@@ -106,7 +106,7 @@ describe("AnnotationStorage", function () {
       // changing value
       annotationStorage.setValue("asdf", { value: "modified" });
       annotationStorage.resetModified();
-      expect(called).toBe(true);
+      expect(called).toBeTrue();
     });
   });
 });

@@ -157,7 +157,7 @@ describe("cmap", function () {
     const str = "/WMode 1 def\n";
     const stream = new StringStream(str);
     const cmap = await CMapFactory.create({ encoding: stream });
-    expect(cmap.vertical).toEqual(true);
+    expect(cmap.vertical).toBeTrue();
   });
 
   it("loads built in cmap", async function () {
@@ -196,7 +196,7 @@ describe("cmap", function () {
       });
 
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(false).toBeTrue();
     } catch (reason) {
       expect(reason).toBeInstanceOf(Error);
       expect(reason.message).toEqual("Unknown CMap name: null");
@@ -221,7 +221,7 @@ describe("cmap", function () {
       });
 
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(false).toBeTrue();
     } catch (reason) {
       expect(reason).toBeInstanceOf(Error);
       expect(reason.message).toEqual(
@@ -250,12 +250,12 @@ describe("cmap", function () {
       });
 
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(false).toBeTrue();
     } catch (reason) {
       expect(reason).toBeInstanceOf(Error);
       const message = reason.message;
-      expect(message.startsWith("Unable to load CMap data at: ")).toEqual(true);
-      expect(message.endsWith("/external/bcmaps/Adobe-Japan1-1")).toEqual(true);
+      expect(message.startsWith("Unable to load CMap data at: ")).toBeTrue();
+      expect(message.endsWith("/external/bcmaps/Adobe-Japan1-1")).toBeTrue();
     }
   });
 });

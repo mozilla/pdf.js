@@ -37,7 +37,7 @@ describe("font_os2", function () {
       verifyTtxOutput(output);
       expect(
         /<OS_2>\s*<!--.*\r?\n.*-->\s*<version value="3"\/>/.test(output)
-      ).toEqual(true);
+      ).toBeTrue();
     });
 
     it("has invalid selection attributes presence", async function () {
@@ -65,7 +65,7 @@ describe("font_os2", function () {
       verifyTtxOutput(output);
       expect(
         /<OS_2>\s*<!--.*\r?\n.*-->\s*<version value="3"\/>/.test(output)
-      ).toEqual(true);
+      ).toBeTrue();
     });
   });
 });

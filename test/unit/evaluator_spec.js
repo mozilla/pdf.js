@@ -74,7 +74,7 @@ describe("evaluator", function () {
         stream,
         new ResourcesMock()
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray.length).toEqual(1);
       expect(result.fnArray[0]).toEqual(OPS.constructPath);
       expect(result.argsArray[0]).toEqual([OPS.fill, [null], null]);
@@ -87,7 +87,7 @@ describe("evaluator", function () {
         stream,
         new ResourcesMock()
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray.length).toEqual(1);
       expect(result.fnArray[0]).toEqual(OPS.restore);
     });
@@ -130,7 +130,7 @@ describe("evaluator", function () {
         stream,
         new ResourcesMock()
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray.length).toEqual(3);
       expect(result.fnArray).toEqual([
         OPS.constructPath,
@@ -151,7 +151,7 @@ describe("evaluator", function () {
         stream,
         resources
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray).toEqual([
         OPS.constructPath,
         OPS.constructPath,
@@ -169,7 +169,7 @@ describe("evaluator", function () {
         stream,
         new ResourcesMock()
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray.length).toEqual(2);
       expect(result.fnArray[0]).toEqual(OPS.constructPath);
       expect(result.fnArray[1]).toEqual(OPS.setTextRise);
@@ -185,14 +185,14 @@ describe("evaluator", function () {
         stream,
         new ResourcesMock()
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray.length).toEqual(3);
       expect(result.fnArray[0]).toEqual(OPS.setFlatness);
       expect(result.fnArray[1]).toEqual(OPS.setRenderingIntent);
       expect(result.fnArray[2]).toEqual(OPS.constructPath);
       expect(result.argsArray.length).toEqual(3);
       expect(result.argsArray[0].length).toEqual(1);
-      expect(result.argsArray[0][0]).toEqual(true);
+      expect(result.argsArray[0][0]).toBeTrue();
       expect(result.argsArray[1].length).toEqual(1);
       expect(result.argsArray[1][0]).toBeFalse();
       expect(result.argsArray[2]).toEqual([OPS.endPath, [null], null]);
@@ -296,7 +296,7 @@ describe("evaluator", function () {
           );
 
           // Shouldn't get here.
-          expect(false).toEqual(true);
+          expect(false).toBeTrue();
         } catch (reason) {
           expect(reason).toBeInstanceOf(FormatError);
           expect(reason.message).toEqual(
@@ -313,7 +313,7 @@ describe("evaluator", function () {
         stream,
         new ResourcesMock()
       );
-      expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
       expect(result.fnArray.length).toEqual(4);
       expect(result.fnArray[0]).toEqual(OPS.save);
       expect(result.fnArray[1]).toEqual(OPS.save);
@@ -332,7 +332,7 @@ describe("evaluator", function () {
         );
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(reason).toBeInstanceOf(FormatError);
         expect(reason.message).toEqual("XObject should be a stream");
@@ -416,9 +416,9 @@ describe("evaluator", function () {
         });
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch {
-        expect(!!result.fnArray && !!result.argsArray).toEqual(true);
+        expect(!!result.fnArray && !!result.argsArray).toBeTrue();
         expect(result.fnArray.length).toEqual(0);
       }
     });
@@ -437,9 +437,9 @@ describe("evaluator", function () {
         });
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch {
-        expect(true).toEqual(true);
+        expect(true).toBeTrue();
       }
     });
   });

@@ -66,7 +66,7 @@ describe("PDF viewer", () => {
           );
           expect(attachmentsEnabled)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
 
           // Switch to the attachments view.
           await page.click("#attachmentsViewMenu");
@@ -85,7 +85,7 @@ describe("PDF viewer", () => {
             );
             return !!textLayer && !!canvas;
           });
-          expect(stillRendered).withContext(`In ${browserName}`).toBe(true);
+          expect(stillRendered).withContext(`In ${browserName}`).toBeTrue();
         })
       );
     });
@@ -221,7 +221,7 @@ describe("PDF viewer", () => {
             );
             expect(scrollTop < 100)
               .withContext(`In ${browserName}`)
-              .toBe(true);
+              .toBeTrue();
           }
         })
       );
@@ -486,7 +486,7 @@ describe("PDF viewer", () => {
 
             expect(buffer.every(x => x === 0xff0000ff))
               .withContext(`In ${browserName}, in the ${i}th zoom in`)
-              .toBe(true);
+              .toBeTrue();
 
             const currentScale = await page.evaluate(
               () => window.PDFViewerApplication.pdfViewer.currentScale
@@ -834,7 +834,7 @@ describe("PDF viewer", () => {
                 detailCanvasSelector
               );
 
-              expect(isSame).withContext(`In ${browserName}`).toBe(true);
+              expect(isSame).withContext(`In ${browserName}`).toBeTrue();
               expect(rendered).withContext(`In ${browserName}`).toBeFalse();
             });
           });

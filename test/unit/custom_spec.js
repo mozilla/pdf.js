@@ -205,7 +205,7 @@ describe("custom ownerDocument", function () {
 
     await loadingTask.destroy();
     canvasFactory.destroy(canvasAndCtx);
-    expect(style.remove.called).toBe(true);
+    expect(style.remove.called).toBeTrue();
   });
 
   it("should use a constructable stylesheet for CSS font rules", function () {

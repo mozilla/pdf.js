@@ -41,12 +41,12 @@ describe("pdf_history", function () {
     });
 
     it("should accept equal destination hashes", function () {
-      expect(isDestHashesEqual("page.157", "page.157")).toEqual(true);
-      expect(isDestHashesEqual("nameddest=page.157", "page.157")).toEqual(true);
+      expect(isDestHashesEqual("page.157", "page.157")).toBeTrue();
+      expect(isDestHashesEqual("nameddest=page.157", "page.157")).toBeTrue();
 
       expect(
         isDestHashesEqual("nameddest=page.157&zoom=100", "page.157")
-      ).toEqual(true);
+      ).toBeTrue();
     });
   });
 
@@ -67,13 +67,13 @@ describe("pdf_history", function () {
     });
 
     it("should accept equal destination arrays", function () {
-      expect(isDestArraysEqual(firstDest, firstDest)).toEqual(true);
-      expect(isDestArraysEqual(firstDest, fifthDest)).toEqual(true);
+      expect(isDestArraysEqual(firstDest, firstDest)).toBeTrue();
+      expect(isDestArraysEqual(firstDest, fifthDest)).toBeTrue();
 
       const firstDestCopy = firstDest.slice();
       expect(firstDest).not.toBe(firstDestCopy);
 
-      expect(isDestArraysEqual(firstDest, firstDestCopy)).toEqual(true);
+      expect(isDestArraysEqual(firstDest, firstDestCopy)).toBeTrue();
     });
   });
 });
