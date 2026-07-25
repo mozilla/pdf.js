@@ -446,24 +446,36 @@ class PatternCS extends ColorSpace {
  * The default color is `new Uint8Array([0])`.
  */
 class IndexedCS extends ColorSpace {
+  #rgbLookup;
+
   constructor(base, highVal, lookup) {
     super("Indexed", 1);
-    this.base = base;
     this.highVal = highVal;
 
-    const length = base.numComps * (highVal + 1);
-    this.lookup = new Uint8Array(length);
+    const count = highVal + 1;
+    const length = base.numComps * count;
+    const palette = new Uint8Array(length);
 
     if (lookup instanceof BaseStream) {
-      const bytes = lookup.getBytes(length);
-      this.lookup.set(bytes);
+      palette.set(lookup.getBytes(length));
     } else if (typeof lookup === "string") {
       for (let i = 0; i < length; ++i) {
-        this.lookup[i] = lookup.charCodeAt(i) & 0xff;
+        palette[i] = lookup.charCodeAt(i);
       }
     } else {
       throw new FormatError(`IndexedCS - unrecognized lookup table: ${lookup}`);
     }
+
+    this.#rgbLookup = new Uint8ClampedArray(count * 3);
+    base.getRgbBuffer(
+      palette,
+      0,
+      count,
+      this.#rgbLookup,
+      0,
+      /* bits = */ 8,
+      /* alpha01 = */ 0
+    );
   }
 
   getRgbItem(src, srcOffset, dest, destOffset) {
@@ -473,10 +485,12 @@ class IndexedCS extends ColorSpace {
         'IndexedCS.getRgbItem: Unsupported "dest" type.'
       );
     }
-    const { base, highVal, lookup } = this;
-    const start =
-      MathClamp(Math.round(src[srcOffset]), 0, highVal) * base.numComps;
-    base.getRgbBuffer(lookup, start, 1, dest, destOffset, 8, 0);
+    const rgbLookup = this.#rgbLookup;
+    const pos = MathClamp(Math.round(src[srcOffset]), 0, this.highVal) * 3;
+
+    dest[destOffset] = rgbLookup[pos];
+    dest[destOffset + 1] = rgbLookup[pos + 1];
+    dest[destOffset + 2] = rgbLookup[pos + 2];
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
@@ -486,20 +500,21 @@ class IndexedCS extends ColorSpace {
         'IndexedCS.getRgbBuffer: Unsupported "dest" type.'
       );
     }
-    const { base, highVal, lookup } = this;
-    const { numComps } = base;
-    const outputDelta = base.getOutputLength(numComps, alpha01);
+    const { highVal } = this;
+    const rgbLookup = this.#rgbLookup;
 
     for (let i = 0; i < count; ++i) {
-      const lookupPos =
-        MathClamp(Math.round(src[srcOffset++]), 0, highVal) * numComps;
-      base.getRgbBuffer(lookup, lookupPos, 1, dest, destOffset, 8, alpha01);
-      destOffset += outputDelta;
+      const pos = MathClamp(Math.round(src[srcOffset++]), 0, highVal) * 3;
+
+      dest[destOffset++] = rgbLookup[pos];
+      dest[destOffset++] = rgbLookup[pos + 1];
+      dest[destOffset++] = rgbLookup[pos + 2];
+      destOffset += alpha01;
     }
   }
 
   getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(inputLength * this.base.numComps, alpha01);
+    return inputLength * (3 + alpha01);
   }
 
   isDefaultDecode(decode, bpc) {
