@@ -716,7 +716,7 @@ describe("XFAParser", function () {
       expect(found[$text]()).toBe("60.00");
 
       found = searchNode(root, units, "Total_Pric");
-      expect(found).toEqual(null);
+      expect(found).toBeNull();
     });
 
     it("should search some nodes in a datasets object using SOM", function () {

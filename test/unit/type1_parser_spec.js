@@ -76,7 +76,7 @@ describe("Type1Parser", function () {
     expect(parser.getToken()).toEqual("]");
     expect(parser.getToken()).toEqual("noaccess");
     expect(parser.getToken()).toEqual("def");
-    expect(parser.getToken()).toEqual(null);
+    expect(parser.getToken()).toBeNull();
   });
 
   it("handles glued tokens", function () {
@@ -220,7 +220,7 @@ describe("Type1Parser", function () {
     });
     const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
 
-    expect(parser.extractCidKeyedFontProgram({})).toEqual(null);
+    expect(parser.extractCidKeyedFontProgram({})).toBeNull();
   });
 
   it("uses subrs when parsing a CID-keyed Type 1 font", function () {
@@ -307,7 +307,7 @@ describe("Type1Parser", function () {
     const stream = createCidKeyedFontStream({ binary, cidCount: 3 });
     const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
 
-    expect(parser.extractCidKeyedFontProgram({})).toEqual(null);
+    expect(parser.extractCidKeyedFontProgram({})).toBeNull();
   });
 
   it("rejects malformed StartData token sequences", function () {
@@ -330,7 +330,7 @@ describe("Type1Parser", function () {
           tail
       );
       const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
-      expect(parser.extractCidKeyedFontProgram({})).toEqual(null);
+      expect(parser.extractCidKeyedFontProgram({})).toBeNull();
     }
   });
 
@@ -345,7 +345,7 @@ describe("Type1Parser", function () {
     );
     const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
 
-    expect(parser.extractCidKeyedFontProgram({})).toEqual(null);
+    expect(parser.extractCidKeyedFontProgram({})).toBeNull();
   });
 
   it("parses font header font matrix", function () {

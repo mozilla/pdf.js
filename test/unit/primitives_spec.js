@@ -125,7 +125,7 @@ describe("primitives", function () {
 
     it("should allow assigning an XRef table after creation", function () {
       const dict = new Dict(null);
-      expect(dict.xref).toEqual(null);
+      expect(dict.xref).toBeNull();
 
       const xref = new XRefMock([]);
       dict.assignXref(xref);

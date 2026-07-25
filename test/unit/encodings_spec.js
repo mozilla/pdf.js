@@ -40,7 +40,7 @@ describe("encodings", function () {
     });
 
     it("fetches `null` for unknown encoding names", function () {
-      expect(getEncoding("FooBarEncoding")).toEqual(null);
+      expect(getEncoding("FooBarEncoding")).toBeNull();
     });
   });
 });
