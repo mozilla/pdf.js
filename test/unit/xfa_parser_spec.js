@@ -324,7 +324,7 @@ describe("XFAParser", function () {
       expect(font.weight).toEqual("bold");
       expect(font.posture).toEqual("italic");
       expect(font.fill.color.value).toEqual({ r: 1, g: 2, b: 3 });
-      expect(font.extras).toEqual(undefined);
+      expect(font.extras).toBeUndefined();
 
       font = root.template.subform.field[1].font;
       expect(font.typeface).toEqual("Foo");
@@ -374,7 +374,7 @@ describe("XFAParser", function () {
       expect(font.weight).toEqual("bold");
       expect(font.posture).toEqual("italic");
       expect(font.fill.color.value).toEqual({ r: 1, g: 2, b: 3 });
-      expect(font.extras).toEqual(undefined);
+      expect(font.extras).toBeUndefined();
 
       font = root.template.subform.field[1].font;
       expect(font.typeface).toEqual("Foo");
@@ -943,7 +943,7 @@ describe("XFAParser", function () {
       ).toBe("Spratt");
       expect(
         searchNode(form, form, "registration.apt..text")[0][$dump]().$content
-      ).toBe(undefined);
+      ).toBeUndefined();
       expect(
         searchNode(form, form, "registration.street..text")[0][$dump]().$content
       ).toBe("99 Candlestick Lane");
@@ -1003,7 +1003,7 @@ describe("XFAParser", function () {
       ).toBe("Spratt");
       expect(
         searchNode(form, form, "registration..apt..text")[0][$dump]().$content
-      ).toBe(undefined);
+      ).toBeUndefined();
       expect(
         searchNode(form, form, "registration..street..text")[0][$dump]()
           .$content

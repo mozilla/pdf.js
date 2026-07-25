@@ -80,7 +80,7 @@ describe("message_handler", function () {
 
       await sleep(10);
       result = await reader.read();
-      expect(result.value).toEqual(undefined);
+      expect(result.value).toBeUndefined();
       expect(result.done).toEqual(true);
     });
 
@@ -260,7 +260,7 @@ describe("message_handler", function () {
       expect(log).toEqual("01p2p");
 
       result = await reader.read();
-      expect(result.value).toEqual(undefined);
+      expect(result.value).toBeUndefined();
       expect(result.done).toEqual(true);
     });
 
@@ -327,7 +327,7 @@ describe("message_handler", function () {
         expect(log).toEqual("012p");
 
         result = await reader.read();
-        expect(result.value).toEqual(undefined);
+        expect(result.value).toBeUndefined();
         expect(result.done).toEqual(true);
       }
     );
@@ -381,7 +381,7 @@ describe("message_handler", function () {
       expect(log).toEqual("01");
 
       result = await reader.read();
-      expect(result.value).toEqual(undefined);
+      expect(result.value).toBeUndefined();
       expect(result.done).toEqual(true);
     });
   });

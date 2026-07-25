@@ -26,7 +26,7 @@ describe("event_utils", function () {
       const eventBus = new EventBus();
       let count = 0;
       eventBus.on("test", function (evt) {
-        expect(evt).toEqual(undefined);
+        expect(evt).toBeUndefined();
         count++;
       });
       eventBus.dispatch("test");
@@ -204,7 +204,7 @@ describe("event_utils", function () {
       const eventBus = new EventBus();
       let count = 0;
       eventBus.on("test", function (evt) {
-        expect(evt).toEqual(undefined);
+        expect(evt).toBeUndefined();
         count++;
       });
       function domEventListener() {
