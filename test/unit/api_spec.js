@@ -2698,7 +2698,7 @@ describe("api", function () {
 
       expect(info.Title).toEqual("Basic API Test");
       // Custom, non-standard, information dictionary entries.
-      expect(info.Custom).toEqual(undefined);
+      expect(info.Custom).toBeUndefined();
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.7");
       expect(info.Language).toEqual("en");
@@ -2757,7 +2757,7 @@ describe("api", function () {
         await pdfDoc.getMetadata();
 
       // Custom, non-standard, information dictionary entries.
-      expect(info.Custom).toEqual(undefined);
+      expect(info.Custom).toBeUndefined();
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toBeNull();
       expect(info.Language).toBeNull();
@@ -2784,7 +2784,7 @@ describe("api", function () {
         await pdfDoc.getMetadata();
 
       // Custom, non-standard, information dictionary entries.
-      expect(info.Custom).toEqual(undefined);
+      expect(info.Custom).toBeUndefined();
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.6");
       expect(info.Language).toBeNull();
