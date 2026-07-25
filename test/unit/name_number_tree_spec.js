@@ -15,6 +15,7 @@
 
 import { Dict, Ref } from "../../src/core/primitives.js";
 import { NameTree, NumberTree } from "../../src/core/name_number_tree.js";
+import { FormatError } from "../../src/shared/util.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("NameOrNumberTree", function () {
@@ -86,8 +87,9 @@ describe("NameOrNumberTree", function () {
       const xref = new XRefMock([{ ref: leafRef, data: leaf }]);
       const tree = new NameTree(root, xref);
 
-      expect(() => tree.getAll()).toThrow(
-        new Error('Duplicate entry in "Names" tree.')
+      expect(() => tree.getAll()).toThrowError(
+        FormatError,
+        'Duplicate entry in "Names" tree.'
       );
     });
 
@@ -162,8 +164,9 @@ describe("NameOrNumberTree", function () {
       const xref = new XRefMock([{ ref: leafRef, data: leaf }]);
       const tree = new NumberTree(root, xref);
 
-      expect(() => tree.getAll()).toThrow(
-        new Error('Duplicate entry in "Nums" tree.')
+      expect(() => tree.getAll()).toThrowError(
+        FormatError,
+        'Duplicate entry in "Nums" tree.'
       );
     });
   });

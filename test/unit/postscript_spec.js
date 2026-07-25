@@ -36,6 +36,7 @@ import {
   PsUnaryNode,
 } from "../../src/core/postscript/ast.js";
 import { buildPostScriptJsFunction } from "../../src/core/postscript/js_evaluator.js";
+import { FormatError } from "../../src/shared/util.js";
 
 // Precision argument for toBeCloseTo() in trigonometric tests.
 const TRIGONOMETRY_EPS = 1e-10;
@@ -171,7 +172,10 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
 
     it("throws on standalone if without preceding block", function () {
       const parser = new Parser(new Lexer("{ 1 if }"));
-      expect(() => parser.parse()).toThrow();
+      expect(() => parser.parse()).toThrowError(
+        FormatError,
+        "PostScript function: unexpected 'if' operator."
+      );
     });
 
     it("ignores content after closing brace (warns, does not throw)", function () {
@@ -180,11 +184,17 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     });
 
     it("throws when first token is not a left brace", function () {
-      expect(() => parsePostScriptFunction("add }")).toThrow();
+      expect(() => parsePostScriptFunction("add }")).toThrowError(
+        FormatError,
+        "PostScript function: expected token id 1, got 5."
+      );
     });
 
     it("throws when a procedure block is not followed by if or ifelse", function () {
-      expect(() => parsePostScriptFunction("{ { 1 } add }")).toThrow();
+      expect(() => parsePostScriptFunction("{ { 1 } add }")).toThrowError(
+        FormatError,
+        "PostScript function: a procedure block must be followed by 'if' or '{…} ifelse'."
+      );
     });
   });
 

@@ -170,7 +170,7 @@ describe("core_utils", function () {
       for (const input of ["foo", -1, 0]) {
         expect(function () {
           toRomanNumerals(input);
-        }).toThrow(new Error("The number should be a positive integer."));
+        }).toThrowError("The number should be a positive integer.");
       }
     });
 
@@ -575,8 +575,8 @@ describe("core_utils", function () {
     });
 
     it("throws an exception for invalid rotation values", function () {
-      expect(() => getRotationMatrix(42, 10, 20)).toThrow(
-        new Error("Invalid rotation")
+      expect(() => getRotationMatrix(42, 10, 20)).toThrowError(
+        "Invalid rotation"
       );
     });
   });
