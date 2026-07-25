@@ -120,7 +120,7 @@ describe("parser", function () {
                 "work-around rounding bugs in Chromium browsers."
             );
 
-            expect(true).toEqual(true);
+            expect(true).toBeTrue();
             continue;
           }
           expect(result).toEqual(expected);

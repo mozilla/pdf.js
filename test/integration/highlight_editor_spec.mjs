@@ -667,10 +667,10 @@ describe("Highlight Editor", () => {
           // layer we can't be sure of the dimensions.
           expect(Math.abs(w - 73) <= 2)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
           expect(Math.abs(h - 9) <= 2)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
         })
       );
     });
@@ -745,16 +745,16 @@ describe("Highlight Editor", () => {
 
           expect(Math.abs(rectDiv.x - rectSVG.x) <= 2)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
           expect(Math.abs(rectDiv.y - rectSVG.y) <= 2)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
           expect(Math.abs(rectDiv.height - rectSVG.height) <= 2)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
           expect(Math.abs(rectDiv.width - rectSVG.width) <= 2)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
         })
       );
     });
@@ -889,7 +889,7 @@ describe("Highlight Editor", () => {
             .toBeFalse();
           expect(editingEvent.hasSelectedText)
             .withContext(`In ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
 
           // Click somewhere to unselect the current selection.
           await page.mouse.click(rect.x + rect.width + 10, y, { count: 1 });

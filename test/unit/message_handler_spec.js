@@ -81,7 +81,7 @@ describe("message_handler", function () {
       await sleep(10);
       result = await reader.read();
       expect(result.value).toBeUndefined();
-      expect(result.done).toEqual(true);
+      expect(result.done).toBeTrue();
     });
 
     it("should not read any data when cancelled", async function () {
@@ -191,7 +191,7 @@ describe("message_handler", function () {
         await reader.read();
 
         // Shouldn't get here.
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (reason) {
         expect(log).toEqual("01pe");
         expect(reason).toBeInstanceOf(UnknownErrorException);
@@ -261,7 +261,7 @@ describe("message_handler", function () {
 
       result = await reader.read();
       expect(result.value).toBeUndefined();
-      expect(result.done).toEqual(true);
+      expect(result.done).toBeTrue();
     });
 
     it(
@@ -328,7 +328,7 @@ describe("message_handler", function () {
 
         result = await reader.read();
         expect(result.value).toBeUndefined();
-        expect(result.done).toEqual(true);
+        expect(result.done).toBeTrue();
       }
     );
 
@@ -382,7 +382,7 @@ describe("message_handler", function () {
 
       result = await reader.read();
       expect(result.value).toBeUndefined();
-      expect(result.done).toEqual(true);
+      expect(result.done).toBeTrue();
     });
   });
 });

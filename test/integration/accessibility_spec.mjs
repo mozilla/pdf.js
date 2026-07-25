@@ -239,7 +239,7 @@ describe("accessibility", () => {
           );
           expect(isLinkedToStampAnnotation)
             .withContext(`In ${browserName}`)
-            .toEqual(true);
+            .toBeTrue();
         })
       );
     });

@@ -75,10 +75,10 @@ describe("ui_utils", function () {
     });
 
     it("should accept valid angles", function () {
-      expect(isValidRotation(0)).toEqual(true);
-      expect(isValidRotation(90)).toEqual(true);
-      expect(isValidRotation(-270)).toEqual(true);
-      expect(isValidRotation(540)).toEqual(true);
+      expect(isValidRotation(0)).toBeTrue();
+      expect(isValidRotation(90)).toBeTrue();
+      expect(isValidRotation(-270)).toBeTrue();
+      expect(isValidRotation(540)).toBeTrue();
     });
   });
 
@@ -89,14 +89,14 @@ describe("ui_utils", function () {
           width: 200,
           height: 400,
         })
-      ).toEqual(true);
+      ).toBeTrue();
 
       expect(
         isPortraitOrientation({
           width: 500,
           height: 500,
         })
-      ).toEqual(true);
+      ).toBeTrue();
     });
 
     it("should be landscape orientation", function () {

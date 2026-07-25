@@ -40,7 +40,7 @@ async function testCrossOriginRedirects({
 
   await fullReader.headersReady;
   // Sanity check: We can only test range requests if supported:
-  expect(fullReader.isRangeSupported).toEqual(true);
+  expect(fullReader.isRangeSupported).toBeTrue();
   // ^ When range requests are supported (and streaming is disabled), the full
   // initial request is aborted and we do not need to call fullReader.cancel().
 

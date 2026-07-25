@@ -95,7 +95,7 @@ describe("Text layer images", () => {
             }, imageCanvas)
           )
             .withContext(`Image is not all the same pixel, in ${browserName}`)
-            .toBe(true);
+            .toBeTrue();
         })
       );
     });

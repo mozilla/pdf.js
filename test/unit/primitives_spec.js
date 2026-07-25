@@ -586,20 +586,20 @@ describe("primitives", function () {
 
     it("handles names", function () {
       const name = Name.get("Font");
-      expect(isName(name)).toEqual(true);
+      expect(isName(name)).toBeTrue();
     });
 
     it("handles names with name check", function () {
       const name = Name.get("Font");
-      expect(isName(name, "Font")).toEqual(true);
+      expect(isName(name, "Font")).toBeTrue();
       expect(isName(name, "Subtype")).toBeFalse();
     });
 
     it("handles *empty* names, with name check", function () {
       const emptyName = Name.get("");
 
-      expect(isName(emptyName)).toEqual(true);
-      expect(isName(emptyName, "")).toEqual(true);
+      expect(isName(emptyName)).toBeTrue();
+      expect(isName(emptyName, "")).toBeTrue();
       expect(isName(emptyName, "string")).toBeFalse();
     });
 
@@ -616,12 +616,12 @@ describe("primitives", function () {
 
     it("handles commands", function () {
       const cmd = Cmd.get("BT");
-      expect(isCmd(cmd)).toEqual(true);
+      expect(isCmd(cmd)).toBeTrue();
     });
 
     it("handles commands with cmd check", function () {
       const cmd = Cmd.get("BT");
-      expect(isCmd(cmd, "BT")).toEqual(true);
+      expect(isCmd(cmd, "BT")).toBeTrue();
       expect(isCmd(cmd, "ET")).toBeFalse();
     });
 
@@ -638,14 +638,14 @@ describe("primitives", function () {
 
     it("handles empty dictionaries with type check", function () {
       const dict = Dict.empty;
-      expect(isDict(dict)).toEqual(true);
+      expect(isDict(dict)).toBeTrue();
       expect(isDict(dict, "Page")).toBeFalse();
     });
 
     it("handles dictionaries with type check", function () {
       const dict = new Dict();
       dict.set("Type", Name.get("Page"));
-      expect(isDict(dict, "Page")).toEqual(true);
+      expect(isDict(dict, "Page")).toBeTrue();
       expect(isDict(dict, "Contents")).toBeFalse();
     });
 
@@ -656,7 +656,7 @@ describe("primitives", function () {
     it("should handle Refs pointing to the same object", function () {
       const ref1 = Ref.get(1, 0);
       const ref2 = Ref.get(1, 0);
-      expect(isRefsEqual(ref1, ref2)).toEqual(true);
+      expect(isRefsEqual(ref1, ref2)).toBeTrue();
     });
 
     it("should handle Refs pointing to different objects", function () {

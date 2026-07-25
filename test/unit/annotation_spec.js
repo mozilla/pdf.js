@@ -378,9 +378,9 @@ describe("annotation", function () {
       });
       annotation.setFlags(13);
 
-      expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toEqual(true);
-      expect(annotation.hasFlag(AnnotationFlag.NOZOOM)).toEqual(true);
-      expect(annotation.hasFlag(AnnotationFlag.PRINT)).toEqual(true);
+      expect(annotation.hasFlag(AnnotationFlag.INVISIBLE)).toBeTrue();
+      expect(annotation.hasFlag(AnnotationFlag.NOZOOM)).toBeTrue();
+      expect(annotation.hasFlag(AnnotationFlag.PRINT)).toBeTrue();
       expect(annotation.hasFlag(AnnotationFlag.READONLY)).toBeFalse();
       expect(annotation.hasFlag(AnnotationFlag.HIDDEN)).toBeFalse();
     });
@@ -393,7 +393,7 @@ describe("annotation", function () {
         evaluatorOptions: pdfManagerMock.evaluatorOptions,
       });
 
-      expect(annotation.viewable).toEqual(true);
+      expect(annotation.viewable).toBeTrue();
       expect(annotation.printable).toBeFalse();
     });
 
@@ -1060,7 +1060,7 @@ describe("annotation", function () {
         expect(data.url).toBeUndefined();
         expect(data.unsafeUrl).toEqual("../../0013/001346/134685E.pdf#4.3");
         expect(data.dest).toBeUndefined();
-        expect(data.newWindow).toEqual(true);
+        expect(data.newWindow).toBeTrue();
       }
     );
 
@@ -1210,7 +1210,7 @@ describe("annotation", function () {
         );
         expect(data.unsafeUrl).toEqual("Part II/Part II.pdf");
         expect(data.dest).toBeUndefined();
-        expect(data.newWindow).toEqual(true);
+        expect(data.newWindow).toBeTrue();
       }
     );
 
@@ -1653,9 +1653,9 @@ describe("annotation", function () {
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.textAlignment).toEqual(1);
       expect(data.maxLen).toEqual(20);
-      expect(data.readOnly).toEqual(true);
+      expect(data.readOnly).toBeTrue();
       expect(data.hidden).toBeFalse();
-      expect(data.multiLine).toEqual(true);
+      expect(data.multiLine).toBeTrue();
     });
 
     it("should reject comb fields without a maximum length", async function () {
@@ -1688,7 +1688,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.comb).toEqual(true);
+      expect(data.comb).toBeTrue();
     });
 
     it("should only accept comb fields when the flags are valid", async function () {
@@ -2560,7 +2560,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.checkBox).toEqual(true);
+      expect(data.checkBox).toBeTrue();
       expect(data.fieldValue).toEqual("Checked");
       expect(data.defaultFieldValue).toEqual("Off");
       expect(data.radioButton).toBeFalse();
@@ -2594,7 +2594,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.checkBox).toEqual(true);
+      expect(data.checkBox).toBeTrue();
       expect(data.radioButton).toBeFalse();
       expect(data.exportValue).toEqual("I Agree to terms");
       expect(data.fieldValue).toEqual("I Agree to terms");
@@ -2634,7 +2634,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.checkBox).toEqual(true);
+      expect(data.checkBox).toBeTrue();
       expect(data.radioButton).toBeFalse();
       expect(data.exportValue).toEqual("I Agree to terms");
       expect(data.fieldValue).toEqual("I Agree to terms");
@@ -2657,7 +2657,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.checkBox).toEqual(true);
+      expect(data.checkBox).toBeTrue();
       expect(data.fieldValue).toEqual("Checked");
       expect(data.defaultFieldValue).toEqual("Off");
       expect(data.radioButton).toBeFalse();
@@ -2686,7 +2686,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.checkBox).toEqual(true);
+      expect(data.checkBox).toBeTrue();
       expect(data.fieldValue).toEqual("Checked");
       expect(data.defaultFieldValue).toEqual("Off");
       expect(data.radioButton).toBeFalse();
@@ -2772,7 +2772,7 @@ describe("annotation", function () {
         idFactoryMock
       );
 
-      expect(annotation.data.checkBox).toEqual(true);
+      expect(annotation.data.checkBox).toBeTrue();
       expect(annotation.data.exportValue).toEqual("Checked");
 
       const { opList } = await annotation.getOperatorList(
@@ -2788,7 +2788,7 @@ describe("annotation", function () {
       expect(opList.fnArray).toContain(OPS.showText);
       const [id, , , , isUsingOwnCanvas, canvasName] = opList.argsArray[0];
       expect(id).toEqual("124R");
-      expect(isUsingOwnCanvas).toEqual(true);
+      expect(isUsingOwnCanvas).toBeTrue();
       expect(canvasName).toEqual("checked");
     });
 
@@ -3124,7 +3124,7 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toBeFalse();
-      expect(data.radioButton).toEqual(true);
+      expect(data.radioButton).toBeTrue();
       expect(data.fieldValue).toEqual("1");
       expect(data.buttonValue).toEqual("2");
     });
@@ -3156,7 +3156,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.radioButton).toEqual(true);
+      expect(data.radioButton).toBeTrue();
       // The field value (parent "V" = "1") and this widget's own on-state ("2")
       // are both mapped through "Opt" to their real export values.
       expect(data.fieldValue).toEqual("Banane");
@@ -3190,7 +3190,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.radioButton).toEqual(true);
+      expect(data.radioButton).toBeTrue();
       expect(data.fieldValue).toEqual("02");
       expect(data.buttonValue).toEqual("02");
     });
@@ -3244,7 +3244,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.radioButton).toEqual(true);
+      expect(data.radioButton).toBeTrue();
       expect(data.fieldValue).toEqual("Banane");
       expect(data.buttonValue).toEqual("Cherry");
     });
@@ -3277,7 +3277,7 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toBeFalse();
-      expect(data.radioButton).toEqual(true);
+      expect(data.radioButton).toBeTrue();
       expect(data.fieldValue).toEqual(name);
       expect(data.buttonValue).toEqual(name);
     });
@@ -3305,7 +3305,7 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toBeFalse();
-      expect(data.radioButton).toEqual(true);
+      expect(data.radioButton).toBeTrue();
       expect(data.fieldValue).toBeNull();
       expect(data.buttonValue).toEqual("2");
     });
@@ -3727,7 +3727,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.pushButton).toEqual(true);
+      expect(data.pushButton).toBeTrue();
       expect(data.actions.Action).toEqual(["do_something();"]);
     });
 
@@ -3747,7 +3747,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.pushButton).toEqual(true);
+      expect(data.pushButton).toBeTrue();
       expect(data.alternativeText).toEqual("An alternative text");
     });
 
@@ -4055,10 +4055,10 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.readOnly).toEqual(true);
+      expect(data.readOnly).toBeTrue();
       expect(data.hidden).toBeFalse();
-      expect(data.combo).toEqual(true);
-      expect(data.multiSelect).toEqual(true);
+      expect(data.combo).toBeTrue();
+      expect(data.multiSelect).toBeTrue();
     });
 
     it("should render choice for printing", async function () {
@@ -4834,7 +4834,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -4906,7 +4906,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -4943,7 +4943,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.RICHMEDIA);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
   });
@@ -5185,7 +5185,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SCREEN);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -5216,7 +5216,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SCREEN);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -5236,7 +5236,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SCREEN);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
   });
@@ -5300,7 +5300,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SOUND);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -5324,7 +5324,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SOUND);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -5339,7 +5339,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SOUND);
-      expect(data.noHTML).toEqual(true);
+      expect(data.noHTML).toBeTrue();
       expect(data.richMedia).toBeUndefined();
     });
 
@@ -5366,7 +5366,7 @@ describe("annotation", function () {
 
       try {
         catalog.attachmentContent(soundId);
-        expect(false).toEqual(true);
+        expect(false).toBeTrue();
       } catch (ex) {
         expect(ex).toBeInstanceOf(PasswordException);
         expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
@@ -5454,7 +5454,7 @@ describe("annotation", function () {
         // e.g., the API.
         expect(data.annotationFlags).toEqual(56);
         // The popup should inherit the `viewable` property of the parent.
-        expect(viewable).toEqual(true);
+        expect(viewable).toBeTrue();
       }
     );
 

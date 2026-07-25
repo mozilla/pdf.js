@@ -39,7 +39,7 @@ describe("font_fpgm", function () {
         /(?:ENDF\[ \]|SVTCA\[0\])\s*\/\*.*\*\/\s*<\/assembly>\s*<\/fpgm>/.test(
           output
         )
-      ).toEqual(true);
+      ).toBeTrue();
     });
   });
 });

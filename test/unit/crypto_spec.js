@@ -352,7 +352,7 @@ describe("crypto", function () {
         userValidation,
         userPassword
       );
-      expect(result).toEqual(true);
+      expect(result).toBeTrue();
     });
 
     it("should correctly check an owner key", function () {
@@ -378,7 +378,7 @@ describe("crypto", function () {
         uBytes,
         ownerPassword
       );
-      expect(result).toEqual(true);
+      expect(result).toBeTrue();
     });
 
     it("should generate a file encryption key from the user key", function () {
@@ -445,7 +445,7 @@ describe("crypto", function () {
         userValidation,
         userPassword
       );
-      expect(result).toEqual(true);
+      expect(result).toBeTrue();
     });
 
     it("should correctly check an owner key", function () {
@@ -470,7 +470,7 @@ describe("crypto", function () {
         uBytes,
         ownerPassword
       );
-      expect(result).toEqual(true);
+      expect(result).toBeTrue();
     });
 
     it("should generate a file encryption key from the user key", function () {
@@ -573,10 +573,10 @@ describe("CipherTransformFactory", function () {
   function ensurePasswordCorrect(dict, fileId, password) {
     try {
       const factory = new CipherTransformFactory(dict, fileId, password);
-      expect("createCipherTransform" in factory).toEqual(true);
+      expect("createCipherTransform" in factory).toBeTrue();
     } catch {
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(false).toBeTrue();
     }
   }
 
@@ -586,7 +586,7 @@ describe("CipherTransformFactory", function () {
       new CipherTransformFactory(dict, fileId, password);
 
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(false).toBeTrue();
     } catch (ex) {
       expect(ex).toBeInstanceOf(PasswordException);
       expect(ex.code).toEqual(PasswordResponses.NEED_PASSWORD);
@@ -599,7 +599,7 @@ describe("CipherTransformFactory", function () {
       new CipherTransformFactory(dict, fileId, password);
 
       // Shouldn't get here.
-      expect(false).toEqual(true);
+      expect(false).toBeTrue();
     } catch (ex) {
       expect(ex).toBeInstanceOf(PasswordException);
       expect(ex.code).toEqual(PasswordResponses.INCORRECT_PASSWORD);

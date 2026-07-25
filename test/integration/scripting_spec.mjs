@@ -251,7 +251,7 @@ describe("Interaction", () => {
           await page.type(getSelector("405R"), "employee");
 
           let checked = await page.$eval(getSelector("449R"), el => el.checked);
-          expect(checked).toEqual(true);
+          expect(checked).toBeTrue();
 
           // click on reset button
           await page.click(getAnnotationSelector("402R"));
@@ -1888,15 +1888,13 @@ describe("Interaction", () => {
             `${selector} > canvas`,
             elem => getComputedStyle(elem).display !== "none"
           );
-          expect(hasVisibleCanvas)
-            .withContext(`In ${browserName}`)
-            .toEqual(true);
+          expect(hasVisibleCanvas).withContext(`In ${browserName}`).toBeTrue();
 
           const hasHiddenInput = await page.$eval(
             `${selector} > input`,
             elem => getComputedStyle(elem).display === "none"
           );
-          expect(hasHiddenInput).withContext(`In ${browserName}`).toEqual(true);
+          expect(hasHiddenInput).withContext(`In ${browserName}`).toBeTrue();
 
           await page.click(getSelector("12R"));
           await page.waitForFunction(
@@ -1911,17 +1909,13 @@ describe("Interaction", () => {
             `${selector} > canvas`,
             elem => getComputedStyle(elem).display === "none"
           );
-          expect(hasHiddenCanvas)
-            .withContext(`In ${browserName}`)
-            .toEqual(true);
+          expect(hasHiddenCanvas).withContext(`In ${browserName}`).toBeTrue();
 
           const hasVisibleInput = await page.$eval(
             `${selector} > input`,
             elem => getComputedStyle(elem).display !== "none"
           );
-          expect(hasVisibleInput)
-            .withContext(`In ${browserName}`)
-            .toEqual(true);
+          expect(hasVisibleInput).withContext(`In ${browserName}`).toBeTrue();
         })
       );
     });
@@ -2006,17 +2000,17 @@ describe("Interaction", () => {
             getSelector("353R"),
             el => el.disabled
           );
-          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          expect(readonly).withContext(`In ${browserName}`).toBeTrue();
           await page.click(getSelector("334R"));
           await waitForSandboxTrip(page);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
-          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          expect(readonly).withContext(`In ${browserName}`).toBeTrue();
           await page.click(getSelector("351R"));
           await waitForSandboxTrip(page);
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
-          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          expect(readonly).withContext(`In ${browserName}`).toBeTrue();
           await page.click(getSelector("352R"));
           await page.waitForFunction(
             `${getQuerySelector("353R")}.disabled !== true`
@@ -2031,7 +2025,7 @@ describe("Interaction", () => {
           );
 
           let checked = await page.$eval(getSelector("353R"), el => el.checked);
-          expect(checked).withContext(`In ${browserName}`).toEqual(true);
+          expect(checked).withContext(`In ${browserName}`).toBeTrue();
           await page.click(getSelector("334R"));
           await page.waitForFunction(
             `${getQuerySelector("353R")}.disabled !== false`
@@ -2041,7 +2035,7 @@ describe("Interaction", () => {
           );
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
-          expect(readonly).withContext(`In ${browserName}`).toEqual(true);
+          expect(readonly).withContext(`In ${browserName}`).toBeTrue();
           checked = await page.$eval(getSelector("353R"), el => el.checked);
           expect(checked).withContext(`In ${browserName}`).toBeFalse();
         })
@@ -2739,8 +2733,8 @@ describe("Interaction", () => {
           expect(value)
             .withContext(`In ${browserName}`)
             .toEqual("Hello PDF.js");
-          expect(isFieldVisible).withContext(`In ${browserName}`).toBe(true);
-          expect(isCanvasHidden).withContext(`In ${browserName}`).toBe(true);
+          expect(isFieldVisible).withContext(`In ${browserName}`).toBeTrue();
+          expect(isCanvasHidden).withContext(`In ${browserName}`).toBeTrue();
         })
       );
     });

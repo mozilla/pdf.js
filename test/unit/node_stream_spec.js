@@ -114,8 +114,8 @@ describe("node_stream", function () {
     expect(result1.value).toEqual(rangeSize);
     expect(result2.value).toEqual(tailSize);
     expect(isStreamingSupported).toBeFalse();
-    expect(isRangeSupported).toEqual(true);
-    expect(fullReaderCancelled).toEqual(true);
+    expect(isRangeSupported).toBeTrue();
+    expect(fullReaderCancelled).toBeTrue();
   });
 
   it("read filesystem pdf files (smaller than two range requests)", async function () {

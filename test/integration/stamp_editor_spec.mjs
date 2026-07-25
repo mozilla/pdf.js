@@ -555,10 +555,10 @@ describe("Stamp Editor", () => {
         let [newWidth, newHeight] = await getDims();
         expect(newWidth > width + 30)
           .withContext(`In ${browserName}`)
-          .toEqual(true);
+          .toBeTrue();
         expect(newHeight > height + 30)
           .withContext(`In ${browserName}`)
-          .toEqual(true);
+          .toBeTrue();
 
         for (let i = 0; i < 4; i++) {
           await kbBigMoveRight(page);
@@ -569,10 +569,10 @@ describe("Stamp Editor", () => {
         [newWidth, newHeight] = await getDims();
         expect(Math.abs(newWidth - width) < 2)
           .withContext(`In ${browserName}`)
-          .toEqual(true);
+          .toBeTrue();
         expect(Math.abs(newHeight - height) < 2)
           .withContext(`In ${browserName}`)
-          .toEqual(true);
+          .toBeTrue();
 
         // Move the focus to the next resizer.
         await page.keyboard.press("Tab");
@@ -589,7 +589,7 @@ describe("Stamp Editor", () => {
         [, newHeight] = await getDims();
         expect(newHeight > height + 50)
           .withContext(`In ${browserName}`)
-          .toEqual(true);
+          .toBeTrue();
 
         for (let i = 0; i < 4; i++) {
           await kbBigMoveDown(page);
@@ -600,7 +600,7 @@ describe("Stamp Editor", () => {
         [, newHeight] = await getDims();
         expect(Math.abs(newHeight - height) < 2)
           .withContext(`In ${browserName}`)
-          .toEqual(true);
+          .toBeTrue();
 
         // Escape should remove the focus from the resizer.
         await page.keyboard.press("Escape");

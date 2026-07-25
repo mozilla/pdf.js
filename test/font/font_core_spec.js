@@ -11,8 +11,8 @@ describe("font1", function () {
       const output = await ttx(font1_1);
 
       verifyTtxOutput(output);
-      expect(/<ttFont /.test(output)).toEqual(true);
-      expect(/<\/ttFont>/.test(output)).toEqual(true);
+      expect(/<ttFont /.test(output)).toBeTrue();
+      expect(/<\/ttFont>/.test(output)).toBeTrue();
     });
   });
 });

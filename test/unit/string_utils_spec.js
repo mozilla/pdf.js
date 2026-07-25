@@ -23,12 +23,12 @@ import {
 describe("string_utils", function () {
   describe("isAscii", function () {
     it("handles ascii/non-ascii strings", function () {
-      expect(isAscii("hello world")).toEqual(true);
+      expect(isAscii("hello world")).toBeTrue();
       expect(isAscii("こんにちは世界の")).toBeFalse();
       expect(isAscii("hello world in Japanese is こんにちは世界の")).toEqual(
         false
       );
-      expect(isAscii("")).toEqual(true);
+      expect(isAscii("")).toBeTrue();
       expect(isAscii(123)).toBeFalse();
       expect(isAscii(null)).toBeFalse();
       expect(isAscii(undefined)).toBeFalse();
