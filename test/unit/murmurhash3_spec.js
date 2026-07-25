@@ -45,8 +45,8 @@ describe("MurmurHash3_64", function () {
   });
   it("throws an exception for unsupported input types", function () {
     const hash = new MurmurHash3_64();
-    expect(() => hash.update(42)).toThrow(
-      new Error("Invalid data format, must be a string or TypedArray.")
+    expect(() => hash.update(42)).toThrowError(
+      "Invalid data format, must be a string or TypedArray."
     );
   });
 

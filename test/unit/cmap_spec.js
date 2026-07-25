@@ -184,7 +184,7 @@ describe("cmap", function () {
     expect(cmap.length).toEqual(0x10000);
     expect(function () {
       return cmap.isIdentityCMap;
-    }).toThrow(new Error("should not access .isIdentityCMap"));
+    }).toThrowError("should not access .isIdentityCMap");
   });
 
   it("attempts to load a non-existent built-in CMap", async function () {

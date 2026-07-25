@@ -32,12 +32,12 @@ describe("canvas_factory", function () {
       // Invalid width.
       expect(function () {
         return canvasFactory.create(-1, 1);
-      }).toThrow(new Error("Invalid canvas size"));
+      }).toThrowError("Invalid canvas size");
 
       // Invalid height.
       expect(function () {
         return canvasFactory.create(1, -1);
-      }).toThrow(new Error("Invalid canvas size"));
+      }).toThrowError("Invalid canvas size");
     });
 
     it("`create` should return a canvas if the dimensions are valid", function () {
@@ -57,7 +57,7 @@ describe("canvas_factory", function () {
 
       expect(function () {
         return canvasFactory.reset(canvasAndContext, 20, 40);
-      }).toThrow(new Error("Canvas is not specified"));
+      }).toThrowError("Canvas is not specified");
     });
 
     it("`reset` should throw an error if the dimensions are invalid", function () {
@@ -66,12 +66,12 @@ describe("canvas_factory", function () {
       // Invalid width.
       expect(function () {
         return canvasFactory.reset(canvasAndContext, -1, 1);
-      }).toThrow(new Error("Invalid canvas size"));
+      }).toThrowError("Invalid canvas size");
 
       // Invalid height.
       expect(function () {
         return canvasFactory.reset(canvasAndContext, 1, -1);
-      }).toThrow(new Error("Invalid canvas size"));
+      }).toThrowError("Invalid canvas size");
     });
 
     it("`reset` should alter the canvas/context if the dimensions are valid", function () {
@@ -92,7 +92,7 @@ describe("canvas_factory", function () {
     it("`destroy` should throw an error if no canvas is provided", function () {
       expect(function () {
         return canvasFactory.destroy({});
-      }).toThrow(new Error("Canvas is not specified"));
+      }).toThrowError("Canvas is not specified");
     });
 
     it("`destroy` should clear the canvas/context", function () {

@@ -1252,11 +1252,9 @@ describe("api", function () {
 
         expect(function () {
           getDocument(tracemonkeyGetDocumentParams);
-        }).toThrow(
-          new Error(
-            "PDFWorker.create - the worker is being destroyed.\n" +
-              "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
-          )
+        }).toThrowError(
+          "PDFWorker.create - the worker is being destroyed.\n" +
+            "Please remember to await `PDFDocumentLoadingTask.destroy()`-calls."
         );
 
         await destroyPromise;
@@ -3927,10 +3925,8 @@ describe("api", function () {
     it("gets viewport with invalid rotation", function () {
       expect(function () {
         page.getViewport({ scale: 1, rotation: 45 });
-      }).toThrow(
-        new Error(
-          "PageViewport: Invalid rotation, must be a multiple of 90 degrees."
-        )
+      }).toThrowError(
+        "PageViewport: Invalid rotation, must be a multiple of 90 degrees."
       );
     });
 

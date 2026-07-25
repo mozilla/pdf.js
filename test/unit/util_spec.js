@@ -44,7 +44,7 @@ describe("util", function () {
     it("handles non-array arguments", function () {
       expect(function () {
         bytesToString(null);
-      }).toThrow(new Error("Invalid argument for bytesToString"));
+      }).toThrowError("Invalid argument for bytesToString");
     });
 
     it("handles array arguments with a length not exceeding the maximum", function () {
@@ -72,7 +72,7 @@ describe("util", function () {
     it("handles non-string arguments", function () {
       expect(function () {
         stringToBytes(null);
-      }).toThrow(new Error("Invalid argument for stringToBytes"));
+      }).toThrowError("Invalid argument for stringToBytes");
     });
 
     it("handles string arguments", function () {

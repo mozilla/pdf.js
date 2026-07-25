@@ -59,7 +59,7 @@ describe("primitives", function () {
     it("should not accept to create a non-string name", function () {
       expect(function () {
         Name.get(123);
-      }).toThrow(new Error('Name: The "name" must be a string.'));
+      }).toThrowError('Name: The "name" must be a string.');
     });
   });
 
@@ -84,7 +84,7 @@ describe("primitives", function () {
     it("should not accept to create a non-string cmd", function () {
       expect(function () {
         Cmd.get(123);
-      }).toThrow(new Error('Cmd: The "cmd" must be a string.'));
+      }).toThrowError('Cmd: The "cmd" must be a string.');
     });
   });
 
@@ -165,7 +165,7 @@ describe("primitives", function () {
       const dict = new Dict();
       expect(function () {
         dict.set(123, "val");
-      }).toThrow(new Error('Dict.set: The "key" must be a string.'));
+      }).toThrowError('Dict.set: The "key" must be a string.');
 
       expect(dict.has(123)).toBeFalsy();
 
@@ -176,7 +176,7 @@ describe("primitives", function () {
       const dict = new Dict();
       expect(function () {
         dict.set("Size");
-      }).toThrow(new Error('Dict.set: The "value" cannot be undefined.'));
+      }).toThrowError('Dict.set: The "value" cannot be undefined.');
 
       expect(dict.has("Size")).toBeFalsy();
 
