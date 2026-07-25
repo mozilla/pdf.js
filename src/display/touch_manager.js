@@ -30,15 +30,15 @@ class TouchManager {
 
   #onPinchEnd;
 
-  #pointerDownAC = null;
+  #pinchListeners = null;
+
+  #pointerDownListeners = null;
 
   #signal;
 
   #touchInfo = null;
 
   #touchManagerAC;
-
-  #touchMoveAC = null;
 
   constructor({
     container,
@@ -83,60 +83,75 @@ class TouchManager {
       return;
     }
 
+    // The transient listeners below are deliberately NOT bound with abort
+    // signals: WebKit drops DOM listeners registered with an AbortSignal.any()
+    // composite once GC collects its bookkeeping (observed on iOS). When that
+    // hit the touchend/touchcancel cleanup here, the capture-phase stopEvent
+    // listeners survived and permanently swallowed every pointer event on the
+    // container — killing all annotation interaction after a pinch. Plain
+    // listeners with explicit removal are spec-guaranteed to stay.
     if (evt.touches.length === 1) {
-      if (this.#pointerDownAC) {
+      if (this.#pinchListeners) {
+        // A fresh single-finger gesture while the pinch listeners are still
+        // armed means the pinch's end was missed — recover.
+        this.#removePinchListeners();
+        this.#onPinchEnd?.();
+        this.#touchInfo = null;
+        this.#isPinching = false;
+      }
+      if (this.#pointerDownListeners) {
         return;
       }
-      const pointerDownAC = (this.#pointerDownAC = new AbortController());
-      const signal = AbortSignal.any([this.#signal, pointerDownAC.signal]);
       const container = this.#container;
 
       // We want to have the events at the capture phase to make sure we can
       // cancel them.
-      const opts = { capture: true, signal, passive: false };
+      const opts = { capture: true, passive: false };
       const cancelPointerDown = e => {
         if (e.pointerType === "touch") {
-          this.#pointerDownAC?.abort();
-          this.#pointerDownAC = null;
+          this.#removePointerDownListeners();
         }
       };
-      container.addEventListener(
-        "pointerdown",
-        e => {
-          if (e.pointerType === "touch") {
-            // This is the second finger so we don't want it select something
-            // or whatever.
-            stopEvent(e);
-            cancelPointerDown(e);
-          }
-        },
-        opts
-      );
-      container.addEventListener("pointerup", cancelPointerDown, opts);
-      container.addEventListener("pointercancel", cancelPointerDown, opts);
+      this.#pointerDownListeners = [
+        [
+          "pointerdown",
+          e => {
+            if (e.pointerType === "touch") {
+              // This is the second finger so we don't want it select something
+              // or whatever.
+              stopEvent(e);
+              cancelPointerDown(e);
+            }
+          },
+          opts,
+        ],
+        ["pointerup", cancelPointerDown, opts],
+        ["pointercancel", cancelPointerDown, opts],
+      ];
+      for (const [type, listener, o] of this.#pointerDownListeners) {
+        container.addEventListener(type, listener, o);
+      }
       return;
     }
 
-    if (!this.#touchMoveAC) {
-      this.#touchMoveAC = new AbortController();
-      const signal = AbortSignal.any([this.#signal, this.#touchMoveAC.signal]);
+    if (!this.#pinchListeners) {
       const container = this.#container;
 
-      const opt = { signal, capture: false, passive: false };
-      container.addEventListener(
-        "touchmove",
-        this.#onTouchMove.bind(this),
-        opt
-      );
+      const opt = { capture: false, passive: false };
+      const optCapture = { capture: true, passive: false };
       const onTouchEnd = this.#onTouchEnd.bind(this);
-      container.addEventListener("touchend", onTouchEnd, opt);
-      container.addEventListener("touchcancel", onTouchEnd, opt);
-
-      opt.capture = true;
-      container.addEventListener("pointerdown", stopEvent, opt);
-      container.addEventListener("pointermove", stopEvent, opt);
-      container.addEventListener("pointercancel", stopEvent, opt);
-      container.addEventListener("pointerup", stopEvent, opt);
+      this.#pinchListeners = [
+        ["touchmove", this.#onTouchMove.bind(this), opt],
+        ["touchend", onTouchEnd, opt],
+        ["touchcancel", onTouchEnd, opt],
+        ["pointerdown", stopEvent, optCapture],
+        ["pointermove", stopEvent, optCapture],
+        ["pointercancel", stopEvent, optCapture],
+        ["pointerup", stopEvent, optCapture],
+      ];
+      for (const [type, listener, o] of this.#pinchListeners) {
+        container.addEventListener(type, listener, o);
+      }
       this.#onPinchStart?.();
     }
 
@@ -211,14 +226,32 @@ class TouchManager {
     this.#onPinching?.(origin, pDistance, distance);
   }
 
+  #removePointerDownListeners() {
+    if (!this.#pointerDownListeners) {
+      return;
+    }
+    for (const [type, listener, o] of this.#pointerDownListeners) {
+      this.#container.removeEventListener(type, listener, o);
+    }
+    this.#pointerDownListeners = null;
+  }
+
+  #removePinchListeners() {
+    if (!this.#pinchListeners) {
+      return;
+    }
+    for (const [type, listener, o] of this.#pinchListeners) {
+      this.#container.removeEventListener(type, listener, o);
+    }
+    this.#pinchListeners = null;
+  }
+
   #onTouchEnd(evt) {
     if (evt.touches.length >= 2) {
       return;
     }
-    // #touchMoveAC shouldn't be null but it seems that irl it can (see #19793).
-    if (this.#touchMoveAC) {
-      this.#touchMoveAC.abort();
-      this.#touchMoveAC = null;
+    if (this.#pinchListeners) {
+      this.#removePinchListeners();
       this.#onPinchEnd?.();
     }
 
@@ -233,8 +266,8 @@ class TouchManager {
   destroy() {
     this.#touchManagerAC?.abort();
     this.#touchManagerAC = null;
-    this.#pointerDownAC?.abort();
-    this.#pointerDownAC = null;
+    this.#removePointerDownListeners();
+    this.#removePinchListeners();
   }
 }
 
