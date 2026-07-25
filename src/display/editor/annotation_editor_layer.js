@@ -265,7 +265,7 @@ class AnnotationEditorLayer {
     const annotationElementIds = new Set();
     for (const editor of this.#allEditorsIterator) {
       editor.enableEditing();
-      editor.show(true);
+      editor.show();
       if (editor.annotationElementId) {
         this.#uiManager.removeChangedExistingAnnotation(editor);
         annotationElementIds.add(editor.annotationElementId);
