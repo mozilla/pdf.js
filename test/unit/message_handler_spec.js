@@ -76,7 +76,7 @@ describe("message_handler", function () {
       let result = await reader.read();
       expect(log).toEqual("p");
       expect(result.value).toEqual("hi");
-      expect(result.done).toEqual(false);
+      expect(result.done).toBeFalse();
 
       await sleep(10);
       result = await reader.read();
@@ -135,7 +135,7 @@ describe("message_handler", function () {
 
       const result = await reader.read();
       expect(result.value).toEqual([1, 2, 3, 4]);
-      expect(result.done).toEqual(false);
+      expect(result.done).toBeFalse();
 
       await sleep(10);
       expect(log).toEqual("01p2");
@@ -185,7 +185,7 @@ describe("message_handler", function () {
 
       const result = await reader.read();
       expect(result.value).toEqual([1, 2, 3, 4]);
-      expect(result.done).toEqual(false);
+      expect(result.done).toBeFalse();
 
       try {
         await reader.read();
@@ -247,14 +247,14 @@ describe("message_handler", function () {
 
       let result = await reader.read();
       expect(result.value).toEqual([1, 2, 3, 4]);
-      expect(result.done).toEqual(false);
+      expect(result.done).toBeFalse();
 
       await sleep(10);
       expect(log).toEqual("01p2");
 
       result = await reader.read();
       expect(result.value).toEqual([5, 6, 7, 8]);
-      expect(result.done).toEqual(false);
+      expect(result.done).toBeFalse();
 
       await sleep(10);
       expect(log).toEqual("01p2p");
@@ -314,14 +314,14 @@ describe("message_handler", function () {
 
         let result = await reader.read();
         expect(result.value).toEqual([1, 2, 3, 4]);
-        expect(result.done).toEqual(false);
+        expect(result.done).toBeFalse();
 
         await sleep(10);
         expect(log).toEqual("012p");
 
         result = await reader.read();
         expect(result.value).toEqual([5, 6, 7, 8]);
-        expect(result.done).toEqual(false);
+        expect(result.done).toBeFalse();
 
         await sleep(10);
         expect(log).toEqual("012p");
@@ -375,7 +375,7 @@ describe("message_handler", function () {
 
       let result = await reader.read();
       expect(result.value).toEqual([1, 2, 3, 4]);
-      expect(result.done).toEqual(false);
+      expect(result.done).toBeFalse();
 
       await sleep(10);
       expect(log).toEqual("01");

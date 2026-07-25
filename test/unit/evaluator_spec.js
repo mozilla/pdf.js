@@ -194,7 +194,7 @@ describe("evaluator", function () {
       expect(result.argsArray[0].length).toEqual(1);
       expect(result.argsArray[0][0]).toEqual(true);
       expect(result.argsArray[1].length).toEqual(1);
-      expect(result.argsArray[1][0]).toEqual(false);
+      expect(result.argsArray[1][0]).toBeFalse();
       expect(result.argsArray[2]).toEqual([OPS.endPath, [null], null]);
     });
   });

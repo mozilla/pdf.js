@@ -912,7 +912,7 @@ describe("Comment", () => {
               ),
             editorSelector
           );
-          expect(hasCommentButton).withContext(`In ${browserName}`).toBe(false);
+          expect(hasCommentButton).withContext(`In ${browserName}`).toBeFalse();
         })
       );
     });

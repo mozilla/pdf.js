@@ -143,7 +143,7 @@ describe("cmap", function () {
     expect(cmap.useCMap).not.toBeNull();
     expect(cmap.builtInCMap).toBeFalsy();
     expect(cmap.length).toEqual(0x20a7);
-    expect(cmap.isIdentityCMap).toEqual(false);
+    expect(cmap.isIdentityCMap).toBeFalse();
   });
 
   it("parses cmapname", async function () {
@@ -170,7 +170,7 @@ describe("cmap", function () {
     expect(cmap.useCMap).toBeNull();
     expect(cmap.builtInCMap).toBeTruthy();
     expect(cmap.length).toEqual(0x20a7);
-    expect(cmap.isIdentityCMap).toEqual(false);
+    expect(cmap.isIdentityCMap).toBeFalse();
   });
 
   it("loads built in identity cmap", async function () {
@@ -180,7 +180,7 @@ describe("cmap", function () {
       useCMap: null,
     });
     expect(cmap).toBeInstanceOf(IdentityCMap);
-    expect(cmap.vertical).toEqual(false);
+    expect(cmap.vertical).toBeFalse();
     expect(cmap.length).toEqual(0x10000);
     expect(function () {
       return cmap.isIdentityCMap;

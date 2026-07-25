@@ -276,7 +276,7 @@ describe("Interaction", () => {
           expect(text).toEqual("");
 
           checked = await page.$eval(getSelector("449R"), el => el.checked);
-          expect(checked).toEqual(false);
+          expect(checked).toBeFalse();
 
           const visibility = await page.$eval(
             getSelector("427R"),
@@ -2023,7 +2023,7 @@ describe("Interaction", () => {
           );
 
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
-          expect(readonly).withContext(`In ${browserName}`).toEqual(false);
+          expect(readonly).withContext(`In ${browserName}`).toBeFalse();
 
           await page.click(getSelector("353R"));
           await page.waitForFunction(
@@ -2043,7 +2043,7 @@ describe("Interaction", () => {
           readonly = await page.$eval(getSelector("353R"), el => el.disabled);
           expect(readonly).withContext(`In ${browserName}`).toEqual(true);
           checked = await page.$eval(getSelector("353R"), el => el.checked);
-          expect(checked).withContext(`In ${browserName}`).toEqual(false);
+          expect(checked).withContext(`In ${browserName}`).toBeFalse();
         })
       );
     });

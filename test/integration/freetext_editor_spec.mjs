@@ -290,7 +290,7 @@ describe("FreeText Editor", () => {
               sel => !!document.querySelector(sel),
               getEditorSelector(n)
             );
-            expect(hasEditor).withContext(`In ${browserName}`).toEqual(false);
+            expect(hasEditor).withContext(`In ${browserName}`).toBeFalse();
           }
         })
       );

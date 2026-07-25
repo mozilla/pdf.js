@@ -835,7 +835,7 @@ describe("PDF viewer", () => {
               );
 
               expect(isSame).withContext(`In ${browserName}`).toBe(true);
-              expect(rendered).withContext(`In ${browserName}`).toBe(false);
+              expect(rendered).withContext(`In ${browserName}`).toBeFalse();
             });
           });
         });

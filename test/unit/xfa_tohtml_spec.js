@@ -646,7 +646,7 @@ describe("XFAFactory", function () {
 
     a = searchHtmlNode(pages, "name", "a", false, [1]);
     expect(a.attributes.href).toEqual("https://github.com/allizom/pdf.js");
-    expect(a.attributes.newWindow).toEqual(false);
+    expect(a.attributes.newWindow).toBeFalse();
   });
 
   it("should take the absolute value of the font size", async () => {

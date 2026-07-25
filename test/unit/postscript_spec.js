@@ -1191,7 +1191,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0]).toBeInstanceOf(PsConstNode);
       expect(out[0].value).toBe(true);
       expect(out[1]).toBeInstanceOf(PsConstNode);
-      expect(out[1].value).toBe(false);
+      expect(out[1].value).toBeFalse();
     });
 
     it("copy duplicates the top n nodes", function () {
@@ -1416,7 +1416,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("x and false → false", function () {
       const out = toTree("{ false and }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(false);
+      expect(out[0].value).toBeFalse();
     });
 
     it("x or false → x", function () {
@@ -1520,7 +1520,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("x ne x → false (reflexive ne)", function () {
       const out = toTree("{ dup ne }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(false);
+      expect(out[0].value).toBeFalse();
     });
 
     it("_nodesEqual handles structurally-equal unary nodes", function () {
@@ -1615,7 +1615,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     it("false and x → false (second=false and)", function () {
       const out = toTree("{ false exch and }", 1);
       expect(out[0]).toBeInstanceOf(PsConstNode);
-      expect(out[0].value).toBe(false);
+      expect(out[0].value).toBeFalse();
     });
 
     it("false or x → x (second=false or)", function () {
@@ -1821,7 +1821,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
     });
 
     it("constant-folds boolean and, or, xor and bitshift", function () {
-      expect(toTree("{ true false and }", 0)[0].value).toBe(false);
+      expect(toTree("{ true false and }", 0)[0].value).toBeFalse();
       expect(toTree("{ false true or }", 0)[0].value).toBe(true);
       expect(toTree("{ true false xor }", 0)[0].value).toBe(true);
       expect(toTree("{ 4 2 bitshift }", 0)[0].value).toBe(16); // 4 << 2

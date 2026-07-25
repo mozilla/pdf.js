@@ -225,9 +225,9 @@ describe("core_utils", function () {
     });
 
     it("handles non-space characters", function () {
-      expect(isWhiteSpace(0x0b)).toEqual(false);
-      expect(isWhiteSpace(null)).toEqual(false);
-      expect(isWhiteSpace(undefined)).toEqual(false);
+      expect(isWhiteSpace(0x0b)).toBeFalse();
+      expect(isWhiteSpace(null)).toBeFalse();
+      expect(isWhiteSpace(undefined)).toBeFalse();
     });
   });
 
@@ -333,40 +333,40 @@ describe("core_utils", function () {
         italicAngle: 0,
       };
 
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `"blah blah \\" blah blah"`;
       expect(validateCSSFont(cssFontInfo)).toEqual(true);
 
       cssFontInfo.fontFamily = `'blah blah ' blah blah'`;
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `'blah blah \\' blah blah'`;
       expect(validateCSSFont(cssFontInfo)).toEqual(true);
 
       cssFontInfo.fontFamily = `"blah blah `;
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `blah blah"`;
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `'blah blah `;
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = `blah blah'`;
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = "blah blah blah";
       expect(validateCSSFont(cssFontInfo)).toEqual(true);
 
       cssFontInfo.fontFamily = "blah 0blah blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = "blah blah -0blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = "blah blah --blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
 
       cssFontInfo.fontFamily = "blah blah -blah";
       expect(validateCSSFont(cssFontInfo)).toEqual(true);
@@ -375,7 +375,7 @@ describe("core_utils", function () {
       expect(validateCSSFont(cssFontInfo)).toEqual(true);
 
       cssFontInfo.fontFamily = "blah fdqAJqjH$JK23kl23__--Kj blah";
-      expect(validateCSSFont(cssFontInfo)).toEqual(false);
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
     });
 
     it("Check font weight", function () {

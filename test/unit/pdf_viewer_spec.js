@@ -156,7 +156,7 @@ describe("PDFViewer", function () {
         buffer.push(view);
       }
       expect(buffer.has(viewsMap.get(1))).toEqual(true);
-      expect(buffer.has(viewsMap.get(2))).toEqual(false);
+      expect(buffer.has(viewsMap.get(2))).toBeFalse();
     });
   });
 });

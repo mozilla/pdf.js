@@ -55,8 +55,8 @@ describe("network", function () {
 
     expect(len).toEqual(pdf1Length);
     expect(count).toEqual(1);
-    expect(isStreamingSupported).toEqual(false);
-    expect(isRangeSupported).toEqual(false);
+    expect(isStreamingSupported).toBeFalse();
+    expect(isRangeSupported).toBeFalse();
   });
 
   it("read custom ranges", async function () {
@@ -113,7 +113,7 @@ describe("network", function () {
 
     expect(result1.value).toEqual(rangeSize);
     expect(result2.value).toEqual(tailSize);
-    expect(isStreamingSupported).toEqual(false);
+    expect(isStreamingSupported).toBeFalse();
     expect(isRangeSupported).toEqual(true);
     expect(fullReaderCancelled).toEqual(true);
   });
@@ -157,7 +157,7 @@ describe("network", function () {
       } catch (ex) {
         expect(ex).toBeInstanceOf(ResponseException);
         expect(ex.status).toEqual(0);
-        expect(ex.missing).toEqual(false);
+        expect(ex.missing).toBeFalse();
       }
     }
 

@@ -603,12 +603,12 @@ describe("document", function () {
 
       let pdfDocument = getDocument(acroForm);
       let hasJSActions = await pdfDocument.hasJSActions;
-      expect(hasJSActions).toEqual(false);
+      expect(hasJSActions).toBeFalse();
 
       acroForm.set("Fields", []);
       pdfDocument = getDocument(acroForm);
       hasJSActions = await pdfDocument.hasJSActions;
-      expect(hasJSActions).toEqual(false);
+      expect(hasJSActions).toBeFalse();
 
       const kid1Ref = Ref.get(314, 0);
       const kid11Ref = Ref.get(159, 0);
@@ -638,7 +638,7 @@ describe("document", function () {
       acroForm.set("Fields", [parentRef]);
       pdfDocument = getDocument(acroForm, xref);
       hasJSActions = await pdfDocument.hasJSActions;
-      expect(hasJSActions).toEqual(false);
+      expect(hasJSActions).toBeFalse();
 
       const JS = Name.get("JavaScript");
       const additionalActionsDict = new Dict();
