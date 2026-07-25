@@ -706,7 +706,7 @@ describe("api", function () {
       expect(opList.fnArray.length).toEqual(0);
       expect(opList.argsArray.length).toEqual(0);
       expect(opList.lastChunk).toEqual(true);
-      expect(opList.separateAnnots).toEqual(null);
+      expect(opList.separateAnnots).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -727,7 +727,7 @@ describe("api", function () {
       expect(opList.fnArray.length).toEqual(0);
       expect(opList.argsArray.length).toEqual(0);
       expect(opList.lastChunk).toEqual(true);
-      expect(opList.separateAnnots).toEqual(null);
+      expect(opList.separateAnnots).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -801,7 +801,7 @@ describe("api", function () {
       expect(opListA.fnArray.length).toBeGreaterThan(5);
       expect(opListA.argsArray.length).toBeGreaterThan(5);
       expect(opListA.lastChunk).toEqual(true);
-      expect(opListA.separateAnnots).toEqual(null);
+      expect(opListA.separateAnnots).toBeNull();
 
       const pageB = await pdfDocument2.getPage(1);
       expect(pageB).toBeInstanceOf(PDFPageProxy);
@@ -810,7 +810,7 @@ describe("api", function () {
       expect(opListB.fnArray.length).toBe(0);
       expect(opListB.argsArray.length).toBe(0);
       expect(opListB.lastChunk).toEqual(true);
-      expect(opListB.separateAnnots).toEqual(null);
+      expect(opListB.separateAnnots).toBeNull();
 
       try {
         await pdfDocument3.getPage(1);
@@ -851,7 +851,7 @@ describe("api", function () {
       expect(opListA.fnArray.length).toEqual(19);
       expect(opListA.argsArray.length).toEqual(19);
       expect(opListA.lastChunk).toEqual(true);
-      expect(opListA.separateAnnots).toEqual(null);
+      expect(opListA.separateAnnots).toBeNull();
 
       const pageB = await pdfDocument2.getPage(1);
       expect(pageB).toBeInstanceOf(PDFPageProxy);
@@ -860,7 +860,7 @@ describe("api", function () {
       expect(opListB.fnArray.length).toEqual(1);
       expect(opListB.argsArray.length).toEqual(1);
       expect(opListB.lastChunk).toEqual(true);
-      expect(opListB.separateAnnots).toEqual(null);
+      expect(opListB.separateAnnots).toBeNull();
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
@@ -894,7 +894,7 @@ describe("api", function () {
         expect(opList.fnArray.length).toBeGreaterThan(5);
         expect(opList.argsArray.length).toBeGreaterThan(5);
         expect(opList.lastChunk).toEqual(true);
-        expect(opList.separateAnnots).toEqual(null);
+        expect(opList.separateAnnots).toBeNull();
       }
 
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
@@ -1488,7 +1488,7 @@ describe("api", function () {
       const destination = await pdfDocument.getDestination(
         "non-existent-named-destination"
       );
-      expect(destination).toEqual(null);
+      expect(destination).toBeNull();
     });
 
     it("gets destinations, from /Names (NameTree) dictionary", async function () {
@@ -1541,7 +1541,7 @@ describe("api", function () {
       const destination = await pdfDoc.getDestination(
         "non-existent-named-destination"
       );
-      expect(destination).toEqual(null);
+      expect(destination).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -1671,7 +1671,7 @@ describe("api", function () {
 
     it("gets non-existent page labels", async function () {
       const pageLabels = await pdfDocument.getPageLabels();
-      expect(pageLabels).toEqual(null);
+      expect(pageLabels).toBeNull();
     });
 
     it("gets page labels", async function () {
@@ -1752,7 +1752,7 @@ describe("api", function () {
       const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
       const prefs = await pdfDoc.getViewerPreferences();
-      expect(prefs).toEqual(null);
+      expect(prefs).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -1766,7 +1766,7 @@ describe("api", function () {
       const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
       const openAction = await pdfDoc.getOpenAction();
-      expect(openAction).toEqual(null);
+      expect(openAction).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -1810,7 +1810,7 @@ describe("api", function () {
 
     it("gets non-existent attachments", async function () {
       const attachments = await pdfDocument.getAttachments();
-      expect(attachments).toEqual(null);
+      expect(attachments).toBeNull();
     });
 
     it("gets attachments", async function () {
@@ -1975,7 +1975,7 @@ describe("api", function () {
 
     it("gets non-existent JSActions", async function () {
       const jsActions = await pdfDocument.getJSActions();
-      expect(jsActions).toEqual(null);
+      expect(jsActions).toBeNull();
     });
 
     it("gets JSActions", async function () {
@@ -2011,7 +2011,7 @@ describe("api", function () {
 
     it("gets non-existent fieldObjects", async function () {
       const fieldObjects = await pdfDocument.getFieldObjects();
-      expect(fieldObjects).toEqual(null);
+      expect(fieldObjects).toBeNull();
     });
 
     it("gets fieldObjects", async function () {
@@ -2108,7 +2108,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const fieldObjects = await pdfDoc.getFieldObjects();
 
-      expect(fieldObjects).toEqual(null);
+      expect(fieldObjects).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -2276,7 +2276,7 @@ describe("api", function () {
 
     it("gets non-existent calculationOrder", async function () {
       const calculationOrder = await pdfDocument.getCalculationOrderIds();
-      expect(calculationOrder).toEqual(null);
+      expect(calculationOrder).toBeNull();
     });
 
     it("gets calculationOrder", async function () {
@@ -2311,7 +2311,7 @@ describe("api", function () {
       const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
       const outline = await pdfDoc.getOutline();
-      expect(outline).toEqual(null);
+      expect(outline).toBeNull();
 
       await loadingTask.destroy();
     });
@@ -2327,7 +2327,7 @@ describe("api", function () {
       const outlineItem = outline[1];
       expect(outlineItem.title).toEqual("Chapter 1");
       expect(Array.isArray(outlineItem.dest)).toEqual(true);
-      expect(outlineItem.url).toEqual(null);
+      expect(outlineItem.url).toBeNull();
       expect(outlineItem.unsafeUrl).toBeUndefined();
       expect(outlineItem.newWindow).toBeUndefined();
 
@@ -2348,7 +2348,7 @@ describe("api", function () {
 
       const outlineItemTwo = outline[2];
       expect(typeof outlineItemTwo.title).toEqual("string");
-      expect(outlineItemTwo.dest).toEqual(null);
+      expect(outlineItemTwo.dest).toBeNull();
       expect(outlineItemTwo.url).toEqual("http://google.com/");
       expect(outlineItemTwo.unsafeUrl).toEqual("http://google.com");
       expect(outlineItemTwo.newWindow).toBeUndefined();
@@ -2640,7 +2640,7 @@ describe("api", function () {
 
     it("gets non-existent permissions", async function () {
       const permissions = await pdfDocument.getPermissions();
-      expect(permissions).toEqual(null);
+      expect(permissions).toBeNull();
     });
 
     it("gets permissions", async function () {
@@ -2702,7 +2702,7 @@ describe("api", function () {
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.7");
       expect(info.Language).toEqual("en");
-      expect(info.EncryptFilterName).toEqual(null);
+      expect(info.EncryptFilterName).toBeNull();
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
@@ -2712,7 +2712,7 @@ describe("api", function () {
       expect(metadata).toBeInstanceOf(Metadata);
       expect(metadata.get("dc:title")).toEqual("Basic API Test");
 
-      expect(contentDispositionFilename).toEqual(null);
+      expect(contentDispositionFilename).toBeNull();
       expect(contentLength).toEqual(basicApiFileLength);
     });
 
@@ -2735,16 +2735,16 @@ describe("api", function () {
       );
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.4");
-      expect(info.Language).toEqual(null);
-      expect(info.EncryptFilterName).toEqual(null);
+      expect(info.Language).toBeNull();
+      expect(info.EncryptFilterName).toBeNull();
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
       expect(info.IsCollectionPresent).toEqual(false);
       expect(info.IsSignaturesPresent).toEqual(false);
 
-      expect(metadata).toEqual(null);
-      expect(contentDispositionFilename).toEqual(null);
+      expect(metadata).toBeNull();
+      expect(contentDispositionFilename).toBeNull();
       expect(contentLength).toEqual(1016315);
 
       await loadingTask.destroy();
@@ -2759,17 +2759,17 @@ describe("api", function () {
       // Custom, non-standard, information dictionary entries.
       expect(info.Custom).toEqual(undefined);
       // The following are PDF.js specific, non-standard, properties.
-      expect(info.PDFFormatVersion).toEqual(null);
-      expect(info.Language).toEqual(null);
-      expect(info.EncryptFilterName).toEqual(null);
+      expect(info.PDFFormatVersion).toBeNull();
+      expect(info.Language).toBeNull();
+      expect(info.EncryptFilterName).toBeNull();
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(false);
       expect(info.IsXFAPresent).toEqual(false);
       expect(info.IsCollectionPresent).toEqual(false);
       expect(info.IsSignaturesPresent).toEqual(false);
 
-      expect(metadata).toEqual(null);
-      expect(contentDispositionFilename).toEqual(null);
+      expect(metadata).toBeNull();
+      expect(contentDispositionFilename).toBeNull();
       expect(contentLength).toEqual(624);
 
       await loadingTask.destroy();
@@ -2787,16 +2787,16 @@ describe("api", function () {
       expect(info.Custom).toEqual(undefined);
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.6");
-      expect(info.Language).toEqual(null);
-      expect(info.EncryptFilterName).toEqual(null);
+      expect(info.Language).toBeNull();
+      expect(info.EncryptFilterName).toBeNull();
       expect(info.IsLinearized).toEqual(false);
       expect(info.IsAcroFormPresent).toEqual(true);
       expect(info.IsXFAPresent).toEqual(false);
       expect(info.IsCollectionPresent).toEqual(false);
       expect(info.IsSignaturesPresent).toEqual(false);
 
-      expect(metadata).toEqual(null);
-      expect(contentDispositionFilename).toEqual(null);
+      expect(metadata).toBeNull();
+      expect(contentDispositionFilename).toBeNull();
       expect(contentLength).toEqual(244351);
 
       await loadingTask.destroy();
@@ -4165,7 +4165,7 @@ page 1 / 3`);
       // Font name will be a random object id.
       const fontName = items[0].fontName;
       expect(Object.keys(styles)).toEqual([fontName]);
-      expect(lang).toEqual(null);
+      expect(lang).toBeNull();
 
       expect(items[0]).toEqual({
         dir: "ltr",
@@ -4631,7 +4631,7 @@ have written that much by now. So, here’s to squashing bugs.`);
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 
-      expect(tree).toEqual(null);
+      expect(tree).toBeNull();
     });
 
     it("gets simple structure tree", async function () {
@@ -4926,7 +4926,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(opList.fnArray.length).toBeGreaterThan(100);
           expect(opList.argsArray.length).toBeGreaterThan(100);
           expect(opList.lastChunk).toEqual(true);
-          expect(opList.separateAnnots).toEqual(null);
+          expect(opList.separateAnnots).toBeNull();
 
           await loadingTask1.destroy();
         });
@@ -4938,7 +4938,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(opList.fnArray.length).toEqual(0);
           expect(opList.argsArray.length).toEqual(0);
           expect(opList.lastChunk).toEqual(true);
-          expect(opList.separateAnnots).toEqual(null);
+          expect(opList.separateAnnots).toBeNull();
 
           await loadingTask2.destroy();
         });
@@ -4998,7 +4998,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(opListAnnotDisable.fnArray.length).toEqual(0);
       expect(opListAnnotDisable.argsArray.length).toEqual(0);
       expect(opListAnnotDisable.lastChunk).toEqual(true);
-      expect(opListAnnotDisable.separateAnnots).toEqual(null);
+      expect(opListAnnotDisable.separateAnnots).toBeNull();
 
       const opListAnnotEnable = await pdfPage.getOperatorList({
         annotationMode: AnnotationMode.ENABLE,
@@ -5108,7 +5108,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
     it("gets page stats after parsing page, without `pdfBug` set", async function () {
       await page.getOperatorList();
-      expect(page.stats).toEqual(null);
+      expect(page.stats).toBeNull();
     });
 
     it("gets page stats after parsing page, with `pdfBug` set", async function () {
@@ -5549,7 +5549,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         const objsPool = i >= NUM_PAGES_THRESHOLD ? commonObjs : objs;
         const imgData = objsPool.get(objId);
 
-        expect(imgData).toBe(null);
+        expect(imgData).toBeNull();
 
         if (i === NUM_PAGES_THRESHOLD) {
           checkedGlobalDecodeFailed = true;
@@ -5954,7 +5954,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       const { contentDispositionFilename, contentLength } =
         await pdfDocument.getMetadata();
-      expect(contentDispositionFilename).toEqual(null);
+      expect(contentDispositionFilename).toBeNull();
       expect(contentLength).toEqual(dataLength);
 
       expect(fetches).toEqual(3);
@@ -6008,7 +6008,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       const { contentDispositionFilename, contentLength } =
         await pdfDocument.getMetadata();
-      expect(contentDispositionFilename).toEqual(null);
+      expect(contentDispositionFilename).toBeNull();
       expect(contentLength).toEqual(dataLength);
 
       expect(fetches).toEqual(0);
@@ -8072,18 +8072,18 @@ small scripts as well as for`);
 
         // Item [2]: URI action
         expect(outline[2].title).toEqual("External URL");
-        expect(outline[2].dest).toEqual(null);
+        expect(outline[2].dest).toBeNull();
         expect(outline[2].url).toEqual("https://mozilla.org/");
 
         // Item [3]: built-in named action
         expect(outline[3].title).toEqual("Next Page action");
-        expect(outline[3].dest).toEqual(null);
+        expect(outline[3].dest).toBeNull();
         expect(outline[3].action).toEqual("NextPage");
 
         // Item [4]: GoToR (remote PDF) – relative path, so url is null but
         // unsafeUrl holds the raw file path (with dest hash appended).
         expect(outline[4].title).toEqual("Remote PDF link");
-        expect(outline[4].dest).toEqual(null);
+        expect(outline[4].dest).toBeNull();
         expect(outline[4].unsafeUrl).toContain("other.pdf");
 
         // Item [5]: "Chapter" – parent with named dest and 3 children
@@ -8115,7 +8115,7 @@ small scripts as well as for`);
         // Item [6]: "No dest parent" – no dest, but has a child
         const noDestParent = outline[6];
         expect(noDestParent.title).toEqual("No dest parent");
-        expect(noDestParent.dest).toEqual(null);
+        expect(noDestParent.dest).toBeNull();
         expect(noDestParent.items.length).toEqual(1);
         expect(noDestParent.count).toEqual(originalOutline[6].count);
         expect(noDestParent.items[0].title).toEqual("Child with dest");
@@ -8189,7 +8189,7 @@ small scripts as well as for`);
         // surviving children, so it must be kept.
         const chapter = outline.find(i => i.title === "Chapter");
         expect(chapter).not.toBeUndefined();
-        expect(chapter.dest).toEqual(null);
+        expect(chapter.dest).toBeNull();
         expect(chapter.items.length).toEqual(2);
 
         const childTitles = chapter.items.map(i => i.title);
@@ -8304,7 +8304,7 @@ small scripts as well as for`);
         const newPdfDoc = await newLoadingTask.promise;
         const outline = await newPdfDoc.getOutline();
 
-        expect(outline).toEqual(null);
+        expect(outline).toBeNull();
 
         await newLoadingTask.destroy();
       });
@@ -8388,7 +8388,7 @@ small scripts as well as for`);
         // "Parent" is kept as a plain container (dest cleared, no action).
         const parent = outline[0];
         expect(parent.title).toEqual("Parent");
-        expect(parent.dest).toEqual(null);
+        expect(parent.dest).toBeNull();
         expect(parent.items.length).toEqual(1);
 
         // "Child" keeps its explicit dest pointing to the (only) kept page.

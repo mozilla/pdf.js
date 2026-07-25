@@ -270,7 +270,7 @@ describe("parser", function () {
         ">>\n" +
         "endobj"
       );
-      expect(Linearization.create(stream1)).toEqual(null);
+      expect(Linearization.create(stream1)).toBeNull();
 
       // Linearization dictionary with invalid version number.
       // prettier-ignore
@@ -281,7 +281,7 @@ describe("parser", function () {
         ">>\n" +
         "endobj"
       );
-      expect(Linearization.create(stream2)).toEqual(null);
+      expect(Linearization.create(stream2)).toBeNull();
     });
 
     it("should accept a valid linearization dictionary", function () {

@@ -104,8 +104,8 @@ describe("canvas_factory", function () {
       canvasFactory.destroy(canvasAndContext);
 
       const { canvas, context } = canvasAndContext;
-      expect(canvas).toBe(null);
-      expect(context).toBe(null);
+      expect(canvas).toBeNull();
+      expect(context).toBeNull();
     });
   });
 });

@@ -463,10 +463,10 @@ describe("XFAFactory", function () {
 
       const pages = await factory.getPages();
       const field1 = searchHtmlNode(pages, "name", "input");
-      expect(field1).not.toEqual(null);
+      expect(field1).not.toBeNull();
 
       const field2 = searchHtmlNode(pages, "name", "textarea");
-      expect(field2).not.toEqual(null);
+      expect(field2).not.toBeNull();
     });
   });
 
@@ -517,7 +517,7 @@ describe("XFAFactory", function () {
 
     const pages = await factory.getPages();
     const field1 = searchHtmlNode(pages, "name", "input");
-    expect(field1).not.toEqual(null);
+    expect(field1).not.toBeNull();
     expect(field1.attributes.value).toEqual("123");
   });
 

@@ -120,7 +120,7 @@ describe("evaluator", function () {
       expect(result.argsArray.length).toEqual(3);
       expect(result.argsArray[0]).toEqual(["img_p0_1"]);
       expect(result.argsArray[1]).toEqual(["img_p0_1", 1, 1]);
-      expect(result.argsArray[2]).toEqual(null);
+      expect(result.argsArray[2]).toBeNull();
     });
 
     it("should handle three glued operations", async function () {

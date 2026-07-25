@@ -737,7 +737,7 @@ describe("Scripting", function () {
         expect(value).toEqual(-123.456);
 
         value = await myeval(`AFMakeNumber("not a number")`);
-        expect(value).toEqual(null);
+        expect(value).toBeNull();
       });
     });
 

@@ -652,7 +652,7 @@ describe("FreeText Editor", () => {
           const oldAriaOwns = await page.$eval(`span[pdfjs="true"]`, el =>
             el.getAttribute("aria-owns")
           );
-          expect(oldAriaOwns).withContext(`In ${browserName}`).toEqual(null);
+          expect(oldAriaOwns).withContext(`In ${browserName}`).toBeNull();
 
           const rect = await getRect(page, `span[pdfjs="true"]`);
           await createFreeTextEditor({

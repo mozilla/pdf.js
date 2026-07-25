@@ -303,7 +303,7 @@ describe("document", function () {
         expect(sig.subFilter).toEqual("adbe.pkcs7.detached");
         expect(sig.signatureType).toEqual(0);
         expect(sig.byteRange).toEqual([0, 100, 200, 300]);
-        expect(sig.parentId).toEqual(null);
+        expect(sig.parentId).toBeNull();
         expect(sig.revisionIndex).toEqual(0);
         // The bytes (pkcs7 + signed-data spans) are no longer attached
         // to the metadata array — they're fetched on demand via
@@ -485,7 +485,7 @@ describe("document", function () {
         expect(signatures.length).toEqual(2);
         // Sorted descending by c+d, so outer comes first.
         expect(signatures[0].signerName).toEqual("Outer");
-        expect(signatures[0].parentId).toEqual(null);
+        expect(signatures[0].parentId).toBeNull();
         expect(signatures[0].revisionIndex).toEqual(0);
         expect(signatures[1].signerName).toEqual("Inner");
         expect(signatures[1].parentId).toEqual(signatures[0].id);
@@ -518,7 +518,7 @@ describe("document", function () {
 
         expect(await signatureType("adbe.pkcs7.detached")).toEqual(0);
         expect(await signatureType("adbe.pkcs7.sha1")).toEqual(1);
-        expect(await signatureType("ETSI.CAdES.detached")).toEqual(null);
+        expect(await signatureType("ETSI.CAdES.detached")).toBeNull();
       });
     });
 
@@ -526,7 +526,7 @@ describe("document", function () {
       const acroForm = new Dict();
 
       let pdfDocument = getDocument(acroForm);
-      expect(pdfDocument.calculationOrderIds).toEqual(null);
+      expect(pdfDocument.calculationOrderIds).toBeNull();
 
       acroForm.set("CO", [Ref.get(1, 0), Ref.get(2, 0), Ref.get(3, 0)]);
       pdfDocument = getDocument(acroForm);
@@ -534,11 +534,11 @@ describe("document", function () {
 
       acroForm.set("CO", []);
       pdfDocument = getDocument(acroForm);
-      expect(pdfDocument.calculationOrderIds).toEqual(null);
+      expect(pdfDocument.calculationOrderIds).toBeNull();
 
       acroForm.set("CO", ["1", "2"]);
       pdfDocument = getDocument(acroForm);
-      expect(pdfDocument.calculationOrderIds).toEqual(null);
+      expect(pdfDocument.calculationOrderIds).toBeNull();
 
       acroForm.set("CO", ["1", Ref.get(1, 0), "2"]);
       pdfDocument = getDocument(acroForm);
@@ -550,12 +550,12 @@ describe("document", function () {
 
       let pdfDocument = getDocument(acroForm);
       let fields = await pdfDocument.fieldObjects;
-      expect(fields).toEqual(null);
+      expect(fields).toBeNull();
 
       acroForm.set("Fields", []);
       pdfDocument = getDocument(acroForm);
       fields = await pdfDocument.fieldObjects;
-      expect(fields).toEqual(null);
+      expect(fields).toBeNull();
 
       const kid1Ref = Ref.get(314, 0);
       const kid11Ref = Ref.get(159, 0);

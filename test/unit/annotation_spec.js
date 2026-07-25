@@ -251,17 +251,17 @@ describe("annotation", function () {
     });
 
     it("should ignore missing quadpoints", function () {
-      expect(getQuadPoints(dict, rect)).toEqual(null);
+      expect(getQuadPoints(dict, rect)).toBeNull();
     });
 
     it("should ignore non-array values", function () {
       dict.set("QuadPoints", "foo");
-      expect(getQuadPoints(dict, rect)).toEqual(null);
+      expect(getQuadPoints(dict, rect)).toBeNull();
     });
 
     it("should ignore arrays where the length is not a multiple of eight", function () {
       dict.set("QuadPoints", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-      expect(getQuadPoints(dict, rect)).toEqual(null);
+      expect(getQuadPoints(dict, rect)).toBeNull();
     });
 
     it("should ignore quadpoints if one coordinate lies outside the rectangle", function () {
@@ -274,7 +274,7 @@ describe("annotation", function () {
       ];
       for (const input of inputs) {
         dict.set("QuadPoints", input);
-        expect(getQuadPoints(dict, rect)).toEqual(null);
+        expect(getQuadPoints(dict, rect)).toBeNull();
       }
     });
 
@@ -366,7 +366,7 @@ describe("annotation", function () {
       });
       annotation.setModificationDate(undefined);
 
-      expect(annotation.modificationDate).toEqual(null);
+      expect(annotation.modificationDate).toBeNull();
     });
 
     it("should set and get flags", function () {
@@ -442,7 +442,7 @@ describe("annotation", function () {
       });
       annotation.setColor([]);
 
-      expect(annotation.color).toEqual(null);
+      expect(annotation.color).toBeNull();
     });
 
     it("should set and get a grayscale color", function () {
@@ -621,7 +621,7 @@ describe("annotation", function () {
       });
       markupAnnotation.setCreationDate(undefined);
 
-      expect(markupAnnotation.creationDate).toEqual(null);
+      expect(markupAnnotation.creationDate).toBeNull();
     });
 
     it("should not parse IRT/RT when not defined", async function () {
@@ -775,7 +775,7 @@ describe("annotation", function () {
       expect(data.creationDate).toEqual("D:20180523");
       expect(data.modificationDate).toEqual("D:20190523");
       expect(data.color).toEqual(new Uint8ClampedArray([102, 102, 102]));
-      expect(data.popupRef).toEqual(null);
+      expect(data.popupRef).toBeNull();
     });
   });
 
@@ -1601,7 +1601,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.textAlignment).toEqual(null);
+      expect(data.textAlignment).toBeNull();
       expect(data.maxLen).toEqual(0);
       expect(data.readOnly).toEqual(false);
       expect(data.hidden).toEqual(false);
@@ -1625,7 +1625,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
-      expect(data.textAlignment).toEqual(null);
+      expect(data.textAlignment).toBeNull();
       expect(data.maxLen).toEqual(0);
       expect(data.readOnly).toEqual(false);
       expect(data.hidden).toEqual(false);
@@ -1951,7 +1951,7 @@ describe("annotation", function () {
         RenderingIntentFlag.PRINT,
         annotationStorage
       );
-      expect(appearance).toEqual(null);
+      expect(appearance).toBeNull();
     });
 
     it("should render multiline text for printing", async function () {
@@ -3306,7 +3306,7 @@ describe("annotation", function () {
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.checkBox).toEqual(false);
       expect(data.radioButton).toEqual(true);
-      expect(data.fieldValue).toEqual(null);
+      expect(data.fieldValue).toBeNull();
       expect(data.buttonValue).toEqual("2");
     });
 
@@ -4613,7 +4613,7 @@ describe("annotation", function () {
         "Annotation attachment"
       );
       // An unknown id resolves to no content.
-      expect(catalog.attachmentContent("nonexistent")).toEqual(null);
+      expect(catalog.attachmentContent("nonexistent")).toBeNull();
     });
   });
 
@@ -5421,8 +5421,8 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.POPUP);
-      expect(data.modificationDate).toEqual(null);
-      expect(data.color).toEqual(null);
+      expect(data.modificationDate).toBeNull();
+      expect(data.color).toBeNull();
     });
 
     it(
@@ -6037,7 +6037,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
-      expect(data.quadPoints).toEqual(null);
+      expect(data.quadPoints).toBeNull();
     });
 
     it("should set quadpoints if defined", async function () {
@@ -6079,7 +6079,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.HIGHLIGHT);
-      expect(data.quadPoints).toEqual(null);
+      expect(data.quadPoints).toBeNull();
     });
 
     it("should create a new Highlight annotation", async function () {
@@ -6426,7 +6426,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.UNDERLINE);
-      expect(data.quadPoints).toEqual(null);
+      expect(data.quadPoints).toBeNull();
     });
 
     it("should set quadpoints if defined", async function () {
@@ -6468,7 +6468,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.SQUIGGLY);
-      expect(data.quadPoints).toEqual(null);
+      expect(data.quadPoints).toBeNull();
     });
 
     it("should set quadpoints if defined", async function () {
@@ -6510,7 +6510,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       expect(data.annotationType).toEqual(AnnotationType.STRIKEOUT);
-      expect(data.quadPoints).toEqual(null);
+      expect(data.quadPoints).toBeNull();
     });
 
     it("should set quadpoints if defined", async function () {
