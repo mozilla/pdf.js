@@ -2168,7 +2168,7 @@ class PDFDocument {
           collected.map(async signature => {
             const signedEnd = signature.byteRange[2] + signature.byteRange[3];
             signature.modificationsAfterSignature =
-              this.xref.countUpdatesAfter?.(signedEnd) ?? null;
+              this.xref.countUpdatesAfter(signedEnd);
             signature.coversWholeDocument = await this.#coversWholeDocument(
               signedEnd,
               signature.modificationsAfterSignature

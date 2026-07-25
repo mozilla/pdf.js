@@ -156,6 +156,10 @@ class XRefMock {
     this._newTemporaryRefNum = null;
   }
 
+  countUpdatesAfter(offset) {
+    return null;
+  }
+
   fetch(ref) {
     return this._map[ref.toString()];
   }
@@ -165,10 +169,7 @@ class XRefMock {
   }
 
   fetchIfRef(obj) {
-    if (obj instanceof Ref) {
-      return this.fetch(obj);
-    }
-    return obj;
+    return obj instanceof Ref ? this.fetch(obj) : obj;
   }
 
   async fetchIfRefAsync(obj) {

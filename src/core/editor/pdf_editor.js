@@ -104,6 +104,10 @@ class XRefWrapper {
     return this._getNewRef();
   }
 
+  countUpdatesAfter(offset) {
+    return null;
+  }
+
   fetchIfRef(obj) {
     return obj instanceof Ref ? this.fetch(obj) : obj;
   }

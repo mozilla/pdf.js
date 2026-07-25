@@ -52,7 +52,7 @@ describe("document", function () {
       stream.moveStart();
 
       const xref = new XRef(stream, {});
-      xref._xrefSectionOffsets.add(100);
+      xref.xrefSectionOffsetsAdd(100);
 
       expect(xref.countUpdatesAfter(105)).toEqual(1);
       expect(xref.countUpdatesAfter(111)).toEqual(0);
