@@ -1219,7 +1219,7 @@ class PDFEditor {
           if (!isName(annotationDict.get("Subtype"), "Link")) {
             if (isName(annotationDict.get("Subtype"), "Widget")) {
               hasSignatureAnnotations ||= isName(
-                annotationDict.get("FT"),
+                getInheritableProperty({ dict: annotationDict, key: "FT" }),
                 "Sig"
               );
               const parentRef = annotationDict.getRaw("Parent") || null;
