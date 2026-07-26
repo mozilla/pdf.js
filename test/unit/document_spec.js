@@ -226,6 +226,38 @@ describe("document", function () {
       });
     });
 
+    it("should get form info when the signature field type is inherited", function () {
+      const acroForm = new Dict();
+      acroForm.set("SigFlags", 3);
+
+      const widgetRef = Ref.get(11, 0);
+      const parentRef = Ref.get(10, 0);
+
+      const widgetDict = new Dict();
+      widgetDict.set("Rect", [0, 0, 0, 0]);
+      widgetDict.set("Parent", parentRef);
+
+      const parentDict = new Dict();
+      parentDict.set("FT", Name.get("Sig"));
+      parentDict.set("Kids", [widgetRef]);
+
+      const xref = new XRefMock([
+        { ref: widgetRef, data: widgetDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+      widgetDict.assignXref(xref);
+      parentDict.assignXref(xref);
+
+      acroForm.set("Fields", [parentRef]);
+      const pdfDocument = getDocument(acroForm, xref);
+      expect(pdfDocument.formInfo).toEqual({
+        hasAcroForm: false,
+        hasSignatures: true,
+        hasXfa: false,
+        hasFields: true,
+      });
+    });
+
     describe("getSignatures", function () {
       function makeSigDict({
         byteRange,
