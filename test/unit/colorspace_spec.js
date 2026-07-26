@@ -53,6 +53,21 @@ describe("colorspace", function () {
     });
   });
 
+  describe("ColorSpace.getRgbItems", function () {
+    it("should honor the destination offset and alpha stride", function () {
+      const src = new Float32Array([0, 0.25, 0.5, 1, 0.75, 0.5, 0.1, 0.2, 0.3]);
+      const dest = new Uint8ClampedArray(14).fill(9);
+
+      ColorSpaceUtils.rgb.getRgbItems(src, 3, dest, 1, /* alpha01 = */ 1);
+
+      expect(dest).toEqual(
+        new Uint8ClampedArray([
+          9, 0, 64, 128, 9, 255, 191, 128, 9, 26, 51, 77, 9, 9,
+        ])
+      );
+    });
+  });
+
   describe("ColorSpace caching", function () {
     let globalColorSpaceCache, localColorSpaceCache;
 

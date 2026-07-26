@@ -117,6 +117,21 @@ class IccColorSpace extends ColorSpace {
     QCMS._destBuffer = null;
   }
 
+  getRgbItems(src, count, dest, destOffset, alpha01) {
+    const { numComps } = this;
+    const length = count * numComps;
+    const scaled = new Uint8Array(length);
+    // Uint8Array matches the truncation and wrapping of the scalar Wasm calls.
+    for (let i = 0; i < length; i++) {
+      scaled[i] = src[i] * 255;
+    }
+    QCMS._destBuffer = dest;
+    QCMS._destOffset = destOffset;
+    QCMS._destLength = count * (3 + alpha01);
+    qcms_convert_array(this.#transformer, scaled);
+    QCMS._destBuffer = null;
+  }
+
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
     src = src.subarray(srcOffset, srcOffset + count * this.numComps);
     if (bits !== 8) {

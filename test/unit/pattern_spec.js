@@ -37,7 +37,12 @@ describe("pattern", function () {
     } = {}) {
       const dict = new Dict();
       dict.set("ShadingType", 1);
-      dict.set("ColorSpace", Name.get(colorSpace));
+      if (Array.isArray(colorSpace)) {
+        // `setIfName` only accepts a name, and would silently drop an Array.
+        dict.set("ColorSpace", colorSpace);
+      } else {
+        dict.setIfName("ColorSpace", colorSpace);
+      }
       dict.set("Domain", domain);
       dict.set("Matrix", matrix);
       if (background) {
@@ -84,6 +89,44 @@ describe("pattern", function () {
       expect(ir[5]).toEqual([10, 20, 12, 23]);
       expect(ir[6]).toBeNull();
       expect(ir[7]).toBeNull();
+    });
+
+    it("must bound the color component buffer while batching", function () {
+      const numComps = 32;
+      let batchStarts = 0;
+      let componentBufferLength = 0;
+      const colorSpace = [
+        Name.get("DeviceN"),
+        Array.from({ length: numComps }, (_, i) => Name.get(`Colorant${i}`)),
+        Name.get("DeviceRGB"),
+        {
+          fn(src, srcOffset, dest, destOffset) {
+            dest[destOffset] = src[srcOffset];
+            dest[destOffset + 1] = src[srcOffset + 1];
+            dest[destOffset + 2] = src[srcOffset + 2];
+          },
+        },
+      ];
+      const shading = createFunctionBasedShading({
+        colorSpace,
+        matrix: [64, 0, 0, 64, 0, 0],
+        fn(src, srcOffset, dest, destOffset) {
+          if (destOffset === 0) {
+            batchStarts++;
+            componentBufferLength = dest.length;
+          }
+          dest[destOffset] = src[srcOffset];
+          dest[destOffset + 1] = src[srcOffset + 1];
+          dest[destOffset + 2] = 0.5;
+          dest.fill(0, destOffset + 3, destOffset + numComps);
+        },
+      });
+      const [, , , colors] = shading.getIR();
+
+      const totalVertices = (64 + 1) ** 2;
+      expect(batchStarts).toBeGreaterThan(1);
+      expect(componentBufferLength).toBeLessThan(totalVertices * numComps);
+      expect(Array.from(colors.subarray(0, 4))).toEqual([0, 0, 128, 0]);
     });
 
     it("must keep mesh colors intact through binary serialization", function () {

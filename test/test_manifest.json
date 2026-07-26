@@ -14508,5 +14508,13 @@
     "md5": "4b87611416be34894eeb19c158fafbad",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "function_based_shading_cmyk",
+    "file": "pdfs/function_based_shading_cmyk.pdf",
+    "md5": "6c2b4d131a007a6f40ac7a892ad5f2a1",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq"
   }
 ]
