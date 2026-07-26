@@ -184,6 +184,21 @@ class ColorSpace {
   }
 
   /**
+   * Converts `count` unscaled colors to RGB, starting at `destOffset`.
+   * Components use the native color-space ranges expected by `getRgbItem`,
+   * and each output has a `3 + alpha01` byte stride.
+   * Subclasses may override this to batch expensive conversions.
+   */
+  getRgbItems(src, count, dest, destOffset, alpha01) {
+    const { numComps } = this;
+
+    for (let i = 0, srcOffset = 0; i < count; i++, srcOffset += numComps) {
+      this.getRgbItem(src, srcOffset, dest, destOffset);
+      destOffset += 3 + alpha01;
+    }
+  }
+
+  /**
    * Determines the number of bytes required to store the result of the
    * conversion done by the getRgbBuffer method. As in getRgbBuffer,
    * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
@@ -377,6 +392,20 @@ class AlternateCS extends ColorSpace {
     const tmpBuf = this.tmpBuf;
     this.tintFn(src, srcOffset, tmpBuf, 0);
     this.base.getRgbItem(tmpBuf, 0, dest, destOffset);
+  }
+
+  getRgbItems(src, count, dest, destOffset, alpha01) {
+    const { base, numComps, tintFn } = this;
+    const baseNumComps = base.numComps;
+    // Tint first so the base color space can convert the batch at once.
+    const tinted = new Float32Array(count * baseNumComps);
+
+    for (let i = 0, srcOffset = 0, tintedOffset = 0; i < count; i++) {
+      tintFn(src, srcOffset, tinted, tintedOffset);
+      srcOffset += numComps;
+      tintedOffset += baseNumComps;
+    }
+    base.getRgbItems(tinted, count, dest, destOffset, alpha01);
   }
 
   getRgbBuffer(src, srcOffset, count, dest, destOffset, bits, alpha01) {
