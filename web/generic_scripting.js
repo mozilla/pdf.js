@@ -57,7 +57,12 @@ class GenericScripting {
 
   async dispatchEventInSandbox(event) {
     const sandbox = await this._ready;
-    setTimeout(() => sandbox.dispatchEvent(event), 0);
+    return new Promise(resolve => {
+      setTimeout(() => {
+        sandbox.dispatchEvent(event);
+        resolve();
+      }, 0);
+    });
   }
 
   async destroySandbox() {
