@@ -440,5 +440,82 @@ describe("display_utils", function () {
         )
       );
     });
+
+    it("should only keep the supported rich text elements", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        children: [
+          { name: "p", value: "kept" },
+          {
+            name: "section",
+            children: [{ name: "span", value: "removed" }],
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+
+      expect(container.querySelector("p")).not.toBeNull();
+      expect(container.querySelector("section")).toBeNull();
+      expect(container.querySelector("span")).toBeNull();
+      expect(container.textContent).toEqual("kept");
+    });
+
+    it("should only keep the supported rich text attributes", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        children: [
+          {
+            name: "p",
+            attributes: { class: ["bar"], dir: "rtl", title: "unsupported" },
+            value: "text",
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+      const p = container.querySelector("p");
+
+      expect(p.getAttribute("class")).toEqual("bar");
+      expect(p.getAttribute("dir")).toEqual("rtl");
+      expect(p.hasAttribute("title")).toEqual(false);
+    });
+
+    it("should only apply the supported rich text style properties", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        children: [
+          {
+            name: "span",
+            attributes: { style: { color: "green", width: "100px" } },
+            value: "text",
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+      const span = container.querySelector("span");
+
+      expect(span.style.color).toEqual("green");
+      expect(span.style.width).toEqual("");
+    });
   });
 });
