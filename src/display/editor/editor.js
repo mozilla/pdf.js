@@ -1359,16 +1359,7 @@ class AnnotationEditor {
 
     bindEvents(this, div, ["keydown", "pointerdown", "dblclick"]);
 
-    if (this.isResizable && this._uiManager._supportsPinchToZoom) {
-      this.#touchManager ||= new TouchManager({
-        container: div,
-        isPinchingDisabled: () => !this.isSelected,
-        onPinchStart: this.#touchPinchStartCallback.bind(this),
-        onPinching: this.#touchPinchCallback.bind(this),
-        onPinchEnd: this.#touchPinchEndCallback.bind(this),
-        signal: this._uiManager._signal,
-      });
-    }
+    this.#addTouchManager();
 
     this.addStandaloneCommentButton();
     this._uiManager._editorUndoBar?.hide();
@@ -1803,6 +1794,25 @@ class AnnotationEditor {
     this.div.addEventListener("focusout", this.focusout.bind(this), { signal });
   }
 
+  #addTouchManager() {
+    if (
+      this.#touchManager ||
+      !this.div ||
+      !this.isResizable ||
+      !this._uiManager._supportsPinchToZoom
+    ) {
+      return;
+    }
+    this.#touchManager = new TouchManager({
+      container: this.div,
+      isPinchingDisabled: () => !this.isSelected,
+      onPinchStart: this.#touchPinchStartCallback.bind(this),
+      onPinching: this.#touchPinchCallback.bind(this),
+      onPinchEnd: this.#touchPinchEndCallback.bind(this),
+      signal: this._uiManager._signal,
+    });
+  }
+
   /**
    * Rebuild the editor in case it has been removed on undo.
    *
@@ -1810,6 +1820,7 @@ class AnnotationEditor {
    */
   rebuild() {
     this.#addFocusListeners();
+    this.#addTouchManager();
   }
 
   /**
