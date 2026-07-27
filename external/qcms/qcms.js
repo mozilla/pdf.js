@@ -1,5 +1,5 @@
 /* THIS FILE IS GENERATED - DO NOT EDIT */
-import { copy_result, copy_rgb, make_cssRGB } from './qcms_utils.js';
+import { copy_result } from './qcms_utils.js';
 
 
 /**
@@ -25,16 +25,20 @@ export const Intent = Object.freeze({
 });
 
 /**
+ * Converts `src` and hands the result to `copy_result`, laid out as RGB, or as
+ * RGBA with an opaque alpha when `add_alpha` is set.
+ *
  * # Safety
  *
  * This function is called directly from JavaScript.
  * @param {number} transformer
  * @param {Uint8Array} src
+ * @param {boolean} add_alpha
  */
-export function qcms_convert_array(transformer, src) {
+export function qcms_convert_array(transformer, src, add_alpha) {
     const ptr0 = passArray8ToWasm0(src, wasm.__wbindgen_malloc);
     const len0 = WASM_VECTOR_LEN;
-    wasm.qcms_convert_array(transformer, ptr0, len0);
+    wasm.qcms_convert_array(transformer, ptr0, len0, add_alpha);
 }
 
 /**
@@ -46,10 +50,11 @@ export function qcms_convert_array(transformer, src) {
  * @param {number} src2
  * @param {number} src3
  * @param {number} src4
- * @param {boolean} css
+ * @returns {number}
  */
-export function qcms_convert_four(transformer, src1, src2, src3, src4, css) {
-    wasm.qcms_convert_four(transformer, src1, src2, src3, src4, css);
+export function qcms_convert_four(transformer, src1, src2, src3, src4) {
+    const ret = wasm.qcms_convert_four(transformer, src1, src2, src3, src4);
+    return ret >>> 0;
 }
 
 /**
@@ -58,10 +63,11 @@ export function qcms_convert_four(transformer, src1, src2, src3, src4, css) {
  * This function is called directly from JavaScript.
  * @param {number} transformer
  * @param {number} src
- * @param {boolean} css
+ * @returns {number}
  */
-export function qcms_convert_one(transformer, src, css) {
-    wasm.qcms_convert_one(transformer, src, css);
+export function qcms_convert_one(transformer, src) {
+    const ret = wasm.qcms_convert_one(transformer, src);
+    return ret >>> 0;
 }
 
 /**
@@ -72,10 +78,11 @@ export function qcms_convert_one(transformer, src, css) {
  * @param {number} src1
  * @param {number} src2
  * @param {number} src3
- * @param {boolean} css
+ * @returns {number}
  */
-export function qcms_convert_three(transformer, src1, src2, src3, css) {
-    wasm.qcms_convert_three(transformer, src1, src2, src3, css);
+export function qcms_convert_three(transformer, src1, src2, src3) {
+    const ret = wasm.qcms_convert_three(transformer, src1, src2, src3);
+    return ret >>> 0;
 }
 
 /**
@@ -106,17 +113,11 @@ export function qcms_transformer_from_memory(mem, in_type, intent) {
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
-        __wbg___wbindgen_throw_6b64449b9b9ed33c: function(arg0, arg1) {
+        __wbg___wbindgen_throw_344f42d3211c4765: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
         __wbg_copy_result_0d15f3bf9d9012ae: function(arg0, arg1) {
             copy_result(arg0 >>> 0, arg1 >>> 0);
-        },
-        __wbg_copy_rgb_0106d9d9464fce43: function(arg0) {
-            copy_rgb(arg0 >>> 0);
-        },
-        __wbg_make_cssRGB_8e24b34f71f5363e: function(arg0) {
-            make_cssRGB(arg0 >>> 0);
         },
         __wbindgen_init_externref_table: function() {
             const table = wasm.__wbindgen_externrefs;
@@ -135,8 +136,7 @@ function __wbg_get_imports() {
 }
 
 function getStringFromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return decodeText(ptr, len);
+    return decodeText(ptr >>> 0, len);
 }
 
 let cachedUint8ArrayMemory0 = null;
@@ -170,8 +170,9 @@ function decodeText(ptr, len) {
 
 let WASM_VECTOR_LEN = 0;
 
-let wasmModule, wasm;
+let wasmModule, wasmInstance, wasm;
 function __wbg_finalize_init(instance, module) {
+    wasmInstance = instance;
     wasm = instance.exports;
     wasmModule = module;
     cachedUint8ArrayMemory0 = null;

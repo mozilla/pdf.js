@@ -61,30 +61,28 @@ class IccColorSpace extends ColorSpace {
     switch (numComps) {
       case 1:
         inType = DataType.Gray8;
-        this.#convertPixel = (src, srcOffset, css) =>
-          qcms_convert_one(this.#transformer, src[srcOffset] * 255, css);
+        this.#convertPixel = (src, srcOffset) =>
+          qcms_convert_one(this.#transformer, src[srcOffset] * 255);
         break;
       case 3:
         inType = DataType.RGB8;
-        this.#convertPixel = (src, srcOffset, css) =>
+        this.#convertPixel = (src, srcOffset) =>
           qcms_convert_three(
             this.#transformer,
             src[srcOffset] * 255,
             src[srcOffset + 1] * 255,
-            src[srcOffset + 2] * 255,
-            css
+            src[srcOffset + 2] * 255
           );
         break;
       case 4:
         inType = DataType.CMYK;
-        this.#convertPixel = (src, srcOffset, css) =>
+        this.#convertPixel = (src, srcOffset) =>
           qcms_convert_four(
             this.#transformer,
             src[srcOffset] * 255,
             src[srcOffset + 1] * 255,
             src[srcOffset + 2] * 255,
-            src[srcOffset + 3] * 255,
-            css
+            src[srcOffset + 3] * 255
           );
         break;
       default:
@@ -105,16 +103,15 @@ class IccColorSpace extends ColorSpace {
   }
 
   getRgbHex(src, srcOffset) {
-    this.#convertPixel(src, srcOffset, /* css */ true);
-    return QCMS._cssColor;
+    const color = this.#convertPixel(src, srcOffset);
+    return Util.makeHexColor(color >> 16, (color >> 8) & 0xff, color & 0xff);
   }
 
   getRgbItem(src, srcOffset, dest, destOffset) {
-    QCMS._destBuffer = dest;
-    QCMS._destOffset = destOffset;
-    QCMS._destLength = 3;
-    this.#convertPixel(src, srcOffset, /* css */ false);
-    QCMS._destBuffer = null;
+    const color = this.#convertPixel(src, srcOffset);
+    dest[destOffset] = color >> 16;
+    dest[destOffset + 1] = (color >> 8) & 0xff;
+    dest[destOffset + 2] = color & 0xff;
   }
 
   getRgbItems(src, count, dest, destOffset, alpha01) {
@@ -127,8 +124,10 @@ class IccColorSpace extends ColorSpace {
     }
     QCMS._destBuffer = dest;
     QCMS._destOffset = destOffset;
-    QCMS._destLength = count * (3 + alpha01);
-    qcms_convert_array(this.#transformer, scaled);
+    // `scaled` is freshly allocated, so unlike in getRgbBuffer it can never
+    // alias `dest`: an RGBA destination always has an alpha channel to keep.
+    QCMS._keepAlpha = alpha01 === 1;
+    qcms_convert_array(this.#transformer, scaled, alpha01 === 1);
     QCMS._destBuffer = null;
   }
 
@@ -140,12 +139,12 @@ class IccColorSpace extends ColorSpace {
         src[i] *= scale;
       }
     }
-    QCMS._mustAddAlpha = alpha01 && dest.buffer === src.buffer;
     QCMS._destBuffer = dest;
     QCMS._destOffset = destOffset;
-    QCMS._destLength = count * (3 + alpha01);
-    qcms_convert_array(this.#transformer, src);
-    QCMS._mustAddAlpha = false;
+    // The wasm side always fills alpha in, so say when the destination's own
+    // alpha must survive: an /SMask has been decoded into it by now.
+    QCMS._keepAlpha = alpha01 === 1 && dest.buffer !== src.buffer;
+    qcms_convert_array(this.#transformer, src, alpha01 === 1);
     QCMS._destBuffer = null;
   }
 
@@ -172,7 +171,6 @@ class IccColorSpace extends ColorSpace {
           });
           isUsable = !!this._module;
           QCMS._memory = this._module.memory;
-          QCMS._makeHexColor = Util.makeHexColor.bind(Util);
         } catch (e) {
           warn(`ICCBased color space: "${e}".`);
         }
