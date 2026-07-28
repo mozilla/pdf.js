@@ -2087,6 +2087,28 @@ class PDFDocument {
     ) {
       return null;
     }
+    // Slice the two ByteRange byte spans out of the underlying PDF stream.
+    // ByteRange = [a, b, c, d] means signed bytes are [a..a+b] and [c..c+d];
+    // the gap covers the /Contents hex blob itself.
+    const [a, b, c, d] = byteRange;
+    // `/ByteRange` offsets are absolute, so compare against `stream.end`
+    // (raw buffer end), not `stream.length` (post-`moveStart` payload).
+    const fileLength = this.stream.end || 0;
+    // Reject signatures whose /ByteRange is structurally implausible: it
+    // must start at the file head, define a non-empty first span, leave
+    // room for the /Contents blob between the two spans, and fit within
+    // the file. Without this a crafted PDF can claim to cover the whole
+    // document while only signing a small prologue.
+    if (
+      a !== 0 ||
+      b <= 0 ||
+      a + b > c ||
+      c + d > fileLength ||
+      fileLength === 0
+    ) {
+      return null;
+    }
+
     const contents = await sigDict.getAsync("Contents");
     if (typeof contents !== "string" || contents.length === 0) {
       return null;
@@ -2104,29 +2126,6 @@ class PDFDocument {
       signatureType = 0;
     } else if (subFilter === "adbe.pkcs7.sha1") {
       signatureType = 1;
-    }
-
-    // Slice the two ByteRange byte spans out of the underlying PDF stream.
-    // ByteRange = [a, b, c, d] means signed bytes are [a..a+b] and [c..c+d];
-    // the gap covers the /Contents hex blob itself.
-    const [a, b, c, d] = byteRange;
-    const stream = this.stream;
-    // `/ByteRange` offsets are absolute, so compare against `stream.end`
-    // (raw buffer end), not `stream.length` (post-`moveStart` payload).
-    const fileLength = stream.end || 0;
-    // Reject signatures whose /ByteRange is structurally implausible: it
-    // must start at the file head, define a non-empty first span, leave
-    // room for the /Contents blob between the two spans, and fit within
-    // the file. Without this a crafted PDF can claim to cover the whole
-    // document while only signing a small prologue.
-    if (
-      a !== 0 ||
-      b <= 0 ||
-      a + b > c ||
-      c + d > fileLength ||
-      fileLength === 0
-    ) {
-      return null;
     }
 
     const [t, name, reason, location, contactInfo, m] = await Promise.all([
