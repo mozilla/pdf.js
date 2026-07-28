@@ -1241,13 +1241,9 @@ class Catalog {
     let javaScript = null;
 
     function appendIfJavaScriptDict(name, jsDict) {
-      if (!(jsDict instanceof Dict)) {
+      if (!(jsDict instanceof Dict) || !isName(jsDict.get("S"), "JavaScript")) {
         return;
       }
-      if (!isName(jsDict.get("S"), "JavaScript")) {
-        return;
-      }
-
       let js = jsDict.get("JS");
       if (js instanceof BaseStream) {
         js = js.getString();
@@ -1260,7 +1256,7 @@ class Catalog {
       );
       // Skip empty entries, similar to the `_collectJS` function.
       if (js) {
-        (javaScript ||= new Map()).set(name, js);
+        (javaScript ??= new Map()).set(name, js);
       }
     }
 
@@ -1291,14 +1287,10 @@ class Catalog {
     );
 
     if (javaScript) {
-      actions ||= Object.create(null);
+      actions ??= Object.create(null);
 
       for (const [key, val] of javaScript) {
-        if (key in actions) {
-          actions[key].push(val);
-        } else {
-          actions[key] = [val];
-        }
+        (actions[key] ??= []).push(val);
       }
     }
     return shadow(this, "jsActions", actions);

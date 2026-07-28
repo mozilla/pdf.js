@@ -803,27 +803,24 @@ class AnnotationElement {
     const fields = [];
 
     if (this._fieldObjects) {
-      const fieldObj = this._fieldObjects[name];
-      if (fieldObj) {
-        for (const { page, id, exportValues } of fieldObj) {
-          if (page === -1) {
-            continue;
-          }
-          if (id === skipId) {
-            continue;
-          }
-          const exportValue =
-            typeof exportValues === "string" ? exportValues : null;
+      const fieldObj = this._fieldObjects[name] || [];
 
-          const domElement = document.querySelector(
-            `[data-element-id="${id}"]`
-          );
-          if (domElement && !GetElementsByNameSet.has(domElement)) {
-            warn(`_getElementsByName - element not allowed: ${id}`);
-            continue;
-          }
-          fields.push({ id, exportValue, domElement });
+      for (const { page, id, exportValues } of fieldObj) {
+        if (page === -1) {
+          continue;
         }
+        if (id === skipId) {
+          continue;
+        }
+        const exportValue =
+          typeof exportValues === "string" ? exportValues : null;
+
+        const domElement = document.querySelector(`[data-element-id="${id}"]`);
+        if (domElement && !GetElementsByNameSet.has(domElement)) {
+          warn(`_getElementsByName - element not allowed: ${id}`);
+          continue;
+        }
+        fields.push({ id, exportValue, domElement });
       }
       return fields;
     }
