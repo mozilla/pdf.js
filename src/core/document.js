@@ -2114,10 +2114,26 @@ class PDFDocument {
       return null;
     }
 
-    const [filterName, subFilterName] = await Promise.all([
+    const [
+      filterName,
+      subFilterName,
+      t,
+      name,
+      reason,
+      location,
+      contactInfo,
+      m,
+    ] = await Promise.all([
       sigDict.getAsync("Filter"),
       sigDict.getAsync("SubFilter"),
+      field.getAsync("T"),
+      sigDict.getAsync("Name"),
+      sigDict.getAsync("Reason"),
+      sigDict.getAsync("Location"),
+      sigDict.getAsync("ContactInfo"),
+      sigDict.getAsync("M"),
     ]);
+
     const filter = filterName instanceof Name ? filterName.name : null,
       subFilter = subFilterName instanceof Name ? subFilterName.name : null;
 
@@ -2127,15 +2143,6 @@ class PDFDocument {
     } else if (subFilter === "adbe.pkcs7.sha1") {
       signatureType = 1;
     }
-
-    const [t, name, reason, location, contactInfo, m] = await Promise.all([
-      field.getAsync("T"),
-      sigDict.getAsync("Name"),
-      sigDict.getAsync("Reason"),
-      sigDict.getAsync("Location"),
-      sigDict.getAsync("ContactInfo"),
-      sigDict.getAsync("M"),
-    ]);
     const refKey = fieldRef instanceof Ref ? fieldRef.toString() : "inline";
 
     return {
