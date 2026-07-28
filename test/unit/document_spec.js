@@ -322,6 +322,10 @@ describe("document", function () {
           { ref: sigRef, data: sigDict },
           { ref: fieldRef, data: fieldDict },
         ]);
+        acroForm.assignXref(xref);
+        sigDict.assignXref(xref);
+        fieldDict.assignXref(xref);
+
         acroForm.set("Fields", [fieldRef]);
 
         const pdfDocument = getDocument(acroForm, xref);
@@ -362,6 +366,10 @@ describe("document", function () {
           { ref: sigRef, data: sigDict },
           { ref: fieldRef, data: fieldDict },
         ]);
+        acroForm.assignXref(xref);
+        sigDict.assignXref(xref);
+        fieldDict.assignXref(xref);
+
         acroForm.set("Fields", [fieldRef]);
 
         const documentStream = new StringStream(
@@ -386,6 +394,10 @@ describe("document", function () {
           { ref: sigRef, data: sigDict },
           { ref: fieldRef, data: fieldDict },
         ]);
+        acroForm.assignXref(xref);
+        sigDict.assignXref(xref);
+        fieldDict.assignXref(xref);
+
         acroForm.set("Fields", [fieldRef]);
 
         const documentStream = new StringStream(
@@ -418,6 +430,11 @@ describe("document", function () {
           { ref: sigFieldRef, data: sigField },
           { ref: containerRef, data: container },
         ]);
+        acroForm.assignXref(xref);
+        sigDict.assignXref(xref);
+        sigField.assignXref(xref);
+        container.assignXref(xref);
+
         acroForm.set("Fields", [containerRef]);
 
         const pdfDocument = getDocument(acroForm, xref);
@@ -450,6 +467,11 @@ describe("document", function () {
           { ref: sigFieldRef, data: sigField },
           { ref: widgetRef, data: widget },
         ]);
+        acroForm.assignXref(xref);
+        sigDict.assignXref(xref);
+        sigField.assignXref(xref);
+        widget.assignXref(xref);
+
         acroForm.set("Fields", [sigFieldRef]);
 
         const pdfDocument = getDocument(acroForm, xref);
@@ -472,6 +494,10 @@ describe("document", function () {
           { ref: sigRef, data: sigDict },
           { ref: fieldRef, data: fieldDict },
         ]);
+        acroForm.assignXref(xref);
+        sigDict.assignXref(xref);
+        fieldDict.assignXref(xref);
+
         acroForm.set("Fields", [fieldRef]);
 
         const pdfDocument = getDocument(acroForm, xref);
@@ -498,18 +524,21 @@ describe("document", function () {
           name: "Inner",
         });
 
+        const outerField = makeSigField({ T: "outer", sigRef: outerSigRef });
+        const innerField = makeSigField({ T: "inner", sigRef: innerSigRef });
+
         const xref = new XRefMock([
           { ref: outerSigRef, data: outerSig },
-          {
-            ref: outerFieldRef,
-            data: makeSigField({ T: "outer", sigRef: outerSigRef }),
-          },
+          { ref: outerFieldRef, data: outerField },
           { ref: innerSigRef, data: innerSig },
-          {
-            ref: innerFieldRef,
-            data: makeSigField({ T: "inner", sigRef: innerSigRef }),
-          },
+          { ref: innerFieldRef, data: innerField },
         ]);
+        acroForm.assignXref(xref);
+        outerSig.assignXref(xref);
+        innerSig.assignXref(xref);
+        outerField.assignXref(xref);
+        innerField.assignXref(xref);
+
         acroForm.set("Fields", [outerFieldRef, innerFieldRef]);
 
         const pdfDocument = getDocument(acroForm, xref);
@@ -535,14 +564,18 @@ describe("document", function () {
             byteRange: [0, 10, 20, 30],
             subFilter,
           });
+          const sigField = makeSigField({ T: "sig", sigRef });
+
           const xref = new XRefMock([
             { ref: sigRef, data: sigDict },
-            {
-              ref: fieldRef,
-              data: makeSigField({ T: "sig", sigRef }),
-            },
+            { ref: fieldRef, data: sigField },
           ]);
+          acroForm.assignXref(xref);
+          sigDict.assignXref(xref);
+          sigField.assignXref(xref);
+
           acroForm.set("Fields", [fieldRef]);
+
           const pdfDocument = getDocument(acroForm, xref);
           const [sig] = await pdfDocument.signatures;
           return sig.signatureType;
