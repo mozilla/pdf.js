@@ -177,6 +177,28 @@ class XRefMock {
   }
 }
 
+/**
+ * `XRefMock` variant that limits the number of fetches, such that tests
+ * exercising cycle detection fail rather than hang when a guard is missing.
+ */
+class BoundedXRefMock extends XRefMock {
+  #limit;
+
+  fetchCount = 0;
+
+  constructor(array, limit = 100) {
+    super(array);
+    this.#limit = limit;
+  }
+
+  fetch(ref) {
+    if (++this.fetchCount > this.#limit) {
+      throw new Error(`BoundedXRefMock: more than ${this.#limit} fetches.`);
+    }
+    return super.fetch(ref);
+  }
+}
+
 function createIdFactory(pageIndex) {
   const pdfManager = {
     get docId() {
@@ -285,6 +307,7 @@ class TestPdfsServer {
 }
 
 export {
+  BoundedXRefMock,
   buildGetDocumentParams,
   CMAP_URL,
   createIdFactory,

@@ -57,6 +57,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/autolinker_spec.js",
       "pdfjs-test/unit/bidi_spec.js",
       "pdfjs-test/unit/canvas_factory_spec.js",
+      "pdfjs-test/unit/catalog_spec.js",
       "pdfjs-test/unit/cff_parser_spec.js",
       "pdfjs-test/unit/cmap_spec.js",
       "pdfjs-test/unit/colorspace_spec.js",
