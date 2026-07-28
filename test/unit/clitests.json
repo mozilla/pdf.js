@@ -11,6 +11,7 @@
     "autolinker_spec.js",
     "bidi_spec.js",
     "canvas_factory_spec.js",
+    "catalog_spec.js",
     "cff_parser_spec.js",
     "cmap_spec.js",
     "colorspace_spec.js",

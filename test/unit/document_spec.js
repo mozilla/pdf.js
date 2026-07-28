@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createIdFactory, XRefMock } from "./test_utils.js";
+import { BoundedXRefMock, createIdFactory, XRefMock } from "./test_utils.js";
 import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import { PDFDocument } from "../../src/core/document.js";
 import { StringStream } from "../../src/core/stream.js";
@@ -628,6 +628,41 @@ describe("document", function () {
       expect(fields["parent.kid1.kid11"]).toEqual(["159R"]);
       expect(fields["parent.kid2"]).toEqual(["265R", "266R"]);
       expect(fields.parent).toEqual(["358R"]);
+    });
+
+    it("should get field objects with a circular `Parent` chain", async function () {
+      // A field without a `T` entry inherits its name from the `Parent` chain,
+      // which may be circular in corrupt/malicious documents.
+      const widgetRef = Ref.get(1, 0);
+      const parentRef = Ref.get(2, 0);
+      const grandParentRef = Ref.get(3, 0);
+
+      const widgetDict = new Dict();
+      widgetDict.set("Type", Name.get("Annot"));
+      widgetDict.set("Subtype", Name.get("Widget"));
+      widgetDict.set("FT", Name.get("Btn"));
+      widgetDict.set("Parent", parentRef);
+
+      // Note that the cycle doesn't include the field itself, and that neither
+      // ancestor provides a `T` entry.
+      const parentDict = new Dict();
+      parentDict.set("Parent", grandParentRef);
+      const grandParentDict = new Dict();
+      grandParentDict.set("Parent", parentRef);
+
+      const xref = new BoundedXRefMock([
+        { ref: widgetRef, data: widgetDict },
+        { ref: parentRef, data: parentDict },
+        { ref: grandParentRef, data: grandParentDict },
+      ]);
+
+      const acroForm = new Dict();
+      acroForm.set("Fields", [widgetRef]);
+      const pdfDocument = getDocument(acroForm, xref);
+
+      const { allFields } = await pdfDocument.fieldObjects;
+      expect(Object.keys(allFields)).toEqual([""]);
+      expect(allFields[""].map(obj => obj.id)).toEqual(["1R"]);
     });
 
     it("should check if fields have any actions", async function () {
