@@ -1996,7 +1996,7 @@ class PDFDocument {
     return shadow(this, "fieldObjects", promise);
   }
 
-  #collectSignatureFields(fields, out, visitedRefs) {
+  async #collectSignatureFields(fields, out, visitedRefs) {
     if (!Array.isArray(fields)) {
       return;
     }
@@ -2007,14 +2007,18 @@ class PDFDocument {
         }
         visitedRefs.put(fieldRef);
       }
-      const field = this.xref.fetchIfRef(fieldRef);
+      const field = await this.xref.fetchIfRefAsync(fieldRef);
       if (!(field instanceof Dict)) {
         continue;
       }
-      if (isName(field.get("FT"), "Sig")) {
-        const sigDict = this.xref.fetchIfRef(field.get("V"));
+      if (isName(await field.getAsync("FT"), "Sig")) {
+        const sigDict = await field.getAsync("V");
         if (sigDict instanceof Dict) {
-          const parsed = this.#parseSignatureDict(field, sigDict, fieldRef);
+          const parsed = await this.#parseSignatureDict(
+            field,
+            sigDict,
+            fieldRef
+          );
           if (parsed) {
             out.push(parsed);
           }
@@ -2023,7 +2027,11 @@ class PDFDocument {
       if (field.has("Kids")) {
         // A terminal field can have Widget annotations as children, so its
         // own signature must be collected before walking the field tree.
-        this.#collectSignatureFields(field.get("Kids"), out, visitedRefs);
+        await this.#collectSignatureFields(
+          await field.getAsync("Kids"),
+          out,
+          visitedRefs
+        );
       }
     }
   }
@@ -2070,8 +2078,8 @@ class PDFDocument {
     return true;
   }
 
-  #parseSignatureDict(field, sigDict, fieldRef) {
-    const byteRange = sigDict.get("ByteRange");
+  async #parseSignatureDict(field, sigDict, fieldRef) {
+    const byteRange = await sigDict.getAsync("ByteRange");
     if (
       !Array.isArray(byteRange) ||
       byteRange.length !== 4 ||
@@ -2079,15 +2087,17 @@ class PDFDocument {
     ) {
       return null;
     }
-    const contents = sigDict.get("Contents");
+    const contents = await sigDict.getAsync("Contents");
     if (typeof contents !== "string" || contents.length === 0) {
       return null;
     }
 
-    const filterName = sigDict.get("Filter");
-    const filter = filterName instanceof Name ? filterName.name : null;
-    const subFilterName = sigDict.get("SubFilter");
-    const subFilter = subFilterName instanceof Name ? subFilterName.name : null;
+    const [filterName, subFilterName] = await Promise.all([
+      sigDict.getAsync("Filter"),
+      sigDict.getAsync("SubFilter"),
+    ]);
+    const filter = filterName instanceof Name ? filterName.name : null,
+      subFilter = subFilterName instanceof Name ? subFilterName.name : null;
 
     let signatureType = null;
     if (subFilter === "adbe.pkcs7.detached") {
@@ -2118,22 +2128,20 @@ class PDFDocument {
     ) {
       return null;
     }
-    const pkcs7 = stringToBytes(contents);
 
-    const t = field.get("T");
-    const fieldName = typeof t === "string" ? stringToPDFString(t) : "";
-    const name = sigDict.get("Name");
-    const reason = sigDict.get("Reason");
-    const location = sigDict.get("Location");
-    const contactInfo = sigDict.get("ContactInfo");
-    const m = sigDict.get("M");
-
+    const [t, name, reason, location, contactInfo, m] = await Promise.all([
+      field.getAsync("T"),
+      sigDict.getAsync("Name"),
+      sigDict.getAsync("Reason"),
+      sigDict.getAsync("Location"),
+      sigDict.getAsync("ContactInfo"),
+      sigDict.getAsync("M"),
+    ]);
     const refKey = fieldRef instanceof Ref ? fieldRef.toString() : "inline";
-    const id = `${refKey}:${a}-${b}-${c}-${d}`;
 
     return {
-      id,
-      fieldName,
+      id: `${refKey}:${a}-${b}-${c}-${d}`,
+      fieldName: typeof t === "string" ? stringToPDFString(t) : "",
       signerName: typeof name === "string" ? stringToPDFString(name) : null,
       reason: typeof reason === "string" ? stringToPDFString(reason) : null,
       location:
@@ -2145,7 +2153,7 @@ class PDFDocument {
       subFilter,
       signatureType,
       byteRange,
-      pkcs7,
+      pkcs7: stringToBytes(contents),
       revisionIndex: 0,
       parentId: null,
     };
@@ -2165,7 +2173,7 @@ class PDFDocument {
         const fields = annotationGlobals.acroForm.get("Fields");
 
         const collected = [];
-        this.#collectSignatureFields(fields, collected, new RefSet());
+        await this.#collectSignatureFields(fields, collected, new RefSet());
 
         await Promise.all(
           collected.map(async signature => {
