@@ -1890,19 +1890,20 @@ class PDFViewer {
       container.scrollLeft - firstPage.x,
       container.scrollTop - firstPage.y
     );
-    const intLeft = Math.round(topLeft[0]);
-    const intTop = Math.round(topLeft[1]);
+    const [left, top] = topLeft;
 
     let pdfOpenParams = `#page=${pageNumber}`;
     if (!this.isInPresentationMode) {
-      pdfOpenParams += `&zoom=${normalizedScaleValue},${intLeft},${intTop}`;
+      pdfOpenParams +=
+        `&zoom=${normalizedScaleValue},` +
+        `${Math.round(left)},${Math.round(top)}`;
     }
 
     this._location = {
       pageNumber,
       scale: normalizedScaleValue,
-      top: intTop,
-      left: intLeft,
+      top,
+      left,
       rotation: this._pagesRotation,
       pdfOpenParams,
     };

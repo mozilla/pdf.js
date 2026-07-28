@@ -20,6 +20,7 @@ import {
   getRect,
   getSpanRectFromText,
   loadAndWait,
+  pinch,
   scrollIntoView,
   showViewsManager,
   waitAndClick,
@@ -1527,7 +1528,11 @@ describe("PDF viewer", () => {
     beforeEach(async () => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
-        `.page[data-page-number = "1"] .endOfContent`
+        `.page[data-page-number = "1"] .endOfContent`,
+        // Pin the zoom: the drift checked below is proportional to the zoom
+        // level reached at the end of the pinch, and the default `page-fit`
+        // depends on the size of the window.
+        50
       );
     });
 
@@ -1535,20 +1540,9 @@ describe("PDF viewer", () => {
       await closePages(pages);
     });
 
-    it("keeps the content under the pinch centre fixed on the screen", async () => {
+    it("keeps the content under the pinch center fixed on the screen", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          if (browserName === "firefox") {
-            pending(
-              "Touch events are not supported on devices without touch screen in Firefox."
-            );
-          }
-          if (browserName === "chrome") {
-            pending(
-              "Pinch zoom emulation is not supported for WebDriver BiDi in Chrome."
-            );
-          }
-
           const rect = await getSpanRectFromText(page, 1, "type-stable");
           const originX = rect.x + rect.width / 2;
           const originY = rect.y + rect.height / 2;
@@ -1564,14 +1558,12 @@ describe("PDF viewer", () => {
             };
             window.PDFViewerApplication.eventBus.on("textlayerrendered", cb);
           });
-          const client = await page.target().createCDPSession();
-          await client.send("Input.synthesizePinchGesture", {
-            x: originX,
-            y: originY,
-            scaleFactor: 3,
-            gestureSourceType: "touch",
-          });
+          // Spread the two fingers from 50 to 200 pixels apart: the first
+          // moves are swallowed until the distance between them changed by
+          // more than 35 pixels, hence a zoom factor of about 200/85 = 2.4.
+          await pinch(page, originX, originY, 25, 100);
           await awaitPromise(rendered);
+
           const spanHandle = await page.evaluateHandle(() =>
             Array.from(
               document.querySelectorAll(
@@ -1579,7 +1571,21 @@ describe("PDF viewer", () => {
               )
             ).find(span => span.textContent.includes("type-stable"))
           );
-          expect(await spanHandle.isIntersectingViewport()).toBeTrue();
+          expect(await spanHandle.isIntersectingViewport())
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+
+          // The text which was under the fingers must still be at the same
+          // height: only vertically because a page which is larger than its
+          // container isn't centered in it anymore.
+          // A few pixels are tolerated because the origin is preserved by
+          // scrolling: Chrome snaps the scroll offsets to the device pixels and
+          // the discarded fractions show up as a small drift. It's exact in
+          // Firefox, which keeps them.
+          const newRect = await getSpanRectFromText(page, 1, "type-stable");
+          expect(Math.abs(newRect.y + newRect.height / 2 - originY))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(5);
         })
       );
     });

@@ -189,7 +189,7 @@ class TouchManager {
     const pDistance = Math.hypot(prevGapX, prevGapY) || 1;
     if (
       !this.#isPinching &&
-      Math.abs(pDistance - distance) <= TouchManager.MIN_TOUCH_DISTANCE_TO_PINCH
+      Math.abs(pDistance - distance) <= this.MIN_TOUCH_DISTANCE_TO_PINCH
     ) {
       return;
     }
@@ -207,7 +207,12 @@ class TouchManager {
       return;
     }
 
-    const origin = [(screen0X + screen1X) / 2, (screen0Y + screen1Y) / 2];
+    // The distances are in screen CSS pixels, but the origin must be in client
+    // coordinates, like the one coming from a wheel event.
+    const origin = [
+      (touch0.clientX + touch1.clientX) / 2,
+      (touch0.clientY + touch1.clientY) / 2,
+    ];
     this.#onPinching?.(origin, pDistance, distance);
   }
 
