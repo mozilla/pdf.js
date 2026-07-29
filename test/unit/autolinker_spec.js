@@ -24,6 +24,12 @@ function testLinks(links) {
 }
 
 describe("autolinker", function () {
+  it("should not require RegExp Unicode sets", function () {
+    expect(Autolinker.findLinks.toString()).not.toMatch(
+      /\)\/[dgimsuy]*v[dgimsuy]*;/
+    );
+  });
+
   it("should correctly find URLs", function () {
     const [matched] = Autolinker.findLinks("http://www.example.com");
     expect(matched.url).toEqual("http://www.example.com/");
