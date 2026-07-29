@@ -190,11 +190,9 @@ class Builder {
     if (hasNamespace) {
       this._currentNamespace = this._namespaceStack.pop();
     }
-    if (prefixes) {
-      prefixes.forEach(({ prefix }) => {
-        this._namespacePrefixes.get(prefix).pop();
-      });
-    }
+    prefixes?.forEach(({ prefix }) => {
+      this._namespacePrefixes.get(prefix).pop();
+    });
     if (nsAgnostic) {
       this._nsAgnosticLevel--;
     }
