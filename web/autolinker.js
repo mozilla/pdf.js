@@ -139,7 +139,7 @@ class Autolinker {
     // Regex can be tested and verified at https://regex101.com/r/rXoLiT/2.
     this.#regex ??=
       // eslint-disable-next-line regexp/no-super-linear-backtracking
-      /\b(?:https?:\/\/|mailto:|www\.)(?:[^\s\p{P}<>]|\/|[^\s[\]]+[^\s\p{P}<>])+|(?=\p{L})[^\s@\p{Ps}\p{Pe}<>]+@((?:-|[^\s\p{P}<>])+(?:\.(?:-|[^\s\p{P}<>])+)+)/gu;
+      /\b(?:https?:\/\/|mailto:|www\.)(?:[^\s\p{P}<>]|\/|[^\s[\]]+[^\s\p{P}<>])+|(?=\p{L})[^\s@\p{Ps}\p{Pe}<>]+@((?:(?=-|[^\s\p{P}<>])[\s\S])+(?:\.(?:(?=-|[^\s\p{P}<>])[\s\S])+)+)/gu;
 
     const [normalizedText, diffs] = normalize(text, { ignoreDashEOL: true });
     const matches = normalizedText.matchAll(this.#regex);
