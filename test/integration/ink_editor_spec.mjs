@@ -1407,3 +1407,67 @@ describe("Ink must be committed when the document is saved", () => {
     );
   });
 });
+
+describe("Pinch to resize a drawing", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  // Spread two fingers apart, centered on the editor.
+  async function pinchOut(page, selector) {
+    const { x, y, width, height } = await getRect(page, selector);
+    const centerX = x + width / 2;
+    const centerY = y + height / 2;
+    const finger0 = await page.touchscreen.touchStart(centerX - 25, centerY);
+    const finger1 = await page.touchscreen.touchStart(centerX + 25, centerY);
+    for (let i = 1; i <= 12; i++) {
+      const gap = 25 + i * 12;
+      await finger0.move(centerX - gap, centerY);
+      await finger1.move(centerX + gap, centerY);
+    }
+    await finger0.end();
+    await finger1.end();
+  }
+
+  it("must keep resizing a drawing which came back with an undo", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        if (browserName === "firefox") {
+          pending(
+            "Touch events are not supported on devices without touch screen in Firefox."
+          );
+        }
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+        await drawLine(
+          page,
+          rect.x + 200,
+          rect.y + 200,
+          rect.x + 300,
+          rect.y + 260
+        );
+        await commit(page);
+
+        const editorSelector = getEditorSelector(0);
+        await clearAll(page);
+        await waitForNoElement(page, editorSelector);
+        await kbUndo(page);
+        await page.waitForSelector(editorSelector);
+        await selectEditor(page, editorSelector);
+
+        const { width: before } = await getRect(page, editorSelector);
+        await pinchOut(page, editorSelector);
+        const { width: after } = await getRect(page, editorSelector);
+
+        expect(after).withContext(`In ${browserName}`).toBeGreaterThan(before);
+      })
+    );
+  });
+});
