@@ -1,0 +1,126 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { TouchManager } from "../../src/display/touch_manager.js";
+
+describe("TouchManager", function () {
+  function makeTouch(identifier, x, y = 0) {
+    return {
+      identifier,
+      screenX: x,
+      screenY: y,
+      clientX: x,
+      clientY: y,
+    };
+  }
+
+  class TouchManagerHelper {
+    #ac = new AbortController();
+
+    constructor() {
+      this.container = new EventTarget();
+      this.pinchings = [];
+      this.pinchStarts = 0;
+      this.pinchEnds = 0;
+
+      this.manager = new TouchManager({
+        container: this.container,
+        onPinchStart: () => {
+          this.pinchStarts += 1;
+        },
+        onPinching: (origin, prevDistance, distance) => {
+          this.pinchings.push({ origin, prevDistance, distance });
+        },
+        onPinchEnd: () => {
+          this.pinchEnds += 1;
+        },
+        signal: this.#ac.signal,
+      });
+    }
+
+    dispatch(type, touches, changedTouches) {
+      const event = Object.assign(new Event(type, { cancelable: true }), {
+        touches,
+        changedTouches,
+      });
+      this.container.dispatchEvent(event);
+      return event;
+    }
+
+    destroy() {
+      this.manager.destroy();
+      this.#ac.abort();
+    }
+  }
+
+  it("tracks only touches whose starts reach the container", function () {
+    const helper = new TouchManagerHelper();
+    const own0 = makeTouch(0, 100);
+    const own1 = makeTouch(1, 300);
+    const foreign = makeTouch(2, 500);
+
+    helper.dispatch("touchstart", [own0], [own0]);
+    helper.dispatch("touchstart", [own0, own1, foreign], [own1]);
+    expect(helper.pinchStarts).toEqual(1);
+
+    helper.dispatch("touchend", [own1, foreign], [own0]);
+    expect(helper.pinchEnds).toEqual(1);
+
+    // The end of own1 is not delivered. The next start must remove its stale
+    // identifier before adding the newly changed touch.
+    const own3 = makeTouch(3, 100);
+    const own4 = makeTouch(4, 300);
+    helper.dispatch("touchstart", [foreign, own3], [own3]);
+    expect(helper.pinchStarts).toEqual(1);
+    helper.dispatch("touchstart", [foreign, own3, own4], [own4]);
+    expect(helper.pinchStarts).toEqual(2);
+
+    helper.destroy();
+  });
+
+  it("re-baselines when exactly two tracked touches remain", function () {
+    const helper = new TouchManagerHelper();
+    const touch0 = makeTouch(0, 0);
+    const touch1 = makeTouch(1, 200);
+    const touch2 = makeTouch(2, 400);
+
+    helper.dispatch("touchstart", [touch0], [touch0]);
+    helper.dispatch("touchstart", [touch0, touch1], [touch1]);
+    helper.dispatch("touchstart", [touch0, touch1, touch2], [touch2]);
+    helper.dispatch("touchend", [touch0, touch1], [touch2]);
+
+    const moved0 = makeTouch(0, -50);
+    const moved1 = makeTouch(1, 250);
+    helper.dispatch("touchmove", [moved0, moved1], [moved0, moved1]);
+    expect(helper.pinchings).toEqual([]);
+
+    const movedAgain0 = makeTouch(0, -100);
+    const movedAgain1 = makeTouch(1, 300);
+    helper.dispatch(
+      "touchmove",
+      [movedAgain0, movedAgain1],
+      [movedAgain0, movedAgain1]
+    );
+    expect(helper.pinchings).toEqual([
+      {
+        origin: [100, 0],
+        prevDistance: 300,
+        distance: 400,
+      },
+    ]);
+
+    helper.destroy();
+  });
+});
