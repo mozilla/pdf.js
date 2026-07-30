@@ -271,6 +271,12 @@ class PDFEditor {
       }
       const oldRef = obj;
       obj = await xref.fetchAsync(oldRef);
+      const mappedRef = oldRefMapping.get(oldRef);
+      if (mappedRef) {
+        // Another concurrent traversal may have allocated the clone while the
+        // source object was being fetched.
+        return mappedRef;
+      }
       if (typeof obj === "number") {
         // Simple value; no need to create a new reference.
         return obj;

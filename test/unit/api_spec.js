@@ -6286,6 +6286,29 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("clones shared indirect objects reached concurrently only once", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Resources << /ExtGState " +
+            "<< /GS1 4 0 R /GS2 4 0 R >> >> >>\nendobj\n",
+          "4 0 obj\n<< /Type /ExtGState /CA 0.5 >>\nendobj\n",
+        ]);
+
+        const loadingTask = getDocument({ data: pdfData });
+        const pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        expect(countMarker(data, "/Type /ExtGState")).toEqual(1);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument({ data });
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(1);
+        await newPdfDoc.getPage(1);
+        await newLoadingTask.destroy();
+      });
+
       it("should merge two PDFs with page included ranges", async function () {
         const loadingTask = getDocument(
           buildGetDocumentParams("tracemonkey.pdf")
