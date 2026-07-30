@@ -370,6 +370,7 @@ const PDFViewerApplication = {
     // Set some specific preferences for tests.
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       Object.assign(opts, {
+        annotationEditorMode: x => parseInt(x, 10),
         capCanvasAreaFactor: x => parseInt(x, 10),
         docBaseUrl: x => x,
         enableAltText: x => x === "true",
