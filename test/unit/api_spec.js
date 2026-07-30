@@ -7694,6 +7694,36 @@ small scripts as well as for`);
         return fontIndex < 0 ? null : operatorList.argsArray[fontIndex][0];
       };
 
+      it("does not mutate source widget parents", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 20 10] " +
+            "/Parent 5 0 R >>\nendobj\n",
+          "5 0 obj\n<< /FT /Tx /T (group) /Kids [4 0 R] >>\nendobj\n",
+          "6 0 obj\n<< /Fields [] /DA (/Helv 10 Tf) >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data: pdfData });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([{ document: null }]);
+
+        const sourceAnnotations = await (
+          await pdfDoc.getPage(1)
+        ).getAnnotations();
+        expect(sourceAnnotations[0].fieldName).toEqual("group");
+        expect(sourceAnnotations[0].fieldType).toEqual("Tx");
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+        await loadingTask.destroy();
+      });
+
       it("rebuilds a missing AcroForm Fields array", async function () {
         const data = assemblePdf([
           "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
