@@ -702,6 +702,7 @@ class Annotation {
 
     this.setTitle(dict.get("T"));
     this.setContents(dict.get("Contents"));
+    this.setAnnotationName(dict.get("NM"));
     this.setModificationDate(dict.get("M"));
     this.setFlags(dict.get("F"));
     this.setRectangle(dict.getArray("Rect"));
@@ -738,6 +739,7 @@ class Annotation {
       contentsObj: this._contents,
       hasAppearance: !!this.appearance,
       id: params.id,
+      annotationName: this.annotationName,
       modificationDate: this.modificationDate,
       oc: this._oc,
       rect: this.rectangle,
@@ -971,6 +973,37 @@ class Annotation {
    */
   setContents(contents) {
     this._contents = this._parseStringHelper(contents);
+  }
+
+  /**
+   * Set the subject.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} subject - A short description of what the annotation is
+   *                           about, which viewers show beside its contents
+   */
+  setSubject(subject) {
+    this._subject = this._parseStringHelper(subject);
+  }
+
+  /**
+   * Set the annotation name.
+   *
+   * Unlike `id`, which identifies the object in the file, this is the name the
+   * document itself gives the annotation, and the one other annotations and
+   * external records refer to it by.
+   *
+   * @public
+   * @memberof Annotation
+   * @param {string} annotationName - The annotation name, uniquely identifying
+   *                                  the annotation among those on its page
+   */
+  setAnnotationName(annotationName) {
+    this.annotationName =
+      typeof annotationName === "string"
+        ? stringToPDFString(annotationName)
+        : null;
   }
 
   /**
@@ -1732,6 +1765,9 @@ class MarkupAnnotation extends Annotation {
       this.setContents(parent.get("Contents"));
       this.data.contentsObj = this._contents;
 
+      this.setSubject(parent.get("Subj"));
+      this.data.subjectObj = this._subject;
+
       if (!parent.has("CreationDate")) {
         this.data.creationDate = null;
       } else {
@@ -1757,6 +1793,9 @@ class MarkupAnnotation extends Annotation {
       }
     } else {
       this.data.titleObj = this._title;
+
+      this.setSubject(dict.get("Subj"));
+      this.data.subjectObj = this._subject;
 
       this.setCreationDate(dict.get("CreationDate"));
       this.data.creationDate = this.creationDate;
