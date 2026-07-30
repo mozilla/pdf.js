@@ -28,16 +28,28 @@
   --sig-detail-color: light-dark(rgb(96 96 96), rgb(180 180 184));
   --sig-divider-color: light-dark(rgb(228 228 232), rgb(82 82 86));
   --sig-summary-hover-color: light-dark(rgb(28 67 138), rgb(126 169 255));
-  --sig-link-color: light-dark(rgb(28 113 216), rgb(126 169 255));
+  --sig-link-color: var(
+    --link-color,
+    light-dark(rgb(28 113 216), rgb(126 169 255))
+  );
   --sig-link-hover-bg: light-dark(
     rgb(28 113 216 / 0.1),
     rgb(126 169 255 / 0.15)
   );
-  --sig-banner-verified-bg: light-dark(rgb(228 247 235), rgb(28 84 49));
+  --sig-banner-verified-bg: var(
+    --background-color-success,
+    light-dark(rgb(228 247 235), rgb(28 84 49))
+  );
   --sig-banner-verified-color: light-dark(rgb(16 92 47), rgb(176 232 196));
-  --sig-banner-warn-bg: light-dark(rgb(255 247 217), rgb(95 67 9));
+  --sig-banner-warn-bg: var(
+    --background-color-warning,
+    light-dark(rgb(255 247 217), rgb(95 67 9))
+  );
   --sig-banner-warn-color: light-dark(rgb(124 84 9), rgb(255 222 153));
-  --sig-banner-error-bg: light-dark(rgb(254 226 235), rgb(122 21 51));
+  --sig-banner-error-bg: var(
+    --background-color-critical,
+    light-dark(rgb(254 226 235), rgb(122 21 51))
+  );
   --sig-banner-error-color: light-dark(rgb(167 26 70), rgb(255 188 207));
 
   /* Tint colours for the row / toolbar icons. These are paired with
@@ -48,9 +60,18 @@
    * verified = green (only used for the top-level "everything fine"
    * row and the toolbar's verified badge). */
   --sig-icon-default: light-dark(rgb(150 150 150), rgb(180 180 184));
-  --sig-icon-warn: light-dark(rgb(217 142 27), rgb(255 178 77));
-  --sig-icon-error: light-dark(rgb(196 31 71), rgb(255 117 145));
-  --sig-icon-verified: light-dark(rgb(29 142 61), rgb(106 210 126));
+  --sig-icon-warn: var(
+    --icon-color-warning,
+    light-dark(rgb(217 142 27), rgb(255 178 77))
+  );
+  --sig-icon-error: var(
+    --icon-color-critical,
+    light-dark(rgb(196 31 71), rgb(255 117 145))
+  );
+  --sig-icon-verified: var(
+    --icon-color-success,
+    light-dark(rgb(29 142 61), rgb(106 210 126))
+  );
 
   @media screen and (forced-colors: active) {
     /* HCM keywords are picked by *semantic role*, not by hue — the
@@ -77,23 +98,26 @@
     --sig-detail-color: GrayText;
     --sig-divider-color: GrayText;
     --sig-summary-hover-color: AccentColor;
-    --sig-link-color: LinkText;
+    --sig-link-color: var(--link-color, LinkText);
     --sig-link-hover-bg: transparent;
-    --sig-banner-verified-bg: ButtonFace;
-    --sig-banner-verified-color: ButtonText;
-    --sig-banner-warn-bg: ButtonFace;
-    --sig-banner-warn-color: ButtonText;
-    --sig-banner-error-bg: ButtonFace;
-    --sig-banner-error-color: ButtonText;
+    /* Firefox collapses the status backgrounds onto --background-color-canvas
+       in HCM, so the foregrounds have to follow --text-color to stay a pair
+       (ButtonText over that Canvas surface is not guaranteed to contrast). */
+    --sig-banner-verified-bg: var(--background-color-success, ButtonFace);
+    --sig-banner-verified-color: var(--text-color, ButtonText);
+    --sig-banner-warn-bg: var(--background-color-warning, ButtonFace);
+    --sig-banner-warn-color: var(--text-color, ButtonText);
+    --sig-banner-error-bg: var(--background-color-critical, ButtonFace);
+    --sig-banner-error-color: var(--text-color, ButtonText);
     /* Severities collapse to the same emphasis keyword (AccentColor)
      * in HCM — same trick as alt-text where `done` and `warning`
      * share their hover colour. The glyph shape (check vs `!` vs `✕`)
      * carries the remaining distinction. The neutral "row crypto
      * verified" check stays muted (GrayText). */
     --sig-icon-default: GrayText;
-    --sig-icon-warn: AccentColor;
-    --sig-icon-error: AccentColor;
-    --sig-icon-verified: AccentColor;
+    --sig-icon-warn: var(--icon-color-warning, AccentColor);
+    --sig-icon-error: var(--icon-color-critical, AccentColor);
+    --sig-icon-verified: var(--icon-color-success, AccentColor);
   }
 }
 

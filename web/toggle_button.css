@@ -2,44 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-.toggle-button {
-  --button-background-color: color-mix(in srgb, currentColor 7%, transparent);
-  --button-background-color-hover: color-mix(
-    in srgb,
-    currentColor 14%,
-    transparent
-  );
-  --button-background-color-active: color-mix(
-    in srgb,
-    currentColor 21%,
-    transparent
-  );
-  --color-accent-primary: light-dark(#0060df, #0df);
-  --color-accent-primary-hover: light-dark(#0250bb, #80ebff);
-  --color-accent-primary-active: light-dark(#054096, #aaf2ff);
-  --border-radius-circle: 9999px;
-  --border-width: 1px;
-  --size-item-small: 16px;
-  --size-item-large: 32px;
-  --color-canvas: light-dark(white, #1c1b22);
-  --background-color-canvas: var(--color-canvas);
-  --border-color-interactive: light-dark(#8f8f9d, #f9f9fa);
-  --border-color-interactive-hover: var(--border-color-interactive);
-  --border-color-interactive-active: var(--border-color-interactive);
-  --focus-outline-offset: 2px;
-
-  @media (forced-colors: active) {
-    --color-accent-primary: ButtonText;
-    --color-accent-primary-hover: SelectedItem;
-    --color-accent-primary-active: SelectedItem;
-    --button-background-color: ButtonFace;
-    --border-color-interactive: ButtonText;
-    --border-color-interactive-hover: SelectedItem;
-    --border-color-interactive-active: ButtonText;
-    --color-canvas: ButtonText;
-    --background-color-canvas: Canvas;
-  }
-}
+/* The Firefox foundation tokens below are read with the shipped literal as the
+   fallback, so MOZCENTRAL tracks the design system (tokens-brand.css, linked
+   from viewer.html) while every other build keeps this self-contained
+   moz-toggle copy. Declaring those token names here instead would shadow
+   Firefox's (unlayered beats @layer), and a bare var() would both trip
+   stylelint's no-unknown-custom-properties and collapse the toggle to a
+   zero-size transparent element if the chrome sheet ever failed to load. */
 
 /*
     The original file is located at:
@@ -55,23 +24,47 @@
 */
 
 .toggle-button {
-  --toggle-background-color: var(--button-background-color);
-  --toggle-background-color-hover: var(--button-background-color-hover);
-  --toggle-background-color-active: var(--button-background-color-active);
-  --toggle-background-color-pressed: var(--color-accent-primary);
-  --toggle-background-color-pressed-hover: var(--color-accent-primary-hover);
-  --toggle-background-color-pressed-active: var(--color-accent-primary-active);
-  --toggle-border-color: var(--border-color-interactive);
+  --toggle-background-color: var(
+    --button-background-color,
+    color-mix(in srgb, currentColor 7%, transparent)
+  );
+  --toggle-background-color-hover: var(
+    --button-background-color-hover,
+    color-mix(in srgb, currentColor 14%, transparent)
+  );
+  --toggle-background-color-active: var(
+    --button-background-color-active,
+    color-mix(in srgb, currentColor 21%, transparent)
+  );
+  --toggle-background-color-pressed: var(
+    --color-accent-primary,
+    light-dark(#0060df, #0df)
+  );
+  --toggle-background-color-pressed-hover: var(
+    --color-accent-primary-hover,
+    light-dark(#0250bb, #80ebff)
+  );
+  --toggle-background-color-pressed-active: var(
+    --color-accent-primary-active,
+    light-dark(#054096, #aaf2ff)
+  );
+  --toggle-border-color: var(
+    --border-color-interactive,
+    light-dark(#8f8f9d, #f9f9fa)
+  );
   --toggle-border-color-hover: var(--toggle-border-color);
   --toggle-border-color-active: var(--toggle-border-color);
-  --toggle-border-radius: var(--border-radius-circle);
-  --toggle-border-width: var(--border-width);
-  --toggle-height: var(--size-item-small);
-  --toggle-width: var(--size-item-large);
+  --toggle-border-radius: var(--border-radius-circle, 9999px);
+  --toggle-border-width: var(--border-width, 1px);
+  --toggle-height: var(--size-item-small, 16px);
+  --toggle-width: var(--size-item-large, 32px);
   --toggle-dot-background-color: var(--toggle-border-color);
   --toggle-dot-background-color-hover: var(--toggle-dot-background-color);
   --toggle-dot-background-color-active: var(--toggle-dot-background-color);
-  --toggle-dot-background-color-on-pressed: var(--background-color-canvas);
+  --toggle-dot-background-color-on-pressed: var(
+    --background-color-canvas,
+    light-dark(white, #1c1b22)
+  );
   --toggle-dot-margin: 1px;
   --toggle-dot-height: calc(
     var(--toggle-height) - 2 * var(--toggle-dot-margin) - 2 *
@@ -93,8 +86,8 @@
   box-sizing: border-box;
 
   &:focus-visible {
-    outline: var(--focus-outline);
-    outline-offset: var(--focus-outline-offset);
+    outline: var(--focus-ring-outline);
+    outline-offset: var(--focus-outline-offset, 2px);
   }
 
   &:enabled:hover {
@@ -186,16 +179,42 @@
 
 @media (forced-colors) {
   .toggle-button {
-    --toggle-dot-background-color: var(--color-accent-primary);
-    --toggle-dot-background-color-hover: var(--color-accent-primary-hover);
-    --toggle-dot-background-color-active: var(--color-accent-primary-active);
-    --toggle-dot-background-color-on-pressed: var(--button-background-color);
-    --toggle-border-color-hover: var(--border-color-interactive-hover);
-    --toggle-border-color-active: var(--border-color-interactive-active);
+    --toggle-background-color: var(--button-background-color, ButtonFace);
+    --toggle-background-color-pressed: var(--color-accent-primary, ButtonText);
+    --toggle-background-color-pressed-hover: var(
+      --color-accent-primary-hover,
+      SelectedItem
+    );
+    --toggle-background-color-pressed-active: var(
+      --color-accent-primary-active,
+      SelectedItem
+    );
+    --toggle-border-color: var(--border-color-interactive, ButtonText);
+    --toggle-dot-background-color: var(--color-accent-primary, ButtonText);
+    --toggle-dot-background-color-hover: var(
+      --color-accent-primary-hover,
+      SelectedItem
+    );
+    --toggle-dot-background-color-active: var(
+      --color-accent-primary-active,
+      SelectedItem
+    );
+    --toggle-dot-background-color-on-pressed: var(
+      --button-background-color,
+      ButtonFace
+    );
+    --toggle-border-color-hover: var(
+      --border-color-interactive-hover,
+      SelectedItem
+    );
+    --toggle-border-color-active: var(
+      --border-color-interactive-active,
+      ButtonText
+    );
   }
 
   .toggle-button[aria-pressed="true"]:enabled::after {
-    border: 1px solid var(--button-background-color);
+    border: 1px solid var(--button-background-color, ButtonFace);
     content: "";
     position: absolute;
     height: var(--toggle-height);

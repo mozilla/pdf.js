@@ -60,19 +60,35 @@
   --sidebar-max-width: 50vw;
   --sidebar-block-padding: 8px;
 
-  --text-color: light-dark(#15141a, #fbfbfe);
-  --button-fg: var(--text-color);
-  --button-no-bg: transparent;
-  --button-bg: light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07));
-  --button-border-color: transparent;
-  --button-hover-bg: light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14));
-  --button-hover-fg: var(--text-color);
-  --button-hover-border-color: var(--button-border-color);
-  --button-active-bg: light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21));
-  --button-active-fg: var(--text-color);
-  --button-active-border-color: var(--button-border-color);
-  --button-focus-no-bg: color-mix(in srgb, var(--text-color), transparent 93%);
-  --button-focus-outline-color: light-dark(#0062fa, #00cadb);
+  --views-text-color: var(--text-color, light-dark(#15141a, #fbfbfe));
+  --button-fg: var(--views-text-color);
+  --button-no-bg: var(--button-background-color-toolbar, transparent);
+  --button-bg: var(
+    --button-background-color,
+    light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
+  );
+  --views-button-border-color: var(--button-border-color, transparent);
+  --button-hover-bg: var(
+    --button-background-color-hover,
+    light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14))
+  );
+  --button-hover-fg: var(--views-text-color);
+  --button-hover-border-color: var(--views-button-border-color);
+  --button-active-bg: var(
+    --button-background-color-active,
+    light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21))
+  );
+  --button-active-fg: var(--views-text-color);
+  --button-active-border-color: var(--views-button-border-color);
+  --button-focus-no-bg: color-mix(
+    in srgb,
+    var(--views-text-color),
+    transparent 93%
+  );
+  --button-focus-outline-color: var(
+    --focus-outline-color,
+    light-dark(#0062fa, #00cadb)
+  );
   --button-focus-border-color: light-dark(white, black);
   --status-border-color: transparent;
   --status-actions-bg: light-dark(
@@ -81,7 +97,7 @@
   );
   --status-undo-bg: light-dark(rgb(0 98 250 / 0.08), rgb(0 202 219 / 0.08));
   --status-waiting-bg: var(--status-undo-bg);
-  --indicator-color: light-dark(#0062fa, #00cadb);
+  --indicator-color: var(--color-accent-primary, light-dark(#0062fa, #00cadb));
   --status-warning-bg: light-dark(#ffe8ea, #6e001f);
   --indicator-warning-color: light-dark(#b20037, #ffa0aa);
   --header-shadow:
@@ -95,7 +111,7 @@
   --image-current-border-color: var(--button-focus-outline-color);
   --image-current-focused-outline-color: var(--image-hover-border-color);
   --image-page-number-bg: light-dark(#f0f0f4, #42414d);
-  --image-page-number-fg: var(--text-color);
+  --image-page-number-fg: var(--views-text-color);
   --image-page-number-border-color: transparent;
   --image-hover-page-number-bg: var(--image-page-number-bg);
   --image-hover-page-number-fg: var(--image-page-number-fg);
@@ -134,23 +150,25 @@
   --multiple-dragging-text-color: light-dark(#fbfbfe, #15141a);
 
   @media screen and (forced-colors: active) {
-    --text-color: CanvasText;
-    --button-fg: ButtonText;
-    --button-bg: ButtonFace;
-    --button-no-bg: ButtonFace;
-    --button-border-color: ButtonText;
-    --button-hover-bg: SelectedItemText;
-    --button-hover-fg: SelectedItem;
-    --button-hover-border-color: SelectedItem;
-    --button-active-bg: SelectedItemText;
-    --button-active-fg: SelectedItem;
-    --button-active-border-color: ButtonText;
-    --button-focus-no-bg: ButtonFace;
-    --button-focus-outline-color: CanvasText;
+    --views-text-color: var(--text-color, CanvasText);
+    --button-fg: var(--button-text-color, ButtonText);
+    --button-bg: var(--button-background-color, ButtonFace);
+    --button-no-bg: var(--button-background-color, ButtonFace);
+    --views-button-border-color: var(--button-border-color, ButtonText);
+    --button-hover-bg: var(--button-background-color-hover, SelectedItemText);
+    --button-hover-fg: var(--button-text-color-hover, SelectedItem);
+    --button-hover-border-color: var(--button-border-color-hover, SelectedItem);
+    --button-active-bg: var(--button-background-color-active, SelectedItemText);
+    --button-active-fg: var(--button-text-color-active, SelectedItem);
+    --button-active-border-color: var(--button-border-color-active, ButtonText);
+    --button-focus-no-bg: var(--button-background-color, ButtonFace);
+    --button-focus-outline-color: var(--focus-outline-color, CanvasText);
     --button-focus-border-color: none;
     --status-border-color: CanvasText;
     --status-undo-bg: none;
-    --indicator-color: CanvasText;
+    /* Painted on Canvas panels, so --text-color rather than the accent (which
+       is ButtonText in Firefox HCM). */
+    --indicator-color: var(--text-color, CanvasText);
     --status-warning-bg: none;
     --indicator-warning-color: CanvasText;
     --header-shadow: none;
@@ -162,7 +180,7 @@
     --image-hover-page-number-fg: SelectedItem;
     --image-current-page-number-bg: ButtonText;
     --image-current-page-number-fg: ButtonFace;
-    --image-current-border-color: ButtonText;
+    --image-current-border-color: var(--border-color, ButtonText);
     --image-current-focused-outline-color: var(--image-hover-border-color);
     --image-current-hover-page-number-bg: SelectedItem;
     --image-current-hover-page-number-fg: SelectedItemText;
@@ -170,7 +188,7 @@
     --image-page-number-fg: ButtonText;
     --image-page-number-border-color: var(--image-page-number-fg);
     --multiple-dragging-bg: Canvas;
-    --multiple-dragging-indicator-bg: ButtonBorder;
+    --multiple-dragging-indicator-bg: var(--text-color, ButtonBorder);
     --multiple-dragging-text-color: Canvas;
     --image-dragging-placeholder-bg: Canvas;
     --image-dragging-placeholder-border: 1px GrayText solid;
@@ -200,8 +218,8 @@
   .viewsManagerButton {
     width: auto;
     color: var(--button-fg);
-    border-radius: 8px;
-    border: 1px solid var(--button-border-color);
+    border-radius: var(--button-border-radius, 8px);
+    border: 1px solid var(--views-button-border-color);
     background: var(--button-bg);
 
     &:hover {
@@ -229,13 +247,17 @@
     }
 
     &.viewsCloseButton {
-      width: 26px;
-      height: 26px;
-      padding: 4px;
-      border-radius: 8px;
+      width: var(--size-item-large, 26px);
+      height: var(--size-item-large, 26px);
+      border-radius: var(--button-border-radius, 8px);
       background: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
       &::before {
+        width: 16px;
+        height: 16px;
         mask-image: var(--close-button-icon);
       }
     }
@@ -253,7 +275,7 @@
 
     .viewsManagerLabel {
       flex: 1 1 auto;
-      color: var(--text-color);
+      color: var(--views-text-color);
       text-align: center;
       height: fit-content;
       width: fit-content;

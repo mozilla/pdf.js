@@ -24,12 +24,6 @@
   --field-bg-color: light-dark(rgb(255 255 255), rgb(64 64 68));
   --field-border-color: light-dark(rgb(187 187 188), rgb(115 115 115));
   --doorhanger-bg-color: light-dark(rgb(255 255 255), rgb(74 74 79));
-  --dialog-button-border: none;
-  --dialog-button-bg-color: light-dark(rgb(12 12 13 / 0.1), rgb(92 92 97));
-  --dialog-button-hover-bg-color: light-dark(
-    rgb(12 12 13 / 0.3),
-    rgb(115 115 115)
-  );
 
   --toolbar-bg-color: light-dark(#f9f9fb, #2b2a33);
   --toolbar-divider-color: light-dark(#e0e0e6, #5b5b66);
@@ -42,9 +36,6 @@
 
 @media screen and (forced-colors: active) {
   :root {
-    --dialog-button-border: 1px solid Highlight;
-    --dialog-button-hover-bg-color: Highlight;
-    --dialog-button-hover-color: ButtonFace;
     --field-border-color: ButtonText;
     --main-color: CanvasText;
   }
@@ -92,40 +83,6 @@ body {
 
 #viewerContainer.noToolbar {
   inset-block-start: 0;
-}
-
-.dialogButton {
-  border: none;
-  background: none;
-  width: 28px;
-  height: 28px;
-  outline: none;
-}
-
-.dialogButton:is(:hover, :focus-visible) {
-  background-color: var(--dialog-button-hover-bg-color);
-}
-
-.dialogButton:is(:hover, :focus-visible) > span {
-  color: var(--dialog-button-hover-color);
-}
-
-.dialogButton[disabled] {
-  opacity: 0.5;
-}
-
-.dialogButton {
-  min-width: 16px;
-  margin: 2px 1px;
-  padding: 2px 6px 0;
-  border: none;
-  border-radius: 2px;
-  color: var(--main-color);
-  font-size: 12px;
-  line-height: 14px;
-  user-select: none;
-  cursor: default;
-  box-sizing: border-box;
 }
 
 .toolbarField {
@@ -202,19 +159,6 @@ body {
       mask-image: var(--toolbarButton-download-icon);
     }
   }
-}
-
-:is(.toolbarButton .dialogButton)[disabled] {
-  opacity: 0.5;
-}
-
-.dialogButton {
-  width: auto;
-  margin: 3px 4px 2px !important;
-  padding: 2px 11px;
-  color: var(--main-color);
-  background-color: var(--dialog-button-bg-color);
-  border: var(--dialog-button-border) !important;
 }
 
 dialog {

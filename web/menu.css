@@ -41,10 +41,13 @@ button.hasPopupMenu {
     var(--menu-text-color),
     transparent 93%
   );
-  --menuitem-focus-outline-color: light-dark(#0062fa, #00cadb);
+  --menuitem-focus-outline-color: var(
+    --focus-outline-color,
+    light-dark(#0062fa, #00cadb)
+  );
   --menuitem-focus-border-color: light-dark(white, black);
 
-  --menu-bg: light-dark(white, #23222b);
+  --menu-bg: var(--background-color-box, light-dark(white, #23222b));
   --menu-background-blend-mode: normal;
   --menu-box-shadow:
     0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
@@ -52,7 +55,7 @@ button.hasPopupMenu {
   --menu-border-color: light-dark(rgb(21 20 26 / 0.1), rgb(251 251 254 / 0.1));
   --menuitem-border-radius: 8px;
   --menu-backdrop-filter: none;
-  --menu-text-color: light-dark(#15141a, #fbfbfe);
+  --menu-text-color: var(--text-color, light-dark(#15141a, #fbfbfe));
   --menu-text-disabled-color: var(--menu-text-color);
   --menuitem-text-hover-fg: var(--menu-text-color);
   --menuitem-hover-bg: color-mix(
@@ -64,11 +67,11 @@ button.hasPopupMenu {
   --disabled-opacity: 0.62;
 
   @media screen and (forced-colors: active) {
-    --menu-bg: Canvas;
+    --menu-bg: var(--background-color-box, Canvas);
     --menu-background-blend-mode: normal;
     --menu-box-shadow: none;
     --menu-backdrop-filter: none;
-    --menu-text-color: ButtonText;
+    --menu-text-color: var(--text-color, ButtonText);
     --menu-text-disabled-color: GrayText;
     --menu-border-color: CanvasText;
     --menuitem-border-color: none;
@@ -78,7 +81,7 @@ button.hasPopupMenu {
     --menuitem-active-border-color: ButtonText;
     --menuitem-text-active-fg: SelectedItem;
     --menuitem-focus-bg: ButtonFace;
-    --menuitem-focus-outline-color: CanvasText;
+    --menuitem-focus-outline-color: var(--focus-outline-color, CanvasText);
     --menuitem-focus-border-color: none;
     --disabled-opacity: 1;
   }

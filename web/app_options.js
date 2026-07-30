@@ -417,6 +417,18 @@ const defaultOptions = new Map([
     },
   ],
   [
+    // Whether the viewer follows the Firefox design system (see the pref-gated
+    // @import of tokens-brand.css in viewer.css). Read from CSS via
+    // -moz-pref(), not from JS, so it is Firefox-only and has no effect
+    // elsewhere.
+    "enableNova",
+    {
+      /** @type {boolean} */
+      value: true,
+      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+    },
+  ],
+  [
     "enableOptimizedPartialRendering",
     {
       /** @type {boolean} */

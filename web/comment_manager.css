@@ -65,39 +65,86 @@
 :is(.annotationLayer, .annotationEditorLayer) {
   .annotationCommentButton {
     color-scheme: light dark;
-    --comment-button-bg: light-dark(white, #1c1b22);
+    --comment-button-bg: var(
+      --background-color-canvas,
+      light-dark(white, #1c1b22)
+    );
     --comment-button-fg: light-dark(#5b5b66, #fbfbfe);
     --comment-button-active-bg: light-dark(#0041a4, #a6ecf4);
-    --comment-button-active-fg: light-dark(white, #15141a);
-    --comment-button-hover-bg: light-dark(#0053cb, #61dce9);
-    --comment-button-hover-fg: light-dark(white, #15141a);
-    --comment-button-selected-bg: light-dark(#0062fa, #00cadb);
-    --comment-button-border-color: light-dark(#8f8f9d, #bfbfc9);
+    --comment-button-active-fg: var(
+      --button-text-color-primary,
+      light-dark(white, #15141a)
+    );
+    --comment-button-hover-bg: var(
+      --color-accent-primary-hover,
+      light-dark(#0053cb, #61dce9)
+    );
+    --comment-button-hover-fg: var(
+      --button-text-color-primary,
+      light-dark(white, #15141a)
+    );
+    --comment-button-selected-bg: var(
+      --color-accent-primary,
+      light-dark(#0062fa, #00cadb)
+    );
+    --comment-button-border-color: var(
+      --border-color-interactive,
+      light-dark(#8f8f9d, #bfbfc9)
+    );
     --comment-button-active-border-color: var(--comment-button-active-bg);
     --comment-button-focus-border-color: light-dark(#cfcfd8, #3a3944);
     --comment-button-hover-border-color: var(--comment-button-hover-bg);
     --comment-button-selected-border-color: var(--comment-button-selected-bg);
-    --comment-button-selected-fg: light-dark(white, #15141a);
+    --comment-button-selected-fg: var(
+      --button-text-color-primary,
+      light-dark(white, #15141a)
+    );
     --comment-button-dim: 24px;
     --comment-button-box-shadow:
       0 0.25px 0.75px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)),
       0 2px 6px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
-    --comment-button-focus-outline-color: light-dark(#0062fa, #00cadb);
+    --comment-button-focus-outline-color: var(
+      --focus-outline-color,
+      light-dark(#0062fa, #00cadb)
+    );
 
+    /* Each state reads the *matching* pair of Firefox button tokens, so the
+       background and the icon can never resolve to the same system colour. */
     @media screen and (forced-colors: active) {
-      --comment-button-bg: ButtonFace;
-      --comment-button-fg: ButtonText;
-      --comment-button-hover-bg: SelectedItemText;
-      --comment-button-hover-fg: SelectedItem;
-      --comment-button-active-bg: SelectedItemText;
-      --comment-button-active-fg: SelectedItem;
-      --comment-button-border-color: ButtonBorder;
-      --comment-button-active-border-color: ButtonBorder;
-      --comment-button-hover-border-color: SelectedItem;
+      --comment-button-bg: var(--button-background-color, ButtonFace);
+      --comment-button-fg: var(--button-text-color, ButtonText);
+      --comment-button-hover-bg: var(
+        --button-background-color-hover,
+        SelectedItemText
+      );
+      --comment-button-hover-fg: var(--button-text-color-hover, SelectedItem);
+      --comment-button-active-bg: var(
+        --button-background-color-active,
+        SelectedItemText
+      );
+      --comment-button-active-fg: var(--button-text-color-active, SelectedItem);
+      --comment-button-border-color: var(--button-border-color, ButtonBorder);
+      --comment-button-active-border-color: var(
+        --button-border-color-active,
+        ButtonBorder
+      );
+      --comment-button-hover-border-color: var(
+        --button-border-color-hover,
+        SelectedItem
+      );
       --comment-button-box-shadow: none;
-      --comment-button-focus-outline-color: CanvasText;
-      --comment-button-selected-bg: ButtonBorder;
-      --comment-button-selected-fg: ButtonFace;
+      --comment-button-focus-outline-color: var(
+        --focus-outline-color,
+        CanvasText
+      );
+      --comment-button-selected-bg: var(
+        --button-background-color-primary,
+        ButtonBorder
+      );
+      --comment-button-selected-fg: var(
+        --button-text-color-primary,
+        ButtonFace
+      );
     }
 
     position: absolute;
@@ -185,19 +232,28 @@
   --comment-active-brightness: 0.825;
   --comment-active-filter: brightness(var(--comment-active-brightness));
   --comment-border-color: light-dark(#f0f0f4, #52525e);
-  --comment-focus-outline-color: light-dark(#0062fa, #00cadb);
-  --comment-fg-color: light-dark(#15141a, #fbfbfe);
+  --comment-focus-outline-color: var(
+    --focus-outline-color,
+    light-dark(#0062fa, #00cadb)
+  );
+  --comment-fg-color: var(--text-color, light-dark(#15141a, #fbfbfe));
   --comment-count-bg-color: light-dark(#e2f7ff, #00317e);
   --comment-indicator-active-fg-color: light-dark(#0041a4, #a6ecf4);
   --comment-indicator-active-filter: brightness(
     calc(1 / var(--comment-active-brightness))
   );
   --comment-indicator-focus-fg-color: light-dark(#5b5b66, #fbfbfe);
-  --comment-indicator-hover-fg-color: light-dark(#0053cb, #61dce9);
+  --comment-indicator-hover-fg-color: var(
+    --color-accent-primary-hover,
+    light-dark(#0053cb, #61dce9)
+  );
   --comment-indicator-hover-filter: brightness(
     calc(1 / var(--comment-hover-brightness))
   );
-  --comment-indicator-selected-fg-color: light-dark(#0062fa, #00cadb);
+  --comment-indicator-selected-fg-color: var(
+    --color-accent-primary,
+    light-dark(#0062fa, #00cadb)
+  );
 
   --button-comment-bg: transparent;
   --button-comment-color: var(--main-color);
@@ -208,9 +264,6 @@
   --button-comment-hover-bg: light-dark(#e0e0e6, #52525e);
   --button-comment-hover-color: var(--button-comment-color);
 
-  --link-fg-color: light-dark(#0060df, #0df);
-  --link-hover-fg-color: light-dark(#0250bb, #80ebff);
-
   @media screen and (forced-colors: active) {
     --comment-date-fg-color: CanvasText;
     --comment-bg-color: Canvas;
@@ -219,11 +272,13 @@
     --comment-active-bg-color: Canvas;
     --comment-active-filter: none;
     --comment-border-color: CanvasText;
-    --comment-fg-color: CanvasText;
+    --comment-fg-color: var(--text-color, CanvasText);
     --comment-count-bg-color: Canvas;
     --comment-indicator-active-fg-color: SelectedItem;
-    --comment-indicator-focus-fg-color: CanvasText;
-    --comment-indicator-hover-fg-color: CanvasText;
+    --comment-indicator-focus-fg-color: var(--text-color, CanvasText);
+    /* On the Canvas comment surface, so paired with --text-color rather than a
+       button/accent token. */
+    --comment-indicator-hover-fg-color: var(--text-color, CanvasText);
     --comment-indicator-selected-fg-color: SelectedItem;
     --button-comment-bg: ButtonFace;
     --button-comment-color: ButtonText;
@@ -232,8 +287,6 @@
     --button-comment-border: 1px solid ButtonText;
     --button-comment-hover-bg: Highlight;
     --button-comment-hover-color: HighlightText;
-    --link-fg-color: LinkText;
-    --link-hover-fg-color: LinkText;
   }
 }
 
