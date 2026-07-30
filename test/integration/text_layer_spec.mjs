@@ -20,9 +20,11 @@
 import {
   closePages,
   closeSinglePage,
+  firstPageOnTop,
   getSpanRectFromText,
   kbSelectAll,
   loadAndWait,
+  scrollIntoView,
   waitForEvent,
 } from "./test_utils.mjs";
 import { MathClamp } from "../../src/shared/math_clamp.js";
@@ -1144,6 +1146,94 @@ describe("Text layer", () => {
                   `In ${browserName}, no selection drawn without backdrop-filter`
                 )
                 .toBeFalse();
+            })
+          );
+        });
+      });
+
+      describe("when the page has been destroyed and rendered again", () => {
+        const selectionSelector = ".canvasWrapper .selection svg path[d]";
+        const timeout = 5000;
+
+        let pages;
+
+        beforeEach(async () => {
+          pages = await loadAndWait(
+            "tracemonkey.pdf",
+            `.page[data-page-number = "1"] .endOfContent`,
+            undefined,
+            undefined,
+            { annotationEditorMode: -1 }
+          );
+        });
+
+        afterEach(async () => {
+          await closePages(pages);
+        });
+
+        async function selectSomeText(page) {
+          const [positionStart, positionEnd] = await Promise.all([
+            getSpanRectFromText(
+              page,
+              1,
+              "(frequently executed) bytecode sequences, records"
+            ).then(middlePosition),
+            getSpanRectFromText(
+              page,
+              1,
+              "them, and compiles them to fast native code. We call such a se-"
+            ).then(belowEndPosition),
+          ]);
+
+          await page.mouse.move(positionStart.x, positionStart.y);
+          await page.mouse.down();
+          await moveInSteps(page, positionStart, positionEnd, 20);
+          await page.mouse.up();
+        }
+
+        it("must draw the selection", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              await selectSomeText(page);
+              await page.waitForSelector(selectionSelector, { timeout });
+
+              await page.evaluate(() => {
+                document.getSelection().removeAllRanges();
+              });
+              await page.waitForSelector(selectionSelector, {
+                hidden: true,
+                timeout,
+              });
+
+              // Scroll down, page by page, until the first page view is
+              // evicted from the buffer: its canvas wrapper is then removed.
+              const pagesCount = await page.evaluate(
+                () => window.PDFViewerApplication.pagesCount
+              );
+              let isDestroyed = false;
+              for (let i = 2; i <= pagesCount && !isDestroyed; i++) {
+                const selector = `.page[data-page-number = "${i}"]`;
+                await scrollIntoView(page, selector);
+                await page.waitForSelector(
+                  `${selector} .canvasWrapper canvas`,
+                  { timeout: 0 }
+                );
+                isDestroyed = !(await page.$(
+                  `.page[data-page-number = "1"] .canvasWrapper`
+                ));
+              }
+
+              expect(isDestroyed)
+                .withContext(`In ${browserName}, first page destroyed`)
+                .toBeTrue();
+
+              await firstPageOnTop(page);
+              await page.waitForSelector(
+                `.page[data-page-number = "1"] .canvasWrapper canvas`,
+                { timeout: 0 }
+              );
+              await selectSomeText(page);
+              await page.waitForSelector(selectionSelector, { timeout });
             })
           );
         });

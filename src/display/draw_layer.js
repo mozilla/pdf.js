@@ -641,7 +641,8 @@ class DrawLayer {
         textLayerData.selectionDiv = div;
       }
 
-      if (!div.parentNode && drawLayer.#parent) {
+      if (drawLayer.#parent && div.parentNode !== drawLayer.#parent) {
+        // The div can still be in a canvas wrapper which has been removed.
         drawLayer.#parent.append(div);
         this.#selections.add(div);
       }
