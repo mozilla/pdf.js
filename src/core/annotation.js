@@ -2887,10 +2887,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     this.data.doNotScroll = this.hasFieldFlag(AnnotationFieldFlag.DONOTSCROLL);
 
     // Check if we have a date or time.
-    const {
-      data: { actions },
-    } = this;
-
+    const { actions } = this.data;
     if (!actions) {
       return;
     }
@@ -2898,32 +2895,35 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     const AFDateTime =
       /^AF(Date|Time)_(?:Keystroke|Format)(?:Ex)?\(['"]?([^'"]+)['"]?\);$/;
     let canUseHTMLDateTime = false;
+
+    const aFormat = actions.get("Format"),
+      aKeystroke = actions.get("Keystroke");
     if (
-      (actions.Format?.length === 1 &&
-        actions.Keystroke?.length === 1 &&
-        AFDateTime.test(actions.Format[0]) &&
-        AFDateTime.test(actions.Keystroke[0])) ||
-      (actions.Format?.length === 0 &&
-        actions.Keystroke?.length === 1 &&
-        AFDateTime.test(actions.Keystroke[0])) ||
-      (actions.Keystroke?.length === 0 &&
-        actions.Format?.length === 1 &&
-        AFDateTime.test(actions.Format[0]))
+      (aFormat?.length === 1 &&
+        aKeystroke?.length === 1 &&
+        AFDateTime.test(aFormat[0]) &&
+        AFDateTime.test(aKeystroke[0])) ||
+      (aFormat?.length === 0 &&
+        aKeystroke?.length === 1 &&
+        AFDateTime.test(aKeystroke[0])) ||
+      (aKeystroke?.length === 0 &&
+        aFormat?.length === 1 &&
+        AFDateTime.test(aFormat[0]))
     ) {
       // If the Format and Keystroke actions are the same, we can just use
       // the Format action.
       canUseHTMLDateTime = true;
     }
     const actionsToVisit = [];
-    if (actions.Format) {
-      actionsToVisit.push(...actions.Format);
+    if (aFormat) {
+      actionsToVisit.push(...aFormat);
     }
-    if (actions.Keystroke) {
-      actionsToVisit.push(...actions.Keystroke);
+    if (aKeystroke) {
+      actionsToVisit.push(...aKeystroke);
     }
     if (canUseHTMLDateTime) {
-      delete actions.Keystroke;
-      actions.Format = actionsToVisit;
+      actions.delete("Keystroke");
+      actions.set("Format", actionsToVisit);
     }
 
     for (const formatAction of actionsToVisit) {

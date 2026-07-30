@@ -19,6 +19,7 @@ import {
   DocumentActionEventType,
   FormatError,
   info,
+  makeArr,
   PermissionFlag,
   shadow,
   stringToUTF8String,
@@ -1287,10 +1288,10 @@ class Catalog {
     );
 
     if (javaScript) {
-      actions ??= Object.create(null);
+      actions ??= new Map();
 
       for (const [key, val] of javaScript) {
-        (actions[key] ??= []).push(val);
+        actions.getOrInsertComputed(key, makeArr).push(val);
       }
     }
     return shadow(this, "jsActions", actions);

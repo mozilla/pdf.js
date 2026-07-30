@@ -22,7 +22,9 @@ const FieldType = {
 };
 
 function createActionsMap(actions) {
-  return new Map(actions ? Object.entries(actions) : null);
+  return actions instanceof Map
+    ? actions
+    : new Map(actions ? Object.entries(actions) : null);
 }
 
 function getFieldType(actions) {
@@ -30,10 +32,8 @@ function getFieldType(actions) {
   if (!format) {
     return FieldType.none;
   }
+  format = format[0].trim();
 
-  format = format[0];
-
-  format = format.trim();
   if (format.startsWith("AFNumber_")) {
     return FieldType.number;
   }

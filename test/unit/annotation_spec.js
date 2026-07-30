@@ -2460,17 +2460,14 @@ describe("annotation", function () {
         annotationGlobalsMock,
         idFactoryMock
       );
-      const fieldObject = await annotation.getFieldObject();
-      const actions = fieldObject.actions;
-      expect(actions["Mouse Enter"]).toEqual(["hello()"]);
-      expect(actions["Mouse Exit"]).toEqual([
-        "world()",
-        "olleh()",
-        "foo()",
-        "dlrow()",
-        "oof()",
-      ]);
-      expect(actions["Mouse Down"]).toEqual(["bar()"]);
+      const { actions } = await annotation.getFieldObject();
+      expect(actions).toEqual(
+        new Map([
+          ["Mouse Enter", ["hello()"]],
+          ["Mouse Exit", ["world()", "olleh()", "foo()", "dlrow()", "oof()"]],
+          ["Mouse Down", ["bar()"]],
+        ])
+      );
     });
 
     it("should save Japanese text", async function () {
@@ -3728,7 +3725,7 @@ describe("annotation", function () {
       );
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.pushButton).toBeTrue();
-      expect(data.actions.Action).toEqual(["do_something();"]);
+      expect(data.actions.get("Action")).toEqual(["do_something();"]);
     });
 
     it("should handle push buttons that act as a tooltip only", async function () {
