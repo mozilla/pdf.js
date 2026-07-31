@@ -1325,6 +1325,32 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("File param with a protocol-relative URL (issue 20218)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      const baseURL = new URL(global.integrationBaseUrl);
+      const url = `//${baseURL.host}/build/generic/web/compressed.tracemonkey-pldi-09.pdf`;
+      pages = await loadAndWait(url, ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must load and extract the filename correctly", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const filename = await page.evaluate(() => document.title);
+
+          expect(filename)
+            .withContext(`In ${browserName}`)
+            .toBe("compressed.tracemonkey-pldi-09.pdf");
+        })
+      );
+    });
+  });
+
   describe("File param with encoded characters (issue 20420)", () => {
     let pages;
 

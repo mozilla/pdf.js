@@ -55,9 +55,10 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
         }
       }
 
-      const fileParam = filename.startsWith("http")
-        ? filename
-        : `/test/pdfs/${filename}`;
+      const fileParam =
+        filename.startsWith("http") || filename.startsWith("//")
+          ? filename
+          : `/test/pdfs/${filename}`;
       const url = `${global.integrationBaseUrl}?file=${fileParam}#zoom=${zoom ?? "page-fit"}${app_options}`;
 
       if (setups) {
