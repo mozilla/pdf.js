@@ -257,7 +257,7 @@ pdfjs-find-match-count = Occurrence { $current } sur { $total }
 #   $limit (Number) - the maximum number of matches
 pdfjs-find-match-count-limit =
     { $limit ->
-        [one] Plus d’{ $limit } occurrence
+        [1] Plus d’une occurrence
        *[other] Plus de { $limit } occurrences
     }
 pdfjs-find-not-found = Expression non trouvée
