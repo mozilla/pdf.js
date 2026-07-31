@@ -14,7 +14,7 @@
  */
 
 .sidebar {
-  --sidebar-bg-color: light-dark(#fff, #23222b);
+  --sidebar-bg-color: var(--background-color-box, light-dark(#fff, #23222b));
   --sidebar-border-color: light-dark(
     rgb(21 20 26 / 0.1),
     rgb(251 251 254 / 0.1)
@@ -30,13 +30,18 @@
   --sidebar-width: 239px;
   --resizer-width: 4px;
   --resizer-shift: calc(0px - var(--resizer-width) - 2px);
-  --resizer-hover-bg-color: light-dark(#0062fa, #00cadb);
+  --resizer-hover-bg-color: var(
+    --color-accent-primary,
+    light-dark(#0062fa, #00cadb)
+  );
 
   @media screen and (forced-colors: active) {
-    --sidebar-bg-color: Canvas;
+    --sidebar-bg-color: var(--background-color-box, Canvas);
     --sidebar-border-color: CanvasText;
     --sidebar-box-shadow: none;
-    --resizer-hover-bg-color: CanvasText;
+    /* Painted on the Canvas sidebar, so --text-color rather than the accent
+       (which is ButtonText in Firefox HCM). */
+    --resizer-hover-bg-color: var(--text-color, CanvasText);
   }
 
   border-radius: var(--sidebar-border-radius);

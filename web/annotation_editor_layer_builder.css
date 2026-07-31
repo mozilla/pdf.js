@@ -21,15 +21,18 @@
 :root {
   --editor-toolbar-vert-offset: 6px;
   --outline-width: 2px;
-  --outline-color: #0060df;
+  /* Palette primitives, not the semantic light-dark tokens: these are drawn on
+     the always-light PDF page, where --color-accent-primary and friends would
+     resolve to their dark value. */
+  --outline-color: var(--color-blue-60, #0060df);
   --outline-around-width: 1px;
-  --outline-around-color: #f0f0f4;
+  --outline-around-color: var(--color-gray-20, #f0f0f4);
   --hover-outline-around-color: var(--outline-around-color);
-  --focus-outline: solid var(--outline-width) var(--outline-color);
+  --editor-selection-outline: solid var(--outline-width) var(--outline-color);
   --unfocus-outline: solid var(--outline-width) transparent;
   --focus-outline-around: solid var(--outline-around-width)
     var(--outline-around-color);
-  --hover-outline-color: #8f8f9d;
+  --hover-outline-color: var(--color-gray-60, #8f8f9d);
   --hover-outline: solid var(--outline-width) var(--hover-outline-color);
   --hover-outline-around: solid var(--outline-around-width)
     var(--hover-outline-around-color);
@@ -95,7 +98,7 @@
     --outline-color: CanvasText;
     --outline-around-color: ButtonFace;
     --resizer-bg-color: ButtonText;
-    --hover-outline-color: Highlight;
+    --hover-outline-color: var(--color-accent-primary-hover, Highlight);
     --hover-outline-around-color: SelectedItemText;
   }
 }
@@ -188,7 +191,7 @@
   }
 
   &.selectedEditor {
-    border: var(--focus-outline);
+    border: var(--editor-selection-outline);
     outline: var(--focus-outline-around);
 
     &::before {
@@ -244,30 +247,51 @@
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
-    --editor-toolbar-border-color: #8f8f9d;
+    --editor-toolbar-border-color: var(--border-color-interactive, #8f8f9d);
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
     --editor-toolbar-hover-bg-color: light-dark(#e0e0e6, #52525e);
     --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
     --editor-toolbar-hover-outline: none;
-    --editor-toolbar-focus-outline-color: light-dark(#0060df, #0df);
+    --editor-toolbar-focus-outline-color: var(
+      --focus-outline-color,
+      light-dark(#0060df, #0df)
+    );
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
     --editor-toolbar-height: 28px;
     --editor-toolbar-padding: 2px;
-    --alt-text-done-color: light-dark(#2ac3a2, #54ffbd);
+    --alt-text-done-color: var(
+      --color-accent-attention,
+      light-dark(#2ac3a2, #54ffbd)
+    );
     --alt-text-warning-color: light-dark(#0090ed, #80ebff);
     --alt-text-hover-done-color: var(--alt-text-done-color);
     --alt-text-hover-warning-color: var(--alt-text-warning-color);
 
     @media screen and (forced-colors: active) {
-      --editor-toolbar-bg-color: ButtonFace;
-      --editor-toolbar-fg-color: ButtonText;
-      --editor-toolbar-border-color: ButtonText;
-      --editor-toolbar-hover-border-color: AccentColor;
-      --editor-toolbar-hover-bg-color: ButtonFace;
-      --editor-toolbar-hover-fg-color: AccentColor;
+      --editor-toolbar-bg-color: var(--button-background-color, ButtonFace);
+      --editor-toolbar-fg-color: var(--button-text-color, ButtonText);
+      --editor-toolbar-border-color: var(--button-border-color, ButtonText);
+      --editor-toolbar-hover-border-color: var(
+        --button-border-color-hover,
+        AccentColor
+      );
+      --editor-toolbar-hover-bg-color: var(
+        --button-background-color-hover,
+        ButtonFace
+      );
+      --editor-toolbar-hover-fg-color: var(
+        --button-text-color-hover,
+        AccentColor
+      );
       --editor-toolbar-hover-outline: 2px solid
         var(--editor-toolbar-hover-border-color);
-      --editor-toolbar-focus-outline-color: ButtonBorder;
+      /* --button-border-color, not --focus-outline-color: the ring is painted
+         on the toolbar's own ButtonFace surface, and --focus-outline-color is
+         CanvasText in Firefox HCM. */
+      --editor-toolbar-focus-outline-color: var(
+        --button-border-color,
+        ButtonBorder
+      );
       --editor-toolbar-shadow: none;
       --alt-text-done-color: var(--editor-toolbar-fg-color);
       --alt-text-warning-color: var(--editor-toolbar-fg-color);
@@ -461,15 +485,18 @@
 
           &.show {
             --alt-text-tooltip-bg: light-dark(#f0f0f4, #1c1b22);
-            --alt-text-tooltip-fg: light-dark(#15141a, #fbfbfe);
-            --alt-text-tooltip-border: #8f8f9d;
+            --alt-text-tooltip-fg: var(
+              --text-color,
+              light-dark(#15141a, #fbfbfe)
+            );
+            --alt-text-tooltip-border: var(--border-color-interactive, #8f8f9d);
             --alt-text-tooltip-shadow: 0 2px 6px 0
               light-dark(rgb(58 57 68 / 0.2), #15141a);
 
             @media screen and (forced-colors: active) {
               --alt-text-tooltip-bg: Canvas;
-              --alt-text-tooltip-fg: CanvasText;
-              --alt-text-tooltip-border: CanvasText;
+              --alt-text-tooltip-fg: var(--text-color, CanvasText);
+              --alt-text-tooltip-border: var(--border-color, CanvasText);
               --alt-text-tooltip-shadow: none;
             }
 
@@ -1055,7 +1082,10 @@
 }
 
 .colorPicker {
-  --hover-outline-color: light-dark(#0250bb, #80ebff);
+  --hover-outline-color: var(
+    --color-accent-primary-hover,
+    light-dark(#0250bb, #80ebff)
+  );
   --selected-outline-color: light-dark(#0060df, #aaf2ff);
   --swatch-border-color: light-dark(#cfcfd8, #52525e);
 

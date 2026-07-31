@@ -17,28 +17,46 @@
   --closing-button-icon: url(images/messageBar_closingButton.svg);
   --message-bar-close-button-color: var(--text-primary-color);
   --message-bar-close-button-color-hover: var(--text-primary-color);
-  --message-bar-close-button-border-radius: 4px;
+  --message-bar-close-button-border-radius: var(--border-radius-small, 4px);
   --message-bar-close-button-border: none;
-  --message-bar-close-button-hover-bg-color: light-dark(
-    rgb(21 20 26 / 0.14),
-    rgb(251 251 254 / 0.14)
+  --message-bar-close-button-hover-bg-color: var(
+    --button-background-color-hover,
+    light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14))
   );
-  --message-bar-close-button-active-bg-color: light-dark(
-    rgb(21 20 26 / 0.21),
-    rgb(251 251 254 / 0.21)
+  --message-bar-close-button-active-bg-color: var(
+    --button-background-color-active,
+    light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21))
   );
-  --message-bar-close-button-focus-bg-color: light-dark(
-    rgb(21 20 26 / 0.07),
-    rgb(251 251 254 / 0.07)
+  --message-bar-close-button-focus-bg-color: var(
+    --button-background-color,
+    light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
   );
 
   @media screen and (forced-colors: active) {
-    --message-bar-close-button-color: ButtonText;
-    --message-bar-close-button-border: 1px solid ButtonText;
-    --message-bar-close-button-hover-bg-color: ButtonText;
-    --message-bar-close-button-active-bg-color: ButtonText;
-    --message-bar-close-button-focus-bg-color: ButtonText;
-    --message-bar-close-button-color-hover: HighlightText;
+    --message-bar-close-button-color: var(--button-text-color, ButtonText);
+    --message-bar-close-button-border: 1px solid
+      var(--button-border-color, ButtonText);
+    /* One icon colour is shared by hover/active/focus, so all three backgrounds
+       read the -hover token and pair with --button-text-color-hover. The
+       fallbacks are SelectedItemText/SelectedItem for the same reason: the
+       previous ButtonText-behind-HighlightText hid the icon outright in any
+       theme whose button ink and highlight text are both light. */
+    --message-bar-close-button-hover-bg-color: var(
+      --button-background-color-hover,
+      SelectedItemText
+    );
+    --message-bar-close-button-active-bg-color: var(
+      --button-background-color-hover,
+      SelectedItemText
+    );
+    --message-bar-close-button-focus-bg-color: var(
+      --button-background-color-hover,
+      SelectedItemText
+    );
+    --message-bar-close-button-color-hover: var(
+      --button-text-color-hover,
+      SelectedItem
+    );
   }
 
   display: flex;
@@ -50,7 +68,9 @@
   gap: 8px;
   user-select: none;
 
-  border-radius: 4px;
+  /* Nests inside .dialog, whose radius is --border-radius-medium, so it has to
+     scale with it to keep the inner corner tighter than the outer one. */
+  border-radius: var(--border-radius-small, 4px);
 
   border: 1px solid var(--message-bar-border-color);
   background: var(--message-bar-bg-color);
@@ -130,8 +150,6 @@
 }
 
 #editorUndoBar {
-  --text-primary-color: light-dark(#15141a, #fbfbfe);
-
   --message-bar-icon: url(images/messageBar_info.svg);
   --message-bar-icon-color: light-dark(#0060df, #73a7f3);
   --message-bar-bg-color: light-dark(#deeafc, #003070);
@@ -141,41 +159,10 @@
     rgb(255 255 255 / 0.08)
   );
 
-  --undo-button-bg-color: light-dark(
-    rgb(21 20 26 / 0.07),
-    rgb(255 255 255 / 0.08)
-  );
-  --undo-button-bg-color-hover: light-dark(
-    rgb(21 20 26 / 0.14),
-    rgb(255 255 255 / 0.14)
-  );
-  --undo-button-bg-color-active: light-dark(
-    rgb(21 20 26 / 0.21),
-    rgb(255 255 255 / 0.21)
-  );
-
-  --undo-button-border: 1px solid light-dark(#0060df, #0df);
-
-  --undo-button-fg-color: var(--message-bar-fg-color);
-  --undo-button-fg-color-hover: var(--undo-button-fg-color);
-  --undo-button-fg-color-active: var(--undo-button-fg-color);
-
   @media screen and (forced-colors: active) {
-    --text-primary-color: CanvasText;
-
     --message-bar-icon-color: CanvasText;
     --message-bar-bg-color: Canvas;
     --message-bar-border-color: CanvasText;
-
-    --undo-button-bg-color: ButtonText;
-    --undo-button-bg-color-hover: SelectedItem;
-    --undo-button-bg-color-active: SelectedItem;
-
-    --undo-button-fg-color: ButtonFace;
-    --undo-button-fg-color-hover: SelectedItemText;
-    --undo-button-fg-color-active: SelectedItemText;
-
-    --undo-button-border: none;
   }
 
   position: fixed;
@@ -197,26 +184,10 @@
   }
 
   #editorUndoBarUndoButton {
-    border-radius: 4px;
-    font-weight: 590;
-    line-height: 19.5px;
-    color: var(--undo-button-fg-color);
-    border: var(--undo-button-border);
-    padding: 4px 16px;
     margin-inline-start: 8px;
-    height: 32px;
-
-    background-color: var(--undo-button-bg-color);
-
-    &:hover {
-      background-color: var(--undo-button-bg-color-hover);
-      color: var(--undo-button-fg-color-hover);
-    }
-
-    &:active {
-      background-color: var(--undo-button-bg-color-active);
-      color: var(--undo-button-fg-color-active);
-    }
+    /* The generic secondary border is the same translucent wash as its fill,
+       which disappears on the tinted bar, so keep an explicit accent edge. */
+    border-color: var(--color-accent-primary, light-dark(#0060df, #0df));
   }
 
   > div {

@@ -13,6 +13,16 @@
  * limitations under the License.
  */
 
+/* Pref-gated, so the Firefox tokens are opt-in (and with them the Nova theme,
+   which tokens-brand.css gates on browser.nova.enabled): with the pref off
+   every var() falls back to its shipped literal. -moz-pref() works here
+   because chrome rules are enabled for a resource:// stylesheet, and it only
+   sees pdfjs.* prefs. */
+/*#if MOZCENTRAL*/
+@import url(chrome://global/skin/design-system/tokens-brand.css) -moz-pref(
+    "pdfjs.enableNova"
+  );
+/*#endif*/
 @import url(pdf_viewer.css);
 @import url(digital_signature_properties.css);
 
@@ -55,7 +65,10 @@
     inset calc(-1px * var(--dir-factor)) 0 0 rgb(0 0 0 / 0.25),
     0 1px 0 rgb(0 0 0 / 0.15), 0 0 1px rgb(0 0 0 / 0.1);
   --toolbarSidebar-border-bottom: none;
-  --button-hover-color: color-mix(in srgb, currentColor 17%, transparent);
+  --button-hover-color: var(
+    --button-background-color-toolbar-hover,
+    color-mix(in srgb, currentColor 17%, transparent)
+  );
   --toggled-btn-color: light-dark(rgb(0 0 0), rgb(255 255 255));
   --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
   --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
@@ -70,12 +83,6 @@
   --doorhanger-border-color: light-dark(rgb(12 12 13 / 0.2), rgb(39 39 43));
   --doorhanger-hover-color: light-dark(rgb(12 12 13), rgb(249 249 250));
   --doorhanger-separator-color: light-dark(rgb(222 222 222), rgb(92 92 97));
-  --dialog-button-border: none;
-  --dialog-button-bg-color: light-dark(rgb(12 12 13 / 0.1), rgb(92 92 97));
-  --dialog-button-hover-bg-color: light-dark(
-    rgb(12 12 13 / 0.3),
-    rgb(115 115 115)
-  );
 
   --loading-icon: url(images/loading.svg);
   --toolbarButton-editorComment-icon: url(images/comment-editButton.svg);
@@ -136,6 +143,10 @@
 
 @media screen and (forced-colors: active) {
   :root {
+    /* Must stay a system color in HCM: --button-background-color-toolbar-hover
+       is NOT overridden in the dist's forced-colors layer (it stays a
+       color-mix(currentColor 17%, transparent)), which would make the hover
+       background a faint translucent overlay and hide the ButtonFace icon. */
     --button-hover-color: Highlight;
     --toolbar-icon-opacity: 1;
     --toolbar-icon-bg-color: ButtonText;
@@ -150,9 +161,6 @@
     --doorhanger-hover-color: ButtonFace;
     --doorhanger-border-color-whcm: 1px solid ButtonText;
     --doorhanger-triangle-opacity-whcm: 0;
-    --dialog-button-border: 1px solid Highlight;
-    --dialog-button-hover-bg-color: Highlight;
-    --dialog-button-hover-color: ButtonFace;
     --dropdown-btn-border: 1px solid ButtonText;
     --field-border-color: ButtonText;
     --main-color: CanvasText;
@@ -413,42 +421,12 @@ body {
   }
 }
 
-.dialogButton {
-  border: none;
-  background: none;
-  width: 28px;
-  height: 28px;
-  outline: none;
-}
-
-.dialogButton:is(:hover, :focus-visible) {
-  background-color: var(--dialog-button-hover-bg-color);
-}
-
-.dialogButton:is(:hover, :focus-visible) > span {
-  color: var(--dialog-button-hover-color);
-}
-
 .splitToolbarButtonSeparator {
   float: inline-start;
   width: 0;
   height: 62%;
   border-left: 1px solid var(--separator-color);
   border-right: none;
-}
-
-.dialogButton {
-  min-width: 16px;
-  margin: 2px 1px;
-  padding: 2px 6px 0;
-  border: none;
-  border-radius: 2px;
-  color: var(--main-color);
-  font-size: 12px;
-  line-height: 14px;
-  user-select: none;
-  cursor: default;
-  box-sizing: border-box;
 }
 
 #viewsManagerToggleButton::before {
@@ -646,15 +624,6 @@ body {
   }
 }
 
-.dialogButton {
-  width: auto;
-  margin: 3px 4px 2px !important;
-  padding: 2px 11px;
-  color: var(--main-color);
-  background-color: var(--dialog-button-bg-color);
-  border: var(--dialog-button-border) !important;
-}
-
 dialog {
   margin: auto;
   padding: 15px;
@@ -665,7 +634,7 @@ dialog {
   line-height: 14px;
   background-color: var(--doorhanger-bg-color);
   border: 1px solid rgb(0 0 0 / 0.5);
-  border-radius: 4px;
+  border-radius: var(--border-radius-medium, 4px);
   box-shadow: 0 1px 4px rgb(0 0 0 / 0.3);
 }
 
@@ -695,8 +664,10 @@ dialog .separator {
 }
 
 dialog .buttonRow {
-  text-align: center;
-  vertical-align: middle;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
 }
 
 dialog :link {

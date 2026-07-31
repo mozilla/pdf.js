@@ -1,0 +1,247 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
+ * Shared button primitive: .primaryButton / .secondaryButton, for any button in
+ * the viewer and not only those inside a .dialog. The colors consume Firefox
+ * design tokens with the shipped literal as a fallback (see pdf_viewer.css).
+ */
+
+:root {
+  --button-primary-bg-color: var(
+    --button-background-color-primary,
+    light-dark(#0060df, #0df)
+  );
+  --button-primary-fg-color: var(
+    --button-text-color-primary,
+    light-dark(#fbfbfe, #15141a)
+  );
+  --button-primary-border-color: var(--button-primary-bg-color);
+  --button-primary-active-bg-color: var(
+    --button-background-color-primary-active,
+    light-dark(#054096, #aaf2ff)
+  );
+  --button-primary-active-fg-color: var(--button-primary-fg-color);
+  --button-primary-active-border-color: var(--button-primary-active-bg-color);
+  --button-primary-hover-bg-color: var(
+    --button-background-color-primary-hover,
+    light-dark(#0250bb, #80ebff)
+  );
+  --button-primary-hover-fg-color: var(--button-primary-fg-color);
+  --button-primary-hover-border-color: var(--button-primary-hover-bg-color);
+  --button-primary-disabled-bg-color: var(--button-primary-bg-color);
+  --button-primary-disabled-border-color: var(--button-primary-border-color);
+  --button-primary-disabled-fg-color: var(--button-primary-fg-color);
+
+  --button-secondary-bg-color: var(
+    --button-background-color,
+    light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
+  );
+  --button-secondary-fg-color: var(--text-color, light-dark(#15141a, #fbfbfe));
+  /* Firefox's outline-style secondary button has a transparent fill and carries
+     the edge on --button-border-color; the fallback matches the fill instead,
+     since the shipped one is a translucent overlay. */
+  --button-secondary-border-color: var(
+    --button-border-color,
+    var(--button-secondary-bg-color)
+  );
+  --button-secondary-active-bg-color: var(
+    --button-background-color-active,
+    light-dark(rgb(21 20 26 / 0.21), rgb(251 251 254 / 0.21))
+  );
+  --button-secondary-active-fg-color: var(--button-secondary-fg-color);
+  --button-secondary-active-border-color: var(--button-secondary-bg-color);
+  --button-secondary-hover-bg-color: var(
+    --button-background-color-hover,
+    light-dark(rgb(21 20 26 / 0.14), rgb(251 251 254 / 0.14))
+  );
+  --button-secondary-hover-fg-color: var(--button-secondary-fg-color);
+  --button-secondary-hover-border-color: var(--button-secondary-hover-bg-color);
+  --button-secondary-disabled-bg-color: var(--button-secondary-bg-color);
+  --button-secondary-disabled-border-color: var(
+    --button-secondary-border-color
+  );
+  --button-secondary-disabled-fg-color: var(--button-secondary-fg-color);
+  --button-disabled-opacity: 0.4;
+  --hover-filter: brightness(0.9);
+
+  @media (prefers-color-scheme: dark) {
+    --button-disabled-opacity: 0.6;
+    --hover-filter: brightness(1.4);
+  }
+
+  @media screen and (forced-colors: active) {
+    --button-primary-bg-color: var(
+      --button-background-color-primary,
+      ButtonText
+    );
+    --button-primary-fg-color: var(--button-text-color-primary, ButtonFace);
+    --button-primary-border-color: var(
+      --button-border-color-primary,
+      ButtonText
+    );
+    --button-primary-active-bg-color: var(
+      --button-background-color-primary-active,
+      SelectedItem
+    );
+    --button-primary-active-fg-color: var(
+      --button-text-color-primary-active,
+      HighlightText
+    );
+    --button-primary-active-border-color: var(
+      --button-border-color-primary-active,
+      ButtonText
+    );
+    --button-primary-hover-bg-color: var(
+      --button-background-color-primary-hover,
+      SelectedItem
+    );
+    --button-primary-hover-fg-color: var(
+      --button-text-color-primary-hover,
+      HighlightText
+    );
+    --button-primary-hover-border-color: var(
+      --button-border-color-primary-hover,
+      SelectedItem
+    );
+    --button-primary-disabled-bg-color: var(
+      --button-background-color-primary-disabled,
+      GrayText
+    );
+    --button-primary-disabled-fg-color: var(
+      --button-text-color-primary-disabled,
+      ButtonFace
+    );
+    --button-primary-disabled-border-color: var(
+      --button-border-color-primary-disabled,
+      GrayText
+    );
+
+    --button-secondary-bg-color: var(--button-background-color, ButtonFace);
+    --button-secondary-fg-color: var(--button-text-color, ButtonText);
+    --button-secondary-border-color: var(--button-border-color, ButtonText);
+    --button-secondary-active-bg-color: var(
+      --button-background-color-active,
+      HighlightText
+    );
+    --button-secondary-active-fg-color: var(
+      --button-text-color-active,
+      SelectedItem
+    );
+    --button-secondary-active-border-color: var(
+      --button-border-color-active,
+      ButtonText
+    );
+    --button-secondary-hover-bg-color: var(
+      --button-background-color-hover,
+      HighlightText
+    );
+    --button-secondary-hover-fg-color: var(
+      --button-text-color-hover,
+      SelectedItem
+    );
+    --button-secondary-hover-border-color: var(
+      --button-border-color-hover,
+      SelectedItem
+    );
+    --button-secondary-disabled-fg-color: var(
+      --button-text-color-disabled,
+      GrayText
+    );
+    --button-secondary-disabled-border-color: var(
+      --button-border-color-disabled,
+      GrayText
+    );
+    --button-disabled-opacity: 1;
+    --hover-filter: none;
+  }
+}
+
+.primaryButton,
+.secondaryButton {
+  border-radius: var(--button-border-radius, 4px);
+  border: 1px solid;
+  font: menu;
+  font-weight: var(--button-font-weight, 590);
+  font-size: var(--button-font-size, 13px);
+  padding: var(--button-padding, 4px 16px);
+  width: auto;
+  min-height: var(--button-min-height, 32px);
+
+  &:hover {
+    cursor: pointer;
+    filter: var(--hover-filter);
+  }
+
+  > span {
+    color: inherit;
+    font: inherit;
+  }
+
+  &:disabled {
+    pointer-events: none;
+  }
+}
+
+.primaryButton {
+  color: var(--button-primary-fg-color);
+  background-color: var(--button-primary-bg-color);
+  border-color: var(--button-primary-border-color);
+  opacity: 1;
+
+  &:hover {
+    color: var(--button-primary-hover-fg-color);
+    background-color: var(--button-primary-hover-bg-color);
+    border-color: var(--button-primary-hover-border-color);
+  }
+
+  &:active {
+    color: var(--button-primary-active-fg-color);
+    background-color: var(--button-primary-active-bg-color);
+    border-color: var(--button-primary-active-border-color);
+  }
+
+  &:disabled {
+    background-color: var(--button-primary-disabled-bg-color);
+    border-color: var(--button-primary-disabled-border-color);
+    color: var(--button-primary-disabled-fg-color);
+    opacity: var(--button-disabled-opacity);
+  }
+}
+
+.secondaryButton {
+  color: var(--button-secondary-fg-color);
+  background-color: var(--button-secondary-bg-color);
+  border-color: var(--button-secondary-border-color);
+
+  &:hover {
+    color: var(--button-secondary-hover-fg-color);
+    background-color: var(--button-secondary-hover-bg-color);
+    border-color: var(--button-secondary-hover-border-color);
+  }
+
+  &:active {
+    color: var(--button-secondary-active-fg-color);
+    background-color: var(--button-secondary-active-bg-color);
+    border-color: var(--button-secondary-active-border-color);
+  }
+
+  &:disabled {
+    background-color: var(--button-secondary-disabled-bg-color);
+    border-color: var(--button-secondary-disabled-border-color);
+    color: var(--button-secondary-disabled-fg-color);
+    opacity: var(--button-disabled-opacity);
+  }
+}

@@ -15,8 +15,16 @@
 
 :root {
   --clear-signature-button-icon: url(images/editor-toolbar-delete.svg);
-  --signature-bg: light-dark(#f9f9fb, #2b2a33);
-  --signature-hover-bg: light-dark(#f0f0f4, var(--signature-bg));
+  /* The signature wells are boxes nested in the dialog, i.e. Firefox's
+     .info-box-container pattern. */
+  --signature-bg: var(
+    --background-color-box-info,
+    light-dark(#f9f9fb, #2b2a33)
+  );
+  --signature-hover-bg: var(
+    --button-background-color-hover,
+    light-dark(#f0f0f4, var(--signature-bg))
+  );
   --button-signature-bg: transparent;
   --button-signature-color: var(--main-color);
   --button-signature-active-bg: light-dark(#cfcfd8, #5b5b66);
@@ -41,13 +49,13 @@
 
 .signatureDialog {
   --primary-color: var(--text-primary-color);
-  --border-color: #8f8f9d;
+  --signature-border-color: var(--border-color-interactive, #8f8f9d);
   --open-link-fg: var(--link-fg-color);
   --open-link-hover-fg: var(--link-hover-fg-color);
 
   @media screen and (forced-colors: active) {
     --primary-color: ButtonText;
-    --border-color: ButtonText;
+    --signature-border-color: var(--border-color-interactive, ButtonText);
     --open-link-fg: ButtonText;
     --open-link-hover-fg: ButtonText;
   }
@@ -88,11 +96,11 @@
 
     > input {
       width: 100%;
-      height: 32px;
+      height: var(--size-item-large, 32px);
       padding-inline: 8px calc(4px + var(--button-dimension));
       box-sizing: border-box;
-      border-radius: 4px;
-      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-small, 4px);
+      border: 1px solid var(--signature-border-color);
     }
 
     .clearInputButton {
@@ -113,11 +121,17 @@
 
 #addSignatureDialog {
   --secondary-color: var(--text-secondary-color);
-  --bg-hover: #e0e0e6;
-  --tab-top-line-active-color: #0060df;
+  --bg-hover: var(
+    --button-background-color-hover,
+    light-dark(#e0e0e6, #52525e)
+  );
+  --tab-top-line-active-color: var(
+    --color-accent-primary,
+    light-dark(#0060df, #0df)
+  );
   --tab-top-line-active-hover-color: var(--tab-text-hover-color);
-  --tab-top-line-hover-color: #8f8f9d;
-  --tab-top-line-inactive-color: #cfcfd8;
+  --tab-top-line-hover-color: var(--border-color-interactive, #8f8f9d);
+  --tab-top-line-inactive-color: light-dark(#cfcfd8, #8f8f9d);
   --tab-bottom-line-active-color: var(--tab-top-line-inactive-color);
   --tab-bottom-line-hover-color: var(--tab-top-line-inactive-color);
   --tab-bottom-line-inactive-color: var(--tab-top-line-inactive-color);
@@ -126,7 +140,7 @@
   --tab-bg-active-hover-color: var(--bg-hover);
   --tab-bg-hover: var(--bg-hover);
   --tab-panel-border: none;
-  --tab-panel-border-radius: 4px;
+  --tab-panel-border-radius: var(--border-radius-small, 4px);
   --tab-text-color: var(--primary-color);
   --tab-text-active-color: var(--tab-top-line-active-color);
   --tab-text-active-hover-color: var(--tab-text-hover-color);
@@ -134,24 +148,6 @@
   --signature-placeholder-color: var(--secondary-color);
   --signature-draw-placeholder-color: var(--primary-color);
   --signature-color: var(--primary-color);
-  --clear-signature-button-border-width: 0;
-  --clear-signature-button-border-style: solid;
-  --clear-signature-button-border-color: transparent;
-  --clear-signature-button-border-disabled-color: transparent;
-  --clear-signature-button-color: var(--primary-color);
-  --clear-signature-button-hover-color: var(--clear-signature-button-color);
-  --clear-signature-button-active-color: var(--clear-signature-button-color);
-  --clear-signature-button-disabled-color: var(--clear-signature-button-color);
-  --clear-signature-button-focus-color: var(--clear-signature-button-color);
-  --clear-signature-button-bg: var(--dialog-bg-color);
-  --clear-signature-button-bg-hover: var(--bg-hover);
-  --clear-signature-button-bg-active: #cfcfd8;
-  --clear-signature-button-bg-focus: #f0f0f4;
-  --clear-signature-button-bg-disabled: color-mix(
-    in srgb,
-    #f0f0f4,
-    transparent 40%
-  );
   --save-warning-color: var(--secondary-color);
   --thickness-bg: var(--dialog-bg-color);
   --thickness-label-color: var(--primary-color);
@@ -159,30 +155,13 @@
   --thickness-border: none;
   --draw-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
 
-  @media (prefers-color-scheme: dark) {
-    /* TODO: Update the dialog colors for dark mode but in dialog.css */
-    --dialog-bg-color: #42414d;
-    --bg-hover: #52525e;
-    --primary-color: #fbfbfe;
-    --secondary-color: #cfcfd8;
-    --tab-top-line-active-color: #0df;
-    --tab-top-line-inactive-color: #8f8f9d;
-    --clear-signature-button-bg-active: #5b5b66;
-    --clear-signature-button-bg-focus: #2b2a33;
-    --clear-signature-button-bg-disabled: color-mix(
-      in srgb,
-      #2b2a33,
-      transparent 40%
-    );
-  }
-
   @media screen and (forced-colors: active) {
     --secondary-color: ButtonText;
     --bg: HighlightText;
     --bg-hover: var(--bg);
-    --tab-top-line-active-color: ButtonText;
+    --tab-top-line-active-color: var(--color-accent-primary, ButtonText);
     --tab-top-line-active-hover-color: HighlightText;
-    --tab-top-line-hover-color: SelectedItem;
+    --tab-top-line-hover-color: var(--border-color-interactive, SelectedItem);
     --tab-top-line-inactive-color: ButtonText;
     --tab-bottom-line-active-color: var(--tab-top-line-active-color);
     --tab-bottom-line-hover-color: var(--tab-top-line-hover-color);
@@ -196,24 +175,10 @@
     --tab-text-active-hover-color: HighlightText;
     --tab-text-hover-color: SelectedItem;
     --signature-color: ButtonText;
-    --clear-signature-button-border-width: 1px;
-    --clear-signature-button-border-style: solid;
-    --clear-signature-button-border-color: ButtonText;
-    --clear-signature-button-border-disabled-color: GrayText;
-    --clear-signature-button-color: ButtonText;
-    --clear-signature-button-hover-color: HighlightText;
-    --clear-signature-button-active-color: SelectedItem;
-    --clear-signature-button-focus-color: CanvasText;
-    --clear-signature-button-disabled-color: GrayText;
-    --clear-signature-button-bg: var(--bg);
-    --clear-signature-button-bg-hover: SelectedItem;
-    --clear-signature-button-bg-active: var(--bg);
-    --clear-signature-button-bg-focus: var(--bg);
-    --clear-signature-button-bg-disabled: var(--bg);
     --thickness-bg: Canvas;
     --thickness-label-color: CanvasText;
     --thickness-slider-color: ButtonText;
-    --thickness-border: 1px solid var(--border-color);
+    --thickness-border: 1px solid var(--signature-border-color);
   }
 
   #addSignatureDialogLabel {
@@ -533,14 +498,7 @@
 
           #clearSignatureButton {
             display: flex;
-            height: 32px;
-            padding: 4px 8px;
             align-items: center;
-            background-color: var(--clear-signature-button-bg);
-            border-width: var(--clear-signature-button-border-width);
-            border-style: var(--clear-signature-button-border-style);
-            border-color: var(--clear-signature-button-border-color);
-            border-radius: 4px;
 
             > span {
               display: flex;
@@ -549,8 +507,6 @@
               gap: 4px;
               flex-shrink: 0;
 
-              color: var(--clear-signature-button-color);
-
               &::after {
                 content: "";
                 display: inline-block;
@@ -558,55 +514,8 @@
                 height: 16px;
                 mask-image: var(--clear-signature-button-icon);
                 mask-size: cover;
-                background-color: var(--clear-signature-button-color);
+                background-color: currentColor;
                 flex-shrink: 0;
-              }
-            }
-
-            &:hover {
-              background-color: var(--clear-signature-button-bg-hover);
-
-              > span {
-                color: var(--clear-signature-button-hover-color);
-                &::after {
-                  background-color: var(--clear-signature-button-hover-color);
-                }
-              }
-            }
-
-            &:active {
-              background-color: var(--clear-signature-button-bg-active);
-
-              > span {
-                color: var(--clear-signature-button-active-color);
-                &::after {
-                  background-color: var(--clear-signature-button-active-color);
-                }
-              }
-            }
-
-            &:focus-visible {
-              background-color: var(--clear-signature-button-bg-focus);
-
-              > span {
-                color: var(--clear-signature-button-focus-color);
-                &::after {
-                  background-color: var(--clear-signature-button-focus-color);
-                }
-              }
-            }
-
-            &:disabled {
-              background-color: var(--clear-signature-button-bg-disabled);
-              border-color: var(--clear-signature-button-border-disabled-color);
-
-              > span {
-                color: var(--clear-signature-button-disabled-color);
-                &::after {
-                  background-color: var(
-                    --clear-signature-button-disabled-color
-                  );
-                }
               }
             }
           }
