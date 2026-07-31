@@ -628,39 +628,43 @@ describe("document", function () {
       const kid2BisRef = Ref.get(266, 0);
       const parentRef = Ref.get(358, 0);
 
-      const allFields = Object.create(null);
+      const allFieldsObj = Object.create(null);
       for (const name of ["parent", "kid1", "kid2", "kid11"]) {
         const buttonWidgetDict = new Dict();
         buttonWidgetDict.set("Type", Name.get("Annot"));
         buttonWidgetDict.set("Subtype", Name.get("Widget"));
         buttonWidgetDict.set("FT", Name.get("Btn"));
         buttonWidgetDict.set("T", name);
-        allFields[name] = buttonWidgetDict;
+        allFieldsObj[name] = buttonWidgetDict;
       }
 
-      allFields.kid1.set("Kids", [kid11Ref]);
-      allFields.parent.set("Kids", [kid1Ref, kid2Ref, kid2BisRef]);
+      allFieldsObj.kid1.set("Kids", [kid11Ref]);
+      allFieldsObj.parent.set("Kids", [kid1Ref, kid2Ref, kid2BisRef]);
 
       const xref = new XRefMock([
-        { ref: parentRef, data: allFields.parent },
-        { ref: kid1Ref, data: allFields.kid1 },
-        { ref: kid11Ref, data: allFields.kid11 },
-        { ref: kid2Ref, data: allFields.kid2 },
-        { ref: kid2BisRef, data: allFields.kid2 },
+        { ref: parentRef, data: allFieldsObj.parent },
+        { ref: kid1Ref, data: allFieldsObj.kid1 },
+        { ref: kid11Ref, data: allFieldsObj.kid11 },
+        { ref: kid2Ref, data: allFieldsObj.kid2 },
+        { ref: kid2BisRef, data: allFieldsObj.kid2 },
       ]);
 
       acroForm.set("Fields", [parentRef]);
       pdfDocument = getDocument(acroForm, xref);
-      fields = (await pdfDocument.fieldObjects).allFields;
 
-      for (const [name, objs] of Object.entries(fields)) {
-        fields[name] = objs.map(obj => obj.id);
-      }
+      const { allFields, orphanFields } = await pdfDocument.fieldObjects;
 
-      expect(fields["parent.kid1"]).toEqual(["314R"]);
-      expect(fields["parent.kid1.kid11"]).toEqual(["159R"]);
-      expect(fields["parent.kid2"]).toEqual(["265R", "266R"]);
-      expect(fields.parent).toEqual(["358R"]);
+      const objIds = Array.from(allFields.entries(), ([name, objs]) => [
+        name,
+        objs.map(obj => obj.id),
+      ]);
+      expect(objIds).toEqual([
+        ["parent", ["358R"]],
+        ["parent.kid1", ["314R"]],
+        ["parent.kid1.kid11", ["159R"]],
+        ["parent.kid2", ["265R", "266R"]],
+      ]);
+      expect(orphanFields.size).toEqual(3);
     });
 
     it("should get field objects with a circular `Parent` chain", async function () {
@@ -693,9 +697,14 @@ describe("document", function () {
       acroForm.set("Fields", [widgetRef]);
       const pdfDocument = getDocument(acroForm, xref);
 
-      const { allFields } = await pdfDocument.fieldObjects;
-      expect(Object.keys(allFields)).toEqual([""]);
-      expect(allFields[""].map(obj => obj.id)).toEqual(["1R"]);
+      const { allFields, orphanFields } = await pdfDocument.fieldObjects;
+
+      const objIds = Array.from(allFields.entries(), ([name, objs]) => [
+        name,
+        objs.map(obj => obj.id),
+      ]);
+      expect(objIds).toEqual([["", ["1R"]]]);
+      expect(orphanFields.size).toEqual(0);
     });
 
     it("should check if fields have any actions", async function () {

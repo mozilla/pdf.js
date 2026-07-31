@@ -14,7 +14,7 @@
  */
 
 import { makeArr, makeMap, serializeError } from "./app_utils.js";
-import { createActionsMap } from "./common.js";
+import { createMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
@@ -98,7 +98,7 @@ class Doc extends PDFObject {
 
     this._zoomType = ZoomType.none;
     this._zoom = data.zoom || 100;
-    this._actions = createActionsMap(data.actions);
+    this._actions = createMap(data.actions);
     this._globalEval = data.globalEval;
     this._userActivation = false;
     this._disablePrinting = false;
@@ -174,7 +174,7 @@ class Doc extends PDFObject {
     if (name === "PageOpen") {
       this.#pageActions ??= new Map();
       this.#pageActions.getOrInsertComputed(pageNumber, () =>
-        createActionsMap(actions)
+        createMap(actions)
       );
       this._pageNum = pageNumber - 1;
     }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { createActionsMap, FieldType, getFieldType } from "./common.js";
+import { createMap, FieldType, getFieldType } from "./common.js";
 import { makeArr, serializeError } from "./app_utils.js";
 import { Color } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
@@ -65,7 +65,7 @@ class Field extends PDFObject {
     this.userName = data.userName;
 
     // Private
-    this._actions = createActionsMap(data.actions);
+    this._actions = createMap(data.actions);
     this._browseForFileToSubmit = data.browseForFileToSubmit || null;
     this._buttonCaption = null;
     this._buttonIcon = null;
@@ -578,7 +578,7 @@ class RadioButtonField extends Field {
     for (const radioData of otherButtons) {
       this.exportValues.push(radioData.exportValues);
       this._radioIds.push(radioData.id);
-      this._radioActions.push(createActionsMap(radioData.actions));
+      this._radioActions.push(createMap(radioData.actions));
       if (this._value === radioData.exportValues) {
         this._id = radioData.id;
       }

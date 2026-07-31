@@ -2028,56 +2028,64 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const fieldObjects = await pdfDoc.getFieldObjects();
 
-      expect(fieldObjects).toEqual({
-        Text1: [
-          {
-            id: "25R",
-            value: "",
-            defaultValue: "",
-            multiline: false,
-            password: false,
-            charLimit: 0,
-            comb: false,
-            editable: true,
-            hidden: false,
-            name: "Text1",
-            rect: [24.1789, 719.66, 432.22, 741.66],
-            actions: null,
-            page: 0,
-            strokeColor: null,
-            fillColor: null,
-            rotation: 0,
-            datetimeFormat: undefined,
-            hasDatetimeHTML: false,
-            type: "text",
-          },
-        ],
-        Button1: [
-          {
-            id: "26R",
-            value: "Off",
-            defaultValue: null,
-            exportValues: undefined,
-            editable: true,
-            name: "Button1",
-            rect: [455.436, 719.678, 527.436, 739.678],
-            hidden: false,
-            actions: new Map([
-              [
-                "Action",
-                [
-                  `this.getField("Text1").value = this.info.authors.join("::");`,
-                ],
-              ],
-            ]),
-            page: 0,
-            strokeColor: null,
-            fillColor: new Uint8ClampedArray([192, 192, 192]),
-            rotation: 0,
-            type: "button",
-          },
-        ],
-      });
+      expect(fieldObjects).toEqual(
+        new Map([
+          [
+            "Text1",
+            [
+              {
+                id: "25R",
+                value: "",
+                defaultValue: "",
+                multiline: false,
+                password: false,
+                charLimit: 0,
+                comb: false,
+                editable: true,
+                hidden: false,
+                name: "Text1",
+                rect: [24.1789, 719.66, 432.22, 741.66],
+                actions: null,
+                page: 0,
+                strokeColor: null,
+                fillColor: null,
+                rotation: 0,
+                datetimeFormat: undefined,
+                hasDatetimeHTML: false,
+                type: "text",
+              },
+            ],
+          ],
+          [
+            "Button1",
+            [
+              {
+                id: "26R",
+                value: "Off",
+                defaultValue: null,
+                exportValues: undefined,
+                editable: true,
+                name: "Button1",
+                rect: [455.436, 719.678, 527.436, 739.678],
+                hidden: false,
+                actions: new Map([
+                  [
+                    "Action",
+                    [
+                      `this.getField("Text1").value = this.info.authors.join("::");`,
+                    ],
+                  ],
+                ]),
+                page: 0,
+                strokeColor: null,
+                fillColor: new Uint8ClampedArray([192, 192, 192]),
+                rotation: 0,
+                type: "button",
+              },
+            ],
+          ],
+        ])
+      );
 
       await loadingTask.destroy();
     });
@@ -2087,8 +2095,8 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const fieldObjects = await pdfDoc.getFieldObjects();
 
-      for (const name in fieldObjects) {
-        const pageIndexes = fieldObjects[name].map(o => o.page);
+      for (const [name, objs] of fieldObjects) {
+        const pageIndexes = objs.map(o => o.page);
         let expected;
 
         switch (name) {
@@ -7758,9 +7766,12 @@ small scripts as well as for`);
 
         loadingTask = getDocument({ data: extracted });
         pdfDoc = await loadingTask.promise;
-        expect(Object.keys(await pdfDoc.getFieldObjects())).toEqual(["group"]);
+
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()]).toEqual(["group"]);
         const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
         expect(annotations[0].fieldName).toEqual("group");
+
         await loadingTask.destroy();
       });
 
@@ -7788,7 +7799,10 @@ small scripts as well as for`);
 
         loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
-        expect(Object.keys(await pdfDoc.getFieldObjects())).toEqual(["field"]);
+
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()]).toEqual(["field"]);
+
         await loadingTask.destroy();
       });
 
@@ -7846,9 +7860,10 @@ small scripts as well as for`);
 
         loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
-        expect(Object.keys(await pdfDoc.getFieldObjects())).toEqual([
-          "signature",
-        ]);
+
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()]).toEqual(["signature"]);
+
         await loadingTask.destroy();
       });
 
@@ -7894,7 +7909,7 @@ small scripts as well as for`);
         // reflects the T entries of the fields in the AcroForm dictionary.
         const fieldObjects = await pdfDoc.getFieldObjects();
         expect(fieldObjects).not.toBeNull();
-        expect(Object.keys(fieldObjects).sort()).toEqual(origFieldNames);
+        expect([...fieldObjects.keys()].sort()).toEqual(origFieldNames);
 
         await loadingTask.destroy();
       });
@@ -7952,7 +7967,7 @@ small scripts as well as for`);
         const allOrigFieldNames = [
           ...new Set([...origPage1FieldNames, ...origPage2FieldNames]),
         ].sort();
-        expect(Object.keys(fieldObjects).sort()).toEqual(allOrigFieldNames);
+        expect([...fieldObjects.keys()].sort()).toEqual(allOrigFieldNames);
 
         await loadingTask.destroy();
       });
@@ -7964,9 +7979,8 @@ small scripts as well as for`);
         let pdfDoc = await loadingTask.promise;
 
         expect(await pdfDoc.getCalculationOrderIds()).toEqual(["6R"]);
-        expect(Object.keys((await pdfDoc.getFieldObjects()) || {})).toEqual([
-          "group",
-        ]);
+        const fieldObjects1 = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects1.keys()]).toEqual(["group"]);
 
         const data = await pdfDoc.extractPages([{ document: null }]);
         await loadingTask.destroy();
@@ -7978,9 +7992,8 @@ small scripts as well as for`);
         expect(Array.isArray(calculationOrder)).toBeTrue();
         expect(calculationOrder.length).toEqual(1);
         expect(calculationOrder[0]).not.toEqual("6R");
-        expect(Object.keys((await pdfDoc.getFieldObjects()) || {})).toEqual([
-          "group",
-        ]);
+        const fieldObjects2 = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects2.keys()]).toEqual(["group"]);
 
         await loadingTask.destroy();
       });
@@ -8023,9 +8036,9 @@ small scripts as well as for`);
         loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(2);
-        expect(
-          Object.keys((await pdfDoc.getFieldObjects()) ?? {}).sort()
-        ).toEqual(["first", "second"]);
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()].sort()).toEqual(["first", "second"]);
+
         for (const pageNumber of [1, 2]) {
           const fontName = await getAppearanceFontName(pdfDoc, pageNumber);
           expect(fontName).not.toBeNull();
@@ -8064,9 +8077,9 @@ small scripts as well as for`);
         loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(2);
-        expect(
-          Object.keys((await pdfDoc.getFieldObjects()) ?? {}).sort()
-        ).toEqual(["broken", "main"]);
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()].sort()).toEqual(["broken", "main"]);
+
         const fontName = await getAppearanceFontName(pdfDoc, 2);
         expect(fontName).not.toBeNull();
         expect(fontName).not.toEqual("g_font_error");
@@ -8109,9 +8122,9 @@ small scripts as well as for`);
         loadingTask = getDocument({ data });
         pdfDoc = await loadingTask.promise;
         expect(pdfDoc.numPages).toEqual(2);
-        expect(
-          Object.keys((await pdfDoc.getFieldObjects()) ?? {}).sort()
-        ).toEqual(["check", "main"]);
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()].sort()).toEqual(["check", "main"]);
+
         const fontName = await getAppearanceFontName(pdfDoc, 2);
         expect(fontName).not.toBeNull();
         expect(fontName).not.toEqual("g_font_error");
