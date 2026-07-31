@@ -261,7 +261,7 @@ pdfjs-find-match-count =
 #   $limit (Number) - the maximum number of matches
 pdfjs-find-match-count-limit =
     { $limit ->
-        [one] Più di una { $limit } corrispondenza
+        [one] Più di { $limit } corrispondenza
        *[other] Più di { $limit } corrispondenze
     }
 pdfjs-find-not-found = Testo non trovato

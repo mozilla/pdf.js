@@ -162,8 +162,8 @@ pdfjs-print-progress-message = Preparando documento para impresión…
 #   $progress (Number) - percent value
 pdfjs-print-progress-percent = { $progress }%
 pdfjs-print-progress-close-button = Cancelar
-pdfjs-printing-not-supported = Advertencia: La impresión no esta completamente soportada por este navegador.
-pdfjs-printing-not-ready = Advertencia: El PDF no cargo completamente para impresión.
+pdfjs-printing-not-supported = Advertencia: La impresión no está completamente soportada por este navegador.
+pdfjs-printing-not-ready = Advertencia: El PDF no cargó completamente para impresión.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
@@ -266,7 +266,7 @@ pdfjs-page-landmark =
 ## Loading indicator messages
 
 pdfjs-loading-error = Un error ocurrió al cargar el PDF.
-pdfjs-invalid-file-error = Archivo PDF invalido o dañado.
+pdfjs-invalid-file-error = Archivo PDF inválido o dañado.
 pdfjs-missing-file-error = Archivo PDF no encontrado.
 pdfjs-unexpected-response-error = Respuesta inesperada del servidor.
 pdfjs-rendering-error = Un error ocurrió al renderizar la página.
@@ -361,7 +361,7 @@ pdfjs-editor-remove-signature-button =
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Tamaño
 pdfjs-editor-ink-color-input = Color
-pdfjs-editor-ink-thickness-input = Grossor
+pdfjs-editor-ink-thickness-input = Grosor
 pdfjs-editor-ink-opacity-input = Opacidad
 pdfjs-editor-stamp-add-image-button =
     .title = Agregar imagen
@@ -581,7 +581,7 @@ pdfjs-editor-add-signature-type-input =
     .aria-label = Escribe tu firma
     .placeholder = Escribe tu firma
 pdfjs-editor-add-signature-draw-placeholder = Dibuja tu firma
-pdfjs-editor-add-signature-draw-thickness-range-label = Grossor
+pdfjs-editor-add-signature-draw-thickness-range-label = Grosor
 # Variables:
 #   $thickness (Number) - the thickness (in pixels) of the line used to draw a signature.
 pdfjs-editor-add-signature-draw-thickness-range =
@@ -698,15 +698,15 @@ pdfjs-views-manager-status-undo-cut-label =
 #   $count (Number) - the number of selected pages to be copied.
 pdfjs-views-manager-pages-status-undo-copy-label =
     { $count ->
-        [one] 1 pagina copiada
-       *[other] { $count } paginas copiadas
+        [one] 1 página copiada
+       *[other] { $count } páginas copiadas
     }
 # Variables:
 #   $count (Number) - the number of selected pages to be deleted.
 pdfjs-views-manager-pages-status-undo-delete-label =
     { $count ->
-        [one] 1 pagina eliminada
-       *[other] { $count } paginas eliminadas
+        [one] 1 página eliminada
+       *[other] { $count } páginas eliminadas
     }
 pdfjs-views-manager-pages-status-waiting-ready-label = Preparando tu archivo…
 pdfjs-views-manager-pages-status-waiting-uploading-label = Subiendo archivo…

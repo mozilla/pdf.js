@@ -132,8 +132,8 @@ pdfjs-document-properties-page-size-orientation-portrait = pokončno
 pdfjs-document-properties-page-size-orientation-landscape = ležeče
 pdfjs-document-properties-page-size-name-a-three = A3
 pdfjs-document-properties-page-size-name-a-four = A4
-pdfjs-document-properties-page-size-name-letter = Pismo
-pdfjs-document-properties-page-size-name-legal = Pravno
+pdfjs-document-properties-page-size-name-letter = Letter
+pdfjs-document-properties-page-size-name-legal = Legal
 
 ## Variables:
 ##   $width (Number) - the width of the (current) page

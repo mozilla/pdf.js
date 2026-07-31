@@ -67,8 +67,8 @@ pdfjs-page-rotate-cw-button =
     .title = Im Uhrzeigersinn drehen
 pdfjs-page-rotate-cw-button-label = Im Uhrzeigersinn drehen
 pdfjs-page-rotate-ccw-button =
-    .title = Gegen Uhrzeigersinn drehen
-pdfjs-page-rotate-ccw-button-label = Gegen Uhrzeigersinn drehen
+    .title = Gegen den Uhrzeigersinn drehen
+pdfjs-page-rotate-ccw-button-label = Gegen den Uhrzeigersinn drehen
 pdfjs-cursor-text-select-tool-button =
     .title = Textauswahl-Werkzeug aktivieren
 pdfjs-cursor-text-select-tool-button-label = Textauswahl-Werkzeug
@@ -299,7 +299,7 @@ pdfjs-rendering-error = Beim Darstellen der Seite trat ein Fehler auf.
 # (32000-1:2008 Table 169 – Annotation types).
 # Some common types are e.g.: "Check", "Text", "Comment", "Note"
 pdfjs-text-annotation-type =
-    .alt = [Anlage: { $type }]
+    .alt = [{ $type } Anmerkung]
 # Variables:
 #   $dateObj (Date) - the modification date and time of the annotation
 pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
@@ -626,7 +626,7 @@ pdfjs-editor-add-signature-save-checkbox = Unterschrift speichern
 pdfjs-editor-add-signature-save-warning-message = Sie haben die Grenze von 5 gespeicherten Unterschriften erreicht. Entfernen Sie eine, um weitere zu speichern.
 pdfjs-editor-add-signature-image-upload-error-title = Grafik konnte nicht hochgeladen werden
 pdfjs-editor-add-signature-image-upload-error-description = Überprüfen Sie Ihre Netzwerkverbindung, oder versuchen Sie es mit einer anderen Grafik.
-pdfjs-editor-add-signature-image-no-data-error-title = Kann Grafik nicht in eine Signatur umwandeln
+pdfjs-editor-add-signature-image-no-data-error-title = Kann Grafik nicht in eine Unterschrift umwandeln
 pdfjs-editor-add-signature-image-no-data-error-description = Bitte versuchen Sie, eine andere Grafik hochzuladen.
 pdfjs-editor-add-signature-error-close-button = Schließen
 
@@ -730,9 +730,9 @@ pdfjs-views-manager-pages-status-undo-delete-label =
     }
 pdfjs-views-manager-pages-status-waiting-ready-label = Ihre Datei wird vorbereitet…
 pdfjs-views-manager-pages-status-waiting-uploading-label = Datei wird hochgeladen…
-pdfjs-views-manager-status-warning-cut-label = Ausschneiden war nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
+pdfjs-views-manager-status-warning-cut-label = Ausschneiden nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-warning-copy-label = Kopieren nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
-pdfjs-views-manager-status-warning-delete-label = Löschen war nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
+pdfjs-views-manager-status-warning-delete-label = Löschen nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-warning-save-label = Speichern nicht möglich. Aktualisieren Sie die Seite und versuchen Sie es erneut.
 pdfjs-views-manager-status-undo-button-label = Rückgängig
 pdfjs-views-manager-status-done-button-label = Fertig
@@ -824,8 +824,8 @@ pdfjs-digital-signature-properties-certificate-revoked = Zertifikat: Widerrufen
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =
-    .title = Gespeicherte Signatur entfernen
-pdfjs-editor-delete-signature-button-label1 = Gespeicherte Signatur entfernen
+    .title = Gespeicherte Unterschrift entfernen
+pdfjs-editor-delete-signature-button-label1 = Gespeicherte Unterschrift entfernen
 
 ## Editor toolbar
 
