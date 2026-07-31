@@ -4703,6 +4703,38 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("preserves table cell row and column spans (issue 18090)", async function () {
+      const objects = [
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+          "/StructTreeRoot 4 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+          "/MediaBox [0 0 100 100] >>\nendobj\n",
+        "4 0 obj\n<< /Type /StructTreeRoot /K 5 0 R " +
+          "/ParentTree 8 0 R >>\nendobj\n",
+        "5 0 obj\n<< /Type /StructElem /S /Table /P 4 0 R " +
+          "/K 6 0 R >>\nendobj\n",
+        "6 0 obj\n<< /Type /StructElem /S /TR /P 5 0 R " +
+          "/K 7 0 R >>\nendobj\n",
+        "7 0 obj\n<< /Type /StructElem /S /TD /P 6 0 R /Pg 3 0 R /K 0 " +
+          "/A << /O /Table /RowSpan 2 /ColSpan 3 >> >>\nendobj\n",
+        "8 0 obj\n<< /Nums [0 [7 0 R]] >>\nendobj\n",
+      ];
+      const loadingTask = getDocument({ data: assemblePdf(objects) });
+      const pdfDoc = await loadingTask.promise;
+      const tree = await (await pdfDoc.getPage(1)).getStructTree();
+      const cell = tree.children[0].children[0].children[0];
+
+      expect(cell).toEqual({
+        role: "TD",
+        children: [{ type: "content", id: "p3R_mc0" }],
+        rowSpan: 2,
+        colSpan: 3,
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets corrupt structure tree with non-dictionary nodes (issue 18503)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue18503.pdf"));
       const pdfDoc = await loadingTask.promise;

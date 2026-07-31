@@ -928,6 +928,17 @@ class StructTreePage {
         // For example when rendering on the canvas the commands between the
         // beginning and the end of the marked-content sequence, we can
         // compute the overall bbox.
+
+        if (isName(a.get("O"), "Table")) {
+          const rowSpan = a.get("RowSpan");
+          if (Number.isInteger(rowSpan) && rowSpan > 1) {
+            obj.rowSpan = rowSpan;
+          }
+          const colSpan = a.get("ColSpan");
+          if (Number.isInteger(colSpan) && colSpan > 1) {
+            obj.colSpan = colSpan;
+          }
+        }
       }
 
       const lang = node.dict.get("Lang");

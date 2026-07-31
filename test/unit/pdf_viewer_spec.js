@@ -13,9 +13,47 @@
  * limitations under the License.
  */
 
+import { isNodeJS } from "../../src/shared/util.js";
 import { PDFPageViewBuffer } from "../../web/pdf_viewer.js";
+import { StructTreeLayerBuilder } from "../../web/struct_tree_layer_builder.js";
 
 describe("PDFViewer", function () {
+  describe("StructTreeLayerBuilder", function () {
+    it("sets table cell row and column spans (issue 18090)", async function () {
+      if (isNodeJS) {
+        pending("Document is not supported in Node.js.");
+      }
+      const pdfPage = {
+        getStructTree: async () => ({
+          role: "Root",
+          children: [
+            {
+              role: "Table",
+              children: [
+                {
+                  role: "TR",
+                  children: [
+                    {
+                      role: "TD",
+                      children: [],
+                      rowSpan: 2,
+                      colSpan: 3,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        }),
+      };
+      const tree = await new StructTreeLayerBuilder(pdfPage).render();
+      const cell = tree.querySelector('[role="cell"]');
+
+      expect(cell.getAttribute("aria-rowspan")).toEqual("2");
+      expect(cell.getAttribute("aria-colspan")).toEqual("3");
+    });
+  });
+
   describe("PDFPageViewBuffer", function () {
     function createViewsMap(startId, endId) {
       const map = new Map();

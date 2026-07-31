@@ -1292,6 +1292,8 @@ class PDFDocumentProxy {
  *   {@link StructTreeNode} and {@link StructTreeContent} objects.
  * @property {string} role - element's role, already mapped if a role map exists
  * in the PDF.
+ * @property {number} [rowSpan] - The number of rows spanned by a table cell.
+ * @property {number} [colSpan] - The number of columns spanned by a table cell.
  */
 
 /**

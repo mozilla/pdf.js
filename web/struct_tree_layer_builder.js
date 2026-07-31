@@ -242,7 +242,7 @@ class StructTreeLayerBuilder {
   }
 
   #setAttributes(structElement, htmlElement) {
-    const { alt, id, lang } = structElement;
+    const { alt, colSpan, id, lang, rowSpan } = structElement;
     if (alt !== undefined) {
       // Don't add the label in the struct tree layer but on the annotation
       // in the annotation layer.
@@ -268,6 +268,12 @@ class StructTreeLayerBuilder {
         "lang",
         removeNullCharacters(lang, /* replaceInvisible = */ true)
       );
+    }
+    if (rowSpan !== undefined) {
+      htmlElement.setAttribute("aria-rowspan", rowSpan);
+    }
+    if (colSpan !== undefined) {
+      htmlElement.setAttribute("aria-colspan", colSpan);
     }
   }
 
