@@ -1600,13 +1600,10 @@ class PDFViewer {
   }
 
   get #pageWidthScaleFactor() {
-    if (
-      this._spreadMode !== SpreadMode.NONE &&
+    return this._spreadMode !== SpreadMode.NONE &&
       this._scrollMode !== ScrollMode.HORIZONTAL
-    ) {
-      return 2;
-    }
-    return 1;
+      ? 2
+      : 1;
   }
 
   #setScale(value, options) {

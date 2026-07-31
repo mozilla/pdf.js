@@ -154,10 +154,7 @@ class FontFinder {
 
 function selectFont(xfaFont, typeface) {
   if (xfaFont.posture === "italic") {
-    if (xfaFont.weight === "bold") {
-      return typeface.bolditalic;
-    }
-    return typeface.italic;
+    return xfaFont.weight === "bold" ? typeface.bolditalic : typeface.italic;
   } else if (xfaFont.weight === "bold") {
     return typeface.bold;
   }

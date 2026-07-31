@@ -131,17 +131,15 @@ class AltText {
   }
 
   isEmpty() {
-    if (this.#useNewAltTextFlow) {
-      return this.#altText === null;
-    }
-    return !this.#altText && !this.#altTextDecorative;
+    return this.#useNewAltTextFlow
+      ? this.#altText === null
+      : !this.#altText && !this.#altTextDecorative;
   }
 
   hasData() {
-    if (this.#useNewAltTextFlow) {
-      return this.#altText !== null || !!this.#guessedText;
-    }
-    return this.isEmpty();
+    return this.#useNewAltTextFlow
+      ? this.#altText !== null || !!this.#guessedText
+      : this.isEmpty();
   }
 
   get guessedText() {

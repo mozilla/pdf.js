@@ -39,10 +39,7 @@ class Stream extends BaseStream {
   }
 
   getByte() {
-    if (this.pos >= this.end) {
-      return -1;
-    }
-    return this.bytes[this.pos++];
+    return this.pos >= this.end ? -1 : this.bytes[this.pos++];
   }
 
   getBytes(length) {

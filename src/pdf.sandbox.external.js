@@ -130,18 +130,12 @@ export class SandboxSupportBase {
         }
         this.win.alert(cMsg);
       },
-      confirm: cMsg => {
-        if (typeof cMsg !== "string") {
-          return false;
-        }
-        return this.win.confirm(cMsg);
-      },
-      prompt: (cQuestion, cDefault) => {
-        if (typeof cQuestion !== "string" || typeof cDefault !== "string") {
-          return null;
-        }
-        return this.win.prompt(cQuestion, cDefault);
-      },
+      confirm: cMsg =>
+        typeof cMsg !== "string" ? false : this.win.confirm(cMsg),
+      prompt: (cQuestion, cDefault) =>
+        typeof cQuestion !== "string" || typeof cDefault !== "string"
+          ? null
+          : this.win.prompt(cQuestion, cDefault),
       parseURL: cUrl => {
         const url = new this.win.URL(cUrl);
         const props = [

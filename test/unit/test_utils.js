@@ -38,10 +38,9 @@ const WASM_URL = isNodeJS
 
 class DefaultFileReaderFactory {
   static async fetch(params) {
-    if (isNodeJS) {
-      return fetchDataNode(params.path);
-    }
-    return fetchDataDOM(params.path, /* type = */ "bytes");
+    return isNodeJS
+      ? fetchDataNode(params.path)
+      : fetchDataDOM(params.path, /* type = */ "bytes");
   }
 }
 

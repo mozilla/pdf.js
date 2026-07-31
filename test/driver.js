@@ -1007,10 +1007,9 @@ class Driver {
   }
 
   _getLastPageNumber(task) {
-    if (!task.pdfDoc) {
-      return task.firstPage || 1;
-    }
-    return task.lastPage || task.pdfDoc.numPages;
+    return !task.pdfDoc
+      ? task.firstPage || 1
+      : task.lastPage || task.pdfDoc.numPages;
   }
 
   _nextPage(task, loadError) {

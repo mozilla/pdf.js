@@ -16,19 +16,15 @@
 import { stringToBytes, Util, warn } from "../shared/util.js";
 
 function isAscii(str) {
-  return (
-    typeof str === "string" &&
-    // eslint-disable-next-line no-control-regex
-    (!str || /^[\x00-\x7F]*$/.test(str))
-  );
+  // eslint-disable-next-line no-control-regex
+  return typeof str === "string" && (!str || /^[\x00-\x7F]*$/.test(str));
 }
 
 // If the string is null or undefined then it is returned as is.
 function stringToAsciiOrUTF16BE(str) {
-  if (str === null || str === undefined) {
-    return str;
-  }
-  return isAscii(str) ? str : stringToUTF16String(str, /* bigEndian = */ true);
+  return str === null || str === undefined || isAscii(str)
+    ? str
+    : stringToUTF16String(str, /* bigEndian = */ true);
 }
 
 function stringToUTF16HexString(str) {

@@ -622,10 +622,7 @@ class InkDrawOutline extends Outline {
   }
 
   updateProperty(name, value) {
-    if (name === "stroke-width") {
-      return this.#updateThickness(value);
-    }
-    return null;
+    return name === "stroke-width" ? this.#updateThickness(value) : null;
   }
 
   #updateThickness(thickness) {

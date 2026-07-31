@@ -98,10 +98,7 @@ class Field extends PDFObject {
   }
 
   get currentValueIndices() {
-    if (!this._isChoice) {
-      return 0;
-    }
-    return this._currentValueIndices;
+    return !this._isChoice ? 0 : this._currentValueIndices;
   }
 
   set currentValueIndices(indices) {
@@ -683,17 +680,13 @@ class CheckboxField extends RadioButtonField {
   }
 
   isBoxChecked(nWidget) {
-    if (this._value === "Off") {
-      return false;
-    }
-    return super.isBoxChecked(nWidget);
+    return this._value === "Off" ? false : super.isBoxChecked(nWidget);
   }
 
   isDefaultChecked(nWidget) {
-    if (this.defaultValue === "Off") {
-      return this._value === "Off";
-    }
-    return super.isDefaultChecked(nWidget);
+    return this.defaultValue === "Off"
+      ? this._value === "Off"
+      : super.isDefaultChecked(nWidget);
   }
 
   checkThisBox(nWidget, bCheckIt = true) {
