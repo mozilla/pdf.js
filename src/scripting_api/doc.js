@@ -173,9 +173,9 @@ class Doc extends PDFObject {
   _dispatchPageEvent(name, actions, pageNumber) {
     if (name === "PageOpen") {
       this.#pageActions ??= new Map();
-      if (!this.#pageActions.has(pageNumber)) {
-        this.#pageActions.set(pageNumber, createActionsMap(actions));
-      }
+      this.#pageActions.getOrInsertComputed(pageNumber, () =>
+        createActionsMap(actions)
+      );
       this._pageNum = pageNumber - 1;
     }
 

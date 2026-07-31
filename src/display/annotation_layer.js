@@ -1012,9 +1012,9 @@ class LinkAnnotationElement extends AnnotationElement {
     } else {
       if (
         data.actions &&
-        (data.actions.Action ||
-          data.actions["Mouse Up"] ||
-          data.actions["Mouse Down"]) &&
+        (data.actions.has("Action") ||
+          data.actions.has("Mouse Up") ||
+          data.actions.has("Mouse Down")) &&
         this.enableScripting &&
         this.hasJSActions
       ) {
@@ -1158,14 +1158,14 @@ class LinkAnnotationElement extends AnnotationElement {
    * @param {Object} data
    * @memberof LinkAnnotationElement
    */
-  _bindJSAction(link, data) {
+  _bindJSAction(link, { actions, id, overlaidText }) {
     link.href = this.linkService.getAnchorUrl("");
     const map = new Map([
       ["Action", "onclick"],
       ["Mouse Up", "onmouseup"],
       ["Mouse Down", "onmousedown"],
     ]);
-    for (const name of Object.keys(data.actions)) {
+    for (const name of actions.keys()) {
       const jsName = map.get(name);
       if (!jsName) {
         continue;
@@ -1173,16 +1173,13 @@ class LinkAnnotationElement extends AnnotationElement {
       link[jsName] = () => {
         this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
           source: this,
-          detail: {
-            id: data.id,
-            name,
-          },
+          detail: { id, name },
         });
         return false;
       };
     }
-    if (data.overlaidText) {
-      link.title = data.overlaidText;
+    if (overlaidText) {
+      link.title = overlaidText;
     }
     link.onclick ||= () => false;
 
@@ -1379,8 +1376,10 @@ class WidgetAnnotationElement extends AnnotationElement {
   }
 
   _setEventListeners(element, elementData, names, getter) {
+    const { actions } = this.data;
+
     for (const [baseName, eventName] of names) {
-      if (eventName === "Action" || this.data.actions?.[eventName]) {
+      if (eventName === "Action" || actions?.has(eventName)) {
         if (eventName === "Focus" || eventName === "Blur") {
           elementData ||= { focused: false };
         }
@@ -1391,10 +1390,10 @@ class WidgetAnnotationElement extends AnnotationElement {
           eventName,
           getter
         );
-        if (eventName === "Focus" && !this.data.actions?.Blur) {
+        if (eventName === "Focus" && !actions?.has("Blur")) {
           // Ensure that elementData will have the correct value.
           this._setEventListener(element, elementData, "blur", "Blur", null);
-        } else if (eventName === "Blur" && !this.data.actions?.Focus) {
+        } else if (eventName === "Blur" && !actions?.has("Focus")) {
           this._setEventListener(element, elementData, "focus", "Focus", null);
         }
       }
@@ -1630,7 +1629,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
           elementData.lastCommittedValue = target.value;
           elementData.commitKey = 1;
-          if (!this.data.actions?.Focus) {
+          if (!this.data.actions?.has("Focus")) {
             elementData.focused = true;
           }
         });
@@ -1752,7 +1751,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           if (!elementData.focused || !event.relatedTarget) {
             return;
           }
-          if (!this.data.actions?.Blur) {
+          if (!this.data.actions?.has("Blur")) {
             elementData.focused = false;
           }
           const { target } = event;
@@ -1800,7 +1799,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           _blurListener(event);
         });
 
-        if (this.data.actions?.Keystroke) {
+        if (this.data.actions?.has("Keystroke")) {
           element.addEventListener("beforeinput", event => {
             elementData.lastCommittedValue = null;
             const { data, target } = event;

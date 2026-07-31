@@ -19,7 +19,9 @@ class SandboxSupport extends SandboxSupportBase {
   exportValueToSandbox(val) {
     // The communication with the Quickjs sandbox is based on strings
     // So we use JSON.stringfy to serialize
-    return JSON.stringify(val);
+    return JSON.stringify(val, (k, v) =>
+      v instanceof Map ? Object.fromEntries(v) : v
+    );
   }
 
   importValueFromSandbox(val) {
@@ -65,7 +67,7 @@ class Sandbox {
     let success = false;
     let buf = 0;
     try {
-      const sandboxData = JSON.stringify(data);
+      const sandboxData = this.support.exportValueToSandbox(data);
       // "pdfjsScripting.initSandbox..." MUST be the last line to be evaluated
       // since the returned value is used for the communication.
       code.push(`pdfjsScripting.initSandbox({ data: ${sandboxData} })`);
