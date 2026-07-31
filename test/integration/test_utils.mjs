@@ -600,6 +600,31 @@ async function dragAndDrop(page, selector, translations, steps = 1) {
   await page.waitForSelector("#viewer:not(.noUserSelect)");
 }
 
+// Move two fingers, horizontally centered on (centerX, centerY), from startGap
+// to endGap: it's a pinch out when endGap is larger than startGap.
+// Keep in mind that `TouchManager` starts to pinch only once the distance
+// between the two fingers changed by more than `MIN_TOUCH_DISTANCE_TO_PINCH`
+// (35 CSS pixels), hence the first moves are swallowed and the resulting zoom
+// factor is smaller than endGap / startGap.
+async function pinch(page, centerX, centerY, startGap, endGap, steps = 12) {
+  const finger0 = await page.touchscreen.touchStart(
+    centerX - startGap,
+    centerY
+  );
+  const finger1 = await page.touchscreen.touchStart(
+    centerX + startGap,
+    centerY
+  );
+  const delta = (endGap - startGap) / steps;
+  for (let i = 1; i <= steps; i++) {
+    const gap = startGap + i * delta;
+    await finger0.move(centerX - gap, centerY);
+    await finger1.move(centerX + gap, centerY);
+  }
+  await finger0.end();
+  await finger1.end();
+}
+
 function waitForPageChanging(page) {
   return createPromise(page, resolve => {
     window.PDFViewerApplication.eventBus.on("pagechanging", resolve, {
@@ -1163,6 +1188,7 @@ export {
   paste,
   pasteFromClipboard,
   PDI,
+  pinch,
   scrollIntoView,
   selectEditor,
   selectEditors,
