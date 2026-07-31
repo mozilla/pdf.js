@@ -1561,7 +1561,12 @@ describe("PDF viewer", () => {
           // Spread the two fingers from 50 to 200 pixels apart: the first
           // moves are swallowed until the distance between them changed by
           // more than 35 pixels, hence a zoom factor of about 200/85 = 2.4.
-          await pinch(page, originX, originY, 25, 100);
+          await pinch(page, {
+            centerX: originX,
+            centerY: originY,
+            startGap: 25,
+            endGap: 100,
+          });
           await awaitPromise(rendered);
 
           const spanHandle = await page.evaluateHandle(() =>

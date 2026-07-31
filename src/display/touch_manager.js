@@ -15,6 +15,10 @@
 
 import { OutputScale, stopEvent } from "./display_utils.js";
 
+function preventDefault(evt) {
+  evt.preventDefault();
+}
+
 class TouchManager {
   #container;
 
@@ -135,8 +139,13 @@ class TouchManager {
       opt.capture = true;
       container.addEventListener("pointerdown", stopEvent, opt);
       container.addEventListener("pointermove", stopEvent, opt);
-      container.addEventListener("pointercancel", stopEvent, opt);
-      container.addEventListener("pointerup", stopEvent, opt);
+      // `pointerup` and `pointercancel` are only default-prevented: a
+      // `stopPropagation` in the capture phase also skips the bubble-phase
+      // listeners of the very node it's called on, hence swallowing them here
+      // would prevent any session in flight, e.g. an editor being resized, from
+      // ever being ended.
+      container.addEventListener("pointercancel", preventDefault, opt);
+      container.addEventListener("pointerup", preventDefault, opt);
       this.#onPinchStart?.();
     }
 

@@ -36,6 +36,7 @@ import {
   selectEditor,
   selectEditors,
   switchToEditor,
+  unselectEditor,
   waitForAnnotationModeChanged,
   waitForNoElement,
   waitForPointerUp,
@@ -64,6 +65,26 @@ const drawLine = async (page, x0, y0, x1, y1) => {
   await page.mouse.move(x1, y1);
   await page.mouse.up();
   await awaitPromise(clickHandle);
+};
+
+// Draw an editor large enough to have room for two fingers on it, and leave it
+// selected since that's what makes it resizable with a touchscreen.
+const drawAndSelectEditor = async page => {
+  await switchToInk(page);
+  const { x, y, width, height } = await getRect(page, ".annotationEditorLayer");
+  await drawLine(
+    page,
+    x + 0.15 * width,
+    y + 0.1 * height,
+    x + 0.75 * width,
+    y + 0.35 * height
+  );
+  await commit(page);
+
+  return {
+    layer: { x, y, width, height },
+    editor: await getRect(page, getEditorSelector(0)),
+  };
 };
 
 describe("Ink Editor", () => {
@@ -1445,18 +1466,110 @@ describe("Pinch to resize a drawing", () => {
         const before = await getRect(page, editorSelector);
         const startGap = Math.min(before.width, before.height) * 0.2;
         const endGap = Math.max(before.width, before.height) * 1.8;
-        await pinch(
-          page,
-          before.x + before.width / 2,
-          before.y + before.height / 2,
+        await pinch(page, {
+          centerX: before.x + before.width / 2,
+          centerY: before.y + before.height / 2,
           startGap,
-          endGap
-        );
+          endGap,
+        });
         const { width: after } = await getRect(page, editorSelector);
 
         expect(after)
           .withContext(`In ${browserName}`)
           .toBeGreaterThan(before.width);
+      })
+    );
+  });
+});
+
+describe("Resize with a touchscreen", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that the resize session is ended when the finger is lifted while another one is down", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const { layer } = await drawAndSelectEditor(page);
+
+        // Grabbing a resizer starts a resize session, which disables the
+        // pointer events of the editor layer until the finger is lifted.
+        const resizer = await getRect(
+          page,
+          `${getEditorSelector(0)} .resizer.bottomRight`
+        );
+        await pinch(page, {
+          steps: 0,
+          startPoints: [
+            {
+              x: resizer.x + resizer.width / 2,
+              y: resizer.y + resizer.height / 2,
+            },
+            {
+              x: layer.x + 0.3 * layer.width,
+              y: layer.y + 0.9 * layer.height,
+            },
+          ],
+          afterFirstStart: () =>
+            page.waitForSelector(".annotationEditorLayer.disabled"),
+          afterFirstEnd: () =>
+            // The `pointerup` of the resizing finger must still be dispatched,
+            // else the resize session would never end and the editor would keep
+            // being resized by the plain mouse moves coming afterwards.
+            page.waitForSelector(".annotationEditorLayer:not(.disabled)"),
+        });
+      })
+    );
+  });
+});
+
+describe("Tap after a two-finger gesture", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that the tap following a two-finger gesture selects the editor", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const { layer, editor } = await drawAndSelectEditor(page);
+        const editorSelector = getEditorSelector(0);
+
+        // One finger on the editor, which starts a drag session, and a second
+        // one elsewhere on the page, which turns it into a two-finger gesture.
+        await pinch(page, {
+          steps: 0,
+          startPoints: [
+            {
+              x: editor.x + 0.5 * editor.width,
+              y: editor.y + 0.8 * editor.height,
+            },
+            {
+              x: layer.x + 0.3 * layer.width,
+              y: layer.y + 0.9 * layer.height,
+            },
+          ],
+        });
+
+        // Once every finger is up, no listener may be left behind to swallow
+        // the `pointerdown` of the next tap on the editor.
+        await unselectEditor(page, editorSelector);
+        await page.touchscreen.tap(
+          editor.x + 0.5 * editor.width,
+          editor.y + 0.8 * editor.height
+        );
+        await waitForSelectedEditor(page, editorSelector);
       })
     );
   });
