@@ -14,6 +14,7 @@
  */
 
 import { INTERNAL_EVT, internalOpt } from "./internal_evt.js";
+import { makeSet } from "pdfjs-lib";
 
 const WaitOnType = {
   EVENT: "event",
@@ -72,7 +73,7 @@ async function waitOnEventOrTimeout({ target, name, delay = 0 }) {
  * and `off` methods. To raise an event, the `dispatch` method shall be used.
  */
 class EventBus {
-  #listeners = Object.create(null);
+  #listeners = new Map();
 
   constructor() {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -101,8 +102,7 @@ class EventBus {
       signal.addEventListener("abort", onAbort);
     }
 
-    const eventListeners = (this.#listeners[eventName] ??= []);
-    eventListeners.push({
+    this.#listeners.getOrInsertComputed(eventName, makeSet).add({
       listener,
       internal: options?.internal === INTERNAL_EVT,
       once: options?.once === true,
@@ -116,17 +116,11 @@ class EventBus {
    * @param {Object} [options]
    */
   off(eventName, listener, options = null) {
-    const eventListeners = this.#listeners[eventName];
-    if (!eventListeners) {
-      return;
-    }
-    for (let i = 0, ii = eventListeners.length; i < ii; i++) {
-      const evt = eventListeners[i];
-      if (evt.listener === listener) {
-        evt.rmAbort?.(); // Ensure that the `AbortSignal` listener is removed.
-        eventListeners.splice(i, 1);
-        return;
-      }
+    const eventListeners = this.#listeners.get(eventName);
+    const evt = eventListeners?.keys().find(e => e.listener === listener);
+    if (evt) {
+      evt.rmAbort?.(); // Ensure that the `AbortSignal` listener is removed.
+      eventListeners.delete(evt);
     }
   }
 
@@ -135,14 +129,14 @@ class EventBus {
    * @param {Object} data
    */
   dispatch(eventName, data) {
-    const eventListeners = this.#listeners[eventName];
-    if (!eventListeners?.length) {
+    const eventListeners = this.#listeners.get(eventName);
+    if (!eventListeners?.size) {
       return;
     }
     let extListeners;
-    // Making copy of the listeners array in case if it will be modified
+    // Always create a copy of the listeners in case they are modified
     // during dispatch.
-    for (const { listener, internal, once } of eventListeners.slice(0)) {
+    for (const { listener, internal, once } of new Set(eventListeners)) {
       if (once) {
         this.off(eventName, listener);
       }
