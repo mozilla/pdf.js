@@ -188,10 +188,7 @@ class CanvasBBoxTracker {
   }
 
   getOpenMarker() {
-    if (this._savesStack.length === 0) {
-      return null;
-    }
-    return this._savesStack.at(-1);
+    return this._savesStack.length === 0 ? null : this._savesStack.at(-1);
   }
 
   recordCloseMarker(opIdx, onSavePopped) {

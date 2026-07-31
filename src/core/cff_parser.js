@@ -1428,10 +1428,9 @@ class CFFFDSelect {
   }
 
   getFDIndex(glyphIndex) {
-    if (glyphIndex < 0 || glyphIndex >= this.fdSelect.length) {
-      return -1;
-    }
-    return this.fdSelect[glyphIndex];
+    return glyphIndex < 0 || glyphIndex >= this.fdSelect.length
+      ? -1
+      : this.fdSelect[glyphIndex];
   }
 }
 

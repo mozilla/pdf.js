@@ -239,10 +239,10 @@ class ChunkedStream extends Stream {
     };
     Object.defineProperty(ChunkedStreamSubstream.prototype, "isDataLoaded", {
       get() {
-        if (this.numChunksLoaded === this.numChunks) {
-          return true;
-        }
-        return this.getMissingChunks().length === 0;
+        return (
+          this.numChunksLoaded === this.numChunks ||
+          this.getMissingChunks().length === 0
+        );
       },
       configurable: true,
     });

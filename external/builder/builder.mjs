@@ -73,10 +73,7 @@ function preprocess(inFilename, outFilename, defines) {
   const out = [];
   let i = 0;
   function readLine() {
-    if (i < totalLines) {
-      return lines[i++];
-    }
-    return null;
+    return i < totalLines ? lines[i++] : null;
   }
   const writeLine =
     typeof outFilename === "function"
@@ -127,10 +124,7 @@ function preprocess(inFilename, outFilename, defines) {
   function expand(line) {
     line = line.replaceAll(/__\w+__/g, function (variable) {
       variable = variable.substring(2, variable.length - 2);
-      if (variable in defines) {
-        return defines[variable];
-      }
-      return "";
+      return variable in defines ? defines[variable] : "";
     });
     writeLine(line);
   }

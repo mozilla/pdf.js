@@ -254,10 +254,9 @@ class SignatureEditor extends DrawingEditor {
 
   /** @inheritdoc */
   get toolbarButtons() {
-    if (this._uiManager.signatureManager) {
-      return [["editSignature", this._uiManager.signatureManager]];
-    }
-    return super.toolbarButtons;
+    return this._uiManager.signatureManager
+      ? [["editSignature", this._uiManager.signatureManager]]
+      : super.toolbarButtons;
   }
 
   addSignature(data, heightInPage, description, uuid) {

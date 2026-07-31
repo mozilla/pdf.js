@@ -52,11 +52,9 @@ class AForm {
   }
 
   AFMergeChange(event = globalThis.event) {
-    if (event.willCommit) {
-      return event.value.toString();
-    }
-
-    return this._app._eventDispatcher.mergeChange(event);
+    return event.willCommit
+      ? event.value.toString()
+      : this._app._eventDispatcher.mergeChange(event);
   }
 
   AFParseDateEx(cString, cOrder) {
@@ -102,10 +100,7 @@ class AForm {
   }
 
   AFMakeArrayFromList(string) {
-    if (typeof string === "string") {
-      return string.split(/, ?/g);
-    }
-    return string;
+    return typeof string === "string" ? string.split(/, ?/g) : string;
   }
 
   AFNumber_Format(
@@ -616,11 +611,9 @@ class AForm {
   }
 
   AFExactMatch(rePatterns, str) {
-    if (rePatterns instanceof RegExp) {
-      return str.match(rePatterns)?.[0] === str || 0;
-    }
-
-    return rePatterns.findIndex(re => str.match(re)?.[0] === str) + 1;
+    return rePatterns instanceof RegExp
+      ? str.match(rePatterns)?.[0] === str || 0
+      : rePatterns.findIndex(re => str.match(re)?.[0] === str) + 1;
   }
 }
 

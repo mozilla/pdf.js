@@ -186,10 +186,7 @@ class Parser {
     }
 
     if (typeof buf1 === "string") {
-      if (cipherTransform) {
-        return cipherTransform.decryptString(buf1);
-      }
-      return buf1;
+      return cipherTransform ? cipherTransform.decryptString(buf1) : buf1;
     }
 
     // simple object

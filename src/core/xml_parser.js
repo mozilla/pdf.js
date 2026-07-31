@@ -324,10 +324,9 @@ class SimpleDOMNode {
   }
 
   get textContent() {
-    if (!this.childNodes) {
-      return this.nodeValue || "";
-    }
-    return this.childNodes.map(child => child.textContent).join("");
+    return !this.childNodes
+      ? this.nodeValue || ""
+      : this.childNodes.map(child => child.textContent).join("");
   }
 
   get children() {
