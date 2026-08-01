@@ -26,6 +26,7 @@ import {
   info,
   isNodeJS,
   makeObj,
+  OPS,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -38,6 +39,7 @@ import {
   SerializableEmpty,
 } from "./annotation_storage.js";
 import {
+  BBoxReader,
   CanvasBBoxTracker,
   CanvasDependencyTracker,
   CanvasImagesTracker,
@@ -1539,6 +1541,7 @@ class PDFPageProxy {
       cacheKey,
       makeObj
     );
+
     // Ensure that a pending `streamReader` cancel timeout is always aborted.
     if (intentState.streamReaderCancelTimeout) {
       clearTimeout(intentState.streamReaderCancelTimeout);
@@ -1575,14 +1578,25 @@ class PDFPageProxy {
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
+      // Get the trackers from `gfx` into the task's. The worker path populates
+      // them from the final `ExecuteOperatorList` response, so we don't need
+      // this in that case.
+      if (!internalRenderTask.rendererHandler && internalRenderTask.gfx) {
+        const { dependencyTracker, imagesTracker } = internalRenderTask.gfx;
+        internalRenderTask.recordedBBoxes = dependencyTracker?.take() ?? null;
+        internalRenderTask.debugMetadata = recordForDebugger
+          ? (dependencyTracker?.takeDebugMetadata() ?? null)
+          : null;
+        internalRenderTask.imageCoordinates = imagesTracker?.take() ?? null;
+      }
+
       if (shouldRecordOperations) {
-        const recordedBBoxes = internalRenderTask.gfx?.dependencyTracker.take();
+        const { recordedBBoxes, debugMetadata } = internalRenderTask;
         if (recordedBBoxes) {
           internalRenderTask.stepper?.setOperatorBBoxes(
             recordedBBoxes,
-            internalRenderTask.gfx.dependencyTracker.takeDebugMetadata()
+            debugMetadata
           );
-
           if (recordOperations) {
             this.recordedBBoxes = recordedBBoxes;
           }
@@ -1590,7 +1604,7 @@ class PDFPageProxy {
       }
 
       if (shouldRecordImages && !error) {
-        this.imageCoordinates = internalRenderTask.gfx?.imagesTracker.take();
+        this.imageCoordinates = internalRenderTask.imageCoordinates;
       }
 
       // Attempt to reduce memory usage during *printing*, by always running
@@ -1621,34 +1635,18 @@ class PDFPageProxy {
       }
     };
 
-    let dependencyTracker = null;
-    let bboxTracker = null;
-    if (shouldRecordOperations || shouldRecordImages) {
-      bboxTracker = new CanvasBBoxTracker(
-        canvas,
-        intentState.operatorList.length
-      );
-    }
-    if (shouldRecordOperations) {
-      dependencyTracker = new CanvasDependencyTracker(
-        bboxTracker,
-        recordForDebugger
-      );
-    }
-
     const internalRenderTask = new InternalRenderTask({
       callback: complete,
       // Only include the required properties, and *not* the entire object.
       params: {
         canvas,
         canvasContext,
-        dependencyTracker: dependencyTracker ?? bboxTracker,
-        imagesTracker: shouldRecordImages
-          ? new CanvasImagesTracker(canvas)
-          : null,
         viewport,
         transform,
         background,
+        recordOperations: shouldRecordOperations,
+        recordImages: shouldRecordImages,
+        recordForDebugger,
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
@@ -1662,6 +1660,7 @@ class PDFPageProxy {
       pageColors,
       enableHWA: this._transport.enableHWA,
       operationsFilter,
+      rendererWorker: this._transport.rendererWorker,
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -1671,7 +1670,7 @@ class PDFPageProxy {
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
     ])
-      .then(([renderPageData, optionalContentConfig]) => {
+      .then(async ([renderPageData, optionalContentConfig]) => {
         if (this.destroyed) {
           complete();
           return;
@@ -1688,7 +1687,7 @@ class PDFPageProxy {
           renderPageData && typeof renderPageData === "object"
             ? renderPageData
             : { transparency: renderPageData };
-        internalRenderTask.initializeGraphics({
+        await internalRenderTask.initializeGraphics({
           transparency,
           hasCanvasFilters: hasCanvasFilters || intentState.hasCanvasFilters,
           optionalContentConfig,
@@ -1848,6 +1847,9 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
+    this._transport.rendererHandler?.send("cleanupPage", {
+      pageIndex: this._pageIndex,
+    });
     this.#pendingCleanup = false;
 
     return Promise.all(waitOn);
@@ -1885,6 +1887,9 @@ class PDFPageProxy {
     }
     this._intentStates.clear();
     this.objs.clear();
+    this._transport.rendererHandler?.send("cleanupPage", {
+      pageIndex: this._pageIndex,
+    });
     this.#pendingCleanup = false;
     return true;
   }
@@ -1946,6 +1951,13 @@ class PDFPageProxy {
       );
     }
     const { map, transfer } = annotationStorageSerializable;
+
+    // Restore the page in the renderer worker before any `obj` message can
+    // be forwarded, since the core worker emits each object only once and a
+    // dropped one would hang `ExecuteOperatorList` on its dependency.
+    this._transport.rendererHandler?.send("restorePage", {
+      pageIndex: this._pageIndex,
+    });
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
@@ -3402,6 +3414,9 @@ class WorkerTransport {
     if (!keepLoadedFonts) {
       this.fontLoader.clear();
     }
+    // Keep the renderer worker's document-level state in sync with the main
+    // thread.
+    this.rendererHandler?.send("Cleanup", { keepLoadedFonts });
     this.#methodPromises.clear();
     this.filterFactory.destroy(/* keepHCM = */ true);
     TextLayer.cleanup();
@@ -3496,6 +3511,13 @@ class RenderTask {
   get imageCoordinates() {
     return this._internalRenderTask.imageCoordinates || null;
   }
+
+  /**
+   * @type {MessageHandler | null}
+   */
+  get rendererHandler() {
+    return this._internalRenderTask.rendererHandler;
+  }
 }
 
 /**
@@ -3506,6 +3528,16 @@ class InternalRenderTask {
   #rAF = null;
 
   static #canvasInUse = new WeakSet();
+
+  // Since `transferControlToOffscreen()` can only be called once per canvas
+  // we need to keep a track of Maps already transferred canvases to their
+  // worker-side OffscreenCanvas ids, in case they are used in multiple render
+  // tasks.
+  static #transferredCanvases = new WeakMap();
+
+  static #canvasId = 0;
+
+  static #renderTaskId = 0;
 
   constructor({
     callback,
@@ -3522,6 +3554,7 @@ class InternalRenderTask {
     pageColors = null,
     enableHWA = false,
     operationsFilter = null,
+    rendererWorker = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3552,9 +3585,21 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
-    this._dependencyTracker = params.dependencyTracker;
-    this._imagesTracker = params.imagesTracker;
+    this._recordOperations = !!params.recordOperations;
+    this._recordImages = !!params.recordImages;
+    this._recordForDebugger = !!params.recordForDebugger;
     this._operationsFilter = operationsFilter;
+    this._rendererWorker = rendererWorker;
+    this._renderTaskId = InternalRenderTask.#renderTaskId++;
+    this._sentOperatorListLength = 0;
+    // Maps an annotation id to the set of canvas names that have
+    // already been transferred to the worker.
+    this._transferredAnnotationCanvasIds = new Map();
+    // We get the recordedBBoxes and debugMetadata from the worker
+    // when recording is enabled,
+    this.recordedBBoxes = null;
+    this.debugMetadata = null;
+    this.imageCoordinates = null;
   }
 
   get completed() {
@@ -3564,7 +3609,78 @@ class InternalRenderTask {
     });
   }
 
-  initializeGraphics({
+  get rendererHandler() {
+    return this._rendererWorker?.messageHandler ?? null;
+  }
+
+  // Transfer annotation canvases to the renderer worker which show up in the
+  // operator list later when it is updated.
+  _getAnnotationCanvasFromOpList(startIdx, endIdx) {
+    const annotationCanvases = [];
+    const transfers = [];
+    if (
+      !this.annotationCanvasMap ||
+      !this._canvas?.ownerDocument ||
+      typeof this._canvas.ownerDocument.createElement !== "function"
+    ) {
+      return { annotationCanvases, transfers };
+    }
+    const { fnArray, argsArray } = this.operatorList;
+    for (let i = startIdx; i < endIdx; i++) {
+      if (fnArray[i] !== OPS.beginAnnotation) {
+        continue;
+      }
+      const [id, , , , hasOwnCanvas, canvasName] = argsArray[i];
+      if (!hasOwnCanvas) {
+        continue;
+      }
+      const transferredNames = this._transferredAnnotationCanvasIds.get(id);
+      if (transferredNames?.has(canvasName)) {
+        continue;
+      }
+
+      let canvas;
+      if (canvasName) {
+        let canvases = this.annotationCanvasMap.get(id);
+        if (!canvases) {
+          canvases = [];
+          this.annotationCanvasMap.set(id, canvases);
+        }
+        canvas = canvases.find(
+          c => c.getAttribute("data-canvas-name") === canvasName
+        );
+        if (!canvas) {
+          canvas = this._canvas.ownerDocument.createElement("canvas");
+          canvas.setAttribute("data-canvas-name", canvasName);
+          canvases.push(canvas);
+        }
+      } else {
+        canvas = this.annotationCanvasMap.get(id);
+        if (!canvas) {
+          canvas = this._canvas.ownerDocument.createElement("canvas");
+          this.annotationCanvasMap.set(id, canvas);
+        }
+      }
+      if (typeof canvas.transferControlToOffscreen !== "function") {
+        continue;
+      }
+      try {
+        const offscreen = canvas.transferControlToOffscreen();
+        annotationCanvases.push([id, canvasName, offscreen]);
+        transfers.push(offscreen);
+        if (!transferredNames) {
+          this._transferredAnnotationCanvasIds.set(id, new Set([canvasName]));
+        } else {
+          transferredNames.add(canvasName);
+        }
+      } catch (ex) {
+        warn(`Failed to transfer annotation canvas to worker: ${ex.message}.`);
+      }
+    }
+    return { annotationCanvases, transfers };
+  }
+
+  async initializeGraphics({
     transparency = false,
     hasCanvasFilters = false,
     optionalContentConfig,
@@ -3588,41 +3704,166 @@ class InternalRenderTask {
       this.stepper.init(this.operatorList);
       this.stepper.nextBreakPoint = this.stepper.getNextBreakPoint();
     }
-    const {
-      viewport,
-      transform,
-      background,
-      dependencyTracker,
-      imagesTracker,
-    } = this.params;
+    const { viewport, transform, background } = this.params;
 
-    // When printing in Firefox, we get a specific context in mozPrintCallback
-    // which cannot be created from the canvas itself.
-    const canvasContext =
-      this._canvasContext ||
-      this._canvas.getContext("2d", {
-        alpha: false,
-        willReadFrequently: !this._enableHWA,
-      });
+    // The stepper-driven debug recording path needs `gfx` on the main thread,
+    // so we have to fall back to local rendering when it's enabled. Plain
+    // `recordOperations`/`recordImages` are now handled inside the worker.
+    // Worker rendering is also disabled when canvas filters (TR) are present
+    // because OffscreenCanvas's OffscreenCanvasRenderingContext2D ignores
+    // `.filter` values set from a data URL. See bug 2011237.
+    let useWorkerRendering =
+      this.rendererHandler &&
+      !this.params.canvasContext &&
+      !hasCanvasFilters &&
+      !this.pageColors &&
+      !this._recordForDebugger;
 
-    this.gfx = new CanvasGraphics(
-      canvasContext,
-      this.commonObjs,
-      this.objs,
-      this.canvasFactory,
-      this.filterFactory,
-      { optionalContentConfig },
-      this.annotationCanvasMap,
-      this.pageColors,
-      dependencyTracker,
-      imagesTracker
+    const transferredEntry = InternalRenderTask.#transferredCanvases.get(
+      this._canvas
     );
-    this.gfx.beginDrawing({
-      transform,
-      viewport,
-      transparency,
-      background,
-    });
+    if (
+      transferredEntry &&
+      (!useWorkerRendering ||
+        transferredEntry.rendererWorker !== this._rendererWorker)
+    ) {
+      // The canvas is only a placeholder now, hence it can only be
+      // re-rendered by the renderer worker owning its OffscreenCanvas.
+      throw new Error(
+        "Cannot re-render a canvas whose control was transferred to a " +
+          "renderer worker, without using that same worker."
+      );
+    }
+
+    if (!useWorkerRendering && this._rendererWorker) {
+      // Only warn when a renderer worker is actually available, but cannot be
+      // used for this particular render
+      if (this.rendererHandler) {
+        warn("Falling back to main-thread rendering.");
+      }
+      this._rendererWorker = null;
+    }
+    let initPromise = null;
+    if (useWorkerRendering) {
+      try {
+        let offscreen = null;
+        let canvasId;
+        if (transferredEntry) {
+          ({ canvasId } = transferredEntry);
+        } else {
+          offscreen = this._canvas.transferControlToOffscreen();
+          canvasId = InternalRenderTask.#canvasId++;
+          InternalRenderTask.#transferredCanvases.set(this._canvas, {
+            rendererWorker: this._rendererWorker,
+            canvasId,
+          });
+        }
+        const { annotationCanvases, transfers } =
+          this._getAnnotationCanvasFromOpList(
+            0,
+            this.operatorList.argsArray.length
+          );
+        const initTransfers = offscreen ? [offscreen, ...transfers] : transfers;
+        const initParams = {
+          canvas: offscreen,
+          canvasId,
+          pageIndex: this._pageIndex,
+          renderTaskId: this._renderTaskId,
+          enableHWA: this._enableHWA,
+          optionalContentConfig: optionalContentConfig.serializable,
+          annotationCanvasMap: this.annotationCanvasMap
+            ? annotationCanvases
+            : null,
+          transform,
+          viewport,
+          transparency,
+          background,
+          recordOperations: this._recordOperations,
+          recordImages: this._recordImages,
+        };
+        initPromise = this.rendererHandler.sendWithPromise(
+          "InitializeGraphics",
+          initParams,
+          initTransfers
+        );
+        // Mark the canvas as worker-rendered so that consumers (thumbnail
+        // generation, test driver) can detect and clean up appropriately.
+        const { _rendererWorker, _renderTaskId } = this;
+        this._canvas.resetWorkerCanvas = () => {
+          _rendererWorker.messageHandler?.send("CleanupRenderTask", {
+            renderTaskId: _renderTaskId,
+          });
+          _rendererWorker.messageHandler?.send("ReleaseCanvas", { canvasId });
+        };
+      } catch (ex) {
+        // Once the canvas has been transferred it's detached, hence falling
+        // back to main-thread rendering is no longer possible.
+        if (InternalRenderTask.#transferredCanvases.has(this._canvas)) {
+          throw ex;
+        }
+        warn(
+          `Failed to initialize graphics in renderer worker: ${ex.message}. ` +
+            "Falling back to main-thread rendering."
+        );
+        this._rendererWorker = null;
+        useWorkerRendering = false;
+      }
+    }
+    if (!useWorkerRendering) {
+      // When printing in Firefox, we get a specific context in mozPrintCallback
+      // which cannot be created from the canvas itself.
+      const canvasContext =
+        this._canvasContext ||
+        this._canvas.getContext("2d", {
+          alpha: false,
+          willReadFrequently: !this._enableHWA,
+        });
+
+      let bboxTracker = null;
+      let dependencyTracker = null;
+      let imagesTracker = null;
+      if (this._recordOperations || this._recordImages) {
+        bboxTracker = new CanvasBBoxTracker(
+          this._canvas,
+          this.operatorList.fnArray.length
+        );
+      }
+      if (this._recordOperations) {
+        dependencyTracker = new CanvasDependencyTracker(
+          bboxTracker,
+          this._recordForDebugger
+        );
+      }
+      if (this._recordImages) {
+        imagesTracker = new CanvasImagesTracker(this._canvas);
+      }
+
+      this.gfx = new CanvasGraphics(
+        canvasContext,
+        this.commonObjs,
+        this.objs,
+        this.canvasFactory,
+        this.filterFactory,
+        { optionalContentConfig },
+        this.annotationCanvasMap,
+        this.pageColors,
+        dependencyTracker ?? bboxTracker,
+        imagesTracker
+      );
+      this.gfx.beginDrawing({
+        transform,
+        viewport,
+        transparency,
+        background,
+      });
+    }
+    if (initPromise) {
+      // Wait for the renderer worker to finish setup.
+      await initPromise;
+      if (this.cancelled) {
+        return;
+      }
+    }
     this.operatorListIdx = 0;
     this.graphicsReady = true;
     this.graphicsReadyCallback?.();
@@ -3631,6 +3872,9 @@ class InternalRenderTask {
   cancel(error = null, extraDelay = 0) {
     this.running = false;
     this.cancelled = true;
+    this.rendererHandler?.send("CleanupRenderTask", {
+      renderTaskId: this._renderTaskId,
+    });
     this.gfx?.endDrawing();
     if (this.#rAF) {
       window.cancelAnimationFrame(this.#rAF);
@@ -3652,11 +3896,16 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
-    this.gfx.dependencyTracker?.growOperationsCount(
-      this.operatorList.fnArray.length
-    );
-    this.stepper?.updateOperatorList(this.operatorList);
-
+    // When rendering in the renderer worker, the worker manages its own copy
+    // of the bbox/dependency tracker (sized inside `#appendOperatorList`).
+    // The stepper is main-thread only and is mutually exclusive with worker
+    // rendering, so there's nothing to update here in that case.
+    if (!this._rendererWorker) {
+      this.gfx.dependencyTracker?.growOperationsCount(
+        this.operatorList.fnArray.length
+      );
+      this.stepper?.updateOperatorList(this.operatorList);
+    }
     if (this.running) {
       return;
     }
@@ -3688,6 +3937,89 @@ class InternalRenderTask {
 
   async _next() {
     if (this.cancelled) {
+      return;
+    }
+    const { operatorList, operatorListIdx } = this;
+    if (this._rendererWorker) {
+      const { rendererHandler } = this;
+      if (!rendererHandler) {
+        throw new Error("Renderer worker was destroyed during rendering.");
+      }
+      const operatorListArgsArrayLen = operatorList.argsArray.length;
+      const sentLength = Math.min(
+        this._sentOperatorListLength,
+        operatorListArgsArrayLen
+      );
+      const { annotationCanvases, transfers } =
+        this._getAnnotationCanvasFromOpList(
+          sentLength,
+          operatorListArgsArrayLen
+        );
+      if (annotationCanvases.length > 0) {
+        rendererHandler.send(
+          "UpdateAnnotationCanvases",
+          {
+            renderTaskId: this._renderTaskId,
+            annotationCanvasMap: annotationCanvases,
+          },
+          transfers
+        );
+      }
+      const fnArray =
+        sentLength < operatorListArgsArrayLen
+          ? operatorList.fnArray.slice(sentLength, operatorListArgsArrayLen)
+          : null;
+      const argsArray =
+        sentLength < operatorListArgsArrayLen
+          ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
+          : null;
+      // Since operationsFilter is a function and cannot be structured-cloned,
+      // precomputing the results for the ops being sent as a mask that the
+      // worker can index into.
+      let operationsFilterMask = null;
+      if (fnArray && this._operationsFilter) {
+        operationsFilterMask = new Uint8Array(fnArray.length);
+        for (let i = 0, ii = fnArray.length; i < ii; i++) {
+          operationsFilterMask[i] = this._operationsFilter(sentLength + i)
+            ? 1
+            : 0;
+        }
+      }
+      const response = await rendererHandler.sendWithPromise(
+        "ExecuteOperatorList",
+        {
+          renderTaskId: this._renderTaskId,
+          fnArray,
+          argsArray,
+          operatorListIdx,
+          operationsFilterMask,
+          lastChunk: operatorList.lastChunk,
+        }
+      );
+      this.operatorListIdx = response.operatorListIdx;
+      // Only the final chunk carries `recordedBBoxes` / `imageCoordinates`.
+      if (response.recordedBBoxesBuffer) {
+        this.recordedBBoxes = BBoxReader.fromBuffer(
+          response.recordedBBoxesBuffer
+        );
+      }
+      if (response.imageCoordinates) {
+        this.imageCoordinates = response.imageCoordinates;
+      }
+      this._sentOperatorListLength = operatorListArgsArrayLen;
+      if (this.cancelled) {
+        return;
+      }
+
+      if (this.operatorListIdx === operatorList.argsArray.length) {
+        this.running = false;
+        if (this.operatorList.lastChunk) {
+          InternalRenderTask.#canvasInUse.delete(this._canvas);
+          this.callback();
+        }
+      } else {
+        this._continue();
+      }
       return;
     }
     this.operatorListIdx = this.gfx.executeOperatorList(
