@@ -109,6 +109,27 @@ describe("XML", function () {
     });
   });
 
+  describe("character references", function () {
+    const parseText = xml =>
+      new SimpleXMLParser({}).parseFromString(xml).documentElement.textContent;
+
+    it("should resolve the valid ones", function () {
+      expect(parseText("<a>&#65;&#x42;&#x1F602;&#0;&#x10FFFF;</a>")).toEqual(
+        "AB\u{1F602}\0\u{10FFFF}"
+      );
+    });
+
+    it("should keep the invalid ones as-is", function () {
+      // These must not throw: `String.fromCodePoint` rejects anything which
+      // isn't a code point.
+      expect(parseText("<a>&#xZZ;</a>")).toEqual("&#xZZ;");
+      expect(parseText("<a>&#zz;</a>")).toEqual("&#zz;");
+      expect(parseText("<a>&#x110000;</a>")).toEqual("&#x110000;");
+      expect(parseText("<a>&#1114112;</a>")).toEqual("&#1114112;");
+      expect(parseText("<a>&#-1;</a>")).toEqual("&#-1;");
+    });
+  });
+
   it("should parse processing instructions", function () {
     const xml = `
       <a>
