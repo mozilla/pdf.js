@@ -14,9 +14,20 @@
  */
 
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
+import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
+import { ObjectHandler } from "./object_handler.js";
+import { PDFObjects } from "./pdf_objects.js";
 
 class RendererMessageHandler {
+  static #commonObjs = new PDFObjects();
+
+  static #fontLoader = new FontLoader({
+    ownerDocument: globalThis,
+  });
+
+  static #objsMap = new Map();
+
   static {
     // Worker thread (and not Node.js)?
     if (
@@ -29,6 +40,45 @@ class RendererMessageHandler {
     ) {
       this.initializeFromPort(self);
     }
+  }
+
+  static #getPageObjs(pageIndex) {
+    let objs = this.#objsMap.get(pageIndex);
+    if (!objs) {
+      objs = new PDFObjects();
+      this.#objsMap.set(pageIndex, objs);
+    }
+    return objs;
+  }
+
+  static #setupObjectHandler(handler) {
+    const objectHandler = new ObjectHandler({
+      messageHandler: handler,
+      commonObjs: this.#commonObjs,
+      fontLoader: this.#fontLoader,
+      pageCache: this.#objsMap,
+      shouldCreatePageObjs: true,
+    });
+
+    handler.on("commonobj", ([id, type, exportedData]) => {
+      if (this.#commonObjs.has(id)) {
+        return null;
+      }
+      return objectHandler.resolveCommonObject(id, type, exportedData);
+    });
+
+    handler.on("obj", ([id, pageIndex, type, imageData]) => {
+      objectHandler.resolveObject(id, pageIndex, type, imageData);
+    });
+
+    handler.on("objFailed", ({ id, pageIndex, reason }) => {
+      const error = new Error(reason);
+      if (pageIndex === null) {
+        this.#commonObjs.reject(id, error);
+        return;
+      }
+      this.#getPageObjs(pageIndex).reject(id, error);
+    });
   }
 
   static setup(handler) {
@@ -46,6 +96,8 @@ class RendererMessageHandler {
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
     });
+
+    this.#setupObjectHandler(handler);
   }
 
   static initializeFromPort(port) {

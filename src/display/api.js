@@ -2702,6 +2702,15 @@ class WorkerTransport {
     return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
+  /**
+   * Reading through the `RendererWorker` ensures that destroying the renderer
+   * worker is observed here, without holding a stale handler reference.
+   * @type {MessageHandler | null}
+   */
+  get rendererHandler() {
+    return this.rendererWorker?.messageHandler ?? null;
+  }
+
   getRenderingIntent(
     intent,
     annotationMode = AnnotationMode.ENABLE,
@@ -2999,10 +3008,63 @@ class WorkerTransport {
       pdfBug: this._params.pdfBug,
     });
 
+    // TODO: add a direct channel between the renderer worker and the core
+    // worker so these main-thread forwarders can be removed.
+    this.rendererHandler?.on("FontFallback", data => {
+      if (this.destroyed) {
+        return null;
+      }
+      return messageHandler.sendWithPromise("FontFallback", data);
+    });
+
+    const forwardToRenderer = (action, data) => {
+      const { rendererHandler } = this;
+      if (!rendererHandler) {
+        return;
+      }
+      try {
+        rendererHandler.send(action, data);
+      } catch (reason) {
+        warn(`forwardToRenderer("${action}") failed: ${reason}`);
+        rendererHandler.send("objFailed", {
+          id: data[0],
+          pageIndex: action === "obj" ? data[1] : null,
+          reason: reason.message,
+        });
+      }
+    };
+
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
         return null; // Ignore any pending requests if the worker was terminated.
       }
+
+      if (type === "CopyLocalImage") {
+        const dataLen = this.commonObjs.has(id)
+          ? null
+          : objectHandler.resolveCommonObject(id, type, exportedData);
+        const { rendererHandler } = this;
+        if (!dataLen || !rendererHandler) {
+          return dataLen;
+        }
+        // If the core worker doesn't re-send the image data, ensure that
+        // the renderer worker has a copy too
+        return rendererHandler
+          .sendWithPromise("commonobj", [id, type, exportedData])
+          .catch(() => null)
+          .then(rendererDataLen => {
+            if (!rendererDataLen) {
+              forwardToRenderer("commonobj", [
+                id,
+                "Image",
+                this.commonObjs.get(id),
+              ]);
+            }
+            return dataLen;
+          });
+      }
+
+      forwardToRenderer("commonobj", [id, type, exportedData]);
 
       if (this.commonObjs.has(id)) {
         return null;
@@ -3016,6 +3078,7 @@ class WorkerTransport {
         // Ignore any pending requests if the worker was terminated.
         return;
       }
+      forwardToRenderer("obj", [id, pageIndex, type, imageData]);
       objectHandler.resolveObject(id, pageIndex, type, imageData);
     });
 
