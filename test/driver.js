@@ -571,6 +571,9 @@ class Driver {
 
     // Create a working canvas
     this.canvas = document.createElement("canvas");
+    // Used as the render-target when testing rendering in worker, since a
+    // canvas can only be transferred once using `transferControlToOffscreen`.
+    this.renderCanvas = null;
   }
 
   run() {
@@ -1201,8 +1204,19 @@ class Driver {
                 initPromise = Promise.resolve();
               }
             }
+            // Render into a separate canvas to allow
+            // `transferControlToOffscreen`; `recordOperations` is tracked
+            // by the worker independently of which canvas receives the
+            // pixels, so `partialCrop` doesn't need `this.canvas` directly.
+            this.renderCanvas = document.createElement("canvas");
+            this.renderCanvas.width = pixelWidth;
+            this.renderCanvas.height = pixelHeight;
+            this.renderCanvas.style.width = this.canvas.style.width;
+            this.renderCanvas.style.height = this.canvas.style.height;
+            const renderCanvas = this.renderCanvas;
+
             const renderContext = {
-              canvas: this.canvas,
+              canvas: renderCanvas,
               viewport,
               optionalContentConfigPromise: task.optionalContentConfigPromise,
               annotationCanvasMap,
@@ -1224,6 +1238,14 @@ class Driver {
             }
 
             const completeRender = error => {
+              if (renderCanvas !== this.canvas) {
+                try {
+                  ctx.drawImage(renderCanvas, 0, 0);
+                } catch (ex) {
+                  this._info(`Unable to copy the render canvas: ${ex}`);
+                }
+                renderCanvas.resetWorkerCanvas?.();
+              }
               // if text layer is present, compose it on top of the page
               if (textLayerCanvas) {
                 if (task.type === "text") {
@@ -1264,6 +1286,14 @@ class Driver {
                 await renderTask.promise;
 
                 if (partialCrop) {
+                  if (renderCanvas !== this.canvas) {
+                    try {
+                      ctx.drawImage(renderCanvas, 0, 0);
+                    } catch (ex) {
+                      this._info(`Unable to copy the render canvas: ${ex}`);
+                    }
+                    renderCanvas.resetWorkerCanvas?.();
+                  }
                   const clearOutsidePartial = () => {
                     const { width, height } = ctx.canvas;
                     // Everything above the partial area
