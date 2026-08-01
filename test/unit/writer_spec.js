@@ -295,10 +295,20 @@ describe("Writer", function () {
     });
 
     it("should not use scientific notation for very large numbers", async function () {
-      // JavaScript produces scientific notation above ~1e21 but such values
-      // are unlikely in PDFs; values below that threshold must be plain.
+      // JavaScript's toString() and toFixed() produce scientific notation from
+      // 1e21 on, which is invalid PDF: such a number must be written with all
+      // its digits, which are the exact ones of the underlying double.
       expect(await serialize(1e10)).toEqual("10000000000");
       expect(await serialize(1.5e6)).toEqual("1500000");
+      expect(await serialize(1e20)).toEqual("100000000000000000000");
+      expect(await serialize(1e21)).toEqual("1000000000000000000000");
+      // Removing the trailing zeros of the exponent used to change the value:
+      // "1e+30" was written "1e+3" and "1e+100" was written "1e+1".
+      expect(await serialize(1e30)).toEqual("1000000000000000019884624838656");
+      expect(await serialize(-1e30)).toEqual(
+        "-1000000000000000019884624838656"
+      );
+      expect((await serialize(1e100)).length).toEqual(101);
     });
 
     it("should round to at most 10 decimal places", async function () {

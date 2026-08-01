@@ -148,6 +148,31 @@ async function writeArray(array, buffer, transform) {
   buffer.push("]");
 }
 
+// The exponential notation isn't valid in a PDF, hence a number is always
+// written with all its digits.
+function numberToPDFString(value) {
+  // `toFixed` uses the exponential notation from 1e21 on, so such a number is
+  // written thanks to BigInt: it's necessarily an integer, and `isInteger` also
+  // rules out NaN and ±Infinity for which BigInt would throw.
+  if (Number.isInteger(value) && Math.abs(value) >= 1e21) {
+    return BigInt(value).toString();
+  }
+
+  // Below that limit `toFixed(10)` never uses the exponential notation (unlike
+  // `toString` which uses it under 1e-6) and it rounds the value: it always
+  // adds 10 decimals, hence scan them backwards to remove the trailing zeros,
+  // and then the dot itself when none of the decimals is left.
+  const str = value.toFixed(10);
+  let end = str.length;
+  while (str[end - 1] === "0") {
+    end--;
+  }
+  if (str[end - 1] === ".") {
+    end--;
+  }
+  return str.slice(0, end);
+}
+
 async function writeValue(value, buffer, transform) {
   if (value instanceof Name) {
     buffer.push(`/${escapePDFName(value.name)}`);
@@ -165,9 +190,7 @@ async function writeValue(value, buffer, transform) {
     // matrices (e.g. [0.000008 0 0 0.000008 0 0]).
     // The numbers must be "rounded" only when pdf.js is producing them and the
     // current transformation matrix is well known.
-    // toFixed(10) avoids scientific notation and rounds; the replace removes
-    // trailing zeros (and a trailing dot for integers).
-    buffer.push(value.toFixed(10).replace(/\.?0+$/, ""));
+    buffer.push(numberToPDFString(value));
   } else if (typeof value === "boolean") {
     buffer.push(value.toString());
   } else if (value instanceof Dict) {
