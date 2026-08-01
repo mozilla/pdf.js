@@ -220,4 +220,24 @@ describe("autolinker", function () {
       ["john.doe@uni-cityname.tld", "mailto:john.doe@uni-cityname.tld"],
     ]);
   });
+
+  it("should find emails with the longest parts allowed by the RFCs", function () {
+    const local = "a".repeat(64);
+    const label = "b".repeat(63);
+    testLinks([[`${local}@${label}.com`, `mailto:${local}@${label}.com`]]);
+  });
+
+  it("shouldn't find emails with parts longer than allowed by the RFCs", function () {
+    expect(
+      Autolinker.findLinks(`${"a".repeat(107)}@${"a".repeat(80)}.com`)
+    ).toEqual([]);
+  });
+
+  it("should handle a long run of characters before an @ efficiently", function () {
+    const text = `${"a".repeat(50000)}@`;
+
+    const startTime = performance.now();
+    expect(Autolinker.findLinks(text)).toEqual([]);
+    expect(performance.now() - startTime).toBeLessThan(1000);
+  });
 });
