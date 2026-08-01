@@ -122,6 +122,30 @@ describe("display_utils", function () {
       expect(
         getPdfFilenameFromUrl("http://www.example.com/pdfs/pdf.html#file2.pdf")
       ).toEqual("file2.pdf");
+      // Only the last ".pdf" of the hash is used.
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#a.pdf/b.pdf")).toEqual(
+        "b.pdf"
+      );
+      // A ".pdf" which isn't preceded by a name is ignored.
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#=.pdf")).toEqual(
+        "document.pdf"
+      );
+      // An invalid last ".pdf" prevents an earlier valid one from being used.
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#a.pdf/=.pdf")).toEqual(
+        "document.pdf"
+      );
+    });
+
+    it("gets PDF filename from a long hash string efficiently", function () {
+      // Scanning the hash for a name is quadratic when it contains no ".pdf".
+      const url = `/pdfs/pdfs.html#${"a".repeat(200000)}`;
+
+      const startTime = performance.now();
+      const filename = getPdfFilenameFromUrl(url);
+      const duration = performance.now() - startTime;
+
+      expect(filename).toEqual("document.pdf");
+      expect(duration).toBeLessThan(1000);
     });
 
     it("gets correct PDF filename when multiple ones are present", function () {
