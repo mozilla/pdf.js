@@ -220,9 +220,10 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   page ids and page numbers. It's used when the page order is changed or some
  *   pages are removed, cloned, etc.
  * @property {boolean} [disableWorkerRendering] - Disables rendering of pages in
- *   a worker thread. The default value is `true` for now, since worker
- *   rendering stays disabled throughout this series; it becomes `false` in the
- *   final commit, which enables it.
+ *   a worker thread. Note that worker rendering also requires
+ *   `GlobalWorkerOptions.rendererSrc` to be set; when it's unset, or the
+ *   renderer worker fails to start, rendering falls back to the main-thread.
+ *   The default value is `false`.
  */
 
 /**
@@ -338,9 +339,7 @@ function getDocument(src = {}) {
           isValidFetchUrl(wasmUrl, document.baseURI)
         );
   const disableWorkerRendering =
-    // TODO: Default to enabled once worker rendering is complete; flipped in
-    // the last commit of this series.
-    src.disableWorkerRendering !== false ||
+    src.disableWorkerRendering === true ||
     typeof Worker === "undefined" ||
     !FeatureTest.isOffscreenCanvasSupported ||
     ownerDocument !== globalThis.document ||

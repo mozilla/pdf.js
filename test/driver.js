@@ -41,6 +41,7 @@ const IMAGE_RESOURCES_PATH = "/web/images/";
 const VIEWER_CSS = "../build/components/pdf_viewer.css";
 const VIEWER_LOCALE = "en-US";
 const WORKER_SRC = "../build/generic/build/pdf.worker.mjs";
+const RENDERER_SRC = "../build/generic/build/pdf.renderer.mjs";
 const RENDER_TASK_ON_CONTINUE_DELAY = 5; // ms
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -534,6 +535,7 @@ class Driver {
   constructor(options) {
     // Configure the global worker options.
     GlobalWorkerOptions.workerSrc = WORKER_SRC;
+    GlobalWorkerOptions.rendererSrc = RENDERER_SRC;
 
     // We only need to initialize the `L10n`-instance here, since translation is
     // triggered by a `MutationObserver`; see e.g. `Rasterize.annotationLayer`.
