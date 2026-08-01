@@ -25,6 +25,7 @@ import {
   ensureResponseOrigin,
   extractFilenameFromHeader,
   getResponseOrigin,
+  trimHeadersEnd,
   validateRangeRequestCapabilities,
 } from "./network_utils.js";
 import { endRequests } from "./transport_stream.js";
@@ -208,9 +209,7 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
     const rawResponseHeaders = fullRequestXhr.getAllResponseHeaders();
     const responseHeaders = new Headers(
       rawResponseHeaders
-        ? rawResponseHeaders
-            .trimStart()
-            .replace(/[^\S ]+$/, "") // Not `trimEnd`, to keep regular spaces.
+        ? trimHeadersEnd(rawResponseHeaders.trimStart())
             .split(/[\r\n]+/)
             .map(x => {
               const [key, ...val] = x.split(": ");
