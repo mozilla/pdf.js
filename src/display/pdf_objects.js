@@ -38,14 +38,17 @@ class PDFObjects {
    *
    * @param {string} objId
    * @param {function} [callback]
+   * @param {function} [errorCallback] - Called with the rejection reason if the
+   *   object fails to resolve (e.g. it could never be delivered). Only used
+   *   together with `callback`.
    * @returns {any}
    */
-  get(objId, callback = null) {
+  get(objId, callback = null, errorCallback = null) {
     // If there is a callback, then the get can be async and the object is
     // not required to be resolved right now.
     if (callback) {
       const obj = this.#objs.getOrInsertComputed(objId, dataObj);
-      obj.promise.then(() => callback(obj.data));
+      obj.promise.then(() => callback(obj.data), errorCallback);
       return null;
     }
     // If there isn't a callback, the user expects to get the resolved data

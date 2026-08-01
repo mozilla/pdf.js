@@ -3694,6 +3694,8 @@ class InternalRenderTask {
       this.operatorList,
       this.operatorListIdx,
       this._continueBound,
+      // main-thread doesn't reject objects
+      null,
       this.stepper,
       this._operationsFilter
     );
