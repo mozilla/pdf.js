@@ -668,6 +668,10 @@ class CanvasGraphics {
   ) {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
+    // Cache materialized Path2D objects on the operatorList itself rather
+    // than by mutating `argsArray[i][0]`, so the op list stays structured-
+    // cloneable for postMessage to the renderer worker.
+    this._pathCache = operatorList.pathCache ||= new Map();
     let i = executionStartIdx || 0;
     const argsArrayLen = argsArray.length;
 
@@ -2064,10 +2068,12 @@ class CanvasGraphics {
 
   // Path
   constructPath(opIdx, op, data, minMax) {
-    let [path] = data;
+    let path = this._pathCache.get(opIdx);
     if (!minMax) {
-      // The path is empty, so no need to update the current minMax.
-      path ||= data[0] = new Path2D();
+      if (!path) {
+        path = new Path2D();
+        this._pathCache.set(opIdx, path);
+      }
       if (op !== OPS.stroke && op !== OPS.closeStroke) {
         this.current.tilingPatternDims = null;
       }
@@ -2090,8 +2096,9 @@ class CanvasGraphics {
         .recordDependencies(opIdx, ["transform"]);
     }
 
-    if (!(path instanceof Path2D)) {
-      path = data[0] = makePathFromDrawOPS(path);
+    if (!path) {
+      path = makePathFromDrawOPS(data[0]);
+      this._pathCache.set(opIdx, path);
     }
     Util.axialAlignedBoundingBox(
       minMax,
@@ -2944,11 +2951,12 @@ class CanvasGraphics {
     ctx.scale(textHScale, fontDirection);
 
     // Type3 fonts have their own operator list. Avoid mixing it up with the
-    // dependency tracker of the main operator list.
+    // dependency tracker and `pathCache` of the main operator list.
     const dependencyTracker = this.dependencyTracker;
     this.dependencyTracker = dependencyTracker
       ? new CanvasNestedDependencyTracker(dependencyTracker, opIdx)
       : null;
+    const prevPathCache = this._pathCache;
 
     for (i = 0; i < glyphsLength; ++i) {
       glyph = glyphs[i];
@@ -2987,6 +2995,7 @@ class CanvasGraphics {
       current.x += width * textHScale;
     }
     ctx.restore();
+    this._pathCache = prevPathCache;
     if (dependencyTracker) {
       this.dependencyTracker = dependencyTracker;
     }
