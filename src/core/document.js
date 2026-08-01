@@ -42,6 +42,7 @@ import {
   isWhiteSpace,
   lookupNormalRect,
   MissingDataException,
+  normalizeCSSFontFamily,
   PDF_VERSION_REGEXP,
   RESOURCES_KEYS_OPERATOR_LIST,
   RESOURCES_KEYS_TEXT_CONTENT,
@@ -1396,9 +1397,7 @@ class PDFDocument {
       if (!(descriptor instanceof Dict)) {
         continue;
       }
-      let fontFamily = descriptor.get("FontFamily");
-      // For example, "Wingdings 3" is not a valid font name in the css specs.
-      fontFamily = fontFamily.replaceAll(/ +(\d)/g, "$1");
+      const fontFamily = normalizeCSSFontFamily(descriptor.get("FontFamily"));
       const fontWeight = descriptor.get("FontWeight");
 
       // Angle is expressed in degrees counterclockwise in PDF

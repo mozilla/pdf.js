@@ -574,6 +574,18 @@ function validateFontName(fontFamily, mustWarn = false) {
   return true;
 }
 
+// Strip the spaces preceding a digit, since e.g. "Wingdings 3" is not a valid
+// font name in the css specs.
+// The optional trailing digit is matched as part of the space run, so that a
+// failing match cannot backtrack over the spaces; otherwise the replacement
+// would be quadratic in the number of consecutive spaces.
+function normalizeCSSFontFamily(fontFamily) {
+  return fontFamily.replaceAll(
+    /( +)(\d)?/g,
+    (_, spaces, digit) => digit ?? " "
+  );
+}
+
 function validateCSSFont(cssFontInfo) {
   // See https://developer.mozilla.org/en-US/docs/Web/CSS/font-style.
   const DEFAULT_CSS_FONT_OBLIQUE = "14";
@@ -750,6 +762,7 @@ export {
   lookupRect,
   MAX_INT_32,
   MissingDataException,
+  normalizeCSSFontFamily,
   numberToString,
   ParserEOFException,
   parseXFAPath,
