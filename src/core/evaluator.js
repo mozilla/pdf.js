@@ -388,6 +388,136 @@ class PartialEvaluator {
     return false;
   }
 
+  _hasTransferMaps(transferObj) {
+    let transferArray;
+    if (Array.isArray(transferObj)) {
+      transferArray = transferObj;
+      if (
+        transferObj.length > 1 &&
+        transferObj.every(map => map === transferObj[0])
+      ) {
+        // All entries in the array are the same, so we can just use one of
+        // them; this mirrors `handleTransferFunction`.
+        transferArray = [transferObj[0]];
+      }
+    } else if (isPDFFunction(transferObj)) {
+      transferArray = [transferObj];
+    } else {
+      return false;
+    }
+
+    const numFns = transferArray.length;
+    if (!(numFns === 1 || numFns === 4)) {
+      return false;
+    }
+
+    let numEffectfulFns = 0;
+    for (const entry of transferArray) {
+      const transfer = this.xref.fetchIfRef(entry);
+      if (isName(transfer, "Identity")) {
+        continue;
+      }
+      if (!isPDFFunction(transfer)) {
+        return false;
+      }
+      numEffectfulFns++;
+    }
+    return numEffectfulFns > 0;
+  }
+
+  hasCanvasFilters(resources) {
+    if (!(resources instanceof Dict)) {
+      return false;
+    }
+
+    const processed = new RefSet();
+    if (resources.objId) {
+      processed.put(resources.objId);
+    }
+    const xref = this.xref;
+    const nodes = [resources];
+    while (nodes.length) {
+      const node = nodes.shift();
+
+      const graphicStates = node.get("ExtGState");
+      if (graphicStates instanceof Dict) {
+        for (let graphicState of graphicStates.getRawValues()) {
+          if (graphicState instanceof Ref) {
+            if (processed.has(graphicState)) {
+              continue;
+            }
+            try {
+              graphicState = xref.fetch(graphicState);
+            } catch (ex) {
+              info(`hasCanvasFilters - failed to fetch ExtGState: "${ex}".`);
+              // A fetch failure means we can't inspect the resource, so fall
+              // back to main-thread rendering rather than misclassify a corrupt
+              // PDF as filter-free.
+              return true;
+            }
+          }
+          if (!(graphicState instanceof Dict)) {
+            continue;
+          }
+          if (graphicState.objId) {
+            processed.put(graphicState.objId);
+          }
+          try {
+            const transferObj = graphicState.has("TR2")
+              ? graphicState.get("TR2")
+              : graphicState.get("TR");
+            if (this._hasTransferMaps(transferObj)) {
+              return true;
+            }
+          } catch (ex) {
+            info(`hasCanvasFilters - failed to inspect filter data: "${ex}".`);
+            return true;
+          }
+        }
+      }
+
+      for (const resourceType of ["XObject", "Pattern"]) {
+        const resourceEntries = node.get(resourceType);
+        if (resourceEntries instanceof Dict) {
+          for (let entry of resourceEntries.getRawValues()) {
+            if (entry instanceof Ref) {
+              if (processed.has(entry)) {
+                continue;
+              }
+              try {
+                entry = xref.fetch(entry);
+              } catch (ex) {
+                info(
+                  `hasCanvasFilters - failed to fetch ${resourceType}: "${ex}".`
+                );
+                return true;
+              }
+            }
+            if (!(entry instanceof BaseStream)) {
+              continue;
+            }
+            if (entry.dict.objId) {
+              processed.put(entry.dict.objId);
+            }
+            const nestedResources = entry.dict.get("Resources");
+            if (!(nestedResources instanceof Dict)) {
+              continue;
+            }
+            if (nestedResources.objId && processed.has(nestedResources.objId)) {
+              continue;
+            }
+
+            nodes.push(nestedResources);
+            if (nestedResources.objId) {
+              processed.put(nestedResources.objId);
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {
