@@ -85,6 +85,11 @@ class PDFRenderingQueue {
       return;
     }
     // No pages needed rendering, so check thumbnails.
+    // TODO: When worker rendering is enabled, thumbnails are
+    // re-rendered from scratch because the page canvas is offscreen-
+    // transferred and cannot be reused as a thumbnail source. Consider
+    // having the worker emit a downscaled ImageBitmap to reuse the main
+    // render.
     if (
       this.isThumbnailViewEnabled &&
       this.#pdfThumbnailViewer?.forceRendering()
