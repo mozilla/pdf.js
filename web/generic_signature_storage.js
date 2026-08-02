@@ -16,13 +16,12 @@
 import { getUuid } from "pdfjs-lib";
 
 const KEY_STORAGE = "pdfjs.signature";
+const KEY_CRYPTO = "pdfjs.signature.key";
 
 class SignatureStorage {
-  // TODO: Encrypt the data in using a password and add a UI for entering it.
-  // We could use the Web Crypto API for this (see https://bradyjoslin.com/blog/encryption-webcrypto/
-  // for an example).
-
   #eventBus;
+
+  #key = null;
 
   #signatures = null;
 
@@ -33,10 +32,52 @@ class SignatureStorage {
     this.#signal = signal;
   }
 
-  #save() {
+  async #getKey() {
+    if (this.#key) {
+      return this.#key;
+    }
+    const stored = localStorage.getItem(KEY_CRYPTO);
+    if (stored) {
+      const raw = Uint8Array.from(atob(stored), c => c.charCodeAt(0));
+      this.#key = await crypto.subtle.importKey(
+        "raw",
+        raw,
+        { name: "AES-GCM" },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    } else {
+      this.#key = await crypto.subtle.generateKey(
+        { name: "AES-GCM", length: 256 },
+        true,
+        ["encrypt", "decrypt"]
+      );
+      const exported = await crypto.subtle.exportKey("raw", this.#key);
+      localStorage.setItem(
+        KEY_CRYPTO,
+        btoa(String.fromCharCode(...new Uint8Array(exported)))
+      );
+    }
+    return this.#key;
+  }
+
+  async #save() {
+    const key = await this.#getKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const encoded = new TextEncoder().encode(
+      JSON.stringify(Object.fromEntries(this.#signatures))
+    );
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      encoded
+    );
+    const payload = new Uint8Array(iv.length + ciphertext.byteLength);
+    payload.set(iv, 0);
+    payload.set(new Uint8Array(ciphertext), iv.length);
     localStorage.setItem(
       KEY_STORAGE,
-      JSON.stringify(Object.fromEntries(this.#signatures))
+      btoa(String.fromCharCode(...payload))
     );
   }
 
@@ -60,8 +101,23 @@ class SignatureStorage {
       this.#signatures = new Map();
       const data = localStorage.getItem(KEY_STORAGE);
       if (data) {
-        for (const [key, value] of Object.entries(JSON.parse(data))) {
-          this.#signatures.set(key, value);
+        try {
+          const cryptoKey = await this.#getKey();
+          const payload = Uint8Array.from(atob(data), c => c.charCodeAt(0));
+          const iv = payload.slice(0, 12);
+          const ciphertext = payload.slice(12);
+          const plaintext = await crypto.subtle.decrypt(
+            { name: "AES-GCM", iv },
+            cryptoKey,
+            ciphertext
+          );
+          const parsed = JSON.parse(new TextDecoder().decode(plaintext));
+          for (const [key, value] of Object.entries(parsed)) {
+            this.#signatures.set(key, value);
+          }
+        } catch {
+          // Corrupted or unreadable data — start fresh.
+          localStorage.removeItem(KEY_STORAGE);
         }
       }
     }
@@ -83,7 +139,7 @@ class SignatureStorage {
     }
     const uuid = getUuid();
     this.#signatures.set(uuid, data);
-    this.#save();
+    await this.#save();
 
     return uuid;
   }
@@ -94,7 +150,7 @@ class SignatureStorage {
       return false;
     }
     signatures.delete(uuid);
-    this.#save();
+    await this.#save();
 
     return true;
   }
