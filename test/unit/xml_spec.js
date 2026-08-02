@@ -153,4 +153,33 @@ describe("XML", function () {
       ["foo", ""],
     ]);
   });
+
+  describe("entities", function () {
+    const parseText = xml =>
+      new SimpleXMLParser({}).parseFromString(xml).documentElement.textContent;
+
+    it("should resolve the entities", function () {
+      expect(
+        parseText("<a>&lt;b&gt; &amp; &quot;c&quot; &apos;d&apos;</a>")
+      ).toEqual(`<b> & "c" 'd'`);
+      expect(parseText("<a>&#65;&#x42;</a>")).toEqual("AB");
+    });
+
+    it("should keep the unresolved entities as-is", function () {
+      expect(parseText("<a>&unknown; a&b;c</a>")).toEqual("&unknown; a&b;c");
+    });
+
+    it("should resolve an entity preceded by a bare ampersand", function () {
+      expect(parseText("<a>AT&T &amp; Co</a>")).toEqual("AT&T & Co");
+      expect(parseText("<a>&&amp;</a>")).toEqual("&&");
+    });
+
+    it("should handle a long run of ampersands efficiently", function () {
+      const text = "&".repeat(100000);
+
+      const startTime = performance.now();
+      expect(parseText(`<a>${text}</a>`)).toEqual(text);
+      expect(performance.now() - startTime).toBeLessThan(1000);
+    });
+  });
 });

@@ -49,7 +49,8 @@ function isWhitespaceString(s) {
 
 class XMLParserBase {
   static get _entityRegex() {
-    return shadow(this, "_entityRegex", /&(?:#x([^;]+)|#([^;]+)|([^;]+));/g);
+    // Entity references cannot contain "&", keeping the scan linear.
+    return shadow(this, "_entityRegex", /&(?:#x([^;&]+)|#([^;&]+)|([^;&]+));/g);
   }
 
   _resolveEntities(s) {
