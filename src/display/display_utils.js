@@ -188,10 +188,22 @@ function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
   }
 
   if (newURL.hash) {
-    const reFilename = /[^/?#=]+\.pdf\b(?!.*\.pdf\b)/i;
-    const hashFilename = reFilename.exec(newURL.hash);
-    if (hashFilename) {
-      return decode(hashFilename[0]);
+    // Locate the last ".pdf" and then extend it to the left, up to the closest
+    // separator. Both steps are linear, whereas a single pattern starting with
+    // `[^/?#=]+` is quadratic on a hash which contains no ".pdf" at all.
+    const { hash } = newURL;
+    let extensionStart = -1;
+    for (const { index } of hash.matchAll(/\.pdf\b/gi)) {
+      extensionStart = index;
+    }
+    if (extensionStart > 0) {
+      let filenameStart = extensionStart;
+      while (filenameStart > 0 && !"/?#=".includes(hash[filenameStart - 1])) {
+        filenameStart--;
+      }
+      if (filenameStart < extensionStart) {
+        return decode(hash.slice(filenameStart, extensionStart + 4));
+      }
     }
   }
 
