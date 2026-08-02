@@ -1069,9 +1069,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Object<string, Array<Object>> | null>} A promise that is
-   *   resolved with an {Object} containing /AcroForm field data for the JS
-   *   sandbox, or `null` when no field data is present in the PDF file.
+   * @returns {Promise<Map<string, Array<Object>> | null>} A promise that is
+   *   resolved with a {Map} containing /AcroForm field data for the JS sandbox,
+   *   or `null` when no field data is present in the PDF file.
    */
   getFieldObjects() {
     return this._transport.getFieldObjects();

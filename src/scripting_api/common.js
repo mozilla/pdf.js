@@ -21,10 +21,8 @@ const FieldType = {
   time: 4,
 };
 
-function createActionsMap(actions) {
-  return actions instanceof Map
-    ? actions
-    : new Map(actions ? Object.entries(actions) : null);
+function createMap(val) {
+  return val instanceof Map ? val : new Map(val ? Object.entries(val) : null);
 }
 
 function getFieldType(actions) {
@@ -49,4 +47,4 @@ function getFieldType(actions) {
   return FieldType.none;
 }
 
-export { createActionsMap, FieldType, getFieldType };
+export { createMap, FieldType, getFieldType };

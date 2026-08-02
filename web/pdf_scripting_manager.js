@@ -111,7 +111,7 @@ class PDFScriptingManager {
     // targeting an unknown id can be ignored.
     if (objects) {
       this.#objectIds = new Set();
-      for (const fields of Object.values(objects)) {
+      for (const fields of objects.values()) {
         for (const { id } of fields) {
           this.#objectIds.add(id);
         }

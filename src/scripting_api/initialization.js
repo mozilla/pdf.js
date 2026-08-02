@@ -32,6 +32,7 @@ import { AForm } from "./aform.js";
 import { App } from "./app.js";
 import { Color } from "./color.js";
 import { Console } from "./console.js";
+import { createMap } from "./common.js";
 import { Doc } from "./doc.js";
 import { ProxyHandler } from "./proxy.js";
 import { serializeError } from "./app_utils.js";
@@ -70,61 +71,57 @@ function initSandbox(params) {
   const util = new Util({ externalCall });
   const appObjects = app._objects;
 
-  if (data.objects) {
+  for (const [name, objs] of createMap(data.objects)) {
     const annotations = [];
+    let container = null;
 
-    for (const [name, objs] of Object.entries(data.objects)) {
-      annotations.length = 0;
-      let container = null;
+    for (const obj of objs) {
+      if (obj.type !== "") {
+        annotations.push(obj);
+      } else {
+        container = obj;
+      }
+    }
 
-      for (const obj of objs) {
-        if (obj.type !== "") {
-          annotations.push(obj);
-        } else {
-          container = obj;
+    let obj = container;
+    if (annotations.length > 0) {
+      obj = annotations[0];
+      obj.send = send;
+    }
+
+    obj.globalEval = globalEval;
+    obj.doc = _document;
+    obj.fieldPath = name;
+    obj.appObjects = appObjects;
+    obj.util = util;
+
+    const otherFields = annotations.slice(1);
+
+    let field;
+    switch (obj.type) {
+      case "radiobutton": {
+        field = new RadioButtonField(otherFields, obj);
+        break;
+      }
+      case "checkbox": {
+        field = new CheckboxField(otherFields, obj);
+        break;
+      }
+      default:
+        if (otherFields.length > 0) {
+          obj.siblings = otherFields.map(x => x.id);
         }
-      }
+        field = new Field(obj);
+    }
 
-      let obj = container;
-      if (annotations.length > 0) {
-        obj = annotations[0];
-        obj.send = send;
-      }
-
-      obj.globalEval = globalEval;
-      obj.doc = _document;
-      obj.fieldPath = name;
-      obj.appObjects = appObjects;
-      obj.util = util;
-
-      const otherFields = annotations.slice(1);
-
-      let field;
-      switch (obj.type) {
-        case "radiobutton": {
-          field = new RadioButtonField(otherFields, obj);
-          break;
-        }
-        case "checkbox": {
-          field = new CheckboxField(otherFields, obj);
-          break;
-        }
-        default:
-          if (otherFields.length > 0) {
-            obj.siblings = otherFields.map(x => x.id);
-          }
-          field = new Field(obj);
-      }
-
-      const wrapped = new Proxy(field, proxyHandler);
-      const _object = { obj: field, wrapped };
-      doc._addField(name, _object);
-      for (const object of objs) {
-        appObjects[object.id] = _object;
-      }
-      if (container) {
-        appObjects[container.id] = _object;
-      }
+    const wrapped = new Proxy(field, proxyHandler);
+    const _object = { obj: field, wrapped };
+    doc._addField(name, _object);
+    for (const object of objs) {
+      appObjects[object.id] = _object;
+    }
+    if (container) {
+      appObjects[container.id] = _object;
     }
   }
 
