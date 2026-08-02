@@ -53,12 +53,12 @@ class XMLParserBase {
   }
 
   _resolveEntities(s) {
-    return s.replaceAll(XMLParserBase._entityRegex, (_, hex, dec, entity) => {
-      if (hex) {
-        return String.fromCodePoint(parseInt(hex, 16));
-      }
-      if (dec) {
-        return String.fromCodePoint(parseInt(dec, 10));
+    return s.replaceAll(XMLParserBase._entityRegex, (all, hex, dec, entity) => {
+      if (hex || dec) {
+        const code = hex ? parseInt(hex, 16) : parseInt(dec, 10);
+        // An out-of-range or unparsable code point is kept as-is, since
+        // `String.fromCodePoint` would throw on it.
+        return code >= 0 && code <= 0x10ffff ? String.fromCodePoint(code) : all;
       }
       switch (entity) {
         case "lt":
