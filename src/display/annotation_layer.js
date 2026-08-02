@@ -1811,11 +1811,21 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             switch (event.inputType) {
               // https://rawgit.com/w3c/input-events/v1/index.html#interface-InputEvent-Attributes
               case "deleteWordBackward": {
-                const match = value
-                  .substring(0, selectionStart)
-                  .match(/\w*\W*$/);
-                if (match) {
-                  selStart -= match[0].length;
+                // The previous unanchored regex could take quadratic time, so
+                // scan backwards over the trailing non-word characters and
+                // then the word.
+                const wordCharPattern = /\w/;
+                while (
+                  selStart > 0 &&
+                  !wordCharPattern.test(value[selStart - 1])
+                ) {
+                  selStart--;
+                }
+                while (
+                  selStart > 0 &&
+                  wordCharPattern.test(value[selStart - 1])
+                ) {
+                  selStart--;
                 }
                 break;
               }

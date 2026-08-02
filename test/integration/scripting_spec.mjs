@@ -1204,6 +1204,69 @@ describe("Interaction", () => {
       );
     });
 
+    it("must efficiently delete a word from a large field", async () => {
+      const nonWordLength = 200000;
+
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          const result = await page.$eval(
+            getSelector("27R"),
+            (element, length) => {
+              element.value = `${"!".repeat(length)}a`;
+              element.setSelectionRange(
+                element.value.length,
+                element.value.length
+              );
+
+              const eventBus = window.PDFViewerApplication.eventBus;
+              const eventBusPrototype = Object.getPrototypeOf(eventBus);
+              const originalDispatch = eventBusPrototype.dispatch;
+              let selection;
+              eventBusPrototype.dispatch = function (eventName, data) {
+                if (
+                  this === eventBus &&
+                  eventName === "dispatcheventinsandbox"
+                ) {
+                  const { selEnd, selStart } = data.detail;
+                  selection = { selEnd, selStart };
+                  return;
+                }
+                originalDispatch.call(this, eventName, data);
+              };
+
+              const event = new InputEvent("beforeinput", {
+                bubbles: true,
+                cancelable: true,
+                inputType: "deleteWordBackward",
+              });
+              try {
+                const startTime = performance.now();
+                element.dispatchEvent(event);
+                return {
+                  duration: performance.now() - startTime,
+                  selection,
+                };
+              } finally {
+                eventBusPrototype.dispatch = originalDispatch;
+              }
+            },
+            nonWordLength
+          );
+          expect(result.selection)
+            .withContext(`In ${browserName}`)
+            .toEqual({
+              selEnd: nonWordLength + 1,
+              selStart: nonWordLength,
+            });
+          expect(result.duration)
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(1000);
+        })
+      );
+    });
+
     it("must check that an infinite loop is not triggered", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
