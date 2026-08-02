@@ -32,6 +32,17 @@ function createHeaders(isHttp, httpHeaders) {
   return headers;
 }
 
+// Trim the trailing whitespace of the raw response headers, but keep the
+// regular spaces (hence no `trimEnd`). Scanning backwards keeps this linear,
+// whereas a `$`-anchored regex is quadratic in the length of the run.
+function trimHeadersEnd(str) {
+  let end = str.length;
+  while (end > 0 && str[end - 1] !== " " && /\s/.test(str[end - 1])) {
+    end--;
+  }
+  return str.slice(0, end);
+}
+
 function getResponseOrigin(url) {
   // Notably, null is distinct from "null" string (e.g. from file:-URLs).
   return URL.parse(url)?.origin ?? null;
@@ -117,5 +128,6 @@ export {
   ensureResponseOrigin,
   extractFilenameFromHeader,
   getResponseOrigin,
+  trimHeadersEnd,
   validateRangeRequestCapabilities,
 };

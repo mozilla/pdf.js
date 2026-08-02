@@ -17,6 +17,7 @@ import {
   createHeaders,
   createResponseError,
   extractFilenameFromHeader,
+  trimHeadersEnd,
   validateRangeRequestCapabilities,
 } from "../../src/display/network_utils.js";
 import { ResponseException } from "../../src/shared/util.js";
@@ -384,6 +385,40 @@ describe("network_utils", function () {
       testCreateResponseError(new URL("https://foo.com/bar.pdf"), 302, false);
 
       testCreateResponseError(new URL("https://foo.com/bar.pdf"), 0, false);
+    });
+  });
+
+  describe("trimHeadersEnd", function () {
+    it("removes the trailing whitespace", function () {
+      expect(trimHeadersEnd("a: 1\r\nb: 2\r\n")).toEqual("a: 1\r\nb: 2");
+      expect(trimHeadersEnd("a: 1\n\n")).toEqual("a: 1");
+      expect(trimHeadersEnd("a: 1\t\r\n")).toEqual("a: 1");
+    });
+
+    it("keeps the regular spaces", function () {
+      expect(trimHeadersEnd("a:  1  ")).toEqual("a:  1  ");
+      expect(trimHeadersEnd("a: 1\r\n  ")).toEqual("a: 1\r\n  ");
+      expect(trimHeadersEnd("  ")).toEqual("  ");
+    });
+
+    it("handles strings without trailing whitespace", function () {
+      expect(trimHeadersEnd("")).toEqual("");
+      expect(trimHeadersEnd("a: 1")).toEqual("a: 1");
+      expect(trimHeadersEnd("\r\na: 1")).toEqual("\r\na: 1");
+    });
+
+    it("handles a long run of whitespace efficiently", function () {
+      // Removing the run with a `$`-anchored regex is quadratic in its length,
+      // and a server controls how long the headers are.
+      const run = "\t".repeat(100000);
+
+      const startTime = performance.now();
+      // The run is trailing, hence removed.
+      expect(trimHeadersEnd(`a: 1${run}`)).toEqual("a: 1");
+      // The run is followed by a non-whitespace, hence kept: this is the case
+      // which a regex has to backtrack over.
+      expect(trimHeadersEnd(`a: 1${run}b`)).toEqual(`a: 1${run}b`);
+      expect(performance.now() - startTime).toBeLessThan(1000);
     });
   });
 });
