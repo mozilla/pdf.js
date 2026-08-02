@@ -440,6 +440,30 @@ describe("core_utils", function () {
       expect(validateCSSFont(cssFontInfo)).toBeFalse();
     });
 
+    it("Check font family containing control characters", function () {
+      const cssFontInfo = {
+        fontFamily: "",
+        fontWeight: 0,
+        italicAngle: 0,
+      };
+
+      // A form feed is a newline in CSS, hence it terminates the <string>.
+      cssFontInfo.fontFamily = `"blah\fblah"`;
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
+
+      cssFontInfo.fontFamily = `"blah\x00blah"`;
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
+
+      cssFontInfo.fontFamily = `"blah\tblah"`;
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
+
+      cssFontInfo.fontFamily = `"blah\nblah"`;
+      expect(validateCSSFont(cssFontInfo)).toBeFalse();
+
+      cssFontInfo.fontFamily = `"blah blah"`;
+      expect(validateCSSFont(cssFontInfo)).toBeTrue();
+    });
+
     it("Check font weight", function () {
       const cssFontInfo = {
         fontFamily: "blah",

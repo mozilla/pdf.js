@@ -23,6 +23,7 @@ import {
 } from "../shared/util.js";
 import { Dict, isName, isRefsEqual, Name, Ref, RefSet } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
+import { CONTROL_CHAR_REGEXP } from "../shared/css_utils.js";
 import { stringToPDFString } from "./string_utils.js";
 
 const PDF_VERSION_REGEXP = /^[1-9]\.\d$/;
@@ -558,6 +559,17 @@ function validateFontName(fontFamily, mustWarn = false) {
     if (re.test(fontFamily.slice(1, -1))) {
       if (mustWarn) {
         warn(`FontFamily contains unescaped ${m[1]}: ${fontFamily}.`);
+      }
+      return false;
+    }
+    // A <string> is terminated by a newline, which for CSS also includes the
+    // form feed character; see https://drafts.csswg.org/css-syntax/#newline.
+    // The font family is escaped before being used, see `serializeFontFamily`,
+    // hence this only prevents values that cannot sensibly name a font from
+    // being used at all (the unquoted case below is already this strict).
+    if (CONTROL_CHAR_REGEXP.test(fontFamily)) {
+      if (mustWarn) {
+        warn(`FontFamily contains control characters: ${fontFamily}.`);
       }
       return false;
     }
