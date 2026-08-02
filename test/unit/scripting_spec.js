@@ -363,6 +363,80 @@ describe("Scripting", function () {
       });
     });
 
+    it("should trigger an event added with setAction", async () => {
+      const refId = getId();
+      const data = {
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {},
+              type: "text",
+            },
+          ],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+      };
+      sandbox.createSandbox(data);
+
+      await myeval(
+        `(this.getField("field").setAction("test", 'event.source.value = "abc";'), 0)`
+      );
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        value: "",
+        name: "test",
+        willCommit: true,
+      });
+
+      expect(send_queue.has(refId)).toBeTrue();
+      expect(send_queue.get(refId)).toEqual({
+        id: refId,
+        value: "abc",
+      });
+    });
+
+    it("should trigger an event appended with setAction", async () => {
+      const refId = getId();
+      const data = {
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {
+                test: [`event.source.value = "a";`],
+              },
+              type: "text",
+            },
+          ],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+      };
+      sandbox.createSandbox(data);
+
+      await myeval(
+        `(this.getField("field").setAction("test", 'event.source.value += "b";'), 0)`
+      );
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        value: "",
+        name: "test",
+        willCommit: true,
+      });
+
+      expect(send_queue.has(refId)).toBeTrue();
+      expect(send_queue.get(refId)).toEqual({
+        id: refId,
+        value: "ab",
+      });
+    });
+
     it("should trigger a Keystroke event and invalidate it", async () => {
       const refId = getId();
       const data = {
