@@ -24,6 +24,7 @@ import {
   getRotationMatrix,
   getSizeInBytes,
   isWhiteSpace,
+  normalizeCSSFontFamily,
   numberToString,
   parseXFAPath,
   recoverJsURL,
@@ -322,6 +323,41 @@ describe("core_utils", function () {
     it("should keep the character after U+FFFE or U+FFFF", function () {
       expect(encodeToXmlString("￿A")).toEqual("&#xFFFF;A");
       expect(encodeToXmlString("￾B")).toEqual("&#xFFFE;B");
+    });
+  });
+
+  describe("normalizeCSSFontFamily", function () {
+    it("should strip the spaces preceding a digit", function () {
+      expect(normalizeCSSFontFamily("Wingdings 3")).toEqual("Wingdings3");
+      expect(normalizeCSSFontFamily("Wingdings   3")).toEqual("Wingdings3");
+      expect(normalizeCSSFontFamily(" 1 2 3")).toEqual("123");
+      expect(normalizeCSSFontFamily("MS Gothic 2 Bold 7")).toEqual(
+        "MS Gothic2 Bold7"
+      );
+    });
+
+    it("should keep the spaces which don't precede a digit", function () {
+      expect(normalizeCSSFontFamily("")).toEqual("");
+      expect(normalizeCSSFontFamily("Times New Roman")).toEqual(
+        "Times New Roman"
+      );
+      // The runs of spaces must be preserved as-is.
+      expect(normalizeCSSFontFamily("  Times   New Roman ")).toEqual(
+        " Times New Roman "
+      );
+      // A digit which isn't preceded by a space is left alone.
+      expect(normalizeCSSFontFamily("Wingdings3")).toEqual("Wingdings3");
+    });
+
+    it("should handle long runs of spaces efficiently", function () {
+      // Guard against a regular expression that backtracks over the spaces,
+      // which makes the replacement quadratic: that needs several seconds
+      // here, whereas a linear one needs well under a millisecond.
+      const fontFamily = `Wingdings${" ".repeat(100000)}`;
+
+      const startTime = performance.now();
+      expect(normalizeCSSFontFamily(fontFamily)).toEqual("Wingdings ");
+      expect(performance.now() - startTime).toBeLessThan(1000);
     });
   });
 
