@@ -14,9 +14,9 @@
  */
 
 import { createActionsMap, FieldType, getFieldType } from "./common.js";
+import { makeArr, serializeError } from "./app_utils.js";
 import { Color } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
-import { serializeError } from "./app_utils.js";
 
 class Field extends PDFObject {
   constructor(data) {
@@ -496,10 +496,7 @@ class Field extends PDFObject {
     if (typeof cTrigger !== "string" || typeof cScript !== "string") {
       return;
     }
-    if (!(cTrigger in this._actions)) {
-      this._actions[cTrigger] = [];
-    }
-    this._actions[cTrigger].push(cScript);
+    this._actions.getOrInsertComputed(cTrigger, makeArr).push(cScript);
   }
 
   setFocus() {
