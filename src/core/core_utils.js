@@ -341,7 +341,8 @@ function lookupNormalRect(arr, fallback) {
  * each part of the path.
  */
 function parseXFAPath(path) {
-  const positionPattern = /(.+)\[(\d+)\]$/;
+  // Anchoring prevents retrying the match at every character.
+  const positionPattern = /^(.+)\[(\d+)\]$/;
   return path.split(".").map(component => {
     const m = component.match(positionPattern);
     if (m) {

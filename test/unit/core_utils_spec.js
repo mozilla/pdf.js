@@ -244,6 +244,32 @@ describe("core_utils", function () {
         { name: "BAR", pos: 456 },
       ]);
     });
+
+    it("should ignore a malformed position", function () {
+      expect(parseXFAPath("foo[].bar[1x].oof[].[3]")).toEqual([
+        { name: "foo[]", pos: 0 },
+        { name: "bar[1x]", pos: 0 },
+        { name: "oof[]", pos: 0 },
+        { name: "[3]", pos: 0 },
+      ]);
+    });
+
+    it("should keep the longest name when a component has several brackets", function () {
+      expect(parseXFAPath("foo[1][2]")).toEqual([{ name: "foo[1]", pos: 2 }]);
+    });
+
+    it("should handle a long component efficiently", function () {
+      // Looking for the position with a leading `.+` is quadratic in the
+      // length of a component which doesn't end with one.
+      const name = "a".repeat(200000);
+
+      const startTime = performance.now();
+      const parsedPath = parseXFAPath(name);
+      const duration = performance.now() - startTime;
+
+      expect(parsedPath).toEqual([{ name, pos: 0 }]);
+      expect(duration).toBeLessThan(1000);
+    });
   });
 
   describe("recoverJsURL", function () {
