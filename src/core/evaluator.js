@@ -388,49 +388,15 @@ class PartialEvaluator {
     return false;
   }
 
-  _hasTransferMaps(transferObj) {
-    let transferArray;
-    if (Array.isArray(transferObj)) {
-      transferArray = transferObj;
-      if (
-        transferObj.length > 1 &&
-        transferObj.every(map => map === transferObj[0])
-      ) {
-        // All entries in the array are the same, so we can just use one of
-        // them; this mirrors `handleTransferFunction`.
-        transferArray = [transferObj[0]];
-      }
-    } else if (isPDFFunction(transferObj)) {
-      transferArray = [transferObj];
-    } else {
-      return false;
-    }
-
-    const numFns = transferArray.length;
-    if (!(numFns === 1 || numFns === 4)) {
-      return false;
-    }
-
-    let numEffectfulFns = 0;
-    for (const entry of transferArray) {
-      const transfer = this.xref.fetchIfRef(entry);
-      if (isName(transfer, "Identity")) {
-        continue;
-      }
-      if (!isPDFFunction(transfer)) {
-        return false;
-      }
-      numEffectfulFns++;
-    }
-    return numEffectfulFns > 0;
-  }
-
-  hasCanvasFilters(resources) {
+  hasCanvasFilters(resources, nonCanvasFiltersSet) {
     if (!(resources instanceof Dict)) {
       return false;
     }
+    if (resources.objId && nonCanvasFiltersSet.has(resources.objId)) {
+      return false;
+    }
 
-    const processed = new RefSet();
+    const processed = new RefSet(nonCanvasFiltersSet);
     if (resources.objId) {
       processed.put(resources.objId);
     }
@@ -466,7 +432,7 @@ class PartialEvaluator {
             const transferObj = graphicState.has("TR2")
               ? graphicState.get("TR2")
               : graphicState.get("TR");
-            if (this._hasTransferMaps(transferObj)) {
+            if (this._getTransferFunctions(transferObj) !== null) {
               return true;
             }
           } catch (ex) {
@@ -514,6 +480,13 @@ class PartialEvaluator {
           }
         }
       }
+    }
+
+    // When no canvas filters exist, there's no need to re-fetch/re-parse any
+    // of the processed `Ref`s again for subsequent pages; the early
+    // `return true`s above skip this, since those subtrees weren't inspected.
+    for (const ref of processed) {
+      nonCanvasFiltersSet.put(ref);
     }
     return false;
   }
@@ -1057,7 +1030,7 @@ class PartialEvaluator {
     );
   }
 
-  handleTransferFunction(tr) {
+  _getTransferFunctions(tr) {
     let transferArray;
     if (Array.isArray(tr)) {
       transferArray = tr;
@@ -1071,21 +1044,43 @@ class PartialEvaluator {
     } else {
       return null; // Not a valid transfer function entry.
     }
+    if (!(transferArray.length === 1 || transferArray.length === 4)) {
+      return null; // Only 1 or 4 functions are supported, by the specification.
+    }
 
-    const transferMaps = [];
-    let numFns = 0,
-      numEffectfulFns = 0;
+    const transferFns = [];
+    let numEffectfulFns = 0;
     for (const entry of transferArray) {
       const transferObj = this.xref.fetchIfRef(entry);
-      numFns++;
 
       if (isName(transferObj, "Identity")) {
-        transferMaps.push(null);
+        transferFns.push(null);
         continue;
       } else if (!isPDFFunction(transferObj)) {
         return null; // Not a valid transfer function object.
       }
+      transferFns.push(transferObj);
+      numEffectfulFns++;
+    }
 
+    if (numEffectfulFns === 0) {
+      return null; // Only /Identity transfer functions found, which are no-ops.
+    }
+    return transferFns;
+  }
+
+  handleTransferFunction(tr) {
+    const transferFns = this._getTransferFunctions(tr);
+    if (!transferFns) {
+      return null;
+    }
+
+    const transferMaps = [];
+    for (const transferObj of transferFns) {
+      if (!transferObj) {
+        transferMaps.push(null); // An `/Identity` entry.
+        continue;
+      }
       const transferFn = this._pdfFunctionFactory.create(transferObj);
       const transferMap = new Uint8Array(256),
         tmp = new Float32Array(1);
@@ -1095,14 +1090,6 @@ class PartialEvaluator {
         transferMap[j] = (tmp[0] * 255) | 0;
       }
       transferMaps.push(transferMap);
-      numEffectfulFns++;
-    }
-
-    if (!(numFns === 1 || numFns === 4)) {
-      return null; // Only 1 or 4 functions are supported, by the specification.
-    }
-    if (numEffectfulFns === 0) {
-      return null; // Only /Identity transfer functions found, which are no-ops.
     }
     return transferMaps;
   }
