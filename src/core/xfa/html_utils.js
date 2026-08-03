@@ -28,6 +28,7 @@ import {
 import { createValidAbsoluteUrl, warn } from "../../shared/util.js";
 import { getMeasurement, stripQuotes } from "./utils.js";
 import { selectFont } from "./fonts.js";
+import { serializeFontFamily } from "../../shared/css_utils.js";
 import { TextMeasure } from "./text.js";
 import { XFAObject } from "./xfa_object.js";
 
@@ -597,13 +598,16 @@ function setFontFamily(xfaFont, node, fontFinder, style) {
   }
 
   const name = stripQuotes(xfaFont.typeface);
-  style.fontFamily = `"${name}"`;
+  // Use the same serialization as the `@font-face` rule, resp. the `FontFace`
+  // instance, that the font is registered with; see `createFontFaceRule` and
+  // `createNativeFontFace` in `src/display/font_loader.js`.
+  style.fontFamily = serializeFontFamily(name);
 
   const typeface = fontFinder.find(name);
   if (typeface) {
     const { fontFamily } = typeface.regular.cssFontInfo;
     if (fontFamily !== name) {
-      style.fontFamily = `"${fontFamily}"`;
+      style.fontFamily = serializeFontFamily(fontFamily);
     }
 
     const para = getCurrentPara(node);

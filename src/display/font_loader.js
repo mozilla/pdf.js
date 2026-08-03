@@ -22,6 +22,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { makePathFromDrawOPS } from "./display_utils.js";
+import { serializeFontFamily } from "../shared/css_utils.js";
 
 class FontLoader {
   #systemFonts = new Set();
@@ -439,7 +440,7 @@ class FontFaceObject {
         css.style = `oblique ${this.cssFontInfo.italicAngle}deg`;
       }
       nativeFontFace = new FontFace(
-        this.cssFontInfo.fontFamily,
+        serializeFontFamily(this.cssFontInfo.fontFamily),
         this.data,
         css
       );
@@ -463,7 +464,10 @@ class FontFaceObject {
       if (this.cssFontInfo.italicAngle) {
         css += `font-style: oblique ${this.cssFontInfo.italicAngle}deg;`;
       }
-      rule = `@font-face {font-family:"${this.cssFontInfo.fontFamily}";${css}src:${url}}`;
+      // The font family originates from the PDF document, hence it must be
+      // serialized as a <string> to prevent arbitrary rule injection.
+      const fontFamily = serializeFontFamily(this.cssFontInfo.fontFamily);
+      rule = `@font-face {font-family:${fontFamily};${css}src:${url}}`;
     }
 
     this._inspectFont?.(this, url);
