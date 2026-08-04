@@ -30,6 +30,9 @@ latest JavaScript features; please also see [this wiki page](https://github.com/
 
 + Older browsers: https://mozilla.github.io/pdf.js/legacy/web/viewer.html
 
+> [!NOTE]
+> Open new files via the menu (the ">>" icon) or by dragging and dropping.
+
 ### Browser Extensions
 
 #### Firefox
