@@ -7775,6 +7775,67 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("rebuilds a missing AcroForm Fields array with a Parent cycle", async function () {
+        const data = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 20 10] " +
+            "/Parent 5 0 R >>\nendobj\n",
+          // The Parent chain 5 -> 7 -> 5 is cyclic.
+          "5 0 obj\n<< /FT /Tx /T (group) /Kids [4 0 R] /Parent 7 0 R >>\n" +
+            "endobj\n",
+          "6 0 obj\n<< /DA (/Helv 10 Tf) >>\nendobj\n",
+          "7 0 obj\n<< /T (cycle) /Kids [5 0 R] /Parent 5 0 R >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data });
+        let pdfDoc = await loadingTask.promise;
+        const extracted = await pdfDoc.extractPages([{ document: null }]);
+        expect(extracted).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data: extracted });
+        pdfDoc = await loadingTask.promise;
+
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()]).toEqual(["group"]);
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations[0].fieldName).toEqual("group");
+
+        await loadingTask.destroy();
+      });
+
+      it("rebuilds a missing AcroForm Fields array with a bogus Parent", async function () {
+        const data = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 20 10] " +
+            "/FT /Tx /T (widget) /Parent 5 0 R >>\nendobj\n",
+          // The Parent isn't a dictionary.
+          "5 0 obj\n[1 2 3]\nendobj\n",
+          "6 0 obj\n<< /DA (/Helv 10 Tf) >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data });
+        let pdfDoc = await loadingTask.promise;
+        const extracted = await pdfDoc.extractPages([{ document: null }]);
+        expect(extracted).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data: extracted });
+        pdfDoc = await loadingTask.promise;
+
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations.length).toEqual(1);
+        expect(annotations[0].fieldName).toEqual("widget");
+
+        await loadingTask.destroy();
+      });
+
       it("preserves indirect AcroForm default resources", async function () {
         const pdfData = assemblePdf([
           "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
