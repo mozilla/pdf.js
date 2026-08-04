@@ -815,19 +815,13 @@ describe("Reorganize Pages View", () => {
           await page.waitForSelector("#viewsManagerStatusActionButton", {
             visible: true,
           });
-          const rect1 = await getRect(page, getThumbnailSelector(1));
-          const rect2 = await getRect(page, getThumbnailSelector(2));
-
-          await dragAndDrop(
-            page,
-            getThumbnailSelector(1),
-            [[0, rect2.y - rect1.y + rect2.height / 2]],
-            10
-          );
+          // Drag-and-drop behavior is covered separately. Use an exact move
+          // here so this test only checks the save payload.
+          await movePages(page, [1], 2);
 
           const handleSave = await createPromise(page, resolve => {
             window.PDFViewerApplication.onSavePages = async ({ data }) => {
-              resolve(Array.from(data[0].pageIndices));
+              resolve(Array.from(data.pageInfos[0].pageIndices));
             };
           });
 
@@ -2032,9 +2026,12 @@ describe("Reorganize Pages View", () => {
           const pagesData = await awaitPromise(handleExport);
           expect(pagesData)
             .withContext(`In ${browserName}`)
-            .toEqual([
-              { document: null, pageIndices: [0, 1], includePages: [0, 2] },
-            ]);
+            .toEqual({
+              pageInfos: [
+                { document: null, pageIndices: [0, 1], includePages: [0, 2] },
+              ],
+              copyLevels: null,
+            });
 
           await waitForTextToBe(page, labelSelector, "Select pages");
           // All checkboxes should be unchecked.
@@ -2865,7 +2862,7 @@ describe("Reorganize Pages View", () => {
       await closePages(pages);
     });
 
-    it("should check that the pasted page has an ink annotation in the DOM", async () => {
+    it("should keep an ink annotation on a pasted and moved page", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Enable ink editor mode and draw a line on page 1.
@@ -2899,20 +2896,43 @@ describe("Reorganize Pages View", () => {
           // Both the original and the cloned annotation must now be in storage.
           await waitForStorageEntries(page, 2);
 
-          // Close the reorganize view and navigate to page 3 (the pasted copy)
-          // to trigger rendering of its annotation editor layer.
+          const editorIds = await page.evaluate(() => {
+            const entries = Array.from(
+              window.PDFViewerApplication.pdfDocument.annotationStorage
+            );
+            return {
+              original: entries.find(([, editor]) => editor.pageIndex === 0)[0],
+              clone: entries.find(([, editor]) => editor.pageIndex === 2)[0],
+            };
+          });
+
+          // Move the pasted copy before the original and verify that both
+          // stored page indices follow the new page order.
+          await movePages(page, [3], 0);
+          const editorPageIndices = await page.evaluate(ids => {
+            const storage =
+              window.PDFViewerApplication.pdfDocument.annotationStorage;
+            return {
+              original: storage.getRawValue(ids.original).pageIndex,
+              clone: storage.getRawValue(ids.clone).pageIndex,
+            };
+          }, editorIds);
+          expect(editorPageIndices)
+            .withContext(`In ${browserName}`)
+            .toEqual({ original: 1, clone: 0 });
+
+          // Show the moved copy and verify that its cloned editor survived.
           await page.click("#viewsManagerToggleButton");
           await page.waitForSelector("#viewsManager", { hidden: true });
           await page.evaluate(() => {
-            window.PDFViewerApplication.pdfViewer.currentPageNumber = 3;
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = 1;
           });
 
-          // The cloned ink annotation must appear in the DOM of page 3.
-          await page.waitForSelector(`.page[data-page-number="3"] .inkEditor`, {
+          await page.waitForSelector(`.page[data-page-number="1"] .inkEditor`, {
             visible: true,
           });
           const inkEditors = await page.$$(
-            `.page[data-page-number="3"] .inkEditor`
+            `.page[data-page-number="1"] .inkEditor`
           );
           expect(inkEditors.length).withContext(`In ${browserName}`).toBe(1);
         })

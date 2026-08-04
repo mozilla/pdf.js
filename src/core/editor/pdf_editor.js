@@ -57,6 +57,8 @@ class PageData {
     this.annotations = null;
     // Named destinations which points to this page.
     this.pointingNamedDestinations = null;
+    // Rank of this page among the output pages sharing the same source page.
+    this.copyLevel = 0;
 
     documentData.pagesMap.put(page.ref, this);
   }
@@ -1097,9 +1099,17 @@ class PDFEditor {
       }
     }
     await Promise.all(promises);
+    const copyCounts = new Map();
     for (let i = 0, ii = this.oldPages.length; i < ii; i++) {
-      if (this.oldPages[i] === undefined) {
+      const pageData = this.oldPages[i];
+      if (pageData === undefined) {
         throw new Error("extractPages: sparse pageIndices.");
+      }
+      if (pageData) {
+        const { page } = pageData;
+        const copyLevel = copyCounts.get(page) ?? 0;
+        copyCounts.set(page, copyLevel + 1);
+        pageData.copyLevel = copyLevel;
       }
     }
     promises.length = 0;
@@ -2413,12 +2423,18 @@ class PDFEditor {
 
   /**
    * Create a copy of a page.
-   * @param {number} pageIndex
+   * @param {number} pageIndex - Index of the page slot in the new document
+   *   (the index of the source page is `page.pageIndex`).
    * @returns {Promise<Ref>} the page reference in the new PDF document.
    */
   async #makePageCopy(pageIndex) {
-    const { page, documentData, annotations, pointingNamedDestinations } =
-      this.oldPages[pageIndex];
+    const {
+      page,
+      documentData,
+      annotations,
+      pointingNamedDestinations,
+      copyLevel,
+    } = this.oldPages[pageIndex];
     this.currentDocument = documentData;
     const { dedupNamedDestinations, oldRefMapping } = documentData;
     const { xref, rotate, mediaBox, resources, ref: oldPageRef } = page;
@@ -2487,9 +2503,11 @@ class PDFEditor {
 
     const newAnnotations =
       documentData.document === this.#primaryDocument
-        ? this.#newAnnotationsParams?.newAnnotationsByPage?.get(page.pageIndex)
+        ? this.#newAnnotationsParams?.newAnnotationsByPage
+            ?.get(page.pageIndex)
+            ?.filter(({ copyLevel: level }) => (level ?? 0) === copyLevel)
         : null;
-    if (newAnnotations) {
+    if (newAnnotations?.length) {
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
       const changes = new RefSetCache();
       const newData = await AnnotationFactory.saveNewAnnotations(

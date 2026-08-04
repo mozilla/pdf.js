@@ -386,8 +386,8 @@ class PDFThumbnailViewer {
     const pagesCount = this.#pagesMapper.pagesNumber;
     const data = this.hasStructuralChanges()
       ? this.getStructuralChanges()
-      : [{ document: null }];
-    data.push(...entries);
+      : { pageInfos: [{ document: null }], copyLevels: null };
+    data.pageInfos.push(...entries);
     this.eventBus.on(
       "pagesloaded",
       () => {
