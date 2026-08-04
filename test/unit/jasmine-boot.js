@@ -102,6 +102,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/sound_spec.js",
       "pdfjs-test/unit/stream_spec.js",
       "pdfjs-test/unit/string_utils_spec.js",
+      "pdfjs-test/unit/struct_tree_layer_builder_spec.js",
       "pdfjs-test/unit/struct_tree_spec.js",
       "pdfjs-test/unit/svg_factory_spec.js",
       "pdfjs-test/unit/text_layer_spec.js",

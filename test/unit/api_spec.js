@@ -4711,6 +4711,85 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("gets table structure attributes (issue 18090)", async function () {
+      const objects = [
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+          "/StructTreeRoot 4 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+          "/MediaBox [0 0 100 100] >>\nendobj\n",
+        "4 0 obj\n<< /Type /StructTreeRoot /K 5 0 R " +
+          "/ParentTree 10 0 R /ClassMap 11 0 R >>\nendobj\n",
+        "5 0 obj\n<< /Type /StructElem /S /Table /P 4 0 R /K 6 0 R " +
+          "/A [<< /O /Table /Summary (Purpose and structure) >> 0] " +
+          ">>\nendobj\n",
+        "6 0 obj\n<< /Type /StructElem /S /TR /P 5 0 R " +
+          "/K [7 0 R 8 0 R 9 0 R] >>\nendobj\n",
+        "7 0 obj\n<< /Type /StructElem /S /TH /P 6 0 R /Pg 3 0 R " +
+          "/ID (column) /C /spanning /K 0 " +
+          "/A [<< /O /Table /Scope /Column >> 1] >>\nendobj\n",
+        "8 0 obj\n<< /Type /StructElem /S /TH /P 6 0 R /Pg 3 0 R " +
+          "/ID (row) /C /overridden /K 1 " +
+          "/A << /O /Table /Scope /Row /Short (Row) " +
+          "/RowSpan 1 /ColSpan 1 >> " +
+          ">>\nendobj\n",
+        "9 0 obj\n<< /Type /StructElem /S /TD /P 6 0 R /Pg 3 0 R /K 2 " +
+          "/A [<< /O /Table /Headers 12 0 R >> 0] >>\nendobj\n",
+        "10 0 obj\n<< /Nums [0 [7 0 R 8 0 R 9 0 R]] >>\nendobj\n",
+        "11 0 obj\n<< " +
+          "/spanning << /O /Table /RowSpan 2 /ColSpan 3 " +
+          "/Short (Column) >> " +
+          "/overridden << /O /Table /RowSpan 4 /ColSpan 5 /Scope /Both " +
+          "/Short (Long row header) >> " +
+          ">>\nendobj\n",
+        "12 0 obj\n[(column) 13 0 R]\nendobj\n",
+        "13 0 obj\n(row)\nendobj\n",
+      ];
+      const loadingTask = getDocument({ data: assemblePdf(objects) });
+      const pdfDoc = await loadingTask.promise;
+      const tree = await (await pdfDoc.getPage(1)).getStructTree();
+
+      expect(tree).toEqual({
+        role: "Root",
+        children: [
+          {
+            role: "Table",
+            summary: "Purpose and structure",
+            children: [
+              {
+                role: "TR",
+                children: [
+                  {
+                    role: "TH",
+                    structId: "column",
+                    rowSpan: 2,
+                    colSpan: 3,
+                    scope: "Column",
+                    short: "Column",
+                    children: [{ type: "content", id: "p3R_mc0" }],
+                  },
+                  {
+                    role: "TH",
+                    structId: "row",
+                    scope: "Row",
+                    short: "Row",
+                    children: [{ type: "content", id: "p3R_mc1" }],
+                  },
+                  {
+                    role: "TD",
+                    headers: ["column", "row"],
+                    children: [{ type: "content", id: "p3R_mc2" }],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      await loadingTask.destroy();
+    });
+
     it("gets corrupt structure tree with non-dictionary nodes (issue 18503)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue18503.pdf"));
       const pdfDoc = await loadingTask.promise;
