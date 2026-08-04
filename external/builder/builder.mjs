@@ -53,7 +53,7 @@ function preprocess(inFilename, outFilename, defines) {
     }
 
     return content.replaceAll(
-      /^\s*@import\s+url\(([^)]+)\);\s*$/gm,
+      /^[ \t]*@import\s+url\(([^)]+)\);[ \t]*$/gm,
       function (all, url) {
         const file = path.join(path.dirname(baseUrl), url);
         const imported = fs.readFileSync(file, "utf8").toString();

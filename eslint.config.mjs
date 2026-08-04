@@ -62,6 +62,7 @@ export default [
     rules: {
       ...regexpPlugin.configs["flat/recommended"].rules,
       "regexp/no-legacy-features": "off",
+      "regexp/no-super-linear-move": "error",
     },
   },
   {
