@@ -62,7 +62,13 @@ export default [
     rules: {
       ...regexpPlugin.configs["flat/recommended"].rules,
       "regexp/no-legacy-features": "off",
+      "regexp/no-octal": "error",
+      "regexp/no-potentially-useless-backreference": "error",
+      "regexp/no-standalone-backslash": "error",
       "regexp/no-super-linear-move": "error",
+      "regexp/optimal-lookaround-quantifier": "error",
+      "regexp/prefer-escape-replacement-dollar-char": "error",
+      "regexp/prefer-regexp-exec": "error",
     },
   },
   {
