@@ -2147,8 +2147,20 @@ class PDFEditor {
       }
       let parent = parentRef;
       let lastNonNullParent = parentRef;
+      const visited = new RefSet();
       while (true) {
-        parent = xref.fetchIfRef(parent)?.getRaw("Parent") || null;
+        if (parent instanceof Ref) {
+          if (visited.has(parent)) {
+            // Cyclic Parent chain: stop on the field closing the cycle.
+            break;
+          }
+          visited.put(parent);
+        }
+        const parentDict = xref.fetchIfRef(parent);
+        if (!(parentDict instanceof Dict)) {
+          break;
+        }
+        parent = parentDict.getRaw("Parent") || null;
         if (!parent) {
           break;
         }
@@ -2221,6 +2233,9 @@ class PDFEditor {
       }
       processed.put(oldKidRef);
       const kid = xref.fetchIfRef(oldKidRef);
+      if (!(kid instanceof Dict)) {
+        continue;
+      }
       if (kid.has("Kids")) {
         const kidsArray = kid.get("Kids");
         if (!Array.isArray(kidsArray)) {
