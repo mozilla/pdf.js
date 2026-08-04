@@ -602,7 +602,7 @@ class Util extends PDFObject {
         : pattern;
     });
 
-    return [re, actions];
+    return [new RegExp(`^${re}$`, "g"), actions];
   }
 
   _scand(cFormat, cDate, strict = false) {
@@ -622,12 +622,10 @@ class Util extends PDFObject {
         return this.scand("m/d/yy h:MM:ss tt", cDate);
     }
 
-    const [re, actions] = (this.#scandCache ??= new Map()).getOrInsertComputed(
-      cFormat,
-      this.#createScandDataBound
-    );
+    const [regex, actions] = (this.#scandCache ??=
+      new Map()).getOrInsertComputed(cFormat, this.#createScandDataBound);
 
-    const matches = new RegExp(`^${re}$`, "g").exec(cDate);
+    const matches = regex.exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
       return strict ? null : this.#tryToGuessDate(cFormat, cDate);
     }
