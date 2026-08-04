@@ -753,10 +753,10 @@ describe("Scripting", function () {
       it("should parse a date with a format", async () => {
         const check = async (date, format, expected) => {
           const value = await myeval(
-            `AFParseDateEx("${date}", "${format}").toISOString().replace(/T.*$/, "")`
+            `AFParseDateEx("${date}", "${format}").toISOString().replace(/T.*/, "")`
           );
           expect(value).toEqual(
-            new Date(expected).toISOString().replace(/T.*$/, "")
+            new Date(expected).toISOString().replace(/T.*/, "")
           );
         };
 

@@ -37,7 +37,7 @@ function parseAdobeCMap(content) {
     result.usecmap = m[1];
   }
   const re =
-    /(\d+)\s+(begincodespacerange|beginnotdefrange|begincidchar|begincidrange|beginbfchar|beginbfrange)\n([\s\S]*?)\n(?:endcodespacerange|endnotdefrange|endcidchar|endcidrange|endbfchar|endbfrange)/g;
+    /\b(\d+)\s+(begincodespacerange|beginnotdefrange|begincidchar|begincidrange|beginbfchar|beginbfrange)\n([\s\S]*?)\n(?:endcodespacerange|endnotdefrange|endcidchar|endcidrange|endbfchar|endbfrange)/g;
   while ((m = re.exec(body))) {
     const lines = m[3].toLowerCase().split("\n");
 
