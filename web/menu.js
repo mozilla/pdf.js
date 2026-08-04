@@ -39,14 +39,9 @@ class Menu {
   constructor(menuContainer, triggeringButton, menuItems) {
     this.#menu = menuContainer;
     this.#triggeringButton = triggeringButton;
-    if (Array.isArray(menuItems)) {
-      this.#menuItems = menuItems;
-    } else {
-      this.#menuItems = [];
-      for (const button of this.#menu.querySelectorAll("button")) {
-        this.#menuItems.push(button);
-      }
-    }
+    this.#menuItems = Array.isArray(menuItems)
+      ? menuItems
+      : [...this.#menu.querySelectorAll("button")];
     this.#setUpMenu();
   }
 
