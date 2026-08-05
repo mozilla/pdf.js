@@ -76,6 +76,7 @@ import { createImage } from "./editor/pdf_images.js";
 import { FileSpec } from "./file_spec.js";
 import { getSoundFormat } from "./sound.js";
 import { JpegStream } from "./jpeg_stream.js";
+import { MathClamp } from "../shared/math_clamp.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { parseMarkedContentProps } from "./evaluator_utils.js";
@@ -4051,10 +4052,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       const minIndex = Math.min(...valueIndices);
       const maxIndex = Math.max(...valueIndices);
 
-      firstIndex = Math.max(0, maxIndex - numberOfVisibleLines + 1);
-      if (firstIndex > minIndex) {
-        firstIndex = minIndex;
-      }
+      firstIndex = MathClamp(maxIndex - numberOfVisibleLines + 1, 0, minIndex);
     }
     const end = Math.min(firstIndex + numberOfVisibleLines + 1, lineCount);
 
