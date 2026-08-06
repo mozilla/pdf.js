@@ -4885,12 +4885,15 @@ class TranslatedFont {
     );
   }
 
-  loadType3Data(evaluator, resources, task, seenRefs = null) {
+  async loadType3Data(evaluator, resources, task, seenRefs = null) {
     if (this.#type3Loaded) {
       return this.#type3Loaded;
     }
-    const { font, type3Dependencies } = this;
+    const { dict, font, type3Dependencies } = this;
     assert(font.isType3Font, "Must be a Type3 font.");
+
+    const { promise, resolve } = Promise.withResolvers();
+    this.#type3Loaded = promise;
 
     // When parsing Type3 glyphs, always ignore them if there are errors.
     // Compared to the parsing of e.g. an entire page, it doesn't really
@@ -4898,70 +4901,63 @@ class TranslatedFont {
     const type3Evaluator = evaluator.clone({ ignoreErrors: false });
     // Prevent circular references in Type3 fonts.
     const type3FontRefs = new RefSet(evaluator.type3FontRefs);
-    if (this.dict.objId && !type3FontRefs.has(this.dict.objId)) {
-      type3FontRefs.put(this.dict.objId);
+    if (dict.objId && !type3FontRefs.has(dict.objId)) {
+      type3FontRefs.put(dict.objId);
     }
     type3Evaluator.type3FontRefs = type3FontRefs;
 
-    let loadCharProcsPromise = Promise.resolve();
-    const charProcs = this.dict.get("CharProcs");
-    const fontResources = this.dict.get("Resources") || resources;
+    const charProcs = dict.get("CharProcs");
+    const fontResources = dict.get("Resources") || resources;
     const charProcOperatorList = Object.create(null);
 
-    const [x0, y0, x1, y1] = font.bbox,
-      width = x1 - x0,
-      height = y1 - y0;
-    const fontBBoxSize = Math.hypot(width, height);
+    const [x0, y0, x1, y1] = font.bbox;
+    const fontBBoxSize = Math.hypot(x1 - x0, y1 - y0);
 
     for (const key of charProcs.getKeys()) {
-      loadCharProcsPromise = loadCharProcsPromise.then(() => {
-        const glyphStream = charProcs.get(key);
+      try {
         const operatorList = new OperatorList();
-        return type3Evaluator
-          .getOperatorList({
-            stream: glyphStream,
-            task,
-            resources: fontResources,
-            operatorList,
-            prevRefs: seenRefs,
-          })
-          .then(() => {
-            // According to the PDF specification, section "9.6.5 Type 3 Fonts"
-            // and "Table 113":
-            //  "A glyph description that begins with the d1 operator should
-            //   not execute any operators that set the colour (or other
-            //   colour-related parameters) in the graphics state;
-            //   any use of such operators shall be ignored."
-            switch (operatorList.fnArray[0]) {
-              case OPS.setCharWidthAndBounds:
-                this.#removeType3ColorOperators(operatorList, fontBBoxSize);
-                break;
-              case OPS.setCharWidth:
-                if (!fontBBoxSize) {
-                  this.#guessType3FontBBox(operatorList);
-                }
-                break;
-            }
-            charProcOperatorList[key] = operatorList.getIR();
+        await type3Evaluator.getOperatorList({
+          stream: charProcs.get(key),
+          task,
+          resources: fontResources,
+          operatorList,
+          prevRefs: seenRefs,
+        });
 
-            for (const dependency of operatorList.dependencies) {
-              type3Dependencies.add(dependency);
+        // According to the PDF specification, section "9.6.5 Type 3 Fonts"
+        // and "Table 113":
+        //  "A glyph description that begins with the d1 operator should
+        //   not execute any operators that set the colour (or other
+        //   colour-related parameters) in the graphics state;
+        //   any use of such operators shall be ignored."
+        switch (operatorList.fnArray[0]) {
+          case OPS.setCharWidthAndBounds:
+            this.#removeType3ColorOperators(operatorList, fontBBoxSize);
+            break;
+          case OPS.setCharWidth:
+            if (!fontBBoxSize) {
+              this.#guessType3FontBBox(operatorList);
             }
-          })
-          .catch(function (reason) {
-            warn(`Type3 font resource "${key}" is not available.`);
-            const dummyOperatorList = new OperatorList();
-            charProcOperatorList[key] = dummyOperatorList.getIR();
-          });
-      });
-    }
-    this.#type3Loaded = loadCharProcsPromise.then(() => {
-      font.charProcOperatorList = charProcOperatorList;
-      if (this._bbox) {
-        font.isCharBBox = true;
-        font.bbox = this._bbox;
+            break;
+        }
+        charProcOperatorList[key] = operatorList.getIR();
+
+        for (const dependency of operatorList.dependencies) {
+          type3Dependencies.add(dependency);
+        }
+      } catch {
+        warn(`Type3 font resource "${key}" is not available.`);
+        charProcOperatorList[key] = new OperatorList().getIR();
       }
-    });
+    }
+
+    font.charProcOperatorList = charProcOperatorList;
+    if (this._bbox) {
+      font.isCharBBox = true;
+      font.bbox = this._bbox;
+    }
+
+    resolve();
     return this.#type3Loaded;
   }
 
