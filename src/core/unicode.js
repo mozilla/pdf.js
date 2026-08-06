@@ -25,6 +25,9 @@ const getSpecialPUASymbols = getLookupTableFactory(function (t) {
   t[63194] = 0x00ae; // registerserif (0xF6DA) => registered
   t[63722] = 0x2122; // trademarksans (0xF8EA) => trademark
   t[63195] = 0x2122; // trademarkserif (0xF6DB) => trademark
+  t[63718] = 0x23d0; // arrowvertex (0xF8E6)
+  t[63719] = 0x23af; // arrowhorizex (0xF8E7)
+  t[63733] = 0x23ae; // integralex (0xF8F5)
   t[63729] = 0x23a7; // bracelefttp (0xF8F1)
   t[63730] = 0x23a8; // braceleftmid (0xF8F2)
   t[63731] = 0x23a9; // braceleftbt (0xF8F3)
