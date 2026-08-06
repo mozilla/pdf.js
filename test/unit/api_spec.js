@@ -7757,6 +7757,44 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("extracts only an image when all source pages are excluded", async function () {
+        if (isNodeJS) {
+          pending("Cannot create a bitmap from Node.js.");
+        }
+        let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+        let pdfDoc = await loadingTask.promise;
+        const bitmap = await getImageBitmap("firefox_logo.png");
+
+        const data = await pdfDoc.extractPages([
+          { document: null, excludePages: [0] },
+          { image: bitmap },
+        ]);
+        expect(data).not.toBeNull();
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+
+        const pdfPage = await pdfDoc.getPage(1);
+        const { fnArray } = await pdfPage.getOperatorList();
+        expect(fnArray).toContain(OPS.paintImageXObject);
+
+        await loadingTask.destroy();
+      });
+
+      it("returns null when every source page is excluded", async function () {
+        const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
+        const pdfDoc = await loadingTask.promise;
+
+        const data = await pdfDoc.extractPages([
+          { document: null, excludePages: [[0, 2]] },
+        ]);
+        expect(data).toBeNull();
+
+        await loadingTask.destroy();
+      });
+
       it("preserves EmbeddedFiles (attachments) when extracting pages", async function () {
         let loadingTask = getDocument(buildGetDocumentParams("attachment.pdf"));
         let pdfDoc = await loadingTask.promise;
