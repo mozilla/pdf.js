@@ -1359,6 +1359,36 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("File param with a relative URL and a query string (issue 20137)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      // The `file` parameter is `/test/pdfs/basicapi.pdf?token=%2Ffoo`.
+      pages = await loadAndWait(
+        "basicapi.pdf%3Ftoken%3D%252Ffoo",
+        ".textLayer .endOfContent"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not re-encode the file param", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pdfUrl = await page.evaluate(
+            () => window.PDFViewerApplication.url
+          );
+
+          expect(pdfUrl)
+            .withContext(`In ${browserName}`)
+            .toBe("/test/pdfs/basicapi.pdf?token=%2Ffoo");
+        })
+      );
+    });
+  });
+
   describe("Keyboard scrolling on startup (bug 843653)", () => {
     let pages;
 
