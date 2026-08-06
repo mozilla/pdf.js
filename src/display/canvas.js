@@ -66,10 +66,6 @@ const EXECUTION_STEPS = 10;
 
 const FULL_CHUNK_HEIGHT = 16;
 
-// Only used in rescaleAndStroke. The goal is to avoid
-// creating a new DOMMatrix object each time we need it.
-const SCALE_MATRIX = new DOMMatrix();
-
 // Used to get some coordinates.
 const XY = new Float32Array(2);
 
@@ -496,6 +492,10 @@ const NORMAL_CLIP = {};
 const EO_CLIP = {};
 
 class CanvasGraphics {
+  // Only used in rescaleAndStroke. The goal is to avoid
+  // creating a new DOMMatrix object each time we need it.
+  static #SCALE_MATRIX = null;
+
   // Knockout group support fields.
   #knockoutGroupLevel = 0;
 
@@ -4320,6 +4320,7 @@ class CanvasGraphics {
       ctx.stroke(path);
       return;
     }
+    const SCALE_MATRIX = (CanvasGraphics.#SCALE_MATRIX ??= new DOMMatrix());
 
     const dashes = ctx.getLineDash();
     if (saveRestore) {
