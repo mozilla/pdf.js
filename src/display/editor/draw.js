@@ -838,7 +838,7 @@ class DrawingEditor extends AnnotationEditor {
     if (!DrawingEditor.#currentDraw) {
       return;
     }
-    const { offsetX, offsetY, pointerId } = event;
+    const { offsetX, offsetY, clientX, clientY, pointerId } = event;
 
     if (!CurrentPointers.isSamePointerId(pointerId)) {
       return;
@@ -848,9 +848,42 @@ class DrawingEditor extends AnnotationEditor {
       this._endDraw(event);
       return;
     }
+
+    // A pointermove can represent multiple coalesced pointer updates. When
+    // available, feed each sample to the outliner so it receives the
+    // intermediate positions.
+    // offsetX/offsetY are computed in the target's untransformed coordinate
+    // system, whereas clientX/clientY are viewport coordinates. Since
+    // [data-main-rotation] transforms the layer, rotate each client-space delta
+    // back before adding it to the dispatched event's offsets.
+    let properties;
+    const coalesced = event.getCoalescedEvents?.();
+    if (coalesced?.length) {
+      const { rotation } = this._currentParent.viewport;
+      const points = [];
+      for (const { clientX: x, clientY: y } of coalesced) {
+        let deltaX = x - clientX;
+        let deltaY = y - clientY;
+        switch (rotation) {
+          case 90:
+            [deltaX, deltaY] = [deltaY, -deltaX];
+            break;
+          case 180:
+            [deltaX, deltaY] = [-deltaX, -deltaY];
+            break;
+          case 270:
+            [deltaX, deltaY] = [-deltaY, deltaX];
+            break;
+        }
+        points.push(offsetX + deltaX, offsetY + deltaY);
+      }
+      properties = DrawingEditor.#currentDraw.addPoints(points);
+    } else {
+      properties = DrawingEditor.#currentDraw.add(offsetX, offsetY);
+    }
     this._currentParent.drawLayer.updateProperties(
       this._currentDrawId,
-      DrawingEditor.#currentDraw.add(offsetX, offsetY)
+      properties
     );
     // We track the timestamp to know if the touchmove event is used to draw.
     CurrentPointers.setTimeStamp(event.timeStamp);
@@ -882,12 +915,14 @@ class DrawingEditor extends AnnotationEditor {
     parent.toggleDrawing(true);
     this._cleanup(false);
 
-    if (event?.target === parent.div) {
-      parent.drawLayer.updateProperties(
-        this._currentDrawId,
-        DrawingEditor.#currentDraw.end(event.offsetX, event.offsetY)
-      );
-    }
+    // Always finalize the path, even when the pointer-up event does not target
+    // the layer, so any transient tip segment is removed.
+    parent.drawLayer.updateProperties(
+      this._currentDrawId,
+      event?.target === parent.div
+        ? DrawingEditor.#currentDraw.end(event.offsetX, event.offsetY)
+        : DrawingEditor.#currentDraw.end()
+    );
     if (this.supportMultipleDrawings) {
       const draw = DrawingEditor.#currentDraw;
       const drawId = this._currentDrawId;
