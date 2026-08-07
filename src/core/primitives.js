@@ -379,30 +379,30 @@ class RefSet {
 }
 
 class RefSetCache {
-  _map = new Map();
+  #map = new Map();
 
   get size() {
-    return this._map.size;
+    return this.#map.size;
   }
 
   get(ref) {
-    return this._map.get(ref.toString());
+    return this.#map.get(ref.toString());
   }
 
   has(ref) {
-    return this._map.has(ref.toString());
+    return this.#map.has(ref.toString());
   }
 
   put(ref, obj) {
-    this._map.set(ref.toString(), obj);
+    this.#map.set(ref.toString(), obj);
   }
 
   putAlias(ref, aliasRef) {
-    this._map.set(ref.toString(), this.get(aliasRef));
+    this.#map.set(ref.toString(), this.get(aliasRef));
   }
 
   getOrPutComputed(ref, callback) {
-    const map = this._map,
+    const map = this.#map,
       refStr = ref.toString();
 
     if (!map.has(refStr)) {
@@ -412,25 +412,25 @@ class RefSetCache {
   }
 
   [Symbol.iterator]() {
-    return this._map.values();
+    return this.#map.values();
   }
 
   clear() {
-    this._map.clear();
+    this.#map.clear();
   }
 
   *values() {
-    yield* this._map.values();
+    yield* this.#map.values();
   }
 
   *items() {
-    for (const [ref, value] of this._map) {
+    for (const [ref, value] of this.#map) {
       yield [Ref.fromString(ref), value];
     }
   }
 
   *keys() {
-    for (const ref of this._map.keys()) {
+    for (const ref of this.#map.keys()) {
       yield Ref.fromString(ref);
     }
   }
