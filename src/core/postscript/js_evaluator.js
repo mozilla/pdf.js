@@ -781,7 +781,7 @@ class PSStackBasedInterpreter {
       const base = this.#sp - nOut;
       for (let i = 0; i < nOut; i++) {
         const v = base + i >= 0 ? this.#stack[base + i] : 0;
-        dest[destOffset + i] = MathClamp(range[i * 2 + 1], range[i * 2], v);
+        dest[destOffset + i] = MathClamp(v, range[i * 2], range[i * 2 + 1]);
       }
     };
   }

@@ -733,6 +733,12 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(0.5, 9);
     });
 
+    it("clamps output to the bottom of the declared range", async function () {
+      // sub falls below range [0, 1] → result clamped
+      const r = compileAndRun("{ sub }", [0, 1, 0, 1], [0, 1], [0.25, 0.75]);
+      expect(r).toBeCloseTo(0, 9);
+    });
+
     // Bitwise.
 
     it("compiles bitshift left (literal shift)", async function () {

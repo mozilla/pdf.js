@@ -5,8 +5,16 @@
  * Detected patterns and their fixes:
  *   Math.min(Math.max(A, B), C)  →  MathClamp(A, B, C)
  *   Math.min(C, Math.max(A, B))  →  MathClamp(A, B, C)
- *   Math.max(Math.min(A, B), C)  →  MathClamp(A, C, B)
- *   Math.max(C, Math.min(A, B))  →  MathClamp(A, C, B)
+ *   Math.max(Math.min(A, B), C)  →  flagged as a possible clamp, not fixed
+ *   Math.max(C, Math.min(A, B))  →  flagged as a possible clamp, not fixed
+ *
+ * The min-outer patterns are exact: `Math.min(Math.max(A, B), C)` is what
+ * `MathClamp(A, B, C)` expands to, whichever inner operand is the value.
+ *
+ * The max-outer ones are not. `Math.min` is commutative, so the value can be A
+ * or B, and `MathClamp(A, C, B)` only agrees with `Math.max(C, Math.min(A, B))`
+ * when C <= B. The rule can't tell, so it reports these with a message saying
+ * as much and leaves the rewrite to a human.
  */
 
 function isMathCall(node, method) {
@@ -39,6 +47,9 @@ const preferMathClampRule = {
     messages: {
       useClamp:
         "Use MathClamp(v, min, max) instead of nested Math.min/Math.max.",
+      maybeClamp:
+        "Math.max(C, Math.min(A, B)) is MathClamp(A, C, B) only when C <= B; " +
+        "rewrite it by hand if that holds.",
     },
     schema: [],
   },
@@ -79,32 +90,17 @@ const preferMathClampRule = {
         }
 
         // Pattern: Math.max(Math.min(A, B), C) or Math.max(C, Math.min(A, B)).
-        // Fix as MathClamp(A, C, B) where A,B are inner args, C is outer arg.
+        // Only a clamp when the bounds are ordered, so this is reported as a
+        // candidate and not fixed, see the file header.
         if (isMathCall(node, "max")) {
           const [arg0, arg1] = node.arguments;
-          let outerArg, innerNode;
 
-          if (isMathCall(arg0, "min") && !isMathMinMax(arg1)) {
-            innerNode = arg0;
-            outerArg = arg1;
-          } else if (isMathCall(arg1, "min") && !isMathMinMax(arg0)) {
-            innerNode = arg1;
-            outerArg = arg0;
-          } else {
-            return;
+          if (
+            (isMathCall(arg0, "min") && !isMathMinMax(arg1)) ||
+            (isMathCall(arg1, "min") && !isMathMinMax(arg0))
+          ) {
+            context.report({ node, messageId: "maybeClamp" });
           }
-
-          const v = src.getText(innerNode.arguments[0]);
-          const max = src.getText(innerNode.arguments[1]);
-          const min = src.getText(outerArg);
-
-          context.report({
-            node,
-            messageId: "useClamp",
-            fix(fixer) {
-              return fixer.replaceText(node, `MathClamp(${v}, ${min}, ${max})`);
-            },
-          });
         }
       },
     };
