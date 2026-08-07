@@ -3704,11 +3704,6 @@ class CanvasGraphics {
         transform[4] -= rect[0];
         transform[5] -= rect[1];
 
-        rect = rect.slice();
-        rect[0] = rect[1] = 0;
-        rect[2] = width;
-        rect[3] = height;
-
         Util.singularValueDecompose2dScale(getCurrentTransform(this.ctx), XY);
         const { viewportScale } = this;
         const canvasWidth = Math.ceil(
