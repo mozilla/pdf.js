@@ -26,8 +26,8 @@ import {
   isName,
   Name,
   Ref,
+  RefMap,
   RefSet,
-  RefSetCache,
 } from "./primitives.js";
 import { lookupNormalRect, MissingDataException } from "./core_utils.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "./string_utils.js";
@@ -105,8 +105,9 @@ class StructTreeRoot {
     if (!(pageRef instanceof Ref) || id < 0) {
       return;
     }
-    this.structParentIds ||= new RefSetCache();
-    this.structParentIds.getOrPutComputed(pageRef, makeArr).push([id, type]);
+    (this.structParentIds ??= new RefMap())
+      .getOrPutComputed(pageRef, makeArr)
+      .push([id, type]);
   }
 
   addAnnotationIdToPage(pageRef, id) {
@@ -162,7 +163,7 @@ class StructTreeRoot {
     changes,
   }) {
     const root = await pdfManager.ensureCatalog("cloneDict");
-    const cache = new RefSetCache();
+    const cache = new RefMap();
     cache.put(catalogRef, root);
 
     const structTreeRootRef = xref.getNewTemporaryRef();
@@ -279,7 +280,7 @@ class StructTreeRoot {
   async updateStructureTree({ newAnnotationsByPage, pdfManager, changes }) {
     const { ref: structTreeRootRef, xref } = this;
     const structTreeRoot = this.dict.clone();
-    const cache = new RefSetCache();
+    const cache = new RefMap();
     cache.put(structTreeRootRef, structTreeRoot);
 
     let parentTreeRef = structTreeRoot.getRaw("ParentTree");

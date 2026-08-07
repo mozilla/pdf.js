@@ -1356,7 +1356,7 @@ class PartialEvaluator {
     // Workaround for bad PDF generators that reference fonts incorrectly,
     // where `fontRef` is a `Dict` rather than a `Ref` (fixes bug946506.pdf).
     // In this case we cannot put the font into `this.fontCache` (which is
-    // a `RefSetCache`), since it's not possible to use a `Dict` as a key.
+    // a `RefMap`), since it's not possible to use a `Dict` as a key.
     //
     // However, if we don't cache the font it's not possible to remove it
     // when `cleanup` is triggered from the API, which causes issues on
@@ -1365,8 +1365,8 @@ class PartialEvaluator {
     //
     // Instead, we cheat a bit by using a modified `fontID` as a key in
     // `this.fontCache`, to allow the font to be cached.
-    // NOTE: This works because `RefSetCache` calls `toString()` on provided
-    //       keys. Also, since `fontRef` is used when getting cached fonts,
+    // NOTE: This works because `RefMap` calls `toString()` on provided keys.
+    //       Also, since `fontRef` is used when getting cached fonts,
     //       we'll not accidentally match fonts cached with the `fontID`.
     if (fontRefIsRef) {
       this.fontCache.put(fontRef, promise);
