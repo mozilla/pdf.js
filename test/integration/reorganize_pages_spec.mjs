@@ -117,6 +117,10 @@ async function drawInkLine(page, pageNumber) {
 }
 
 async function waitForHavingContents(page, expected) {
+  // Only visible pages render their text layer: enlarge the viewport so that,
+  // once shrunk to the minimum scale in WRAPPED mode below, all the pages fit
+  // on screen even for documents with many pages.
+  await page.setViewport({ width: 1500, height: 1500 });
   await page.evaluate(() => {
     // Make sure all the pages will be visible.
     window.PDFViewerApplication.pdfViewer.scrollMode = 2; /* = ScrollMode.WRAPPED = */
