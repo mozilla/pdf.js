@@ -107,9 +107,9 @@ class SplitView {
       return 0;
     }
     if (total <= this.#minSize * 2) {
-      return MathClamp(0, requestedFirst, total);
+      return MathClamp(requestedFirst, 0, total);
     }
-    return MathClamp(total - this.#minSize, this.#minSize, requestedFirst);
+    return MathClamp(requestedFirst, this.#minSize, total - this.#minSize);
   }
 
   #resize(newFirst) {
