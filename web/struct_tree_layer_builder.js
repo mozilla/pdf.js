@@ -24,12 +24,14 @@ const PDF_ROLE_TO_HTML_ROLE = {
   DocumentFragment: null,
   // Grouping level structure types
   Part: "group",
+  Art: "article",
   Sect: "group", // XXX: There's a "section" role, but it's abstract.
   Div: "group",
+  BlockQuote: "blockquote",
   Aside: "note",
   NonStruct: "none",
   // Block level structure types
-  P: null,
+  P: "paragraph",
   // H<n>,
   H: "heading",
   Title: null,
@@ -39,8 +41,10 @@ const PDF_ROLE_TO_HTML_ROLE = {
   // General inline level structure types
   Lbl: null,
   Span: null,
-  Em: null,
-  Strong: null,
+  Em: "emphasis",
+  Strong: "strong",
+  Note: "note",
+  Code: "code",
   Link: "link",
   Annot: "note",
   Form: "form",
@@ -73,6 +77,17 @@ const PDF_ROLE_TO_HTML_ROLE = {
   // standard structure type Artifact
   Artifact: null,
 };
+
+// WAI-ARIA prohibits accessible names on these roles:
+// https://www.w3.org/TR/wai-aria-1.2/#namefromprohibited
+const ARIA_ROLES_WITH_PROHIBITED_NAMES = new Set([
+  "caption",
+  "code",
+  "emphasis",
+  "none",
+  "paragraph",
+  "strong",
+]);
 
 const MathMLElements = new Set([
   "math",
@@ -327,7 +342,10 @@ class StructTreeLayerBuilder {
           added = true;
         }
       }
-      if (!added) {
+      if (
+        !added &&
+        !ARIA_ROLES_WITH_PROHIBITED_NAMES.has(htmlElement.getAttribute("role"))
+      ) {
         htmlElement.setAttribute("aria-label", label);
       }
     }
