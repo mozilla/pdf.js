@@ -55,6 +55,7 @@
     "sound_spec.js",
     "stream_spec.js",
     "string_utils_spec.js",
+    "struct_tree_layer_builder_spec.js",
     "struct_tree_spec.js",
     "svg_factory_spec.js",
     "text_layer_spec.js",

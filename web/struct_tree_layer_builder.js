@@ -15,7 +15,7 @@
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 
-import { FeatureTest, makeMap, shadow } from "pdfjs-lib";
+import { FeatureTest, getUuid, makeMap, shadow } from "pdfjs-lib";
 import { removeNullCharacters } from "./ui_utils.js";
 
 const PDF_ROLE_TO_HTML_ROLE = {
@@ -63,9 +63,9 @@ const PDF_ROLE_TO_HTML_ROLE = {
   TD: "cell",
   THead: "rowgroup",
   TBody: "rowgroup",
-  TFoot: null,
+  TFoot: "rowgroup",
   // Standard structure type Caption
-  Caption: null,
+  Caption: "caption",
   // Standard structure type Figure
   Figure: "figure",
   // Standard structure type Formula
@@ -179,6 +179,12 @@ class StructTreeLayerBuilder {
 
   #elementAttributes = new Map();
 
+  #structElementIdPrefix = `pdfjs_internal_struct_${getUuid()}_`;
+
+  #structElementIds = new Map();
+
+  #structElements = new Map();
+
   #rawDims;
 
   #elementsToAddToTextLayer = null;
@@ -206,7 +212,9 @@ class StructTreeLayerBuilder {
     this.#treePromise = promise;
 
     try {
-      this.#treeDom = this.#walk(await this.#promise);
+      const tree = await this.#promise;
+      this.#collectStructElements(tree);
+      this.#treeDom = this.#walk(tree);
     } catch (ex) {
       reject(ex);
     }
@@ -241,8 +249,71 @@ class StructTreeLayerBuilder {
     }
   }
 
+  #collectStructElements(node) {
+    if (!node) {
+      return;
+    }
+    // Structure element IDs must be unique within the structure hierarchy;
+    // keep the first element when a malformed document reuses an ID.
+    if (node.structId) {
+      this.#structElements.getOrInsert(node.structId, node);
+    }
+    for (const child of node.children || []) {
+      this.#collectStructElements(child);
+    }
+  }
+
+  #getStructElementId(structId) {
+    return this.#structElementIds.getOrInsertComputed(
+      structId,
+      () => `${this.#structElementIdPrefix}${this.#structElementIds.size}`
+    );
+  }
+
+  #getHeaderIds(headers) {
+    const result = [],
+      visited = new Set(),
+      pending = headers.toReversed();
+
+    while (pending.length > 0) {
+      const structId = pending.pop();
+      if (visited.has(structId)) {
+        continue;
+      }
+      visited.add(structId);
+
+      // The core retains table structure elements from other pages but omits
+      // their marked content. `Alt` or `Short` can still provide accessible
+      // text.
+      const header = this.#structElements.get(structId);
+      if (header?.role !== "TH") {
+        continue;
+      }
+      result.push(this.#getStructElementId(structId));
+
+      // A header may itself refer to other headers. Include those
+      // recursively, as required by ISO 32000-1, Table 349.
+      if (header.headers) {
+        for (let i = header.headers.length - 1; i >= 0; i--) {
+          pending.push(header.headers[i]);
+        }
+      }
+    }
+    return result;
+  }
+
   #setAttributes(structElement, htmlElement) {
-    const { alt, id, lang } = structElement;
+    const {
+      alt,
+      colSpan,
+      headers,
+      id,
+      lang,
+      rowSpan,
+      short,
+      structId,
+      summary,
+    } = structElement;
     if (alt !== undefined) {
       // Don't add the label in the struct tree layer but on the annotation
       // in the annotation layer.
@@ -263,10 +334,49 @@ class StructTreeLayerBuilder {
     if (id !== undefined) {
       htmlElement.setAttribute("aria-owns", id);
     }
+    if (
+      structId !== undefined &&
+      this.#structElements.get(structId) === structElement
+    ) {
+      const elementId = this.#getStructElementId(structId);
+      if (short !== undefined) {
+        // `Short` is the PDF 2.0 abbreviated form of a TH element's content
+        // (see ISO 32000-2, Table 384). Keep the header's own accessible name
+        // and expose the abbreviation through a hidden target used by
+        // referring cells. `aria-describedby` includes directly referenced
+        // hidden content, while an unreferenced hidden child does not
+        // contribute to its parent's name.
+        const abbreviation = document.createElement("span");
+        abbreviation.setAttribute("id", elementId);
+        abbreviation.setAttribute("aria-hidden", "true");
+        abbreviation.textContent = removeNullCharacters(short);
+        htmlElement.append(abbreviation);
+      } else {
+        htmlElement.setAttribute("id", elementId);
+      }
+    }
     if (lang !== undefined) {
       htmlElement.setAttribute(
         "lang",
         removeNullCharacters(lang, /* replaceInvisible = */ true)
+      );
+    }
+    if (rowSpan !== undefined) {
+      htmlElement.setAttribute("aria-rowspan", rowSpan);
+    }
+    if (colSpan !== undefined) {
+      htmlElement.setAttribute("aria-colspan", colSpan);
+    }
+    if (headers?.length > 0) {
+      const headerIds = this.#getHeaderIds(headers);
+      if (headerIds.length > 0) {
+        htmlElement.setAttribute("aria-describedby", headerIds.join(" "));
+      }
+    }
+    if (summary !== undefined) {
+      htmlElement.setAttribute(
+        "aria-description",
+        removeNullCharacters(summary)
       );
     }
   }
@@ -387,14 +497,32 @@ class StructTreeLayerBuilder {
         element.setAttribute("role", "heading");
         element.setAttribute("aria-level", match[1]);
       } else if (PDF_ROLE_TO_HTML_ROLE[role]) {
-        element.setAttribute(
-          "role",
-          role === "TH" &&
+        let htmlRole = PDF_ROLE_TO_HTML_ROLE[role];
+        if (role === "TH") {
+          if (node.scope === "Row") {
+            htmlRole = "rowheader";
+          } else if (node.scope === "Column") {
+            htmlRole = "columnheader";
+          } else if (
             parentNodes.at(-1)?.role === "TR" &&
             parentNodes.at(-2)?.role === "TBody"
-            ? "rowheader" // TH inside TR itself in TBody is a rowheader.
-            : PDF_ROLE_TO_HTML_ROLE[role]
-        );
+          ) {
+            // ARIA has no role for a header applying to both axes. Use the
+            // existing positional fallback for Both and for an omitted Scope.
+            htmlRole = "rowheader";
+          }
+        } else if (role === "Caption") {
+          // ARIA's caption role requires a table, grid, treegrid, or figure
+          // context and SHOULD be a direct child. This builder only produces
+          // table and figure among those roles.
+          const parentRole = parentNodes.at(-1)?.role;
+          if (parentRole !== "Table" && parentRole !== "Figure") {
+            htmlRole = null;
+          }
+        }
+        if (htmlRole) {
+          element.setAttribute("role", htmlRole);
+        }
       }
       if (role === "Figure" && this.#addImageInTextLayer(node, element)) {
         return element;
@@ -430,9 +558,15 @@ class StructTreeLayerBuilder {
     this.#setAttributes(node, element);
 
     if (node.children) {
-      if (node.children.length === 1 && "id" in node.children[0]) {
+      if (
+        node.children.length === 1 &&
+        !("role" in node.children[0]) &&
+        "id" in node.children[0]
+      ) {
         // Often there is only one content node so just set the values on the
-        // parent node to avoid creating an extra span.
+        // parent node to avoid creating an extra span. Note that this must be
+        // limited to leaf children: a structure element has to be visited in
+        // order to get its own role and attributes.
         this.#setAttributes(node.children[0], element);
       } else if (visitChildren) {
         parentNodes.push(node);

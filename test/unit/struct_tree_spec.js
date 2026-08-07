@@ -109,6 +109,43 @@ describe("struct tree", function () {
     });
   });
 
+  it("parses table cell spans from attribute arrays (issue 18090)", async function () {
+    // In this fixture, table and layout attribute dictionaries are separate
+    // indirect objects referenced from the cells' `A` arrays.
+    const filename = "issue13132.pdf";
+    const params = buildGetDocumentParams(filename);
+    const loadingTask = getDocument(params);
+    const doc = await loadingTask.promise;
+    const spans = [];
+
+    function collect(node, pageNumber) {
+      if (node.rowSpan || node.colSpan) {
+        spans.push(
+          `${pageNumber}:${node.role}:${node.rowSpan ?? 1}x${node.colSpan ?? 1}`
+        );
+      }
+      for (const kid of node.children || []) {
+        collect(kid, pageNumber);
+      }
+    }
+
+    for (const pageNumber of [1, 4]) {
+      const page = await doc.getPage(pageNumber);
+      collect(await page.getStructTree(), pageNumber);
+    }
+    expect(spans).toEqual([
+      "1:TD:1x5",
+      "1:TD:1x5",
+      "1:TH:1x3",
+      "1:TH:1x4",
+      "4:TD:1x2",
+      "4:TH:3x1",
+      "4:TD:2x1",
+    ]);
+
+    await loadingTask.destroy();
+  });
+
   it("parses structure with a figure and its bounding box", async function () {
     const filename = "bug1708040.pdf";
     const params = buildGetDocumentParams(filename);

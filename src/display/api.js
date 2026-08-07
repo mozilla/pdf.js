@@ -1296,6 +1296,18 @@ class PDFDocumentProxy {
  *   {@link StructTreeNode} and {@link StructTreeContent} objects.
  * @property {string} role - element's role, already mapped if a role map exists
  * in the PDF.
+ * @property {string} [structId] - A table header's structure element
+ *   identifier, i.e. its `ID` entry. Note that this is unrelated to the `id`
+ *   property of a {@link StructTreeContent} object.
+ * @property {number} [rowSpan] - The number of rows spanned by a table cell.
+ * @property {number} [colSpan] - The number of columns spanned by a table cell.
+ * @property {Array<string>} [headers] - The `structId` values of the table
+ *   headers associated with a table cell.
+ * @property {"Row" | "Column" | "Both"} [scope] - The cells to which a table
+ *   header applies.
+ * @property {string} [short] - An abbreviated version of a table header's
+ *   content.
+ * @property {string} [summary] - A summary of a table's purpose and structure.
  */
 
 /**

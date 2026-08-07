@@ -16,10 +16,19 @@
 import {
   AnnotationPrefix,
   makeArr,
+  shadow,
   stringToUTF8String,
   warn,
 } from "../shared/util.js";
-import { Dict, isDict, isName, Name, Ref, RefSetCache } from "./primitives.js";
+import {
+  Dict,
+  isDict,
+  isName,
+  Name,
+  Ref,
+  RefSet,
+  RefSetCache,
+} from "./primitives.js";
 import { lookupNormalRect, MissingDataException } from "./core_utils.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "./string_utils.js";
 import { BaseStream } from "./base_stream.js";
@@ -27,6 +36,10 @@ import { FileSpec } from "./file_spec.js";
 import { NumberTree } from "./name_number_tree.js";
 
 const MAX_DEPTH = 40;
+const TABLE_SPAN_ATTRIBUTES = [
+  ["RowSpan", "rowSpan"],
+  ["ColSpan", "colSpan"],
+];
 
 const StructElementType = {
   PAGE_CONTENT: 1,
@@ -601,16 +614,146 @@ class StructElementNode {
       // The default encoding for xml files is UTF-8.
       return stringToUTF8String(fileStream.getString());
     }
-    const A = this.dict.get("A");
-    if (A instanceof Dict) {
+    for (const attributes of this.attributes) {
       // This stuff isn't in the spec, but MS Office seems to use it.
-      const O = A.get("O");
-      if (isName(O, "MSFT_Office")) {
-        const mathml = A.get("MSFT_MathML");
+      if (isName(attributes.get("O"), "MSFT_Office")) {
+        const mathml = attributes.get("MSFT_MathML");
         return mathml ? stringToPDFString(mathml) : null;
       }
     }
     return null;
+  }
+
+  #collectAttributes(value, attributes) {
+    const pending = [value];
+    const visited = new RefSet();
+
+    while (pending.length > 0) {
+      value = pending.pop();
+      if (value instanceof Ref) {
+        // Only indirect references can make a PDF attribute graph cyclic.
+        if (visited.has(value)) {
+          continue;
+        }
+        visited.put(value);
+        value = this.xref.fetch(value);
+      }
+      if (value instanceof BaseStream) {
+        value = value.dict;
+      }
+      if (value instanceof Dict) {
+        attributes.push(value);
+        continue;
+      }
+      if (!Array.isArray(value)) {
+        continue;
+      }
+
+      // Process entries in source order. Attribute arrays may interleave
+      // attribute objects and revision numbers.
+      for (let i = value.length - 1; i >= 0; i--) {
+        if (!Number.isInteger(value[i])) {
+          pending.push(value[i]);
+        }
+      }
+    }
+  }
+
+  get attributes() {
+    const attributes = [];
+
+    const classes = this.dict.getArray("C");
+    if (classes !== undefined) {
+      const classMap = this.tree.rootDict?.get("ClassMap");
+      if (classMap instanceof Dict) {
+        // Class names may be interleaved with revision numbers.
+        for (const className of Array.isArray(classes) ? classes : [classes]) {
+          if (className instanceof Name) {
+            this.#collectAttributes(
+              classMap.getRaw(className.name),
+              attributes
+            );
+          }
+        }
+      }
+    }
+
+    // Explicit attributes take precedence over attributes from a class.
+    this.#collectAttributes(this.dict.getRaw("A"), attributes);
+
+    return shadow(this, "attributes", attributes);
+  }
+
+  get tableAttributes() {
+    const { role } = this;
+    if (role !== "Table" && role !== "TH" && role !== "TD") {
+      return null;
+    }
+
+    const result = Object.create(null);
+    for (const attributes of this.attributes) {
+      if (!isName(attributes.get("O"), "Table")) {
+        continue;
+      }
+
+      if (role === "Table") {
+        if (attributes.has("Summary")) {
+          const summary = attributes.get("Summary");
+          if (typeof summary === "string" && summary) {
+            result.summary = stringToPDFString(summary);
+          } else {
+            delete result.summary;
+          }
+        }
+        continue;
+      }
+
+      for (const [key, name] of TABLE_SPAN_ATTRIBUTES) {
+        if (!attributes.has(key)) {
+          continue;
+        }
+        const value = attributes.get(key);
+        if (Number.isInteger(value) && value > 1) {
+          result[name] = value;
+        } else {
+          // Omit default and invalid values, clearing any earlier class value.
+          delete result[name];
+        }
+      }
+
+      if (attributes.has("Headers")) {
+        delete result.headers;
+        const headers = attributes.getArray("Headers");
+        if (Array.isArray(headers)) {
+          const ids = headers
+            .filter(header => typeof header === "string")
+            .map(header => stringToPDFString(header));
+          if (ids.length > 0) {
+            result.headers = ids;
+          }
+        }
+      }
+
+      if (role === "TH" && attributes.has("Scope")) {
+        delete result.scope;
+        const scope = attributes.get("Scope");
+        if (
+          scope instanceof Name &&
+          ["Row", "Column", "Both"].includes(scope.name)
+        ) {
+          result.scope = scope.name;
+        }
+      }
+
+      if (role === "TH" && attributes.has("Short")) {
+        delete result.short;
+        const short = attributes.get("Short");
+        if (typeof short === "string" && short) {
+          result.short = stringToPDFString(short);
+        }
+      }
+    }
+    return Object.keys(result).length > 0 ? result : null;
   }
 
   parseKids() {
@@ -892,6 +1035,18 @@ class StructTreePage {
       if (typeof alt === "string") {
         obj.alt = stringToPDFString(alt);
       }
+
+      // Note that this must not be called `id`, since that name is already
+      // used, with a different meaning, on the content/object/annotation
+      // children below.
+      const structId = node.dict.get("ID");
+      if (obj.role === "TH" && typeof structId === "string" && structId) {
+        obj.structId = stringToPDFString(structId);
+      }
+      const tableAttributes = node.tableAttributes;
+      if (tableAttributes) {
+        Object.assign(obj, tableAttributes);
+      }
       if (obj.role === "Formula") {
         try {
           const { mathML } = node;
@@ -906,29 +1061,30 @@ class StructTreePage {
         }
       }
 
-      const a = node.dict.get("A");
-      if (a instanceof Dict) {
-        const bbox = lookupNormalRect(a.getArray("BBox"), null);
-        if (bbox) {
-          obj.bbox = bbox;
-        } else {
-          const width = a.get("Width");
-          const height = a.get("Height");
-          if (
-            typeof width === "number" &&
-            width > 0 &&
-            typeof height === "number" &&
-            height > 0
-          ) {
-            obj.bbox = [0, 0, width, height];
-          }
+      let bbox = null,
+        size = null;
+      for (const a of node.attributes) {
+        bbox = lookupNormalRect(a.getArray("BBox"), bbox);
+        const width = a.get("Width");
+        const height = a.get("Height");
+        if (
+          typeof width === "number" &&
+          width > 0 &&
+          typeof height === "number" &&
+          height > 0
+        ) {
+          size = [0, 0, width, height];
         }
-        // TODO: If the bbox is not available, we should try to get it from
-        // the content stream.
-        // For example when rendering on the canvas the commands between the
-        // beginning and the end of the marked-content sequence, we can
-        // compute the overall bbox.
       }
+      // Prefer BBox because Width and Height cannot recover its position.
+      if (bbox || size) {
+        obj.bbox = bbox ?? size;
+      }
+      // TODO: If the bbox is not available, we should try to get it from
+      // the content stream.
+      // For example when rendering on the canvas the commands between the
+      // beginning and the end of the marked-content sequence, we can
+      // compute the overall bbox.
 
       const lang = node.dict.get("Lang");
       if (typeof lang === "string") {
