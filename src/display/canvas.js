@@ -2960,7 +2960,7 @@ class CanvasGraphics {
       }
 
       const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
-      const operatorList = font.charProcOperatorList[glyph.operatorListId];
+      const operatorList = font.charProcOperatorList.get(glyph.operatorListId);
       if (!operatorList) {
         warn(`Type3 character "${glyph.operatorListId}" is not available.`);
       } else if (this.contentVisible) {

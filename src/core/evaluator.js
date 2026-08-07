@@ -4901,14 +4901,14 @@ class TranslatedFont {
     const type3Evaluator = evaluator.clone({ ignoreErrors: false });
     // Prevent circular references in Type3 fonts.
     const type3FontRefs = new RefSet(evaluator.type3FontRefs);
-    if (dict.objId && !type3FontRefs.has(dict.objId)) {
+    if (dict.objId) {
       type3FontRefs.put(dict.objId);
     }
     type3Evaluator.type3FontRefs = type3FontRefs;
 
     const charProcs = dict.get("CharProcs");
     const fontResources = dict.get("Resources") || resources;
-    const charProcOperatorList = Object.create(null);
+    const charProcOperatorList = new Map();
 
     const [x0, y0, x1, y1] = font.bbox;
     const fontBBoxSize = Math.hypot(x1 - x0, y1 - y0);
@@ -4940,14 +4940,14 @@ class TranslatedFont {
             }
             break;
         }
-        charProcOperatorList[key] = operatorList.getIR();
+        charProcOperatorList.set(key, operatorList.getIR());
 
         for (const dependency of operatorList.dependencies) {
           type3Dependencies.add(dependency);
         }
       } catch {
         warn(`Type3 font resource "${key}" is not available.`);
-        charProcOperatorList[key] = new OperatorList().getIR();
+        charProcOperatorList.set(key, new OperatorList().getIR());
       }
     }
 
