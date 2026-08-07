@@ -124,6 +124,7 @@ class DrawingEditor extends AnnotationEditor {
         drawId,
         drawOutlines.defaultProperties
       );
+      this.parent.drawLayer.updateZIndex(drawId, this.zIndex);
     } else {
       // We create a new drawing.
       this._drawId = this.#createDrawing(drawOutlines, this.parent);
@@ -141,7 +142,27 @@ class DrawingEditor extends AnnotationEditor {
       /* isPathUpdatable = */ false,
       /* hasClip = */ false
     );
+    // The SVG lives in the canvas wrapper, which is a sibling of the annotation
+    // editor layer containing the editor divs, so it must share their z-index
+    // in order to be stacked with the other editors.
+    parent.drawLayer.updateZIndex(id, this.zIndex);
     return id;
+  }
+
+  /** @inheritdoc */
+  setInBackground() {
+    super.setInBackground();
+    if (this._drawId !== null) {
+      this.parent?.drawLayer.updateZIndex(this._drawId, 0);
+    }
+  }
+
+  /** @inheritdoc */
+  setInForeground() {
+    super.setInForeground();
+    if (this._drawId !== null) {
+      this.parent?.drawLayer.updateZIndex(this._drawId, this.zIndex);
+    }
   }
 
   static _mergeSVGProperties(p1, p2) {
@@ -346,6 +367,28 @@ class DrawingEditor extends AnnotationEditor {
         }
       )
     );
+  }
+
+  /** @inheritdoc */
+  select() {
+    super.select();
+    // The `.selectedEditor` rule raises the editor div, but the drawing itself
+    // lives in a separate SVG, which must be raised along with it.
+    this.parent?.drawLayer.updateProperties(this._drawId, {
+      rootClass: {
+        selected: true,
+      },
+    });
+  }
+
+  /** @inheritdoc */
+  unselect() {
+    super.unselect();
+    this.parent?.drawLayer.updateProperties(this._drawId, {
+      rootClass: {
+        selected: false,
+      },
+    });
   }
 
   _onStartDragging() {
@@ -831,6 +874,12 @@ class DrawingEditor extends AnnotationEditor {
       /* isPathUpdatable = */ true,
       /* hasClip = */ false
     ));
+    // The editor isn't created until the drawing session ends, so use the
+    // z-index it will be given in order to draw on top of the existing editors.
+    parent.drawLayer.updateZIndex(
+      this._currentDrawId,
+      AnnotationEditor._zIndex
+    );
   }
 
   static _drawMove(event) {
