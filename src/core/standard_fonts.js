@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
+import { MacStandardGlyphOrdering, normalizeFontName } from "./fonts_utils.js";
+import { getGlyphsUnicode } from "./glyphlist.js";
 import { getLookupTableFactory } from "./core_utils.js";
-import { normalizeFontName } from "./fonts_utils.js";
 
 /**
  * Hold a map of decoded fonts and of the standard fourteen Type1
@@ -321,6 +322,20 @@ const getSymbolsFonts = getLookupTableFactory(function (t) {
   t.Wingdings = true;
   t["Wingdings-Bold"] = true;
   t["Wingdings-Regular"] = true;
+});
+
+// Base glyph map for fonts whose glyph ids follow the standard Macintosh
+// ordering implied by a `post` table of format 1. Fonts such as TrebuchetMS can
+// use part of this ordering with supplemental overrides.
+const getGlyphMapForMacOrderedFonts = getLookupTableFactory(function (t) {
+  const glyphsUnicode = getGlyphsUnicode();
+  t[2] = 10;
+  for (let gid = 3; gid < MacStandardGlyphOrdering.length; gid++) {
+    const unicode = glyphsUnicode[MacStandardGlyphOrdering[gid]];
+    if (unicode !== undefined) {
+      t[gid] = unicode;
+    }
+  }
 });
 
 // Glyph map for well-known standard fonts. Sometimes Ghostscript uses CID
@@ -825,6 +840,92 @@ const getGlyphMapForStandardFonts = getLookupTableFactory(function (t) {
   t[3416] = 8377;
 });
 
+// TrebuchetMS largely follows the standard Macintosh glyph ordering through
+// glyph id 235, with the exceptions below. Additional mappings for the affected
+// Latin glyph repertoire follow.
+const getSupplementalGlyphMapForTrebuchetMS = getLookupTableFactory(
+  function (t) {
+    // A few of the standard Macintosh glyph slots hold a different, but
+    // similar looking, glyph in TrebuchetMS.
+    t[151] = 956;
+    t[159] = 937;
+    t[168] = 916;
+    t[189] = 8364;
+    t[195] = 8729;
+    t[218] = 713;
+
+    t[236] = 222;
+    t[237] = 254;
+    t[238] = 8722;
+    t[239] = 185;
+    t[240] = 178;
+    t[241] = 179;
+    t[242] = 189;
+    t[243] = 188;
+    t[244] = 190;
+    t[245] = 181;
+    t[246] = 8486;
+    t[247] = 8710;
+    t[248] = 253;
+    t[249] = 215;
+    t[250] = 173;
+    t[253] = 8355;
+    t[254] = 286;
+    t[255] = 287;
+    t[256] = 304;
+    t[257] = 350;
+    t[258] = 351;
+    t[259] = 262;
+    t[260] = 263;
+    t[261] = 268;
+    t[262] = 269;
+    t[263] = 273;
+    t[264] = 175;
+    t[266] = 183;
+    t[267] = 258;
+    t[268] = 259;
+    t[269] = 260;
+    t[270] = 261;
+    t[271] = 270;
+    t[272] = 271;
+    t[273] = 272;
+    t[274] = 280;
+    t[275] = 281;
+    t[276] = 282;
+    t[277] = 283;
+    t[278] = 313;
+    t[279] = 314;
+    t[280] = 317;
+    t[281] = 318;
+    t[282] = 319;
+    t[283] = 320;
+    t[284] = 323;
+    t[285] = 324;
+    t[286] = 327;
+    t[287] = 328;
+    t[288] = 336;
+    t[289] = 337;
+    t[290] = 340;
+    t[291] = 341;
+    t[292] = 344;
+    t[293] = 345;
+    t[294] = 346;
+    t[295] = 347;
+    t[296] = 538;
+    t[297] = 539;
+    t[298] = 356;
+    t[299] = 357;
+    t[300] = 366;
+    t[301] = 367;
+    t[302] = 368;
+    t[303] = 369;
+    t[304] = 377;
+    t[305] = 378;
+    t[306] = 379;
+    t[307] = 380;
+  }
+);
+
 // The glyph map for ArialBlack differs slightly from the glyph map used for
 // other well-known standard fonts. Hence we use this (incomplete) CID to GID
 // mapping to adjust the glyph map for non-embedded ArialBlack fonts.
@@ -977,6 +1078,7 @@ function isKnownFontName(name) {
 
 export {
   getFontNameToFileMap,
+  getGlyphMapForMacOrderedFonts,
   getGlyphMapForStandardFonts,
   getNonStdFontMap,
   getSerifFonts,
@@ -984,6 +1086,7 @@ export {
   getStdFontMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
+  getSupplementalGlyphMapForTrebuchetMS,
   getSymbolsFonts,
   isKnownFontName,
 };
