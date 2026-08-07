@@ -1527,6 +1527,47 @@ describe("Resize with a touchscreen", () => {
       })
     );
   });
+
+  it("must end pinch-resize when one editor finger is lifted with another finger elsewhere", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const { layer, editor } = await drawAndSelectEditor(page);
+        // Keep both fingers inside the editor body.
+        const fingerY = editor.y + 0.8 * editor.height;
+        let finger0, finger1, finger2;
+
+        try {
+          // Two fingers start a pinch-resize session, which disables the layer.
+          finger0 = await page.touchscreen.touchStart(
+            editor.x + 0.2 * editor.width,
+            fingerY
+          );
+          finger1 = await page.touchscreen.touchStart(
+            editor.x + 0.55 * editor.width,
+            fingerY
+          );
+          await page.waitForSelector(".annotationEditorLayer.disabled");
+
+          // On the following editor `touchend`, this foreign finger is present
+          // in `evt.touches` but absent from `evt.changedTouches`.
+          finger2 = await page.touchscreen.touchStart(
+            layer.x + 0.2 * layer.width,
+            layer.y + 0.85 * layer.height
+          );
+
+          // Fewer than two editor fingers remain, so its pinch-resize session
+          // ends.
+          await finger0.end();
+          finger0 = null;
+          await page.waitForSelector(".annotationEditorLayer:not(.disabled)");
+        } finally {
+          await finger0?.end();
+          await finger1?.end();
+          await finger2?.end();
+        }
+      })
+    );
+  });
 });
 
 describe("Tap after a two-finger gesture", () => {
