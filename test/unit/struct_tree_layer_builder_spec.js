@@ -29,6 +29,97 @@ describe("StructTreeLayerBuilder", function () {
     }
   });
 
+  it("exposes paragraph and text emphasis semantics (issue 21732)", async function () {
+    const tree = await render({
+      role: "Root",
+      children: [
+        {
+          role: "P",
+          children: [
+            { type: "content", id: "p1R_mc0" },
+            {
+              role: "Strong",
+              children: [{ type: "content", id: "p1R_mc1" }],
+            },
+            {
+              role: "Em",
+              children: [{ type: "content", id: "p1R_mc2" }],
+            },
+          ],
+        },
+        {
+          role: "P",
+          children: [
+            {
+              role: "Em",
+              children: [{ type: "content", id: "p1R_mc3" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(tree.querySelectorAll('[role="paragraph"]').length).toEqual(2);
+    expect(tree.querySelectorAll('[role="emphasis"]').length).toEqual(2);
+    expect(tree.querySelectorAll('[role="strong"]').length).toEqual(1);
+  });
+
+  it("exposes additional document structure semantics", async function () {
+    const tree = await render({
+      role: "Root",
+      children: [
+        {
+          role: "Art",
+          children: [
+            {
+              role: "BlockQuote",
+              children: [
+                {
+                  role: "Note",
+                  children: [{ type: "content", id: "p1R_mc4" }],
+                },
+                {
+                  role: "Code",
+                  children: [{ type: "content", id: "p1R_mc5" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const article = tree.querySelector('[role="article"]');
+    expect(article).not.toBeNull();
+    const blockQuote = article.querySelector('[role="blockquote"]');
+    expect(blockQuote).not.toBeNull();
+    expect(blockQuote.querySelector('[role="note"]')).not.toBeNull();
+    expect(blockQuote.querySelector('[role="code"]')).not.toBeNull();
+  });
+
+  it("doesn't add prohibited accessible names", async function () {
+    const roles = [
+      ["P", "paragraph"],
+      ["Em", "emphasis"],
+      ["Strong", "strong"],
+      ["Code", "code"],
+    ];
+    const tree = await render({
+      role: "Root",
+      children: roles.map(([role], index) => ({
+        role,
+        alt: `Alternative text ${index}`,
+        children: [{ type: "content", id: `p1R_mc${index}` }],
+      })),
+    });
+
+    for (const [, role] of roles) {
+      expect(
+        tree.querySelector(`[role="${role}"]`).getAttribute("aria-label")
+      ).toBeNull();
+    }
+  });
+
   it("exposes table semantics", async function () {
     const tree = await render({
       role: "Root",
