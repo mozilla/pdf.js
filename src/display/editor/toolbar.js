@@ -341,8 +341,47 @@ class FloatingToolbar {
     const [x, y] = this.#getLastPoint(boxes, isLTR);
     const { style } = (this.#toolbar ||= this.#render());
     parent.append(this.#toolbar);
-    style.insetInlineEnd = `${100 * x}%`;
-    style.top = `calc(${100 * y}% + var(--editor-toolbar-vert-offset))`;
+
+    const parentRect = parent.getBoundingClientRect();
+    const parentHeight = parentRect.height;
+    const parentWidth = parentRect.width;
+
+    const toolbarRect = this.#toolbar.getBoundingClientRect();
+    const toolbarHeight = toolbarRect.height;
+    const toolbarWidth = toolbarRect.width;
+    const offset = parseFloat(
+      getComputedStyle(parent).getPropertyValue("--editor-toolbar-vert-offset")
+    );
+
+    // Y-axis positioning: check if toolbar fits below the text
+    const textBottomY = parentHeight * y;
+    const toolbarBottomY = textBottomY + offset + toolbarHeight;
+
+    if (toolbarBottomY <= parentHeight) {
+      // Toolbar fits below: position toolbar below the text
+      style.top = `calc(${100 * y}% + var(--editor-toolbar-vert-offset))`;
+    } else {
+      // Toolbar doesn't fit below: position toolbar above the text.
+      // The first box will always have the lowest Y because reading
+      // is from top to bottom and boxes[0] is the topmost text.
+      const lowestY = boxes[0].y * 100;
+      style.top = `max(0px, calc(${lowestY}% - ${toolbarHeight}px - var(--editor-toolbar-vert-offset)))`;
+    }
+
+    // X-axis positioning: check if toolbar fits on the right side
+    const textRightX = parentWidth * (1 - x);
+    const toolbarLeftX = textRightX - toolbarWidth;
+
+    if (toolbarLeftX >= 0) {
+      // Toolbar fits on the right: align right with the text
+      style.insetInlineEnd = `${100 * x}%`;
+      style.insetInlineStart = "";
+    } else {
+      // Toolbar doesn't fit on the right: align left with the start of the text
+      const minX = boxes[0].x * 100;
+      style.insetInlineStart = `${minX}%`;
+      style.insetInlineEnd = "";
+    }
   }
 
   hide() {
