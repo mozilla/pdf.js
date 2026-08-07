@@ -4908,7 +4908,7 @@ class TranslatedFont {
 
     const charProcs = dict.get("CharProcs");
     const fontResources = dict.get("Resources") || resources;
-    const charProcOperatorList = Object.create(null);
+    const charProcOperatorList = new Map();
 
     const [x0, y0, x1, y1] = font.bbox;
     const fontBBoxSize = Math.hypot(x1 - x0, y1 - y0);
@@ -4940,14 +4940,14 @@ class TranslatedFont {
             }
             break;
         }
-        charProcOperatorList[key] = operatorList.getIR();
+        charProcOperatorList.set(key, operatorList.getIR());
 
         for (const dependency of operatorList.dependencies) {
           type3Dependencies.add(dependency);
         }
       } catch {
         warn(`Type3 font resource "${key}" is not available.`);
-        charProcOperatorList[key] = new OperatorList().getIR();
+        charProcOperatorList.set(key, new OperatorList().getIR());
       }
     }
 
