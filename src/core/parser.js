@@ -71,14 +71,16 @@ function getInlineImageCacheKey(bytes) {
 }
 
 class Parser {
+  #imageCache = null;
+
+  #imageId = 0;
+
   constructor({ lexer, xref, allowStreams = false, recoveryMode = false }) {
     this.lexer = lexer;
     this.xref = xref;
     this.allowStreams = allowStreams;
     this.recoveryMode = recoveryMode;
 
-    this.imageCache = Object.create(null);
-    this._imageId = 0;
     this.refill();
   }
 
@@ -599,8 +601,8 @@ class Parser {
       // Finally, don't forget to reset the stream position.
       stream.pos = initialStreamPos;
 
-      const cacheEntry = this.imageCache[cacheKey];
-      if (cacheEntry !== undefined) {
+      const cacheEntry = this.#imageCache?.get(cacheKey);
+      if (cacheEntry) {
         this.buf2 = Cmd.get("EI");
         this.shift();
 
@@ -620,9 +622,9 @@ class Parser {
 
     imageStream = this.filter(imageStream, dict, length, cipherTransform);
     imageStream.dict = dict;
-    if (cacheKey !== undefined) {
-      imageStream.cacheKey = `inline_img_${++this._imageId}`;
-      this.imageCache[cacheKey] = imageStream;
+    if (cacheKey) {
+      imageStream.cacheKey = `inline_img_${++this.#imageId}`;
+      (this.#imageCache ??= new Map()).set(cacheKey, imageStream);
     }
 
     this.buf2 = Cmd.get("EI");
