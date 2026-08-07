@@ -572,8 +572,6 @@ class AnnotationEditor {
     style.top = `${(100 * y).toFixed(2)}%`;
 
     this._onTranslating(x, y);
-
-    div.scrollIntoView({ block: "nearest" });
   }
 
   /**
@@ -1521,6 +1519,11 @@ class AnnotationEditor {
           this.#prevDragX = x;
           this.#prevDragY = y;
           this._uiManager.dragSelectedEditors(tx, ty);
+          // Keep the editor where the drag started in view. Calling
+          // `scrollIntoView` here does it once per handled pointermove, after
+          // `dragSelectedEditors` has moved the selection, rather than once
+          // from every selected editor's `drag` method.
+          this.div.scrollIntoView({ block: "nearest" });
         },
         opts
       );
