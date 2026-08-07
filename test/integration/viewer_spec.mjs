@@ -1624,6 +1624,55 @@ describe("PDF viewer", () => {
         })
       );
     });
+
+    it("keeps pinching when going from three fingers back to two", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getScale = () =>
+            page.evaluate(
+              () => window.PDFViewerApplication.pdfViewer.currentScale
+            );
+          const centerX = 300,
+            centerY = 400;
+          const initialScale = await getScale();
+          const minDistance = await page.evaluate(
+            () =>
+              window.PDFViewerApplication._touchManager
+                .MIN_TOUCH_DISTANCE_TO_PINCH
+          );
+          let scale;
+
+          // Spread the two fingers well past the dead zone, which zooms in.
+          await pinch(page, {
+            centerX,
+            centerY,
+            startGap: 25,
+            endGap: 100,
+            beforeEnd: async ([finger0, finger1]) => {
+              scale = await getScale();
+              expect(scale)
+                .withContext(`In ${browserName}`)
+                .toBeGreaterThan(initialScale);
+
+              // A third finger lands and is lifted right away: the pinch in
+              // progress mustn't have to earn the dead zone all over again.
+              const finger2 = await page.touchscreen.touchStart(
+                centerX,
+                centerY + 200
+              );
+              await finger2.end();
+
+              // Hence this move, at half the dead-zone distance, still zooms.
+              await finger1.move(centerX + 100 + minDistance / 2, centerY);
+            },
+          });
+
+          expect(await getScale())
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThan(scale);
+        })
+      );
+    });
   });
 
   describe("Outline tree shift-click toggle (PR 20740)", () => {
