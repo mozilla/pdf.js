@@ -685,7 +685,7 @@ pdfjs-views-manager-pages-status-delete-button-label = 削除
 pdfjs-views-manager-pages-status-export-selected-button-label = 選択したページをエクスポート...
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
-pdfjs-views-manager-status-undo-cut-label = { $count } ページを切り取りしました
+pdfjs-views-manager-status-undo-cut-label = { $count } ページを切り取りました
 # Variables:
 #   $count (Number) - the number of selected pages to be copied.
 pdfjs-views-manager-pages-status-undo-copy-label = { $count } ページをコピーしました

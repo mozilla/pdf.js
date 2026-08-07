@@ -121,7 +121,7 @@ pdfjs-document-properties-modification-date = تاريخ التعديل:
 # Variables:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
-pdfjs-document-properties-creator = المنشئ:
+pdfjs-document-properties-creator = المُنشئ:
 pdfjs-document-properties-producer = منتج PDF:
 pdfjs-document-properties-version = إصدارة PDF:
 pdfjs-document-properties-page-count = عدد الصفحات:
