@@ -123,4 +123,76 @@ describe("TouchManager", function () {
 
     helper.destroy();
   });
+
+  it("keeps pinching when the tracked pair changes", function () {
+    const helper = new TouchManagerHelper();
+    const { MIN_TOUCH_DISTANCE_TO_PINCH: minDistance } = helper.manager;
+    const touch0 = makeTouch(0, 0);
+    const touch1 = makeTouch(1, 200);
+
+    helper.dispatch("touchstart", [touch0], [touch0]);
+    helper.dispatch("touchstart", [touch0, touch1], [touch1]);
+
+    // Past the dead zone: the first move only re-baselines...
+    const spread1 = makeTouch(1, 400);
+    helper.dispatch("touchmove", [touch0, spread1], [spread1]);
+    expect(helper.pinchings).toEqual([]);
+
+    // ...and the second one is reported, hence pinching is in progress.
+    const spread2 = makeTouch(1, 600);
+    helper.dispatch("touchmove", [touch0, spread2], [spread2]);
+    expect(helper.pinchings.length).toEqual(1);
+
+    // A third finger lands and is lifted right away.
+    const touch2 = makeTouch(2, 500, 400);
+    helper.dispatch("touchstart", [touch0, spread2, touch2], [touch2]);
+    helper.dispatch("touchend", [touch0, spread2], [touch2]);
+
+    // The pinch is still in progress, hence a move well inside the dead zone is
+    // still reported instead of having to earn it all over again.
+    const nudge = minDistance / 2;
+    const spread3 = makeTouch(1, 600 + nudge);
+    helper.dispatch("touchmove", [touch0, spread3], [spread3]);
+    expect(helper.pinchings.length).toEqual(2);
+    expect(helper.pinchings[1].prevDistance).toEqual(600);
+    expect(helper.pinchings[1].distance).toBeCloseTo(600 + nudge);
+
+    helper.destroy();
+  });
+
+  it("doesn't keep pinching into the next gesture", function () {
+    const helper = new TouchManagerHelper();
+    const { MIN_TOUCH_DISTANCE_TO_PINCH: minDistance } = helper.manager;
+    const touch0 = makeTouch(0, 0);
+    const touch1 = makeTouch(1, 200);
+
+    helper.dispatch("touchstart", [touch0], [touch0]);
+    helper.dispatch("touchstart", [touch0, touch1], [touch1]);
+    const spread1 = makeTouch(1, 400);
+    const spread2 = makeTouch(1, 600);
+    helper.dispatch("touchmove", [touch0, spread1], [spread1]);
+    helper.dispatch("touchmove", [touch0, spread2], [spread2]);
+    expect(helper.pinchings.length).toEqual(1);
+
+    // A third finger breaks the pair, and then everything is lifted.
+    const touch2 = makeTouch(2, 500, 400);
+    helper.dispatch("touchstart", [touch0, spread2, touch2], [touch2]);
+    helper.dispatch("touchend", [touch0], [spread2, touch2]);
+    helper.dispatch("touchend", [], [touch0]);
+    expect(helper.pinchEnds).toEqual(1);
+
+    // The next gesture must earn the dead zone again.
+    const next0 = makeTouch(3, 0);
+    const next1 = makeTouch(4, 200);
+    helper.dispatch("touchstart", [next0], [next0]);
+    helper.dispatch("touchstart", [next0, next1], [next1]);
+    helper.dispatch(
+      "touchmove",
+      [next0, makeTouch(4, 200 + minDistance / 2)],
+      []
+    );
+    expect(helper.pinchings.length).toEqual(1);
+
+    helper.destroy();
+  });
 });

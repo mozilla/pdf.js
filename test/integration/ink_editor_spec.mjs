@@ -1568,6 +1568,64 @@ describe("Resize with a touchscreen", () => {
       })
     );
   });
+
+  it("must keep pinch-resizing when a finger is lifted and put down again", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const { editor } = await drawAndSelectEditor(page);
+        const editorSelector = getEditorSelector(0);
+        // Keep every finger inside the editor body.
+        const fingerY = editor.y + 0.8 * editor.height;
+        const getCenter = async () => {
+          const { x, y, width, height } = await getRect(page, editorSelector);
+          return [x + width / 2, y + height / 2];
+        };
+        let finger0, finger1;
+
+        try {
+          finger0 = await page.touchscreen.touchStart(
+            editor.x + 0.15 * editor.width,
+            fingerY
+          );
+          finger1 = await page.touchscreen.touchStart(
+            editor.x + 0.85 * editor.width,
+            fingerY
+          );
+          await page.waitForSelector(".annotationEditorLayer.disabled");
+
+          // The second finger is lifted, which ends the session, and put down
+          // again next to the first one, which starts a new one.
+          await finger1.end();
+          await page.waitForSelector(".annotationEditorLayer:not(.disabled)");
+          finger1 = await page.touchscreen.touchStart(
+            editor.x + 0.5 * editor.width,
+            fingerY
+          );
+          await page.waitForSelector(".annotationEditorLayer.disabled");
+
+          // Spreading the fingers must resize the editor around its center and
+          // not drag it: the `pointerdown` of the returning finger mustn't have
+          // started a drag session. The editor is deliberately grown by little,
+          // else it would hit the page borders and be moved to fit in them.
+          const [centerX, centerY] = await getCenter();
+          for (let i = 1; i <= 6; i++) {
+            await finger1.move(editor.x + 0.5 * editor.width + 10 * i, fingerY);
+          }
+
+          const [newCenterX, newCenterY] = await getCenter();
+          expect(Math.abs(newCenterX - centerX))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(2);
+          expect(Math.abs(newCenterY - centerY))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(2);
+        } finally {
+          await finger0?.end();
+          await finger1?.end();
+        }
+      })
+    );
+  });
 });
 
 describe("Tap after a two-finger gesture", () => {
