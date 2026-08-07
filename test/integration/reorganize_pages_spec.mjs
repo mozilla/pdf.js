@@ -144,14 +144,25 @@ async function waitForPageCanvasToHaveImage(page, pageNumber) {
   const selector = `.page[data-page-number = "${pageNumber}"] .canvasWrapper canvas`;
   await page.waitForSelector(selector, { visible: true });
   await page.waitForFunction(
-    sel => {
+    async sel => {
       const canvas = document.querySelector(sel);
       if (!canvas?.width || !canvas.height) {
         return false;
       }
-      const { data } = canvas
-        .getContext("2d", { willReadFrequently: true })
-        .getImageData(0, 0, canvas.width, canvas.height);
+      // The canvas may have been transferred to the renderer worker.
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(canvas);
+      } catch {
+        return false;
+      }
+      const tmp = document.createElement("canvas");
+      tmp.width = canvas.width;
+      tmp.height = canvas.height;
+      const ctx = tmp.getContext("2d", { willReadFrequently: true });
+      ctx.drawImage(bitmap, 0, 0);
+      bitmap.close();
+      const { data } = ctx.getImageData(0, 0, tmp.width, tmp.height);
       for (let i = 0, ii = data.length; i < ii; i += 4) {
         if (
           data[i + 3] !== 0 &&

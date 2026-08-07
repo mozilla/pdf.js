@@ -779,6 +779,14 @@ const defaultOptions = new Map([
     },
   ],
   [
+    "disableWorkerRendering",
+    {
+      /** @type {boolean} */
+      value: false,
+      kind: OptionKind.API + OptionKind.PREFERENCE,
+    },
+  ],
+  [
     "docBaseUrl",
     {
       /** @type {string} */
@@ -915,6 +923,20 @@ const defaultOptions = new Map([
   // End OptionKind.API
 
   // Begin OptionKind.WORKER
+  [
+    "rendererSrc",
+    {
+      /** @type {string} */
+      value:
+        // eslint-disable-next-line no-nested-ternary
+        typeof PDFJSDev === "undefined"
+          ? "../src/pdf.renderer.js"
+          : PDFJSDev.test("MOZCENTRAL")
+            ? "resource://pdf.js/build/pdf.renderer.mjs"
+            : "../build/pdf.renderer.mjs",
+      kind: OptionKind.WORKER,
+    },
+  ],
   [
     "workerPort",
     {

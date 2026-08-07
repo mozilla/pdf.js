@@ -699,7 +699,11 @@ class TilingPattern {
       this.clipBbox(owner, x0, y0, x1, y1);
       owner.baseTransformStack.push(owner.baseTransform);
       owner.baseTransform = getCurrentTransform(owner.ctx);
+      // The nested execution swaps in the pattern's `pathCache`; restore the
+      // outer operator list's cache afterwards.
+      const prevPathCache = owner._pathCache;
       owner.executeOperatorList(this.operatorList);
+      owner._pathCache = prevPathCache;
       owner.baseTransform = owner.baseTransformStack.pop();
     }
 

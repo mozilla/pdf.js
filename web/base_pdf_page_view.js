@@ -16,6 +16,17 @@
 import { FeatureTest, RenderingCancelledException } from "pdfjs-lib";
 import { RenderableView, RenderingStates } from "./renderable_view.js";
 
+function releaseCanvas(canvas) {
+  if (!canvas) {
+    return;
+  }
+  if (canvas.resetWorkerCanvas) {
+    canvas.resetWorkerCanvas();
+    return;
+  }
+  canvas.width = canvas.height = 0;
+}
+
 class BasePDFPageView extends RenderableView {
   #loadingId = null;
 
@@ -124,13 +135,18 @@ class BasePDFPageView extends RenderableView {
     this.#showCanvas = isLastShow => {
       if (updateOnFirstShow) {
         let tempCanvas = this.#tempCanvas;
-        if (!isLastShow && this.minDurationToUpdateCanvas > 0) {
+        if (
+          !isLastShow &&
+          this.minDurationToUpdateCanvas > 0 &&
+          !this.renderTask?.rendererHandler
+        ) {
           // We draw on the canvas at 60fps (in using `requestAnimationFrame`),
           // so if the canvas is large, updating it at 60fps can be a way too
           // much and can cause some serious performance issues.
           // To avoid that we only update the canvas every
           // `this.#minDurationToUpdateCanvas` ms.
-
+          // When rendering in worker, we don't need this optimization because
+          // the rendering is already happening off the main thread.
           if (Date.now() - this.#startTime < this.minDurationToUpdateCanvas) {
             return;
           }
@@ -167,7 +183,7 @@ class BasePDFPageView extends RenderableView {
 
       if (prevCanvas) {
         prevCanvas.replaceWith(canvas);
-        prevCanvas.width = prevCanvas.height = 0;
+        releaseCanvas(prevCanvas);
       } else {
         onShow(canvas);
       }
@@ -195,14 +211,14 @@ class BasePDFPageView extends RenderableView {
       return;
     }
     canvas.remove();
-    canvas.width = canvas.height = 0;
+    releaseCanvas(canvas);
     this.canvas = null;
     this.#resetTempCanvas();
   }
 
   #resetTempCanvas() {
     if (this.#tempCanvas) {
-      this.#tempCanvas.width = this.#tempCanvas.height = 0;
+      releaseCanvas(this.#tempCanvas);
       this.#tempCanvas = null;
     }
   }

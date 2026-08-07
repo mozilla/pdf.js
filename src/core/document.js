@@ -100,6 +100,7 @@ class Page {
     globalImageCache,
     systemFontCache,
     nonBlendModesSet,
+    nonCanvasFiltersSet,
     xfaFactory,
   }) {
     this.pdfManager = pdfManager;
@@ -114,6 +115,7 @@ class Page {
     this.globalImageCache = globalImageCache;
     this.systemFontCache = systemFontCache;
     this.nonBlendModesSet = nonBlendModesSet;
+    this.nonCanvasFiltersSet = nonCanvasFiltersSet;
     this.evaluatorOptions = pdfManager.evaluatorOptions;
     this.xfaFactory = xfaFactory;
 
@@ -564,6 +566,10 @@ class Page {
         transparency: partialEvaluator.hasBlendModes(
           resources,
           this.nonBlendModesSet
+        ),
+        hasCanvasFilters: partialEvaluator.hasCanvasFilters(
+          resources,
+          this.nonCanvasFiltersSet
         ),
         pageIndex,
         cacheKey,
@@ -1720,6 +1726,7 @@ class PDFDocument {
           globalImageCache: catalog.globalImageCache,
           systemFontCache: catalog.systemFontCache,
           nonBlendModesSet: catalog.nonBlendModesSet,
+          nonCanvasFiltersSet: catalog.nonCanvasFiltersSet,
           xfaFactory,
         })
     );
@@ -1820,6 +1827,7 @@ class PDFDocument {
               globalImageCache: catalog.globalImageCache,
               systemFontCache: catalog.systemFontCache,
               nonBlendModesSet: catalog.nonBlendModesSet,
+              nonCanvasFiltersSet: catalog.nonCanvasFiltersSet,
               xfaFactory: null,
             })
           );
