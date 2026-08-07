@@ -327,15 +327,20 @@ class Ref {
 // The reference is identified by number and generation.
 // This structure stores only one instance of the reference.
 class RefSet {
+  #set = new Set();
+
   constructor(parent = null) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
-      parent &&
-      !(parent instanceof RefSet)
-    ) {
-      unreachable('RefSet: Invalid "parent" value.');
+    if (parent) {
+      if (
+        (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
+        !(parent instanceof RefSet)
+      ) {
+        unreachable('RefSet: Invalid "parent" value.');
+      }
+      for (const refStr of parent) {
+        this.#set.add(refStr);
+      }
     }
-    this._set = new Set(parent?._set);
   }
 
   has(ref) {
@@ -346,7 +351,7 @@ class RefSet {
     ) {
       unreachable('RefSet: Invalid "ref" value in has.');
     }
-    return this._set.has(ref.toString());
+    return this.#set.has(ref.toString());
   }
 
   put(ref) {
@@ -357,19 +362,19 @@ class RefSet {
     ) {
       unreachable('RefSet: Invalid "ref" value in put.');
     }
-    this._set.add(ref.toString());
+    this.#set.add(ref.toString());
   }
 
   remove(ref) {
-    this._set.delete(ref.toString());
+    this.#set.delete(ref.toString());
   }
 
   [Symbol.iterator]() {
-    return this._set.values();
+    return this.#set.keys();
   }
 
   clear() {
-    this._set.clear();
+    this.#set.clear();
   }
 }
 
