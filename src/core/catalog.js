@@ -516,11 +516,10 @@ class Catalog {
     // complement binary integer so we can use regular bitwise operations on it.
     flags += 2 ** 32;
 
-    const permissions = [];
-    for (const key in PermissionFlag) {
-      const value = PermissionFlag[key];
+    const permissions = new Set();
+    for (const value of Object.values(PermissionFlag)) {
       if (flags & value) {
-        permissions.push(value);
+        permissions.add(value);
       }
     }
     return permissions;
