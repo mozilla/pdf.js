@@ -876,6 +876,8 @@ class CommentPopup {
 
   #text = null;
 
+  #title = null;
+
   #time = null;
 
   #prevDragX = 0;
@@ -939,6 +941,8 @@ class CommentPopup {
     const time = (this.#time = document.createElement("time"));
     time.className = "commentPopupTime";
 
+    const title = (this.#title = document.createElement("span"));
+
     const buttons = (this.#buttonsContainer = document.createElement("div"));
     buttons.className = "commentPopupButtons";
     const edit = document.createElement("button");
@@ -999,7 +1003,7 @@ class CommentPopup {
     del.addEventListener("contextmenu", noContextMenu);
     buttons.append(edit, del);
 
-    top.append(time, buttons);
+    top.append(title, time, buttons);
 
     const separator = document.createElement("hr");
 
@@ -1137,9 +1141,19 @@ class CommentPopup {
       modificationDate,
       color,
       opacity,
+      titleObj,
+      subjectObj,
     } = editor.getData();
     container.style.backgroundColor =
       (color && CommentManager._makeCommentColor(color, opacity)) || "";
+    if (titleObj?.str) {
+      this.#title.textContent = subjectObj?.str
+        ? `${subjectObj.str} \u2014 ${titleObj.str}`
+        : titleObj.str;
+      this.#title.hidden = false;
+    } else {
+      this.#title.hidden = true;
+    }
     this.#text.replaceChildren();
     const html =
       richText?.str && (!contentsObj?.str || richText.str === contentsObj.str)
