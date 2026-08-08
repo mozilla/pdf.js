@@ -924,9 +924,9 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @returns {Promise<Array<number> | null>} A promise that is resolved with
-   *   an {Array} that contains the permission flags for the PDF document, or
-   *   `null` when no permissions are present in the PDF file.
+   * @returns {Promise<Set<number> | null>} A promise that is resolved with
+   *   a {Set} that contains the permission flags for the PDF document,
+   *   or `null` when no permissions are present in the PDF file.
    */
   getPermissions() {
     return this._transport.getPermissions();

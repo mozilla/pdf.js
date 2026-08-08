@@ -741,24 +741,24 @@ class PDFViewer {
     }
 
     this.#setPrintingAllowed(
-      permissions.includes(PermissionFlag.PRINT_HIGH_QUALITY) ||
-        permissions.includes(PermissionFlag.PRINT)
+      permissions.has(PermissionFlag.PRINT_HIGH_QUALITY) ||
+        permissions.has(PermissionFlag.PRINT)
     );
 
     if (
-      !permissions.includes(PermissionFlag.COPY) &&
+      !permissions.has(PermissionFlag.COPY) &&
       this.#textLayerMode === TextLayerMode.ENABLE
     ) {
       params.textLayerMode = TextLayerMode.ENABLE_PERMISSIONS;
     }
 
-    if (!permissions.includes(PermissionFlag.MODIFY_CONTENTS)) {
+    if (!permissions.has(PermissionFlag.MODIFY_CONTENTS)) {
       params.annotationEditorMode = AnnotationEditorType.DISABLE;
     }
 
     if (
-      !permissions.includes(PermissionFlag.MODIFY_ANNOTATIONS) &&
-      !permissions.includes(PermissionFlag.FILL_INTERACTIVE_FORMS) &&
+      !permissions.has(PermissionFlag.MODIFY_ANNOTATIONS) &&
+      !permissions.has(PermissionFlag.FILL_INTERACTIVE_FORMS) &&
       this.#annotationMode === AnnotationMode.ENABLE_FORMS
     ) {
       params.annotationMode = AnnotationMode.ENABLE;
