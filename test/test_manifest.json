@@ -1216,6 +1216,13 @@
     "type": "text"
   },
   {
+    "id": "link-overlaps-editor-toolbar",
+    "file": "pdfs/link-overlaps-editor-toolbar.pdf",
+    "md5": "cffe75e60236e236e15793e37cd0809b",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue9655-text",
     "file": "pdfs/issue9655_reduced.pdf",
     "md5": "87259a82cf3cda18e240517ca53c312a",
