@@ -27,29 +27,29 @@ import { XRefMock } from "./test_utils.js";
 describe("colorspace", function () {
   describe("ColorSpace.isDefaultDecode", function () {
     it("should be true if decode is not an array", function () {
-      expect(ColorSpace.isDefaultDecode("string", 0)).toBeTruthy();
+      expect(ColorSpace.isDefaultDecode("string", 0)).toBeTrue();
     });
 
     it("should be true if length of decode array is not correct", function () {
-      expect(ColorSpace.isDefaultDecode([0], 1)).toBeTruthy();
-      expect(ColorSpace.isDefaultDecode([0, 1, 0], 1)).toBeTruthy();
+      expect(ColorSpace.isDefaultDecode([0], 1)).toBeTrue();
+      expect(ColorSpace.isDefaultDecode([0, 1, 0], 1)).toBeTrue();
     });
 
     it("should be true if decode map matches the default decode map", function () {
-      expect(ColorSpace.isDefaultDecode([], 0)).toBeTruthy();
+      expect(ColorSpace.isDefaultDecode([], 0)).toBeTrue();
 
-      expect(ColorSpace.isDefaultDecode([0, 0], 1)).toBeFalsy();
-      expect(ColorSpace.isDefaultDecode([0, 1], 1)).toBeTruthy();
+      expect(ColorSpace.isDefaultDecode([0, 0], 1)).toBeFalse();
+      expect(ColorSpace.isDefaultDecode([0, 1], 1)).toBeTrue();
 
-      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 0, 1], 3)).toBeTruthy();
-      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 1, 1], 3)).toBeFalsy();
+      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 0, 1], 3)).toBeTrue();
+      expect(ColorSpace.isDefaultDecode([0, 1, 0, 1, 1, 1], 3)).toBeFalse();
 
       expect(
         ColorSpace.isDefaultDecode([0, 1, 0, 1, 0, 1, 0, 1], 4)
-      ).toBeTruthy();
+      ).toBeTrue();
       expect(
         ColorSpace.isDefaultDecode([1, 0, 0, 1, 0, 1, 0, 1], 4)
-      ).toBeFalsy();
+      ).toBeFalse();
     });
   });
 
@@ -268,7 +268,7 @@ describe("colorspace", function () {
         new Uint8ClampedArray([26, 26, 26])
       );
       expect(colorSpace.getOutputLength(2, 0)).toEqual(6);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
     it("should handle the case when cs is an indirect object", function () {
@@ -313,7 +313,7 @@ describe("colorspace", function () {
         new Uint8ClampedArray([51, 51, 51])
       );
       expect(colorSpace.getOutputLength(3, 1)).toEqual(12);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -384,7 +384,7 @@ describe("colorspace", function () {
         new Uint8ClampedArray([26, 51, 77])
       );
       expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
-      expect(colorSpace.isPassthrough(8)).toBeTruthy();
+      expect(colorSpace.isPassthrough(8)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
     it("should handle the case when cs is an indirect object", function () {
@@ -435,7 +435,7 @@ describe("colorspace", function () {
         new Uint8ClampedArray([26, 51, 77])
       );
       expect(colorSpace.getOutputLength(4, 1)).toEqual(5);
-      expect(colorSpace.isPassthrough(8)).toBeTruthy();
+      expect(colorSpace.isPassthrough(8)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -506,7 +506,7 @@ describe("colorspace", function () {
         colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3, 1]), 0)
       ).toEqual(new Uint8ClampedArray([32, 28, 21]));
       expect(colorSpace.getOutputLength(4, 0)).toEqual(3);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
     it("should handle the case when cs is an indirect object", function () {
@@ -557,7 +557,7 @@ describe("colorspace", function () {
         colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3, 1]), 0)
       ).toEqual(new Uint8ClampedArray([32, 28, 21]));
       expect(colorSpace.getOutputLength(4, 1)).toEqual(4);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -627,7 +627,7 @@ describe("colorspace", function () {
         new Uint8ClampedArray([255, 255, 255])
       );
       expect(colorSpace.getOutputLength(4, 0)).toEqual(12);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -697,7 +697,7 @@ describe("colorspace", function () {
         new Uint8ClampedArray([0, 147, 151])
       );
       expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -766,8 +766,8 @@ describe("colorspace", function () {
         new Uint8ClampedArray([188, 100, 61])
       );
       expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
-      expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
+      expect(colorSpace.isDefaultDecode([0, 1])).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -832,8 +832,8 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb([2], 0)).toEqual(
         new Uint8ClampedArray([255, 109, 70])
       );
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
-      expect(colorSpace.isDefaultDecode([0, 1], 1)).toBeTruthy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
+      expect(colorSpace.isDefaultDecode([0, 1], 1)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
   });
@@ -910,8 +910,8 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb([0.1], 0)).toEqual(
         new Uint8ClampedArray([228, 243, 242])
       );
-      expect(colorSpace.isPassthrough(8)).toBeFalsy();
-      expect(colorSpace.isDefaultDecode([0, 1])).toBeTruthy();
+      expect(colorSpace.isPassthrough(8)).toBeFalse();
+      expect(colorSpace.isDefaultDecode([0, 1])).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
   });
