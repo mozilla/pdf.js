@@ -373,7 +373,7 @@ class RefSet {
   }
 }
 
-class RefSetCache {
+class RefMap {
   _map = new Map();
 
   get size() {
@@ -467,6 +467,6 @@ export {
   isRefsEqual,
   Name,
   Ref,
+  RefMap,
   RefSet,
-  RefSetCache,
 };

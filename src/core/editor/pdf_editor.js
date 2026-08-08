@@ -33,8 +33,8 @@ import {
   isName,
   Name,
   Ref,
+  RefMap,
   RefSet,
-  RefSetCache,
 } from "../primitives.js";
 import { incrementalUpdate, writeValue } from "../writer.js";
 import { isArrayEqual, makeArr, stringToBytes } from "../../shared/util.js";
@@ -69,11 +69,11 @@ class DocumentData {
     this.document = document;
     this.destinations = null;
     this.pageLabels = null;
-    this.pagesMap = new RefSetCache();
-    this.oldRefMapping = new RefSetCache();
+    this.pagesMap = new RefMap();
+    this.oldRefMapping = new RefMap();
     this.dedupNamedDestinations = new Map();
     this.usedNamedDestinations = new Set();
-    this.postponedRefCopies = new RefSetCache();
+    this.postponedRefCopies = new RefMap();
     this.resourceStreamPromises = new Map();
     this.usedStructParents = new Set();
     this.oldStructParentMapping = new Map();
@@ -90,7 +90,7 @@ class DocumentData {
     this.acroFormDefaultResources = null;
     this.acroFormQ = 0;
     this.hasSignatureAnnotations = false;
-    this.fieldToParent = new RefSetCache();
+    this.fieldToParent = new RefMap();
     this.outline = null;
     this.embeddedFiles = null;
   }
@@ -2142,7 +2142,7 @@ class PDFEditor {
    * If the document has some fields but no Fields entry in the AcroForm, we
    * need to fix that by creating a Fields entry with the oldest parent field
    * for each field.
-   * @param {RefSetCache} fieldToParent
+   * @param {RefMap} fieldToParent
    * @param {XRef} xref
    * @returns {Array<Ref>}
    */
@@ -2508,7 +2508,7 @@ class PDFEditor {
         : null;
     if (newAnnotations?.length) {
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       const newData = await AnnotationFactory.saveNewAnnotations(
         page.createAnnotationEvaluator(handler),
         this.xrefWrapper,
@@ -3047,10 +3047,10 @@ class PDFEditor {
 
   /**
    * Create the changes required to write the new PDF document.
-   * @returns {Promise<[RefSetCache, Ref]>}
+   * @returns {Promise<[RefMap, Ref]>}
    */
   async #createChanges() {
-    const changes = new RefSetCache();
+    const changes = new RefMap();
     changes.put(Ref.get(0, 0xffff), { data: null });
     for (let i = 1, ii = this.xref.length; i < ii; i++) {
       if (this.objStreamRefs?.has(i)) {
@@ -3067,7 +3067,7 @@ class PDFEditor {
    * Create an object stream containing the given objects.
    * @param {Ref} objStreamRef
    * @param {Array<Ref>} objRefs
-   * @param {RefSetCache} changes
+   * @param {RefMap} changes
    */
   async #createObjectStream(objStreamRef, objRefs, changes) {
     const streamBuffer = [""];
