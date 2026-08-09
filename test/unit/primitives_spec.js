@@ -501,6 +501,15 @@ describe("primitives", function () {
       refSet.put(ref2);
       expect([...refSet]).toEqual([ref1.toString(), ref2.toString()]);
     });
+
+    it("should support a parent RefSet", function () {
+      const parent = new RefSet();
+      parent.put(ref1);
+      parent.put(ref2);
+
+      const child = new RefSet(parent);
+      expect([...child]).toEqual([ref1.toString(), ref2.toString()]);
+    });
   });
 
   describe("RefMap", function () {
