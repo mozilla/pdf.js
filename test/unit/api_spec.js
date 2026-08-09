@@ -5535,7 +5535,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           }
         }
       }
-      expect(checkedCopyLocalImage).toBeFalsy();
+      expect(checkedCopyLocalImage).toBeUndefined();
 
       firstImgData = null;
       await loadingTask.destroy();
@@ -5588,7 +5588,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           break;
         }
       }
-      expect(checkedCopyLocalImage).toBeTruthy();
+      expect(checkedCopyLocalImage).toBeTrue();
 
       await loadingTask.destroy();
     });
@@ -5648,7 +5648,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           checkedGlobalDecodeFailed = true;
         }
       }
-      expect(checkedGlobalDecodeFailed).toBeTruthy();
+      expect(checkedGlobalDecodeFailed).toBeTrue();
 
       await loadingTask.destroy();
     });

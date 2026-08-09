@@ -1129,7 +1129,7 @@ describe("annotation", function () {
       expect(data.url).toEqual("http://www.example.com/test.pdf#15");
       expect(data.unsafeUrl).toEqual("http://www.example.com/test.pdf#15");
       expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toBeFalsy();
+      expect(data.newWindow).toBeUndefined();
     });
 
     it("should correctly parse a GoToR action, with explicit destination array", async function () {
@@ -1165,7 +1165,7 @@ describe("annotation", function () {
           '[14,{"name":"XYZ"},null,298.043,null]'
       );
       expect(data.dest).toBeUndefined();
-      expect(data.newWindow).toBeFalsy();
+      expect(data.newWindow).toBeUndefined();
     });
 
     it(

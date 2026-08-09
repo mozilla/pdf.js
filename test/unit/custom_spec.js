@@ -166,7 +166,7 @@ describe("custom ownerDocument", function () {
     }).promise;
 
     const style = elements.find(element => element.tagName === "style");
-    expect(style).toBeFalsy();
+    expect(style).toBeUndefined();
     expect(ownerDocument.fonts.size).toBeGreaterThanOrEqual(1);
     expect(Array.from(ownerDocument.fonts).find(checkFont)).toBeTruthy();
 
