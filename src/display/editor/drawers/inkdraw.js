@@ -21,6 +21,10 @@ class InkDrawOutliner {
   // The last 3 points of the line.
   #last = new Float64Array(6);
 
+  // The most recent normalized input position. The displayed path is extended
+  // to it while drawing; see #toSVGPathWithTip.
+  #tip = new Float64Array(2);
+
   #line;
 
   #lines;
@@ -53,6 +57,7 @@ class InkDrawOutliner {
     this.#points = [x, y];
     this.#lines = [{ line, points: this.#points }];
     this.#last.set(line, 0);
+    this.#tip.set([x, y], 0);
   }
 
   updateProperty(name, value) {
@@ -82,9 +87,49 @@ class InkDrawOutliner {
   }
 
   add(x, y) {
+    if (this.#add(x, y)) {
+      this.toSVGPath();
+    }
+
+    return {
+      path: {
+        d: this.#toSVGPathWithTip(),
+      },
+    };
+  }
+
+  addPoints(points) {
+    let needsPathUpdate = false;
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      if (!this.#add(points[i], points[i + 1])) {
+        continue;
+      }
+      needsPathUpdate = true;
+
+      // `toSVGPath` rewrites the current subpath for two or three points. Run
+      // those cases immediately; once there are more points, the call below
+      // can append all remaining Bézier segments.
+      if (this.#points.length <= 6) {
+        this.toSVGPath();
+        needsPathUpdate = false;
+      }
+    }
+    if (needsPathUpdate) {
+      this.toSVGPath();
+    }
+
+    return {
+      path: {
+        d: this.#toSVGPathWithTip(),
+      },
+    };
+  }
+
+  #add(x, y) {
     // The point is in canvas coordinates which means that there is no rotation.
     // It's the same as parent coordinates.
     [x, y] = this.#normalizePoint(x, y);
+    this.#tip.set([x, y], 0);
     const [x1, y1, x2, y2] = this.#last.subarray(2, 6);
     const diffX = x - x2;
     const diffY = y - y2;
@@ -93,7 +138,7 @@ class InkDrawOutliner {
       // The idea is to avoid garbage points around the last point.
       // When the points are too close, it just leads to bad normal vectors and
       // control points.
-      return null;
+      return false;
     }
 
     this.#points.push(x, y);
@@ -102,11 +147,7 @@ class InkDrawOutliner {
       // We've only one point.
       this.#last.set([x2, y2, x, y], 2);
       this.#line.push(NaN, NaN, NaN, NaN, x, y);
-      return {
-        path: {
-          d: this.toSVGPath(),
-        },
-      };
+      return true;
     }
 
     if (isNaN(this.#last[0])) {
@@ -117,17 +158,16 @@ class InkDrawOutliner {
     this.#last.set([x1, y1, x2, y2, x, y], 0);
     this.#line.push(...Outline.createBezierPoints(x1, y1, x2, y2, x, y));
 
-    return {
-      path: {
-        d: this.toSVGPath(),
-      },
-    };
+    return true;
   }
 
   end(x, y) {
-    const change = this.add(x, y);
-    if (change) {
-      return change;
+    if (x !== undefined && this.#add(x, y)) {
+      return {
+        path: {
+          d: this.toSVGPath(),
+        },
+      };
     }
     if (this.#points.length === 2) {
       // We've only one point.
@@ -137,7 +177,12 @@ class InkDrawOutliner {
         },
       };
     }
-    return null;
+    // The line is done: drop the transient tip added by `add`.
+    return {
+      path: {
+        d: this.#lastSVGPath,
+      },
+    };
   }
 
   startNew(x, y, parentWidth, parentHeight, rotation) {
@@ -149,6 +194,7 @@ class InkDrawOutliner {
 
     const line = (this.#line = [NaN, NaN, NaN, NaN, x, y]);
     this.#points = [x, y];
+    this.#tip.set([x, y], 0);
     const last = this.#lines.at(-1);
     if (last) {
       last.line = new Float32Array(last.line);
@@ -200,6 +246,28 @@ class InkDrawOutliner {
         d: this.#lastSVGPath,
       },
     };
+  }
+
+  /**
+   * With at least three accepted points, the last Bézier segment ends halfway
+   * between the two latest points (see Outline.createBezierPoints). Input no
+   * more than two pixels from the latest accepted point is also omitted from
+   * this.#lastSVGPath. Hence the stored path can end before this.#tip. Append a
+   * straight segment to the tip for display only; the segment is recomputed on
+   * each input update and omitted when the line ends.
+   * @returns {string} the SVG path to display while drawing.
+   */
+  #toSVGPathWithTip() {
+    const tipX = Outline.svgRound(this.#tip[0]);
+    const tipY = Outline.svgRound(this.#tip[1]);
+    if (this.#points.length === 2) {
+      // This line contains only its starting point, so create an explicit
+      // subpath from it to the tip.
+      const firstX = Outline.svgRound(this.#line[4]);
+      const firstY = Outline.svgRound(this.#line[5]);
+      return `${this.#lastSVGPath} M ${firstX} ${firstY} L ${tipX} ${tipY}`;
+    }
+    return `${this.#lastSVGPath} L ${tipX} ${tipY}`;
   }
 
   toSVGPath() {

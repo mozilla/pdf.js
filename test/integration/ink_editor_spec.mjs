@@ -1106,6 +1106,157 @@ describe("Ink Editor", () => {
   });
 });
 
+describe("The drawn line must reach the pointer", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that the line ends at the pointer while drawing", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+        const x = Math.round(rect.x + 50);
+        const y = Math.round(rect.y + rect.height / 2);
+        const clickHandle = await waitForPointerUp(page);
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+
+        // Once at least three points are accepted, each smoothed segment ends
+        // halfway between the two latest ones. Without the transient tip, the
+        // displayed path would end at that midpoint rather than at the pointer.
+        for (const deltaX of [20, 60, 120, 200]) {
+          await page.mouse.move(x + deltaX, y);
+          const d = await page.$eval(
+            `.canvasWrapper svg.draw path[d]:not([d=""])`,
+            el => el.getAttribute("d")
+          );
+          // Ink path coordinates are normalized to a "0 0 10000 10000"
+          // viewBox.
+          const numbers = d
+            .trim()
+            .split(/[^0-9.-]+/)
+            .filter(Boolean);
+          const lastX = (numbers.at(-2) / 10000) * rect.width;
+          expect(Math.abs(lastX - deltaX - 50))
+            .withContext(`In ${browserName}, at ${deltaX}, with "${d}"`)
+            .toBeLessThan(1);
+        }
+
+        await page.mouse.up();
+        await awaitPromise(clickHandle);
+
+        // Once the line is done, the transient tip segment must be gone.
+        const d = await page.$eval(
+          `.canvasWrapper svg.draw path[d]:not([d=""])`,
+          el => el.getAttribute("d")
+        );
+        expect(/\sL\s[\d.-]+\s[\d.-]+\s*$/.test(d))
+          .withContext(`In ${browserName}, with "${d}"`)
+          .toBeFalse();
+      })
+    );
+  });
+
+  it("must use coalesced events on a rotated page", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await page.evaluate(() => {
+          window.PDFViewerApplication.rotatePages(90);
+        });
+        await page.waitForSelector(
+          ".annotationEditorLayer[data-main-rotation='90']"
+        );
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+        const x = Math.round(rect.x + 50);
+        const y = Math.round(rect.y + rect.height / 2);
+        const points = [20, 60, 120].map(deltaX => [x + deltaX, y]);
+
+        let pointerUpHandle = await waitForPointerUp(page);
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        for (const [clientX, clientY] of points) {
+          await page.mouse.move(clientX, clientY);
+        }
+        const sequentialPath = await page.$eval(
+          `.canvasWrapper svg.draw path[d]:not([d=""])`,
+          el => el.getAttribute("d").trim()
+        );
+        await page.mouse.up();
+        await awaitPromise(pointerUpHandle);
+
+        pointerUpHandle = await waitForPointerUp(page);
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        await page.evaluate(coalesced => {
+          const prototype = PointerEvent.prototype;
+          const descriptor = Object.getOwnPropertyDescriptor(
+            prototype,
+            "getCoalescedEvents"
+          );
+          globalThis.__restoreGetCoalescedEvents = () => {
+            if (descriptor) {
+              Object.defineProperty(
+                prototype,
+                "getCoalescedEvents",
+                descriptor
+              );
+            } else {
+              delete prototype.getCoalescedEvents;
+            }
+          };
+          globalThis.__coalescedEventsCalls = 0;
+          Object.defineProperty(prototype, "getCoalescedEvents", {
+            configurable: true,
+            value() {
+              globalThis.__coalescedEventsCalls++;
+              return coalesced.map(
+                ([clientX, clientY]) =>
+                  new PointerEvent("pointermove", {
+                    buttons: this.buttons,
+                    clientX,
+                    clientY,
+                    isPrimary: this.isPrimary,
+                    pointerId: this.pointerId,
+                    pointerType: this.pointerType,
+                  })
+              );
+            },
+          });
+        }, points);
+        await page.mouse.move(...points.at(-1));
+        const { coalescedEventsCalls, path } = await page.evaluate(() => {
+          const d = document
+            .querySelector(`.canvasWrapper svg.draw path[d]:not([d=""])`)
+            .getAttribute("d");
+          const calls = globalThis.__coalescedEventsCalls;
+          globalThis.__restoreGetCoalescedEvents();
+          delete globalThis.__coalescedEventsCalls;
+          delete globalThis.__restoreGetCoalescedEvents;
+          return {
+            coalescedEventsCalls: calls,
+            path: d.slice(d.lastIndexOf("M")).trim(),
+          };
+        });
+        await page.mouse.up();
+        await awaitPromise(pointerUpHandle);
+
+        expect(coalescedEventsCalls).withContext(`In ${browserName}`).toBe(1);
+        expect(path).withContext(`In ${browserName}`).toEqual(sequentialPath);
+      })
+    );
+  });
+});
+
 describe("The pen-drawn shape must maintain correct curvature regardless of the page it is drawn on or whether the curve's endpoint lies within or beyond the page boundaries", () => {
   let pages;
 
