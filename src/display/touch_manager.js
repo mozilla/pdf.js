@@ -96,36 +96,7 @@ class TouchManager {
     }
 
     if (touchIds.size === 1) {
-      if (this.#pointerDownAC) {
-        return;
-      }
-      const pointerDownAC = (this.#pointerDownAC = new AbortController());
-      const signal = AbortSignal.any([this.#signal, pointerDownAC.signal]);
-      const container = this.#container;
-
-      // We want to have the events at the capture phase to make sure we can
-      // cancel them.
-      const opts = { capture: true, signal, passive: false };
-      const cancelPointerDown = e => {
-        if (e.pointerType === "touch") {
-          this.#pointerDownAC?.abort();
-          this.#pointerDownAC = null;
-        }
-      };
-      container.addEventListener(
-        "pointerdown",
-        e => {
-          if (e.pointerType === "touch") {
-            // This is the second finger so we don't want it select something
-            // or whatever.
-            stopEvent(e);
-            cancelPointerDown(e);
-          }
-        },
-        opts
-      );
-      container.addEventListener("pointerup", cancelPointerDown, opts);
-      container.addEventListener("pointercancel", cancelPointerDown, opts);
+      this.#armPointerDown();
       return;
     }
 
@@ -159,6 +130,49 @@ class TouchManager {
 
     stopEvent(evt);
     this.#setTouchInfo(evt);
+  }
+
+  /**
+   * Swallow the `pointerdown` of the next finger to land while one is already
+   * down on the container.
+   *
+   * That finger is about to become the second one of a two-finger gesture, so
+   * it must neither select anything nor start a session of its own, e.g. an
+   * editor drag: the latter listens on `window`, hence the capture-phase
+   * listeners which `#touchMoveAC` adds on the container run too late to stop
+   * it, and swallowing the `pointerdown` itself is the only chance to.
+   */
+  #armPointerDown() {
+    if (this.#pointerDownAC) {
+      return;
+    }
+    const pointerDownAC = (this.#pointerDownAC = new AbortController());
+    const signal = AbortSignal.any([this.#signal, pointerDownAC.signal]);
+    const container = this.#container;
+
+    // We want to have the events at the capture phase to make sure we can
+    // cancel them.
+    const opts = { capture: true, signal, passive: false };
+    const cancelPointerDown = e => {
+      if (e.pointerType === "touch") {
+        this.#pointerDownAC?.abort();
+        this.#pointerDownAC = null;
+      }
+    };
+    container.addEventListener(
+      "pointerdown",
+      e => {
+        if (e.pointerType === "touch") {
+          // This is the second finger so we don't want it select something
+          // or whatever.
+          stopEvent(e);
+          cancelPointerDown(e);
+        }
+      },
+      opts
+    );
+    container.addEventListener("pointerup", cancelPointerDown, opts);
+    container.addEventListener("pointercancel", cancelPointerDown, opts);
   }
 
   /**
@@ -198,11 +212,19 @@ class TouchManager {
     return touches;
   }
 
+  /**
+   * Take the current position of the two tracked fingers as the new baseline.
+   *
+   * `#isPinching` is deliberately left as it is, and is only reset when the
+   * gesture ends: a pinch in progress mustn't have to earn
+   * `MIN_TOUCH_DISTANCE_TO_PINCH` all over again because a third finger landed
+   * and was lifted.
+   * @param {TouchEvent} evt
+   */
   #setTouchInfo(evt) {
     const touches = this.#getTrackedTouches(evt);
     if (touches.length !== 2 || this.#isPinchingStopped?.()) {
       this.#touchInfo = null;
-      this.#isPinching = false;
       return;
     }
 
@@ -290,12 +312,23 @@ class TouchManager {
       this.#onPinchEnd?.();
     }
 
-    if (!this.#touchInfo) {
-      return;
-    }
-    stopEvent(evt);
+    // The flag is reset here, and only here, hence unconditionally: a pinch
+    // whose pair was broken, e.g. by a third finger or by `isPinchingStopped`,
+    // has no `#touchInfo` anymore but mustn't leak its state into the next
+    // gesture.
+    const wasTracking = !!this.#touchInfo;
     this.#touchInfo = null;
     this.#isPinching = false;
+    if (this.#touchIds.size === 1) {
+      // A finger which started on the container is still down, so the gesture
+      // is back to its one-finger state: the next finger to land must be
+      // swallowed again. Without this, lifting one finger of a pinch and
+      // putting it back down would let its `pointerdown` through.
+      this.#armPointerDown();
+    }
+    if (wasTracking) {
+      stopEvent(evt);
+    }
   }
 
   destroy() {
