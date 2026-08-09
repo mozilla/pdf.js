@@ -48,12 +48,14 @@ import {
   ZapfDingbatsEncoding,
 } from "./encodings.js";
 import {
+  getGlyphMapForMacOrderedFonts,
   getGlyphMapForStandardFonts,
   getNonStdFontMap,
   getSerifFonts,
   getStdFontMap,
   getSupplementalGlyphMapForArialBlack,
   getSupplementalGlyphMapForCalibri,
+  getSupplementalGlyphMapForTrebuchetMS,
 } from "./standard_fonts.js";
 import { GlyfTable, pruneCompositeGlyphCycles } from "./glyf.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
@@ -385,6 +387,23 @@ function applyStandardFontGlyphMap(map, glyphMap) {
   for (const charCode in glyphMap) {
     map[+charCode] = glyphMap[charCode];
   }
+}
+
+// The glyphs of the (Windows) Symbol font are ordered by char code, hence build
+// an encoding indexed by glyph id; note that the char codes 0x7F-0xA0 are
+// unused and that the glyph ids 0-2 are `.notdef`/`.null`/`nonmarkingreturn`.
+function buildSymbolGlyphIdEncoding() {
+  const encoding = [];
+  let glyphId = 3;
+  for (const [firstCharCode, lastCharCode] of [
+    [0x20, 0x7e],
+    [0xa1, 0xfe],
+  ]) {
+    for (let charCode = firstCharCode; charCode <= lastCharCode; charCode++) {
+      encoding[glyphId++] = SymbolSetEncoding[charCode];
+    }
+  }
+  return encoding;
 }
 
 function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
@@ -1288,12 +1307,22 @@ class Font {
       // Standard fonts might be embedded as CID font without glyph mapping.
       // Building one based on GlyphMapForStandardFonts.
       const map = [];
-      applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
+      if (/Trebuchet/i.test(name)) {
+        // TrebuchetMS doesn't share the glyph ordering of the standard fonts,
+        // hence using the latter would map e.g. "š" to "ž" (issue 21713).
+        applyStandardFontGlyphMap(map, getGlyphMapForMacOrderedFonts());
+        applyStandardFontGlyphMap(map, getSupplementalGlyphMapForTrebuchetMS());
+      } else {
+        applyStandardFontGlyphMap(map, getGlyphMapForStandardFonts());
 
-      if (/Arial-?Black/i.test(name)) {
-        applyStandardFontGlyphMap(map, getSupplementalGlyphMapForArialBlack());
-      } else if (/Calibri/i.test(name)) {
-        applyStandardFontGlyphMap(map, getSupplementalGlyphMapForCalibri());
+        if (/Arial-?Black/i.test(name)) {
+          applyStandardFontGlyphMap(
+            map,
+            getSupplementalGlyphMapForArialBlack()
+          );
+        } else if (/Calibri/i.test(name)) {
+          applyStandardFontGlyphMap(map, getSupplementalGlyphMapForCalibri());
+        }
       }
 
       // Always update the glyph mapping with the `cidToGidMap` when it exists
@@ -1329,8 +1358,13 @@ class Font {
       this.toFontChar = map;
       this.toUnicode = new ToUnicodeMap(map);
     } else if (/Symbol/i.test(fontName)) {
+      // The non-embedded SymbolMT font in issue 21713 uses Identity encoding
+      // and an Identity CIDToGIDMap, hence its CIDs are glyph ids.
+      const isCidKeyed =
+        this.composite && this.cidEncoding.startsWith("Identity-");
+
       this.toFontChar = buildToFontChar(
-        SymbolSetEncoding,
+        isCidKeyed ? buildSymbolGlyphIdEncoding() : SymbolSetEncoding,
         getGlyphsUnicode(),
         this.differences
       );
