@@ -1283,7 +1283,7 @@ describe("Stamp Editor", () => {
           },
         },
         {
-          enableAltText: false,
+          enableAltText: true,
           enableFakeMLManager: false,
           enableUpdatedAddImage: true,
           enableGuessAltText: true,
@@ -1293,6 +1293,19 @@ describe("Stamp Editor", () => {
 
     afterEach(async () => {
       await closePages(pages);
+    });
+
+    it("must hide the alt-text settings when there is no AI", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await page.waitForSelector("#imageAltTextSettings", {
+            hidden: true,
+          });
+          await page.waitForSelector("#imageAltTextSettingsSeparator", {
+            hidden: true,
+          });
+        })
+      );
     });
 
     it("must check that the toggle button isn't displayed when there is no AI", async () => {
