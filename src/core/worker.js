@@ -29,7 +29,7 @@ import {
   getNewAnnotationsMap,
   XRefParseException,
 } from "./core_utils.js";
-import { Dict, isDict, Ref, RefSetCache } from "./primitives.js";
+import { Dict, isDict, Ref, RefMap } from "./primitives.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
@@ -694,7 +694,7 @@ class WorkerMessageHandler {
           pdfManager.ensureDoc("xref"),
           pdfManager.ensureCatalog("structTreeRoot"),
         ];
-        const changes = new RefSetCache();
+        const changes = new RefMap();
         const promises = [];
 
         const newAnnotationsByPage = !isPureXfa

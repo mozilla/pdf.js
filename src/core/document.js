@@ -56,8 +56,8 @@ import {
   isRefsEqual,
   Name,
   Ref,
+  RefMap,
   RefSet,
-  RefSetCache,
 } from "./primitives.js";
 import { FunctionType, PDFFunctionFactory } from "./function.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
@@ -375,7 +375,7 @@ class Page {
     }
     const partialEvaluator = this.#createPartialEvaluator(handler);
 
-    const deletedAnnotations = new RefSetCache();
+    const deletedAnnotations = new RefMap();
     const existingAnnotations = new RefSet();
     await this.#replaceIdByRef(
       annotations,
@@ -1963,7 +1963,7 @@ class PDFDocument {
         const visitedRefs = new RefSet();
         const allFields = new Map();
         const fieldPromises = new Map();
-        const orphanFields = new RefSetCache();
+        const orphanFields = new RefMap();
         for (const fieldRef of acroForm.get("Fields")) {
           await this.#collectFieldObjects(
             "",

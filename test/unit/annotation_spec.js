@@ -44,7 +44,7 @@ import {
   STANDARD_FONT_DATA_URL,
   XRefMock,
 } from "./test_utils.js";
-import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
+import { Dict, Name, Ref, RefMap } from "../../src/core/primitives.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
 import { Catalog } from "../../src/core/catalog.js";
 import { FlateStream } from "../../src/core/flate_stream.js";
@@ -135,7 +135,7 @@ describe("annotation", function () {
       handler: new HandlerMock(),
       pageIndex: 0,
       idFactory: createIdFactory(/* pageIndex = */ 0),
-      fontCache: new RefSetCache(),
+      fontCache: new RefMap(),
       builtInCMapCache,
       standardFontDataCache: new Map(),
       systemFontCache: new Map(),
@@ -2190,7 +2190,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: "hello world" });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -2249,7 +2249,7 @@ describe("annotation", function () {
       const annotationStorage = new Map();
       annotationStorage.set(annotation1.data.id, { value: "hello world" });
       annotationStorage.set(annotation2.data.id, { value: "hello world" });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation1.save(
         partialEvaluator,
@@ -2309,7 +2309,7 @@ describe("annotation", function () {
         value: "hello world",
         rotation: 90,
       });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -2351,7 +2351,7 @@ describe("annotation", function () {
       const annotationStorage = new Map();
       const value = "a".repeat(256);
       annotationStorage.set(annotation.data.id, { value });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -2492,7 +2492,7 @@ describe("annotation", function () {
       annotationStorage.set(annotation.data.id, {
         value: "こんにちは世界の",
       });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -3028,7 +3028,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: true });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const [oldData] = await writeChanges(changes, xref);
@@ -3074,7 +3074,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: true, rotation: 180 });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const [oldData] = await writeChanges(changes, xref);
@@ -3494,7 +3494,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: true });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -3561,7 +3561,7 @@ describe("annotation", function () {
 
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: true });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -3612,7 +3612,7 @@ describe("annotation", function () {
 
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: true });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const [data] = await writeChanges(changes, xref);
@@ -3664,7 +3664,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: true });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -3698,7 +3698,7 @@ describe("annotation", function () {
         idFactoryMock
       );
       const annotationStorage = new Map();
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       expect(changes.size).toEqual(0);
@@ -4213,7 +4213,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: "C", rotation: 270 });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -4272,7 +4272,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: "C" });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -4335,7 +4335,7 @@ describe("annotation", function () {
       );
       const annotationStorage = new Map();
       annotationStorage.set(annotation.data.id, { value: ["B", "C"] });
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       await annotation.save(partialEvaluator, task, annotationStorage, changes);
       const data = await writeChanges(changes, xref);
@@ -5517,7 +5517,7 @@ describe("annotation", function () {
     it("should create a new FreeText annotation", async () => {
       const xref = (partialEvaluator.xref = new XRefMock());
       const task = new WorkerTask("test FreeText creation");
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
         xref,
@@ -5633,7 +5633,7 @@ describe("annotation", function () {
       const xref = (partialEvaluator.xref = new XRefMock([
         { ref: freeTextRef, data: freeTextDict },
       ]));
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       const task = new WorkerTask("test FreeText update");
       await AnnotationFactory.saveNewAnnotations(
@@ -5750,7 +5750,7 @@ describe("annotation", function () {
 
     it("should create a new Ink annotation", async function () {
       const xref = (partialEvaluator.xref = new XRefMock());
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       const task = new WorkerTask("test Ink creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
@@ -5848,7 +5848,7 @@ describe("annotation", function () {
 
     it("should create a new Ink annotation with some transparency", async function () {
       const xref = (partialEvaluator.xref = new XRefMock());
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       const task = new WorkerTask("test Ink creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
@@ -6081,7 +6081,7 @@ describe("annotation", function () {
 
     it("should create a new Highlight annotation", async function () {
       const xref = (partialEvaluator.xref = new XRefMock());
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       const task = new WorkerTask("test Highlight creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
@@ -6175,7 +6175,7 @@ describe("annotation", function () {
 
     it("should create a new free Highlight annotation", async function () {
       const xref = (partialEvaluator.xref = new XRefMock());
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       const task = new WorkerTask("test free Highlight creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,
@@ -6306,7 +6306,7 @@ describe("annotation", function () {
       const xref = (partialEvaluator.xref = new XRefMock([
         { ref: highlightRef, data: highlightDict },
       ]));
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       const task = new WorkerTask("test Highlight update");
       await AnnotationFactory.saveNewAnnotations(
@@ -6370,7 +6370,7 @@ describe("annotation", function () {
         { ref: highlightRef, data: highlightDict },
         { ref: popupRef, data: highlightPopupDict },
       ]));
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       const task = new WorkerTask("test Highlight update");
       await AnnotationFactory.saveNewAnnotations(
@@ -6536,7 +6536,7 @@ describe("annotation", function () {
   describe("StampAnnotation for signatures", function () {
     it("should create a new Stamp annotation", async function () {
       const xref = (partialEvaluator.xref = new XRefMock());
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       const task = new WorkerTask("test Stamp creation");
       await AnnotationFactory.saveNewAnnotations(
         partialEvaluator,

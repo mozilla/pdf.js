@@ -14,7 +14,7 @@
  */
 
 import { assert, makeSet, unreachable, warn } from "../shared/util.js";
-import { RefSet, RefSetCache } from "./primitives.js";
+import { RefMap, RefSet } from "./primitives.js";
 
 class BaseLocalCache {
   constructor(options) {
@@ -30,7 +30,7 @@ class BaseLocalCache {
       this._nameRefMap = new Map();
       this._imageMap = new Map();
     }
-    this._imageCache = new RefSetCache();
+    this._imageCache = new RefMap();
   }
 
   getByName(name) {
@@ -205,8 +205,8 @@ class GlobalImageCache {
         "GlobalImageCache - invalid NUM_PAGES_THRESHOLD constant."
       );
     }
-    this._refCache = new RefSetCache();
-    this._imageCache = new RefSetCache();
+    this._refCache = new RefMap();
+    this._imageCache = new RefMap();
   }
 
   get #byteSize() {

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { Dict, Name, Ref, RefSetCache } from "../../src/core/primitives.js";
+import { Dict, Name, Ref, RefMap } from "../../src/core/primitives.js";
 import {
   incrementalUpdate,
   writeDict,
@@ -35,7 +35,7 @@ describe("Writer", function () {
   describe("Incremental update", function () {
     it("should update a file with new objects", async function () {
       const originalData = new Uint8Array();
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       changes.put(Ref.get(123, 0x2d), { data: "abc\n" });
       changes.put(Ref.get(456, 0x4e), { data: "defg\n" });
       const xrefInfo = {
@@ -105,7 +105,7 @@ describe("Writer", function () {
 
     it("should update a file, missing the /ID-entry, with new objects", async function () {
       const originalData = new Uint8Array();
-      const changes = new RefSetCache();
+      const changes = new RefMap();
       changes.put(Ref.get(123, 0x2d), { data: "abc\n" });
       const xrefInfo = {
         newRef: Ref.get(789, 0),
@@ -200,7 +200,7 @@ describe("Writer", function () {
   describe("XFA", function () {
     it("should update AcroForm when no datasets in XFA array", async function () {
       const originalData = new Uint8Array();
-      const changes = new RefSetCache();
+      const changes = new RefMap();
 
       const acroForm = new Dict(null);
       acroForm.set("XFA", [
@@ -326,7 +326,7 @@ describe("Writer", function () {
 
   it("should update a file with a deleted object", async function () {
     const originalData = new Uint8Array();
-    const changes = new RefSetCache();
+    const changes = new RefMap();
     changes.put(Ref.get(123, 0x2d), { data: null });
     changes.put(Ref.get(456, 0x4e), { data: "abc\n" });
     const xrefInfo = {

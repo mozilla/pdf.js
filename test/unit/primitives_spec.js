@@ -22,8 +22,8 @@ import {
   isRefsEqual,
   Name,
   Ref,
+  RefMap,
   RefSet,
-  RefSetCache,
 } from "../../src/core/primitives.js";
 import { StringStream } from "../../src/core/stream.js";
 import { XRefMock } from "./test_utils.js";
@@ -503,7 +503,7 @@ describe("primitives", function () {
     });
   });
 
-  describe("RefSetCache", function () {
+  describe("RefMap", function () {
     const ref1 = Ref.get(4, 2),
       ref2 = Ref.get(5, 2),
       obj1 = Name.get("foo"),
@@ -511,7 +511,7 @@ describe("primitives", function () {
     let cache;
 
     beforeEach(function () {
-      cache = new RefSetCache();
+      cache = new RefMap();
     });
 
     afterEach(function () {

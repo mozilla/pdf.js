@@ -42,8 +42,8 @@ import {
   isRefsEqual,
   Name,
   Ref,
+  RefMap,
   RefSet,
-  RefSetCache,
 } from "./primitives.js";
 import { GlobalColorSpaceCache, GlobalImageCache } from "./image_utils.js";
 import { NameTree, NumberTree } from "./name_number_tree.js";
@@ -120,7 +120,7 @@ function fetchRemoteDest(action) {
 class Catalog {
   #actualNumPages = null;
 
-  #annotationAttachmentIdByRef = new RefSetCache();
+  #annotationAttachmentIdByRef = new RefMap();
 
   #annotationAttachmentRefById = new Map();
 
@@ -130,7 +130,7 @@ class Catalog {
 
   builtInCMapCache = new Map();
 
-  fontCache = new RefSetCache();
+  fontCache = new RefMap();
 
   globalColorSpaceCache = new GlobalColorSpaceCache();
 
@@ -138,11 +138,11 @@ class Catalog {
 
   nonBlendModesSet = new RefSet();
 
-  pageDictCache = new RefSetCache();
+  pageDictCache = new RefMap();
 
-  pageIndexCache = new RefSetCache();
+  pageIndexCache = new RefMap();
 
-  pageKidsCountCache = new RefSetCache();
+  pageKidsCountCache = new RefMap();
 
   standardFontDataCache = new Map();
 
@@ -540,7 +540,7 @@ class Catalog {
       if (!Array.isArray(groupsData)) {
         return shadow(this, "optionalContentConfig", null);
       }
-      const groupRefCache = new RefSetCache();
+      const groupRefCache = new RefMap();
       // Ensure all the optional content groups are valid.
       for (const groupRef of groupsData) {
         if (!(groupRef instanceof Ref) || groupRefCache.has(groupRef)) {
