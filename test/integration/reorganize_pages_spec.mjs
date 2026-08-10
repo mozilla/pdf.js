@@ -2066,12 +2066,24 @@ describe("Reorganize Pages View", () => {
         pages.map(async ([browserName, page]) => {
           await waitForThumbnailVisible(page, 1);
 
-          await Promise.all([
-            page.waitForSelector(`#thumbnailsView.isDragging`, {
-              visible: true,
-            }),
-            dragAndDrop(page, getThumbnailSelector(1), [[0, 10]], 10),
-          ]);
+          let isDragging = false;
+          const checkDragging = async () => {
+            isDragging = await page.$eval("#thumbnailsView", ({ classList }) =>
+              classList.contains("isDragging")
+            );
+          };
+
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, 10]],
+            10,
+            checkDragging
+          );
+
+          expect(isDragging)
+            .withContext(`In ${browserName}, dragging should be enabled`)
+            .toBeTrue();
 
           await page.waitForSelector(`#thumbnailsView.isDragging`, {
             hidden: true,
@@ -2083,28 +2095,19 @@ describe("Reorganize Pages View", () => {
           await waitAndClick(page, "#viewsManagerStatusActionButton");
           await waitAndClick(page, "#viewsManagerStatusActionCopy");
 
-          // If dragging isn't disabled, the promise will resolve with the
-          // selector. Otherwise, it will resolve with undefined (dragAndDrop
-          // has no return), which is the expected behavior.
-          const abortController = new AbortController();
-          const first = await Promise.race([
-            page.waitForSelector(`#thumbnailsView.isDragging`, {
-              visible: true,
-              signal: abortController.signal,
-            }),
-            dragAndDrop(page, getThumbnailSelector(1), [[0, 10]], 10),
-          ]);
-          abortController.abort();
+          await dragAndDrop(
+            page,
+            getThumbnailSelector(1),
+            [[0, 10]],
+            10,
+            checkDragging
+          );
 
-          expect(first)
+          expect(isDragging)
             .withContext(
               `In ${browserName}, dragging should be disabled when pasting`
             )
-            .toBeUndefined();
-
-          // Wait a tick to ensure that the controller.abort() has taken effect
-          // before leaving.
-          await waitForBrowserTrip(page);
+            .toBeFalse();
         })
       );
     });
