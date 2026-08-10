@@ -327,10 +327,6 @@ class XFAObject {
     return this[$getParent]();
   }
 
-  [$getChildren](name = null) {
-    return !name ? this[_children] : this[name];
-  }
-
   [$dump]() {
     const dumped = Object.create(null);
     if (this[$content]) {
@@ -899,12 +895,6 @@ class XmlObject extends XFAObject {
     }
 
     return HTMLResult.EMPTY;
-  }
-
-  [$getChildren](name = null) {
-    return !name
-      ? this[_children]
-      : this[_children].filter(c => c[$nodeName] === name);
   }
 
   [$getAttributes]() {
