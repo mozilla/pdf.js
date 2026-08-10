@@ -23,6 +23,7 @@ import {
   pinch,
   scrollIntoView,
   showViewsManager,
+  switchToEditor,
   waitAndClick,
   waitForPageChanging,
   waitForPageRendered,
@@ -1625,6 +1626,48 @@ describe("PDF viewer", () => {
       );
     });
 
+    it("keeps the content under the fingers when they also move", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const rect = await getSpanRectFromText(page, 1, "type-stable");
+          const originX = rect.x + rect.width / 2;
+          const originY = rect.y + rect.height / 2;
+          const centerDeltaY = -100;
+          const rendered = await createPromise(page, resolve => {
+            const cb = e => {
+              if (e.pageNumber === 1) {
+                window.PDFViewerApplication.eventBus.off(
+                  "textlayerrendered",
+                  cb
+                );
+                resolve();
+              }
+            };
+            window.PDFViewerApplication.eventBus.on("textlayerrendered", cb);
+          });
+          // Spread the fingers, like above, but move them up at the same time:
+          // the zoom origin then follows the gesture instead of being fixed.
+          await pinch(page, {
+            centerX: originX,
+            centerY: originY,
+            centerDeltaY,
+            startGap: 25,
+            endGap: 100,
+          });
+          await awaitPromise(rendered);
+
+          // The text which was under the fingers must have followed them, hence
+          // the same tolerance as above applies.
+          const newRect = await getSpanRectFromText(page, 1, "type-stable");
+          expect(
+            Math.abs(newRect.y + newRect.height / 2 - (originY + centerDeltaY))
+          )
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(5);
+        })
+      );
+    });
+
     it("keeps pinching when going from three fingers back to two", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
@@ -1670,6 +1713,99 @@ describe("PDF viewer", () => {
           expect(await getScale())
             .withContext(`In ${browserName}`)
             .toBeGreaterThan(scale);
+        })
+      );
+    });
+  });
+
+  describe("Two-finger pan", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    const getScrollTop = page =>
+      page.evaluate(() => document.querySelector("#viewerContainer").scrollTop);
+
+    // Return the scroll delta for a two-finger translation without scaling.
+    async function twoFingerDrag(page, dy) {
+      const before = await getScrollTop(page);
+      await pinch(page, {
+        centerX: 200,
+        centerY: 400,
+        centerDeltaY: dy,
+        startGap: 50,
+      });
+      return (await getScrollTop(page)) - before;
+    }
+
+    it("scrolls the viewer when two fingers move together", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const scale = await page.evaluate(
+            () => window.PDFViewerApplication.pdfViewer.currentScale
+          );
+
+          const scrolled = await twoFingerDrag(page, -150);
+
+          // A pure pan changes the scroll position, not the scale. The content
+          // follows the fingers, hence the scrolling matches their movement: a
+          // few pixels are tolerated because Chrome snaps the scroll offsets to
+          // the device pixels.
+          expect(scrolled)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThan(145);
+          expect(scrolled).withContext(`In ${browserName}`).toBeLessThan(155);
+          expect(
+            await page.evaluate(
+              () => window.PDFViewerApplication.pdfViewer.currentScale
+            )
+          )
+            .withContext(`In ${browserName}`)
+            .toEqual(scale);
+        })
+      );
+    });
+
+    it("scrolls the viewer in highlighting mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // The text layer sets `touch-action: none` in this mode, hence the
+          // scrolling below can only come from this manager, not from the
+          // browser.
+          await switchToEditor("Highlight", page);
+          await page.waitForSelector(".textLayer.highlighting");
+
+          const scrolled = await twoFingerDrag(page, -150);
+          expect(scrolled)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThan(145);
+          expect(scrolled).withContext(`In ${browserName}`).toBeLessThan(155);
+        })
+      );
+    });
+
+    it("doesn't pan while a dialog is open", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.click("#secondaryToolbarToggleButton");
+          await page.waitForSelector("#secondaryToolbar", { hidden: false });
+          await page.click("#documentProperties");
+          await page.waitForSelector("#documentPropertiesDialog", {
+            hidden: false,
+          });
+
+          expect(await twoFingerDrag(page, -150))
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
         })
       );
     });

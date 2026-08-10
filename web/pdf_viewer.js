@@ -265,9 +265,14 @@ class PDFViewer {
 
   #mlManager = null;
 
+  // The scroll position wanted by `panBy`, with its fractions.
+  #panPosition = [NaN, NaN];
+
   #printingAllowed = true;
 
   #scrollTimeoutId = null;
+
+  #staleLocation = false;
 
   #switchAnnotationEditorModeAC = null;
 
@@ -1516,15 +1521,68 @@ class PDFViewer {
     );
   }
 
+  /**
+   * Scroll the viewer by the given gesture deltas: like `GrabToPan` does, the
+   * content follows the gesture.
+   * @param {number} dx - Horizontal delta.
+   * @param {number} dy - Vertical delta.
+   */
+  panBy(dx, dy) {
+    const { container } = this;
+    const position = this.#panPosition;
+    const { scrollLeft, scrollTop } = container;
+
+    // Keep the fractions which the browser dropped when it snapped the offsets
+    // to the device pixels, else they'd be lost on every move and the content
+    // would drift away from the gesture. Anything else which moved the
+    // container, e.g. a scale update or a boundary being hit, wins: the
+    // comparison is false as long as the position is unknown, hence NaN.
+    const left =
+      (Math.abs(scrollLeft - position[0]) < 1 ? position[0] : scrollLeft) - dx;
+    const top =
+      (Math.abs(scrollTop - position[1]) < 1 ? position[1] : scrollTop) - dy;
+    position[0] = left;
+    position[1] = top;
+    container.scrollLeft = left;
+    container.scrollTop = top;
+    this.#staleLocation = true;
+  }
+
+  /**
+   * Recompute `this._location` when a panning invalidated it.
+   *
+   * It's normally refreshed on an animation frame, hence panning several times
+   * in a row, e.g. once per touch move, leaves it behind: restoring the
+   * position from it would then undo those pannings.
+   */
+  #refreshLocation() {
+    if (!this.#staleLocation) {
+      return;
+    }
+    const { first } = this._getVisiblePages();
+    if (first) {
+      this._updateLocation(first);
+    }
+  }
+
   #setScaleUpdatePages(
     newScale,
     newValue,
-    { noScroll = false, preset = false, drawingDelay = -1, origin = null }
+    {
+      noScroll = false,
+      preset = false,
+      drawingDelay = -1,
+      origin = null,
+      pan = null,
+    }
   ) {
-    this.clearSelection();
     this._currentScaleValue = newValue.toString();
 
     if (this.#isSameScale(newScale)) {
+      if (pan && !noScroll) {
+        // Preserve panning when zoom is rounded or clamped away.
+        this.panBy(pan[0], pan[1]);
+      }
       if (preset) {
         this.eventBus.dispatch("scalechanging", {
           source: this,
@@ -1534,6 +1592,7 @@ class PDFViewer {
       }
       return;
     }
+    this.clearSelection();
 
     this.viewer.style.setProperty(
       "--scale-factor",
@@ -1557,6 +1616,8 @@ class PDFViewer {
     this._currentScale = newScale;
 
     if (!noScroll) {
+      this.#refreshLocation();
+
       let page = this._currentPageNumber,
         dest;
       if (
@@ -1577,14 +1638,24 @@ class PDFViewer {
         destArray: dest,
         allowNegativeOffset: true,
       });
+      // The gesture movement, if any, is applied together with the origin
+      // below: both are relative to the position which `scrollPageIntoView`
+      // just restored from `this._location`, and a single scroll update only
+      // loses the fractions once.
+      let dx = pan?.[0] ?? 0,
+        dy = pan?.[1] ?? 0;
       if (Array.isArray(origin)) {
         // If the origin of the scaling transform is specified, preserve its
         // location on screen. If not specified, scaling will fix the top-left
         // corner of the visible PDF area.
         const scaleDiff = newScale / previousScale - 1;
         const [top, left] = this.containerTopLeft;
-        this.container.scrollLeft += (origin[0] - left) * scaleDiff;
-        this.container.scrollTop += (origin[1] - top) * scaleDiff;
+        dx -= (origin[0] - left) * scaleDiff;
+        dy -= (origin[1] - top) * scaleDiff;
+      }
+      if (dx || dy) {
+        // Applied before `scalechanging` listeners update `this._location`.
+        this.panBy(dx, dy);
       }
     }
 
@@ -1873,6 +1944,8 @@ class PDFViewer {
   }
 
   _updateLocation(firstPage) {
+    this.#staleLocation = false;
+
     const currentScale = this._currentScale;
     const currentScaleValue = this._currentScaleValue;
     const normalizedScaleValue =
@@ -2494,13 +2567,20 @@ class PDFViewer {
    * @property {number} [steps]
    * @property {Array} [origin] x and y coordinates of the scale
    *                            transformation origin.
+   * @property {Array<number>} [pan] - Horizontal and vertical gesture deltas.
    */
 
   /**
    * Changes the current zoom level by the specified amount.
    * @param {ChangeScaleOptions} [options]
    */
-  updateScale({ drawingDelay, scaleFactor = null, steps = null, origin }) {
+  updateScale({
+    drawingDelay,
+    scaleFactor = null,
+    steps = null,
+    origin,
+    pan = null,
+  }) {
     if (steps === null && scaleFactor === null) {
       throw new Error(
         "Invalid updateScale options: either `steps` or `scaleFactor` must be provided."
@@ -2521,7 +2601,7 @@ class PDFViewer {
       } while (--steps > 0);
     }
     newScale = MathClamp(newScale, MIN_SCALE, MAX_SCALE);
-    this.#setScale(newScale, { noScroll: false, drawingDelay, origin });
+    this.#setScale(newScale, { noScroll: false, drawingDelay, origin, pan });
   }
 
   /**
