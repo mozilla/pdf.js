@@ -56,6 +56,10 @@
       outline: calc(1.5px * var(--total-scale-factor)) solid CanvasText !important;
       background-color: ButtonFace !important;
       color: ButtonText !important;
+
+      & > .header {
+        background-color: ButtonFace !important;
+      }
     }
 
     .highlightArea:hover::after {
@@ -178,6 +182,13 @@
   }
 
   .textAnnotation img {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .textAnnotation svg {
     position: absolute;
     cursor: pointer;
     width: 100%;
@@ -403,7 +414,12 @@
   }
 
   .popup > .header {
-    display: inline-block;
+    display: block;
+    border-radius: calc(2px * var(--total-scale-factor))
+      calc(2px * var(--total-scale-factor)) 0 0;
+    margin: calc(-6px * var(--total-scale-factor))
+      calc(-6px * var(--total-scale-factor)) 0;
+    padding: calc(6px * var(--total-scale-factor));
   }
 
   .popup > .header > .title {
@@ -419,7 +435,7 @@
 
   .popupContent {
     border-top: 1px solid rgb(51 51 51);
-    margin-top: calc(2px * var(--total-scale-factor));
+    margin-top: 0;
     padding-top: calc(2px * var(--total-scale-factor));
   }
 

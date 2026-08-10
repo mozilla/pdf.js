@@ -1297,24 +1297,33 @@ class TextAnnotationElement extends AnnotationElement {
   render() {
     this.container.classList.add("textAnnotation");
 
+    const iconName = this.data.name.toLowerCase();
     const image = document.createElement("img");
-    image.src =
-      this.imageResourcesPath +
-      "annotation-" +
-      this.data.name.toLowerCase() +
-      ".svg";
+    image.src = `${this.imageResourcesPath}annotation-${iconName}.svg`;
     image.setAttribute("data-l10n-id", "pdfjs-text-annotation-type");
     image.setAttribute(
       "data-l10n-args",
       JSON.stringify({ type: this.data.name })
     );
 
+    const icon = this.svgFactory.create(40, 40, /* skipDimensions = */ true);
+    const use = this.svgFactory.createElement("svg:use");
+    use.setAttribute(
+      "href",
+      `${this.imageResourcesPath}annotation-${iconName}.svg#annotation-icon`
+    );
+    icon.append(use);
+    icon.ariaHidden = true;
+    icon.style.color = this.data.color
+      ? Util.makeHexColor(...this.data.color)
+      : "#ffff00";
+
     if (!this.data.popupRef && this.hasPopupData) {
       this.hasOwnCommentButton = true;
       this._createPopup();
     }
 
-    this.container.append(image);
+    this.container.append(image, icon);
     return this.container;
   }
 }
@@ -2835,15 +2844,14 @@ class PopupElement {
     const popup = (this.#popup = document.createElement("div"));
     popup.className = "popup";
 
+    const header = document.createElement("span");
+    header.className = "header";
     if (this.#color) {
       const baseColor = (popup.style.outlineColor = Util.makeHexColor(
         ...this.#color
       ));
-      popup.style.backgroundColor = `color-mix(in srgb, ${baseColor} 30%, white)`;
+      header.style.backgroundColor = `color-mix(in srgb, ${baseColor} 30%, white)`;
     }
-
-    const header = document.createElement("span");
-    header.className = "header";
     if (this.#titleObj?.str) {
       const title = document.createElement("span");
       title.className = "title";

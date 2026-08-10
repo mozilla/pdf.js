@@ -50,6 +50,7 @@ import { TestReporter } from "../reporter.js";
 async function initializePDFJS(callback) {
   await Promise.all(
     [
+      "pdfjs-test/unit/annotation_layer_spec.js",
       "pdfjs-test/unit/annotation_spec.js",
       "pdfjs-test/unit/annotation_storage_spec.js",
       "pdfjs-test/unit/api_spec.js",
