@@ -48,11 +48,11 @@ const RESOURCES_KEYS_TEXT_CONTENT = [
   "XObject",
 ];
 
-function getLookupTableFactory(initializer) {
+function getLookupTableFactory(initializer, useArray = false) {
   let lookup;
   return function () {
     if (initializer) {
-      lookup = Object.create(null);
+      lookup = useArray ? [] : Object.create(null);
       initializer(lookup);
       initializer = null;
     }
