@@ -186,7 +186,7 @@ function formatArg(arg, full) {
       return `<${arg.length} values>`;
     }
     const fmt = n => (Number.isInteger(n) ? n : Math.round(n * 1000) / 1000);
-    return `[${Array.from(arg).map(fmt).join(" ")}]`;
+    return `[${Array.from(arg, fmt).join(" ")}]`;
   }
   if (Array.isArray(arg)) {
     if (arg.length === 0) {

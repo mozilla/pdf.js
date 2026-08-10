@@ -177,10 +177,7 @@ function getSearchResults(page) {
       if (highlights.length === 0) {
         continue;
       }
-      results.push([
-        i + 1,
-        Array.from(highlights).map(span => span.textContent),
-      ]);
+      results.push([i + 1, Array.from(highlights, span => span.textContent)]);
     }
     return results;
   });

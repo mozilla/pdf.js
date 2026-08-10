@@ -621,8 +621,9 @@ describe("Comment", () => {
               Array.from(
                 document.querySelectorAll(
                   `#editorCommentParamsToolbar ul > li > time`
-                )
-              ).map(time => new Date(time.getAttribute("datetime")))
+                ),
+                time => new Date(time.getAttribute("datetime"))
+              )
             );
             for (let i = 0; i < dates.length - 1; i++) {
               expect(dates[i])
