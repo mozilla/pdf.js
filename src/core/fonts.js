@@ -64,6 +64,7 @@ import { compileFontInfo } from "./obj_bin_transform_core.js";
 import { DataBuilder } from "./data_builder.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { getFontBasicMetrics } from "./metrics.js";
+import { getLookupTableFactory } from "./core_utils.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
 import { Stream } from "./stream.js";
 import { Type1Font } from "./type1_font.js";
@@ -392,19 +393,17 @@ function applyStandardFontGlyphMap(map, glyphMap) {
 // The glyphs of the (Windows) Symbol font are ordered by char code, hence build
 // an encoding indexed by glyph id; note that the char codes 0x7F-0xA0 are
 // unused and that the glyph ids 0-2 are `.notdef`/`.null`/`nonmarkingreturn`.
-function buildSymbolGlyphIdEncoding() {
-  const encoding = [];
+const getSymbolGlyphIdEncoding = getLookupTableFactory(t => {
   let glyphId = 3;
   for (const [firstCharCode, lastCharCode] of [
     [0x20, 0x7e],
     [0xa1, 0xfe],
   ]) {
     for (let charCode = firstCharCode; charCode <= lastCharCode; charCode++) {
-      encoding[glyphId++] = SymbolSetEncoding[charCode];
+      t[glyphId++] = SymbolSetEncoding[charCode];
     }
   }
-  return encoding;
-}
+}, /* useArray = */ true);
 
 function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
   const toFontChar = [];
@@ -1358,13 +1357,13 @@ class Font {
       this.toFontChar = map;
       this.toUnicode = new ToUnicodeMap(map);
     } else if (/Symbol/i.test(fontName)) {
-      // The non-embedded SymbolMT font in issue 21713 uses Identity encoding
+      // The non-embedded SymbolMT font in issue 21523 uses Identity encoding
       // and an Identity CIDToGIDMap, hence its CIDs are glyph ids.
       const isCidKeyed =
         this.composite && this.cidEncoding.startsWith("Identity-");
 
       this.toFontChar = buildToFontChar(
-        isCidKeyed ? buildSymbolGlyphIdEncoding() : SymbolSetEncoding,
+        isCidKeyed ? getSymbolGlyphIdEncoding() : SymbolSetEncoding,
         getGlyphsUnicode(),
         this.differences
       );
