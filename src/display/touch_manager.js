@@ -19,6 +19,11 @@ function preventDefault(evt) {
   evt.preventDefault();
 }
 
+// Use Gecko's pinch-span epsilon:
+// https://searchfox.org/mozilla-central/source/gfx/layers/apz/src/AsyncPanZoomController.cpp#1775-1788
+// https://searchfox.org/mozilla-central/source/gfx/layers/apz/src/Axis.h#21
+const MIN_TOUCH_SPAN = 1e-4;
+
 class TouchManager {
   #container;
 
@@ -264,11 +269,13 @@ class TouchManager {
     const currGapX = screen1X - screen0X;
     const currGapY = screen1Y - screen0Y;
 
-    const distance = Math.hypot(currGapX, currGapY) || 1;
-    const pDistance = Math.hypot(prevGapX, prevGapY) || 1;
+    const distance = Math.hypot(currGapX, currGapY);
+    const pDistance = Math.hypot(prevGapX, prevGapY);
     if (
-      !this.#isPinching &&
-      Math.abs(pDistance - distance) <= this.MIN_TOUCH_DISTANCE_TO_PINCH
+      distance < MIN_TOUCH_SPAN ||
+      pDistance < MIN_TOUCH_SPAN ||
+      (!this.#isPinching &&
+        Math.abs(pDistance - distance) <= this.MIN_TOUCH_DISTANCE_TO_PINCH)
     ) {
       return;
     }

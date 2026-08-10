@@ -124,6 +124,37 @@ describe("TouchManager", function () {
     helper.destroy();
   });
 
+  it("doesn't report a scale change for a degenerate span", function () {
+    const helper = new TouchManagerHelper();
+    const touch0 = makeTouch(0, 0);
+    const touch1 = makeTouch(1, 200);
+
+    helper.dispatch("touchstart", [touch0], [touch0]);
+    helper.dispatch("touchstart", [touch0, touch1], [touch1]);
+
+    // Set a 160px scale baseline.
+    const moved0 = makeTouch(0, 20);
+    const moved1 = makeTouch(1, 180);
+    helper.dispatch("touchmove", [moved0, moved1], [moved0, moved1]);
+    expect(helper.pinchings).toEqual([]);
+
+    // Ignore a zero span.
+    const merged0 = makeTouch(0, 110);
+    const merged1 = makeTouch(1, 110);
+    helper.dispatch("touchmove", [merged0, merged1], [merged0, merged1]);
+    expect(helper.pinchings).toEqual([]);
+
+    // Resume from the 160px baseline.
+    const spread0 = makeTouch(0, 20);
+    const spread1 = makeTouch(1, 220);
+    helper.dispatch("touchmove", [spread0, spread1], [spread0, spread1]);
+    expect(helper.pinchings.length).toEqual(1);
+    const { prevDistance, distance } = helper.pinchings[0];
+    expect([prevDistance, distance]).toEqual([160, 200]);
+
+    helper.destroy();
+  });
+
   it("keeps pinching when the tracked pair changes", function () {
     const helper = new TouchManagerHelper();
     const { MIN_TOUCH_DISTANCE_TO_PINCH: minDistance } = helper.manager;
