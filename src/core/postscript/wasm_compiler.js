@@ -19,6 +19,7 @@ import {
   PS_VALUE_TYPE,
   PSStackToTree,
 } from "./ast.js";
+import { stringToBytes } from "../../shared/util.js";
 import { TOKEN } from "./lexer.js";
 
 // Wasm opcodes — https://webassembly.github.io/spec/core/binary/instructions.html
@@ -98,7 +99,7 @@ function unsignedLEB128(n) {
 }
 
 function encodeASCIIString(s) {
-  return [...unsignedLEB128(s.length), ...Array.from(s, c => c.charCodeAt(0))];
+  return [...unsignedLEB128(s.length), ...stringToBytes(s)];
 }
 
 function section(id, data) {
