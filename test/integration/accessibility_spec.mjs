@@ -471,11 +471,11 @@ describe("accessibility", () => {
         pages.map(async ([browserName, page]) => {
           const ariaHidden = await page.evaluate(() =>
             Array.from(
-              document.querySelectorAll(".structTree :has(> math)")
-            ).map(el =>
-              document
-                .getElementById(el.getAttribute("aria-owns"))
-                .getAttribute("aria-hidden")
+              document.querySelectorAll(".structTree :has(> math)"),
+              el =>
+                document
+                  .getElementById(el.getAttribute("aria-owns"))
+                  .getAttribute("aria-hidden")
             )
           );
           expect(ariaHidden)
@@ -557,8 +557,9 @@ describe("accessibility", () => {
         pages.map(async ([browserName, page]) => {
           let elementRole = await page.evaluate(() =>
             Array.from(
-              document.querySelector(".structTree [role='table']").children
-            ).map(child => child.getAttribute("role"))
+              document.querySelector(".structTree [role='table']").children,
+              child => child.getAttribute("role")
+            )
           );
 
           // THeader and TBody must be rowgroup.
@@ -570,8 +571,9 @@ describe("accessibility", () => {
             Array.from(
               document.querySelector(
                 ".structTree [role='table'] > [role='rowgroup'] > [role='row']"
-              ).children
-            ).map(child => child.getAttribute("role"))
+              ).children,
+              child => child.getAttribute("role")
+            )
           );
 
           // THeader has 3 columnheader.
@@ -583,8 +585,9 @@ describe("accessibility", () => {
             Array.from(
               document.querySelector(
                 ".structTree [role='table'] > [role='rowgroup']:nth-child(2)"
-              ).children
-            ).map(child => child.getAttribute("role"))
+              ).children,
+              child => child.getAttribute("role")
+            )
           );
 
           // TBody has 5 rows.
@@ -596,8 +599,9 @@ describe("accessibility", () => {
             Array.from(
               document.querySelector(
                 ".structTree [role='table'] > [role='rowgroup']:nth-child(2) > [role='row']:first-child"
-              ).children
-            ).map(child => child.getAttribute("role"))
+              ).children,
+              child => child.getAttribute("role")
+            )
           );
           // First row has a rowheader and 2 cells.
           expect(elementRole)

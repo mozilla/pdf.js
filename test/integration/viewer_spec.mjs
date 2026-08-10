@@ -2063,7 +2063,8 @@ describe("PDF viewer", () => {
                   // Just verify the images rendered correctly.
                   const imgs = document.querySelectorAll("#printContainer img");
                   window._printImagesAccessible = Promise.resolve(
-                    Array.from(imgs).map(
+                    Array.from(
+                      imgs,
                       img => img.complete && img.naturalWidth > 0
                     )
                   );
