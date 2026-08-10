@@ -195,4 +195,25 @@ describe("TouchManager", function () {
 
     helper.destroy();
   });
+
+  it("ends the gesture in flight when destroyed", function () {
+    const helper = new TouchManagerHelper();
+    const touch0 = makeTouch(0, 100);
+    const touch1 = makeTouch(1, 300);
+
+    helper.dispatch("touchstart", [touch0], [touch0]);
+    helper.dispatch("touchstart", [touch0, touch1], [touch1]);
+    expect(helper.pinchStarts).toEqual(1);
+    expect(helper.pinchEnds).toEqual(0);
+
+    // Destroy the manager while both touches are active.
+    helper.manager.destroy();
+    expect(helper.pinchEnds).toEqual(1);
+
+    // A later `touchend` must not call `onPinchEnd` again.
+    helper.dispatch("touchend", [], [touch0, touch1]);
+    expect(helper.pinchEnds).toEqual(1);
+
+    helper.destroy();
+  });
 });

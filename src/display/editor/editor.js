@@ -1931,6 +1931,11 @@ class AnnotationEditor {
       // undo/redo so we must commit it before.
       this.commit();
     }
+    // End an active pinch before detaching: its callback uses `parent` and
+    // records the resize.
+    this.#touchManager?.destroy();
+    this.#touchManager = null;
+
     if (this.parent) {
       this.parent.remove(this);
     } else {
@@ -1951,8 +1956,6 @@ class AnnotationEditor {
       this.#telemetryTimeouts = null;
     }
     this.parent = null;
-    this.#touchManager?.destroy();
-    this.#touchManager = null;
     this.#fakeAnnotation?.remove();
     this.#fakeAnnotation = null;
   }
