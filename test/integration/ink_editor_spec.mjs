@@ -1824,3 +1824,45 @@ describe("Tap after a two-finger gesture", () => {
     );
   });
 });
+
+describe("Removal during a pinch-resize", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that removing the editor being pinch-resized ends the gesture", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const { editor } = await drawAndSelectEditor(page);
+        const fingerY = editor.y + 0.8 * editor.height;
+        let finger0, finger1;
+
+        try {
+          finger0 = await page.touchscreen.touchStart(
+            editor.x + 0.2 * editor.width,
+            fingerY
+          );
+          finger1 = await page.touchscreen.touchStart(
+            editor.x + 0.55 * editor.width,
+            fingerY
+          );
+          await page.waitForSelector(".annotationEditorLayer.disabled");
+
+          // Removal must re-enable the layer before the touches end.
+          await page.keyboard.press("Backspace");
+          await waitForStorageEntries(page, 0);
+          await page.waitForSelector(".annotationEditorLayer:not(.disabled)");
+        } finally {
+          await finger0?.end();
+          await finger1?.end();
+        }
+      })
+    );
+  });
+});
