@@ -38,6 +38,7 @@ import {
   switchToEditor,
   unselectEditor,
   waitForAnnotationModeChanged,
+  waitForBrowserTrip,
   waitForNoElement,
   waitForPointerUp,
   waitForSelectedEditor,
@@ -1748,6 +1749,8 @@ describe("Resize with a touchscreen", () => {
           // again next to the first one, which starts a new one.
           await finger1.end();
           await page.waitForSelector(".annotationEditorLayer:not(.disabled)");
+          // Let Firefox update hit-testing after the layer is re-enabled.
+          await waitForBrowserTrip(page);
           finger1 = await page.touchscreen.touchStart(
             editor.x + 0.5 * editor.width,
             fingerY
