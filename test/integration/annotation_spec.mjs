@@ -327,7 +327,7 @@ describe("Annotation and storage", () => {
           ]) {
             await page.evaluate(n => {
               window.document
-                .querySelectorAll(`[data-page-number="${n}"][class="page"]`)[0]
+                .querySelector(`[data-page-number="${n}"][class="page"]`)
                 .scrollIntoView();
             }, pageNumber);
 
@@ -366,7 +366,7 @@ describe("Annotation and storage", () => {
           ]) {
             await page.evaluate(n => {
               window.document
-                .querySelectorAll(`[data-page-number="${n}"][class="page"]`)[0]
+                .querySelector(`[data-page-number="${n}"][class="page"]`)
                 .scrollIntoView();
             }, pageNumber);
 
