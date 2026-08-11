@@ -55,13 +55,13 @@ describe("accessibility", () => {
 
           // Check the headings match up.
           const head1 = await page.$eval(
-            ".structTree [role='heading'][aria-level='1'] span",
+            ".structTree [role='heading'][aria-level='1'] [aria-owns]",
             el =>
               document.getElementById(el.getAttribute("aria-owns")).textContent
           );
           expect(head1).withContext(`In ${browserName}`).toEqual("Heading 1");
           const head2 = await page.$eval(
-            ".structTree [role='heading'][aria-level='2'] span",
+            ".structTree [role='heading'][aria-level='2'] [aria-owns]",
             el =>
               document.getElementById(el.getAttribute("aria-owns")).textContent
           );

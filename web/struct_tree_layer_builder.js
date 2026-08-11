@@ -84,6 +84,7 @@ const ARIA_ROLES_WITH_PROHIBITED_NAMES = new Set([
   "caption",
   "code",
   "emphasis",
+  "generic",
   "none",
   "paragraph",
   "strong",
@@ -342,11 +343,22 @@ class StructTreeLayerBuilder {
           added = true;
         }
       }
-      if (
-        !added &&
-        !ARIA_ROLES_WITH_PROHIBITED_NAMES.has(htmlElement.getAttribute("role"))
-      ) {
-        htmlElement.setAttribute("aria-label", label);
+      const role =
+        htmlElement.getAttribute("role") ||
+        (htmlElement.localName === "span" ? "generic" : null);
+      // Global ARIA attributes cause user agents to ignore `role="none"` and
+      // expose the element's implicit role instead. Keep NonStruct elements
+      // presentational so that only their descendants reach assistive
+      // technologies.
+      if (!added && role !== "none") {
+        // A role which cannot be named can still be described, so expose the
+        // alternative text that way instead of dropping it.
+        htmlElement.setAttribute(
+          ARIA_ROLES_WITH_PROHIBITED_NAMES.has(role)
+            ? "aria-description"
+            : "aria-label",
+          label
+        );
       }
     }
     if (id !== undefined) {
@@ -579,12 +591,15 @@ class StructTreeLayerBuilder {
       if (
         node.children.length === 1 &&
         !("role" in node.children[0]) &&
-        "id" in node.children[0]
+        "id" in node.children[0] &&
+        element.getAttribute("role") !== "none"
       ) {
         // Often there is only one content node so just set the values on the
         // parent node to avoid creating an extra span. Note that this must be
         // limited to leaf children: a structure element has to be visited in
-        // order to get its own role and attributes.
+        // order to get its own role and attributes. A presentational parent
+        // must keep a child span since setting the child's global ARIA
+        // attributes on the parent would cause its role to be ignored.
         this.#setAttributes(node.children[0], element);
       } else if (visitChildren) {
         parentNodes.push(node);
