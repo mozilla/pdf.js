@@ -309,7 +309,7 @@ class Toolbar {
       eventBus.on(
         "mainhighlightcolorpickerupdatecolor",
         ({ value }) => {
-          this.#colorPicker?.updateColor(value);
+          this.#colorPicker?.update(value);
         },
         internalOpt
       );

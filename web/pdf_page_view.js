@@ -860,6 +860,9 @@ class PDFPageView extends BasePDFPageView {
       }
     }
     this.cssTransform({});
+    // Drawings stay visible in the unrotated canvas wrapper while the other
+    // kept layers are hidden, so reposition them before reset().
+    this.annotationEditorLayer?.update(this.viewport);
     this.reset({
       keepAnnotationLayer: true,
       keepAnnotationEditorLayer: true,

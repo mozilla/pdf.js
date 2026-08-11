@@ -106,12 +106,12 @@ class InkEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
-  static createDrawerInstance(x, y, parentWidth, parentHeight, rotation) {
+  static createDrawerInstance({ x, y, box: [, , width, height], rotation }) {
     return new InkDrawOutliner(
       x,
       y,
-      parentWidth,
-      parentHeight,
+      width,
+      height,
       rotation,
       this._defaultDrawingOptions["stroke-width"]
     );

@@ -17,6 +17,48 @@ import { BBOX_INIT, Util } from "../../../shared/util.js";
 import { FreeDrawOutline, FreeDrawOutliner } from "./freedraw.js";
 import { Outline } from "./outline.js";
 
+/**
+ * @param {Outline} outline
+ * @returns {Object}
+ */
+function getHighlightSVGProperties(outline) {
+  return {
+    bbox: outline.box,
+    root: {
+      viewBox: "0 0 1 1",
+    },
+    rootClass: {
+      highlight: true,
+      free: outline.isFree,
+    },
+    path: {
+      d: outline.toSVGPath(),
+    },
+  };
+}
+
+/**
+ * @param {Outline} outline
+ * @param {number} rotation
+ * @returns {Object}
+ */
+function getHighlightFocusSVGProperties(outline, rotation) {
+  const { focusOutline } = outline;
+  return {
+    bbox: Outline._rotateBox(focusOutline.box, rotation),
+    root: {
+      "data-main-rotation": rotation,
+    },
+    rootClass: {
+      highlightOutline: true,
+      free: outline.isFree,
+    },
+    path: {
+      d: focusOutline.toSVGPath(),
+    },
+  };
+}
+
 class HighlightOutliner {
   #box;
 
@@ -288,6 +330,8 @@ class HighlightOutliner {
 class HighlightOutline extends Outline {
   #box;
 
+  #boxes = null;
+
   #outlines;
 
   constructor(outlines, box, firstPoint, lastPoint) {
@@ -296,6 +340,69 @@ class HighlightOutline extends Outline {
     this.#box = box;
     this.firstPoint = firstPoint;
     this.lastPoint = lastPoint;
+  }
+
+  /**
+   * Build a text selection and its hover/selection outline.
+   * @param {Array<Object>} boxes - the boxes of the selected text.
+   * @param {boolean} isLTR
+   * @returns {HighlightOutline}
+   */
+  static build(boxes, isLTR) {
+    // The boxes come from the text layer, hence two contiguous ones can be
+    // separated by a tiny gap: expanding them makes them overlap and the
+    // sweep line merges them into a single gapless outline.
+    const outline = new HighlightOutliner(
+      boxes,
+      /* borderWidth = */ 0.001
+    ).getOutlines();
+    outline.#boxes = boxes;
+    // Expand the focus outline and leave room for its stroke.
+    outline.focusOutline = new HighlightOutliner(
+      boxes,
+      /* borderWidth = */ 0.0025,
+      /* innerMargin = */ 0.001,
+      isLTR
+    ).getOutlines();
+
+    return outline;
+  }
+
+  get isFree() {
+    return false;
+  }
+
+  /** @inheritdoc */
+  get defaultSVGProperties() {
+    return getHighlightSVGProperties(this);
+  }
+
+  /** @inheritdoc */
+  getFocusSVGProperties(rotation) {
+    return getHighlightFocusSVGProperties(this, rotation);
+  }
+
+  /** @inheritdoc */
+  updateRotation(rotation) {
+    return { root: { "data-main-rotation": rotation } };
+  }
+
+  /** @inheritdoc */
+  serializeQuadPoints([pageX, pageY], [pageWidth, pageHeight]) {
+    const boxes = this.#boxes;
+    const quadPoints = new Float32Array(boxes.length * 8);
+    let i = 0;
+    for (const { x, y, width, height } of boxes) {
+      const sx = x * pageWidth + pageX;
+      const sy = (1 - y) * pageHeight + pageY;
+      // QuadPoints order: top-left, top-right, bottom-left, bottom-right.
+      quadPoints[i] = quadPoints[i + 4] = sx;
+      quadPoints[i + 1] = quadPoints[i + 3] = sy;
+      quadPoints[i + 2] = quadPoints[i + 6] = sx + width * pageWidth;
+      quadPoints[i + 5] = quadPoints[i + 7] = sy - height * pageHeight;
+      i += 8;
+    }
+    return quadPoints;
   }
 
   toSVGPath() {
@@ -358,10 +465,91 @@ class FreeHighlightOutliner extends FreeDrawOutliner {
   }
 }
 
+class FreeHighlightDrawer {
+  #outliner;
+
+  #thickness;
+
+  constructor(x, y, box, scaleFactor, thickness, isLTR, innerMargin) {
+    this.#outliner = new FreeHighlightOutliner(
+      x,
+      y,
+      box,
+      scaleFactor,
+      thickness,
+      isLTR,
+      innerMargin
+    );
+    this.#thickness = thickness;
+  }
+
+  add(x, y) {
+    return this.#outliner.add(x, y)
+      ? { path: { d: this.#outliner.toSVGPath() } }
+      : null;
+  }
+
+  addPoints(points) {
+    let hasChanged = false;
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      hasChanged = this.#outliner.add(points[i], points[i + 1]) || hasChanged;
+    }
+    return hasChanged ? { path: { d: this.#outliner.toSVGPath() } } : null;
+  }
+
+  end(x, y) {
+    return x === undefined ? null : this.add(x, y);
+  }
+
+  isEmpty() {
+    return this.#outliner.isEmpty();
+  }
+
+  isCancellable() {
+    return this.#outliner.isCancellable();
+  }
+
+  removeLastElement() {
+    return this.#outliner.removeLastElement();
+  }
+
+  updateProperty(_name, _value) {
+    // Drawing options update the SVG, but this stroke's geometry stays fixed.
+    return null;
+  }
+
+  getOutlines() {
+    const outlines = this.#outliner.getOutlines();
+    outlines.buildFocusOutline(2 * this.#thickness);
+
+    return outlines;
+  }
+
+  get defaultSVGProperties() {
+    return {
+      bbox: [0, 0, 1, 1],
+      root: {
+        viewBox: "0 0 1 1",
+      },
+      rootClass: {
+        highlight: true,
+        free: true,
+      },
+      path: {
+        d: this.#outliner.toSVGPath(),
+      },
+    };
+  }
+}
+
 class FreeHighlightOutline extends FreeDrawOutline {
-  newOutliner(point, box, scaleFactor, thickness, isLTR, innerMargin = 0) {
+  // Extra radius around the highlight.
+  static #EXTRA_THICKNESS = 1.5;
+
+  newOutliner(x, y, box, scaleFactor, thickness, isLTR, innerMargin = 0) {
     return new FreeHighlightOutliner(
-      point,
+      x,
+      y,
       box,
       scaleFactor,
       thickness,
@@ -369,6 +557,61 @@ class FreeHighlightOutline extends FreeDrawOutline {
       innerMargin
     );
   }
+
+  get isFree() {
+    return true;
+  }
+
+  /** @param {number} thickness */
+  buildFocusOutline(thickness) {
+    this.focusOutline = this.getNewOutline(
+      thickness / 2 + FreeHighlightOutline.#EXTRA_THICKNESS,
+      /* innerMargin = */ 0.0025
+    );
+  }
+
+  /** @inheritdoc */
+  get defaultSVGProperties() {
+    return getHighlightSVGProperties(this);
+  }
+
+  /** @inheritdoc */
+  getFocusSVGProperties(rotation) {
+    return getHighlightFocusSVGProperties(this, rotation);
+  }
+
+  /** @inheritdoc */
+  get focusMustRemoveSelfIntersections() {
+    // Mask out the part of the stroke inside the shape.
+    return true;
+  }
+
+  /** @inheritdoc */
+  updateRotation(rotation) {
+    return { root: { "data-main-rotation": rotation } };
+  }
+
+  /** @inheritdoc */
+  updateProperty(name, value) {
+    if (name !== "thickness") {
+      return null;
+    }
+    const bbox = this.updateThickness(value / 2);
+    this.buildFocusOutline(value);
+
+    return bbox;
+  }
+
+  /** @inheritdoc */
+  getPathResizedSVGProperties() {
+    // Thickness changes rebuild the path.
+    return { path: { d: this.toSVGPath() } };
+  }
 }
 
-export { FreeHighlightOutliner, HighlightOutliner };
+export {
+  FreeHighlightDrawer,
+  FreeHighlightOutliner,
+  HighlightOutline,
+  HighlightOutliner,
+};

@@ -613,6 +613,47 @@ describe("Highlight Editor", () => {
     });
   });
 
+  describe("Free highlight drawing state", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must be cleared when the pointer is released outside the text layer", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          const rect = await getRect(page, ".textLayer");
+          const x = rect.x + 40;
+          const y = rect.y + 40;
+          const clickHandle = await waitForPointerUp(page);
+
+          await page.mouse.move(x, y);
+          await page.mouse.down();
+          await page.waitForSelector(".textLayer.highlighting.free");
+          await page.mouse.move(x + 40, y + 40);
+          await page.mouse.move(rect.x - 10, y);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+
+          await page.waitForSelector(".textLayer.highlighting:not(.free)", {
+            visible: true,
+          });
+          const isFree = await page.$eval(".textLayer", element =>
+            element.classList.contains("free")
+          );
+          expect(isFree).withContext(`In ${browserName}`).toEqual(false);
+        })
+      );
+    });
+  });
+
   describe("Highlight with the keyboard", () => {
     let pages;
 
