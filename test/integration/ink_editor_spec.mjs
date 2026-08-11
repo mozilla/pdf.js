@@ -1197,7 +1197,12 @@ describe("The drawn line must reach the pointer", () => {
         pointerUpHandle = await waitForPointerUp(page);
         await page.mouse.move(x, y);
         await page.mouse.down();
-        await page.evaluate(coalesced => {
+        // Preserve each sample's offset from the dispatched event. Firefox can
+        // snap that event to a device pixel, so its client coordinates may
+        // differ from the requested ones at a fractional device pixel ratio.
+        const [lastX, lastY] = points.at(-1);
+        const deltas = points.map(([px, py]) => [px - lastX, py - lastY]);
+        await page.evaluate(sampleDeltas => {
           const prototype = PointerEvent.prototype;
           const descriptor = Object.getOwnPropertyDescriptor(
             prototype,
@@ -1219,12 +1224,12 @@ describe("The drawn line must reach the pointer", () => {
             configurable: true,
             value() {
               globalThis.__coalescedEventsCalls++;
-              return coalesced.map(
-                ([clientX, clientY]) =>
+              return sampleDeltas.map(
+                ([deltaX, deltaY]) =>
                   new PointerEvent("pointermove", {
                     buttons: this.buttons,
-                    clientX,
-                    clientY,
+                    clientX: this.clientX + deltaX,
+                    clientY: this.clientY + deltaY,
                     isPrimary: this.isPrimary,
                     pointerId: this.pointerId,
                     pointerType: this.pointerType,
@@ -1232,8 +1237,8 @@ describe("The drawn line must reach the pointer", () => {
               );
             },
           });
-        }, points);
-        await page.mouse.move(...points.at(-1));
+        }, deltas);
+        await page.mouse.move(lastX, lastY);
         const { coalescedEventsCalls, path } = await page.evaluate(() => {
           const d = document
             .querySelector(`.canvasWrapper svg.draw path[d]:not([d=""])`)
