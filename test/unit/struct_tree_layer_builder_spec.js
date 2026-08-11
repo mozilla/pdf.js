@@ -97,7 +97,7 @@ describe("StructTreeLayerBuilder", function () {
     expect(blockQuote.querySelector('[role="code"]')).not.toBeNull();
   });
 
-  it("doesn't add prohibited accessible names", async function () {
+  it("describes, instead of naming, the roles prohibiting accessible names", async function () {
     const roles = [
       ["P", "paragraph"],
       ["Em", "emphasis"],
@@ -113,11 +113,79 @@ describe("StructTreeLayerBuilder", function () {
       })),
     });
 
-    for (const [, role] of roles) {
-      expect(
-        tree.querySelector(`[role="${role}"]`).getAttribute("aria-label")
-      ).toBeNull();
-    }
+    roles.forEach(([, role], index) => {
+      const element = tree.querySelector(`[role="${role}"]`);
+
+      expect(element.getAttribute("aria-label")).toBeNull();
+      expect(element.getAttribute("aria-description")).toEqual(
+        `Alternative text ${index}`
+      );
+    });
+  });
+
+  it("describes the implicit generic role of a roleless span", async function () {
+    const tree = await render({
+      role: "Root",
+      children: [
+        {
+          role: "Span",
+          alt: "Alternative text",
+          children: [{ type: "content", id: "p1R_mc0" }],
+        },
+      ],
+    });
+    const element = tree.firstElementChild;
+
+    expect(element.getAttribute("role")).toBeNull();
+    expect(element.getAttribute("aria-label")).toBeNull();
+    expect(element.getAttribute("aria-description")).toEqual(
+      "Alternative text"
+    );
+  });
+
+  it("keeps NonStruct presentational when it has alternative text", async function () {
+    const tree = await render({
+      role: "Root",
+      children: [
+        {
+          role: "NonStruct",
+          alt: "Alternative text",
+          children: [{ type: "content", id: "p1R_mc0" }],
+        },
+      ],
+    });
+    const element = tree.querySelector('[role="none"]');
+
+    expect(element.getAttribute("aria-label")).toBeNull();
+    expect(element.getAttribute("aria-description")).toBeNull();
+    expect(element.getAttribute("aria-owns")).toBeNull();
+    expect(element.firstElementChild.getAttribute("aria-owns")).toEqual(
+      "p1R_mc0"
+    );
+  });
+
+  it("keeps the caption role when the caption has an alternative text", async function () {
+    const tree = await render({
+      role: "Root",
+      children: [
+        {
+          role: "Table",
+          children: [
+            {
+              role: "Caption",
+              alt: "Life expectancy by country",
+              children: [{ type: "content", id: "p1R_mc0" }],
+            },
+          ],
+        },
+      ],
+    });
+    const caption = tree.querySelector('[role="caption"]');
+
+    expect(caption.getAttribute("aria-description")).toEqual(
+      "Life expectancy by country"
+    );
+    expect(caption.getAttribute("aria-owns")).toEqual("p1R_mc0");
   });
 
   it("exposes table semantics", async function () {
