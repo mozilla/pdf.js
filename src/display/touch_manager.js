@@ -24,6 +24,35 @@ function preventDefault(evt) {
 // https://searchfox.org/mozilla-central/source/gfx/layers/apz/src/Axis.h#21
 const MIN_TOUCH_SPAN = 1e-4;
 
+/**
+ * @param {TouchEvent} evt
+ * @returns {boolean} Whether the event was cancelable.
+ */
+function stopTouchEvent(evt) {
+  if (evt.cancelable) {
+    stopEvent(evt);
+    return true;
+  }
+  // `preventDefault()` has no effect; still hide it from an outer manager.
+  evt.stopPropagation();
+  return false;
+}
+
+/**
+ * @typedef {Object} TouchManagerOptions
+ * @property {HTMLElement | Window} container
+ * @property {function} [isPinchingDisabled]
+ * @property {function} [isPinchingStopped]
+ * @property {function} [onPinchStart]
+ * @property {function} [onPinching] - Called with the previous client
+ *   midpoint, the previous/current screen distance, and the client midpoint
+ *   delta.
+ * @property {function} [onPinchEnd]
+ * @property {function} [onPanning] - Called with the client midpoint delta
+ *   when no scale update is emitted.
+ * @property {AbortSignal} signal
+ */
+
 class TouchManager {
   #container;
 
@@ -39,6 +68,10 @@ class TouchManager {
 
   #onPinchEnd;
 
+  #onPanning;
+
+  #ownsGesture = false;
+
   #pointerDownAC = null;
 
   #signal;
@@ -51,6 +84,9 @@ class TouchManager {
 
   #touchMoveAC = null;
 
+  /**
+   * @param {TouchManagerOptions} options
+   */
   constructor({
     container,
     isPinchingDisabled = null,
@@ -58,6 +94,7 @@ class TouchManager {
     onPinchStart = null,
     onPinching = null,
     onPinchEnd = null,
+    onPanning = null,
     signal,
   }) {
     this.#container = container;
@@ -66,6 +103,7 @@ class TouchManager {
     this.#onPinchStart = onPinchStart;
     this.#onPinching = onPinching;
     this.#onPinchEnd = onPinchEnd;
+    this.#onPanning = onPanning;
     this.#touchManagerAC = new AbortController();
     this.#signal = AbortSignal.any([signal, this.#touchManagerAC.signal]);
 
@@ -133,7 +171,8 @@ class TouchManager {
       this.#onPinchStart?.();
     }
 
-    stopEvent(evt);
+    // Cancelability can change during a touch sequence.
+    this.#ownsGesture = stopTouchEvent(evt);
     this.#setTouchInfo(evt);
   }
 
@@ -239,6 +278,9 @@ class TouchManager {
       touch0Y: touch0.screenY,
       touch1X: touch1.screenX,
       touch1Y: touch1.screenY,
+      // Distances use screen coordinates; zoom and scrolling use client ones.
+      panX: (touch0.clientX + touch1.clientX) / 2,
+      panY: (touch0.clientY + touch1.clientY) / 2,
     };
   }
 
@@ -251,7 +293,16 @@ class TouchManager {
       return;
     }
 
-    stopEvent(evt);
+    const wasOwned = this.#ownsGesture;
+    this.#ownsGesture = stopTouchEvent(evt);
+    if (!this.#ownsGesture) {
+      return;
+    }
+    if (!wasOwned) {
+      // Drop movement accumulated while events could not be canceled.
+      this.#setTouchInfo(evt);
+      return;
+    }
 
     const [touch0, touch1] = touches;
     const { screenX: screen0X, screenY: screen0Y } = touch0;
@@ -262,12 +313,22 @@ class TouchManager {
       touch0Y: pTouch0Y,
       touch1X: pTouch1X,
       touch1Y: pTouch1Y,
+      panX: pPanX,
+      panY: pPanY,
     } = touchInfo;
 
     const prevGapX = pTouch1X - pTouch0X;
     const prevGapY = pTouch1Y - pTouch0Y;
     const currGapX = screen1X - screen0X;
     const currGapY = screen1Y - screen0Y;
+
+    // Advance the panning baseline independently of the pinch threshold.
+    const panX = (touch0.clientX + touch1.clientX) / 2;
+    const panY = (touch0.clientY + touch1.clientY) / 2;
+    touchInfo.panX = panX;
+    touchInfo.panY = panY;
+    const dx = panX - pPanX;
+    const dy = panY - pPanY;
 
     const distance = Math.hypot(currGapX, currGapY);
     const pDistance = Math.hypot(prevGapX, prevGapY);
@@ -277,6 +338,11 @@ class TouchManager {
       (!this.#isPinching &&
         Math.abs(pDistance - distance) <= this.MIN_TOUCH_DISTANCE_TO_PINCH)
     ) {
+      // Keep the distance baseline so a slow pinch can cross the threshold, or
+      // a degenerate span recover, but the midpoint still moved.
+      if (dx || dy) {
+        this.#onPanning?.(dx, dy);
+      }
       return;
     }
 
@@ -289,17 +355,18 @@ class TouchManager {
       // Start pinching.
       this.#isPinching = true;
 
-      // We return here else the first pinch is a bit too much
+      // Skip the first scale update, as before, but keep its translation.
+      if (dx || dy) {
+        this.#onPanning?.(dx, dy);
+      }
       return;
     }
 
     // The distances are in screen CSS pixels, but the origin must be in client
     // coordinates, like the one coming from a wheel event.
-    const origin = [
-      (touch0.clientX + touch1.clientX) / 2,
-      (touch0.clientY + touch1.clientY) / 2,
-    ];
-    this.#onPinching?.(origin, pDistance, distance);
+    // Zoom around the previous midpoint and apply its movement in the same
+    // update. Using the current midpoint would add `(ratio - 1) * delta`.
+    this.#onPinching?.([pPanX, pPanY], pDistance, distance, dx, dy);
   }
 
   #onTouchEnd(evt) {
@@ -324,7 +391,7 @@ class TouchManager {
       this.#armPointerDown();
     }
     if (wasTracking) {
-      stopEvent(evt);
+      stopTouchEvent(evt);
     }
   }
 
@@ -332,6 +399,7 @@ class TouchManager {
     // `#setTouchInfo` may already have cleared the baseline.
     this.#touchInfo = null;
     this.#isPinching = false;
+    this.#ownsGesture = false;
     if (this.#touchMoveAC) {
       this.#touchMoveAC.abort();
       this.#touchMoveAC = null;

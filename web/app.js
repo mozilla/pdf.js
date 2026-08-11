@@ -1005,7 +1005,7 @@ const PDFViewerApplication = {
     return this._initializedCapability.promise;
   },
 
-  updateZoom(steps, scaleFactor, origin) {
+  updateZoom(steps, scaleFactor, origin, pan = null) {
     if (this.pdfViewer.isInPresentationMode) {
       return;
     }
@@ -1014,6 +1014,7 @@ const PDFViewerApplication = {
       steps,
       scaleFactor,
       origin,
+      pan,
     });
   },
 
@@ -1032,22 +1033,33 @@ const PDFViewerApplication = {
     this.pdfViewer.currentScaleValue = DEFAULT_SCALE_VALUE;
   },
 
-  touchPinchCallback(origin, prevDistance, distance) {
+  touchPinchCallback(origin, prevDistance, distance, panX, panY) {
+    // A scale update which is a no-op, e.g. one rounded or clamped away, still
+    // applies the panning, hence there's nothing to special-case here.
+    const pan = [panX, panY];
     if (this.supportsPinchToZoom) {
       const newScaleFactor = this._accumulateFactor(
         this.pdfViewer.currentScale,
         distance / prevDistance,
         "_touchUnusedFactor"
       );
-      this.updateZoom(null, newScaleFactor, origin);
+      this.updateZoom(null, newScaleFactor, origin, pan);
     } else {
       const PIXELS_PER_LINE_SCALE = 30;
       const ticks = this._accumulateTicks(
         (distance - prevDistance) / PIXELS_PER_LINE_SCALE,
         "_touchUnusedTicks"
       );
-      this.updateZoom(ticks, null, origin);
+      this.updateZoom(ticks, null, origin, pan);
     }
+  },
+
+  touchPanCallback(dx, dy) {
+    const { pdfViewer } = this;
+    if (!this.pdfDocument || pdfViewer.isInPresentationMode) {
+      return;
+    }
+    pdfViewer.panBy(dx, dy);
   },
 
   touchPinchEndCallback() {
@@ -2405,6 +2417,7 @@ const PDFViewerApplication = {
       isPinchingStopped: () => this.overlayManager?.active,
       onPinching: this.touchPinchCallback.bind(this),
       onPinchEnd: this.touchPinchEndCallback.bind(this),
+      onPanning: this.touchPanCallback.bind(this),
       signal,
     });
 
