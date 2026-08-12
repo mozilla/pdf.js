@@ -5,15 +5,19 @@
 ## Main toolbar buttons (tooltips and alt text for images)
 
 pdfjs-previous-button =
-    .title = Previous Page
+    .title = Previous Page (P / K)
 pdfjs-previous-button-label = Previous
 pdfjs-next-button =
-    .title = Next Page
+    .title = Next Page (N / J)
 pdfjs-next-button-label = Next
 
 # .title: Tooltip for the pageNumber input.
 pdfjs-page-input =
-    .title = Page
+    .title =
+        { PLATFORM() ->
+            [macos] Page (⌥⌘G)
+           *[other] Page (Ctrl+Alt+G)
+        }
 
 # Variables:
 #   $pagesCount (Number) - the total number of pages in the document
@@ -26,24 +30,44 @@ pdfjs-of-pages = of { $pagesCount }
 pdfjs-page-of-pages = ({ $pageNumber } of { $pagesCount })
 
 pdfjs-zoom-out-button =
-    .title = Zoom Out
+    .title =
+        { PLATFORM() ->
+            [macos] Zoom Out (⌘-)
+           *[other] Zoom Out (Ctrl+-)
+        }
 pdfjs-zoom-out-button-label = Zoom Out
 pdfjs-zoom-in-button =
-    .title = Zoom In
+    .title =
+        { PLATFORM() ->
+            [macos] Zoom In (⌘=)
+           *[other] Zoom In (Ctrl+=)
+        }
 pdfjs-zoom-in-button-label = Zoom In
 pdfjs-zoom-select =
     .title = Zoom
 pdfjs-presentation-mode-button =
-    .title = Switch to Presentation Mode
+    .title =
+        { PLATFORM() ->
+            [macos] Switch to Presentation Mode (⌥⌘P)
+           *[other] Switch to Presentation Mode (Ctrl+Alt+P)
+        }
 pdfjs-presentation-mode-button-label = Presentation Mode
 pdfjs-open-file-button =
     .title = Open File
 pdfjs-open-file-button-label = Open
 pdfjs-print-button =
-    .title = Print
+    .title =
+        { PLATFORM() ->
+            [macos] Print (⌘P)
+           *[other] Print (Ctrl+P)
+        }
 pdfjs-print-button-label = Print
 pdfjs-save-button =
-    .title = Save
+    .title =
+        { PLATFORM() ->
+            [macos] Save (⌘S)
+           *[other] Save (Ctrl+S)
+        }
 pdfjs-save-button-label = Save
 
 # Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
@@ -71,16 +95,16 @@ pdfjs-last-page-button =
     .title = Go to Last Page
 pdfjs-last-page-button-label = Go to Last Page
 pdfjs-page-rotate-cw-button =
-    .title = Rotate Clockwise
+    .title = Rotate Clockwise (R)
 pdfjs-page-rotate-cw-button-label = Rotate Clockwise
 pdfjs-page-rotate-ccw-button =
-    .title = Rotate Counterclockwise
+    .title = Rotate Counterclockwise (Shift+R)
 pdfjs-page-rotate-ccw-button-label = Rotate Counterclockwise
 pdfjs-cursor-text-select-tool-button =
-    .title = Enable Text Selection Tool
+    .title = Enable Text Selection Tool (S)
 pdfjs-cursor-text-select-tool-button-label = Text Selection Tool
 pdfjs-cursor-hand-tool-button =
-    .title = Enable Hand Tool
+    .title = Enable Hand Tool (H)
 pdfjs-cursor-hand-tool-button-label = Hand Tool
 pdfjs-scroll-page-button =
     .title = Use Page Scrolling
@@ -184,7 +208,11 @@ pdfjs-current-outline-item-button =
     .title = Find Current Outline Item
 pdfjs-current-outline-item-button-label = Current Outline Item
 pdfjs-findbar-button =
-    .title = Find in Document
+    .title =
+        { PLATFORM() ->
+            [macos] Find in Document (⌘F)
+           *[other] Find in Document (Ctrl+F)
+        }
 pdfjs-findbar-button-label = Find
 pdfjs-additional-layers = Additional Layers
 
@@ -212,10 +240,18 @@ pdfjs-find-input =
     .title = Find
     .placeholder = Find in document…
 pdfjs-find-previous-button =
-    .title = Find the previous occurrence of the phrase
+    .title =
+        { PLATFORM() ->
+            [macos] Find the previous occurrence of the phrase (⇧⌘G)
+           *[other] Find the previous occurrence of the phrase (Ctrl+Shift+G)
+        }
 pdfjs-find-previous-button-label = Previous
 pdfjs-find-next-button =
-    .title = Find the next occurrence of the phrase
+    .title =
+        { PLATFORM() ->
+            [macos] Find the next occurrence of the phrase (⌘G)
+           *[other] Find the next occurrence of the phrase (Ctrl+G)
+        }
 pdfjs-find-next-button-label = Next
 pdfjs-find-highlight-checkbox = Highlight All
 pdfjs-find-match-case-checkbox-label = Match Case
@@ -692,7 +728,7 @@ pdfjs-editor-add-comment-button =
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
 pdfjs-toggle-views-manager-button1 =
-    .title = Manage pages
+    .title = Manage pages (F4)
 pdfjs-toggle-views-manager-notification-button =
     .title = Toggle Sidebar (document contains thumbnails/outline/attachments/layers)
 pdfjs-toggle-views-manager-button1-label = Manage pages
