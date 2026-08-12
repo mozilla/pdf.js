@@ -2352,4 +2352,54 @@ describe("PDF viewer", () => {
       );
     });
   });
+
+  describe("Preferences", () => {
+    describe('handles "updatedPreference" event correctly', () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait("empty.pdf", ".textLayer .endOfContent");
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      async function getToolbarState(page) {
+        return page.evaluate(() => ({
+          density: document
+            .getElementsByTagName("html")[0]
+            .getAttribute("data-toolbar-density"),
+          height: document.getElementById("toolbarContainer").clientHeight,
+        }));
+      }
+
+      it("changes the toolbar height", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const initial = await getToolbarState(page);
+            expect(initial.density).toEqual("normal");
+            expect(initial.height).toEqual(32);
+
+            // Update the preference to change the toolbar height.
+            await page.evaluate(() => {
+              const event = new CustomEvent("updatedPreference", {
+                bubbles: true,
+                cancelable: true,
+                detail: { name: "toolbarDensity", value: 2 },
+              });
+              window.dispatchEvent(event);
+            });
+            await page.waitForFunction(
+              `document.getElementsByTagName("html")[0].getAttribute("data-toolbar-density") !== "normal"`
+            );
+
+            const changed = await getToolbarState(page);
+            expect(changed.density).toEqual("touch");
+            expect(changed.height).toEqual(44);
+          })
+        );
+      });
+    });
+  });
 });
