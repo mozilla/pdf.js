@@ -273,6 +273,8 @@ class XRef {
         const entry = {
           offset: parser.getObj(),
           gen: parser.getObj(),
+          free: false,
+          uncompressed: false,
         };
         const type = parser.getObj();
 
@@ -400,6 +402,8 @@ class XRef {
         const entry = {
           offset,
           gen: generation,
+          free: false,
+          uncompressed: false,
         };
         switch (type) {
           case 0:
@@ -542,6 +546,7 @@ class XRef {
           this.#entries[num] = {
             offset: position - stream.start,
             gen,
+            free: false,
             uncompressed: true,
           };
         }
