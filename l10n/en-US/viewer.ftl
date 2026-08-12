@@ -4,15 +4,15 @@
 
 ## Main toolbar buttons (tooltips and alt text for images)
 
-pdfjs-previous-button =
+pdfjs-previous-button1 =
     .title = Previous Page (P / K)
 pdfjs-previous-button-label = Previous
-pdfjs-next-button =
+pdfjs-next-button1 =
     .title = Next Page (N / J)
 pdfjs-next-button-label = Next
 
 # .title: Tooltip for the pageNumber input.
-pdfjs-page-input =
+pdfjs-page-input1 =
     .title =
         { PLATFORM() ->
             [macos] Page (⌥⌘G)
@@ -29,14 +29,14 @@ pdfjs-of-pages = of { $pagesCount }
 #   $pagesCount (Number) - the total number of pages in the document
 pdfjs-page-of-pages = ({ $pageNumber } of { $pagesCount })
 
-pdfjs-zoom-out-button =
+pdfjs-zoom-out-button1 =
     .title =
         { PLATFORM() ->
             [macos] Zoom Out (⌘-)
            *[other] Zoom Out (Ctrl+-)
         }
 pdfjs-zoom-out-button-label = Zoom Out
-pdfjs-zoom-in-button =
+pdfjs-zoom-in-button1 =
     .title =
         { PLATFORM() ->
             [macos] Zoom In (⌘=)
@@ -45,7 +45,7 @@ pdfjs-zoom-in-button =
 pdfjs-zoom-in-button-label = Zoom In
 pdfjs-zoom-select =
     .title = Zoom
-pdfjs-presentation-mode-button =
+pdfjs-presentation-mode-button1 =
     .title =
         { PLATFORM() ->
             [macos] Switch to Presentation Mode (⌥⌘P)
@@ -55,14 +55,14 @@ pdfjs-presentation-mode-button-label = Presentation Mode
 pdfjs-open-file-button =
     .title = Open File
 pdfjs-open-file-button-label = Open
-pdfjs-print-button =
+pdfjs-print-button1 =
     .title =
         { PLATFORM() ->
             [macos] Print (⌘P)
            *[other] Print (Ctrl+P)
         }
 pdfjs-print-button-label = Print
-pdfjs-save-button =
+pdfjs-save-button1 =
     .title =
         { PLATFORM() ->
             [macos] Save (⌘S)
@@ -94,16 +94,16 @@ pdfjs-first-page-button-label = Go to First Page
 pdfjs-last-page-button =
     .title = Go to Last Page
 pdfjs-last-page-button-label = Go to Last Page
-pdfjs-page-rotate-cw-button =
+pdfjs-page-rotate-cw-button1 =
     .title = Rotate Clockwise (R)
 pdfjs-page-rotate-cw-button-label = Rotate Clockwise
-pdfjs-page-rotate-ccw-button =
+pdfjs-page-rotate-ccw-button1 =
     .title = Rotate Counterclockwise (Shift+R)
 pdfjs-page-rotate-ccw-button-label = Rotate Counterclockwise
-pdfjs-cursor-text-select-tool-button =
+pdfjs-cursor-text-select-tool-button1 =
     .title = Enable Text Selection Tool (S)
 pdfjs-cursor-text-select-tool-button-label = Text Selection Tool
-pdfjs-cursor-hand-tool-button =
+pdfjs-cursor-hand-tool-button1 =
     .title = Enable Hand Tool (H)
 pdfjs-cursor-hand-tool-button-label = Hand Tool
 pdfjs-scroll-page-button =
@@ -207,7 +207,7 @@ pdfjs-printing-not-ready = Warning: The PDF is not fully loaded for printing.
 pdfjs-current-outline-item-button =
     .title = Find Current Outline Item
 pdfjs-current-outline-item-button-label = Current Outline Item
-pdfjs-findbar-button =
+pdfjs-findbar-button1 =
     .title =
         { PLATFORM() ->
             [macos] Find in Document (⌘F)
@@ -239,14 +239,14 @@ pdfjs-thumb-page-checkbox1 =
 pdfjs-find-input =
     .title = Find
     .placeholder = Find in document…
-pdfjs-find-previous-button =
+pdfjs-find-previous-button1 =
     .title =
         { PLATFORM() ->
             [macos] Find the previous occurrence of the phrase (⇧⌘G)
            *[other] Find the previous occurrence of the phrase (Ctrl+Shift+G)
         }
 pdfjs-find-previous-button-label = Previous
-pdfjs-find-next-button =
+pdfjs-find-next-button1 =
     .title =
         { PLATFORM() ->
             [macos] Find the next occurrence of the phrase (⌘G)
@@ -727,7 +727,7 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
-pdfjs-toggle-views-manager-button1 =
+pdfjs-toggle-views-manager-button2 =
     .title = Manage pages (F4)
 pdfjs-toggle-views-manager-notification-button =
     .title = Toggle Sidebar (document contains thumbnails/outline/attachments/layers)
