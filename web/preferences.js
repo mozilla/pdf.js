@@ -47,7 +47,10 @@ class BasePreferences {
       }
     );
 
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("(TESTING && !LIB) || MOZCENTRAL")
+    ) {
       window.addEventListener(
         "updatedPreference",
         async ({ detail: { name, value } }) => {
