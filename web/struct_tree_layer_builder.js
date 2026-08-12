@@ -197,6 +197,10 @@ class StructTreeLayerBuilder {
 
   #elementAttributes = new Map();
 
+  #pendingLinkOwnership = new Map();
+
+  #linkTextId = 0;
+
   #structElementIdPrefix = `pdfjs_internal_struct_${getUuid()}_`;
 
   #structElementIds = new Map();
@@ -245,9 +249,26 @@ class StructTreeLayerBuilder {
     return promise;
   }
 
-  async getAriaAttributes(annotationId) {
+  /**
+   * @param {string} annotationId
+   * @param {Object} [options]
+   * @param {boolean} [options.enableLinkOwnership]
+   * @returns {Promise<Map<string, string>|null|undefined>}
+   */
+  async getAriaAttributes(annotationId, { enableLinkOwnership = false } = {}) {
     try {
       await this.render();
+      const ownership = this.#pendingLinkOwnership.get(annotationId);
+      if (ownership && enableLinkOwnership) {
+        const { element, ids } = ownership;
+        element.removeAttribute("role");
+        if (ids.length > 0) {
+          this.#elementAttributes
+            .getOrInsertComputed(annotationId, makeMap)
+            .set("aria-owns", ids.join(" "));
+        }
+        this.#pendingLinkOwnership.delete(annotationId);
+      }
       return this.#elementAttributes.get(annotationId);
     } catch {
       // If the structTree cannot be fetched, parsed, and/or rendered,
@@ -637,6 +658,25 @@ class StructTreeLayerBuilder {
           element.append(this.#walk(kid, parentNodes));
         }
         parentNodes.pop();
+      }
+    }
+    if (node.role === "Link") {
+      const annotations = node.children?.filter(
+        child => child.type === "annotation"
+      );
+      if (annotations?.length === 1) {
+        const annotation = annotations[0];
+        const ids = [];
+        for (const child of element.children) {
+          if (child.getAttribute("aria-owns") === annotation.id) {
+            continue;
+          }
+          child.id ||= `${this.#structElementIdPrefix}link_${this.#linkTextId++}`;
+          ids.push(child.id);
+        }
+        // Keep the structure-tree Link as a fallback until a stable, visible
+        // link annotation explicitly takes ownership of these children.
+        this.#pendingLinkOwnership.set(annotation.id, { element, ids });
       }
     }
     return element;

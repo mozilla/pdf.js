@@ -4136,12 +4136,19 @@ class AnnotationLayer {
       this.#hasAriaAttributesFromStructTree = true;
       for (const {
         contentElement,
-        data: { id },
+        data: { hidden, id, oc },
       } of this.#elements) {
         const annotationId = (contentElement.id = `${AnnotationPrefix}${id}`);
+        // An unbound link has no <a>, hidden links aren't exposed, and
+        // optional-content visibility can change after this one-time setup.
+        // Keep the structure-tree Link fallback in all three cases; a visible
+        // optional-content link can therefore remain duplicated, matching the
+        // pre-existing behavior.
+        const enableLinkOwnership =
+          contentElement.localName === "a" && !hidden && !oc;
         promises.push(
           this.#structTreeLayer
-            ?.getAriaAttributes(annotationId)
+            ?.getAriaAttributes(annotationId, { enableLinkOwnership })
             .then(ariaAttributes => {
               if (ariaAttributes) {
                 for (const [key, value] of ariaAttributes) {
