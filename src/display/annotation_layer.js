@@ -4212,9 +4212,14 @@ class AnnotationLayer {
     this.div.append(fragment);
     await Promise.all(promises);
     if (this.#accessibilityManager) {
-      for (const element of this.#elements) {
+      const annotationIds = await this.#structTreeLayer?.getAnnotationIds();
+      for (const { contentElement } of this.#elements) {
+        if (annotationIds?.has(contentElement.id)) {
+          // The structure tree already positions this annotation.
+          continue;
+        }
         this.#accessibilityManager.addPointerInTextLayer(
-          element.contentElement,
+          contentElement,
           /* isRemovable = */ false
         );
       }

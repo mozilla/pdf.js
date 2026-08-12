@@ -230,16 +230,12 @@ describe("accessibility", () => {
         pages.map(async ([browserName, page]) => {
           await page.waitForSelector(".structTree");
 
-          const isLinkedToStampAnnotation = await page.$eval(
-            ".structTree [role='figure']",
-            el =>
-              document
-                .getElementById(el.getAttribute("aria-owns"))
-                .classList.contains("stampAnnotation")
+          const owners = await page.$$eval(
+            `[aria-owns~="pdfjs_internal_id_20R"]`,
+            elements =>
+              elements.map(element => element.closest(".structTree") !== null)
           );
-          expect(isLinkedToStampAnnotation)
-            .withContext(`In ${browserName}`)
-            .toBeTrue();
+          expect(owners).withContext(`In ${browserName}`).toEqual([true]);
         })
       );
     });
