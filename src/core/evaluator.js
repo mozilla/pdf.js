@@ -1197,12 +1197,13 @@ class PartialEvaluator {
           }
           break;
         case "TR":
-        case "TR2": {
           // TR2 takes precedence over TR (see PDF 32000-1:2008, Table 58), so
           // ignore TR when a TR2 entry is present in the same dictionary.
-          if (key === "TR" && gState.has("TR2")) {
+          if (gState.has("TR2")) {
             break;
           }
+        /* falls through */
+        case "TR2": {
           // For TR2 the name /Default denotes "the transfer function that was
           // in effect at the start of the page" (PDF 32000-1:2008, Table 58).
           // A page always starts with the identity transfer function, hence
