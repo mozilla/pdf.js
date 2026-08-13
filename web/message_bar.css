@@ -32,6 +32,13 @@
     light-dark(rgb(21 20 26 / 0.07), rgb(251 251 254 / 0.07))
   );
 
+  /* Use Nova's icon-button radius. */
+  /*#if MOZCENTRAL && !GECKOVIEW*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --message-bar-close-button-border-radius: var(--button-border-radius);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --message-bar-close-button-color: var(--button-text-color, ButtonText);
     --message-bar-close-button-border: 1px solid
@@ -158,6 +165,15 @@
     rgb(0 0 0 / 0.08),
     rgb(255 255 255 / 0.08)
   );
+
+  /* Match Nova message bars: use a neutral surface and information icon. */
+  /*#if MOZCENTRAL && !GECKOVIEW*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --message-bar-icon-color: var(--icon-color-information);
+    --message-bar-bg-color: var(--background-color-box);
+    --message-bar-border-color: var(--border-color-deemphasized);
+  }
+  /*#endif*/
 
   @media screen and (forced-colors: active) {
     --message-bar-icon-color: CanvasText;

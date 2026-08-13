@@ -13,11 +13,8 @@
  * limitations under the License.
  */
 
-/* Pref-gated, so the Firefox tokens are opt-in (and with them the Nova theme,
-   which tokens-brand.css gates on browser.nova.enabled): with the pref off
-   every var() falls back to its shipped literal. -moz-pref() works here
-   because chrome rules are enabled for a resource:// stylesheet, and it only
-   sees pdfjs.* prefs. */
+/* Import Firefox tokens only when enabled; the token sheet gates its Nova
+   overrides on browser.nova.enabled. */
 /*#if MOZCENTRAL*/
 @import url(chrome://global/skin/design-system/tokens-brand.css) -moz-pref(
     "pdfjs.enableNova"
@@ -135,6 +132,61 @@
   --secondaryToolbarButton-documentProperties-icon: url(images/secondaryToolbarButton-documentProperties.svg);
   --editorParams-stampAddImage-icon: url(images/toolbarButton-zoomIn.svg);
   --comment-edit-button-icon: url(images/comment-editButton.svg);
+
+  /* Map viewer variables to Nova design tokens. Keep Nova blocks before later
+     forced-colors overrides. Comments must stay outside #if blocks because the
+     preprocessor strips one comment layer from their contents. The root font
+     size makes Firefox's rem-based spacing tokens resolve correctly. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    font-size: var(--font-size-root);
+
+    --toolbarButton-menuArrowNova-icon: url(images/toolbarButton-menuArrowNova.svg);
+
+    --toolbar-height: 40px;
+    --toolbar-horizontal-padding: 6px;
+    --toolbar-vertical-padding: 4px;
+
+    --toolbar-icon-opacity: 1;
+    --doorhanger-icon-opacity: 1;
+
+    --main-color: var(--text-color);
+    --body-bg-color: light-dark(var(--color-gray-15), var(--color-gray-85));
+    --progressBar-color: var(--color-accent-primary);
+    --progressBar-bg-color: var(--background-color-box-info);
+    --progressBar-blend-color: color-mix(
+      in srgb,
+      var(--color-accent-primary) 40%,
+      var(--background-color-box)
+    );
+    --toolbar-icon-bg-color: var(--toolbarbutton-icon-fill);
+    --toolbar-icon-hover-bg-color: var(--toolbarbutton-icon-fill);
+
+    --sidebar-narrow-bg-color: color-mix(
+      in srgb,
+      var(--background-color-canvas) 90%,
+      transparent
+    );
+    --sidebar-toolbar-bg-color: var(--toolbar-background-color);
+    --toolbar-bg-color: var(--toolbar-background-color);
+    --toolbar-border-color: var(--border-color-deemphasized);
+    --toggled-btn-color: var(--toolbarbutton-icon-fill);
+    --toggled-btn-bg-color: var(--toolbarbutton-background-color-active);
+    --toggled-hover-active-btn-color: var(
+      --toolbarbutton-background-color-active
+    );
+    --dropdown-btn-bg-color: var(--button-background-color);
+    --dropdown-btn-border: 1px solid var(--button-border-color);
+    --separator-color: var(--border-color-deemphasized);
+    --field-color: var(--text-color);
+    --field-bg-color: var(--background-color-box);
+    --field-border-color: var(--border-color-interactive);
+    --doorhanger-bg-color: var(--background-color-box);
+    --doorhanger-border-color: var(--border-color-deemphasized);
+    --doorhanger-hover-color: var(--text-color);
+    --doorhanger-separator-color: var(--border-color-deemphasized);
+  }
+  /*#endif*/
 }
 
 :root:dir(rtl) {
@@ -190,9 +242,23 @@
 html {
   &[data-toolbar-density="compact"] {
     --toolbar-height: 30px;
+
+    /* 24px buttons, i.e. --size-item-medium. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      --toolbar-height: 32px;
+    }
+    /*#endif*/
   }
   &[data-toolbar-density="touch"] {
     --toolbar-height: 44px;
+
+    /* 40px buttons, i.e. --button-min-height-large. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      --toolbar-height: 48px;
+    }
+    /*#endif*/
   }
 }
 
@@ -393,6 +459,20 @@ body {
   &::after {
     border-width: var(--doorhanger-height);
   }
+
+  /* Nova doorhangers use a bordered panel surface without a caret. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    border-radius: var(--panel-border-radius);
+    border: 1px solid var(--doorhanger-border-color);
+    box-shadow: var(--box-shadow-level-2);
+
+    &::after,
+    &::before {
+      display: none;
+    }
+  }
+  /*#endif*/
 }
 
 .doorHangerRight {
@@ -406,6 +486,13 @@ body {
     border-bottom-color: var(--doorhanger-bg-color);
     inset-inline-end: 1px;
   }
+
+  /* Without the caret, align the panel edge to its anchor. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    inset-inline-end: 0;
+  }
+  /*#endif*/
 }
 
 .doorHanger {
@@ -419,6 +506,12 @@ body {
     border-bottom-color: var(--toolbar-bg-color);
     inset-inline-start: 1px;
   }
+
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    inset-inline-start: 0;
+  }
+  /*#endif*/
 }
 
 .splitToolbarButtonSeparator {
@@ -508,6 +601,12 @@ body {
   height: 9px;
   width: 9px;
   border-radius: 50%;
+
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    background-color: var(--color-accent-attention);
+  }
+  /*#endif*/
 }
 
 .verticalToolbarSeparator {
@@ -568,6 +667,24 @@ body {
   &:focus {
     border-color: #0a84ff;
   }
+
+  /* Use Nova field focus styling. Do not fix the height: Firefox tests that
+     #pageNumber follows its font size. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-small);
+    padding: var(--space-xsmall) var(--space-small);
+
+    &:focus {
+      border-color: var(--field-border-color);
+    }
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: var(--focus-outline-inset);
+    }
+  }
+  /*#endif*/
 }
 
 #pageNumber {
@@ -673,6 +790,30 @@ dialog .buttonRow {
 dialog :link {
   color: rgb(255 255 255);
 }
+
+/* Legacy dialogs do not use .dialog, so map their surface, type, and links to
+   Nova tokens. Keep line-height proportional to the tokenized font size. */
+/*#if MOZCENTRAL*/
+@media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+  dialog:not(.dialog) {
+    padding: var(--space-large);
+    font-size: var(--font-size-small);
+    line-height: 150%;
+    border-spacing: var(--space-xsmall);
+    background-color: var(--background-color-canvas);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--box-shadow-level-3);
+
+    .separator {
+      margin-block: var(--space-small);
+    }
+
+    :link {
+      color: var(--link-color);
+    }
+  }
+}
+/*#endif*/
 
 #passwordDialog {
   text-align: center;
@@ -846,6 +987,29 @@ dialog :link {
       height: auto;
     }
   }
+
+  /* Use Nova's inset focus ring. The toggled-hover rule is !important, so pass
+     its ring through the variable. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    border-radius: var(--button-border-radius);
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: var(--focus-outline-inset);
+    }
+
+    &.toggled:hover:focus-visible {
+      --toggled-hover-btn-outline: var(--focus-outline);
+    }
+
+    &.labeled {
+      border-radius: var(--panel-menuitem-border-radius);
+      gap: var(--space-small);
+      padding-inline-start: var(--space-small);
+    }
+  }
+  /*#endif*/
 }
 
 .toolbarButtonWithContainer {
@@ -862,6 +1026,14 @@ dialog :link {
 
   .menu {
     padding-block: 5px;
+
+    /* Inset Nova menu rows from the panel edge. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      padding-block: var(--space-small);
+      padding-inline: var(--space-small);
+    }
+    /*#endif*/
   }
 
   .menuContainer {
@@ -915,6 +1087,13 @@ dialog :link {
       padding-inline: 10px;
       padding-block: 10px;
 
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        padding-inline: var(--space-medium);
+        padding-block: var(--space-medium);
+      }
+      /*#endif*/
+
       > .editorParamsSetter {
         min-height: 26px;
         display: flex;
@@ -952,6 +1131,23 @@ dialog :link {
         &::-moz-range-thumb {
           background-color: white;
         }
+
+        /* Use Nova slider colors. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          &::-moz-range-progress {
+            background-color: var(--color-accent-primary);
+          }
+
+          &::-moz-range-track {
+            background-color: var(--border-color-interactive);
+          }
+
+          &::-moz-range-thumb {
+            background-color: var(--color-accent-primary);
+          }
+        }
+        /*#endif*/
       }
     }
   }
@@ -1069,6 +1265,17 @@ dialog :link {
   flex-wrap: wrap;
   justify-content: flex-start;
 
+  /* Inset the bar without changing its height; PDFFindBar uses height to
+     detect wrapping. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --input-horizontal-padding: var(--space-medium);
+
+    border-radius: var(--border-radius-medium);
+    padding-inline: var(--space-small);
+  }
+  /*#endif*/
+
   > * {
     height: var(--toolbar-height);
     padding: var(--findbar-padding);
@@ -1106,7 +1313,20 @@ dialog :link {
 
       &[data-status="notFound"] {
         background-color: rgb(255 102 102);
+
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          background-color: var(--background-color-critical);
+        }
+        /*#endif*/
       }
+
+      /* Use Nova's search-field radius. */
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        border-radius: var(--input-search-border-radius);
+      }
+      /*#endif*/
     }
   }
 
@@ -1122,6 +1342,14 @@ dialog :link {
       background-color: rgb(217 217 217);
       color: rgb(82 82 82);
       padding-block: 4px;
+
+      /* Replace the fixed gray pair with Nova theme tokens. */
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        background-color: var(--background-color-box-info);
+        color: var(--text-color-deemphasized);
+      }
+      /*#endif*/
 
       &:empty {
         display: none;
@@ -1238,6 +1466,15 @@ dialog :link {
   padding-inline: 4px;
   margin: 2px;
   border-radius: 2px;
+
+  /* Use Nova's pill shape for toolbar labels and findbar toggles. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    padding-inline: var(--space-small);
+    border-radius: var(--button-border-radius);
+  }
+  /*#endif*/
+
   color: var(--main-color);
   font-size: 12px;
   line-height: 14px;
@@ -1264,6 +1501,12 @@ dialog :link {
   justify-content: space-between;
   gap: 1px;
   box-sizing: border-box;
+
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    gap: var(--space-xxsmall);
+  }
+  /*#endif*/
 }
 
 .dropdownToolbarButton {
@@ -1337,10 +1580,84 @@ dialog :link {
   &:is(:hover, :focus-visible, :active)::after {
     background-color: var(--toolbar-icon-hover-bg-color);
   }
+
+  /* Mirror moz-select. Keep the inner select opaque because SelectParent uses
+     its computed background for the option popup; paint hover as a gradient so
+     background-color stays stable. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    overflow: hidden;
+    border: var(--button-border);
+    border-radius: var(--button-border-radius);
+    background-color: var(--button-background-color);
+    color: var(--button-text-color);
+
+    &:is(:hover, :has(> select:open)) {
+      border-color: var(--border-color-interactive-hover);
+      background-color: var(--button-background-color-hover);
+      color: var(--button-text-color-hover);
+    }
+
+    &:has(> select:focus-visible) {
+      outline: var(--focus-outline);
+      outline-offset: var(--focus-outline-offset);
+    }
+
+    > select {
+      height: auto;
+      min-height: var(--button-min-height);
+      border-radius: inherit;
+      padding-block: var(--button-padding-block);
+      padding-inline: var(--button-padding-inline)
+        calc(
+          var(--button-padding-inline) + var(--icon-size) + var(--space-small)
+        );
+      font-size: var(--font-size-root);
+      font-weight: var(--button-font-weight);
+      color: inherit;
+      background-color: var(--background-color-box);
+
+      > option {
+        color: var(--text-color);
+        font-weight: var(--font-weight);
+      }
+
+      &:is(:hover, :focus-visible) {
+        background-color: var(--background-color-box);
+        color: inherit;
+      }
+
+      &:focus-visible {
+        outline: none;
+      }
+    }
+
+    &:is(:hover, :has(> select:open)) > select {
+      background-image: linear-gradient(
+        var(--button-background-color-hover),
+        var(--button-background-color-hover)
+      );
+    }
+
+    &::after,
+    &:is(:hover, :focus-visible, :active)::after {
+      inset-inline-end: var(--button-padding-inline);
+      background-color: currentColor;
+      mask-image: var(--toolbarButton-menuArrowNova-icon);
+    }
+  }
+  /*#endif*/
 }
 
 #toolbarContainer {
   --menuitem-height: calc(var(--toolbar-height) - 6px);
+
+  /* Keep menu rows at Nova's 32px size across toolbar densities. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --menuitem-height: var(--size-item-large);
+  }
+  /*#endif*/
 
   width: 100%;
   height: var(--toolbar-height);
@@ -1373,6 +1690,13 @@ dialog :link {
 
     #toolbarViewerLeft {
       margin-inline-start: 8px;
+
+      /* --toolbar-horizontal-padding already insets the row. */
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        margin-inline-start: 0;
+      }
+      /*#endif*/
 
       #numPages.toolbarLabel {
         padding-inline-start: 3px;

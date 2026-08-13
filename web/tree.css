@@ -28,6 +28,19 @@
   --treeitem-expanded-icon: url(images/treeitem-expanded.svg);
   --treeitem-collapsed-icon: url(images/treeitem-collapsed.svg);
 
+  /* Style tree rows like Nova toolbar buttons and inset them from the sidebar. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --treeitem-color: var(--text-color);
+    --treeitem-bg-color: var(--toolbarbutton-background-color-hover);
+    --treeitem-hover-color: var(--text-color);
+    --treeitem-selected-color: var(--text-color);
+    --treeitem-selected-bg-color: var(--toolbarbutton-background-color-active);
+
+    padding-inline: var(--panel-menuitem-margin-inline);
+  }
+  /*#endif*/
+
   &.withNesting {
     .treeItemToggler {
       &::before {
@@ -68,6 +81,13 @@
         background-clip: padding-box;
         border-radius: 2px;
         color: var(--treeitem-hover-color);
+
+        /* This selector outranks the row's own radius, so repeat it here. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          border-radius: var(--panel-menuitem-border-radius);
+        }
+        /*#endif*/
       }
     }
 
@@ -110,11 +130,28 @@
       white-space: normal;
       cursor: default;
 
+      /* Fill the inset width and pad the label inside the rounded row. */
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        box-sizing: border-box;
+        min-width: 100%;
+        padding-block: var(--space-xsmall);
+        padding-inline: var(--space-small);
+        border-radius: var(--panel-menuitem-border-radius);
+      }
+      /*#endif*/
+
       &:hover {
         background-color: var(--treeitem-bg-color);
         background-clip: padding-box;
         border-radius: 2px;
         color: var(--treeitem-hover-color);
+
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          border-radius: var(--panel-menuitem-border-radius);
+        }
+        /*#endif*/
       }
     }
 

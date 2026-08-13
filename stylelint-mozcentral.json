@@ -1,5 +1,6 @@
 {
   "plugins": ["./external/stylelint/no-unused-custom-properties.mjs"],
+  "referenceFiles": ["./external/stylelint/mozcentral-tokens.css"],
   "rules": {
     "no-unknown-custom-properties": true,
     "pdfjs/no-unused-custom-properties": [

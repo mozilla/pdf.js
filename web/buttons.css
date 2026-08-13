@@ -82,6 +82,16 @@
     --hover-filter: brightness(1.4);
   }
 
+  /* Nova supplies state colors; preserve its border and disabled opacity. */
+  /*#if MOZCENTRAL && !GECKOVIEW*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --hover-filter: none;
+    --button-disabled-opacity: var(--button-opacity-disabled);
+    --button-secondary-hover-border-color: var(--button-border-color-hover);
+    --button-secondary-active-border-color: var(--button-border-color-active);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --button-primary-bg-color: var(
       --button-background-color-primary,
