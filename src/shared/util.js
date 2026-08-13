@@ -722,7 +722,7 @@ class Util {
     return shadow(
       this,
       "hexNums",
-      Array.from(Array(256).keys(), n => n.toString(16).padStart(2, "0"))
+      Array.from({ length: 256 }, (_, n) => n.toString(16).padStart(2, "0"))
     );
   }
 

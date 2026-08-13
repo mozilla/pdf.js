@@ -3729,9 +3729,7 @@ describe("FreeText Editor", () => {
             const { map } =
               window.PDFViewerApplication.pdfDocument.annotationStorage
                 .serializable;
-            return (
-              map.size === 4 && [...map.values()].every(entry => entry.deleted)
-            );
+            return map.size === 4 && map.values().every(entry => entry.deleted);
           });
 
           // Disable editing mode.
