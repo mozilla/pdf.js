@@ -109,13 +109,7 @@ class Field extends PDFObject {
       indices = [indices];
     }
     if (
-      !indices.every(
-        i =>
-          typeof i === "number" &&
-          Number.isInteger(i) &&
-          i >= 0 &&
-          i < this.numItems
-      )
+      !indices.every(i => Number.isInteger(i) && i >= 0 && i < this.numItems)
     ) {
       return;
     }
