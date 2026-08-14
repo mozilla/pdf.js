@@ -59,8 +59,6 @@ const BUILD_DIR = "build/";
 const L10N_DIR = "l10n/";
 const TEST_DIR = "test/";
 
-const BASELINE_DIR = BUILD_DIR + "baseline/";
-const MOZCENTRAL_BASELINE_DIR = BUILD_DIR + "mozcentral.baseline/";
 const GENERIC_DIR = BUILD_DIR + "generic/";
 const GENERIC_LEGACY_DIR = BUILD_DIR + "generic-legacy/";
 const COMPONENTS_DIR = BUILD_DIR + "components/";
@@ -82,7 +80,6 @@ const COMMON_WEB_FILES = [
   "web/images/*.{png,svg,gif}",
   "web/debugger.{css,mjs}",
 ];
-const MOZCENTRAL_DIFF_FILE = "mozcentral.diff";
 
 const CONFIG_FILE = "pdfjs.config";
 const config = JSON.parse(fs.readFileSync(CONFIG_FILE).toString());
@@ -1682,6 +1679,212 @@ gulp.task(
   )
 );
 
+function getGeckoDirs() {
+  const geckoPath =
+    getArgValue("--path") ?? getArgValue("-p") ?? process.env.GECKO_PATH;
+
+  if (!geckoPath) {
+    throw new Error(
+      "Missing mozilla-central path; please use either the " +
+        '"--path <path>" (or "-p <path>") argument or the "GECKO_PATH" ' +
+        "environment variable."
+    );
+  }
+  const rootDir = path.resolve(geckoPath);
+
+  if (!checkFile(path.join(rootDir, "mach"))) {
+    throw new Error(
+      `"${rootDir}" does not appear to be a mozilla-central checkout.`
+    );
+  }
+  const pdfjsDir = path.join(rootDir, "toolkit", "components", "pdfjs"),
+    l10nDir = path.join(
+      rootDir,
+      "toolkit",
+      "locales",
+      "en-US",
+      "toolkit",
+      "pdfviewer"
+    );
+
+  for (const dir of [pdfjsDir, l10nDir]) {
+    if (!checkDir(dir)) {
+      throw new Error(`The "${dir}" folder does not exist.`);
+    }
+  }
+  return { rootDir, pdfjsDir, l10nDir };
+}
+
+/** Copy `src` if contents differ; otherwise preserve `dest`'s mtime. */
+function copyFileIfChanged(src, dest, stats) {
+  const data = fs.readFileSync(src);
+  let destData;
+  try {
+    destData = fs.readFileSync(dest);
+  } catch (ex) {
+    if (ex.code !== "ENOENT" && ex.code !== "EISDIR") {
+      throw ex;
+    }
+  }
+
+  if (destData?.equals(data)) {
+    stats.unchanged++;
+    return;
+  }
+  // Remove first because `dest` may be a directory.
+  fs.rmSync(dest, { recursive: true, force: true });
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.writeFileSync(dest, data);
+  stats.updated.push(dest);
+}
+
+/** Mirror regular files and directories from `src`, deleting stale entries. */
+function mirrorDir(src, dest, stats) {
+  const destStats = fs.lstatSync(dest, { throwIfNoEntry: false });
+
+  if (destStats && !destStats.isDirectory()) {
+    fs.rmSync(dest, { recursive: true, force: true });
+    stats.removed.push(dest);
+  }
+  fs.mkdirSync(dest, { recursive: true });
+
+  const srcEntries = fs.readdirSync(src, { withFileTypes: true });
+  const srcDirs = new Set(),
+    srcFiles = new Set();
+
+  for (const entry of srcEntries) {
+    if (entry.isDirectory()) {
+      srcDirs.add(entry.name);
+    } else if (entry.isFile()) {
+      srcFiles.add(entry.name);
+    } else {
+      throw new Error(
+        `Unsupported entry type for "${path.join(src, entry.name)}".`
+      );
+    }
+  }
+
+  // Remove stale entries and entries whose type changed.
+  for (const entry of fs.readdirSync(dest, { withFileTypes: true })) {
+    if (
+      (entry.isDirectory() && srcDirs.has(entry.name)) ||
+      (entry.isFile() && srcFiles.has(entry.name))
+    ) {
+      continue;
+    }
+    const destPath = path.join(dest, entry.name);
+    fs.rmSync(destPath, { recursive: true, force: true });
+    stats.removed.push(destPath);
+  }
+
+  for (const entry of srcEntries) {
+    const srcPath = path.join(src, entry.name),
+      destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      mirrorDir(srcPath, destPath, stats);
+    } else {
+      copyFileIfChanged(srcPath, destPath, stats);
+    }
+  }
+}
+
+function hasWatchArg() {
+  // Node consumes "--watch" before gulp can parse it.
+  if (process.env.WATCH_REPORT_DEPENDENCIES) {
+    throw new Error(
+      'The "--watch" option is consumed by Node; please use "-w" instead.'
+    );
+  }
+  return process.argv.includes("-w");
+}
+
+function updateMozcentral(done) {
+  const { rootDir, pdfjsDir, l10nDir } = getGeckoDirs();
+  console.log(`\n### Updating PDF.js in "${rootDir}"`);
+
+  const MOZCENTRAL_EXTENSION_DIR =
+      BUILD_DIR + "mozcentral/browser/extensions/pdfjs/",
+    MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
+    MOZCENTRAL_L10N_DIR =
+      BUILD_DIR + "mozcentral/browser/locales/en-US/pdfviewer/";
+
+  const stats = { updated: [], removed: [], unchanged: 0 };
+
+  // Mirror `build` and `web`; preserve other `content` entries.
+  for (const dir of ["build", "web"]) {
+    mirrorDir(
+      MOZCENTRAL_CONTENT_DIR + dir,
+      path.join(pdfjsDir, "content", dir),
+      stats
+    );
+  }
+
+  for (const file of ["LICENSE", "PdfJsDefaultPrefs.js"]) {
+    copyFileIfChanged(
+      MOZCENTRAL_EXTENSION_DIR + file,
+      path.join(pdfjsDir, file),
+      stats
+    );
+  }
+
+  for (const file of fs.readdirSync(MOZCENTRAL_L10N_DIR)) {
+    if (file.endsWith(".ftl")) {
+      copyFileIfChanged(
+        MOZCENTRAL_L10N_DIR + file,
+        path.join(l10nDir, file),
+        stats
+      );
+    }
+  }
+
+  for (const filePath of stats.removed) {
+    console.log(`  deleted: ${filePath}`);
+  }
+  for (const filePath of stats.updated) {
+    console.log(`  updated: ${filePath}`);
+  }
+  console.log(
+    `\n${stats.updated.length} file(s) updated, ` +
+      `${stats.removed.length} file(s) deleted, ` +
+      `${stats.unchanged} file(s) unchanged.`
+  );
+
+  done();
+}
+
+gulp.task(
+  "firefox",
+  gulp.series("mozcentral", updateMozcentral, function watchMozcentral(done) {
+    if (!hasWatchArg()) {
+      done();
+      return;
+    }
+    const MOZCENTRAL_SOURCE_FILES = [
+      "src/**",
+      "web/**",
+      "!web/locale/**", // Generated by the `locale` task.
+      "!web/wasm/**", // Generated by the `dev-wasm` task.
+      "l10n/en-US/*.ftl",
+      "external/bcmaps/*",
+      "external/iccs/*",
+      "external/jbig2/*",
+      "external/openjpeg/*",
+      "external/qcms/*",
+      "external/standard_fonts/*",
+      "LICENSE",
+    ];
+
+    console.log("\n### Watching for changes; press Ctrl+C to stop");
+
+    gulp.watch(
+      MOZCENTRAL_SOURCE_FILES,
+      gulp.series("mozcentral", updateMozcentral)
+    );
+    done();
+  })
+);
+
 function createChromiumPrefsSchema() {
   console.log("\n### Building Chromium preferences file");
 
@@ -2226,44 +2429,6 @@ gulp.task(
     }
   )
 );
-
-function createBaseline(done) {
-  console.log("\n### Creating baseline environment");
-
-  const baselineCommit = process.env.BASELINE;
-  if (!baselineCommit) {
-    done(new Error("Missing baseline commit. Specify the BASELINE variable."));
-    return;
-  }
-
-  let initializeCommand = "git fetch origin";
-  if (!checkDir(BASELINE_DIR)) {
-    fs.mkdirSync(BASELINE_DIR, { recursive: true });
-    initializeCommand = "git clone ../../ .";
-  }
-
-  const workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
-  exec(initializeCommand, { cwd: workingDirectory }, function (error) {
-    if (error) {
-      done(new Error("Baseline clone/fetch failed."));
-      return;
-    }
-
-    exec(
-      "git checkout " + baselineCommit,
-      { cwd: workingDirectory },
-      function (error2) {
-        if (error2) {
-          done(new Error("Baseline commit checkout failed."));
-          return;
-        }
-
-        console.log('Baseline commit "' + baselineCommit + '" checked out.');
-        done();
-      }
-    );
-  });
-}
 
 gulp.task(
   "unittestcli",
@@ -3122,87 +3287,6 @@ gulp.task(
     safeSpawnSync("npm", ["install", distPath], opts);
     done();
   })
-);
-
-gulp.task(
-  "mozcentralbaseline",
-  gulp.series(createBaseline, function createMozcentralBaseline(done) {
-    console.log("\n### Creating mozcentral baseline environment");
-
-    // Create a mozcentral build.
-    fs.rmSync(BASELINE_DIR + BUILD_DIR, { recursive: true, force: true });
-
-    const workingDirectory = path.resolve(process.cwd(), BASELINE_DIR);
-    safeSpawnSync("gulp", ["mozcentral"], {
-      env: process.env,
-      cwd: workingDirectory,
-      stdio: "inherit",
-    });
-
-    // Copy the mozcentral build to the mozcentral baseline directory.
-    fs.rmSync(MOZCENTRAL_BASELINE_DIR, { recursive: true, force: true });
-    fs.mkdirSync(MOZCENTRAL_BASELINE_DIR, { recursive: true });
-
-    gulp
-      .src([BASELINE_DIR + BUILD_DIR + "mozcentral/**/*"], { encoding: false })
-      .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
-      .on("end", function () {
-        // Commit the mozcentral baseline.
-        safeSpawnSync("git", ["init"], { cwd: MOZCENTRAL_BASELINE_DIR });
-        safeSpawnSync("git", ["add", "."], { cwd: MOZCENTRAL_BASELINE_DIR });
-        safeSpawnSync("git", ["commit", "-m", '"mozcentral baseline"'], {
-          cwd: MOZCENTRAL_BASELINE_DIR,
-        });
-        done();
-      });
-  })
-);
-
-gulp.task(
-  "mozcentraldiff",
-  gulp.series(
-    "mozcentral",
-    "mozcentralbaseline",
-    function createMozcentralDiff(done) {
-      console.log("\n### Creating mozcentral diff");
-
-      // Create the diff between the current mozcentral build and the
-      // baseline mozcentral build, which both exist at this point.
-      // Remove all files/folders, except for `.git` because it needs to be a
-      // valid Git repository for the Git commands below to work.
-      for (const entry of fs.readdirSync(MOZCENTRAL_BASELINE_DIR)) {
-        if (entry !== ".git") {
-          fs.rmSync(MOZCENTRAL_BASELINE_DIR + entry, {
-            recursive: true,
-            force: true,
-          });
-        }
-      }
-
-      gulp
-        .src([BUILD_DIR + "mozcentral/**/*"], { encoding: false })
-        .pipe(gulp.dest(MOZCENTRAL_BASELINE_DIR))
-        .on("end", function () {
-          safeSpawnSync("git", ["add", "-A"], { cwd: MOZCENTRAL_BASELINE_DIR });
-          const diff = safeSpawnSync(
-            "git",
-            ["diff", "--binary", "--cached", "--unified=8"],
-            { cwd: MOZCENTRAL_BASELINE_DIR }
-          ).stdout;
-
-          createStringSource(MOZCENTRAL_DIFF_FILE, diff)
-            .pipe(gulp.dest(BUILD_DIR))
-            .on("end", function () {
-              console.log(
-                "Result diff can be found at " +
-                  BUILD_DIR +
-                  MOZCENTRAL_DIFF_FILE
-              );
-              done();
-            });
-        });
-    }
-  )
 );
 
 gulp.task("externaltest", function (done) {
