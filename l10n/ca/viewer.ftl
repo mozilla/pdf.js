@@ -42,6 +42,12 @@ pdfjs-print-button-label = Imprimeix
 pdfjs-save-button =
     .title = Desa
 pdfjs-save-button-label = Desa
+# Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
+pdfjs-download-button =
+    .title = Baixa
+# Used in Firefox for Android as a label for the download button (“download” is a verb).
+# Length of the translation matters since we are in a mobile context, with limited screen estate.
+pdfjs-download-button-label = Baixa
 pdfjs-bookmark-button =
     .title = Pàgina actual (mostra l'URL de la pàgina actual)
 pdfjs-bookmark-button-label = Pàgina actual
@@ -98,6 +104,14 @@ pdfjs-document-properties-button =
 pdfjs-document-properties-button-label = Propietats del document…
 pdfjs-document-properties-file-name = Nom del fitxer:
 pdfjs-document-properties-file-size = Mida del fitxer:
+# Variables:
+#   $kb (Number) - the PDF file size in kilobytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kB ({ $b } bytes)
+# Variables:
+#   $mb (Number) - the PDF file size in megabytes
+#   $b (Number) - the PDF file size in bytes
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bytes)
 pdfjs-document-properties-title = Títol:
 pdfjs-document-properties-author = Autor:
 pdfjs-document-properties-subject = Assumpte:
@@ -136,6 +150,24 @@ pdfjs-document-properties-linearized = Vista web ràpida:
 pdfjs-document-properties-linearized-yes = Sí
 pdfjs-document-properties-linearized-no = No
 pdfjs-document-properties-close-button = Tanca
+pdfjs-digital-signature-properties-view-certificate = Mostra el certificat
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Motiu: { $reason }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Una subsignatura
+       *[other] ({ $count }) subsignatures
+    }
 
 ## Print
 
@@ -184,6 +216,11 @@ pdfjs-thumb-page-title =
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Miniatura de la pàgina { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Pàgina { $page } de { $total }
 
 ## Find panel button title and messages
 
@@ -202,6 +239,21 @@ pdfjs-find-match-diacritics-checkbox-label = Respecta els diacrítics
 pdfjs-find-entire-word-checkbox-label = Paraules senceres
 pdfjs-find-reached-top = S'ha arribat al principi del document, es continua pel final
 pdfjs-find-reached-bottom = S'ha arribat al final del document, es continua pel principi
+# Variables:
+#   $current (Number) - the index of the currently active find result
+#   $total (Number) - the total number of matches in the document
+pdfjs-find-match-count =
+    { $total ->
+        [one] { $current } d'{ $total } coincidència
+       *[other] { $current } de { $total } coincidències
+    }
+# Variables:
+#   $limit (Number) - the maximum number of matches
+pdfjs-find-match-count-limit =
+    { $limit ->
+        [one] Més d'{ $limit } coincidència
+       *[other] Més de { $limit } coincidències
+    }
 pdfjs-find-not-found = No s'ha trobat l'expressió
 
 ## Predefined zoom values
@@ -251,10 +303,53 @@ pdfjs-web-fonts-disabled = Els tipus de lletra web estan desactivats: no es pode
 
 pdfjs-editor-free-text-button =
     .title = Text
+pdfjs-editor-color-picker-free-text-input =
+    .title = Canvia el color del text
 pdfjs-editor-free-text-button-label = Text
 pdfjs-editor-ink-button =
     .title = Dibuixa
+pdfjs-editor-color-picker-ink-input =
+    .title = Canvia el color de dibuix
 pdfjs-editor-ink-button-label = Dibuixa
+pdfjs-editor-stamp-button =
+    .title = Afegeix o edita imatges
+pdfjs-editor-stamp-button-label = Afegeix o edita imatges
+pdfjs-editor-highlight-button =
+    .title = Ressalta
+pdfjs-editor-highlight-button-label = Ressalta
+pdfjs-highlight-floating-button1 =
+    .title = Ressalta
+    .aria-label = Ressalta
+pdfjs-highlight-floating-button-label = Ressalta
+pdfjs-editor-signature-button =
+    .title = Afegeix una signatura
+pdfjs-editor-signature-button-label = Afegeix una signatura
+
+## Default editor aria labels
+
+# “Drawing” is a noun, the string is used on the editor for drawings.
+pdfjs-editor-ink-editor =
+    .aria-label = Editor de dibuix
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor1 =
+    .aria-description = Editor de signatures: { $description }
+pdfjs-editor-stamp-editor =
+    .aria-label = Editor d'imatges
+
+## Remove button for the various kind of editor.
+
+pdfjs-editor-remove-ink-button =
+    .title = Suprimeix el dibuix
+pdfjs-editor-remove-freetext-button =
+    .title = Suprimeix el text
+pdfjs-editor-remove-stamp-button =
+    .title = Suprimeix la imatge
+pdfjs-editor-remove-highlight-button =
+    .title = Suprimeix el ressaltat
+pdfjs-editor-remove-signature-button =
+    .title = Elimina la signatura
 
 ##
 
@@ -264,10 +359,135 @@ pdfjs-editor-free-text-size-input = Mida
 pdfjs-editor-ink-color-input = Color
 pdfjs-editor-ink-thickness-input = Gruix
 pdfjs-editor-ink-opacity-input = Opacitat
+pdfjs-editor-stamp-add-image-button =
+    .title = Afegeix una imatge
+pdfjs-editor-stamp-add-image-button-label = Afegeix una imatge
+# This refers to the thickness of the line used for free highlighting (not bound to text)
+pdfjs-editor-free-highlight-thickness-input = Gruix
+pdfjs-editor-add-signature-container =
+    .aria-label = Controls de signatura i signatures desades
+pdfjs-editor-signature-add-signature-button =
+    .title = Afegeix una nova signatura
+pdfjs-editor-signature-add-signature-button-label = Afegeix una nova signatura
+# Used on the button to use an already saved signature.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-add-saved-signature-button =
+    .title = Signatura desada: { $description }
+# .default-content is used as a placeholder in an empty text editor.
+pdfjs-free-text2 =
+    .aria-label = Editor de text
+    .default-content = Comença a escriute...
+# Used to show how many comments are present in the pdf file.
+# Variables:
+#   $count (Number) - the number of comments.
+pdfjs-editor-comments-sidebar-title =
+    { $count ->
+        [one] Comentari
+       *[other] Comentaris
+    }
+pdfjs-editor-comments-sidebar-close-button =
+    .title = Tanca la barra lateral
+    .aria-label = Tanca la barra lateral
+pdfjs-editor-comments-sidebar-close-button-label = Tanca la barra lateral
+pdfjs-editor-comments-sidebar-no-comments-link = Més informació
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-button-label = Text alternatiu
+pdfjs-editor-alt-text-edit-button =
+    .aria-label = Edita el text alternatiu
+pdfjs-editor-alt-text-dialog-label = Trieu una opció
+pdfjs-editor-alt-text-dialog-description = El text alternatiu és d'ajuda quan no es pot veure la imatge o quan no es carrega.
+pdfjs-editor-alt-text-add-description-label = Afegeix una descripció
+pdfjs-editor-alt-text-add-description-description = Una o dues frases amb la intenció de descriure el subjecte, l'entorn o les accions.
+pdfjs-editor-alt-text-mark-decorative-label = Marca com a decoratiu
+pdfjs-editor-alt-text-mark-decorative-description = Això s'utilitza per a imatges ornamentals, com ara vores o marques d'aigua.
 pdfjs-editor-alt-text-cancel-button = Cancel·la
+pdfjs-editor-alt-text-save-button = Desa
+pdfjs-editor-alt-text-decorative-tooltip = S'ha marcat com a decoratiu
+# .placeholder: This is a placeholder for the alt text input area
+pdfjs-editor-alt-text-textarea =
+    .placeholder = Per exemple, “Un jove seu a taula per menjar un àpat”
+# Alternative text (alt text) helps when people can't see the image.
+pdfjs-editor-alt-text-button =
+    .aria-label = Text alternatiu
+
+## Color picker
+
+# This means "Color used to highlight text"
+pdfjs-editor-highlight-colorpicker-label = Color de ressaltat
+pdfjs-editor-colorpicker-button =
+    .title = Canvia el color
+pdfjs-editor-colorpicker-dropdown =
+    .aria-label = Opcions de color
+pdfjs-editor-colorpicker-yellow =
+    .title = Groc
+pdfjs-editor-colorpicker-green =
+    .title = Verd
+pdfjs-editor-colorpicker-blue =
+    .title = Blau
+pdfjs-editor-colorpicker-pink =
+    .title = Rosa
+pdfjs-editor-colorpicker-red =
+    .title = Vermell
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = Mostra-ho tot
+pdfjs-editor-highlight-show-all-button =
+    .title = Mostra-ho tot
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+# Modal header positioned above a text box where users can edit the alt text.
+pdfjs-editor-new-alt-text-dialog-edit-label = Edita el text alternatiu (descripció de la imatge)
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Afegeix text alternatiu (descripció de la imatge)
+pdfjs-editor-new-alt-text-textarea =
+    .placeholder = Escriviu la vostra descripció aquí...
+# This text refers to the alt text box above this description. It offers a definition of alt text.
+pdfjs-editor-new-alt-text-description = Descripció breu per a les persones que no poden veure la imatge o quan la imatge no es carrega.
+# This is a required legal disclaimer that refers to the automatically created text inside the alt text box above this text. It disappears if the text is edited by a human.
+pdfjs-editor-new-alt-text-disclaimer1 = Aquest text alternatiu ha estat creat automàticament i pot ser inexacte.
+pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Més informació
+pdfjs-editor-new-alt-text-create-automatically-button-label = Crea el text alternatiu automàticament
+pdfjs-editor-new-alt-text-not-now-button = Ara no
+pdfjs-editor-new-alt-text-error-title = No s'ha pogut crear el text alternatiu automàticament
+pdfjs-editor-new-alt-text-error-description = Escriviu el vostre propi text alternatiu o proveu més tard.
+pdfjs-editor-new-alt-text-error-close-button = Tanca
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Text alternatiu afegit.
+pdfjs-editor-new-alt-text-added-button-label = Text alternatiu afegit.
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = Suprimeix
+pdfjs-editor-alt-text-settings-download-model-button = Baixa
+pdfjs-editor-alt-text-settings-downloading-model-button = S'està descarregant…
+pdfjs-editor-alt-text-settings-close-button = Tanca
+
+## "Annotations removed" bar
+
+pdfjs-editor-undo-bar-message-ink = S'ha eliminat el dibuix
+pdfjs-editor-undo-bar-message-stamp = S'ha eliminat la imatge
+pdfjs-editor-undo-bar-message-signature = S’ha eliminat la signatura
+# Variables:
+#   $count (Number) - the number of removed annotations.
+pdfjs-editor-undo-bar-message-multiple =
+    { $count ->
+        [one] S'ha eliminat una anotació
+       *[other] S'han eliminat { $count } anotacions
+    }
+pdfjs-editor-undo-bar-undo-button =
+    .title = Desfés
+pdfjs-editor-undo-bar-undo-button-label = Desfés
+pdfjs-editor-undo-bar-close-button =
+    .title = Tanca
+pdfjs-editor-undo-bar-close-button-label = Tanca
 
 ## Dialog buttons
 
