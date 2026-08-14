@@ -158,7 +158,7 @@ class ColorPicker {
       type: AnnotationEditorParamsType.HIGHLIGHT_COLOR,
       value: color,
     });
-    this.updateColor(color);
+    this.update(color);
   }
 
   _colorSelectFromKeyboard(event) {
@@ -279,7 +279,7 @@ class ColorPicker {
     });
   }
 
-  updateColor(color) {
+  update(color) {
     if (this.#buttonSwatch) {
       this.#buttonSwatch.style.backgroundColor = color;
     }

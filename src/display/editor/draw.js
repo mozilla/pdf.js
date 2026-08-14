@@ -13,10 +13,15 @@
  * limitations under the License.
  */
 
+// eslint-disable-next-line max-len
+/** @typedef {import("./annotation_editor_layer.js").AnnotationEditorLayer} AnnotationEditorLayer */
+// eslint-disable-next-line max-len
+/** @typedef {import("./tools.js").AnnotationEditorUIManager} AnnotationEditorUIManager */
+
 import { AnnotationEditorParamsType, unreachable } from "../../shared/util.js";
+import { bindEvents, CurrentPointers } from "./tools.js";
 import { noContextMenu, stopEvent } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
-import { CurrentPointers } from "./tools.js";
 
 class DrawingOptions {
   #svgProperties = Object.create(null);
@@ -64,13 +69,19 @@ class DrawingOptions {
  * Basic draw editor.
  */
 class DrawingEditor extends AnnotationEditor {
-  #drawOutlines = null;
+  #internalDiv = null;
 
   #mustBeCommitted;
+
+  _clipPathId = null;
 
   _colorPicker = null;
 
   _drawId = null;
+
+  _drawOutlines = null;
+
+  _focusDrawId = null;
 
   static _currentDrawId = -1;
 
@@ -81,6 +92,8 @@ class DrawingEditor extends AnnotationEditor {
   static #currentDrawingAC = null;
 
   static #currentDrawingOptions = null;
+
+  static #currentClipPathId = null;
 
   static _INNER_MARGIN = 3;
 
@@ -109,8 +122,8 @@ class DrawingEditor extends AnnotationEditor {
     }
   }
 
-  #createDrawOutlines({ drawOutlines, drawId, drawingOptions }) {
-    this.#drawOutlines = drawOutlines;
+  #createDrawOutlines({ drawOutlines, drawId, drawingOptions, clipPathId }) {
+    this._drawOutlines = drawOutlines;
     this._drawingOptions ||= drawingOptions;
     if (!this.annotationElementId) {
       this._uiManager.a11yAlert(AnnotationEditor._l10nAlert[this.editorType]);
@@ -118,12 +131,14 @@ class DrawingEditor extends AnnotationEditor {
 
     if (drawId >= 0) {
       this._drawId = drawId;
+      this._clipPathId = clipPathId ?? null;
       // We need to redraw the drawing because we changed the coordinates to be
       // in the box coordinate system.
       this.parent.drawLayer.finalizeDraw(
         drawId,
         drawOutlines.defaultProperties
       );
+      this.#createFocusOutline(this.parent);
     } else {
       // We create a new drawing.
       this._drawId = this.#createDrawing(drawOutlines, this.parent);
@@ -133,15 +148,60 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   #createDrawing(drawOutlines, parent) {
-    const { id } = parent.drawLayer.draw(
+    const { id, clipPathId } = parent.drawLayer.draw(
       DrawingEditor._mergeSVGProperties(
         this._drawingOptions.toSVGProperties(),
         drawOutlines.defaultSVGProperties
       ),
       /* isPathUpdatable = */ false,
-      /* hasClip = */ false
+      /* hasClip = */ this.constructor._hasClipPath
     );
+    if (this.constructor._hasClipPath) {
+      this._clipPathId = clipPathId;
+    }
+    this.#createFocusOutline(parent);
+
     return id;
+  }
+
+  #createFocusOutline(parent) {
+    const properties = this._drawOutlines.getFocusSVGProperties(
+      this.#rotationAngle
+    );
+    if (properties) {
+      this._focusDrawId = parent.drawLayer.drawOutline(
+        properties,
+        this._drawOutlines.focusMustRemoveSelfIntersections
+      );
+    }
+  }
+
+  #updateFocusOutline(angle = this.#rotationAngle) {
+    if (this._focusDrawId === null) {
+      return;
+    }
+    this.parent?.drawLayer.updateProperties(
+      this._focusDrawId,
+      this._drawOutlines.getFocusSVGProperties(angle)
+    );
+  }
+
+  #toggleFocusOutlineClass(rootClass) {
+    if (this._focusDrawId !== null) {
+      this.parent?.drawLayer.updateProperties(this._focusDrawId, { rootClass });
+    }
+  }
+
+  #updateVisibility() {
+    const { parent, _drawId, _focusDrawId, _isVisible } = this;
+    if (!parent || _drawId === null) {
+      return;
+    }
+    const rootClass = { hidden: !_isVisible };
+    parent.drawLayer.updateProperties(_drawId, { rootClass });
+    if (_focusDrawId !== null) {
+      parent.drawLayer.updateProperties(_focusDrawId, { rootClass });
+    }
   }
 
   static _mergeSVGProperties(p1, p2) {
@@ -178,12 +238,32 @@ class DrawingEditor extends AnnotationEditor {
     return true;
   }
 
+  static get _hasClipPath() {
+    return false;
+  }
+
+  static get _hasDrawClass() {
+    return true;
+  }
+
   /**
    * @returns {boolean} `true` if several drawings can be added to the
    * annotation.
    */
   static get supportMultipleDrawings() {
     return false;
+  }
+
+  get _drawRotation() {
+    return this.rotation;
+  }
+
+  get _opacityName() {
+    return this.constructor.typesMap.get(this.opacityType);
+  }
+
+  get #rotationAngle() {
+    return (this.parentRotation - this._drawRotation + 360) % 360;
   }
 
   /** @inheritdoc */
@@ -238,7 +318,7 @@ class DrawingEditor extends AnnotationEditor {
     const savedValue = options[name];
     const setter = val => {
       options.updateProperty(name, val);
-      const bbox = this.#drawOutlines.updateProperty(name, val);
+      const bbox = this._drawOutlines.updateProperty(name, val);
       if (bbox) {
         this.#updateBbox(bbox);
       }
@@ -266,17 +346,17 @@ class DrawingEditor extends AnnotationEditor {
   /**
    * Update color and opacity atomically as one undoable command.
    */
-  _updateColorAndOpacity(color, opacity) {
+  _updateColorAndOpacity(color, opacity, type = this.colorAndOpacityType) {
     const colorName = this.constructor.typesMap.get(this.colorType);
-    const opacityName = this.constructor.typesMap.get(this.opacityType);
+    const opacityName = this._opacityName;
     const options = this._drawingOptions;
     const savedColor = options[colorName];
     const savedOpacity = options[opacityName];
     const setter = (c, op) => {
       options.updateProperty(colorName, c);
       options.updateProperty(opacityName, op);
-      this.#drawOutlines.updateProperty(colorName, c);
-      this.#drawOutlines.updateProperty(opacityName, op);
+      this._drawOutlines.updateProperty(colorName, c);
+      this._drawOutlines.updateProperty(opacityName, op);
       this.parent?.drawLayer.updateProperties(
         this._drawId,
         options.toSVGProperties()
@@ -289,7 +369,7 @@ class DrawingEditor extends AnnotationEditor {
       undo: setter.bind(this, savedColor, savedOpacity),
       post: this._uiManager.updateUI.bind(this._uiManager, this),
       mustExec: true,
-      type: AnnotationEditorParamsType.INK_COLOR_AND_OPACITY,
+      type,
       overwriteIfSameType: true,
       keepUndo: true,
     });
@@ -300,7 +380,7 @@ class DrawingEditor extends AnnotationEditor {
     this.parent?.drawLayer.updateProperties(
       this._drawId,
       DrawingEditor._mergeSVGProperties(
-        this.#drawOutlines.getPathResizingSVGProperties(
+        this._drawOutlines.getPathResizingSVGProperties(
           this.#convertToDrawSpace()
         ),
         {
@@ -315,7 +395,7 @@ class DrawingEditor extends AnnotationEditor {
     this.parent?.drawLayer.updateProperties(
       this._drawId,
       DrawingEditor._mergeSVGProperties(
-        this.#drawOutlines.getPathResizedSVGProperties(
+        this._drawOutlines.getPathResizedSVGProperties(
           this.#convertToDrawSpace()
         ),
         {
@@ -323,6 +403,7 @@ class DrawingEditor extends AnnotationEditor {
         }
       )
     );
+    this.#updateFocusOutline();
   }
 
   /** @inheritdoc */
@@ -337,7 +418,7 @@ class DrawingEditor extends AnnotationEditor {
     this.parent?.drawLayer.updateProperties(
       this._drawId,
       DrawingEditor._mergeSVGProperties(
-        this.#drawOutlines.getPathTranslatedSVGProperties(
+        this._drawOutlines.getPathTranslatedSVGProperties(
           this.#convertToDrawSpace(),
           this.parentDimensions
         ),
@@ -364,12 +445,18 @@ class DrawingEditor extends AnnotationEditor {
     });
   }
 
+  get _mustBeDisabledOnCommit() {
+    return true;
+  }
+
   /** @inheritdoc */
   commit() {
     super.commit();
 
-    this.disableEditMode();
-    this.disableEditing();
+    if (this._mustBeDisabledOnCommit) {
+      this.disableEditMode();
+      this.disableEditing();
+    }
   }
 
   /** @inheritdoc */
@@ -414,6 +501,7 @@ class DrawingEditor extends AnnotationEditor {
 
   /** @inheritdoc */
   remove() {
+    this._uiManager.removeShouldRescale(this);
     this.#cleanDrawLayer();
     super.remove();
   }
@@ -429,7 +517,7 @@ class DrawingEditor extends AnnotationEditor {
     }
 
     this.#addToDrawLayer();
-    this.#updateBbox(this.#drawOutlines.box);
+    this.#updateBbox(this._drawOutlines.box);
 
     if (!this.isAttachedToDOM) {
       // At some point this editor was removed and we're rebuilding it,
@@ -452,6 +540,7 @@ class DrawingEditor extends AnnotationEditor {
         !this.parent && this.div?.classList.contains("selectedEditor");
     }
     super.setParent(parent);
+    this.#updateVisibility();
     if (mustBeSelected) {
       // We select it after the parent has been set.
       this.select();
@@ -462,8 +551,13 @@ class DrawingEditor extends AnnotationEditor {
     if (this._drawId === null || !this.parent) {
       return;
     }
-    this.parent.drawLayer.remove(this._drawId);
+    const { drawLayer } = this.parent;
+    drawLayer.remove(this._drawId);
     this._drawId = null;
+    if (this._focusDrawId !== null) {
+      drawLayer.remove(this._focusDrawId);
+      this._focusDrawId = null;
+    }
 
     // All the SVG properties must be reset in order to make it possible to
     // undo.
@@ -476,17 +570,24 @@ class DrawingEditor extends AnnotationEditor {
     }
     if (this._drawId !== null) {
       // The parent has changed, we need to move the drawing to the new parent.
-      this.parent.drawLayer.updateParent(this._drawId, parent.drawLayer);
+      const { drawLayer } = this.parent;
+      drawLayer.updateParent(this._drawId, parent.drawLayer);
+      if (this._focusDrawId !== null) {
+        drawLayer.updateParent(this._focusDrawId, parent.drawLayer);
+      }
       return;
     }
     this._drawingOptions.updateAll();
-    this._drawId = this.#createDrawing(this.#drawOutlines, parent);
+    this._drawId = this.#createDrawing(this._drawOutlines, parent);
+    if (this._clipPathId && this.#internalDiv) {
+      this.#internalDiv.style.clipPath = this._clipPathId;
+    }
   }
 
   #convertToParentSpace([x, y, width, height]) {
     const {
       parentDimensions: [pW, pH],
-      rotation,
+      _drawRotation: rotation,
     } = this;
     switch (rotation) {
       case 90:
@@ -507,7 +608,7 @@ class DrawingEditor extends AnnotationEditor {
       width,
       height,
       parentDimensions: [pW, pH],
-      rotation,
+      _drawRotation: rotation,
     } = this;
     switch (rotation) {
       case 90:
@@ -531,7 +632,7 @@ class DrawingEditor extends AnnotationEditor {
     this._onResized();
   }
 
-  #rotateBox() {
+  #rotateBox(parentRotation = this.parentRotation) {
     // We've to deal with two rotations: the rotation of the annotation and the
     // rotation of the parent page.
     // When the page is rotated, all the layers are just rotated thanks to CSS
@@ -549,8 +650,7 @@ class DrawingEditor extends AnnotationEditor {
       y,
       width,
       height,
-      rotation,
-      parentRotation,
+      _drawRotation: rotation,
       parentDimensions: [pW, pH],
     } = this;
     switch ((rotation * 4 + parentRotation) / 90) {
@@ -635,34 +735,68 @@ class DrawingEditor extends AnnotationEditor {
     }
   }
 
-  /** @inheritdoc */
-  rotate() {
-    if (!this.parent) {
+  /**
+   * @inheritdoc
+   * @param {number} [parentRotation] - The parent rotation to apply.
+   */
+  rotate(parentRotation = this.parentRotation) {
+    if (!this.parent || this._drawId === null) {
       return;
     }
+    const angle = (parentRotation - this._drawRotation + 360) % 360;
     this.parent.drawLayer.updateProperties(
       this._drawId,
       DrawingEditor._mergeSVGProperties(
         {
-          bbox: this.#rotateBox(),
+          bbox: this.#rotateBox(parentRotation),
         },
-        this.#drawOutlines.updateRotation(
-          (this.parentRotation - this.rotation + 360) % 360
-        )
+        this._drawOutlines.updateRotation(angle)
       )
     );
+    this.#updateFocusOutline(angle);
+  }
+
+  /** @inheritdoc */
+  show(visible = this._isVisible) {
+    super.show(visible);
+    this.#updateVisibility();
+  }
+
+  /** @inheritdoc */
+  select() {
+    super.select();
+    this.#toggleFocusOutlineClass({ hovered: false, selected: true });
+  }
+
+  /** @inheritdoc */
+  unselect() {
+    super.unselect();
+    this.#toggleFocusOutlineClass({ selected: false });
+  }
+
+  pointerover() {
+    if (!this.isSelected) {
+      this.#toggleFocusOutlineClass({ hovered: true });
+    }
+  }
+
+  pointerleave() {
+    if (!this.isSelected) {
+      this.#toggleFocusOutlineClass({ hovered: false });
+    }
   }
 
   onScaleChanging() {
     if (!this.parent) {
       return;
     }
-    this.#updateBbox(
-      this.#drawOutlines.updateParentDimensions(
-        this.parentDimensions,
-        this.parent.scale
-      )
+    const bbox = this._drawOutlines.updateParentDimensions(
+      this.parentDimensions,
+      this.parent.scale
     );
+    if (bbox) {
+      this.#updateBbox(bbox);
+    }
   }
 
   static onScaleChangingWhenDrawing() {}
@@ -680,12 +814,18 @@ class DrawingEditor extends AnnotationEditor {
     }
 
     const div = super.render();
-    div.classList.add("draw");
+    if (this.constructor._hasDrawClass) {
+      div.classList.add("draw");
+    }
 
-    const drawDiv = document.createElement("div");
+    const drawDiv = (this.#internalDiv = document.createElement("div"));
     div.append(drawDiv);
     drawDiv.setAttribute("aria-hidden", "true");
     drawDiv.className = "internal";
+    if (this._clipPathId) {
+      drawDiv.style.clipPath = this._clipPathId;
+    }
+    bindEvents(this, drawDiv, ["pointerover", "pointerleave"]);
     this.setDims();
     this._uiManager.addShouldRescale(this);
     this.disableEditing();
@@ -698,18 +838,68 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /**
-   * Create a new drawer instance.
-   * @param {number} x - The x coordinate of the event.
-   * @param {number} y - The y coordinate of the event.
-   * @param {number} parentWidth - The parent width.
-   * @param {number} parentHeight - The parent height.
-   * @param {number} rotation - The parent rotation.
+   * @param {Object} params
+   * @param {number} params.x - The x coordinate of the event.
+   * @param {number} params.y - The y coordinate of the event.
+   * @param {Array<number>} params.box - The target's client bounding box.
+   * @param {number} params.rotation - The viewport rotation.
+   * @param {AnnotationEditorLayer} params.parent - The parent layer.
+   * @param {boolean} params.isLTR - Whether the direction is left-to-right.
    */
-  static createDrawerInstance(_x, _y, _parentWidth, _parentHeight, _rotation) {
+  static createDrawerInstance(_params) {
     unreachable("Not implemented");
   }
 
-  static startDrawing(parent, uiManager, _isLTR, event) {
+  /**
+   * @param {AnnotationEditorLayer} _parent
+   * @param {PointerEvent} event
+   * @returns {HTMLElement}
+   */
+  static _getDrawingTarget(_parent, { target }) {
+    return target;
+  }
+
+  /**
+   * @param {PointerEvent} event
+   * @param {PointerEvent} [referenceEvent]
+   * @returns {Array<number>}
+   */
+  static _getPointerCoords(
+    { offsetX, offsetY, clientX, clientY },
+    referenceEvent = null
+  ) {
+    if (!referenceEvent) {
+      return [offsetX, offsetY];
+    }
+
+    let deltaX = clientX - referenceEvent.clientX;
+    let deltaY = clientY - referenceEvent.clientY;
+    switch (this._currentParent.viewport.rotation) {
+      case 90:
+        [deltaX, deltaY] = [deltaY, -deltaX];
+        break;
+      case 180:
+        [deltaX, deltaY] = [-deltaX, -deltaY];
+        break;
+      case 270:
+        [deltaX, deltaY] = [-deltaY, deltaX];
+        break;
+    }
+    return [referenceEvent.offsetX + deltaX, referenceEvent.offsetY + deltaY];
+  }
+
+  /**
+   * @param {HTMLElement} _target
+   * @param {AbortSignal} _signal
+   */
+  static _addDrawingListeners(_target, _signal) {}
+
+  /** @param {boolean} isAborted */
+  static _endDrawingSession(isAborted = false) {
+    return this._currentParent.endDrawingSession(isAborted);
+  }
+
+  static startDrawing(parent, uiManager, isLTR, event) {
     // The pointerType of CurrentPointer is set when the user starts an empty
     // drawing session. If, in the same drawing session, the user starts using a
     // different type of pointer (e.g. a pen and then a finger), we just return.
@@ -717,16 +907,22 @@ class DrawingEditor extends AnnotationEditor {
     // If the user starts to draw with a finger and then uses a second finger,
     // we just stop the current drawing and let the user zoom the document.
 
-    const { target, offsetX: x, offsetY: y, pointerId, pointerType } = event;
+    const { pointerId, pointerType } = event;
     if (CurrentPointers.isInitializedAndDifferentPointerType(pointerType)) {
       return;
     }
 
+    const target = this._getDrawingTarget(parent, event);
+    const [x, y] = this._getPointerCoords(event);
     const {
       viewport: { rotation },
     } = parent;
-    const { width: parentWidth, height: parentHeight } =
-      target.getBoundingClientRect();
+    const {
+      x: boxX,
+      y: boxY,
+      width: parentWidth,
+      height: parentHeight,
+    } = target.getBoundingClientRect();
 
     const ac = (DrawingEditor.#currentDrawingAC = new AbortController());
     const signal = parent.combinedSignal(ac);
@@ -746,7 +942,7 @@ class DrawingEditor extends AnnotationEditor {
       "pointercancel",
       e => {
         if (CurrentPointers.isSamePointerIdOrRemove(e.pointerId)) {
-          this._currentParent.endDrawingSession();
+          this._endDrawingSession();
         }
       },
       { signal }
@@ -768,7 +964,7 @@ class DrawingEditor extends AnnotationEditor {
         if (DrawingEditor.#currentDraw.isCancellable()) {
           DrawingEditor.#currentDraw.removeLastElement();
           if (DrawingEditor.#currentDraw.isEmpty()) {
-            this._currentParent.endDrawingSession(/* isAborted = */ true);
+            this._endDrawingSession(/* isAborted = */ true);
           } else {
             this._endDraw(null);
           }
@@ -794,6 +990,7 @@ class DrawingEditor extends AnnotationEditor {
       },
       { signal }
     );
+    this._addDrawingListeners(target, signal);
     parent.toggleDrawing();
     uiManager._editorUndoBar?.hide();
 
@@ -813,24 +1010,27 @@ class DrawingEditor extends AnnotationEditor {
 
     uiManager.updateUIForDefaultProperties(this);
 
-    DrawingEditor.#currentDraw = this.createDrawerInstance(
+    DrawingEditor.#currentDraw = this.createDrawerInstance({
       x,
       y,
-      parentWidth,
-      parentHeight,
-      rotation
-    );
+      box: [boxX, boxY, parentWidth, parentHeight],
+      rotation,
+      parent,
+      isLTR,
+    });
     DrawingEditor.#currentDrawingOptions = this.getDefaultDrawingOptions();
     this._currentParent = parent;
 
-    ({ id: this._currentDrawId } = parent.drawLayer.draw(
+    const { id, clipPathId } = parent.drawLayer.draw(
       this._mergeSVGProperties(
         DrawingEditor.#currentDrawingOptions.toSVGProperties(),
         DrawingEditor.#currentDraw.defaultSVGProperties
       ),
       /* isPathUpdatable = */ true,
-      /* hasClip = */ false
-    ));
+      /* hasClip = */ this._hasClipPath
+    );
+    this._currentDrawId = id;
+    DrawingEditor.#currentClipPathId = this._hasClipPath ? clipPathId : null;
   }
 
   static _drawMove(event) {
@@ -838,9 +1038,7 @@ class DrawingEditor extends AnnotationEditor {
     if (!DrawingEditor.#currentDraw) {
       return;
     }
-    const { offsetX, offsetY, clientX, clientY, pointerId } = event;
-
-    if (!CurrentPointers.isSamePointerId(pointerId)) {
+    if (!CurrentPointers.isSamePointerId(event.pointerId)) {
       return;
     }
     if (CurrentPointers.isUsingMultiplePointers()) {
@@ -852,34 +1050,18 @@ class DrawingEditor extends AnnotationEditor {
     // A pointermove can represent multiple coalesced pointer updates. When
     // available, feed each sample to the outliner so it receives the
     // intermediate positions.
-    // offsetX/offsetY are computed in the target's untransformed coordinate
-    // system, whereas clientX/clientY are viewport coordinates. Since
-    // [data-main-rotation] transforms the layer, rotate each client-space delta
-    // back before adding it to the dispatched event's offsets.
     let properties;
     const coalesced = event.getCoalescedEvents?.();
     if (coalesced?.length) {
-      const { rotation } = this._currentParent.viewport;
       const points = [];
-      for (const { clientX: x, clientY: y } of coalesced) {
-        let deltaX = x - clientX;
-        let deltaY = y - clientY;
-        switch (rotation) {
-          case 90:
-            [deltaX, deltaY] = [deltaY, -deltaX];
-            break;
-          case 180:
-            [deltaX, deltaY] = [-deltaX, -deltaY];
-            break;
-          case 270:
-            [deltaX, deltaY] = [-deltaY, deltaX];
-            break;
-        }
-        points.push(offsetX + deltaX, offsetY + deltaY);
+      for (const sample of coalesced) {
+        points.push(...this._getPointerCoords(sample, event));
       }
       properties = DrawingEditor.#currentDraw.addPoints(points);
     } else {
-      properties = DrawingEditor.#currentDraw.add(offsetX, offsetY);
+      properties = DrawingEditor.#currentDraw.add(
+        ...this._getPointerCoords(event)
+      );
     }
     this._currentParent.drawLayer.updateProperties(
       this._currentDrawId,
@@ -896,6 +1078,7 @@ class DrawingEditor extends AnnotationEditor {
       this._currentParent = null;
       DrawingEditor.#currentDraw = null;
       DrawingEditor.#currentDrawingOptions = null;
+      DrawingEditor.#currentClipPathId = null;
       CurrentPointers.clearTimeStamp();
     }
 
@@ -920,7 +1103,7 @@ class DrawingEditor extends AnnotationEditor {
     parent.drawLayer.updateProperties(
       this._currentDrawId,
       event?.target === parent.div
-        ? DrawingEditor.#currentDraw.end(event.offsetX, event.offsetY)
+        ? DrawingEditor.#currentDraw.end(...this._getPointerCoords(event))
         : DrawingEditor.#currentDraw.end()
     );
     if (this.supportMultipleDrawings) {
@@ -966,6 +1149,7 @@ class DrawingEditor extends AnnotationEditor {
         false,
         {
           drawId: this._currentDrawId,
+          clipPathId: DrawingEditor.#currentClipPathId,
           drawOutlines: DrawingEditor.#currentDraw.getOutlines(
             pageWidth * scale,
             pageHeight * scale,
@@ -997,8 +1181,9 @@ class DrawingEditor extends AnnotationEditor {
    * @param {number} pageY - The y coordinate of the page.
    * @param {number} pageWidth - The width of the page.
    * @param {number} pageHeight - The height of the page.
-   * @param {number} innerWidth - The inner width.
+   * @param {number} innerMargin - The outline's inner margin.
    * @param {Object} data - The data to deserialize.
+   * @param {AnnotationEditorUIManager} uiManager
    * @returns {Object} The deserialized outlines.
    */
   static deserializeDraw(
@@ -1006,8 +1191,9 @@ class DrawingEditor extends AnnotationEditor {
     _pageY,
     _pageWidth,
     _pageHeight,
-    _innerWidth,
-    _data
+    _innerMargin,
+    _data,
+    _uiManager
   ) {
     unreachable("Not implemented");
   }
@@ -1023,7 +1209,8 @@ class DrawingEditor extends AnnotationEditor {
       pageWidth,
       pageHeight,
       this._INNER_MARGIN,
-      data
+      data,
+      uiManager
     );
     const editor = await super.deserialize(data, parent, uiManager);
     editor.createDrawingOptions(data);
@@ -1038,7 +1225,7 @@ class DrawingEditor extends AnnotationEditor {
   serializeDraw(isForCopying) {
     const [pageX, pageY] = this.pageTranslation;
     const [pageWidth, pageHeight] = this.pageDimensions;
-    return this.#drawOutlines.serialize(
+    return this._drawOutlines.serialize(
       [pageX, pageY, pageWidth, pageHeight],
       isForCopying
     );

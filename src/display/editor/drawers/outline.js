@@ -18,6 +18,9 @@ import { unreachable } from "../../../shared/util.js";
 class Outline {
   static PRECISION = 1e-4;
 
+  /** @type {Outline|null} Optional hover/selection outline drawn separately. */
+  focusOutline = null;
+
   /**
    * @returns {string} The SVG path of the outline.
    */
@@ -35,6 +38,111 @@ class Outline {
 
   serialize(_bbox, _rotation) {
     unreachable("Abstract method `serialize` must be implemented.");
+  }
+
+  /** @type {Object} */
+  // eslint-disable-next-line getter-return
+  get defaultSVGProperties() {
+    unreachable("Abstract getter `defaultSVGProperties` must be implemented.");
+  }
+
+  /** @type {Object} SVG properties used to finalize a drawing session. */
+  get defaultProperties() {
+    return this.defaultSVGProperties;
+  }
+
+  /**
+   * @param {number} _rotation - the rotation to apply to the outline.
+   * @returns {Object|null}
+   */
+  getFocusSVGProperties(_rotation) {
+    return null;
+  }
+
+  /** @type {boolean} Whether `DrawLayer.drawOutline` applies its mask. */
+  get focusMustRemoveSelfIntersections() {
+    return false;
+  }
+
+  /**
+   * @param {string} _name
+   * @param {*} _value
+   * @returns {Array<number>|Float32Array|null} The new bounding box, if any.
+   */
+  updateProperty(_name, _value) {
+    return null;
+  }
+
+  /**
+   * @param {Array<number>} _dimensions
+   * @param {number} _scale
+   * @returns {Array<number>|Float32Array|null} The new bounding box, if any.
+   */
+  updateParentDimensions(_dimensions, _scale) {
+    return null;
+  }
+
+  /**
+   * @param {Array<number>} _pageTranslation
+   * @param {Array<number>} _pageDimensions
+   * @returns {Float32Array|null}
+   */
+  serializeQuadPoints(_pageTranslation, _pageDimensions) {
+    return null;
+  }
+
+  /**
+   * @param {number} _rotation
+   * @returns {Object} the SVG properties to apply to the rotated shape.
+   */
+  updateRotation(_rotation) {
+    return {};
+  }
+
+  /**
+   * Called on each resizing step, hence the outline itself is unchanged.
+   * @param {Array<number>} _bbox - the bounding box being resized to.
+   * @returns {Object} the SVG properties to apply to the resizing shape.
+   */
+  getPathResizingSVGProperties(_bbox) {
+    return {};
+  }
+
+  /**
+   * Called once the resizing is done, hence the outline can be updated.
+   * @param {Array<number>} _bbox - the new bounding box.
+   * @returns {Object} the SVG properties to apply to the resized shape.
+   */
+  getPathResizedSVGProperties(_bbox) {
+    return {};
+  }
+
+  /**
+   * Called once the translation is done, hence the outline can be updated.
+   * @param {Array<number>} _bbox - the new bounding box.
+   * @param {Array<number>} _parentDimensions
+   * @returns {Object} the SVG properties to apply to the translated shape.
+   */
+  getPathTranslatedSVGProperties(_bbox, _parentDimensions) {
+    return {};
+  }
+
+  /**
+   * Rotate a bounding box which lives in the unit square.
+   * @param {Array<number>} bbox
+   * @param {number} angle
+   * @returns {Array<number>}
+   */
+  static _rotateBox([x, y, width, height], angle) {
+    switch (angle) {
+      case 90:
+        return [1 - y - height, x, height, width];
+      case 180:
+        return [1 - x - width, 1 - y - height, width, height];
+      case 270:
+        return [y, 1 - x - width, height, width];
+    }
+    return [x, y, width, height];
   }
 
   static _rescale(src, tx, ty, sx, sy, dest) {
