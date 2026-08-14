@@ -107,11 +107,11 @@ pdfjs-document-properties-file-size = Veľkosť súboru:
 # Variables:
 #   $kb (Number) - the PDF file size in kilobytes
 #   $b (Number) - the PDF file size in bytes
-pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kB ({ $b } bajtov)
+pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) } kB ({ $b } bajtov)
 # Variables:
 #   $mb (Number) - the PDF file size in megabytes
 #   $b (Number) - the PDF file size in bytes
-pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtov)
+pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } bajtov)
 pdfjs-document-properties-title = Názov:
 pdfjs-document-properties-author = Autor:
 pdfjs-document-properties-subject = Predmet:
@@ -517,8 +517,8 @@ pdfjs-editor-new-alt-text-error-close-button = Zavrieť
 # Variables:
 #   $totalSize (Number) - the total size (in MB) of the AI model.
 #   $downloadedSize (Number) - the downloaded size (in MB) of the AI model.
-pdfjs-editor-new-alt-text-ai-model-downloading-progress = Sťahuje sa model AI pre alternatívne texty ({ $downloadedSize } z { $totalSize } MB)
-    .aria-valuetext = Sťahuje sa model AI pre alternatívne texty ({ $downloadedSize } z { $totalSize } MB)
+pdfjs-editor-new-alt-text-ai-model-downloading-progress = Sťahuje sa model AI pre alternatívne texty ({ $downloadedSize } z { $totalSize } MB)
+    .aria-valuetext = Sťahuje sa model AI pre alternatívne texty ({ $downloadedSize } z { $totalSize } MB)
 # This is a button that users can click to edit the alt text they have already added.
 pdfjs-editor-new-alt-text-added-button =
     .aria-label = Alternatívny text bol pridaný
