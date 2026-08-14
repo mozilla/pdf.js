@@ -966,7 +966,7 @@ function createNameTable(name, proto) {
     proto[0][8] || "Unknown", // 8.Manufacturer
     proto[0][9] || "Unknown", // 9.Designer
   ];
-  const stringsBytes = strings.map(s => stringToBytes(s));
+  const stringsBytes = strings.map(stringToBytes);
 
   // Mac want 1-byte per character strings while Windows want
   // 2-bytes per character, so duplicate the names table
