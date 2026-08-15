@@ -426,7 +426,7 @@ class EquateRange extends XFAObject {
     for (let range of unicodeRange
       .split(",")
       .map(x => x.trim())
-      .filter(x => !!x)) {
+      .filter(Boolean)) {
       range = range.split("-", 2).map(x => {
         const found = x.match(unicodeRegex);
         if (!found) {

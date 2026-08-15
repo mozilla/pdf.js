@@ -1291,7 +1291,7 @@ class PDFEditor {
     }
 
     await Promise.all(promises);
-    newAnnotations = newAnnotations.filter(annot => !!annot);
+    newAnnotations = newAnnotations.filter(Boolean);
     pageData.annotations = newAnnotations.length > 0 ? newAnnotations : null;
     pageData.documentData.hasSignatureAnnotations ||= hasSignatureAnnotations;
   }
@@ -2377,7 +2377,7 @@ class PDFEditor {
     const numPages = document.numPages;
     const labelsByPageIndex = new Map();
     const oldPageIndices = new Set(
-      this.oldPages.filter(p => !!p).map(({ page: { pageIndex } }) => pageIndex)
+      this.oldPages.filter(Boolean).map(({ page: { pageIndex } }) => pageIndex)
     );
     let currentLabel = null;
     let stFirstIndex = -1;

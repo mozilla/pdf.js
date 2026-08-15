@@ -5703,7 +5703,7 @@ class Text extends ContentObject {
     if (typeof this[$content] === "string") {
       return this[$content]
         .split(/[\u2029\u2028\n]/)
-        .filter(line => !!line)
+        .filter(Boolean)
         .join("\n");
     }
     return this[$content][$text]();
