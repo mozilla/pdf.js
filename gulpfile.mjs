@@ -25,15 +25,16 @@ import {
   parseCoverageFormats,
 } from "./external/ccov/coverage_format.mjs";
 import { exec, execSync, spawn, spawnSync } from "child_process";
+import { finished, pipeline as runPipeline } from "stream/promises";
 import autoprefixer from "autoprefixer";
 import { buildPrefsSchema } from "./external/chromium/prefs.mjs";
 import crypto from "crypto";
-import { finished } from "stream/promises";
 import fs from "fs";
 import gulp from "gulp";
 import hljs from "highlight.js";
 import istanbulCoverage from "istanbul-lib-coverage";
 import istanbulReportGenerator from "istanbul-reports";
+import { kleur } from "./external/color_utils.mjs";
 import layouts from "@metalsmith/layouts";
 import libReport from "istanbul-lib-report";
 import markdown from "@metalsmith/markdown";
@@ -76,6 +77,11 @@ const TYPES_DIR = BUILD_DIR + "types/";
 const TMP_DIR = BUILD_DIR + "tmp/";
 const PREFSTEST_DIR = BUILD_DIR + "prefstest/";
 const TYPESTEST_DIR = BUILD_DIR + "typestest/";
+const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/";
+const MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/";
+const MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/";
+const MOZCENTRAL_L10N_DIR = MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/";
+const CHROMIUM_DIR = BUILD_DIR + "chromium/";
 const COMMON_WEB_FILES = [
   "web/images/*.{png,svg,gif}",
   "web/debugger.{css,mjs}",
@@ -276,6 +282,35 @@ function createWebpackAlias(defines) {
   return alias;
 }
 
+/**
+ * Webpack's file and missing dependencies, keyed by output filename.
+ * @type {Map<string, Set<string>>}
+ */
+const webpackFileDeps = new Map();
+
+/** Return a Webpack plugin that records dependencies for `filename`. */
+function recordFileDeps(filename) {
+  return {
+    /** @param {import('webpack').Compiler} compiler */
+    apply(compiler) {
+      compiler.hooks.done.tap("RecordFileDependencies", ({ compilation }) => {
+        const dependencies = new Set([
+          ...compilation.fileDependencies,
+          ...compilation.missingDependencies,
+        ]);
+
+        // Preserve known dependencies after a failed compilation.
+        if (compilation.errors.length > 0) {
+          for (const dependency of webpackFileDeps.get(filename) ?? []) {
+            dependencies.add(dependency);
+          }
+        }
+        webpackFileDeps.set(filename, dependencies);
+      });
+    },
+  };
+}
+
 function createWebpackConfig(
   defines,
   output,
@@ -351,7 +386,7 @@ function createWebpackConfig(
       })
     );
   }
-  plugins.push({
+  plugins.push(recordFileDeps(output.filename), {
     /** @param {import('webpack').Compiler} compiler */
     apply(compiler) {
       const errors = [];
@@ -450,6 +485,46 @@ function createWebpackConfig(
 function webpack2Stream(webpackConfig) {
   // Replacing webpack1 to webpack2 in the webpack-stream.
   return webpackStream(webpackConfig, webpack2);
+}
+
+/** Write a Vinyl stream to `dest` and wait for completion. */
+function writeToDirectory(readable, dest) {
+  return runPipeline(
+    readable,
+    gulp.dest(dest),
+    // Drain `gulp.dest`'s readable side to prevent backpressure.
+    new stream.Writable({
+      objectMode: true,
+      write(_file, _encoding, callback) {
+        callback();
+      },
+    })
+  );
+}
+
+function getErrorMessages(error) {
+  if (error instanceof AggregateError) {
+    return error.errors.flatMap(getErrorMessages);
+  }
+  if (error?.plugin === "webpack-stream") {
+    // Avoid repeating webpack-stream's compilation diagnostics.
+    return [];
+  }
+  return [
+    error instanceof Error ? error.stack || error.message : String(error),
+  ];
+}
+
+function reportBuildFailure(error) {
+  console.error(kleur.red(`\n### ${error?.message || "Build failed"}`));
+  for (const message of getErrorMessages(error)) {
+    console.error(kleur.red(message));
+  }
+}
+
+/** Return a repository-relative path with POSIX separators. */
+function repoPath(filePath) {
+  return path.relative(__dirname, filePath).split(path.sep).join("/");
 }
 
 function getVersionJSON() {
@@ -1175,7 +1250,7 @@ function createBuildNumber(done) {
   );
 }
 
-function buildDefaultPreferences(defines, dir) {
+function createDefaultPreferencesBundle(defines, dir) {
   console.log(`\n### Building default preferences (${dir})`);
 
   const bundleDefines = {
@@ -1198,20 +1273,29 @@ function buildDefaultPreferences(defines, dir) {
   );
   return gulp
     .src("web/app_options.js", { encoding: false })
-    .pipe(webpack2Stream(defaultPreferencesConfig))
-    .pipe(gulp.dest(DEFAULT_PREFERENCES_DIR + dir));
+    .pipe(webpack2Stream(defaultPreferencesConfig));
 }
 
-function getDefaultPreferences(dir) {
+function buildDefaultPreferences(defines, dir) {
+  return createDefaultPreferencesBundle(defines, dir).pipe(
+    gulp.dest(DEFAULT_PREFERENCES_DIR + dir)
+  );
+}
+
+let defaultPreferencesId = 0;
+
+async function getDefaultPreferences(dir) {
   console.log(`\n### Parsing default preferences (${dir})`);
 
-  const require = process
-    .getBuiltinModule("module")
-    .createRequire(import.meta.url);
-
-  const { AppOptions, OptionKind } = require(
-    "./" + DEFAULT_PREFERENCES_DIR + dir + "app_options.mjs"
+  const url = new URL(
+    `${DEFAULT_PREFERENCES_DIR}${dir}app_options.mjs`,
+    import.meta.url
   );
+  // Node caches ES modules by URL; vary it to reload this bundle in watch mode.
+  url.searchParams.set("id", defaultPreferencesId++);
+
+  // eslint-disable-next-line no-unsanitized/method
+  const { AppOptions, OptionKind } = await import(url.href);
 
   const prefs = AppOptions.getAll(
     OptionKind.PREFERENCE,
@@ -1550,7 +1634,7 @@ gulp.task(
   )
 );
 
-function createDefaultPrefsFile() {
+async function createDefaultPrefsFile() {
   console.log("\n### Building mozilla-central preferences file");
 
   const defaultFileName = "PdfJsDefaultPrefs.js",
@@ -1561,7 +1645,7 @@ function createDefaultPrefsFile() {
     "// THIS FILE IS GENERATED AUTOMATICALLY, DO NOT EDIT MANUALLY!\n//\n" +
     `// Any overrides should be placed in \`${overrideFileName}\`.\n`;
 
-  const prefs = getDefaultPreferences("mozcentral/");
+  const prefs = await getDefaultPreferences("mozcentral/");
   const buf = [];
 
   for (const name in prefs) {
@@ -1579,104 +1663,203 @@ function createDefaultPrefsFile() {
   return createStringSource(defaultFileName, buf.join("\n"));
 }
 
+/**
+ * Build the mozilla-central staging tree.
+ * @param {Set<string>|null} [changedFiles] - Absolute changed paths. Omit for
+ *   a full build.
+ * @returns {Promise<boolean>} Whether any output was built.
+ */
+async function buildMozcentral(changedFiles = null) {
+  console.log("\n### Building mozilla-central extension");
+  const defines = { ...DEFINES, MOZCENTRAL: true };
+  const gvDefines = { ...defines, GECKOVIEW: true };
+
+  const MOZCENTRAL_BUILD_DIR = MOZCENTRAL_CONTENT_DIR + "build",
+    MOZCENTRAL_WEB_DIR = MOZCENTRAL_CONTENT_DIR + "web";
+
+  const MOZCENTRAL_WEB_FILES = [
+    ...COMMON_WEB_FILES,
+    "!web/images/toolbarButton-openFile.svg",
+  ];
+  const MOZCENTRAL_AUTOPREFIXER_CONFIG = {
+    overrideBrowserslist: ["last 1 firefox versions"],
+  };
+
+  const fullBuild = !changedFiles;
+  const changedPaths = fullBuild ? [] : [...changedFiles].map(repoPath);
+
+  if (fullBuild) {
+    // Clear the staging tree before a full build.
+    fs.rmSync(MOZCENTRAL_DIR, { recursive: true, force: true });
+  }
+
+  // Rebuild bundles with unknown or changed Webpack dependencies.
+  function bundleChanged(filename) {
+    const deps = webpackFileDeps.get(filename);
+    return !deps || [...changedFiles].some(file => deps.has(file));
+  }
+  // Match changed paths for non-Webpack outputs.
+  function sourceChanged(regExp) {
+    return changedPaths.some(p => regExp.test(p));
+  }
+
+  // Map outputs to their builders and watch dependencies.
+  const units = [
+    { bundle: "pdf.mjs", create: () => createMainBundle(defines) },
+    {
+      bundle: "pdf.scripting.mjs",
+      create: () => createScriptingBundle(defines),
+    },
+    { bundle: "pdf.worker.mjs", create: () => createWorkerBundle(defines) },
+    {
+      files: /^src\/pdf\.sandbox\.external\.js$/,
+      create: () => createSandboxExternal(defines),
+    },
+    {
+      bundle: "viewer.mjs",
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () => createWebBundle(defines),
+    },
+    {
+      bundle: "viewer-geckoview.mjs",
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () => createGVWebBundle(gvDefines),
+    },
+    {
+      files: /^web\/(images\/|debugger\.)/,
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () =>
+        gulp.src(MOZCENTRAL_WEB_FILES, { base: "web/", encoding: false }),
+    },
+    {
+      files: /^external\/bcmaps\//,
+      dest: MOZCENTRAL_WEB_DIR + "/cmaps",
+      create: createCMapBundle,
+    },
+    {
+      files: /^external\/iccs\//,
+      dest: MOZCENTRAL_WEB_DIR + "/iccs",
+      create: createICCBundle,
+    },
+    {
+      files: /^external\/standard_fonts\//,
+      dest: MOZCENTRAL_WEB_DIR + "/standard_fonts",
+      create: createStandardFontBundle,
+    },
+    {
+      files: /^external\/(jbig2|openjpeg|qcms)\//,
+      dest: MOZCENTRAL_WEB_DIR + "/wasm",
+      create: () => createWasmBundle({ includeQuickJS: false }),
+    },
+    // HTML includes and CSS imports aren't tracked individually; a top-level
+    // HTML or CSS change rebuilds both corresponding variants.
+    {
+      files: /^web\/[^/]+\.html$/,
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () => preprocessHTML("web/viewer.html", defines),
+    },
+    {
+      files: /^web\/[^/]+\.html$/,
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () => preprocessHTML("web/viewer-geckoview.html", gvDefines),
+    },
+    {
+      files: /^web\/[^/]+\.css$/,
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () =>
+        preprocessCSS("web/viewer.css", defines).pipe(
+          postcss([
+            discardCommentsCSS(),
+            autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
+          ])
+        ),
+    },
+    {
+      files: /^web\/[^/]+\.css$/,
+      dest: MOZCENTRAL_WEB_DIR,
+      create: () =>
+        preprocessCSS("web/viewer-geckoview.css", gvDefines).pipe(
+          postcss([
+            discardCommentsCSS(),
+            autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
+          ])
+        ),
+    },
+    {
+      files: /^l10n\/en-US\/[^/]+\.ftl$/,
+      dest: MOZCENTRAL_L10N_DIR,
+      create: () => gulp.src("l10n/en-US/*.ftl", { encoding: false }),
+    },
+    {
+      files: /^LICENSE$/,
+      dest: MOZCENTRAL_EXTENSION_DIR,
+      create: () => gulp.src("LICENSE", { encoding: false }),
+    },
+    // PdfJsDefaultPrefs.js is generated from this bundle.
+    {
+      bundle: "app_options.mjs",
+      dest: DEFAULT_PREFERENCES_DIR + "mozcentral/",
+      create: () => createDefaultPreferencesBundle(defines, "mozcentral/"),
+    },
+  ];
+
+  const builds = [];
+  let prefsBuildIndex = -1;
+
+  for (const { bundle, files, dest = MOZCENTRAL_BUILD_DIR, create } of units) {
+    if (fullBuild || (bundle ? bundleChanged(bundle) : sourceChanged(files))) {
+      if (bundle === "app_options.mjs") {
+        prefsBuildIndex = builds.length;
+      }
+      builds.push(
+        // Convert synchronous builder errors to rejections so all units settle.
+        (async () => {
+          await writeToDirectory(create(), dest);
+        })()
+      );
+    }
+  }
+
+  if (builds.length === 0) {
+    console.log("Nothing to rebuild.");
+    return false;
+  }
+
+  // Even after a failure, wait for every unit before the next watch build.
+  const results = await Promise.allSettled(builds);
+  const errors = results
+    .filter(({ status }) => status === "rejected")
+    .map(({ reason }) => reason);
+
+  // Generate preferences after their bundle succeeds, even if another unit
+  // failed: the next build may reuse this bundle before synchronizing.
+  if (prefsBuildIndex >= 0 && results[prefsBuildIndex].status === "fulfilled") {
+    try {
+      await writeToDirectory(
+        await createDefaultPrefsFile(),
+        MOZCENTRAL_EXTENSION_DIR
+      );
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new AggregateError(errors, "The mozilla-central build failed.");
+  }
+  return true;
+}
+
 gulp.task(
   "mozcentral",
-  gulp.series(
-    createBuildNumber,
-    function scriptingMozcentral() {
-      const defines = { ...DEFINES, MOZCENTRAL: true };
-      return buildDefaultPreferences(defines, "mozcentral/");
-    },
-    function createMozcentral() {
-      console.log("\n### Building mozilla-central extension");
-      const defines = { ...DEFINES, MOZCENTRAL: true };
-      const gvDefines = { ...defines, GECKOVIEW: true };
-
-      const MOZCENTRAL_DIR = BUILD_DIR + "mozcentral/",
-        MOZCENTRAL_EXTENSION_DIR = MOZCENTRAL_DIR + "browser/extensions/pdfjs/",
-        MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
-        MOZCENTRAL_L10N_DIR =
-          MOZCENTRAL_DIR + "browser/locales/en-US/pdfviewer/";
-
-      const MOZCENTRAL_WEB_FILES = [
-        ...COMMON_WEB_FILES,
-        "!web/images/toolbarButton-openFile.svg",
-      ];
-      const MOZCENTRAL_AUTOPREFIXER_CONFIG = {
-        overrideBrowserslist: ["last 1 firefox versions"],
-      };
-
-      // Clear out everything in the firefox extension build directory
-      fs.rmSync(MOZCENTRAL_DIR, { recursive: true, force: true });
-
-      return ordered([
-        createMainBundle(defines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-        ),
-        createScriptingBundle(defines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-        ),
-        createSandboxExternal(defines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-        ),
-        createWorkerBundle(defines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "build")
-        ),
-        createWebBundle(defines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
-        ),
-        createGVWebBundle(gvDefines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
-        ),
-        gulp
-          .src(MOZCENTRAL_WEB_FILES, { base: "web/", encoding: false })
-          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
-        createCMapBundle().pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/cmaps")
-        ),
-        createICCBundle().pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/iccs")),
-        createStandardFontBundle().pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/standard_fonts")
-        ),
-        createWasmBundle({ includeQuickJS: false }).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web/wasm")
-        ),
-
-        preprocessHTML("web/viewer.html", defines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
-        ),
-        preprocessHTML("web/viewer-geckoview.html", gvDefines).pipe(
-          gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")
-        ),
-
-        preprocessCSS("web/viewer.css", defines)
-          .pipe(
-            postcss([
-              discardCommentsCSS(),
-              autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
-            ])
-          )
-          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
-
-        preprocessCSS("web/viewer-geckoview.css", gvDefines)
-          .pipe(
-            postcss([
-              discardCommentsCSS(),
-              autoprefixer(MOZCENTRAL_AUTOPREFIXER_CONFIG),
-            ])
-          )
-          .pipe(gulp.dest(MOZCENTRAL_CONTENT_DIR + "web")),
-
-        gulp
-          .src("l10n/en-US/*.ftl", { encoding: false })
-          .pipe(gulp.dest(MOZCENTRAL_L10N_DIR)),
-        gulp
-          .src("LICENSE", { encoding: false })
-          .pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-        createDefaultPrefsFile().pipe(gulp.dest(MOZCENTRAL_EXTENSION_DIR)),
-      ]);
+  gulp.series(createBuildNumber, async function createMozcentral() {
+    try {
+      return await buildMozcentral();
+    } catch (error) {
+      reportBuildFailure(error);
+      throw error;
     }
-  )
+  })
 );
 
 function getGeckoDirs() {
@@ -1799,15 +1982,9 @@ function hasWatchArg() {
   return process.argv.includes("-w");
 }
 
-function updateMozcentral(done) {
+function syncMozcentral() {
   const { rootDir, pdfjsDir, l10nDir } = getGeckoDirs();
   console.log(`\n### Updating PDF.js in "${rootDir}"`);
-
-  const MOZCENTRAL_EXTENSION_DIR =
-      BUILD_DIR + "mozcentral/browser/extensions/pdfjs/",
-    MOZCENTRAL_CONTENT_DIR = MOZCENTRAL_EXTENSION_DIR + "content/",
-    MOZCENTRAL_L10N_DIR =
-      BUILD_DIR + "mozcentral/browser/locales/en-US/pdfviewer/";
 
   const stats = { updated: [], removed: [], unchanged: 0 };
 
@@ -1842,53 +2019,93 @@ function updateMozcentral(done) {
     console.log(`  deleted: ${filePath}`);
   }
   for (const filePath of stats.updated) {
-    console.log(`  updated: ${filePath}`);
+    console.log(kleur.green(`  updated: ${filePath}`));
   }
   console.log(
     `\n${stats.updated.length} file(s) updated, ` +
       `${stats.removed.length} file(s) deleted, ` +
       `${stats.unchanged} file(s) unchanged.`
   );
+}
+
+function watchMozcentral(done) {
+  if (!hasWatchArg()) {
+    done();
+    return;
+  }
+  const MOZCENTRAL_SOURCE_FILES = [
+    "src/**",
+    "web/**",
+    "!web/locale/**", // Generated by the `locale` task.
+    "!web/wasm/**", // Generated by the `dev-wasm` task.
+    "l10n/en-US/*.ftl",
+    "external/bcmaps/*",
+    "external/iccs/*",
+    "external/jbig2/*",
+    "external/openjpeg/*",
+    "external/qcms/*",
+    "external/standard_fonts/*",
+    "LICENSE",
+  ];
+
+  console.log("\n### Watching for changes; press Ctrl+C to stop");
+
+  const changedFiles = new Set();
+  let timeoutId = null,
+    building = false;
+
+  async function rebuild() {
+    timeoutId = null;
+    if (building) {
+      return; // The active rebuild will consume these changes.
+    }
+    building = true;
+
+    while (changedFiles.size > 0) {
+      const files = new Set(changedFiles);
+      changedFiles.clear();
+
+      console.log(
+        `\n### Changed: ${[...files].map(repoPath).sort().join(", ")}`
+      );
+      try {
+        if (await buildMozcentral(files)) {
+          syncMozcentral();
+        }
+      } catch (error) {
+        // Keep watching so a later edit can fix the error.
+        reportBuildFailure(error);
+      }
+    }
+    building = false;
+  }
+
+  gulp.watch(MOZCENTRAL_SOURCE_FILES).on("all", (event, filePath) => {
+    changedFiles.add(path.resolve(filePath));
+    // Coalesce event bursts such as branch switches.
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(rebuild, 100);
+  });
 
   done();
 }
 
 gulp.task(
   "firefox",
-  gulp.series("mozcentral", updateMozcentral, function watchMozcentral(done) {
-    if (!hasWatchArg()) {
+  gulp.series(
+    "mozcentral",
+    function updateMozcentral(done) {
+      syncMozcentral();
       done();
-      return;
-    }
-    const MOZCENTRAL_SOURCE_FILES = [
-      "src/**",
-      "web/**",
-      "!web/locale/**", // Generated by the `locale` task.
-      "!web/wasm/**", // Generated by the `dev-wasm` task.
-      "l10n/en-US/*.ftl",
-      "external/bcmaps/*",
-      "external/iccs/*",
-      "external/jbig2/*",
-      "external/openjpeg/*",
-      "external/qcms/*",
-      "external/standard_fonts/*",
-      "LICENSE",
-    ];
-
-    console.log("\n### Watching for changes; press Ctrl+C to stop");
-
-    gulp.watch(
-      MOZCENTRAL_SOURCE_FILES,
-      gulp.series("mozcentral", updateMozcentral)
-    );
-    done();
-  })
+    },
+    watchMozcentral
+  )
 );
 
-function createChromiumPrefsSchema() {
+async function createChromiumPrefsSchema() {
   console.log("\n### Building Chromium preferences file");
 
-  const prefs = getDefaultPreferences("chromium/");
+  const prefs = await getDefaultPreferences("chromium/");
   const chromiumPrefs = buildPrefsSchema(prefs);
 
   return createStringSource(
@@ -1913,8 +2130,7 @@ gulp.task(
       console.log("\n### Building Chromium extension");
       const defines = { ...DEFINES, CHROME: true, SKIP_BABEL: false };
 
-      const CHROME_BUILD_DIR = BUILD_DIR + "/chromium/",
-        CHROME_BUILD_CONTENT_DIR = CHROME_BUILD_DIR + "/content/";
+      const CHROME_BUILD_CONTENT_DIR = CHROMIUM_DIR + "content/";
 
       const CHROME_WEB_FILES = [
         ...COMMON_WEB_FILES,
@@ -1922,7 +2138,7 @@ gulp.task(
       ];
 
       // Clear out everything in the chrome extension build directory
-      fs.rmSync(CHROME_BUILD_DIR, { recursive: true, force: true });
+      fs.rmSync(CHROMIUM_DIR, { recursive: true, force: true });
 
       const version = getVersionJSON().version;
 
@@ -1971,21 +2187,21 @@ gulp.task(
           )
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
-        gulp
-          .src("LICENSE", { encoding: false })
-          .pipe(gulp.dest(CHROME_BUILD_DIR)),
+        gulp.src("LICENSE", { encoding: false }).pipe(gulp.dest(CHROMIUM_DIR)),
         gulp
           .src("extensions/chromium/manifest.json", { encoding: false })
           .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
-          .pipe(gulp.dest(CHROME_BUILD_DIR)),
+          .pipe(gulp.dest(CHROMIUM_DIR)),
         gulp
           .src(["extensions/chromium/**/*.{html,js,css,png}"], {
             base: "extensions/chromium/",
             encoding: false,
           })
-          .pipe(gulp.dest(CHROME_BUILD_DIR)),
-        createChromiumPrefsSchema().pipe(gulp.dest(CHROME_BUILD_DIR)),
+          .pipe(gulp.dest(CHROMIUM_DIR)),
       ]);
+    },
+    async function prefsSchemaChromium() {
+      return writeToDirectory(await createChromiumPrefsSchema(), CHROMIUM_DIR);
     }
   )
 );
@@ -2375,7 +2591,7 @@ gulp.task(
       const defines = { ...DEFINES, MOZCENTRAL: true };
       return buildDefaultPreferences(defines, "mozcentral/");
     },
-    function checkPrefs() {
+    async function checkPrefs() {
       console.log("\n### Checking preference generation");
 
       // Check that the preferences were correctly generated,
@@ -2386,14 +2602,12 @@ gulp.task(
         "chromium/",
         "mozcentral/",
       ]) {
-        getDefaultPreferences(dir);
+        await getDefaultPreferences(dir);
       }
 
       // Check that all the relevant files can be generated.
-      return ordered([
-        createChromiumPrefsSchema().pipe(gulp.dest(PREFSTEST_DIR)),
-        createDefaultPrefsFile().pipe(gulp.dest(PREFSTEST_DIR)),
-      ]);
+      await writeToDirectory(await createChromiumPrefsSchema(), PREFSTEST_DIR);
+      await writeToDirectory(await createDefaultPrefsFile(), PREFSTEST_DIR);
     }
   )
 );
