@@ -104,7 +104,7 @@ const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const BABEL_COREJS_OPTS = Object.freeze({
   method: "usage-global",
-  version: "3.49.0",
+  version: "3.50.0",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
 });
