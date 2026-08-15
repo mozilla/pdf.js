@@ -102,28 +102,37 @@ describe("Cursor tools", () => {
         pages.map(async ([browserName, page]) => {
           await enableHandTool(page);
 
-          const pageHeight = await page.evaluate(
-            () =>
-              document.querySelector(`.page[data-page-number="1"]`).offsetHeight
+          const viewerRect = await getRect(page, "#viewerContainer");
+          const x = Math.floor(viewerRect.x + viewerRect.width / 2),
+            startY = Math.floor(viewerRect.y + (3 * viewerRect.height) / 4),
+            endY = Math.floor(viewerRect.y + viewerRect.height / 4),
+            steps = 10;
+          const initialScrollTop = await page.evaluate(
+            () => document.getElementById("viewerContainer").scrollTop
           );
-          const steps = 10,
-            delta = Math.floor(pageHeight / steps);
 
-          const spanRect = await getRect(
-            page,
-            `.page[data-page-number="1"] > .textLayer > span`
-          );
-          const x = spanRect.x + 1,
-            y = spanRect.y + spanRect.height / 2;
-
-          for (let i = 0; i < steps; i++) {
-            await page.mouse.move(x, y);
-            await page.mouse.down();
-            await page.mouse.move(x, y - delta);
-            await page.mouse.up();
+          await page.mouse.move(x, startY);
+          await page.mouse.down();
+          // Puppeteer's `steps` option generates fractional intermediate
+          // positions, which Firefox doesn't support.
+          for (let i = 1; i <= steps; i++) {
+            await page.mouse.move(
+              x,
+              Math.round(startY + ((endY - startY) * i) / steps)
+            );
           }
-          // Ensure that the second page is visible.
-          await page.waitForFunction("window.PDFViewerApplication.page === 2");
+          await page.mouse.up();
+
+          const scrollTop = await page.evaluate(
+            () => document.getElementById("viewerContainer").scrollTop
+          );
+          const scrollDelta = scrollTop - initialScrollTop,
+            expectedScrollDelta = startY - endY;
+          expect(Math.abs(scrollDelta - expectedScrollDelta))
+            .withContext(
+              `Expected a scroll delta of ${expectedScrollDelta}, got ${scrollDelta}, in ${browserName}`
+            )
+            .toBeLessThan(1);
 
           // Finally, disable the hand tool.
           await enableSelectTool(page);
