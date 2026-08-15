@@ -127,7 +127,7 @@ describe("primitives", function () {
       const dict = new Dict(null);
       expect(dict.xref).toBeNull();
 
-      const xref = new XRefMock([]);
+      const xref = new XRefMock();
       dict.assignXref(xref);
       expect(dict.xref).toEqual(xref);
     });
