@@ -498,7 +498,7 @@ class NewAltTextManager {
       text
         .toLowerCase()
         .split(/[^\p{L}\p{N}]+/gu)
-        .filter(x => !!x)
+        .filter(Boolean)
     );
   }
 

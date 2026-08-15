@@ -407,7 +407,7 @@ describe("display_utils", function () {
     // Unlike other tests we cannot simply compare the HTML-strings since
     // Chrome and Firefox produce different results. Instead we compare sets
     // containing the individual parts of the HTML-strings.
-    const splitParts = s => new Set(s.split(/[<>/ ]+/).filter(x => x));
+    const splitParts = s => new Set(s.split(/[<>/ ]+/).filter(Boolean));
 
     it("should render plain text", function () {
       if (isNodeJS) {

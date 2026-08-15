@@ -1980,7 +1980,7 @@ class PDFDocument {
         for (const [name, promises] of fieldPromises) {
           allPromises.push(
             Promise.all(promises).then(fields => {
-              fields = fields.filter(field => !!field);
+              fields = fields.filter(Boolean);
               if (fields.length > 0) {
                 allFields.set(name, fields);
               }

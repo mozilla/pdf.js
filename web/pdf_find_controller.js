@@ -629,7 +629,7 @@ class PDFFindController {
     }
     // We don't bother caching the normalized search query in the Array-case,
     // since this code-path is *essentially* unused in the default viewer.
-    return (query || []).filter(q => !!q).map(q => normalize(q)[0]);
+    return (query || []).filter(Boolean).map(q => normalize(q)[0]);
   }
 
   #shouldDirtyMatch(state) {
