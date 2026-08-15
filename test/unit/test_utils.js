@@ -123,36 +123,38 @@ function getCrossOriginHostname(hostname) {
 }
 
 class XRefMock {
-  constructor(array) {
-    this._map = Object.create(null);
-    this._newTemporaryRefNum = null;
-    this._newPersistentRefNum = null;
-    this.stream = new NullStream();
+  #map = new Map();
 
-    for (const key in array) {
-      const obj = array[key];
-      this._map[obj.ref.toString()] = obj.data;
+  #newPersistentRefNum = null;
+
+  #newTemporaryRefNum = null;
+
+  stream = new NullStream();
+
+  constructor(array = []) {
+    for (const { ref, data } of array) {
+      this.#map.set(ref.toString(), data);
     }
   }
 
   getNewPersistentRef(obj) {
-    if (this._newPersistentRefNum === null) {
-      this._newPersistentRefNum = Object.keys(this._map).length || 1;
+    if (this.#newPersistentRefNum === null) {
+      this.#newPersistentRefNum = this.#map.size || 1;
     }
-    const ref = Ref.get(this._newPersistentRefNum++, 0);
-    this._map[ref.toString()] = obj;
+    const ref = Ref.get(this.#newPersistentRefNum++, 0);
+    this.#map.set(ref.toString(), obj);
     return ref;
   }
 
   getNewTemporaryRef() {
-    if (this._newTemporaryRefNum === null) {
-      this._newTemporaryRefNum = Object.keys(this._map).length || 1;
+    if (this.#newTemporaryRefNum === null) {
+      this.#newTemporaryRefNum = this.#map.size || 1;
     }
-    return Ref.get(this._newTemporaryRefNum++, 0);
+    return Ref.get(this.#newTemporaryRefNum++, 0);
   }
 
   resetNewTemporaryRef() {
-    this._newTemporaryRefNum = null;
+    this.#newTemporaryRefNum = null;
   }
 
   countUpdatesAfter(offset) {
@@ -160,7 +162,7 @@ class XRefMock {
   }
 
   fetch(ref) {
-    return this._map[ref.toString()];
+    return this.#map.get(ref.toString());
   }
 
   async fetchAsync(ref) {
