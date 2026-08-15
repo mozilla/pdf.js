@@ -193,6 +193,8 @@ class StructTreeLayerBuilder {
 
   #treePromise;
 
+  #annotationIds = new Set();
+
   #elementAttributes = new Map();
 
   #structElementIdPrefix = `pdfjs_internal_struct_${getUuid()}_`;
@@ -230,6 +232,7 @@ class StructTreeLayerBuilder {
     try {
       const tree = await this.#promise;
       this.#collectStructElements(tree);
+      this.#collectAnnotations(tree);
       this.#treeDom = this.#walk(tree);
     } catch (ex) {
       reject(ex);
@@ -249,6 +252,20 @@ class StructTreeLayerBuilder {
     } catch {
       // If the structTree cannot be fetched, parsed, and/or rendered,
       // ensure that e.g. the AnnotationLayer won't break completely.
+    }
+    return null;
+  }
+
+  /**
+   * Get the ids of annotations owned by the structure tree.
+   * @returns {Promise<Set<string>|null>}
+   */
+  async getAnnotationIds() {
+    try {
+      await this.render();
+      return this.#annotationIds;
+    } catch {
+      // See the comment in `getAriaAttributes`.
     }
     return null;
   }
@@ -276,6 +293,19 @@ class StructTreeLayerBuilder {
     }
     for (const child of node.children || []) {
       this.#collectStructElements(child);
+    }
+  }
+
+  #collectAnnotations(node) {
+    if (!node) {
+      return;
+    }
+    if (node.type === "annotation") {
+      this.#annotationIds.add(node.id);
+      return;
+    }
+    for (const child of node.children || []) {
+      this.#collectAnnotations(child);
     }
   }
 

@@ -17,10 +17,14 @@ import { isNodeJS } from "../../src/shared/util.js";
 import { StructTreeLayerBuilder } from "../../web/struct_tree_layer_builder.js";
 
 describe("StructTreeLayerBuilder", function () {
-  function render(structTree) {
+  function build(structTree) {
     return new StructTreeLayerBuilder({
       getStructTree: async () => structTree,
-    }).render();
+    });
+  }
+
+  function render(structTree) {
+    return build(structTree).render();
   }
 
   beforeEach(function () {
@@ -354,6 +358,67 @@ describe("StructTreeLayerBuilder", function () {
     expect(row.getAttribute("aria-colspan")).toBeNull();
     expect(row.getAttribute("aria-owns")).toBeNull();
     expect(row.id).toEqual("");
+  });
+
+  it("keeps structured annotations in the structure tree", async function () {
+    const builder = build({
+      role: "Root",
+      children: [
+        {
+          role: "P",
+          children: [
+            { type: "content", id: "p1R_mc0" },
+            {
+              role: "Link",
+              children: [
+                {
+                  role: "Figure",
+                  children: [{ type: "content", id: "p1R_mc1" }],
+                },
+                { type: "annotation", id: "pdfjs_internal_id_1R" },
+              ],
+            },
+            {
+              role: "Link",
+              children: [
+                { type: "content", id: "p1R_mc2" },
+                { type: "annotation", id: "pdfjs_internal_id_2R" },
+                { type: "content", id: "p1R_mc3" },
+                { type: "annotation", id: "pdfjs_internal_id_3R" },
+              ],
+            },
+            {
+              role: "Link",
+              children: [{ type: "annotation", id: "pdfjs_internal_id_4R" }],
+            },
+          ],
+        },
+      ],
+    });
+    const tree = await builder.render();
+
+    expect(await builder.getAnnotationIds()).toEqual(
+      new Set([
+        "pdfjs_internal_id_1R",
+        "pdfjs_internal_id_2R",
+        "pdfjs_internal_id_3R",
+        "pdfjs_internal_id_4R",
+      ])
+    );
+    expect(
+      [...tree.querySelectorAll("[aria-owns]")].map(e =>
+        e.getAttribute("aria-owns")
+      )
+    ).toEqual([
+      "p1R_mc0",
+      "p1R_mc1",
+      "pdfjs_internal_id_1R",
+      "p1R_mc2",
+      "pdfjs_internal_id_2R",
+      "p1R_mc3",
+      "pdfjs_internal_id_3R",
+      "pdfjs_internal_id_4R",
+    ]);
   });
 
   it("only uses the caption role inside a table or a figure", async function () {

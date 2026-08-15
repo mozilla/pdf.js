@@ -4899,7 +4899,10 @@ have written that much by now. So, here’s to squashing bugs.`);
                               {
                                 role: "Link",
                                 children: [
-                                  { type: "object", id: "432R" },
+                                  {
+                                    type: "annotation",
+                                    id: "pdfjs_internal_id_432R",
+                                  },
                                   { type: "content", id: "p406R_mc34" },
                                 ],
                               },
@@ -4922,7 +4925,10 @@ have written that much by now. So, here’s to squashing bugs.`);
                               {
                                 role: "Link",
                                 children: [
-                                  { type: "object", id: "433R" },
+                                  {
+                                    type: "annotation",
+                                    id: "pdfjs_internal_id_433R",
+                                  },
                                   { type: "content", id: "p406R_mc36" },
                                 ],
                               },
@@ -4948,7 +4954,7 @@ have written that much by now. So, here’s to squashing bugs.`);
                       {
                         role: "Link",
                         children: [
-                          { type: "object", id: "434R" },
+                          { type: "annotation", id: "pdfjs_internal_id_434R" },
                           { type: "content", id: "p406R_mc10" },
                         ],
                       },
