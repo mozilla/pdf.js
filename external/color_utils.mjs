@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-import { kleur } from "../external/color_utils.mjs";
+import kleur from "kleur";
 
-const TEST_PASSED = kleur.green("TEST-PASS");
-const TEST_UNEXPECTED_FAIL = kleur.red().bold("TEST-UNEXPECTED-FAIL");
+// Kleur has one global switch, so use stdout for automatic TTY detection.
+kleur.enabled =
+  !process.env.NO_COLOR &&
+  (!!process.stdout.isTTY ||
+    !!process.env.FORCE_COLOR ||
+    process.env.GITHUB_ACTIONS === "true");
 
-function colorBrowser(name) {
-  return kleur.cyan(name);
-}
-
-export { colorBrowser, TEST_PASSED, TEST_UNEXPECTED_FAIL };
+export { kleur };
