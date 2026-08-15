@@ -140,27 +140,33 @@ async function drawInkLine(page, pageNumber) {
 }
 
 async function waitForHavingContents(page, expected) {
-  await page.evaluate(() => {
-    // Make sure all the pages will be visible.
-    window.PDFViewerApplication.pdfViewer.scrollMode = 2; /* = ScrollMode.WRAPPED = */
-    window.PDFViewerApplication.pdfViewer.updateScale({
-      drawingDelay: 0,
-      scaleFactor: 0.01,
-    });
-  });
-  return page.waitForFunction(
-    ex => {
-      const textLayers = document.querySelectorAll(".textLayer");
-      const buffer = [];
-      for (const [i, textLayer] of textLayers.entries()) {
-        const text = textLayer.textContent.trim();
-        buffer.push(typeof ex[i] === "string" ? text : parseInt(text, 10));
+  await page.waitForFunction(
+    length => {
+      const { pdfViewer } = window.PDFViewerApplication;
+      for (let i = 0; i < length; i++) {
+        if (!pdfViewer.getPageView(i)?.pdfPage) {
+          return false;
+        }
       }
-      return ex.length === buffer.length && ex.every((v, i) => v === buffer[i]);
+      return true;
     },
     {},
-    expected
+    expected.length
   );
+  const actual = await page.evaluate(async ex => {
+    const { pdfViewer } = window.PDFViewerApplication;
+    const contents = [];
+    for (let i = 0, ii = ex.length; i < ii; i++) {
+      const { items } = await pdfViewer.getPageView(i).pdfPage.getTextContent();
+      const text = items
+        .map(item => item.str ?? "")
+        .join("")
+        .trim();
+      contents.push(typeof ex[i] === "string" ? text : parseInt(text, 10));
+    }
+    return contents;
+  }, expected);
+  expect(actual).toEqual(expected);
 }
 
 async function waitForPageCanvasToHaveImage(page, pageNumber) {
@@ -2470,13 +2476,17 @@ describe("Reorganize Pages View", () => {
           await waitForThumbnailVisible(page, 1);
           const rect1 = await getRect(page, getThumbnailSelector(1));
           const rect2 = await getRect(page, getThumbnailSelector(2));
+          // Stay clear of the bottom edge, where dragging can auto-scroll and
+          // move the page one position too far.
+          const yTranslation =
+            rect2.y + rect2.height / 2 - (rect1.y + rect1.height / 2) + 1;
 
           // Move page 1 after page 2: mapping becomes [2, 1, 3, …, 17].
           let handlePagesEdited = await waitForPagesEdited(page);
           await dragAndDrop(
             page,
             getThumbnailSelector(1),
-            [[0, rect2.y - rect1.y + rect2.height / 2]],
+            [[0, yTranslation]],
             10
           );
           let pageIndices = await awaitPromise(handlePagesEdited);
@@ -2897,27 +2907,40 @@ describe("Reorganize Pages View", () => {
           // Both the original and the cloned annotation must now be in storage.
           await waitForStorageEntries(page, 2);
 
-          const editorIds = await page.evaluate(() => {
+          // When its layer is rendered, a clone replaces its serialized storage
+          // entry with a real editor having a new id. The original id doesn't
+          // change, hence use it to tell the two entries apart.
+          const originalEditorId = await page.evaluate(() => {
             const entries = Array.from(
               window.PDFViewerApplication.pdfDocument.annotationStorage
             );
-            return {
-              original: entries.find(([, editor]) => editor.pageIndex === 0)[0],
-              clone: entries.find(([, editor]) => editor.pageIndex === 2)[0],
-            };
+            return entries.find(([, editor]) => editor.pageIndex === 0)[0];
           });
 
           // Move the pasted copy before the original and verify that both
           // stored page indices follow the new page order.
           await movePages(page, [3], 0);
-          const editorPageIndices = await page.evaluate(ids => {
-            const storage =
-              window.PDFViewerApplication.pdfDocument.annotationStorage;
-            return {
-              original: storage.getRawValue(ids.original).pageIndex,
-              clone: storage.getRawValue(ids.clone).pageIndex,
-            };
-          }, editorIds);
+          const editorPageIndicesHandle = await page.waitForFunction(
+            id => {
+              const storage =
+                window.PDFViewerApplication.pdfDocument.annotationStorage;
+              const original = storage.getRawValue(id);
+              const clone = Array.from(storage).find(
+                ([editorId]) => editorId !== id
+              )?.[1];
+              if (!original || !clone) {
+                return false;
+              }
+              return {
+                original: original.pageIndex,
+                clone: clone.pageIndex,
+              };
+            },
+            {},
+            originalEditorId
+          );
+          const editorPageIndices = await editorPageIndicesHandle.jsonValue();
+          await editorPageIndicesHandle.dispose();
           expect(editorPageIndices)
             .withContext(`In ${browserName}`)
             .toEqual({ original: 1, clone: 0 });
@@ -3117,12 +3140,12 @@ describe("Reorganize Pages View", () => {
             visible: true,
           });
 
+          const currentThumbnailSelector =
+            '.thumbnailImageContainer[aria-current="page"]';
           const countCurrentThumbnails = () =>
-            page.evaluate(
-              () =>
-                document.querySelectorAll(
-                  '.thumbnailImageContainer[aria-current="page"]'
-                ).length
+            page.$$eval(
+              currentThumbnailSelector,
+              thumbnails => thumbnails.length
             );
 
           // Copy page 1 and paste it after page 3.
@@ -3151,6 +3174,7 @@ describe("Reorganize Pages View", () => {
             await waitAndClick(page, "#viewsManagerStatusActionCut");
             await awaitPromise(handlePagesEdited);
 
+            await page.waitForSelector(currentThumbnailSelector);
             expect(await countCurrentThumbnails())
               .withContext(`In ${browserName}, after cut #${i + 1}`)
               .toBe(1);
@@ -3162,6 +3186,7 @@ describe("Reorganize Pages View", () => {
             await waitAndClick(page, "#viewsManagerStatusUndoButton");
             await awaitPromise(handlePagesEdited);
 
+            await page.waitForSelector(currentThumbnailSelector);
             expect(await countCurrentThumbnails())
               .withContext(`In ${browserName}, after undo #${i + 1}`)
               .toBe(1);
