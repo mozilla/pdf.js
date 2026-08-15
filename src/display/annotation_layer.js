@@ -654,8 +654,8 @@ class AnnotationElement {
       return;
     }
 
-    const [rectBlX, rectBlY, rectTrX, rectTrY] = this.data.rect.map(x =>
-      Math.fround(x)
+    const [rectBlX, rectBlY, rectTrX, rectTrY] = this.data.rect.map(
+      Math.fround
     );
 
     if (quadPoints.length === 8) {

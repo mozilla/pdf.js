@@ -867,7 +867,7 @@ describe("FreeText Editor", () => {
             }, proprName);
 
           const rects = (await serialize("rect")).map(rect =>
-            rect.slice(0, 2).map(x => Math.floor(x))
+            rect.slice(0, 2).map(Math.floor)
           );
           const expected = [
             [-28, 695],

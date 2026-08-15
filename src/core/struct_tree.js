@@ -728,7 +728,7 @@ class StructElementNode {
         if (Array.isArray(headers)) {
           const ids = headers
             .filter(header => typeof header === "string")
-            .map(header => stringToPDFString(header));
+            .map(stringToPDFString);
           if (ids.length > 0) {
             map.set("headers", ids);
           }
