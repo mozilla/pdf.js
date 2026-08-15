@@ -417,10 +417,8 @@ const defaultOptions = new Map([
     },
   ],
   [
-    // Whether the viewer follows the Firefox design system (see the pref-gated
-    // @import of tokens-brand.css in viewer.css). Read from CSS via
-    // -moz-pref(), not from JS, so it is Firefox-only and has no effect
-    // elsewhere.
+    // Import Firefox design-system tokens and enable Nova viewer styles. The
+    // Nova overrides also require browser.nova.enabled.
     "enableNova",
     {
       /** @type {boolean} */

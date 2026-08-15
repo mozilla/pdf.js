@@ -149,6 +149,32 @@
   --multiple-dragging-indicator-bg: var(--indicator-color);
   --multiple-dragging-text-color: light-dark(#fbfbfe, #15141a);
 
+  /* Use opaque Nova surfaces and carry warning severity in the icon color. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --sidebar-bg-color: var(--background-color-box);
+    --sidebar-backdrop-filter: none;
+    --header-bg: var(--background-color-box);
+    --status-undo-bg: color-mix(
+      in srgb,
+      var(--color-accent-primary) 8%,
+      transparent
+    );
+    --status-warning-bg: var(--background-color-box-info);
+    --indicator-warning-color: var(--icon-color-critical);
+    --image-border-color: var(--border-color-deemphasized);
+    --image-hover-border-color: var(--border-color-interactive);
+    --image-page-number-bg: var(--background-color-box-info);
+    --image-current-page-number-fg: var(--button-text-color-primary);
+    --image-dragging-placeholder-bg: color-mix(
+      in srgb,
+      var(--color-accent-primary) 8%,
+      transparent
+    );
+    --multiple-dragging-bg: var(--background-color-box);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --views-text-color: var(--text-color, CanvasText);
     --button-fg: var(--button-text-color, ButtonText);
@@ -262,6 +288,19 @@
       }
     }
   }
+
+  /* Radius the opaque header instead of clipping the panel, which would hide
+     the protruding resizer. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    padding-block-start: 0;
+
+    #viewsManagerHeader {
+      border-start-start-radius: var(--panel-border-radius);
+      border-start-end-radius: var(--panel-border-radius);
+    }
+  }
+  /*#endif*/
 
   #viewsManagerHeader {
     display: flex;
@@ -683,6 +722,12 @@
             min-height: 24px;
             padding: 4px 16px;
 
+            /*#if MOZCENTRAL*/
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+              border-radius: var(--button-border-radius);
+            }
+            /*#endif*/
+
             font: menu;
             font-size: 13px;
             font-style: normal;
@@ -725,6 +770,11 @@
         &:not(.isDragging) > .thumbnailImageContainer::after {
           content: attr(page-number);
           border-radius: 8px;
+          /*#if MOZCENTRAL*/
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+            border-radius: var(--border-radius-circle);
+          }
+          /*#endif*/
           border: 1px solid var(--image-page-number-border-color);
           background-color: var(--image-page-number-bg);
           color: var(--image-page-number-fg);
@@ -777,6 +827,13 @@
           user-select: none;
           position: relative;
 
+          /* Use Nova's medium card radius. */
+          /*#if MOZCENTRAL*/
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+            border-radius: var(--border-radius-medium);
+          }
+          /*#endif*/
+
           img {
             width: 100%;
             height: 100%;
@@ -785,6 +842,12 @@
             outline: none;
             user-select: none;
             pointer-events: none;
+
+            /*#if MOZCENTRAL*/
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+              border-radius: var(--border-radius-medium);
+            }
+            /*#endif*/
           }
 
           &.missingThumbnailImage {
@@ -912,11 +975,26 @@
                 box-sizing: content-box;
                 outline: none;
                 user-select: none;
+
+                /*#if MOZCENTRAL*/
+                @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+                  border-radius: var(--border-radius-medium);
+                }
+                /*#endif*/
               }
 
               &::after {
                 content: attr(data-multiple-count);
                 border-radius: calc(8px * var(--thumbnail-dragging-scale));
+
+                /*#if MOZCENTRAL*/
+                @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+                  border-radius: calc(
+                    var(--border-radius-medium) *
+                      var(--thumbnail-dragging-scale)
+                  );
+                }
+                /*#endif*/
                 background-color: var(--multiple-dragging-indicator-bg);
                 color: var(--multiple-dragging-text-color);
                 position: absolute;
@@ -949,9 +1027,25 @@
         rgb(255 255 255 / 0.9)
       );
 
+      /* Match the Nova row colors used by the outline and layers views. */
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        --attachment-color: var(--text-color);
+        --attachment-hover-color: var(--text-color);
+        --attachment-bg-color: var(--toolbarbutton-background-color-hover);
+      }
+      /*#endif*/
+
       > ul {
         list-style-type: none;
         padding: 0;
+
+        /* Match the menu-item inset in tree.css. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          padding-inline: var(--panel-menuitem-margin-inline);
+        }
+        /*#endif*/
 
         > li > a {
           text-decoration: none;
@@ -976,6 +1070,21 @@
             border-radius: 2px;
             color: var(--attachment-hover-color);
           }
+
+          /* Repeat the radius for the more-specific :hover rule above. */
+          /*#if MOZCENTRAL*/
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+            box-sizing: border-box;
+            min-width: 100%;
+            padding-block: var(--space-xsmall);
+            padding-inline: var(--space-small);
+
+            &,
+            &:hover {
+              border-radius: var(--panel-menuitem-border-radius);
+            }
+          }
+          /*#endif*/
         }
       }
     }

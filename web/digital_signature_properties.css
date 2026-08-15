@@ -73,6 +73,27 @@
     light-dark(rgb(29 142 61), rgb(106 210 126))
   );
 
+  /* Like Nova message bars, use a neutral banner surface and keep severity in
+     the colored stripe. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --sig-card-border: var(--border-color-deemphasized);
+    --sig-card-nested-bg: var(--background-color-box-info);
+    --sig-row-color: var(--text-color);
+    --sig-detail-color: var(--text-color-deemphasized);
+    --sig-divider-color: var(--border-color-deemphasized);
+    --sig-summary-hover-color: var(--link-color-hover);
+    --sig-link-hover-bg: var(--button-background-color-ghost-hover);
+    --sig-banner-verified-bg: var(--background-color-box-info);
+    --sig-banner-warn-bg: var(--background-color-box-info);
+    --sig-banner-error-bg: var(--background-color-box-info);
+    --sig-banner-verified-color: var(--text-color);
+    --sig-banner-warn-color: var(--text-color);
+    --sig-banner-error-color: var(--text-color);
+    --sig-icon-default: var(--text-color-deemphasized);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     /* HCM keywords are picked by *semantic role*, not by hue — the
      * user's high-contrast theme resolves them to whatever palette it
@@ -222,6 +243,13 @@
    * user's high-contrast palette without us hard-coding any hue. */
   border-inline-start: 3px solid currentcolor;
 
+  /* Match the Nova message-bar radius. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-medium);
+  }
+  /*#endif*/
+
   &.verified {
     background: var(--sig-banner-verified-bg);
     color: var(--sig-banner-verified-color);
@@ -257,6 +285,13 @@
   flex-direction: column;
   gap: 3px;
   background: var(--sig-card-bg);
+
+  /* Match the banner's inset radius. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-medium);
+  }
+  /*#endif*/
 
   .signer {
     font-weight: 600;
@@ -361,6 +396,14 @@
     border-radius: 4px;
     white-space: nowrap;
 
+    /* Use Nova ghost-button spacing and radius. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      padding-inline: var(--space-small);
+      border-radius: var(--button-border-radius);
+    }
+    /*#endif*/
+
     &:hover {
       background: var(--sig-link-hover-bg);
       text-decoration: underline;
@@ -368,6 +411,13 @@
     &:focus-visible {
       outline: 2px solid var(--sig-link-color);
       outline-offset: 1px;
+
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        outline: var(--focus-outline);
+        outline-offset: var(--focus-outline-offset);
+      }
+      /*#endif*/
     }
   }
 
@@ -376,6 +426,13 @@
     border-top: 1px dashed var(--sig-divider-color);
     padding-top: 4px;
     font-size: 12px;
+
+    /* Use Nova's solid separator. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      border-top-style: solid;
+    }
+    /*#endif*/
 
     > summary {
       cursor: pointer;
@@ -426,6 +483,13 @@
     padding: 6px 8px;
     background: var(--sig-card-nested-bg);
     gap: 2px;
+
+    /* Use the radius below the outer card's. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      border-radius: var(--border-radius-small);
+    }
+    /*#endif*/
   }
 
   .subSignatures .signer,

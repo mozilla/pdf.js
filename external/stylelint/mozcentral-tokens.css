@@ -1,0 +1,91 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:root {
+  --background-color-box: initial;
+  --background-color-box-info: initial;
+  --background-color-canvas: initial;
+  --background-color-critical: initial;
+  --background-color-information: initial;
+  --background-color-success: initial;
+  --border-color: initial;
+  --border-color-deemphasized: initial;
+  --border-color-interactive: initial;
+  --border-color-interactive-hover: initial;
+  --border-radius-circle: initial;
+  --border-radius-large: initial;
+  --border-radius-medium: initial;
+  --border-radius-small: initial;
+  --border-radius-xsmall: initial;
+  --box-shadow-level-2: initial;
+  --box-shadow-level-3: initial;
+  --button-background-color: initial;
+  --button-background-color-active: initial;
+  --button-background-color-ghost-hover: initial;
+  --button-background-color-hover: initial;
+  --button-background-color-menu-active: initial;
+  --button-background-color-menu-hover: initial;
+  --button-border: initial;
+  --button-border-color: initial;
+  --button-border-color-active: initial;
+  --button-border-color-hover: initial;
+  --button-border-radius: initial;
+  --button-font-weight: initial;
+  --button-min-height: initial;
+  --button-opacity-disabled: initial;
+  --button-padding-block: initial;
+  --button-padding-inline: initial;
+  --button-text-color: initial;
+  --button-text-color-hover: initial;
+  --button-text-color-menu-active: initial;
+  --button-text-color-menu-hover: initial;
+  --button-text-color-primary: initial;
+  --color-accent-attention: initial;
+  --color-accent-primary: initial;
+  --color-accent-primary-active: initial;
+  --color-gray-15: initial;
+  --color-gray-85: initial;
+  --focus-outline: initial;
+  --focus-outline-inset: initial;
+  --focus-outline-offset: initial;
+  --font-size-root: initial;
+  --font-size-small: initial;
+  --font-weight: initial;
+  --icon-color: initial;
+  --icon-color-critical: initial;
+  --icon-color-information: initial;
+  --input-search-border-radius: initial;
+  --link-color: initial;
+  --link-color-hover: initial;
+  --panel-border-radius: initial;
+  --panel-menuitem-border-radius: initial;
+  --panel-menuitem-margin: initial;
+  --panel-menuitem-margin-inline: initial;
+  --panel-menuitem-padding: initial;
+  --panel-menuitem-padding-inline: initial;
+  --size-item-large: initial;
+  --size-item-medium: initial;
+  --space-large: initial;
+  --space-medium: initial;
+  --space-small: initial;
+  --space-xsmall: initial;
+  --space-xxsmall: initial;
+  --text-color: initial;
+  --text-color-deemphasized: initial;
+  --toolbar-background-color: initial;
+  --toolbarbutton-background-color-active: initial;
+  --toolbarbutton-background-color-hover: initial;
+  --toolbarbutton-icon-fill: initial;
+}

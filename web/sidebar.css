@@ -35,6 +35,15 @@
     light-dark(#0062fa, #00cadb)
   );
 
+  /* Style the sidebar as a Nova panel. Keep this before forced-colors. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --sidebar-border-color: var(--border-color-deemphasized);
+    --sidebar-box-shadow: var(--box-shadow-level-2);
+    --sidebar-border-radius: var(--panel-border-radius);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --sidebar-bg-color: var(--background-color-box, Canvas);
     --sidebar-border-color: CanvasText;
@@ -81,6 +90,14 @@
       background-color: var(--resizer-hover-bg-color);
       outline: none;
     }
+
+    /* Match Firefox's Nova splitter: use its full width and rounded ends. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      border-inline-width: 0;
+      border-radius: var(--border-radius-large);
+    }
+    /*#endif*/
   }
 
   &.resizing {

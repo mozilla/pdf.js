@@ -66,6 +66,23 @@ button.hasPopupMenu {
   --menuitem-hover-background-blend-mode: normal;
   --disabled-opacity: 0.62;
 
+  /* Map menu states to Nova panel and menu-item tokens. Keep this before the
+     forced-colors overrides. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --menuitem-gap: var(--space-small);
+    --menuitem-border-radius: var(--panel-menuitem-border-radius);
+    --menu-box-shadow: var(--box-shadow-level-2);
+    --menu-border-color: var(--border-color-deemphasized);
+    --menuitem-hover-bg: var(--button-background-color-menu-hover);
+    --menuitem-text-hover-fg: var(--button-text-color-menu-hover);
+    --menuitem-active-bg: var(--button-background-color-menu-active);
+    --menuitem-text-active-fg: var(--button-text-color-menu-active);
+    --menuitem-focus-border-color: transparent;
+    --disabled-opacity: var(--button-opacity-disabled);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --menu-bg: var(--background-color-box, Canvas);
     --menu-background-blend-mode: normal;
@@ -103,6 +120,14 @@ button.hasPopupMenu {
   border-radius: 6px;
   border: 1px solid var(--menu-border-color);
   backdrop-filter: var(--menu-backdrop-filter);
+
+  /* Rows provide their own inline inset. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    padding: var(--space-small) 0;
+    border-radius: var(--panel-border-radius);
+  }
+  /*#endif*/
 
   &.withMark {
     --menu-mark-icon-size: 16px;
@@ -185,6 +210,14 @@ button.hasPopupMenu {
         background-color: var(--menuitem-focus-bg);
         outline: 2px solid var(--menuitem-focus-outline-color);
         outline-offset: 2px;
+
+        /* Use the inset focus ring from Firefox panel items. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          outline: var(--focus-outline);
+          outline-offset: var(--focus-outline-inset);
+        }
+        /*#endif*/
       }
     }
 
@@ -215,5 +248,36 @@ button.hasPopupMenu {
       font-weight: 510;
       line-height: normal;
     }
+
+    /* Match Firefox panel-item spacing. width: auto prevents the margins from
+       overflowing; add checkmark padding only where its size has a unit. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      height: auto;
+      min-height: var(--size-item-large);
+      width: auto;
+      margin: var(--panel-menuitem-margin);
+      padding: var(--panel-menuitem-padding);
+
+      &.selected::after {
+        inset-inline-start: var(--panel-menuitem-padding-inline);
+      }
+
+      > span {
+        padding-inline-start: 0;
+      }
+    }
+    /*#endif*/
   }
+
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    &.withMark > button {
+      padding-inline-start: calc(
+        var(--panel-menuitem-padding-inline) + var(--menu-mark-icon-size) +
+          var(--menuitem-gap)
+      );
+    }
+  }
+  /*#endif*/
 }

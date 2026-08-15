@@ -25,6 +25,13 @@
   box-sizing: border-box;
 
   border-radius: 8px;
+
+  /* Match the Nova radius used by .dialog. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    border-radius: var(--border-radius-medium);
+  }
+  /*#endif*/
 }
 
 #commentManagerDialog {
@@ -264,6 +271,26 @@
   --button-comment-hover-bg: light-dark(#e0e0e6, #52525e);
   --button-comment-hover-color: var(--button-comment-color);
 
+  /* Use Nova's secondary box surface and toolbar-button states. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --comment-date-fg-color: color-mix(
+      in srgb,
+      var(--comment-fg-color) 69%,
+      transparent
+    );
+    --comment-bg-color: var(--background-color-box-info);
+    --comment-border-color: var(--border-color-deemphasized);
+    --comment-count-bg-color: var(--background-color-information);
+    --comment-indicator-active-fg-color: var(--color-accent-primary-active);
+    --comment-indicator-focus-fg-color: var(--icon-color);
+
+    --button-comment-color: var(--toolbarbutton-icon-fill);
+    --button-comment-active-bg: var(--toolbarbutton-background-color-active);
+    --button-comment-hover-bg: var(--toolbarbutton-background-color-hover);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --comment-date-fg-color: CanvasText;
     --comment-bg-color: Canvas;
@@ -334,6 +361,13 @@
         font-style: normal;
         font-weight: 400;
         line-height: normal;
+
+        /* Use Nova's small radius. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          border-radius: var(--border-radius-small);
+        }
+        /*#endif*/
       }
     }
 
@@ -384,6 +418,18 @@
         height: 0;
         overflow: hidden;
       }
+
+      /* Match Nova toolbar-button radius and focus styling. */
+      /*#if MOZCENTRAL*/
+      @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+        border-radius: var(--button-border-radius);
+
+        &:focus-visible {
+          outline: var(--focus-outline);
+          outline-offset: var(--focus-outline-offset);
+        }
+      }
+      /*#endif*/
     }
   }
 
@@ -412,6 +458,14 @@
         border-radius: 8px;
         border: 0.5px solid var(--comment-border-color);
         background-color: var(--comment-bg-color);
+
+        /* Use Nova's radius and 1px separator. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          border-radius: var(--border-radius-medium);
+          border-width: 1px;
+        }
+        /*#endif*/
 
         &:not(.noComments) {
           &:hover {

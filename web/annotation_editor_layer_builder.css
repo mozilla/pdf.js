@@ -267,6 +267,21 @@
     --alt-text-hover-done-color: var(--alt-text-done-color);
     --alt-text-hover-warning-color: var(--alt-text-warning-color);
 
+    /* Match Nova's panel surface and 32px toolbar controls. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      --editor-toolbar-bg-color: var(--background-color-box);
+      --editor-toolbar-fg-color: var(--toolbarbutton-icon-fill);
+      --editor-toolbar-border-color: var(--border-color-deemphasized);
+      --editor-toolbar-hover-bg-color: var(
+        --toolbarbutton-background-color-hover
+      );
+      --editor-toolbar-shadow: var(--box-shadow-level-2);
+      --editor-toolbar-height: var(--size-item-large);
+      --alt-text-warning-color: var(--icon-color-information);
+    }
+    /*#endif*/
+
     @media screen and (forced-colors: active) {
       --editor-toolbar-bg-color: var(--button-background-color, ButtonFace);
       --editor-toolbar-fg-color: var(--button-text-color, ButtonText);
@@ -319,6 +334,12 @@
     background-color: var(--editor-toolbar-bg-color);
     border: 1px solid var(--editor-toolbar-border-color);
     box-shadow: var(--editor-toolbar-shadow);
+
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      border-radius: var(--panel-border-radius);
+    }
+    /*#endif*/
 
     &.hidden {
       display: none;
@@ -413,6 +434,15 @@
           border-radius: 2px;
           outline: 2px solid var(--editor-toolbar-focus-outline-color);
         }
+
+        /* Match the radius of hovered and focused Nova buttons. */
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          &:is(:hover, :focus-visible) {
+            border-radius: var(--button-border-radius);
+          }
+        }
+        /*#endif*/
       }
 
       .altText {
@@ -492,6 +522,17 @@
             --alt-text-tooltip-border: var(--border-color-interactive, #8f8f9d);
             --alt-text-tooltip-shadow: 0 2px 6px 0
               light-dark(rgb(58 57 68 / 0.2), #15141a);
+
+            /* Use Nova's box surface and compact radius. */
+            /*#if MOZCENTRAL*/
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+              --alt-text-tooltip-bg: var(--background-color-box);
+              --alt-text-tooltip-border: var(--border-color-deemphasized);
+              --alt-text-tooltip-shadow: var(--box-shadow-level-2);
+
+              border-radius: var(--border-radius-xsmall);
+            }
+            /*#endif*/
 
             @media screen and (forced-colors: active) {
               --alt-text-tooltip-bg: Canvas;
@@ -619,6 +660,15 @@
     --no-alt-text-badge-bg-color: light-dark(#cfcfd8, #fbfbfe);
     --no-alt-text-badge-fg-color: light-dark(#5b5b66, #15141a);
 
+    /* Use Nova's neutral badge colors. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      --no-alt-text-badge-border-color: var(--border-color-deemphasized);
+      --no-alt-text-badge-bg-color: var(--background-color-box);
+      --no-alt-text-badge-fg-color: var(--icon-color);
+    }
+    /*#endif*/
+
     @media screen and (forced-colors: active) {
       --no-alt-text-badge-border-color: ButtonText;
       --no-alt-text-badge-bg-color: ButtonFace;
@@ -640,6 +690,12 @@
     border-radius: 2px;
     border: 1px solid var(--no-alt-text-badge-border-color);
     background: var(--no-alt-text-badge-bg-color);
+
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      border-radius: var(--border-radius-xsmall);
+    }
+    /*#endif*/
 
     &::before {
       content: "";
@@ -906,6 +962,13 @@
   --preview-image-bg-color: light-dark(#f0f0f4, #2b2a33);
   --preview-image-border: none;
 
+  /* Use Nova's secondary box surface for the preview. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --preview-image-bg-color: var(--background-color-box-info);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --preview-image-bg-color: ButtonFace;
     --preview-image-border: 1px solid ButtonText;
@@ -1089,6 +1152,14 @@
   --selected-outline-color: light-dark(#0060df, #aaf2ff);
   --swatch-border-color: light-dark(#cfcfd8, #52525e);
 
+  /* Use Nova selection and border colors for the swatches. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --selected-outline-color: var(--color-accent-primary);
+    --swatch-border-color: var(--border-color-deemphasized);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --hover-outline-color: Highlight;
     --selected-outline-color: var(--hover-outline-color);
@@ -1112,6 +1183,15 @@
 
 .basicColorPicker {
   width: 28px;
+
+  /* Keep the swatch square when the row height changes. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    width: auto;
+    aspect-ratio: 1;
+    padding: var(--space-small);
+  }
+  /*#endif*/
 
   &::-moz-color-swatch {
     border-radius: 100%;
@@ -1219,6 +1299,14 @@
           &:has(.dropdown:not(.hidden)) {
             background-color: var(--editor-toolbar-hover-bg-color);
 
+            /* Match the active toolbar-button state while the menu is open. */
+            /*#if MOZCENTRAL*/
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+              background-color: var(--toolbarbutton-background-color-active);
+              border-radius: var(--button-border-radius);
+            }
+            /*#endif*/
+
             &::after {
               scale: -1;
             }
@@ -1265,6 +1353,30 @@
                 outline: 2px solid var(--hover-outline-color);
               }
             }
+
+            /* Match Firefox's horizontal visual picker. Keep this after the
+               button rule to override its width: 100%. */
+            /*#if MOZCENTRAL*/
+            @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+              flex-direction: row;
+              gap: var(--space-small);
+              padding: var(--space-small);
+              width: max-content;
+              inset-inline-start: 50%;
+              translate: calc(-50% * var(--dir-factor));
+              border-radius: var(--border-radius-medium);
+
+              button {
+                width: auto;
+                flex: 0 0 auto;
+
+                > .swatch {
+                  width: var(--size-item-medium);
+                  height: var(--size-item-medium);
+                }
+              }
+            }
+            /*#endif*/
           }
         }
       }

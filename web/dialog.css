@@ -36,6 +36,15 @@
   --input-text-bg-color: light-dark(white, #42414d);
   --input-text-fg-color: var(--text-primary-color);
 
+  /* Match Nova popup borders, separators, and shadows. */
+  /*#if MOZCENTRAL && !GECKOVIEW*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --dialog-border-color: var(--border-color-deemphasized);
+    --dialog-shadow: var(--box-shadow-level-3);
+    --separator-color: var(--border-color-deemphasized);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --dialog-bg-color: var(--background-color-canvas, Canvas);
     /* border-only: --background-color-canvas would resolve to Canvas in FF HCM

@@ -34,6 +34,14 @@
   --button-signature-hover-bg: light-dark(#e0e0e6, #52525e);
   --button-signature-hover-color: var(--button-signature-color);
 
+  /* Use Nova button states for saved-signature rows. */
+  /*#if MOZCENTRAL*/
+  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+    --button-signature-hover-bg: var(--button-background-color-hover);
+    --button-signature-active-bg: var(--button-background-color-active);
+  }
+  /*#endif*/
+
   @media screen and (forced-colors: active) {
     --signature-bg: HighlightText;
     --signature-hover-bg: var(--signature-bg);
@@ -374,6 +382,12 @@
               margin: 0;
               background-color: var(--thickness-bg);
               border-radius: 4px 4px 0 0;
+              /*#if MOZCENTRAL*/
+              @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+                border-radius: var(--border-radius-small)
+                  var(--border-radius-small) 0 0;
+              }
+              /*#endif*/
               border-inline: var(--thickness-border);
               border-top: var(--thickness-border);
               pointer-events: auto;
@@ -623,6 +637,11 @@
       button {
         border: var(--button-signature-border);
         border-radius: 4px;
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          border-radius: var(--border-radius-small);
+        }
+        /*#endif*/
         background-color: var(--button-signature-bg);
         color: var(--button-signature-color);
 
@@ -665,6 +684,11 @@
         justify-content: flex-start;
         outline: none;
         border-radius: 4px;
+        /*#if MOZCENTRAL*/
+        @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+          border-radius: var(--border-radius-small);
+        }
+        /*#endif*/
         box-sizing: border-box;
         font: message-box;
         position: relative;
@@ -686,6 +710,11 @@
           box-sizing: border-box;
           border: none;
           border-radius: 4px;
+          /*#if MOZCENTRAL*/
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+            border-radius: var(--border-radius-small);
+          }
+          /*#endif*/
 
           > path {
             stroke: var(--button-signature-color);
@@ -705,6 +734,12 @@
 
         &:is(:hover, :active) > svg {
           border-radius: 4px 0 0 4px;
+          /*#if MOZCENTRAL*/
+          @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+            border-radius: var(--border-radius-small) 0 0
+              var(--border-radius-small);
+          }
+          /*#endif*/
           background-color: var(--signature-hover-bg);
         }
 
