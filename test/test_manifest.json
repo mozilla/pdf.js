@@ -14516,5 +14516,13 @@
     "rounds": 1,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "large_jpeg_downscale",
+    "file": "pdfs/large_jpeg_downscale.pdf",
+    "md5": "cfa0f34c0a615caaa267d70d7c91fd51",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq"
   }
 ]

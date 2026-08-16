@@ -814,6 +814,8 @@ class JpegImage {
     let exifOffsets = null;
     let offset = 0;
     let numComponents = null;
+    let scanLines = 0,
+      samplesPerLine = 0;
     let fileMarker = view.getUint16(offset);
     offset += 2;
     if (fileMarker !== /* SOI (Start of Image) = */ 0xffd8) {
@@ -858,8 +860,8 @@ class JpegImage {
         case 0xffc2: // SOF2 (Start of Frame, Progressive DCT)
           // Skip marker length.
           // Skip precision.
-          // Skip scanLines.
-          // Skip samplesPerLine.
+          scanLines = view.getUint16(offset + (2 + 1));
+          samplesPerLine = view.getUint16(offset + (2 + 1 + 2));
           numComponents = data[offset + (2 + 1 + 2 + 2)];
           break markerLoop;
         case 0xffff: // Fill bytes
@@ -879,7 +881,8 @@ class JpegImage {
     if (numComponents === 3 && colorTransform === 0) {
       return null;
     }
-    return exifOffsets || {};
+    // A zero SOF height means that a later DNL marker defines it.
+    return { width: samplesPerLine, height: scanLines, ...exifOffsets };
   }
 
   parse(data, { dnlScanLines = null } = {}) {

@@ -96,18 +96,20 @@ class ImageResizer {
     return area > maxArea;
   }
 
-  static getReducePowerForJPX(width, height, componentsCount) {
+  // Return the power-of-two reduction exponent for canvas and area limits.
+  static getReducePower(width, height, maxArea = Infinity) {
+    if (
+      !Number.isInteger(width) ||
+      width <= 0 ||
+      !Number.isInteger(height) ||
+      height <= 0
+    ) {
+      return 0;
+    }
     const area = width * height;
-    // The maximum memory we've in the wasm runtime is 2GB.
-    // Each component is 4 bytes and we can't allocate all the memory just for
-    // the buffers so we limit the size to 1GB / (componentsCount * 4).
-    // We could use more than 2GB by setting MAXIMUM_MEMORY but it would take
-    // too much time to decode a big image.
-    const maxJPXArea = 2 ** 30 / (componentsCount * 4);
     if (!this.needsToBeResized(width, height)) {
-      if (area > maxJPXArea) {
-        // The image is too large, we need to rescale it.
-        return Math.ceil(Math.log2(area / maxJPXArea));
+      if (area > maxArea) {
+        return Math.ceil(Math.log2(area / maxArea));
       }
       return 0;
     }
@@ -115,9 +117,15 @@ class ImageResizer {
     const minFactor = Math.max(
       width / MAX_DIM,
       height / MAX_DIM,
-      Math.sqrt(area / Math.min(maxJPXArea, MAX_AREA))
+      Math.sqrt(area / Math.min(maxArea, MAX_AREA))
     );
-    return Math.ceil(Math.log2(minFactor));
+    return Math.max(0, Math.ceil(Math.log2(minFactor)));
+  }
+
+  static getReducePowerForJPX(width, height, componentsCount) {
+    // Budget 1 GiB of OpenJPEG's 2 GiB Wasm heap for four-byte component
+    // samples.
+    return this.getReducePower(width, height, 2 ** 30 / (componentsCount * 4));
   }
 
   static get MAX_DIM() {

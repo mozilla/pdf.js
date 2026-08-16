@@ -837,29 +837,33 @@ class PDFImage {
         !this.mask &&
         !this.needsDecode
       ) {
-        let imageLength = originalHeight * rowBytes;
-        if (isOffscreenCanvasSupported && !mustBeResized) {
-          let isHandled = false;
-          switch (this.colorSpace.name) {
-            case "DeviceGray":
-              // Avoid truncating the image, since `JpegImage.getData`
-              // will expand the image data when `forceRGB === true`.
-              imageLength *= 4;
-              isHandled = true;
-              break;
-            case "DeviceRGB":
-              imageLength = (imageLength / 3) * 4;
-              isHandled = true;
-              break;
-            case "DeviceCMYK":
-              isHandled = true;
-              break;
-          }
-
-          if (isHandled) {
+        let isHandled = false;
+        switch (this.colorSpace.name) {
+          case "DeviceGray":
+          case "DeviceRGB":
+          case "DeviceCMYK":
+            isHandled = true;
+            break;
+        }
+        if (isHandled) {
+          if (isOffscreenCanvasSupported) {
+            // Try ImageDecoder before the pixel-buffer fallback.
             const image = await this.#getImage(drawWidth, drawHeight);
             if (image) {
               return image;
+            }
+          }
+          let imageLength = originalHeight * rowBytes;
+
+          if (isOffscreenCanvasSupported && !mustBeResized) {
+            switch (this.colorSpace.name) {
+              case "DeviceGray":
+                // Account for the DeviceGray-to-RGBA expansion.
+                imageLength *= 4;
+                break;
+              case "DeviceRGB":
+                imageLength = (imageLength / 3) * 4;
+                break;
             }
             const rgba = await this.getImageBytes(imageLength, {
               drawWidth,
@@ -874,26 +878,20 @@ class PDFImage {
               rgba
             );
           }
-        } else {
-          switch (this.colorSpace.name) {
-            case "DeviceGray":
-              imageLength *= 3;
-            /* falls through */
-            case "DeviceRGB":
-            case "DeviceCMYK":
-              imgData.kind = ImageKind.RGB_24BPP;
-              imgData.data = await this.getImageBytes(imageLength, {
-                drawWidth,
-                drawHeight,
-                forceRGB: true,
-                internal: mustBeResized,
-              });
-              if (mustBeResized) {
-                // The image is too big so we resize it.
-                return ImageResizer.createImage(imgData);
-              }
-              return imgData;
+          if (this.colorSpace.name === "DeviceGray") {
+            imageLength *= 3;
           }
+          imgData.kind = ImageKind.RGB_24BPP;
+          imgData.data = await this.getImageBytes(imageLength, {
+            drawWidth,
+            drawHeight,
+            forceRGB: true,
+            internal: mustBeResized,
+          });
+          if (mustBeResized) {
+            return ImageResizer.createImage(imgData);
+          }
+          return imgData;
         }
       }
     }
@@ -1148,14 +1146,15 @@ class PDFImage {
   }
 
   async #getImage(width, height) {
-    const bitmap = await this.image.getTransferableImage();
+    const bitmap = await this.image.getTransferableImage(width, height);
     if (!bitmap) {
       return null;
     }
+    // ImageDecoder may ignore the requested dimensions.
     return {
       data: null,
-      width,
-      height,
+      width: bitmap.displayWidth ?? width,
+      height: bitmap.displayHeight ?? height,
       bitmap,
       interpolate: this.interpolate,
     };
