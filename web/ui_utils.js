@@ -399,6 +399,11 @@ function backtrackBeforeAllVisibleElements(index, views, top) {
   return index;
 }
 
+function visibleSort(a, b) {
+  const pc = a.percent - b.percent;
+  return Math.abs(pc) > 0.001 ? -pc : a.id - b.id; // ensure stability
+}
+
 /**
  * @typedef {Object} GetVisibleElementsParameters
  * @property {HTMLElement} scrollEl - A container that can possibly scroll.
@@ -576,13 +581,7 @@ function getVisibleElements({
     last = visible.at(-1);
 
   if (sortByVisibility) {
-    visible.sort(function (a, b) {
-      const pc = a.percent - b.percent;
-      if (Math.abs(pc) > 0.001) {
-        return -pc;
-      }
-      return a.id - b.id; // ensure stability
-    });
+    visible.sort(visibleSort);
   }
   return { first, last, views: visible, ids };
 }
