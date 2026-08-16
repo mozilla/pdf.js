@@ -1133,18 +1133,23 @@ async function highlightSpan(
 }
 
 async function showViewsManager(page) {
-  const hasAnimations = await page.evaluate(
-    () => !window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-  const movingPromise = hasAnimations
-    ? page.waitForSelector("#outerContainer.viewsManagerMoving", {
-        visible: true,
-      })
-    : Promise.resolve();
+  // Opening dispatches this event synchronously when animations are disabled,
+  // so install the listener before clicking the toggle button. With animations,
+  // it's dispatched once the transition has ended and the moving class has
+  // been removed.
+  const openedHandle = await createPromise(page, resolve => {
+    const { eventBus, viewsManager } = window.PDFViewerApplication;
+    const onResize = ({ source }) => {
+      if (source !== viewsManager) {
+        return;
+      }
+      eventBus.off("resize", onResize);
+      resolve();
+    };
+    eventBus.on("resize", onResize);
+  });
   await page.click("#viewsManagerToggleButton");
-  if (hasAnimations) {
-    await movingPromise;
-  }
+  await awaitPromise(openedHandle);
   await page.waitForSelector("#viewsManager", { visible: true });
   await page.waitForSelector(
     "#outerContainer:not(.viewsManagerMoving).viewsManagerOpen",
