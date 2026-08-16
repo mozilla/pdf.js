@@ -334,7 +334,8 @@
       align-self: stretch;
       justify-content: space-between;
       width: auto;
-      padding: 12px 16px 12px 8px;
+      padding-block: 12px;
+      padding-inline: 8px 16px;
 
       &:not(:has(#viewsManagerHeaderLabel ~ button:not([hidden])))::after {
         /* If one of the following buttons is visible, hide the placeholder
@@ -372,7 +373,7 @@
             display: inline-block;
             width: 12px;
             height: 12px;
-            margin-left: 8px;
+            margin-inline-start: 8px;
             mask-repeat: no-repeat;
             mask-position: center;
             mask-image: var(--views-manager-button-arrow-icon);

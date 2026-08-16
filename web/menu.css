@@ -159,7 +159,7 @@ button.hasPopupMenu {
       position: absolute;
       inset-inline-start: var(--menuitem-gap);
       top: 50%;
-      transform: translateY(-50%);
+      transform: translateY(-50%) scaleX(var(--dir-factor));
     }
 
     &:disabled {
