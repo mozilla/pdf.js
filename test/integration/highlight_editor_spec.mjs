@@ -1437,6 +1437,48 @@ describe("Highlight Editor", () => {
     });
   });
 
+  describe("Floating highlight button in a RTL locale", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        null,
+        null,
+        { locale: "ar" }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the floating toolbar is next to the selected text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const { x, y, width, height } = await getSpanRectFromText(
+            page,
+            1,
+            "Abstract"
+          );
+          await page.mouse.click(x + width / 2, y + height / 2, {
+            count: 2,
+            delay: 100,
+          });
+
+          const toolbarRect = await getRect(page, ".textLayer .editToolbar");
+
+          // In RTL, the left edge of the toolbar is aligned on the left edge
+          // of the selection (bug 2060032).
+          expect(toolbarRect.x)
+            .withContext(`In ${browserName}`)
+            .toBeCloseTo(x, 0);
+        })
+      );
+    });
+  });
+
   describe("Text layer must have the focus before highlights", () => {
     let pages;
 
