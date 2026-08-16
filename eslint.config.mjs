@@ -164,6 +164,7 @@ export default [
       "unicorn/no-incorrect-query-selector": "error",
       "unicorn/no-instanceof-builtins": "error",
       "unicorn/no-invalid-remove-event-listener": "error",
+      "unicorn/no-multiple-promise-resolver-calls": "error",
       "unicorn/no-new-buffer": "error",
       "unicorn/no-single-promise-in-promise-methods": "error",
       "unicorn/no-typeof-undefined": ["error", { checkGlobalVariables: false }],

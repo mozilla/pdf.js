@@ -883,6 +883,7 @@ function runTests(testsName, { bot = false } = {}) {
     testProcess.on("close", function (code) {
       if (code !== 0) {
         reject(new Error(`Running ${testsName} tests failed.`));
+        return;
       }
       resolve();
     });
