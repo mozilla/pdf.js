@@ -277,6 +277,10 @@ class FloatingToolbar {
     const editToolbar = (this.#toolbar = document.createElement("div"));
     editToolbar.className = "editToolbar";
     editToolbar.setAttribute("role", "toolbar");
+    // The toolbar is inserted in the text layer which is always LTR (see
+    // `.pdfViewer .page`), hence the direction must be set here in order to
+    // have `inset-inline-end` (see `show`) resolved against the UI direction.
+    editToolbar.dir = this.#uiManager.direction;
 
     const signal = this.#uiManager._signal;
     if (signal instanceof AbortSignal && !signal.aborted) {
