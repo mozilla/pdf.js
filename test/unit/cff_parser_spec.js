@@ -60,11 +60,7 @@ describe("CFFParser", function () {
       "8b06f79a93fc7c8c077d99f85695f75e" +
       "9908fb6e8cf87393f7108b09a70adf0b" +
       "f78e14";
-    const fontArr = [];
-    for (let i = 0, ii = exampleFont.length; i < ii; i += 2) {
-      const hex = exampleFont.substring(i, i + 2);
-      fontArr.push(parseInt(hex, 16));
-    }
+    const fontArr = Uint8Array.fromHex(exampleFont);
     fontData = new Stream(fontArr);
   });
 
