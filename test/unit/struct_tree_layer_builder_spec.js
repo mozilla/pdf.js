@@ -360,6 +360,49 @@ describe("StructTreeLayerBuilder", function () {
     expect(row.id).toEqual("");
   });
 
+  it("only lets an eligible link annotation own its tagged text", async function () {
+    const annotationId = "pdfjs_internal_id_1R";
+    const builder = build({
+      role: "Root",
+      children: [
+        {
+          role: "Link",
+          children: [
+            { type: "content", id: "p1R_mc1" },
+            {
+              role: "Lbl",
+              // BBox is layout-only.
+              bbox: [0, 0, 10, 10],
+              children: [{ type: "content", id: "p1R_mc2" }],
+            },
+            { type: "annotation", id: annotationId },
+          ],
+        },
+      ],
+    });
+    const tree = await builder.render();
+    const link = tree.firstElementChild;
+    expect(link.getAttribute("role")).toEqual("link");
+    const [text, label, annotation] = link.children;
+    expect(await builder.getAnnotationIds()).toEqual(new Set([annotationId]));
+    expect([text.id, label.id]).not.toContain("");
+    expect(annotation.getAttribute("aria-owns")).toEqual(annotationId);
+
+    // Merely asking for the annotation attributes keeps the fallback.
+    expect(await builder.getAriaAttributes(annotationId)).toBeUndefined();
+    expect(link.getAttribute("role")).toEqual("link");
+
+    const attributes = await builder.getAriaAttributes(annotationId, {
+      enableLinkOwnership: true,
+    });
+
+    expect(attributes).toEqual(
+      new Map([["aria-owns", `${text.id} ${label.id}`]])
+    );
+    expect(link.getAttribute("role")).toBeNull();
+    expect(link.childElementCount).toEqual(3);
+  });
+
   it("keeps structured annotations in the structure tree", async function () {
     const builder = build({
       role: "Root",
