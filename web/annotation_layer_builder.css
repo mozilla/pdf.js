@@ -154,6 +154,13 @@
     pointer-events: none;
   }
 
+  /* Ensure the annotation editor layer does not block text selection when
+     the user is selecting text in the textLayer. This mirrors the rule above
+     which applies to the (regular) annotation layer. */
+  .textLayer.selecting ~ .annotationEditorLayer section {
+    pointer-events: none;
+  }
+
   :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton) > a {
     position: absolute;
     font-size: 1em;
