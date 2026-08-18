@@ -53,6 +53,18 @@ const selectAll = selectEditors.bind(null, "highlight");
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
 
+// Move the mouse in integer steps to avoid fractional intermediate positions
+// which can break selection in Firefox.
+async function moveInSteps(page, from, to, steps) {
+  const deltaX = to.x - from.x;
+  const deltaY = to.y - from.y;
+  for (let i = 0; i <= steps; i++) {
+    const x = Math.round(from.x + (deltaX * i) / steps);
+    const y = Math.round(from.y + (deltaY * i) / steps);
+    await page.mouse.move(x, y);
+  }
+}
+
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
     let pages;
@@ -530,6 +542,63 @@ describe("Highlight Editor", () => {
           );
         })
       );
+    });
+
+    describe("Selecting text inside a highlighted paragraph", () => {
+      let pages;
+
+      beforeEach(async () => {
+        pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+      });
+
+      afterEach(async () => {
+        await closePages(pages);
+      });
+
+      it("allows selecting/copying text inside a highlight", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await switchToHighlight(page);
+
+            // Create a highlight on the word "Abstract".
+            await highlightSpan(page, 1, "Abstract");
+            await page.waitForSelector(
+              `.page[data-page-number = "1"] svg.highlightOutline.selected`
+            );
+
+            // Try to select text within the highlighted area.
+            const rect = await getSpanRectFromText(page, 1, "Abstract");
+            const startX = Math.round(rect.x + 2);
+            const startY = Math.round(rect.y + rect.height / 2);
+            const endX = Math.round(rect.x + rect.width - 2);
+            const endY = startY;
+
+            await page.mouse.move(startX, startY);
+            await page.mouse.down();
+            // Drag across the highlighted span to create a selection.
+            await moveInSteps(page, { x: startX, y: startY }, { x: endX, y: endY }, 12);
+            await page.mouse.up();
+
+            // Wait for the selection to appear to reduce flakiness.
+            await page.waitForFunction(() => window.getSelection().toString().length > 0);
+
+            // The selection should contain the word we selected.
+            await expectAsync(page)
+              .withContext(`In ${browserName}`)
+              .toHaveRoughlySelected("Abstract");
+
+            // Also verify backward selection (drag right->left) works.
+            await page.mouse.move(endX, endY);
+            await page.mouse.down();
+            await moveInSteps(page, { x: endX, y: endY }, { x: startX, y: startY }, 12);
+            await page.mouse.up();
+            await page.waitForFunction(() => window.getSelection().toString().length > 0);
+            await expectAsync(page)
+              .withContext(`In ${browserName} (backwards)`)
+              .toHaveRoughlySelected("Abstract");
+          })
+        );
+      });
     });
   });
 
