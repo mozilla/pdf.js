@@ -86,7 +86,11 @@ class BaseStream {
     return false;
   }
 
-  async getTransferableImage() {
+  /**
+   * @param {number} width - The width from the image dictionary.
+   * @param {number} height - The height from the image dictionary.
+   */
+  async getTransferableImage(width, height) {
     return null;
   }
 

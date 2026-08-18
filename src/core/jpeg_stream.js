@@ -16,6 +16,7 @@
 import { FeatureTest, shadow, warn } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
+import { ImageResizer } from "./image_resizer.js";
 import { JpegImage } from "./jpg.js";
 
 /**
@@ -140,7 +141,7 @@ class JpegStream extends DecodeStream {
     return this.stream.isAsync;
   }
 
-  async getTransferableImage() {
+  async getTransferableImage(width, height) {
     if (!(await JpegStream.canUseImageDecoder)) {
       return null;
     }
@@ -170,6 +171,17 @@ class JpegStream extends DecodeStream {
       if (!useImageDecoder) {
         return null;
       }
+      if (
+        useImageDecoder.width !== width ||
+        useImageDecoder.height !== height
+      ) {
+        // The SOF dimensions disagree with the image dictionary, e.g. because
+        // the height is only known from a DNL marker or because the scan simply
+        // ends early (issue15492.pdf). `ImageDecoder` reports and scales the
+        // frame according to the SOF, so let our own decoder, which honours the
+        // dictionary, handle the image instead.
+        return null;
+      }
       if (useImageDecoder.exifStart) {
         // Replace the entire EXIF-block with dummy data, to ensure that a
         // non-default EXIF orientation won't cause the image to be rotated
@@ -179,11 +191,19 @@ class JpegStream extends DecodeStream {
         data = data.slice();
         data.fill(0x00, useImageDecoder.exifStart, useImageDecoder.exifEnd);
       }
-      decoder = new ImageDecoder({
+      const init = {
         data,
         type: "image/jpeg",
         preferAnimation: false,
-      });
+      };
+      // Request reduced dimensions; ImageDecoder treats them as best-effort.
+      const reducePower = ImageResizer.getReducePower(width, height);
+      if (reducePower) {
+        const factor = 2 ** reducePower;
+        init.desiredWidth = Math.ceil(width / factor);
+        init.desiredHeight = Math.ceil(height / factor);
+      }
+      decoder = new ImageDecoder(init);
 
       return (await decoder.decode()).image;
     } catch (reason) {
