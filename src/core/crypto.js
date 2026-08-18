@@ -207,7 +207,7 @@ class AESBaseCipher {
     0x9f5d80be, 0x91548db5, 0x834f9aa8, 0x8d4697a3,
   ]);
 
-  _mixCol = new Uint8Array(256).map((_, i) =>
+  _mixCol = Uint8Array.from({ length: 256 }, (_, i) =>
     i < 128 ? i << 1 : (i << 1) ^ 0x1b
   );
 
