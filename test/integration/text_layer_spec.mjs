@@ -14,7 +14,7 @@
  */
 
 /**
- * @import { Page } from "puppeteer"
+ * @import { Browser, Page } from "puppeteer"
  */
 
 import {
@@ -49,6 +49,32 @@ import { startBrowser } from "../test.mjs";
  * @property {Rect} rect
  * @property {string} text
  */
+
+// These suites require Firefox profile preferences and a dedicated browser, so
+// exclude them when Firefox is disabled.
+const describeFirefoxOnly = global.integrationSessions.some(
+  session => session.browserType === "firefox"
+)
+  ? describe
+  : xdescribe;
+
+// Dedicated browser setup can exceed Jasmine's 30-second default. Keep this
+// above `startBrowser`'s protocol timeout so protocol errors surface first.
+const BROWSER_HOOK_TIMEOUT = 60000;
+
+/**
+ * @param {Browser} [browser]
+ * @param {Page} [page]
+ */
+async function closeDedicatedBrowser(browser, page) {
+  try {
+    if (page) {
+      await closeSinglePage(page);
+    }
+  } finally {
+    await browser?.close();
+  }
+}
 
 describe("Text layer", () => {
   describe("Text layout", () => {
@@ -1240,7 +1266,7 @@ describe("Text layer", () => {
       });
     });
 
-    describe("using selection carets", () => {
+    describeFirefoxOnly("using selection carets", () => {
       let browser;
       let page;
 
@@ -1264,12 +1290,11 @@ describe("Text layer", () => {
           `.page[data-page-number = "1"] .endOfContent`,
           { timeout: 0 }
         );
-      });
+      }, BROWSER_HOOK_TIMEOUT);
 
       afterEach(async () => {
-        await closeSinglePage(page);
-        await browser.close();
-      });
+        await closeDedicatedBrowser(browser, page);
+      }, BROWSER_HOOK_TIMEOUT);
 
       it("doesn't jump when moving selection", async () => {
         const [initialStart, initialEnd, finalEnd] = await Promise.all([
@@ -1468,7 +1493,7 @@ describe("Text layer", () => {
     });
   });
 
-  describe("when the browser enforces a minimum font size", () => {
+  describeFirefoxOnly("when the browser enforces a minimum font size", () => {
     let browser;
     let page;
 
@@ -1489,12 +1514,11 @@ describe("Text layer", () => {
         `.page[data-page-number = "1"] .endOfContent`,
         { timeout: 0 }
       );
-    });
+    }, BROWSER_HOOK_TIMEOUT);
 
     afterEach(async () => {
-      await closeSinglePage(page);
-      await browser.close();
-    });
+      await closeDedicatedBrowser(browser, page);
+    }, BROWSER_HOOK_TIMEOUT);
 
     it("renders spans with the right size", async () => {
       const rect = await getSpanRectFromText(

@@ -1068,8 +1068,14 @@ async function startBrowser({
       "browser.newtabpage.enabled": false,
       // Disable network connections to Contile.
       "browser.topsites.contile.enabled": false,
-      // Disable logging for remote settings.
+      // Disable logging for remote settings and the messaging system.
       "services.settings.loglevel": "off",
+      "messaging-system.log": "off",
+      // Prevent remote settings from using the network.
+      "services.settings.server": "data:,#remote-settings-dummy/v1",
+      // Disable Nimbus rollouts and studies.
+      "nimbus.rollouts.enabled": false,
+      "app.shield.optoutstudies.enabled": false,
       // Disable AI/ML functionality.
       "browser.ai.control.default": "blocked",
       "privacy.baselineFingerprintingProtection": false,
