@@ -811,11 +811,14 @@ class JpegImage {
 
   static canUseImageDecoder(data, colorTransform = -1) {
     const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-    let exifOffsets = null;
+    const info = {
+      width: 0,
+      height: 0,
+      exifStart: 0,
+      exifEnd: 0,
+    };
     let offset = 0;
     let numComponents = null;
-    let scanLines = 0,
-      samplesPerLine = 0;
     let fileMarker = view.getUint16(offset);
     offset += 2;
     if (fileMarker !== /* SOI (Start of Image) = */ 0xffd8) {
@@ -845,12 +848,13 @@ class JpegImage {
             appData[4] === 0 &&
             appData[5] === 0
           ) {
-            if (exifOffsets) {
+            if (info.exifStart) {
               throw new JpegError("Duplicate EXIF-blocks found.");
             }
             // Don't do the EXIF-block replacement here, see `JpegStream`,
             // since that can modify the original PDF document.
-            exifOffsets = { exifStart: oldOffset + 6, exifEnd: newOffset };
+            info.exifStart = oldOffset + 6;
+            info.exifEnd = newOffset;
           }
           fileMarker = view.getUint16(offset);
           offset += 2;
@@ -860,8 +864,8 @@ class JpegImage {
         case 0xffc2: // SOF2 (Start of Frame, Progressive DCT)
           // Skip marker length.
           // Skip precision.
-          scanLines = view.getUint16(offset + (2 + 1));
-          samplesPerLine = view.getUint16(offset + (2 + 1 + 2));
+          info.height = view.getUint16(offset + (2 + 1)); // scanLines
+          info.width = view.getUint16(offset + (2 + 1 + 2)); // samplesPerLine
           numComponents = data[offset + (2 + 1 + 2 + 2)];
           break markerLoop;
         case 0xffff: // Fill bytes
@@ -882,7 +886,7 @@ class JpegImage {
       return null;
     }
     // A zero SOF height means that a later DNL marker defines it.
-    return { width: samplesPerLine, height: scanLines, ...exifOffsets };
+    return info;
   }
 
   parse(data, { dnlScanLines = null } = {}) {

@@ -18,6 +18,7 @@ import { ImageResizer } from "../../src/core/image_resizer.js";
 import { JpegImage } from "../../src/core/jpg.js";
 import { JpegStream } from "../../src/core/jpeg_stream.js";
 import { Stream } from "../../src/core/stream.js";
+import { stringToBytes } from "../../src/shared/util.js";
 
 // Only a JPEG header is needed: `canUseImageDecoder` stops at the SOF marker.
 function createJpeg({
@@ -57,13 +58,13 @@ describe("jpeg_stream", function () {
     it("should report the frame dimensions", function () {
       expect(
         JpegImage.canUseImageDecoder(createJpeg({ width: 40000, height: 4000 }))
-      ).toEqual({ width: 40000, height: 4000 });
+      ).toEqual({ width: 40000, height: 4000, exifStart: 0, exifEnd: 0 });
 
       expect(
         JpegImage.canUseImageDecoder(
           createJpeg({ width: 123, height: 45, numComponents: 1 })
         )
-      ).toEqual({ width: 123, height: 45 });
+      ).toEqual({ width: 123, height: 45, exifStart: 0, exifEnd: 0 });
     });
 
     it("should report dimensions for each supported SOF marker", function () {
@@ -78,19 +79,19 @@ describe("jpeg_stream", function () {
           )
         )
           .withContext(sofMarker.toString(16))
-          .toEqual({ width: 40000, height: 4000 });
+          .toEqual({ width: 40000, height: 4000, exifStart: 0, exifEnd: 0 });
       }
     });
 
     it("should report a zero SOF height", function () {
       expect(
         JpegImage.canUseImageDecoder(createJpeg({ width: 40000, height: 0 }))
-      ).toEqual({ width: 40000, height: 0 });
+      ).toEqual({ width: 40000, height: 0, exifStart: 0, exifEnd: 0 });
     });
 
     it("should report the frame dimensions together with the EXIF-offsets", function () {
       const payload = [1, 2, 3, 4];
-      const appData = [...new TextEncoder().encode("Exif\x00\x00"), ...payload];
+      const appData = [...stringToBytes("Exif\x00\x00"), ...payload];
 
       // SOI (2) + APP1-marker (2) + length (2) + "Exif\x00\x00" (6) = 12.
       expect(
