@@ -4480,6 +4480,59 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
+    it("auto-closes marked content opened in a text object (bug 1898053)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("bug1898053_minimal.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        includeMarkedContent: true,
+      });
+
+      expect(items.map(item => item.id ?? item.type ?? item.str)).toEqual([
+        "Hello, world!",
+        "p3R_mc1",
+        "endMarkedContent",
+        "p3R_mc2",
+        "endMarkedContent",
+        "p3R_mc3",
+        "endMarkedContent",
+        "p3R_mc4",
+        "endMarkedContent",
+        "p3R_mc5",
+        "endMarkedContent",
+        "p3R_mc6",
+        "endMarkedContent",
+      ]);
+
+      await loadingTask.destroy();
+    });
+
+    it("preserves marked content spanning text objects (bug 1823296)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("bug1823296.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        includeMarkedContent: true,
+        disableNormalization: true,
+      });
+
+      const start = items.findIndex(item => item.id === "p3R_mc8");
+      const end = items.findIndex(
+        (item, index) => index > start && item.type === "endMarkedContent"
+      );
+
+      expect(items.slice(start + 1, end).map(item => item.str)).toEqual([
+        "",
+        "PDF/UA is not a separate file-format but simply a way to use the " +
+          "familiar PDF format invented by Adobe",
+        "Systems and now standardized as ISO 32000.[5]",
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content with multi-byte entries, using predefined CMaps (issue 16176)", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("issue16176.pdf", {
