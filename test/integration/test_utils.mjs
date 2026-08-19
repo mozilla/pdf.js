@@ -432,6 +432,53 @@ async function waitForUnselectedEditor(page, selector) {
   return page.waitForSelector(`${selector}:not(.selectedEditor)`);
 }
 
+async function commit(page) {
+  await page.keyboard.press("Escape");
+  await page.waitForSelector(".freeTextEditor.selectedEditor .overlay.enabled");
+}
+
+async function cancelFocusIn(page, selector) {
+  page.evaluate(sel => {
+    const el = document.querySelector(sel);
+    el.addEventListener(
+      "focusin",
+      evt => {
+        evt.preventDefault();
+        evt.stopPropagation();
+      },
+      { capture: true, once: true }
+    );
+  }, selector);
+}
+
+async function createFreeTextEditor({
+  page,
+  x,
+  y,
+  data = null,
+  noFocusIn = false,
+}) {
+  const editorSelector = getEditorSelector(await getNextEditorId(page));
+  const serializedCount = await countSerialized(page);
+  const storageEntriesCount = await countStorageEntries(page);
+
+  await page.mouse.click(x, y);
+  await page.waitForSelector(editorSelector, { visible: true });
+  if (data) {
+    await page.type(`${editorSelector} .internal`, data);
+  }
+  if (noFocusIn) {
+    await cancelFocusIn(page, editorSelector);
+  }
+  await commit(page);
+
+  await waitForSelectedEditor(page, editorSelector);
+  await waitForStorageEntries(page, storageEntriesCount + 1);
+  await waitForSerialized(page, serializedCount + 1);
+
+  return editorSelector;
+}
+
 async function mockClipboard(pages) {
   return Promise.all(
     pages.map(async ([_, page]) => {
@@ -1189,10 +1236,12 @@ export {
   clearInput,
   closePages,
   closeSinglePage,
+  commit,
   copy,
   copyToClipboard,
   countSerialized,
   countStorageEntries,
+  createFreeTextEditor,
   createPromise,
   createPromiseWithArgs,
   dragAndDrop,
