@@ -62,6 +62,7 @@ const PDFStringTranslateTable = [
   0x2019, 0x201a, 0x2122, 0xfb01, 0xfb02, 0x141, 0x152, 0x160, 0x178, 0x17d,
   0x131, 0x142, 0x153, 0x161, 0x17e, 0, 0x20ac,
 ];
+const PDFStringTextDecoders = Object.create(null);
 
 function stringToPDFString(str, keepEscapeSequence = false) {
   // See section 7.9.2.2 Text String Type.
@@ -85,7 +86,10 @@ function stringToPDFString(str, keepEscapeSequence = false) {
 
     if (encoding) {
       try {
-        const decoder = new TextDecoder(encoding, { fatal: true });
+        const decoder = (PDFStringTextDecoders[encoding] ??= new TextDecoder(
+          encoding,
+          { fatal: true }
+        ));
         const buffer = stringToBytes(str);
         const decoded = decoder.decode(buffer);
         if (keepEscapeSequence || !decoded.includes("\x1b")) {
