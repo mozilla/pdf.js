@@ -16,6 +16,7 @@
 import {
   awaitPromise,
   closePages,
+  createFreeTextEditor,
   getAnnotationSelector,
   getEditorSelector,
   getFirstSerialized,
@@ -52,6 +53,8 @@ const __dirname = import.meta.dirname;
 const selectAll = selectEditors.bind(null, "highlight");
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
+
+const switchToFreeText = switchToEditor.bind(null, "FreeText");
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
@@ -2929,6 +2932,133 @@ describe("Highlight Editor", () => {
           })
         );
       });
+    });
+  });
+
+  describe("editToolbar is rendering over annotations", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "toolbar-overlap-with-annotations.pdf",
+        ".annotationEditorLayer",
+        120
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that the edit toolbar is rendered above link annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.waitForSelector(
+            `.page[data-page-number = "1"] .textLayer .endOfContent`
+          );
+
+          const linkSelector = `a[href="https://github.com/mozilla/pdf.js"]`;
+          const linkRect = await getRect(page, linkSelector);
+
+          const topElementId = await page.evaluate(
+            (px, py) => document.elementFromPoint(px, py)?.id || null,
+            linkRect.x + linkRect.width / 2,
+            linkRect.y + linkRect.height / 2
+          );
+          expect(topElementId)
+            .withContext(`In ${browserName}`)
+            .toEqual("pdfjs_internal_id_14R");
+
+          // Select some text to show the floating toolbar.
+          const firstRect = await getSpanRectFromText(page, 1, "A:");
+          await page.mouse.click(firstRect.x, firstRect.y, {
+            count: 2,
+            delay: 100,
+          });
+
+          const highlightButtonSelector = `.page[data-page-number = "1"] .editToolbar button.highlightButton`;
+          await page.waitForSelector(highlightButtonSelector, {
+            visible: true,
+          });
+
+          const topElementClass = await page.evaluate(
+            (px, py) => document.elementFromPoint(px, py)?.className || null,
+            linkRect.x,
+            linkRect.y
+          );
+          expect(topElementClass)
+            .withContext(`In ${browserName}`)
+            .toContain("highlightButton");
+        })
+      );
+    });
+
+    fit("must check that the edit toolbar is rendered above text annotations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const myText = await getSpanRectFromText(page, 1, "My text");
+          // "CHECK" is roughly 50px wide at the default font size and
+          // "CHECK" roughly aligned with the end of "Languages".
+          const editorSelector = await createFreeTextEditor({
+            page,
+            x: myText.x + myText.width / 2,
+            y: myText.y + myText.height + 20,
+            data: "CHECK",
+          });
+
+          const freeTextRect = await getRect(page, editorSelector);
+          const freeTextTopElement = await page.evaluate(
+            (px, py) =>
+              document.elementFromPoint(px, py)?.getAttribute("data-l10n-id") ||
+              null,
+            freeTextRect.x + freeTextRect.width / 2,
+            freeTextRect.y + freeTextRect.height / 2
+          );
+          expect(freeTextTopElement)
+            .withContext(`In ${browserName}`)
+            .toEqual("pdfjs-free-text2");
+
+          // Close the text editor.
+          await switchToFreeText(page, /* disable */ true);
+
+          // Double click on "myText" to show the floating toolbar.
+          await page.mouse.click(
+            myText.x + myText.width / 2,
+            myText.y + myText.height / 2,
+            { count: 2, delay: 100 }
+          );
+
+          const toolbarSelector = `.page[data-page-number = "1"] .editToolbar:has(button.highlightButton)`;
+          const highlightButtonSelector = `${toolbarSelector} button.highlightButton`;
+          await page.waitForSelector(highlightButtonSelector, {
+            visible: true,
+          });
+
+          let topElement = await page.evaluate(
+            (px, py) => document.elementFromPoint(px, py)?.className || null,
+            freeTextRect.x + freeTextRect.width / 2,
+            freeTextRect.y + freeTextRect.height / 2
+          );
+          expect(topElement)
+            .withContext(`In ${browserName}`)
+            .toContain("highlightButton");
+
+          // Re-open the text editor without dismissing the floating toolbar,
+          // so both are present on the page at the same time.
+          await switchToFreeText(page);
+
+          topElement = await page.evaluate(
+            (px, py) => document.elementFromPoint(px, py)?.className || null,
+            freeTextRect.x + freeTextRect.width / 2,
+            freeTextRect.y + freeTextRect.height / 2
+          );
+          expect(topElement)
+            .withContext(`In ${browserName}`)
+            .toContain("highlightButton");
+        })
+      );
     });
   });
 });
