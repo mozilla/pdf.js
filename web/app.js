@@ -89,6 +89,8 @@ import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PdfTextExtractor } from "./pdf_text_extractor.js";
 import { PDFThumbnailViewer } from "web-pdf_thumbnail_viewer";
+// eslint-disable-next-line sort-imports
+import { PDFSearchViewer } from "./pdf_search_viewer.js";
 import { PDFViewer } from "./pdf_viewer.js";
 import { Preferences } from "web-preferences";
 import { RenderingStates } from "./renderable_view.js";
@@ -197,6 +199,9 @@ const PDFViewerApplication = {
   _isScrolling: false,
   editorUndoBar: null,
   _printPermissionPromise: null,
+
+  /** @type {PDFSearchViewer} */
+  pdfSearchViewer: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -865,6 +870,17 @@ const PDFViewerApplication = {
           pdfViewer.currentPageNumber
         );
       };
+    }
+
+    if (appConfig.viewsManager?.searchView) {
+      this.pdfSearchViewer = new PDFSearchViewer({
+        container: appConfig.viewsManager.searchView,
+        eventBus,
+        renderingQueue,
+        linkService,
+        l10n,
+        searchButton: appConfig.viewsManager.searchButton,
+      });
     }
 
     if (
@@ -2928,6 +2944,11 @@ function onFindFromUrlHash(evt) {
     findPrevious: false,
     matchDiacritics: true,
   });
+  PDFViewerApplication.findBar.open();
+  PDFViewerApplication.findBar.findField.value = evt.query;
+  PDFViewerApplication.findBar.highlightAll.checked = true;
+
+  PDFViewerApplication.viewsManager?.open();
 }
 
 function onUpdateFindMatchesCount({ matchesCount }) {

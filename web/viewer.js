@@ -132,6 +132,7 @@ function getViewerConfiguration() {
       outlineButton: document.getElementById("outlinesViewMenu"),
       attachmentsButton: document.getElementById("attachmentsViewMenu"),
       layersButton: document.getElementById("layersViewMenu"),
+      searchButton: document.getElementById("searchViewMenu"),
       viewsManagerSelectorButton: document.getElementById(
         "viewsManagerSelectorButton"
       ),
@@ -195,6 +196,7 @@ function getViewerConfiguration() {
           "viewsManagerStatusActionExport"
         ),
       },
+      searchView: document.getElementById("searchView"),
     },
     findBar: {
       bar: document.getElementById("findbar"),

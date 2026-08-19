@@ -365,6 +365,7 @@ function normalize(text, options = {}) {
   return [normalized, [starts, shifts], hasDiacritics];
 }
 
+
 // Determine the original, non-normalized, match index such that highlighting of
 // search results is correct in the `textLayer` for strings containing e.g. "½"
 // characters; essentially "inverting" the result of the `normalize` function.
@@ -918,6 +919,22 @@ class PDFFindController {
     }
   }
 
+  goToMatch(pageIndex, matchIndex) {
+    if (pageIndex > this.pageMatches.length) {
+      return;
+    }
+    if (matchIndex > this.pageMatches[pageIndex].length) {
+      return;
+    }
+    this._offset.pageIdx = pageIndex;
+    this._offset.matchIdx = matchIndex;
+    this.#updateMatch(true);
+  }
+
+  changeHighlight(value) {
+    this._highlightMatches = value;
+  }
+
   #updatePage(index) {
     if (this._scrollMatches && this._selected.pageIdx === index) {
       // If the page is selected, scroll the page into view, which triggers
@@ -1240,6 +1257,7 @@ class PDFFindController {
     this._eventBus.dispatch("updatefindmatchescount", {
       source: this,
       matchesCount: this.#requestMatchesCount(),
+      pageContents: this._pageContents,
     });
   }
 

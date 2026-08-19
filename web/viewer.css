@@ -110,6 +110,7 @@
   --toolbarButton-viewAttachments-icon: url(images/toolbarButton-viewAttachments.svg);
   --toolbarButton-viewLayers-icon: url(images/toolbarButton-viewLayers.svg);
   --toolbarButton-currentOutlineItem-icon: url(images/toolbarButton-currentOutlineItem.svg);
+  --toolbarButton-viewSearch-icon: url(images/toolbarButton-search.svg);
   --toolbarButton-search-icon: url(images/toolbarButton-search.svg);
   --findbarButton-previous-icon: url(images/findbarButton-previous.svg);
   --findbarButton-next-icon: url(images/findbarButton-next.svg);
@@ -733,6 +734,54 @@ body {
     inset-inline-end: 4px;
   }
 }
+
+#searchView {
+  position: absolute;
+  inset: 0;
+  padding: 10px 20px 0;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#searchView > a:active,
+#searchView > a:focus {
+  outline: 0;
+}
+
+.pageMsg {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  color: var(--main-color);
+  font-size: 12px;
+}
+
+.searchMsg {
+  font-size: 12px;
+  font-weight: 300;
+  color: light-dark(rgb(179 89 0), rgb(255 143 0));
+}
+
+.searchResults {
+  font-size: 10px;
+  color: var(--main-color);
+}
+
+.searchResult {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.searchResult:hover {
+  background-color: var(--button-hover-color);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.highlighted {
+  background: rgb(255 143 0 / 0.35);
+  border-radius: 2px;
+}
+
 #outlineOptionsContainer {
   display: none;
 
