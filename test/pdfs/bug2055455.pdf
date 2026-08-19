@@ -1,0 +1,62 @@
+%PDF-1.7
+%«Ïè¢
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm 9 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 140 100] /Contents 4 0 R
+   /Resources << >> /Annots [7 0 R 8 0 R] >>
+endobj
+4 0 obj
+<< /Length 59 >>
+stream
+0.5 w 0 G
+20 60 15.307 18.992 re S
+20 20 57.26 18.992 re S
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /TrueType /BaseFont /CourierNew /Name /CourierNew
+   /FirstChar 56 /LastChar 56 /Widths [600] /Encoding /WinAnsiEncoding
+   /FontDescriptor 6 0 R >>
+endobj
+6 0 obj
+<< /Type /FontDescriptor /FontName /CourierNew /Flags 34
+   /FontBBox [-122 -680 623 1021] /ItalicAngle 0
+   /Ascent 1021 /Descent -680 /CapHeight 571 /XHeight 423 /StemV 40 >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /F 4 /P 3 0 R
+   /Rect [20 60 35.307 78.992] /T (single) /V (8) /Q 1 /MaxLen 1
+   /Ff 12582912 /DA (/CourierNew 16 Tf 0 g) >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /F 4 /P 3 0 R
+   /Rect [20 20 77.26 38.992] /T (comb) /V (8888) /MaxLen 4
+   /Ff 29360128 /DA (/CourierNew 16 Tf 0 g) >>
+endobj
+9 0 obj
+<< /Fields [7 0 R 8 0 R] /NeedAppearances true
+   /DA (/CourierNew 16 Tf 0 g)
+   /DR << /Font << /CourierNew 5 0 R >> >> >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000080 00000 n 
+0000000137 00000 n 
+0000000266 00000 n 
+0000000374 00000 n 
+0000000562 00000 n 
+0000000754 00000 n 
+0000000936 00000 n 
+0000001113 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1252
+%%EOF

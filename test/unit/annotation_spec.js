@@ -1764,7 +1764,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
-          " 2 3.07 Td (test\\\\print) Tj ET Q EMC"
+          " 2 3.72 Td (test\\\\print) Tj ET Q EMC"
       );
     });
 
@@ -1801,7 +1801,7 @@ describe("annotation", function () {
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm" +
-          ` 2 3.07 Td (${utf16String}) Tj ET Q EMC`
+          ` 2 3.38 Td (${utf16String}) Tj ET Q EMC`
       );
     });
 
@@ -1884,7 +1884,7 @@ describe("annotation", function () {
       );
       expect(appearance).toEqual(
         "/Tx BMC q BT /Helv 5.92 Tf 0 g 1 0 0 1 0 0 Tm" +
-          " 2 3.07 Td (test \\(print\\)) Tj ET Q EMC"
+          " 2 3.49 Td (test \\(print\\)) Tj ET Q EMC"
       );
     });
 
@@ -1921,7 +1921,7 @@ describe("annotation", function () {
         "\x30\x53\x30\x93\x30\x6b\x30\x61\x30\x6f\x4e\x16\x75\x4c\x30\x6e";
       expect(appearance).toEqual(
         "/Tx BMC q BT /Goth 3.5 Tf 0 g 1 0 0 1 0 0 Tm" +
-          ` 2 3.07 Td (${utf16String}) Tj ET Q EMC`
+          ` 2 3.86 Td (${utf16String}) Tj ET Q EMC`
       );
     });
 
@@ -2124,7 +2124,7 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 3.21 Tm" +
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 3.72 Tm" +
           " 2.61 0 Td (a) Tj 8 0 Td (a) Tj 8.56 0 Td (\\() Tj" +
           " 7.44 0 Td (a) Tj 8 0 Td (a) Tj" +
           " 8.56 0 Td (\\)) Tj 7.44 0 Td (a) Tj" +
@@ -2165,7 +2165,7 @@ describe("annotation", function () {
         annotationStorage
       );
       expect(appearance).toEqual(
-        "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 2.5 Tm" +
+        "/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 3.38 Tm" +
           " 1.5 0 Td (\x30\x53) Tj 8 0 Td (\x30\x93) Tj 8 0 Td (\x30\x6b) Tj" +
           " 8 0 Td (\x30\x61) Tj 8 0 Td (\x30\x6f) Tj" +
           " 8 0 Td (\x4e\x16) Tj 8 0 Td (\x75\x4c) Tj" +
@@ -2209,7 +2209,7 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         "2 0 obj\n<< /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 32 10] /Length 74>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.07 Td (hello world) Tj " +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.72 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -2327,8 +2327,8 @@ describe("annotation", function () {
       );
       expect(newData.data).toEqual(
         "2 0 obj\n<< /Subtype /Form /Resources " +
-          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 10 32] /Matrix [0 1 -1 0 32 0] /Length 74>> stream\n" +
-          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 2.94 Td (hello world) Tj " +
+          "<< /Font << /Helv 314 0 R>>>> /BBox [0 0 10 32] /Matrix [0 1 -1 0 32 0] /Length 75>> stream\n" +
+          "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 14.72 Td (hello world) Tj " +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });
@@ -2388,7 +2388,7 @@ describe("annotation", function () {
       // generated data with the PDF.js library.
       const flateStream = new FlateStream(new StringStream(compressedStream));
       expect(flateStream.getString()).toEqual(
-        `/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.07 Td (${value}) Tj ET Q EMC`
+        `/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm 2 3.72 Td (${value}) Tj ET Q EMC`
       );
     });
 
@@ -2513,7 +2513,7 @@ describe("annotation", function () {
       expect(newData.data).toEqual(
         "2 0 obj\n<< /Subtype /Form /Resources " +
           "<< /Font << /Helv 314 0 R /Goth 159 0 R>>>> /BBox [0 0 32 10] /Length 79>> stream\n" +
-          `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2 3.07 Td (${utf16String}) Tj ` +
+          `/Tx BMC q BT /Goth 5 Tf 1 0 0 1 0 0 Tm 2 3.38 Td (${utf16String}) Tj ` +
           "ET Q EMC\nendstream\nendobj\n"
       );
     });

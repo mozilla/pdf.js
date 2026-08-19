@@ -14524,5 +14524,14 @@
     "rounds": 1,
     "lastPage": 1,
     "type": "eq"
+  },
+  {
+    "id": "bug2055455",
+    "file": "pdfs/bug2055455.pdf",
+    "md5": "e9a7d04240532aa4c6849f291f275895",
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "print": true
   }
 ]
