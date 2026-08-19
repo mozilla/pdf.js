@@ -47,6 +47,7 @@
   --menuitem-outlinesView-icon: url(images/toolbarButton-viewOutline.svg);
   --menuitem-attachmentsView-icon: url(images/toolbarButton-viewAttachments.svg);
   --menuitem-layersView-icon: url(images/toolbarButton-viewLayers.svg);
+  --menuitem-searchView-icon: url(images/toolbarButton-search.svg);
   --manage-button-icon: url(images/toolbarButton-pageDown.svg);
   --close-button-icon: url(images/pages_closeButton.svg);
   --undo-label-icon: url(images/altText_done.svg);
@@ -411,6 +412,9 @@
             }
             &#layersViewMenu::before {
               mask-image: var(--menuitem-layersView-icon);
+            }
+            &#searchViewMenu::before {
+              mask-image: var(--menuitem-searchView-icon);
             }
           }
         }

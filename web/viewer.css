@@ -736,11 +736,7 @@ body {
 }
 
 #searchView {
-  position: absolute;
-  inset: 0;
-  padding: 10px 20px 0;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
+  padding: 10px 20px;
 }
 
 #searchView > a:active,
@@ -750,9 +746,12 @@ body {
 
 .pageMsg {
   padding-top: 10px;
-  padding-bottom: 10px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--separator-color);
   color: var(--main-color);
   font-size: 12px;
+  font-weight: 600;
 }
 
 .searchMsg {

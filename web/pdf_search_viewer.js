@@ -1,5 +1,36 @@
 import { normalize } from "./pdf_find_controller.js";
-import { NullL10n } from "./ui_utils.js";
+import { binarySearchFirstItem } from "./ui_utils.js";
+
+// `findController.pageMatches`/`pageMatchesLength` store positions in the
+// original (non-normalized) page text, while `pageContents` here is the
+// normalized text used to build snippets. This converts a match position
+// back into normalized-text coordinates; it's the inverse of the
+// `getOriginalIndex` helper in pdf_find_controller.js.
+function getNormalizedIndex(diffs, pos, len) {
+  if (!diffs) {
+    return [pos, len];
+  }
+  const [starts, shifts] = diffs;
+  const oldStarts = starts.map((s, k) => s + shifts[k]);
+
+  const start = pos;
+  const end = pos + len - 1;
+
+  let i = binarySearchFirstItem(oldStarts, x => x >= start);
+  if (oldStarts[i] > start) {
+    i--;
+  }
+
+  let j = binarySearchFirstItem(oldStarts, x => x >= end, i);
+  if (oldStarts[j] > end) {
+    j--;
+  }
+
+  const newStart = start - shifts[i];
+  const newEnd = end - shifts[j];
+
+  return [newStart, newEnd + 1 - newStart];
+}
 
 /**
  * Viewer control to display search results.
@@ -15,7 +46,7 @@ class PDFSearchViewer {
     eventBus,
     linkService,
     renderingQueue,
-    l10n = NullL10n,
+    l10n,
     searchButton,
   }) {
     this.searchButton = searchButton || null;
@@ -29,15 +60,15 @@ class PDFSearchViewer {
     this.linkService = linkService;
     this.l10n = l10n;
 
-    eventBus._on("updatefindmatchescount", event => {
+    eventBus.on("updatefindmatchescount", event => {
       this.handlerSearchEvent(event, event.source, event.pageContents);
     });
 
-    eventBus._on("updatefindcontrolstate", event => {
+    eventBus.on("updatefindcontrolstate", event => {
       this.updateSelected(event.source);
     });
 
-    eventBus._on("find", () => {
+    eventBus.on("find", () => {
       this.open();
     });
 
@@ -85,7 +116,8 @@ class PDFSearchViewer {
         page + 1,
         pageMatches[page],
         pageMatchesLength ? pageMatchesLength[page] : null,
-        pageContents[page]
+        pageContents[page],
+        findController._pageDiffs[page]
       );
       this.renderedPages[page] = true;
     }
@@ -107,7 +139,14 @@ class PDFSearchViewer {
     }
   }
 
-  renderSearchResult(findController, page, matches, matchesLength, content) {
+  renderSearchResult(
+    findController,
+    page,
+    matches,
+    matchesLength,
+    content,
+    diffs
+  ) {
     // The default number of characters that we look around each snippet.
     const CHARS_NEXT = 50,
       CHARS_PREV = 30,
@@ -119,25 +158,38 @@ class PDFSearchViewer {
     }
     let snippets = [];
     let numSnippets;
-    const queryLen = normalize(findController.state.query).length;
 
+    // `query` can be a string or, for multi-word/OR searches, an array of
+    // words; only used as a fallback when `matchesLength` (which is always
+    // correctly populated for both cases) isn't available.
     function matchLen(i) {
-      return matchesLength ? matchesLength[i] : queryLen;
+      if (matchesLength) {
+        return matchesLength[i];
+      }
+      const query = findController.state.query;
+      return normalize(Array.isArray(query) ? query[0] : query)[0].length;
     }
 
     // Broaden each snippet
     snippets = matches.map(function (m, i) {
+      // `m`/`matchLen(i)` are positions in the original (non-normalized)
+      // page text; `content` is the normalized text, so convert first.
+      const [normM, normLen] = getNormalizedIndex(diffs, m, matchLen(i));
+
       // Find the previous space
-      let start = Math.max(0, content.lastIndexOf(" ", m - CHARS_PREV));
-      if (start <= m - CHARS_MAX) {
-        start = Math.max(0, m - CHARS_PREV);
+      let start = Math.max(0, content.lastIndexOf(" ", normM - CHARS_PREV));
+      if (start <= normM - CHARS_MAX) {
+        start = Math.max(0, normM - CHARS_PREV);
       }
 
-      let end = content.indexOf(" ", Math.min(content.length, m + CHARS_NEXT));
-      if (end === -1 || end >= m + CHARS_MAX) {
-        end = Math.min(content.length, m + CHARS_NEXT);
+      let end = content.indexOf(
+        " ",
+        Math.min(content.length, normM + CHARS_NEXT)
+      );
+      if (end === -1 || end >= normM + CHARS_MAX) {
+        end = Math.min(content.length, normM + CHARS_NEXT);
       }
-      const highlights = [[m, m + matchLen(i)]];
+      const highlights = [[normM, normM + normLen]];
       // Snippet are defined by a start, an end, and a list of highlights.
       return [start, end, highlights];
     });

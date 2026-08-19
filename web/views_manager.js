@@ -86,10 +86,12 @@ class ViewsManager extends Sidebar {
       outlineButton,
       attachmentsButton,
       layersButton,
+      searchButton,
       thumbnailsView,
       outlinesView,
       attachmentsView,
       layersView,
+      searchView,
       viewsManagerAddFile: { button: viewsManagerAddFileButton },
       viewsManagerCurrentOutlineButton,
       viewsManagerSelectorButton,
@@ -134,11 +136,13 @@ class ViewsManager extends Sidebar {
     this.outlineButton = outlineButton;
     this.attachmentsButton = attachmentsButton;
     this.layersButton = layersButton;
+    this.searchButton = searchButton;
 
     this.thumbnailsView = thumbnailsView;
     this.outlinesView = outlinesView;
     this.attachmentsView = attachmentsView;
     this.layersView = layersView;
+    this.searchView = searchView;
 
     this.viewsManagerAddFileButton = viewsManagerAddFileButton;
     this.viewsManagerCurrentOutlineButton = viewsManagerCurrentOutlineButton;
@@ -159,7 +163,7 @@ class ViewsManager extends Sidebar {
     this.menu = new Menu(
       viewsManagerSelectorOptions,
       viewsManagerSelectorButton,
-      [thumbnailButton, outlineButton, attachmentsButton, layersButton]
+      [thumbnailButton, outlineButton, attachmentsButton, layersButton, searchButton]
     );
 
     ViewsManager.#l10nDescription ||= Object.freeze({
@@ -167,6 +171,7 @@ class ViewsManager extends Sidebar {
       outlinesTitle: "pdfjs-views-manager-outlines-title1",
       attachmentsTitle: "pdfjs-views-manager-attachments-title",
       layersTitle: "pdfjs-views-manager-layers-title1",
+      searchTitle: "pdfjs-views-manager-search-title",
       notificationButton: "pdfjs-toggle-views-manager-notification-button",
       toggleButton: "pdfjs-toggle-views-manager-button1",
     });
@@ -261,6 +266,9 @@ class ViewsManager extends Sidebar {
           return;
         }
         break;
+      case SidebarView.SEARCH:
+        titleL10nId = "searchTitle";
+        break;
       default:
         console.error(`PDFSidebar.switchView: "${view}" is not a valid view.`);
         return;
@@ -300,6 +308,11 @@ class ViewsManager extends Sidebar {
       this.layersButton,
       view === SidebarView.LAYERS,
       this.layersView
+    );
+    toggleSelectedBtn(
+      this.searchButton,
+      view === SidebarView.SEARCH,
+      this.searchView
     );
 
     if (forceOpen && !this.isOpen) {
@@ -455,6 +468,10 @@ class ViewsManager extends Sidebar {
 
     this.layersButton.addEventListener("click", () => {
       this.switchView(SidebarView.LAYERS);
+    });
+
+    this.searchButton.addEventListener("click", () => {
+      this.switchView(SidebarView.SEARCH);
     });
 
     // Buttons for view-specific options.

@@ -37,6 +37,7 @@ const SidebarView = {
   OUTLINE: 2,
   ATTACHMENTS: 3,
   LAYERS: 4,
+  SEARCH: 5,
 };
 
 const TextLayerMode = {

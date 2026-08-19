@@ -710,11 +710,13 @@ pdfjs-views-manager-outlines-title1 = Document outline
 pdfjs-views-manager-attachments-title = Attachments
 pdfjs-views-manager-layers-title1 = Layers
     .title = Layers (double-click to reset all layers to the default state)
+pdfjs-views-manager-search-title = Search
 
 pdfjs-views-manager-pages-option-label = Pages
 pdfjs-views-manager-outlines-option-label = Document outline
 pdfjs-views-manager-attachments-option-label = Attachments
 pdfjs-views-manager-layers-option-label = Layers
+pdfjs-views-manager-search-option-label = Search
 
 pdfjs-views-manager-add-file-button =
     .title = Add file
