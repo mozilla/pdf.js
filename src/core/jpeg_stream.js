@@ -179,7 +179,7 @@ class JpegStream extends DecodeStream {
         // the height is only known from a DNL marker or because the scan simply
         // ends early (issue15492.pdf). `ImageDecoder` reports and scales the
         // frame according to the SOF, so let our own decoder, which honours the
-        // dictionary, handle the image instead.
+        // actual JPEG image data, handle the image instead.
         return null;
       }
       if (useImageDecoder.exifStart) {
