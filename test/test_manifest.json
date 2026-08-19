@@ -1216,13 +1216,6 @@
     "type": "text"
   },
   {
-    "id": "link-overlaps-editor-toolbar",
-    "file": "pdfs/link-overlaps-editor-toolbar.pdf",
-    "md5": "cffe75e60236e236e15793e37cd0809b",
-    "rounds": 1,
-    "type": "eq"
-  },
-  {
     "id": "issue9655-text",
     "file": "pdfs/issue9655_reduced.pdf",
     "md5": "87259a82cf3cda18e240517ca53c312a",
@@ -1391,6 +1384,13 @@
     "file": "pdfs/unix01.pdf",
     "md5": "2742999f0bf9b9c035dbb0736096e220",
     "link": true,
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
+    "id": "toolbar-overlap-with-annotations",
+    "file": "pdfs/toolbar-overlap-with-annotations.pdf",
+    "md5": "33f76794ba75dfcf0938267c25b8df14",
     "rounds": 1,
     "type": "eq"
   },
