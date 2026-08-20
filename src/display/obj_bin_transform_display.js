@@ -17,14 +17,13 @@ import { assert, BBOX_INIT, FeatureTest, Util } from "../shared/util.js";
 import {
   CSS_FONT_INFO,
   FONT_INFO,
+  InfoUtils,
   PATTERN_INFO,
   SYSTEM_FONT_INFO,
 } from "../shared/obj_bin_transform_utils.js";
 
 class CssFontInfo {
   #buffer;
-
-  #decoder = new TextDecoder();
 
   #view;
 
@@ -35,14 +34,13 @@ class CssFontInfo {
 
   #readString(index) {
     assert(index < CSS_FONT_INFO.strings.length, "Invalid string index");
+    const { decoder } = InfoUtils;
     let offset = 0;
     for (let i = 0; i < index; i++) {
       offset += this.#view.getUint32(offset) + 4;
     }
     const length = this.#view.getUint32(offset);
-    return this.#decoder.decode(
-      new Uint8Array(this.#buffer, offset + 4, length)
-    );
+    return decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
   }
 
   get fontFamily() {
@@ -61,8 +59,6 @@ class CssFontInfo {
 class SystemFontInfo {
   #buffer;
 
-  #decoder = new TextDecoder();
-
   #view;
 
   constructor(buffer) {
@@ -76,14 +72,13 @@ class SystemFontInfo {
 
   #readString(index) {
     assert(index < SYSTEM_FONT_INFO.strings.length, "Invalid string index");
+    const { decoder } = InfoUtils;
     let offset = 5;
     for (let i = 0; i < index; i++) {
       offset += this.#view.getUint32(offset) + 4;
     }
     const length = this.#view.getUint32(offset);
-    return this.#decoder.decode(
-      new Uint8Array(this.#buffer, offset + 4, length)
-    );
+    return decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
   }
 
   get css() {
@@ -103,15 +98,16 @@ class SystemFontInfo {
   }
 
   get style() {
+    const { decoder } = InfoUtils;
     let offset = 1;
     offset += 4 + this.#view.getUint32(offset);
     const styleLength = this.#view.getUint32(offset);
-    const style = this.#decoder.decode(
+    const style = decoder.decode(
       new Uint8Array(this.#buffer, offset + 4, styleLength)
     );
     offset += 4 + styleLength;
     const weightLength = this.#view.getUint32(offset);
-    const weight = this.#decoder.decode(
+    const weight = decoder.decode(
       new Uint8Array(this.#buffer, offset + 4, weightLength)
     );
     return { style, weight };
@@ -120,8 +116,6 @@ class SystemFontInfo {
 
 class FontInfo {
   #buffer;
-
-  #decoder = new TextDecoder();
 
   #view;
 
@@ -242,14 +236,13 @@ class FontInfo {
 
   #readString(index) {
     assert(index < FONT_INFO.strings.length, "Invalid string index");
+    const { decoder } = InfoUtils;
     let offset = FONT_INFO.OFFSET_STRINGS + 4;
     for (let i = 0; i < index; i++) {
       offset += this.#view.getUint32(offset) + 4;
     }
     const length = this.#view.getUint32(offset);
-    return this.#decoder.decode(
-      new Uint8Array(this.#buffer, offset + 4, length)
-    );
+    return decoder.decode(new Uint8Array(this.#buffer, offset + 4, length));
   }
 
   get fallbackName() {

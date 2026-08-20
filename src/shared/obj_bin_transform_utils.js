@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { shadow } from "./util.js";
+
 class CSS_FONT_INFO {
   static strings = ["fontFamily", "fontWeight", "italicAngle"];
 }
@@ -68,4 +70,14 @@ class PATTERN_INFO {
   static N_FIGURES = 16; // number of figures
 }
 
-export { CSS_FONT_INFO, FONT_INFO, PATTERN_INFO, SYSTEM_FONT_INFO };
+class InfoUtils {
+  static get decoder() {
+    return shadow(this, "decoder", new TextDecoder());
+  }
+
+  static get encoder() {
+    return shadow(this, "encoder", new TextEncoder());
+  }
+}
+
+export { CSS_FONT_INFO, FONT_INFO, InfoUtils, PATTERN_INFO, SYSTEM_FONT_INFO };
