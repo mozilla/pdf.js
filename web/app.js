@@ -30,6 +30,8 @@ import {
   isValidRotation,
   isValidScrollMode,
   isValidSpreadMode,
+  MAX_SCALE,
+  MIN_SCALE,
   normalizeWheelEventDirection,
   parseQueryString,
   ProgressBar,
@@ -49,6 +51,7 @@ import {
   InvalidPDFException,
   isDataScheme,
   isPdfFile,
+  MathClamp,
   OutputScale,
   PDFWorker,
   ResponseException,
@@ -2642,17 +2645,16 @@ const PDFViewerApplication = {
     if (factor === 1) {
       return 1;
     }
-    // If the direction changed, reset the accumulated factor.
-    if ((this[prop] > 1 && factor < 1) || (this[prop] < 1 && factor > 1)) {
-      this[prop] = 1;
-    }
+    // Carry scale-rounding error into the next factor.
+    const target = MathClamp(
+      previousScale * factor * this[prop],
+      MIN_SCALE,
+      MAX_SCALE
+    );
+    const newScale = Math.round(target * 100) / 100;
+    this[prop] = target / newScale;
 
-    const newFactor =
-      Math.floor(previousScale * factor * this[prop] * 100) /
-      (100 * previousScale);
-    this[prop] = factor / newFactor;
-
-    return newFactor;
+    return newScale / previousScale;
   },
 
   /**
