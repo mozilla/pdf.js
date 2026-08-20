@@ -29,7 +29,7 @@ class RunLengthStream extends DecodeStream {
     // (in addition to the second byte from the header), n = 129 through 255 -
     // duplicate the second byte from the header (257 - n) times, n = 128 - end.
     const repeatHeader = this.stream.getBytes(2);
-    if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] === 128) {
+    if (repeatHeader.length < 2 || repeatHeader[0] === 128) {
       this.eof = true;
       return;
     }

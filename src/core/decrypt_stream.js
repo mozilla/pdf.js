@@ -30,12 +30,12 @@ class DecryptStream extends DecodeStream {
 
   readBlock() {
     let chunk = this.#nextChunk ?? this.stream.getBytes(chunkSize);
-    if (!chunk?.length) {
+    if (!chunk.length) {
       this.eof = true;
       return;
     }
     this.#nextChunk = this.stream.getBytes(chunkSize);
-    const hasMoreData = this.#nextChunk?.length > 0;
+    const hasMoreData = this.#nextChunk.length > 0;
 
     const decrypt = this.decrypt;
     chunk = decrypt(chunk, !hasMoreData);
