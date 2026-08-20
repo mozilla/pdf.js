@@ -28,6 +28,7 @@ import {
   SystemFontInfo,
 } from "../../src/display/obj_bin_transform_display.js";
 import { FeatureTest } from "../../src/shared/util.js";
+import { InfoUtils } from "../../src/shared/obj_bin_transform_utils.js";
 
 describe("obj_bin_transform", function () {
   describe("Font data", function () {
@@ -80,7 +81,7 @@ describe("obj_bin_transform", function () {
     describe("font data serialization and deserialization", function () {
       describe("CssFontInfo", function () {
         it("must roundtrip correctly for CssFontInfo", function () {
-          const encoder = new TextEncoder();
+          const { encoder } = InfoUtils;
           let sizeEstimate = 0;
           for (const string of ["Sample Family", "not a number", "angle"]) {
             sizeEstimate += 4 + encoder.encode(string).length;
@@ -97,7 +98,7 @@ describe("obj_bin_transform", function () {
 
       describe("SystemFontInfo", function () {
         it("must roundtrip correctly for SystemFontInfo", function () {
-          const encoder = new TextEncoder();
+          const { encoder } = InfoUtils;
           let sizeEstimate = 1 + 4;
           for (const string of [
             "some string",
@@ -127,7 +128,7 @@ describe("obj_bin_transform", function () {
       describe("FontInfo", function () {
         it("must roundtrip correctly for FontInfo", function () {
           let sizeEstimate = 92; // fixed offset until the strings
-          const encoder = new TextEncoder();
+          const { encoder } = InfoUtils;
           sizeEstimate += 4 + 4 * (4 + encoder.encode("string").length);
           sizeEstimate += 4 + 4; // cssFontInfo and systemFontInfo
           sizeEstimate += 4 + fontInfo.data.length;

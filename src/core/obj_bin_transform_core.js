@@ -17,12 +17,13 @@ import { assert, FeatureTest } from "../shared/util.js";
 import {
   CSS_FONT_INFO,
   FONT_INFO,
+  InfoUtils,
   PATTERN_INFO,
   SYSTEM_FONT_INFO,
 } from "../shared/obj_bin_transform_utils.js";
 
 function compileCssFontInfo(info) {
-  const encoder = new TextEncoder();
+  const { encoder } = InfoUtils;
   const encodedStrings = {};
   let stringsLength = 0;
   for (const prop of CSS_FONT_INFO.strings) {
@@ -48,7 +49,7 @@ function compileCssFontInfo(info) {
 }
 
 function compileSystemFontInfo(info) {
-  const encoder = new TextEncoder();
+  const { encoder } = InfoUtils;
   const encodedStrings = {};
   let stringsLength = 0;
   for (const prop of SYSTEM_FONT_INFO.strings) {
@@ -106,7 +107,7 @@ function compileFontInfo(font) {
     ? compileCssFontInfo(font.cssFontInfo)
     : null;
 
-  const encoder = new TextEncoder();
+  const { encoder } = InfoUtils;
   const encodedStrings = {};
   let stringsLength = 0;
   for (const prop of FONT_INFO.strings) {
