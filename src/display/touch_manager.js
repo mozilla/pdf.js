@@ -84,6 +84,8 @@ class TouchManager {
 
   #touchMoveAC = null;
 
+  #unconfirmedPinch = 0;
+
   /**
    * @param {TouchManagerOptions} options
    */
@@ -125,6 +127,18 @@ class TouchManager {
     //  https://developer.mozilla.org/en-US/docs/Web/API/Touch/screenX#examples
     // MIN_TOUCH_DISTANCE_TO_PINCH is in CSS pixels.
     return 35 / OutputScale.pixelRatio;
+  }
+
+  /**
+   * Once pinching, the span must change by at least 4 device pixels to update
+   * the scale: below that it's contact jitter (a moving finger is reported
+   * with a slight lag and its position is quantized), not an intentional
+   * pinch, hence a two-finger pan doesn't make the zoom drift.
+   *
+   * NOTE: Don't shadow this value since `devicePixelRatio` may change.
+   */
+  get MIN_TOUCH_DISTANCE_TO_SCALE() {
+    return 4 / OutputScale.pixelRatio;
   }
 
   #onTouchStart(evt) {
@@ -281,6 +295,9 @@ class TouchManager {
       // Distances use screen coordinates; zoom and scrolling use client ones.
       panX: (touch0.clientX + touch1.clientX) / 2,
       panY: (touch0.clientY + touch1.clientY) / 2,
+      // Screen-coordinate midpoint used by the sampling allowance.
+      screenPanX: (touch0.screenX + touch1.screenX) / 2,
+      screenPanY: (touch0.screenY + touch1.screenY) / 2,
     };
   }
 
@@ -330,13 +347,28 @@ class TouchManager {
     const dx = panX - pPanX;
     const dy = panY - pPanY;
 
+    // Measure midpoint motion in the same coordinates as the span.
+    const screenPanX = (screen0X + screen1X) / 2;
+    const screenPanY = (screen0Y + screen1Y) / 2;
+    const translation = Math.hypot(
+      screenPanX - touchInfo.screenPanX,
+      screenPanY - touchInfo.screenPanY
+    );
+    touchInfo.screenPanX = screenPanX;
+    touchInfo.screenPanY = screenPanY;
+
     const distance = Math.hypot(currGapX, currGapY);
     const pDistance = Math.hypot(prevGapX, prevGapY);
+    // Before pinching, moving one contact by d moves the midpoint by d / 2 and
+    // changes the span by at most d. Add that sampling allowance to the
+    // threshold.
+    const minDistance = this.#isPinching
+      ? this.MIN_TOUCH_DISTANCE_TO_SCALE
+      : this.MIN_TOUCH_DISTANCE_TO_PINCH + 2 * translation;
     if (
       distance < MIN_TOUCH_SPAN ||
       pDistance < MIN_TOUCH_SPAN ||
-      (!this.#isPinching &&
-        Math.abs(pDistance - distance) <= this.MIN_TOUCH_DISTANCE_TO_PINCH)
+      Math.abs(pDistance - distance) <= minDistance
     ) {
       // Keep the distance baseline so a slow pinch can cross the threshold, or
       // a degenerate span recover, but the midpoint still moved.
@@ -351,15 +383,35 @@ class TouchManager {
     touchInfo.touch1X = screen1X;
     touchInfo.touch1Y = screen1Y;
 
+    const direction = Math.sign(distance - pDistance);
+
     if (!this.#isPinching) {
       // Start pinching.
       this.#isPinching = true;
+      this.#unconfirmedPinch = direction;
 
       // Skip the first scale update, as before, but keep its translation.
       if (dx || dy) {
         this.#onPanning?.(dx, dy);
       }
       return;
+    }
+
+    if (this.#unconfirmedPinch) {
+      const unconfirmed = this.#unconfirmedPinch;
+      this.#unconfirmedPinch = 0;
+      if (
+        direction !== unconfirmed &&
+        Math.abs(distance - pDistance) <= 2 * translation
+      ) {
+        // This reversal matches a lagging contact catching up: its span change
+        // is at most twice the midpoint movement. Discard the tentative pinch.
+        this.#isPinching = false;
+        if (dx || dy) {
+          this.#onPanning?.(dx, dy);
+        }
+        return;
+      }
     }
 
     // The distances are in screen CSS pixels, but the origin must be in client
@@ -399,6 +451,7 @@ class TouchManager {
     // `#setTouchInfo` may already have cleared the baseline.
     this.#touchInfo = null;
     this.#isPinching = false;
+    this.#unconfirmedPinch = 0;
     this.#ownsGesture = false;
     if (this.#touchMoveAC) {
       this.#touchMoveAC.abort();

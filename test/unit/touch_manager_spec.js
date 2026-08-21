@@ -29,6 +29,14 @@ describe("TouchManager", function () {
     };
   }
 
+  // A pair with the given span and midpoint.
+  function pair(span, center = 100, y = 0) {
+    return [
+      makeTouch(0, center - span / 2, y),
+      makeTouch(1, center + span / 2, y),
+    ];
+  }
+
   class TouchManagerHelper {
     #ac = new AbortController();
 
@@ -177,25 +185,25 @@ describe("TouchManager", function () {
     helper.dispatch("touchstart", [touch0, touch1], [touch1]);
 
     // Past the dead zone: the first move only re-baselines...
-    const spread1 = makeTouch(1, 400);
-    helper.dispatch("touchmove", [touch0, spread1], [spread1]);
+    const spread1 = pair(400);
+    helper.dispatch("touchmove", spread1, spread1);
     expect(helper.pinchings).toEqual([]);
 
     // ...and the second one is reported, hence pinching is in progress.
-    const spread2 = makeTouch(1, 600);
-    helper.dispatch("touchmove", [touch0, spread2], [spread2]);
+    const spread2 = pair(600);
+    helper.dispatch("touchmove", spread2, spread2);
     expect(helper.pinchings.length).toEqual(1);
 
     // A third finger lands and is lifted right away.
     const touch2 = makeTouch(2, 500, 400);
-    helper.dispatch("touchstart", [touch0, spread2, touch2], [touch2]);
-    helper.dispatch("touchend", [touch0, spread2], [touch2]);
+    helper.dispatch("touchstart", [...spread2, touch2], [touch2]);
+    helper.dispatch("touchend", spread2, [touch2]);
 
     // The pinch is still in progress, hence a move well inside the dead zone is
     // still reported instead of having to earn it all over again.
     const nudge = minDistance / 2;
-    const spread3 = makeTouch(1, 600 + nudge);
-    helper.dispatch("touchmove", [touch0, spread3], [spread3]);
+    const spread3 = pair(600 + nudge);
+    helper.dispatch("touchmove", spread3, spread3);
     expect(helper.pinchings.length).toEqual(2);
     expect(helper.pinchings[1].prevDistance).toEqual(600);
     expect(helper.pinchings[1].distance).toBeCloseTo(600 + nudge);
@@ -211,16 +219,16 @@ describe("TouchManager", function () {
 
     helper.dispatch("touchstart", [touch0], [touch0]);
     helper.dispatch("touchstart", [touch0, touch1], [touch1]);
-    const spread1 = makeTouch(1, 400);
-    const spread2 = makeTouch(1, 600);
-    helper.dispatch("touchmove", [touch0, spread1], [spread1]);
-    helper.dispatch("touchmove", [touch0, spread2], [spread2]);
+    const spread1 = pair(400);
+    const spread2 = pair(600);
+    helper.dispatch("touchmove", spread1, spread1);
+    helper.dispatch("touchmove", spread2, spread2);
     expect(helper.pinchings.length).toEqual(1);
 
     // A third finger breaks the pair, and then everything is lifted.
     const touch2 = makeTouch(2, 500, 400);
-    helper.dispatch("touchstart", [touch0, spread2, touch2], [touch2]);
-    helper.dispatch("touchend", [touch0], [spread2, touch2]);
+    helper.dispatch("touchstart", [...spread2, touch2], [touch2]);
+    helper.dispatch("touchend", [touch0], [...spread2.slice(1), touch2]);
     helper.dispatch("touchend", [], [touch0]);
     expect(helper.pinchEnds).toEqual(1);
 
@@ -283,30 +291,139 @@ describe("TouchManager", function () {
     const helper = new TouchManagerHelper();
     const { MIN_TOUCH_DISTANCE_TO_PINCH: minDistance } = helper.manager;
     expect(minDistance).toBeGreaterThan(0);
-    const touch0 = makeTouch(0, 0);
-    const touch1 = makeTouch(1, 200);
+    const touches = pair(200);
 
-    helper.dispatch("touchstart", [touch0], [touch0]);
-    helper.dispatch("touchstart", [touch0, touch1], [touch1]);
+    helper.dispatch("touchstart", [touches[0]], [touches[0]]);
+    helper.dispatch("touchstart", touches, [touches[1]]);
 
-    // Stay below the pinch threshold; only midpoint movement is reported.
-    const nearly = makeTouch(1, 200 + minDistance - 1);
-    helper.dispatch("touchmove", [touch0, nearly], [nearly]);
+    // Moving the midpoint by one pixel adds two pixels to the allowance.
+    const nearly = pair(200 + minDistance - 1, 101);
+    helper.dispatch("touchmove", nearly, nearly);
     expect(helper.pinchings).toEqual([]);
     expect(helper.pannings.length).toEqual(1);
 
     // The original distance baseline lets this move cross the threshold.
-    const past = makeTouch(1, 200 + minDistance + 1);
-    helper.dispatch("touchmove", [touch0, past], [past]);
+    const past = pair(200 + minDistance + 5, 102);
+    helper.dispatch("touchmove", past, past);
     expect(helper.pinchings).toEqual([]);
     expect(helper.pannings.length).toEqual(2);
 
-    const further = makeTouch(1, 200 + minDistance + 21);
-    helper.dispatch("touchmove", [touch0, further], [further]);
+    const further = pair(200 + minDistance + 25, 103);
+    helper.dispatch("touchmove", further, further);
     expect(helper.pinchings.length).toEqual(1);
     expect(
       helper.pinchings[0].distance - helper.pinchings[0].prevDistance
     ).toEqual(20);
+
+    helper.destroy();
+  });
+
+  it("pans, without zooming, inside the dead zone while pinching", function () {
+    const helper = new TouchManagerHelper();
+    const {
+      MIN_TOUCH_DISTANCE_TO_PINCH: minDistance,
+      MIN_TOUCH_DISTANCE_TO_SCALE: minScaleDistance,
+    } = helper.manager;
+    expect(minScaleDistance).toBeGreaterThan(0);
+    expect(minScaleDistance).toBeLessThan(minDistance);
+    const touches = pair(200);
+
+    helper.dispatch("touchstart", [touches[0]], [touches[0]]);
+    helper.dispatch("touchstart", touches, [touches[1]]);
+
+    // Start pinching; the first scale update is skipped.
+    const baselineSpan = 200 + minDistance + 1;
+    const spread = pair(baselineSpan);
+    helper.dispatch("touchmove", spread, spread);
+    expect(helper.pinchings).toEqual([]);
+    expect(helper.pannings).toEqual([]);
+
+    // Alternate sub-threshold span changes while moving one pixel at a time.
+    for (let i = 1; i <= 4; i++) {
+      const jittered = pair(
+        baselineSpan + (i % 2 ? minScaleDistance / 2 : 0),
+        100 + i
+      );
+      helper.dispatch("touchmove", jittered, jittered);
+    }
+    expect(helper.pinchings).toEqual([]);
+    expect(helper.pannings).toEqual([
+      [1, 0],
+      [1, 0],
+      [1, 0],
+      [1, 0],
+    ]);
+
+    // The retained span baseline lets a larger change zoom.
+    const past = pair(baselineSpan + minScaleDistance + 20, 105);
+    helper.dispatch("touchmove", past, past);
+    expect(helper.pinchings.length).toEqual(1);
+    expect(
+      helper.pinchings[0].distance - helper.pinchings[0].prevDistance
+    ).toEqual(minScaleDistance + 20);
+
+    helper.destroy();
+  });
+
+  it("doesn't start pinching when the fingers are sampled one at a time", function () {
+    const helper = new TouchManagerHelper();
+    const { MIN_TOUCH_DISTANCE_TO_PINCH: minDistance } = helper.manager;
+    const touches = pair(200);
+
+    helper.dispatch("touchstart", [touches[0]], [touches[0]]);
+    helper.dispatch("touchstart", touches, [touches[1]]);
+
+    // Report each step of a rigid translation one contact at a time.
+    const step = minDistance + 5;
+    const [{ clientX: x0 }, { clientX: x1 }] = touches;
+    for (let i = 1; i <= 4; i++) {
+      const lagging = [
+        makeTouch(0, x0 + i * step),
+        makeTouch(1, x1 + (i - 1) * step),
+      ];
+      helper.dispatch("touchmove", lagging, [lagging[0]]);
+      const caughtUp = [
+        makeTouch(0, x0 + i * step),
+        makeTouch(1, x1 + i * step),
+      ];
+      helper.dispatch("touchmove", caughtUp, [caughtUp[1]]);
+    }
+
+    expect(helper.pinchings).toEqual([]);
+    expect(helper.pannings.reduce((sum, [dx]) => sum + dx, 0)).toEqual(
+      4 * step
+    );
+
+    helper.destroy();
+  });
+
+  it("un-latches a pinch started by a finger sampled late", function () {
+    const helper = new TouchManagerHelper();
+    const { MIN_TOUCH_DISTANCE_TO_PINCH: minDistance } = helper.manager;
+    const touches = pair(200);
+
+    helper.dispatch("touchstart", [touches[0]], [touches[0]]);
+    helper.dispatch("touchstart", touches, [touches[1]]);
+
+    // Leave the second contact two samples behind, so the cumulative span
+    // change exceeds the per-event allowance.
+    const step = minDistance + 5;
+    const [{ clientX: x0 }, { clientX: x1 }] = touches;
+    for (let i = 1; i <= 2; i++) {
+      const lagging = [makeTouch(0, x0 + i * step), makeTouch(1, x1)];
+      helper.dispatch("touchmove", lagging, [lagging[0]]);
+    }
+    expect(helper.pinchings).toEqual([]);
+
+    // Catching up reverses the span by twice the midpoint movement, so the
+    // tentative pinch is discarded.
+    const caughtUp = [makeTouch(0, x0 + 2 * step), makeTouch(1, x1 + 2 * step)];
+    helper.dispatch("touchmove", caughtUp, [caughtUp[1]]);
+    const next = [makeTouch(0, x0 + 3 * step), makeTouch(1, x1 + 2 * step)];
+    helper.dispatch("touchmove", next, [next[0]]);
+
+    expect(helper.pinchings).toEqual([]);
+    expect(helper.pannings.length).toEqual(4);
 
     helper.destroy();
   });
