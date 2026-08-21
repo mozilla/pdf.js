@@ -351,14 +351,14 @@ class TextLayerBuilder {
         }
         if (!modifyStart && range.endOffset === 0) {
           do {
-            while (!anchor.previousSibling) {
+            while (anchor && !anchor.previousSibling) {
               anchor = anchor.parentNode;
             }
-            anchor = anchor.previousSibling;
-          } while (!anchor.childNodes.length);
+            anchor = anchor?.previousSibling;
+          } while (anchor && !anchor.childNodes.length);
         }
 
-        const parentTextLayer = anchor.parentElement?.closest(".textLayer");
+        const parentTextLayer = anchor?.parentElement?.closest(".textLayer");
         const endDiv = this.#textLayers.get(parentTextLayer);
         if (endDiv) {
           endDiv.style.width = parentTextLayer.style.width;
