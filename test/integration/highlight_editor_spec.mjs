@@ -2993,7 +2993,7 @@ describe("Highlight Editor", () => {
       );
     });
 
-    fit("must check that the edit toolbar is rendered above text annotations", async () => {
+    it("must check that the edit toolbar is rendered above text annotations", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await switchToFreeText(page);
