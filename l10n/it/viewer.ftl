@@ -235,8 +235,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Trova
     .placeholder = Trova nel documento…
+    .title = Trova
 pdfjs-find-previous-button =
     .title = Trova l’occorrenza precedente del testo da cercare
 pdfjs-find-previous-button-label = Precedente
@@ -331,16 +331,16 @@ pdfjs-editor-highlight-button =
     .title = Evidenzia
 pdfjs-editor-highlight-button-label = Evidenzia
 pdfjs-highlight-floating-button1 =
-    .title = Evidenzia
     .aria-label = Evidenzia
+    .title = Evidenzia
 pdfjs-highlight-floating-button-label = Evidenzia
 pdfjs-comment-floating-button =
-    .title = Commenta
     .aria-label = Commenta
+    .title = Commenta
 pdfjs-comment-floating-button-label = Commenta
 pdfjs-editor-comment-button =
-    .title = Commenta
     .aria-label = Commenta
+    .title = Commenta
 pdfjs-editor-comment-button-label = Commenta
 pdfjs-editor-signature-button =
     .title = Aggiungi firma
@@ -413,8 +413,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Commenti
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Chiudi la barra laterale
     .aria-label = Chiudi la barra laterale
+    .title = Chiudi la barra laterale
 pdfjs-editor-comments-sidebar-close-button-label = Chiudi la barra laterale
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Hai notato qualcosa di interessante? Evidenzialo e aggiungi un commento.
@@ -756,8 +756,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Proprietà firma digitale
     .aria-label = Proprietà firma digitale
+    .title = Proprietà firma digitale
 pdfjs-digital-signature-properties-button-label = Proprietà firma digitale
 
 ## Banner shown above the signature list summarising the overall
