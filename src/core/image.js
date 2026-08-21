@@ -768,7 +768,7 @@ class PDFImage {
       return imgData;
     }
 
-    if (!forceRGBA) {
+    if (!forceRGBA && !this.smask && !this.mask) {
       // If it is a 1-bit-per-pixel grayscale (i.e. black-and-white) image
       // without any complications, we pass a same-sized copy to the main
       // thread rather than expanding by 32x to RGBA form. This saves *lots*
@@ -788,8 +788,6 @@ class PDFImage {
       }
       if (
         kind &&
-        !this.smask &&
-        !this.mask &&
         drawWidth === originalWidth &&
         drawHeight === originalHeight
       ) {
@@ -831,12 +829,7 @@ class PDFImage {
         }
         return imgData;
       }
-      if (
-        this.image instanceof JpegStream &&
-        !this.smask &&
-        !this.mask &&
-        !this.needsDecode
-      ) {
+      if (this.image instanceof JpegStream && !this.needsDecode) {
         let isHandled = false;
         switch (this.colorSpace.name) {
           case "DeviceGray":
