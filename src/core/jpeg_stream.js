@@ -64,30 +64,8 @@ class JpegStream extends DecodeStream {
   }
 
   get jpegOptions() {
-    const jpegOptions = {
-      decodeTransform: undefined,
-      colorTransform: undefined,
-    };
+    const jpegOptions = { colorTransform: undefined };
 
-    // Checking if values need to be transformed before conversion.
-    const decodeArr = this.dict.getArray("D", "Decode");
-    if ((this.forceRGBA || this.forceRGB) && Array.isArray(decodeArr)) {
-      const bitsPerComponent = this.dict.get("BPC", "BitsPerComponent") || 8;
-      const decodeArrLength = decodeArr.length;
-      const transform = new Int32Array(decodeArrLength);
-      let transformNeeded = false;
-      const maxValue = (1 << bitsPerComponent) - 1;
-      for (let i = 0; i < decodeArrLength; i += 2) {
-        transform[i] = ((decodeArr[i + 1] - decodeArr[i]) * 256) | 0;
-        transform[i + 1] = (decodeArr[i] * maxValue) | 0;
-        if (transform[i] !== 256 || transform[i + 1] !== 0) {
-          transformNeeded = true;
-        }
-      }
-      if (transformNeeded) {
-        jpegOptions.decodeTransform = transform;
-      }
-    }
     // Fetching the 'ColorTransform' entry, if it exists.
     if (this.params instanceof Dict) {
       const colorTransform = this.params.get("ColorTransform");
@@ -146,11 +124,6 @@ class JpegStream extends DecodeStream {
       return null;
     }
     const jpegOptions = this.jpegOptions;
-    if (jpegOptions.decodeTransform) {
-      // TODO: We could decode the image thanks to ImageDecoder and then
-      // get the pixels with copyTo and apply the decodeTransform.
-      return null;
-    }
     let decoder;
     try {
       // TODO: If the stream is Flate & DCT we could try to just pipe the

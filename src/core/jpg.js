@@ -804,9 +804,13 @@ function skipData(data, view, offset) {
 }
 
 class JpegImage {
-  constructor({ decodeTransform = null, colorTransform = -1 } = {}) {
-    this._decodeTransform = decodeTransform;
-    this._colorTransform = colorTransform;
+  constructor(options) {
+    this._colorTransform = options?.colorTransform ?? -1;
+
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
+      this._decodeTransform = options?.decodeTransform || null;
+      this._isSourcePDF = false;
+    }
   }
 
   static canUseImageDecoder(data, colorTransform = -1) {
@@ -1210,7 +1214,7 @@ class JpegImage {
     return undefined;
   }
 
-  #getLinearizedBlockData(width, height, isSourcePDF) {
+  #getLinearizedBlockData(width, height) {
     const scaleX = this.width / width,
       scaleY = this.height / height;
 
@@ -1253,35 +1257,32 @@ class JpegImage {
       }
     }
 
-    // decodeTransform contains pairs of multiplier (-256..256) and additive
-    let transform = this._decodeTransform;
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
+      // decodeTransform contains pairs of multiplier (-256..256) and additive
+      let transform = this._decodeTransform;
 
-    // In PDF files, JPEG images with CMYK colour spaces are usually inverted
-    // (this can be observed by extracting the raw image data).
-    // Since the conversion algorithms (see below) were written primarily for
-    // the PDF use-cases, attempting to use `JpegImage` to parse standalone
-    // JPEG (CMYK) images may thus result in inverted images (see issue 9513).
-    //
-    // Unfortunately it's not (always) possible to tell, from the image data
-    // alone, if it needs to be inverted. Thus in an attempt to provide better
-    // out-of-the-box behaviour when `JpegImage` is used standalone, default to
-    // inverting JPEG (CMYK) images if and only if the image data does *not*
-    // come from a PDF file and no `decodeTransform` was passed by the user.
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("IMAGE_DECODERS") &&
-      !isSourcePDF &&
-      numComponents === 4
-    ) {
-      transform ||= new Int32Array([
-        -256, 255, -256, 255, -256, 255, -256, 255,
-      ]);
-    }
+      // In PDF files, JPEG images with CMYK colour spaces are usually inverted
+      // (this can be observed by extracting the raw image data).
+      // Since the conversion algorithms (see below) were written primarily for
+      // the PDF use-cases, attempting to use `JpegImage` to parse standalone
+      // JPEG (CMYK) images may thus result in inverted images (see issue 9513).
+      //
+      // Unfortunately it's not (always) possible to tell, from the image data
+      // alone, if it needs to be inverted. Thus in an attempt to provide better
+      // out-of-the-box behaviour when `JpegImage` is used standalone, default
+      // to inverting JPEG (CMYK) images if and only if the image data does
+      // *not* come from a PDF file and no `decodeTransform` was provided.
+      if (!this._isSourcePDF && numComponents === 4) {
+        transform ||= new Int32Array([
+          -256, 255, -256, 255, -256, 255, -256, 255,
+        ]);
+      }
 
-    if (transform) {
-      for (i = 0; i < dataLength;) {
-        for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
-          data[i] = ((data[i] * transform[k]) >> 8) + transform[k + 1];
+      if (transform) {
+        for (i = 0; i < dataLength;) {
+          for (j = 0, k = 0; j < numComponents; j++, i++, k += 2) {
+            data[i] = ((data[i] * transform[k]) >> 8) + transform[k + 1];
+          }
         }
       }
     }
@@ -1388,19 +1389,15 @@ class JpegImage {
     return data;
   }
 
-  getData({
-    width,
-    height,
-    forceRGBA = false,
-    forceRGB = false,
-    isSourcePDF = typeof PDFJSDev === "undefined" ||
-      !PDFJSDev.test("IMAGE_DECODERS"),
-  }) {
+  getData({ width, height, forceRGBA = false, forceRGB = false }) {
     if (this.numComponents > 4) {
       throw new JpegError("Unsupported color mode");
     }
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
+      this._isSourcePDF = arguments[0]?.isSourcePDF === true;
+    }
     // Type of data: Uint8ClampedArray(width * height * numComponents)
-    const data = this.#getLinearizedBlockData(width, height, isSourcePDF);
+    const data = this.#getLinearizedBlockData(width, height);
 
     if (this.numComponents === 1 && (forceRGBA || forceRGB)) {
       const len = data.length * (forceRGBA ? 4 : 3);
