@@ -404,8 +404,8 @@ pdfjs-editor-comments-sidebar-no-comments-link = Saber más
 pdfjs-editor-alt-text-button-label = Texto alternativo
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Editar el texto alternativo
-pdfjs-editor-alt-text-dialog-label = Eligir una opción
-pdfjs-editor-alt-text-dialog-description = El texto alternativo (texto alternativo) ayuda cuando las personas no pueden ver la imagen o cuando no se carga.
+pdfjs-editor-alt-text-dialog-label = Elegir una opción
+pdfjs-editor-alt-text-dialog-description = El texto alternativo ayuda cuando las personas no pueden ver la imagen o cuando no se carga.
 pdfjs-editor-alt-text-add-description-label = Añadir una descripción
 pdfjs-editor-alt-text-add-description-description = Intente escribir 1 o 2 frases que describan el tema, el entorno o las acciones.
 pdfjs-editor-alt-text-mark-decorative-label = Marcar como decorativa
@@ -698,7 +698,7 @@ pdfjs-views-manager-status-undo-cut-label =
 pdfjs-views-manager-pages-status-undo-copy-label =
     { $count ->
         [one] 1 página copiada
-       *[other] { $count } páginas cortadas
+       *[other] { $count } páginas copiadas
     }
 # Variables:
 #   $count (Number) - the number of selected pages to be deleted.
@@ -711,8 +711,8 @@ pdfjs-views-manager-pages-status-waiting-ready-label = Preparando su archivo…
 pdfjs-views-manager-pages-status-waiting-uploading-label = Subiendo el archivo…
 pdfjs-views-manager-status-warning-cut-label = No se pudo cortar. Refresque la página y pruebe de nuevo.
 pdfjs-views-manager-status-warning-copy-label = No se pudo copiar. Refresque la página y pruebe de nuevo.
-pdfjs-views-manager-status-warning-delete-label = No se pudo cortar. Refresque la página y pruebe de nuevo.
-pdfjs-views-manager-status-warning-save-label = No se pudo cortar. Refresque la página y pruebe de nuevo.
+pdfjs-views-manager-status-warning-delete-label = No se pudo eliminar. Refresque la página y pruebe de nuevo.
+pdfjs-views-manager-status-warning-save-label = No se pudo guardar. Refresque la página y pruebe de nuevo.
 pdfjs-views-manager-status-undo-button-label = Deshacer
 pdfjs-views-manager-status-done-button-label = Hecho
 pdfjs-views-manager-status-close-button =

@@ -769,6 +769,11 @@ pdfjs-digital-signature-properties-button-label = Firma digital oguerekóva
 ##   $count (Number) - number of signatures at the worst level.
 
 pdfjs-digital-signature-properties-banner-verified = Pe kuatia oñemboheraguapy firma digital oikóvape
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Kuatia mboheraguapypyre { $count } mboajepyre oikove’ỹva ndive
+       *[other] Kuatia mboheraguapypyre { $count } mboajepyreita oikove’ỹva ndive
+    }
 
 ## Per-signature status row. Only three distinct strings are needed:
 ## the signature crypto either verified (the cert chain may still be

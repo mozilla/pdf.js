@@ -178,12 +178,13 @@ pdfjs-find-previous-button-label = Iepriekšējā
 pdfjs-find-next-button =
     .title = Atrast nākamo
 pdfjs-find-next-button-label = Nākamā
-pdfjs-find-highlight-checkbox = Iekrāsot visas
-pdfjs-find-match-case-checkbox-label = Lielo, mazo burtu jutīgs
+pdfjs-find-highlight-checkbox = Izcelt visus
+pdfjs-find-match-case-checkbox-label = Lielo un mazo burtu atbilstība
+pdfjs-find-match-diacritics-checkbox-label = Diakritisko zīmju atbilstība
 pdfjs-find-entire-word-checkbox-label = Veselus vārdus
 pdfjs-find-reached-top = Sasniegts dokumenta sākums, turpinām no beigām
 pdfjs-find-reached-bottom = Sasniegtas dokumenta beigas, turpinām no sākuma
-pdfjs-find-not-found = Frāze nav atrasta
+pdfjs-find-not-found = Vārdkopa nav atrasta
 
 ## Predefined zoom values
 
