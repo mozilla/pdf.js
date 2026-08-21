@@ -1388,6 +1388,13 @@
     "type": "eq"
   },
   {
+    "id": "toolbar-overlap-with-annotations",
+    "file": "pdfs/toolbar-overlap-with-annotations.pdf",
+    "md5": "33f76794ba75dfcf0938267c25b8df14",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "unix01-partial",
     "file": "pdfs/unix01.pdf",
     "md5": "2742999f0bf9b9c035dbb0736096e220",
