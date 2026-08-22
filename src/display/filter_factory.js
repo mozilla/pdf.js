@@ -14,6 +14,12 @@
  */
 
 import {
+  computeLuminance,
+  getRGB,
+  getRGBA,
+  isDataScheme,
+} from "./display_utils.js";
+import {
   FeatureTest,
   SVG_NS,
   unreachable,
@@ -21,7 +27,6 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { getRGB, getRGBA, isDataScheme } from "./display_utils.js";
 
 class BaseFilterFactory {
   constructor() {
@@ -277,11 +282,9 @@ class DOMFilterFactory extends BaseFilterFactory {
     // Then for every color in the pdf, if its rounded luminance is the
     // same as the background one then it's replaced by the new
     // background color else by the foreground one.
-    const map = new Array(256);
-    for (let i = 0; i <= 255; i++) {
-      const x = i / 255;
-      map[i] = x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
-    }
+    const map = Array.from({ length: 256 }, (_, i) =>
+      computeLuminance(i / 255)
+    );
     const table = map.join(",");
 
     const id = `g_${this.#docId}_hcm_filter`;
