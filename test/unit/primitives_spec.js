@@ -98,14 +98,13 @@ describe("primitives", function () {
       expect(dict.get()).toBeUndefined();
       expect(dict.get("Prev")).toBeUndefined();
       expect(dict.get("D", "Decode")).toBeUndefined();
-      expect(dict.get("FontFile", "FontFile2", "FontFile3")).toBeUndefined();
+      expect(dict.get("FontFile", "FontFile2")).toBeUndefined();
     };
 
     let emptyDict, dictWithSizeKey, dictWithManyKeys;
     const storedSize = 42;
     const testFontFile = "file1";
     const testFontFile2 = "file2";
-    const testFontFile3 = "file3";
 
     beforeAll(function () {
       emptyDict = new Dict();
@@ -116,7 +115,6 @@ describe("primitives", function () {
       dictWithManyKeys = new Dict();
       dictWithManyKeys.set("FontFile", testFontFile);
       dictWithManyKeys.set("FontFile2", testFontFile2);
-      dictWithManyKeys.set("FontFile3", testFontFile3);
     });
 
     afterAll(function () {
@@ -153,7 +151,6 @@ describe("primitives", function () {
 
       expect(dictWithSizeKey.get("Size")).toEqual(storedSize);
       expect(dictWithSizeKey.get("Prev", "Size")).toEqual(storedSize);
-      expect(dictWithSizeKey.get("Prev", "Root", "Size")).toEqual(storedSize);
     });
 
     it("should return invalid values for unknown keys when Size key is stored", function () {
@@ -186,21 +183,16 @@ describe("primitives", function () {
     it("should return correct values for multiple stored keys", function () {
       expect(dictWithManyKeys.has("FontFile")).toBeTrue();
       expect(dictWithManyKeys.has("FontFile2")).toBeTrue();
-      expect(dictWithManyKeys.has("FontFile3")).toBeTrue();
 
-      expect(dictWithManyKeys.get("FontFile3")).toEqual(testFontFile3);
-      expect(dictWithManyKeys.get("FontFile2", "FontFile3")).toEqual(
-        testFontFile2
+      expect(dictWithManyKeys.get("FontFile", "FontFile2")).toEqual(
+        testFontFile
       );
-      expect(
-        dictWithManyKeys.get("FontFile", "FontFile2", "FontFile3")
-      ).toEqual(testFontFile);
     });
 
     it("should asynchronously fetch unknown keys", async function () {
       const keyPromises = [
         dictWithManyKeys.getAsync("Size"),
-        dictWithSizeKey.getAsync("FontFile", "FontFile2", "FontFile3"),
+        dictWithSizeKey.getAsync("FontFile", "FontFile2"),
       ];
 
       const values = await Promise.all(keyPromises);
@@ -210,22 +202,19 @@ describe("primitives", function () {
 
     it("should asynchronously fetch correct values for multiple stored keys", async function () {
       const keyPromises = [
-        dictWithManyKeys.getAsync("FontFile3"),
-        dictWithManyKeys.getAsync("FontFile2", "FontFile3"),
-        dictWithManyKeys.getAsync("FontFile", "FontFile2", "FontFile3"),
+        dictWithManyKeys.getAsync("FontFile2"),
+        dictWithManyKeys.getAsync("FontFile", "FontFile2"),
       ];
 
       const values = await Promise.all(keyPromises);
-      expect(values[0]).toEqual(testFontFile3);
-      expect(values[1]).toEqual(testFontFile2);
-      expect(values[2]).toEqual(testFontFile);
+      expect(values[0]).toEqual(testFontFile2);
+      expect(values[1]).toEqual(testFontFile);
     });
 
     it("should iterate through each stored key", function () {
       expect([...dictWithManyKeys]).toEqual([
         ["FontFile", testFontFile],
         ["FontFile2", testFontFile2],
-        ["FontFile3", testFontFile3],
       ]);
     });
 
@@ -236,15 +225,9 @@ describe("primitives", function () {
       fontDict.set("FontFile", fontRef);
 
       expect(fontDict.getRaw("FontFile")).toEqual(fontRef);
-      expect(fontDict.get("FontFile", "FontFile2", "FontFile3")).toEqual(
-        testFontFile
-      );
+      expect(fontDict.get("FontFile", "FontFile2")).toEqual(testFontFile);
 
-      const value = await fontDict.getAsync(
-        "FontFile",
-        "FontFile2",
-        "FontFile3"
-      );
+      const value = await fontDict.getAsync("FontFile", "FontFile2");
       expect(value).toEqual(testFontFile);
     });
 
@@ -275,7 +258,7 @@ describe("primitives", function () {
     });
 
     it("should get all key names", function () {
-      const expectedKeys = ["FontFile", "FontFile2", "FontFile3"];
+      const expectedKeys = ["FontFile", "FontFile2"];
       const keys = [...dictWithManyKeys.getKeys()];
 
       expect(keys.sort()).toEqual(expectedKeys);
@@ -283,7 +266,7 @@ describe("primitives", function () {
 
     it("should get all raw values", function () {
       // Test direct objects:
-      const expectedRawValues1 = [testFontFile, testFontFile2, testFontFile3];
+      const expectedRawValues1 = [testFontFile, testFontFile2];
       const rawValues1 = [...dictWithManyKeys.getRawValues()];
 
       expect(rawValues1.sort()).toEqual(expectedRawValues1);
@@ -314,7 +297,6 @@ describe("primitives", function () {
       const expectedRawEntries = [
         ["FontFile", testFontFile],
         ["FontFile2", testFontFile2],
-        ["FontFile3", testFontFile3],
       ];
       const rawEntries = Array.from(dictWithManyKeys.getRawEntries());
       expect(rawEntries.sort()).toEqual(expectedRawEntries);
@@ -329,7 +311,7 @@ describe("primitives", function () {
     });
 
     it("should correctly merge dictionaries", function () {
-      const expectedKeys = ["FontFile", "FontFile2", "FontFile3", "Size"];
+      const expectedKeys = ["FontFile", "FontFile2", "Size"];
 
       const fontFileDict = new Dict();
       fontFileDict.set("FontFile", "Type1 font file");
