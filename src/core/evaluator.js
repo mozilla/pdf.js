@@ -885,6 +885,16 @@ class PartialEvaluator {
     }
   }
 
+  #createTransferMap(fn) {
+    const transferFn = this._pdfFunctionFactory.create(fn),
+      tmp = new Float32Array(1);
+    return Uint8Array.from({ length: 256 }, (_, i) => {
+      tmp[0] = i / 255;
+      transferFn(tmp, 0, tmp, 0);
+      return (tmp[0] * 255) | 0;
+    });
+  }
+
   handleSMask(
     smask,
     resources,
@@ -904,15 +914,7 @@ class PartialEvaluator {
     // we will build a map of integer values in range 0..255 to be fast.
     const transferObj = smask.get("TR");
     if (isPDFFunction(transferObj)) {
-      const transferFn = this._pdfFunctionFactory.create(transferObj);
-      const transferMap = new Uint8Array(256);
-      const tmp = new Float32Array(1);
-      for (let i = 0; i < 256; i++) {
-        tmp[0] = i / 255;
-        transferFn(tmp, 0, tmp, 0);
-        transferMap[i] = (tmp[0] * 255) | 0;
-      }
-      smaskOptions.transferMap = transferMap;
+      smaskOptions.transferMap = this.#createTransferMap(transferObj);
     }
 
     return this.buildFormXObject(
@@ -930,12 +932,9 @@ class PartialEvaluator {
   handleTransferFunction(tr) {
     let transferArray;
     if (Array.isArray(tr)) {
-      transferArray = tr;
-      if (tr.length > 1 && tr.every(map => map === tr[0])) {
-        // All entries in the array are the same, so we can just use one of
-        // them.
-        transferArray = [tr[0]];
-      }
+      // If all entries in the array are the same, we can just use one of them.
+      transferArray =
+        tr.length > 1 && tr.every(map => map === tr[0]) ? [tr[0]] : tr;
     } else if (isPDFFunction(tr)) {
       transferArray = [tr];
     } else {
@@ -955,16 +954,7 @@ class PartialEvaluator {
       } else if (!isPDFFunction(transferObj)) {
         return null; // Not a valid transfer function object.
       }
-
-      const transferFn = this._pdfFunctionFactory.create(transferObj);
-      const transferMap = new Uint8Array(256),
-        tmp = new Float32Array(1);
-      for (let j = 0; j < 256; j++) {
-        tmp[0] = j / 255;
-        transferFn(tmp, 0, tmp, 0);
-        transferMap[j] = (tmp[0] * 255) | 0;
-      }
-      transferMaps.push(transferMap);
+      transferMaps.push(this.#createTransferMap(transferObj));
       numEffectfulFns++;
     }
 
