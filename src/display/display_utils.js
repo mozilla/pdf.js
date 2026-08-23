@@ -829,6 +829,7 @@ function makePathFromDrawOPS(data) {
 export {
   applyOpacity,
   ColorScheme,
+  computeLuminance,
   CSSConstants,
   deprecated,
   fetchData,
