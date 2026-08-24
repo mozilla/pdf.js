@@ -122,7 +122,6 @@
   font-size: calc(100px * var(--total-scale-factor));
   transform-origin: 0 0;
   cursor: auto;
-  isolation: isolate;
 
   .selectedEditor {
     z-index: 100000 !important;

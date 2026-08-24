@@ -1414,8 +1414,8 @@ describe("Highlight Editor", () => {
             const y = rect.y + rect.height / 2;
             await page.mouse.click(x, y, { count: 2, delay: 100 });
 
-            await page.waitForSelector(".textLayer .highlightButton");
-            await page.click(".textLayer .highlightButton");
+            await page.waitForSelector(".highlightButton");
+            await page.click(".highlightButton");
 
             await page.waitForSelector(getEditorSelector(editorId));
             const usedColor = await page.evaluate(() => {
@@ -1470,7 +1470,7 @@ describe("Highlight Editor", () => {
             delay: 100,
           });
 
-          const toolbarRect = await getRect(page, ".textLayer .editToolbar");
+          const toolbarRect = await getRect(page, ".editToolbar");
 
           // In RTL, the left edge of the toolbar is aligned on the left edge
           // of the selection (bug 2060032).
@@ -1893,8 +1893,8 @@ describe("Highlight Editor", () => {
           const y = rect.y + rect.height / 2;
           await page.mouse.click(x, y, { count: 3, delay: 100 });
 
-          await page.waitForSelector(".textLayer .highlightButton");
-          await page.click(".textLayer .highlightButton");
+          await page.waitForSelector(".highlightButton");
+          await page.click(".highlightButton");
 
           await page.waitForSelector(getEditorSelector(0));
           const usedColor = await page.evaluate(() => {
