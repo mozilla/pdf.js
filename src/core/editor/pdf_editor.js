@@ -2510,7 +2510,7 @@ class PDFEditor {
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
       const changes = new RefMap();
       const newData = await AnnotationFactory.saveNewAnnotations(
-        page.createAnnotationEvaluator(handler),
+        page._createPartialEvaluator(handler),
         this.xrefWrapper,
         task,
         newAnnotations,
