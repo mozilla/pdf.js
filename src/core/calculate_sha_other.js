@@ -31,14 +31,13 @@ class Word64 {
     this.low ^= word.low;
   }
 
+  /**
+   * @param {number} places - An integer, must satisfy `places < 32`.
+   * @returns {undefined}
+   */
   shiftRight(places) {
-    if (places >= 32) {
-      this.low = (this.high >>> (places - 32)) | 0;
-      this.high = 0;
-    } else {
-      this.low = (this.low >>> places) | (this.high << (32 - places));
-      this.high = (this.high >>> places) | 0;
-    }
+    this.low = (this.low >>> places) | (this.high << (32 - places));
+    this.high = (this.high >>> places) | 0;
   }
 
   rotateRight(places) {
