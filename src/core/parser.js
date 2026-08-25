@@ -646,17 +646,9 @@ class Parser {
    *   Whether the filter chain contains `/Crypt`.
    */
   #hasCryptFilter(filter) {
-    if (!Array.isArray(filter)) {
-      return isName(filter, "Crypt");
-    }
-
-    for (const f of filter) {
-      if (isName(this.#fetchIfRef(f), "Crypt")) {
-        return true;
-      }
-    }
-
-    return false;
+    return Array.isArray(filter)
+      ? filter.some(f => isName(this.#fetchIfRef(f), "Crypt"))
+      : isName(filter, "Crypt");
   }
 
   #findStreamLength(startPos) {
