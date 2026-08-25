@@ -144,15 +144,13 @@ class JpegStream extends DecodeStream {
       if (!useImageDecoder) {
         return null;
       }
+      const { width: frameWidth, height: frameHeight } = useImageDecoder;
+      const reducePower = ImageResizer.getReducePower(frameWidth, frameHeight);
       if (
-        useImageDecoder.width !== width ||
-        useImageDecoder.height !== height
+        (frameWidth !== width || frameHeight !== height) &&
+        (reducePower || !frameHeight)
       ) {
-        // The SOF dimensions disagree with the image dictionary, e.g. because
-        // the height is only known from a DNL marker or because the scan simply
-        // ends early (issue15492.pdf). `ImageDecoder` reports and scales the
-        // frame according to the SOF, so let our own decoder, which honours the
-        // actual JPEG image data, handle the image instead.
+        // Only downscale when the SOF and image dictionary dimensions match.
         return null;
       }
       if (useImageDecoder.exifStart) {
@@ -170,11 +168,10 @@ class JpegStream extends DecodeStream {
         preferAnimation: false,
       };
       // Request reduced dimensions; ImageDecoder treats them as best-effort.
-      const reducePower = ImageResizer.getReducePower(width, height);
       if (reducePower) {
         const factor = 2 ** reducePower;
-        init.desiredWidth = Math.ceil(width / factor);
-        init.desiredHeight = Math.ceil(height / factor);
+        init.desiredWidth = Math.ceil(frameWidth / factor);
+        init.desiredHeight = Math.ceil(frameHeight / factor);
       }
       decoder = new ImageDecoder(init);
 

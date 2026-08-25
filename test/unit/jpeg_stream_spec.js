@@ -205,6 +205,24 @@ describe("jpeg_stream", function () {
       ).toEqual(false);
     });
 
+    it("should use `ImageDecoder` for a mismatch without resizing", async function () {
+      const width = 1024,
+        frameHeight = 1030,
+        dictionaryHeight = 1024;
+      expect(ImageResizer.getReducePower(width, frameHeight)).toEqual(0);
+
+      const data = createJpeg({ width, height: frameHeight });
+      const image = await createStream(data).getTransferableImage(
+        width,
+        dictionaryHeight
+      );
+
+      expect(decoderInits.length).toEqual(1);
+      expect(decoderInits[0].desiredWidth).toBeUndefined();
+      expect(decoderInits[0].desiredHeight).toBeUndefined();
+      expect(image).not.toBeNull();
+    });
+
     it("should not use `ImageDecoder` when the SOF dimensions disagree with the image dictionary", async function () {
       // A zero SOF height means that a later DNL marker defines it.
       const dnl = createJpeg({ width: 40000, height: 0 });
