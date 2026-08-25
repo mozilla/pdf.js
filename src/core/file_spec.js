@@ -44,9 +44,7 @@ class FileSpec {
       return;
     }
     this.root = root;
-    if (root.has("FS")) {
-      this.fs = root.get("FS");
-    }
+
     if (root.has("RF")) {
       warn("Related file specifications are not supported");
     }
