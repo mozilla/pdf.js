@@ -131,7 +131,7 @@ class Page {
     };
   }
 
-  #createPartialEvaluator(handler, pageIndex = this.pageIndex) {
+  _createPartialEvaluator(handler, pageIndex = this.pageIndex) {
     // The pageIndex is used to identify the page some objects (like images)
     // belong to.
 
@@ -148,10 +148,6 @@ class Page {
       systemFontCache: this.systemFontCache,
       options: this.evaluatorOptions,
     });
-  }
-
-  createAnnotationEvaluator(handler) {
-    return this.#createPartialEvaluator(handler);
   }
 
   #getInheritableProperty(key, getArray = false) {
@@ -374,7 +370,7 @@ class Page {
     if (this.xfaFactory) {
       throw new Error("XFA: Cannot save new annotations.");
     }
-    const partialEvaluator = this.#createPartialEvaluator(handler);
+    const partialEvaluator = this._createPartialEvaluator(handler);
 
     const deletedAnnotations = new RefSet();
     const existingAnnotations = new RefSet();
@@ -418,7 +414,7 @@ class Page {
   }
 
   async save(handler, task, annotationStorage, changes) {
-    const partialEvaluator = this.#createPartialEvaluator(handler);
+    const partialEvaluator = this._createPartialEvaluator(handler);
 
     // Fetch the page's annotations and save the content
     // in case of interactive form fields.
@@ -482,7 +478,7 @@ class Page {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
 
-    const partialEvaluator = this.#createPartialEvaluator(handler, pageIndex);
+    const partialEvaluator = this._createPartialEvaluator(handler, pageIndex);
 
     const newAnnotsByPage = !this.xfaFactory
       ? getNewAnnotationsMap(annotationStorage)
@@ -690,7 +686,7 @@ class Page {
       RESOURCES_KEYS_TEXT_CONTENT
     );
 
-    const partialEvaluator = this.#createPartialEvaluator(handler);
+    const partialEvaluator = this._createPartialEvaluator(handler);
 
     return partialEvaluator.getTextContent({
       stream: contentStream,
@@ -761,7 +757,7 @@ class Page {
       }
 
       if (annotation.hasTextContent && isVisible) {
-        partialEvaluator ??= this.#createPartialEvaluator(handler);
+        partialEvaluator ??= this._createPartialEvaluator(handler);
 
         textContentPromises.push(
           annotation
@@ -924,7 +920,7 @@ class Page {
             }
             annotation.data.pageIndex = pageIndex;
             if (annotation.hasTextContent && annotation.viewable) {
-              partialEvaluator ??= this.#createPartialEvaluator(handler);
+              partialEvaluator ??= this._createPartialEvaluator(handler);
 
               await annotation.extractTextContent(partialEvaluator, task, [
                 -Infinity,
