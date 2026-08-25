@@ -62,9 +62,7 @@ class Cmd {
   }
 }
 
-const nonSerializable = function nonSerializableClosure() {
-  return nonSerializable; // Creating closure on some variable.
-};
+const nonSerializable = () => nonSerializable; // Creating closure on some variable.
 
 class Dict {
   __nonSerializable__ = nonSerializable; // Disable cloning of the Dict.

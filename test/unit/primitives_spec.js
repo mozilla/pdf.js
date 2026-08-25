@@ -121,6 +121,12 @@ describe("primitives", function () {
       emptyDict = dictWithSizeKey = dictWithManyKeys = null;
     });
 
+    it("should not allow cloning of a dictionary", function () {
+      expect(function () {
+        structuredClone(dictWithSizeKey);
+      }).toThrowError();
+    });
+
     it("should allow assigning an XRef table after creation", function () {
       const dict = new Dict(null);
       expect(dict.xref).toBeNull();
@@ -156,6 +162,12 @@ describe("primitives", function () {
     it("should return invalid values for unknown keys when Size key is stored", function () {
       checkInvalidHasValues(dictWithSizeKey);
       checkInvalidKeyValues(dictWithSizeKey);
+    });
+
+    it("should not allow getting incorrectly ordered keys", function () {
+      expect(function () {
+        dictWithSizeKey.get("Decode", "D");
+      }).toThrowError("Dict.#getValue: Expected keys to be ordered by length.");
     });
 
     it("should not accept to set a non-string key", function () {
@@ -310,6 +322,16 @@ describe("primitives", function () {
       expect(firstDictEmpty).not.toBe(emptyDict);
     });
 
+    it("should not allow to set a key in Dict.empty", function () {
+      const empty = Dict.empty;
+
+      expect(function () {
+        empty.set("Type", "Qwerty");
+      }).toThrowError("Should not call `set` on the empty dictionary.");
+
+      expect(empty.size).toEqual(0);
+    });
+
     it("should correctly merge dictionaries", function () {
       const expectedKeys = ["FontFile", "FontFile2", "Size"];
 
@@ -452,6 +474,20 @@ describe("primitives", function () {
       expect(firstOtherRef).toBe(secondOtherRef);
       expect(firstRef).not.toBe(firstOtherRef);
     });
+
+    it("should create reference from string representation", function () {
+      expect(Ref.fromString("4R")).toEqual(Ref.get(4, 0));
+      expect(Ref.fromString("4R0")).toEqual(Ref.get(4, 0));
+      expect(Ref.fromString("4R2")).toEqual(Ref.get(4, 2));
+    });
+
+    it("should not create reference from invalid string representation", function () {
+      expect(Ref.fromString("")).toBeNull();
+      expect(Ref.fromString("4")).toBeNull();
+      expect(Ref.fromString("R2")).toBeNull();
+      expect(Ref.fromString("0R2")).toBeNull();
+      expect(Ref.fromString("abc")).toBeNull();
+    });
   });
 
   describe("RefSet", function () {
@@ -467,15 +503,30 @@ describe("primitives", function () {
       refSet = null;
     });
 
+    it("should not set an invalid value", function () {
+      expect(function () {
+        refSet.put(10);
+      }).toThrowError('RefSet: Invalid "ref" value in put.');
+    });
+
     it("should have a stored value", function () {
       refSet.put(ref1);
       expect(refSet.has(ref1)).toBeTrue();
+
+      refSet.put("5R2");
+      expect(refSet.has(ref2)).toBeTrue();
     });
 
     it("should not have an unknown value", function () {
       expect(refSet.has(ref1)).toBeFalse();
       refSet.put(ref1);
       expect(refSet.has(ref2)).toBeFalse();
+    });
+
+    it("should not check for an invalid value", function () {
+      expect(function () {
+        refSet.has(10);
+      }).toThrowError('RefSet: Invalid "ref" value in has.');
     });
 
     it("should support iteration", function () {
@@ -491,6 +542,17 @@ describe("primitives", function () {
 
       const child = new RefSet(parent);
       expect([...child]).toEqual([ref1.toString(), ref2.toString()]);
+    });
+
+    it("should reject an invalid parent RefSet", function () {
+      const parent = new Set();
+      parent.add(ref1);
+      parent.add(ref2);
+
+      expect(function () {
+        // eslint-disable-next-line no-new
+        new RefSet(parent);
+      }).toThrowError('RefSet: Invalid "parent" value.');
     });
   });
 
