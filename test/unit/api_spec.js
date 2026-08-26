@@ -2742,12 +2742,13 @@ describe("api", function () {
       expect(info.Producer).toEqual("pdfeTeX-1.21a");
       expect(info.CreationDate).toEqual("D:20090401163925-07'00'");
       // Custom, non-standard, information dictionary entries.
-      const custom = info.Custom;
-      expect(typeof custom === "object" && custom !== null).toBeTrue();
-
-      expect(custom["PTEX.Fullbanner"]).toEqual(
-        "This is pdfeTeX, " +
-          "Version 3.141592-1.21a-2.2 (Web2C 7.5.4) kpathsea version 3.5.6"
+      expect(info.Custom).toEqual(
+        new Map([
+          [
+            "PTEX.Fullbanner",
+            "This is pdfeTeX, Version 3.141592-1.21a-2.2 (Web2C 7.5.4) kpathsea version 3.5.6",
+          ],
+        ])
       );
       // The following are PDF.js specific, non-standard, properties.
       expect(info.PDFFormatVersion).toEqual("1.4");

@@ -1593,16 +1593,12 @@ class PDFDocument {
             default:
               if (value instanceof Name) {
                 customValue = value;
+                break;
               }
-              break;
+              warn(`Bad value, for custom key "${key}", in Info: ${value}.`);
+              continue;
           }
-
-          if (customValue === undefined) {
-            warn(`Bad value, for custom key "${key}", in Info: ${value}.`);
-            continue;
-          }
-          docInfo.Custom ??= Object.create(null);
-          docInfo.Custom[key] = customValue;
+          (docInfo.Custom ??= new Map()).set(key, customValue);
           continue;
       }
       warn(`Bad value, for key "${key}", in Info: ${value}.`);
