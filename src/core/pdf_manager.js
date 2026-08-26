@@ -192,10 +192,6 @@ class LocalPdfManager extends BasePdfManager {
     return value;
   }
 
-  requestRange(begin, end) {
-    return Promise.resolve();
-  }
-
   requestLoadedStream(noFetch = false) {
     return this._loadedStreamPromise;
   }
