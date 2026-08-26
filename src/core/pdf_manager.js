@@ -108,10 +108,6 @@ class BasePdfManager {
     return this.ensure(this.pdfDocument, prop, args);
   }
 
-  ensureXRef(prop, args) {
-    return this.ensure(this.pdfDocument.xref, prop, args);
-  }
-
   ensureCatalog(prop, args) {
     return this.ensure(this.pdfDocument.catalog, prop, args);
   }
