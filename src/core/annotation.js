@@ -688,6 +688,25 @@ function getTransformMatrix(rect, bbox, matrix) {
   ];
 }
 
+function writeLineToCurveToAppearance(data, buffer, maybeClose = false) {
+  buffer.push(`${numberToString(data[4])} ${numberToString(data[5])} m`);
+
+  for (let i = 6, ii = data.length; i < ii; i += 6) {
+    if (isNaN(data[i])) {
+      buffer.push(
+        `${numberToString(data[i + 4])} ${numberToString(data[i + 5])} l`
+      );
+    } else {
+      const curve = /* [c1x, c1y, c2x, c2y, x, y] = */ data.slice(i, i + 6);
+      buffer.push(`${curve.map(numberToString).join(" ")} c`);
+    }
+  }
+
+  if (maybeClose && data.length === 6) {
+    buffer.push(`${numberToString(data[4])} ${numberToString(data[5])} l`);
+  }
+}
+
 class Annotation {
   appearance = null;
 
@@ -4948,28 +4967,11 @@ class InkAnnotation extends MarkupAnnotation {
     }
 
     for (const outline of paths.lines) {
-      appearanceBuffer.push(
-        `${numberToString(outline[4])} ${numberToString(outline[5])} m`
+      writeLineToCurveToAppearance(
+        outline,
+        appearanceBuffer,
+        /* maybeClose = */ true
       );
-      for (let i = 6, ii = outline.length; i < ii; i += 6) {
-        if (isNaN(outline[i])) {
-          appearanceBuffer.push(
-            `${numberToString(outline[i + 4])} ${numberToString(
-              outline[i + 5]
-            )} l`
-          );
-        } else {
-          const [c1x, c1y, c2x, c2y, x, y] = outline.slice(i, i + 6);
-          appearanceBuffer.push(
-            [c1x, c1y, c2x, c2y, x, y].map(numberToString).join(" ") + " c"
-          );
-        }
-      }
-      if (outline.length === 6) {
-        appearanceBuffer.push(
-          `${numberToString(outline[4])} ${numberToString(outline[5])} l`
-        );
-      }
     }
     appearanceBuffer.push("S");
 
@@ -5011,23 +5013,7 @@ class InkAnnotation extends MarkupAnnotation {
       "/R0 gs",
     ];
 
-    appearanceBuffer.push(
-      `${numberToString(outline[4])} ${numberToString(outline[5])} m`
-    );
-    for (let i = 6, ii = outline.length; i < ii; i += 6) {
-      if (isNaN(outline[i])) {
-        appearanceBuffer.push(
-          `${numberToString(outline[i + 4])} ${numberToString(
-            outline[i + 5]
-          )} l`
-        );
-      } else {
-        const [c1x, c1y, c2x, c2y, x, y] = outline.slice(i, i + 6);
-        appearanceBuffer.push(
-          [c1x, c1y, c2x, c2y, x, y].map(numberToString).join(" ") + " c"
-        );
-      }
-    }
+    writeLineToCurveToAppearance(outline, appearanceBuffer);
     appearanceBuffer.push("h f");
     const appearance = appearanceBuffer.join("\n");
 
@@ -5377,26 +5363,11 @@ class StampAnnotation extends MarkupAnnotation {
     ];
 
     for (const line of lines) {
-      appearanceBuffer.push(
-        `${numberToString(line[4])} ${numberToString(line[5])} m`
+      writeLineToCurveToAppearance(
+        line,
+        appearanceBuffer,
+        /* maybeClose = */ true
       );
-      for (let i = 6, ii = line.length; i < ii; i += 6) {
-        if (isNaN(line[i])) {
-          appearanceBuffer.push(
-            `${numberToString(line[i + 4])} ${numberToString(line[i + 5])} l`
-          );
-        } else {
-          const [c1x, c1y, c2x, c2y, x, y] = line.slice(i, i + 6);
-          appearanceBuffer.push(
-            [c1x, c1y, c2x, c2y, x, y].map(numberToString).join(" ") + " c"
-          );
-        }
-      }
-      if (line.length === 6) {
-        appearanceBuffer.push(
-          `${numberToString(line[4])} ${numberToString(line[5])} l`
-        );
-      }
     }
     appearanceBuffer.push(areContours ? "F" : "S");
 
