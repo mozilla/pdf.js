@@ -108,10 +108,6 @@ class BasePdfManager {
     return this.ensure(this.pdfDocument, prop, args);
   }
 
-  ensureXRef(prop, args) {
-    return this.ensure(this.pdfDocument.xref, prop, args);
-  }
-
   ensureCatalog(prop, args) {
     return this.ensure(this.pdfDocument.catalog, prop, args);
   }
@@ -190,10 +186,6 @@ class LocalPdfManager extends BasePdfManager {
       return value.apply(obj, args);
     }
     return value;
-  }
-
-  requestRange(begin, end) {
-    return Promise.resolve();
   }
 
   requestLoadedStream(noFetch = false) {
