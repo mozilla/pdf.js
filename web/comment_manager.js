@@ -612,6 +612,8 @@ class CommentDialog {
 
   #saveButton;
 
+  #saveButtonLabel;
+
   #uiManager;
 
   #prevDragX = 0;
@@ -637,6 +639,7 @@ class CommentDialog {
     this.#overlayManager = overlayManager;
     this.#eventBus = eventBus;
     this.#saveButton = saveButton;
+    this.#saveButtonLabel = saveButton.firstElementChild;
     this.#title = title;
     this.#isLTR = ltr;
 
@@ -744,7 +747,7 @@ class CommentDialog {
         "data-l10n-id",
         "pdfjs-editor-edit-comment-dialog-title-when-editing"
       );
-      this.#saveButton.setAttribute(
+      this.#saveButtonLabel.setAttribute(
         "data-l10n-id",
         "pdfjs-editor-edit-comment-dialog-save-button-when-editing"
       );
@@ -753,7 +756,7 @@ class CommentDialog {
         "data-l10n-id",
         "pdfjs-editor-edit-comment-dialog-title-when-adding"
       );
-      this.#saveButton.setAttribute(
+      this.#saveButtonLabel.setAttribute(
         "data-l10n-id",
         "pdfjs-editor-edit-comment-dialog-save-button-when-adding"
       );
