@@ -2819,6 +2819,11 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets non-existent markInfo", async function () {
+      const markInfo = await pdfDocument.getMarkInfo();
+      expect(markInfo).toBeNull();
+    });
+
     it("gets markInfo", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("annotation-line.pdf")
@@ -2826,9 +2831,13 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
       const markInfo = await pdfDoc.getMarkInfo();
 
-      expect(markInfo.Marked).toBeTrue();
-      expect(markInfo.UserProperties).toBeFalse();
-      expect(markInfo.Suspects).toBeFalse();
+      expect(markInfo).toEqual(
+        new Map([
+          ["Marked", true],
+          ["UserProperties", false],
+          ["Suspects", false],
+        ])
+      );
 
       await loadingTask.destroy();
     });
