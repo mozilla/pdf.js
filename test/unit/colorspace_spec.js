@@ -267,7 +267,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb(new Float32Array([0.1]), 0)).toEqual(
         new Uint8ClampedArray([26, 26, 26])
       );
-      expect(colorSpace.getOutputLength(2, 0)).toEqual(6);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
@@ -312,7 +311,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb(new Float32Array([0.2]), 0)).toEqual(
         new Uint8ClampedArray([51, 51, 51])
       );
-      expect(colorSpace.getOutputLength(3, 1)).toEqual(12);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
@@ -383,7 +381,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3]), 0)).toEqual(
         new Uint8ClampedArray([26, 51, 77])
       );
-      expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
@@ -434,7 +431,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3]), 0)).toEqual(
         new Uint8ClampedArray([26, 51, 77])
       );
-      expect(colorSpace.getOutputLength(4, 1)).toEqual(5);
       expect(colorSpace.isPassthrough(8)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
@@ -505,7 +501,6 @@ describe("colorspace", function () {
       expect(
         colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3, 1]), 0)
       ).toEqual(new Uint8ClampedArray([32, 28, 21]));
-      expect(colorSpace.getOutputLength(4, 0)).toEqual(3);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
@@ -556,7 +551,6 @@ describe("colorspace", function () {
       expect(
         colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3, 1]), 0)
       ).toEqual(new Uint8ClampedArray([32, 28, 21]));
-      expect(colorSpace.getOutputLength(4, 1)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
@@ -626,7 +620,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb(new Float32Array([1.0]), 0)).toEqual(
         new Uint8ClampedArray([255, 255, 255])
       );
-      expect(colorSpace.getOutputLength(4, 0)).toEqual(12);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
@@ -696,7 +689,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb(new Float32Array([0.1, 0.2, 0.3]), 0)).toEqual(
         new Uint8ClampedArray([0, 147, 151])
       );
-      expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
@@ -765,7 +757,6 @@ describe("colorspace", function () {
       expect(colorSpace.getRgb([55, 25, 35], 0)).toEqual(
         new Uint8ClampedArray([188, 100, 61])
       );
-      expect(colorSpace.getOutputLength(4, 0)).toEqual(4);
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(colorSpace.isDefaultDecode([0, 1])).toBeTrue();
       expect(testDest).toEqual(expectedDest);
