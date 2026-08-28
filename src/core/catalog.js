@@ -327,19 +327,12 @@ class Catalog {
     if (!(obj instanceof Dict)) {
       return null;
     }
+    const markInfo = new Map();
 
-    const markInfo = {
-      Marked: false,
-      UserProperties: false,
-      Suspects: false,
-    };
-    for (const key in markInfo) {
-      const value = obj.get(key);
-      if (typeof value === "boolean") {
-        markInfo[key] = value;
-      }
+    for (const key of ["Marked", "UserProperties", "Suspects"]) {
+      const val = obj.get(key);
+      markInfo.set(key, typeof val === "boolean" ? val : false);
     }
-
     return markInfo;
   }
 
