@@ -103,7 +103,7 @@ pdfjs-document-properties-button =
     .title = Propiedades del documento…
 pdfjs-document-properties-button-label = Propiedades del documento…
 pdfjs-document-properties-file-name = Nombre de archivo:
-pdfjs-document-properties-file-size = Tamaño de archovo:
+pdfjs-document-properties-file-size = Tamaño de archivo:
 # Variables:
 #   $kb (Number) - the PDF file size in kilobytes
 #   $b (Number) - the PDF file size in bytes
@@ -122,7 +122,7 @@ pdfjs-document-properties-modification-date = Fecha de modificación:
 #   $dateObj (Date) - the creation/modification date and time of the PDF file
 pdfjs-document-properties-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 pdfjs-document-properties-creator = Creador:
-pdfjs-document-properties-producer = PDF Productor:
+pdfjs-document-properties-producer = Productor PDF:
 pdfjs-document-properties-version = Versión de PDF:
 pdfjs-document-properties-page-count = Cantidad de páginas:
 pdfjs-document-properties-page-size = Tamaño de página:
@@ -248,7 +248,7 @@ pdfjs-find-match-case-checkbox-label = Coincidir mayúsculas
 pdfjs-find-match-diacritics-checkbox-label = Coincidir diacríticos
 pdfjs-find-entire-word-checkbox-label = Palabras completas
 pdfjs-find-reached-top = Inicio de documento alcanzado, continuando desde abajo
-pdfjs-find-reached-bottom = Fin de documento alcanzando, continuando desde arriba
+pdfjs-find-reached-bottom = Fin de documento alcanzado, continuando desde arriba
 # Variables:
 #   $current (Number) - the index of the currently active find result
 #   $total (Number) - the total number of matches in the document
@@ -286,7 +286,7 @@ pdfjs-page-landmark =
 ## Loading indicator messages
 
 pdfjs-loading-error = Ocurrió un error al cargar el PDF.
-pdfjs-invalid-file-error = Archivo PDF no válido o cocrrupto.
+pdfjs-invalid-file-error = Archivo PDF no válido o corrupto.
 pdfjs-missing-file-error = Archivo PDF faltante.
 pdfjs-unexpected-response-error = Respuesta del servidor inesperada.
 pdfjs-rendering-error = Ocurrió un error al dibujar la página.
@@ -425,7 +425,7 @@ pdfjs-editor-comments-sidebar-no-comments-link = Conocer más
 pdfjs-editor-alt-text-button-label = Texto alternativo
 pdfjs-editor-alt-text-edit-button =
     .aria-label = Editar texto alternativo
-pdfjs-editor-alt-text-dialog-label = Eligir una opción
+pdfjs-editor-alt-text-dialog-label = Elegir una opción
 pdfjs-editor-alt-text-dialog-description = El texto alternativo (texto alternativo) ayuda cuando las personas no pueden ver la imagen o cuando no se carga.
 pdfjs-editor-alt-text-add-description-label = Agregar una descripción
 pdfjs-editor-alt-text-add-description-description = Intente escribir 1 o 2 oraciones que describan el tema, el entorno o las acciones.
@@ -562,7 +562,7 @@ pdfjs-editor-signature-added-alert = Firma agregada
 pdfjs-editor-undo-bar-message-highlight = Resaltado eliminado
 pdfjs-editor-undo-bar-message-freetext = Texto eliminado
 pdfjs-editor-undo-bar-message-ink = Dibujo eliminado
-pdfjs-editor-undo-bar-message-stamp = Imagen eliminado
+pdfjs-editor-undo-bar-message-stamp = Imagen eliminada
 pdfjs-editor-undo-bar-message-signature = Firma eliminada
 pdfjs-editor-undo-bar-message-comment = Comentario eliminado
 # Variables:
@@ -686,7 +686,7 @@ pdfjs-views-manager-outlines-title1 = Esquema del documento
     .title = Esquema del documento (doble clic para expandir/colapsar todos los ítems)
 pdfjs-views-manager-attachments-title = Adjuntos
 pdfjs-views-manager-layers-title1 = Capas
-    .title = Capas (doble clic para restablecer todas las cañas al estado predeterminado)
+    .title = Capas (doble clic para restablecer todas las capas al estado predeterminado)
 pdfjs-views-manager-pages-option-label = Páginas
 pdfjs-views-manager-outlines-option-label = Esquema del documento
 pdfjs-views-manager-attachments-option-label = Adjuntos
@@ -786,7 +786,7 @@ pdfjs-digital-signature-properties-banner-expired =
     }
 pdfjs-digital-signature-properties-banner-invalid =
     { $count ->
-        [one] El documento tiene { $count } firmas digital inválida
+        [one] El documento tiene { $count } firma digital inválida
        *[other] El documento tiene { $count } firmas digitales inválidas
     }
 pdfjs-digital-signature-properties-banner-revoked =
