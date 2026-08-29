@@ -355,26 +355,33 @@ describe("Reorganize Pages View", () => {
     it("should reorder thumbnails after dropping two adjacent pages", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          pending("Fails consistently (issue #20814).");
-
-          await waitForThumbnailVisible(page, 1);
-          const rect2 = await getRect(page, getThumbnailSelector(2));
-          const rect4 = await getRect(page, getThumbnailSelector(4));
+          await waitForThumbnailVisible(page, [1, 3]);
           await waitAndClick(
             page,
             `.thumbnail:has(${getThumbnailSelector(1)}) input`
           );
+          // Keep the drop point within the browser viewport, which can be
+          // quite short depending on the platform (issue 20814).
+          await page.evaluate(selector => {
+            document
+              .querySelector(selector)
+              .scrollIntoView({ behavior: "instant", block: "end" });
+          }, getThumbnailSelector(3));
+          const rect2 = await getRect(page, getThumbnailSelector(2));
+          const rect3 = await getRect(page, getThumbnailSelector(3));
 
           const handlePagesEdited = await waitForPagesEdited(page);
+          // Drop the pages 1 and 2 on the center of the third thumbnail, i.e.
+          // just after it.
           await dragAndDrop(
             page,
             getThumbnailSelector(2),
-            [[0, rect4.y - rect2.y]],
+            [[0, rect3.y - rect2.y]],
             10
           );
           const pagesMapping = await awaitPromise(handlePagesEdited);
           const expected = [
-            3, 4, 1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+            3, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
           ];
           expect(pagesMapping)
             .withContext(`In ${browserName}`)
