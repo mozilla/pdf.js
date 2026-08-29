@@ -667,7 +667,6 @@ class OperatorList {
         ? new QueueOptimizer(this)
         : new NullOptimizer(this);
     this.dependencies = new Set();
-    this._totalLength = 0;
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
   }
@@ -682,14 +681,6 @@ class OperatorList {
 
   get ready() {
     return this._resolved || this._streamSink.ready;
-  }
-
-  /**
-   * @type {number} The total length of the entire operator list, since
-   *                `this.length === 0` after flushing.
-   */
-  get totalLength() {
-    return this._totalLength + this.length;
   }
 
   addOp(fn, args) {
@@ -802,8 +793,6 @@ class OperatorList {
 
   flush(lastChunk = false, separateAnnots = null) {
     this.optimizer.flush();
-    const length = this.length;
-    this._totalLength += length;
 
     this._streamSink.enqueue(
       {
@@ -811,7 +800,7 @@ class OperatorList {
         argsArray: this.argsArray,
         lastChunk,
         separateAnnots,
-        length,
+        length: this.length,
       },
       1,
       this._transfers
