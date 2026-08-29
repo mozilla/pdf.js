@@ -2244,28 +2244,22 @@ class PDFDocument {
   }
 
   get hasJSActions() {
-    const promise = this.pdfManager.ensureDoc("_parseHasJSActions");
-    return shadow(this, "hasJSActions", promise);
-  }
-
-  /**
-   * @private
-   */
-  async _parseHasJSActions() {
-    const [catalogJsActions, fieldObjects] = await Promise.all([
+    const promise = Promise.all([
       this.pdfManager.ensureCatalog("jsActions"),
       this.pdfManager.ensureDoc("fieldObjects"),
-    ]);
+    ]).then(([catalogJsActions, fieldObjects]) => {
+      if (catalogJsActions) {
+        return true;
+      }
+      if (fieldObjects?.allFields) {
+        return fieldObjects.allFields
+          .values()
+          .some(fieldObj => fieldObj.some(obj => obj.actions !== null));
+      }
+      return false;
+    });
 
-    if (catalogJsActions) {
-      return true;
-    }
-    if (fieldObjects?.allFields) {
-      return fieldObjects.allFields
-        .values()
-        .some(fieldObj => fieldObj.some(obj => obj.actions !== null));
-    }
-    return false;
+    return shadow(this, "hasJSActions", promise);
   }
 
   get calculationOrderIds() {
