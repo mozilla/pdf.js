@@ -1019,7 +1019,7 @@ async function startBrowser({
     // calls can run before events triggered by the previous protocol calls had
     // a chance to be processed (essentially causing events to get lost). This
     // value gives Chrome a more similar execution speed as Firefox.
-    options.slowMo = 3;
+    options.slowMo = 2;
 
     options.args = [
       // Avoid crashing because no sandbox is shipped by default and we only run
@@ -1071,8 +1071,6 @@ async function startBrowser({
       // Disable logging for remote settings and the messaging system.
       "services.settings.loglevel": "off",
       "messaging-system.log": "off",
-      // Prevent remote settings from using the network.
-      "services.settings.server": "data:,#remote-settings-dummy/v1",
       // Disable Nimbus rollouts and studies.
       "nimbus.rollouts.enabled": false,
       "app.shield.optoutstudies.enabled": false,
