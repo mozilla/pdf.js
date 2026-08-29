@@ -535,6 +535,11 @@ class TextLayer {
     const descent = Math.abs(metrics.fontBoundingBoxDescent);
 
     ctx.canvas.width = ctx.canvas.height = 0;
+    // Canvas resize resets the 2d context state, including `font` (spec).
+    // Invalidate the manual font cache so the next `#ensureCtxFont` with the
+    // same size/family still re-applies `ctx.font` instead of hitting a stale
+    // entry (cold `fontSize*scale === DEFAULT_FONT_SIZE` → ~3× `--scale-x`).
+    this.#canvasCtxFonts.set(ctx, { size: 0, family: "" });
     let ratio = 0.8; // DEFAULT_FONT_ASCENT
 
     if (ascent) {
