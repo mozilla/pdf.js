@@ -8355,6 +8355,83 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("strips applied signatures when extracting the first page of a signed document", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/AcroForm 7 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Annots [5 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Sig " +
+            "/T (Signature1) /V 6 0 R /F 132 /Rect [0 0 0 0] >>\nendobj\n",
+          "6 0 obj\n<< /Type /Sig /Filter /Adobe.PPKMS " +
+            "/SubFilter /adbe.pkcs7.sha1 /ByteRange [0 10 20 30] " +
+            "/Contents <00> /M (D:20260731191548+02'00') >>\nendobj\n",
+          "7 0 obj\n<< /Fields [5 0 R] /SigFlags 3 >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data: pdfData });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        expect(countMarker(data, "/FT /Sig")).toEqual(0);
+        expect(countMarker(data, "/Type /Sig")).toEqual(0);
+        expect(countMarker(data, "/SigFlags")).toEqual(0);
+        expect(countMarker(data, "/ByteRange")).toEqual(0);
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+        expect(await pdfDoc.getSignatures()).toBeNull();
+        expect(await pdfDoc.getFieldObjects()).toBeNull();
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations.some(a => a.fieldType === "Sig")).toBeFalse();
+        await loadingTask.destroy();
+      });
+
+      it("strips inherited applied signatures when extracting pages", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+            "/AcroForm 8 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] /Annots [5 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Page /Parent 2 0 R " +
+            "/MediaBox [0 0 100 100] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 0 0] " +
+            "/Parent 6 0 R >>\nendobj\n",
+          "6 0 obj\n<< /FT /Sig /T (Signature1) /V 7 0 R " +
+            "/Kids [5 0 R] >>\nendobj\n",
+          "7 0 obj\n<< /Type /Sig /Filter /Adobe.PPKMS " +
+            "/SubFilter /adbe.pkcs7.sha1 /ByteRange [0 10 20 30] " +
+            "/Contents <00> >>\nendobj\n",
+          "8 0 obj\n<< /Fields [6 0 R] /SigFlags 3 >>\nendobj\n",
+        ]);
+
+        let loadingTask = getDocument({ data: pdfData });
+        let pdfDoc = await loadingTask.promise;
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        expect(countMarker(data, "/FT /Sig")).toEqual(0);
+        expect(countMarker(data, "/Type /Sig")).toEqual(0);
+        expect(countMarker(data, "/SigFlags")).toEqual(0);
+        expect(countMarker(data, "/ByteRange")).toEqual(0);
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(await pdfDoc.getSignatures()).toBeNull();
+        expect(await pdfDoc.getFieldObjects()).toBeNull();
+        await loadingTask.destroy();
+      });
+
       it("extract page 2 and check AcroForm Fields T entries", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("form_two_pages.pdf")

@@ -1241,10 +1241,23 @@ class PDFEditor {
         xref.fetchIfRefAsync(annotationRef).then(async annotationDict => {
           if (!isName(annotationDict.get("Subtype"), "Link")) {
             if (isName(annotationDict.get("Subtype"), "Widget")) {
-              hasSignatureAnnotations ||= isName(
-                getInheritableProperty({ dict: annotationDict, key: "FT" }),
-                "Sig"
-              );
+              const fieldType = getInheritableProperty({
+                dict: annotationDict,
+                key: "FT",
+              });
+              if (isName(fieldType, "Sig")) {
+                const sigValue = getInheritableProperty({
+                  dict: annotationDict,
+                  key: "V",
+                });
+                if (sigValue) {
+                  // Applied signatures cannot survive extract/edit: ByteRange
+                  // covers the original file and the CMS payload no longer
+                  // verifies (issue 21696). Keep unsigned Sig widgets.
+                  return;
+                }
+                hasSignatureAnnotations = true;
+              }
               const parentRef = annotationDict.getRaw("Parent") || null;
               // The parent will be omitted from the annotation clone to avoid
               // visiting it, then restored by #mergeAcroForms.
