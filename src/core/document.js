@@ -610,7 +610,7 @@ class Page {
       intent & RenderingIntentFlag.ANNOTATIONS_DISABLE
     ) {
       pageOpList.flush(/* lastChunk = */ true);
-      return { length: pageOpList.totalLength };
+      return;
     }
     const renderForms = !!(intent & RenderingIntentFlag.ANNOTATIONS_FORMS),
       isEditing = !!(intent & RenderingIntentFlag.IS_EDITING),
@@ -661,7 +661,6 @@ class Page {
       /* lastChunk = */ true,
       /* separateAnnots = */ { form, canvas }
     );
-    return { length: pageOpList.totalLength };
   }
 
   async extractTextContent({
