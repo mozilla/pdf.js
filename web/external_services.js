@@ -69,6 +69,12 @@ class BaseExternalServices {
     return null;
   }
 
+  /**
+   * Platform appearance renderer; see `PDFDocumentProxy.saveDocument`.
+   * @type {?function(Array<Object>): Promise<Uint8Array|null>}
+   */
+  printToPDF = null;
+
   updateEditorStates(data) {
     throw new Error("Not implemented: updateEditorStates");
   }

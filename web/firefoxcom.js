@@ -33,17 +33,37 @@ function initCom(app) {
   viewerApp = app;
 }
 
+// nsPagePrintTimer waits ~4.5s over the first ten sheets, then 50ms per sheet.
+const PRINT_TO_PDF_BASE_DELAY = 4_500;
+const PRINT_TO_PDF_PER_ENTRY_DELAY = 50;
+const PRINT_TO_PDF_MIN_TIMEOUT = 10_000;
+
+function getPrintToPDFTimeout(entries) {
+  return Math.max(
+    PRINT_TO_PDF_MIN_TIMEOUT,
+    2 * (PRINT_TO_PDF_BASE_DELAY + PRINT_TO_PDF_PER_ENTRY_DELAY * entries)
+  );
+}
+
 class FirefoxCom {
   /**
    * Creates an event that the extension is listening for and will
    * asynchronously respond to.
    * @param {string} action - The action to trigger.
    * @param {Object|string} [data] - The data to send.
+   * @param {number} [timeout] - Reject after this many milliseconds without a
+   *   response; `0` waits forever.
    * @returns {Promise<any>} A promise that is resolved with the response data.
    */
-  static requestAsync(action, data) {
-    return new Promise(resolve => {
-      this.request(action, data, resolve);
+  static requestAsync(action, data, timeout = 0) {
+    return new Promise((resolve, reject) => {
+      const timeoutId = timeout
+        ? setTimeout(reject, timeout, new Error(`"${action}" timed out.`))
+        : 0;
+      this.request(action, data, response => {
+        clearTimeout(timeoutId);
+        resolve(response);
+      });
     });
   }
 
@@ -672,6 +692,15 @@ class SignatureVerifier {
 }
 
 class ExternalServices extends BaseExternalServices {
+  printToPDF = async data => {
+    const buffer = await FirefoxCom.requestAsync(
+      "printToPDF",
+      data,
+      getPrintToPDFTimeout(data.length)
+    );
+    return buffer ? new Uint8Array(buffer) : null;
+  };
+
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
   }

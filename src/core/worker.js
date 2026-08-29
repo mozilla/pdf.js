@@ -681,9 +681,59 @@ class WorkerMessageHandler {
       }
     );
 
+    // Import platform-rendered appearances before saving annotations.
+    async function generateAppearances({ annotationStorage, changes, xref }) {
+      const entries = [];
+      for (const [key, value] of annotationStorage) {
+        const entry = AnnotationFactory.getPrintData(value);
+        if (entry) {
+          entries.push({ key, ...entry });
+        }
+      }
+      if (entries.length === 0) {
+        return;
+      }
+
+      try {
+        // One PDF permits resources to be shared across pages.
+        const buffer = await handler.sendWithPromise(
+          "PrintToPDF",
+          entries.map(({ data }) => ({ data }))
+        );
+        if (!buffer) {
+          return;
+        }
+        const { importPrintedAppearances } =
+          typeof PDFJSDev === "undefined"
+            ? await import("./editor/print_appearances.js")
+            : await __eager_import__("./editor/print_appearances.js");
+        const appearances = await importPrintedAppearances({
+          buffer,
+          changes,
+          docId,
+          entries,
+          // BasePdfManager mutates and freezes these options.
+          evaluatorOptions: { ...pdfManager.evaluatorOptions },
+          handler,
+          xref,
+        });
+        for (const [key, ref] of appearances) {
+          annotationStorage.get(key).appearanceRef = ref;
+        }
+      } catch (reason) {
+        warn(`generateAppearances: "${reason}".`);
+      }
+    }
+
     handler.on(
       "SaveDocument",
-      async function ({ isPureXfa, numPages, annotationStorage, filename }) {
+      async function ({
+        isPureXfa,
+        numPages,
+        annotationStorage,
+        supportsPrintToPDF,
+        filename,
+      }) {
         const globalPromises = [
           pdfManager.requestLoadedStream(),
           pdfManager.ensureCatalog("acroForm"),
@@ -706,6 +756,17 @@ class WorkerMessageHandler {
           xref,
           _structTreeRoot,
         ] = await Promise.all(globalPromises);
+
+        if (
+          (typeof PDFJSDev === "undefined" ||
+            PDFJSDev.test("TESTING || MOZCENTRAL")) &&
+          !isPureXfa &&
+          supportsPrintToPDF &&
+          annotationStorage
+        ) {
+          await generateAppearances({ annotationStorage, changes, xref });
+        }
+
         const catalogRef = xref.trailer.getRaw("Root") || null;
         let structTreeRoot;
 
