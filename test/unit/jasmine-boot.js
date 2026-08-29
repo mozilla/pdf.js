@@ -34,7 +34,6 @@
  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-/* globals jasmineRequire */
 
 // Modified jasmine's boot.js file to load PDF.js libraries async.
 
@@ -187,14 +186,7 @@ async function flushPendingWorkerCoverage() {
 }
 
 (function () {
-  window.jasmine = jasmineRequire.core(jasmineRequire);
-
-  jasmineRequire.html(jasmine);
-
   const env = jasmine.getEnv();
-
-  const jasmineInterface = jasmineRequire.interface(jasmine, env);
-  extend(window, jasmineInterface);
 
   // Runner Parameters
   const urls = new jasmine.HtmlReporterV2Urls();
@@ -220,13 +212,6 @@ async function flushPendingWorkerCoverage() {
 
   // Sets longer timeout.
   jasmine.DEFAULT_TIMEOUT_INTERVAL = 30000;
-
-  function extend(destination, source) {
-    for (const property in source) {
-      destination[property] = source[property];
-    }
-    return destination;
-  }
 
   function unitTestInit() {
     initializePDFJS(function () {
