@@ -1440,7 +1440,9 @@ const PDFViewerApplication = {
     await this.pdfScriptingManager.dispatchWillSave();
 
     try {
-      const data = await this.pdfDocument.saveDocument();
+      const data = await this.pdfDocument.saveDocument(
+        this.externalServices.printToPDF
+      );
       this.downloadManager.download(data, this._downloadUrl, this._docFilename);
     } catch (reason) {
       // When the PDF document isn't ready, fallback to a "regular" download.
