@@ -199,15 +199,6 @@ class ColorSpace {
   }
 
   /**
-   * Determines the number of bytes required to store the result of the
-   * conversion done by the getRgbBuffer method. As in getRgbBuffer,
-   * |alpha01| is either 0 (RGB output) or 1 (RGBA output).
-   */
-  getOutputLength(inputLength, alpha01) {
-    unreachable("Should not call ColorSpace.getOutputLength");
-  }
-
-  /**
    * Returns true if source data will be equal the result/output data.
    */
   isPassthrough(bits) {
@@ -451,13 +442,6 @@ class AlternateCS extends ColorSpace {
       base.getRgbBuffer(baseBuf, 0, count, dest, destOffset, 8, alpha01);
     }
   }
-
-  getOutputLength(inputLength, alpha01) {
-    return this.base.getOutputLength(
-      (inputLength * this.base.numComps) / this.numComps,
-      alpha01
-    );
-  }
 }
 
 class PatternCS extends ColorSpace {
@@ -542,10 +526,6 @@ class IndexedCS extends ColorSpace {
     }
   }
 
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
-  }
-
   isDefaultDecode(decode, bpc) {
     if (isDefaultDecodeHelper(decode, 2)) {
       return true;
@@ -595,10 +575,6 @@ class DeviceGrayCS extends ColorSpace {
       q += alpha01;
     }
   }
-
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
-  }
 }
 
 /**
@@ -643,10 +619,6 @@ class DeviceRgbCS extends ColorSpace {
     }
   }
 
-  getOutputLength(inputLength, alpha01) {
-    return ((inputLength * (3 + alpha01)) / 3) | 0;
-  }
-
   isPassthrough(bits) {
     return bits === 8;
   }
@@ -658,10 +630,6 @@ class DeviceRgbCS extends ColorSpace {
 class DeviceRgbaCS extends ColorSpace {
   constructor() {
     super("DeviceRGBA", 4);
-  }
-
-  getOutputLength(inputLength, _alpha01) {
-    return inputLength * 4;
   }
 
   isPassthrough(bits) {
@@ -798,10 +766,6 @@ class DeviceCmykCS extends ColorSpace {
       destOffset += 3 + alpha01;
     }
   }
-
-  getOutputLength(inputLength, alpha01) {
-    return ((inputLength / 4) * (3 + alpha01)) | 0;
-  }
 }
 
 /**
@@ -891,10 +855,6 @@ class CalGrayCS extends ColorSpace {
       srcOffset += 1;
       destOffset += 3 + alpha01;
     }
-  }
-
-  getOutputLength(inputLength, alpha01) {
-    return inputLength * (3 + alpha01);
   }
 }
 
@@ -1188,10 +1148,6 @@ class CalRGBCS extends ColorSpace {
       destOffset += 3 + alpha01;
     }
   }
-
-  getOutputLength(inputLength, alpha01) {
-    return ((inputLength * (3 + alpha01)) / 3) | 0;
-  }
 }
 
 /**
@@ -1329,10 +1285,6 @@ class LabCS extends ColorSpace {
       srcOffset += 3;
       destOffset += 3 + alpha01;
     }
-  }
-
-  getOutputLength(inputLength, alpha01) {
-    return ((inputLength * (3 + alpha01)) / 3) | 0;
   }
 
   isDefaultDecode(decode, bpc) {

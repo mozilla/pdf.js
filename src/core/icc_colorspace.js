@@ -148,10 +148,6 @@ class IccColorSpace extends ColorSpace {
     QCMS._destBuffer = null;
   }
 
-  getOutputLength(inputLength, alpha01) {
-    return ((inputLength / this.numComps) * (3 + alpha01)) | 0;
-  }
-
   static setOptions({ useWasm, useWorkerFetch, wasmUrl }) {
     if (!useWorkerFetch) {
       this.#useWasm = false;
