@@ -1019,7 +1019,7 @@ async function startBrowser({
     // calls can run before events triggered by the previous protocol calls had
     // a chance to be processed (essentially causing events to get lost). This
     // value gives Chrome a more similar execution speed as Firefox.
-    options.slowMo = 3;
+    options.slowMo = 2;
 
     options.args = [
       // Avoid crashing because no sandbox is shipped by default and we only run
