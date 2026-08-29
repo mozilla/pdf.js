@@ -368,6 +368,26 @@ class AnnotationFactory {
     return imagePromises;
   }
 
+  /**
+   * Get platform-rendering data for a serialized editor annotation.
+   * @param {Object} annotation - Serialized annotation data.
+   * @returns {Object|null}
+   */
+  static getPrintData(annotation) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      !PDFJSDev.test("TESTING || MOZCENTRAL")
+    ) {
+      throw new Error("Not implemented: getPrintData");
+    }
+    switch (annotation?.annotationType) {
+      case AnnotationEditorType.FREETEXT:
+        return FreeTextAnnotation.getPrintData(annotation);
+      default:
+        return null;
+    }
+  }
+
   static async saveNewAnnotations(
     evaluator,
     xref,
@@ -386,7 +406,7 @@ class AnnotationFactory {
       }
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
-          if (!baseFontRef) {
+          if (!annotation.appearanceRef && !baseFontRef) {
             const baseFont = new Dict(xref);
             baseFont.setIfName("BaseFont", "Helvetica");
             baseFont.setIfName("Type", "Font");
@@ -1893,19 +1913,11 @@ class MarkupAnnotation extends Annotation {
     const annotationRef = (annotation.ref ||= xref.getNewTemporaryRef());
 
     const ap = await this.createNewAppearanceStream(annotation, xref, params);
-    let annotationDict;
-
+    let apRef = annotation.appearanceRef ?? null;
     if (ap) {
-      const apRef = xref.getNewTemporaryRef();
-      annotationDict = this.createNewDict(annotation, xref, {
-        apRef,
-      });
-      changes.put(apRef, {
-        data: ap,
-      });
-    } else {
-      annotationDict = this.createNewDict(annotation, xref, {});
+      changes.put((apRef = xref.getNewTemporaryRef()), { data: ap });
     }
+    const annotationDict = this.createNewDict(annotation, xref, { apRef });
     if (Number.isInteger(annotation.parentTreeId)) {
       annotationDict.set("StructParent", annotation.parentTreeId);
     }
@@ -4403,7 +4415,43 @@ class FreeTextAnnotation extends MarkupAnnotation {
     return freetext;
   }
 
+  static getPrintData({ color, fontSize, rect, rotation, value }) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      !PDFJSDev.test("TESTING || MOZCENTRAL")
+    ) {
+      throw new Error("Not implemented: getPrintData");
+    }
+    if (!color || !value) {
+      return null;
+    }
+    const width = rect[2] - rect[0];
+    const height = rect[3] - rect[1];
+    const isSideways = rotation === 90 || rotation === 270;
+
+    return {
+      matrix: rotation ? getRotationMatrix(rotation, width, height) : null,
+      data: {
+        width: isSideways ? height : width,
+        height: isSideways ? width : height,
+        text: value,
+        color: Util.makeHexColor(...color),
+        fontSize,
+        verticalAlign: "top",
+      },
+    };
+  }
+
   static async createNewAppearanceStream(annotation, xref, params) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("TESTING || MOZCENTRAL")) &&
+      annotation.appearanceRef
+    ) {
+      // Use the platform-rendered appearance.
+      return null;
+    }
+
     const { baseFontRef, evaluator, task } = params;
     const { color, fontSize, rect, rotation, value } = annotation;
     if (!color) {
