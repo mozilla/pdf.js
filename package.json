@@ -48,7 +48,7 @@
     "ordered-read-streams": "^2.0.0",
     "pngjs": "^7.0.0",
     "postcss": "^8.5.26",
-    "postcss-discard-comments": "^8.0.3",
+    "postcss-discard-comments": "^9.0.0",
     "postcss-values-parser": "^8.0.0",
     "prettier": "^3.9.6",
     "puppeteer": "^25.9.0",
@@ -68,7 +68,7 @@
     "url": "git://github.com/mozilla/pdf.js.git"
   },
   "engines": {
-    "node": ">=22.13.0 || >=24"
+    "node": ">=22.22.3 || >=24.15.0 || >=26.0"
   },
   "license": "Apache-2.0"
 }
