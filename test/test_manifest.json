@@ -5267,6 +5267,13 @@
     "type": "other"
   },
   {
+    "id": "comments",
+    "file": "pdfs/comments.pdf",
+    "md5": "91c07f9632f8652e2e5661c1634ffe98",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue4722",
     "file": "pdfs/issue4722.pdf",
     "md5": "a42ca858af7d179358f92f47e57c0fed",
