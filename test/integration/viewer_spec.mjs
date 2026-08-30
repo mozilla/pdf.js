@@ -34,6 +34,30 @@ import { PNG } from "pngjs";
 const __dirname = import.meta.dirname;
 
 describe("PDF viewer", () => {
+  describe("Toolbar accessibility", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("exposes an accessible name for the save button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const ariaLabel = await page.$eval(
+            "#downloadButton",
+            button => button.getAttribute("aria-label")
+          );
+          expect(ariaLabel).withContext(`In ${browserName}`).toEqual("Save");
+        })
+      );
+    });
+  });
+
   describe("EFOpen attachments", () => {
     let pages;
 
