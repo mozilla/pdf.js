@@ -823,6 +823,8 @@ class AnnotationEditorUIManager {
 
   #showAllStates = null;
 
+  #allHighlightAnnotationIds = null;
+
   #pdfDocument = null;
 
   #previousStates = {
@@ -2332,6 +2334,58 @@ class AnnotationEditorUIManager {
         [AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL, visible],
       ]);
     }
+    this.#updateHiddenHighlightAnnotations();
+  }
+
+  /**
+   * The highlights which haven't been modified are painted in the page canvas
+   * when the editing mode is off: hiding their editors isn't enough, they must
+   * be excluded from the rendering too.
+   */
+  async #updateHiddenHighlightAnnotations() {
+    const storage = this.#annotationStorage;
+    if (!storage) {
+      return;
+    }
+    if (!this.highlightsAreHidden) {
+      storage.setHiddenIds(null);
+      return;
+    }
+
+    const allIds = await this.#getAllHighlightAnnotationIds();
+    if (!this.highlightsAreHidden) {
+      // The highlights have been shown back while the annotations were
+      // fetched, hence this update is outdated.
+      storage.setHiddenIds(null);
+      return;
+    }
+    storage.setHiddenIds(new Set(allIds));
+  }
+
+  #getAllHighlightAnnotationIds() {
+    if (this.#allHighlightAnnotationIds) {
+      return this.#allHighlightAnnotationIds;
+    }
+    if (!this.#pdfDocument) {
+      // Don't cache it: the document may not be set yet.
+      return Promise.resolve([]);
+    }
+
+    return (this.#allHighlightAnnotationIds = this.#pdfDocument
+      .getAnnotationsByType(
+        // A highlight which isn't on a text is saved as an Ink annotation,
+        // hence the ink ones must be fetched too
+        new Set([AnnotationEditorType.HIGHLIGHT, AnnotationEditorType.INK])
+      )
+      .then(annotations =>
+        (annotations || [])
+          .filter(
+            ({ annotationType, it }) =>
+              annotationType !== AnnotationEditorType.INK ||
+              it === "InkHighlight" // filter for highlights which are saved as Ink annotations
+          )
+          .map(({ id }) => id)
+      ));
   }
 
   enableWaiting(mustWait = false) {
@@ -2410,6 +2464,28 @@ class AnnotationEditorUIManager {
    */
   addEditor(editor) {
     this.#allEditors.set(editor.id, editor);
+
+    // Hides a highlight editor of an existing annotation which is
+    // created after the highlights have been hidden (for example,
+    // when the layer of a not-yet-rendered page is built while scrolling)
+    if (
+      editor.editorType === "highlight" &&
+      editor.annotationElementId &&
+      this.highlightsAreHidden
+    ) {
+      editor.show(false);
+    }
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  get highlightsAreHidden() {
+    return (
+      this.#showAllStates?.get(
+        AnnotationEditorParamsType.HIGHLIGHT_SHOW_ALL
+      ) === false
+    );
   }
 
   /**

@@ -39,6 +39,7 @@ import {
   unselectEditor,
   waitAndClick,
   waitForAnnotationModeChanged,
+  waitForPageRendered,
   waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
@@ -52,6 +53,37 @@ const __dirname = import.meta.dirname;
 const selectAll = selectEditors.bind(null, "highlight");
 
 const switchToHighlight = switchToEditor.bind(null, "Highlight");
+
+// The highlights which haven't been modified are painted in the page canvas,
+// so counting the saturated pixels is the only way to know if they're visible
+// once the editing mode has been left.
+async function countHighlightPixels(page, pageNumber) {
+  await page.waitForSelector(
+    `.page[data-page-number = "${pageNumber}"] .canvasWrapper canvas`
+  );
+  return page.evaluate(pageN => {
+    const canvas = document.querySelector(
+      `.page[data-page-number = "${pageN}"] .canvasWrapper canvas`
+    );
+    const { data } = canvas
+      .getContext("2d", { willReadFrequently: true })
+      .getImageData(0, 0, canvas.width, canvas.height);
+    // A highlight is a saturated and bright color: the difference between
+    // the channels rules out the paper and the (grey) text, and the maximum
+    // rules out the dark colors which the text could be drawn with.
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i],
+        g = data[i + 1],
+        b = data[i + 2];
+      const max = Math.max(r, g, b);
+      if (max - Math.min(r, g, b) > 60 && max > 120) {
+        count += 1;
+      }
+    }
+    return count;
+  }, pageNumber);
+}
 
 describe("Highlight Editor", () => {
   describe("Editor must be removed without exception", () => {
@@ -2976,22 +3008,27 @@ describe("Highlight Editor", () => {
               ".annotationEditorLayer.highlightEditing"
             );
 
-            const isShowAllDisabled = await page.evaluate(() => {
-              const btn = document.querySelector("#editorHighlightShowAll");
-              return btn.getAttribute("aria-pressed") === "false";
-            });
+            // Waiting for the expected state gives a meaningful failure when
+            // it never comes, instead of reading it too early.
+            await page.waitForSelector(
+              `#editorHighlightShowAll[aria-pressed = "false"]`
+            );
+            await page.waitForSelector(`${editorSelector0}.hidden`);
 
+            const isShowAllDisabled = await page.$eval(
+              "#editorHighlightShowAll",
+              btn => btn.getAttribute("aria-pressed") === "false"
+            );
             expect(isShowAllDisabled)
               .withContext(
                 `In ${browserName}: Show all button should still be disabled`
               )
               .toBe(true);
 
-            const hasHiddenClass = await page.evaluate(selector => {
-              const highlight = document.querySelector(selector);
-              return highlight ? highlight.classList.contains("hidden") : false;
-            }, editorSelector0);
-
+            const hasHiddenClass = await page.$eval(
+              editorSelector0,
+              highlight => highlight.classList.contains("hidden")
+            );
             expect(hasHiddenClass)
               .withContext(
                 `In ${browserName}: Highlight should have hidden CSS class`
@@ -3032,18 +3069,22 @@ describe("Highlight Editor", () => {
               };
             }, textSpan);
 
-            await page.mouse.click(spanRect.x, spanRect.y);
-            await page.mouse.click(spanRect.x, spanRect.y);
+            await page.mouse.click(spanRect.x, spanRect.y, {
+              count: 2,
+              delay: 100,
+            });
 
-            await page.waitForSelector(".editToolbar");
-            const highlightFromToolbar = await page.$(
-              ".editToolbar .highlightButton"
+            // The button must be waited for: querying it right away can miss
+            // it, and the test would then silently skip what it's about.
+            await page.waitForSelector(".editToolbar .highlightButton");
+            await page.click(".editToolbar .highlightButton");
+            await page.waitForSelector(getEditorSelector(1));
+
+            // Highlighting a text shows the highlights back, hence the toggle
+            // is enabled again: that's the state which must be preserved.
+            await page.waitForSelector(
+              `#editorHighlightShowAll[aria-pressed = "true"]`
             );
-            if (highlightFromToolbar) {
-              await highlightFromToolbar.click();
-              const editorSelector1 = getEditorSelector(1);
-              await page.waitForSelector(editorSelector1);
-            }
 
             const modeChangedHandle2 = await waitForAnnotationModeChanged(page);
             await page.click("#editorHighlightButton");
@@ -3053,29 +3094,33 @@ describe("Highlight Editor", () => {
             await page.click("#editorHighlightButton");
             await awaitPromise(modeChangedHandle3);
 
-            const isShowAllDisabled = await page.evaluate(() => {
-              const btn = document.querySelector("#editorHighlightShowAll");
-              return btn.getAttribute("aria-pressed") === "false";
-            });
-
-            expect(isShowAllDisabled)
+            await page.waitForSelector(
+              `#editorHighlightShowAll[aria-pressed = "true"]`
+            );
+            const isShowAllEnabled = await page.$eval(
+              "#editorHighlightShowAll",
+              btn => btn.getAttribute("aria-pressed") === "true"
+            );
+            expect(isShowAllEnabled)
               .withContext(
-                `In ${browserName}: Show all button should still be disabled`
+                `In ${browserName}: Show all button should still be enabled`
               )
               .toBe(true);
 
-            await page.waitForSelector(`${editorSelector0}.hidden`);
-
-            const hasHiddenClass = await page.evaluate(selector => {
-              const highlight = document.querySelector(selector);
-              return highlight ? highlight.classList.contains("hidden") : false;
-            }, editorSelector0);
-
-            expect(hasHiddenClass)
-              .withContext(
-                `In ${browserName}: Highlight should have hidden CSS class`
-              )
-              .toBe(true);
+            // The editors are recreated when the mode is entered again, hence
+            // their ids changed and the highlights must be looked for by
+            // their class.
+            await page.waitForSelector(
+              `.page[data-page-number = "1"] svg.highlight:not(.hidden)`
+            );
+            const hiddenHighlights = await page.$$eval(
+              `.page[data-page-number = "1"] svg.highlight`,
+              svgs =>
+                svgs.filter(svg => svg.classList.contains("hidden")).length
+            );
+            expect(hiddenHighlights)
+              .withContext(`In ${browserName}: no highlight must stay hidden`)
+              .toBe(0);
           })
         );
       });
@@ -3125,6 +3170,131 @@ describe("Highlight Editor", () => {
             return highlight?.classList.contains("hidden") ?? false;
           });
           expect(highlightIsHidden).withContext(`In ${browserName}`).toBe(true);
+        })
+      );
+    });
+  });
+
+  describe("Highlight visibility must be persistent on unrendered pages", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("comments.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep the highlights hidden when the editor is closed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await page.click("#editorHighlightShowAll");
+          await page.waitForSelector(
+            `#editorHighlightShowAll[aria-pressed = "false"]`
+          );
+
+          await page.waitForFunction(() =>
+            Array.from(
+              document.querySelectorAll(
+                `.page[data-page-number = "1"] svg.highlight`
+              )
+            ).every(svg => svg.classList.contains("hidden"))
+          );
+
+          await switchToHighlight(page, /* disable = */ true);
+          const hiddenPage1 = await countHighlightPixels(page, 1);
+
+          // The fourth page hasn't been rendered yet,
+          // and it's a free highlight (not on a text)
+          let rendered = await waitForPageRendered(page, 4);
+          await scrollIntoView(page, `.page[data-page-number = "4"]`);
+          await awaitPromise(rendered);
+          const hiddenPage4 = await countHighlightPixels(page, 4);
+
+          // The sixth page hasn't been rendered yet,
+          // and it's a highlight on a text
+          rendered = await waitForPageRendered(page, 6);
+          await scrollIntoView(page, `.page[data-page-number = "6"]`);
+          await awaitPromise(rendered);
+          const hiddenPage6 = await countHighlightPixels(page, 6);
+
+          await switchToHighlight(page);
+          await page.click("#editorHighlightShowAll");
+          await page.waitForSelector(
+            `#editorHighlightShowAll[aria-pressed = "true"]`
+          );
+          await switchToHighlight(page, /* disable = */ true);
+
+          const shownPage6 = await countHighlightPixels(page, 6);
+          rendered = await waitForPageRendered(page, 4);
+          await scrollIntoView(page, `.page[data-page-number = "4"]`);
+          await awaitPromise(rendered);
+          const shownPage4 = await countHighlightPixels(page, 4);
+          rendered = await waitForPageRendered(page, 1);
+          await scrollIntoView(page, `.page[data-page-number = "1"]`);
+          await awaitPromise(rendered);
+          const shownPage1 = await countHighlightPixels(page, 1);
+
+          expect(hiddenPage6)
+            .withContext(`In ${browserName}, sixth page`)
+            .toBeLessThan(shownPage6);
+          expect(hiddenPage4)
+            .withContext(`In ${browserName}, fourth page (free highlight)`)
+            .toBeLessThan(shownPage4);
+          expect(hiddenPage1)
+            .withContext(`In ${browserName}, first page`)
+            .toBeLessThan(shownPage1);
+        })
+      );
+    });
+
+    it("must show the highlights back when a text is highlighted", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const shownAtStart = await countHighlightPixels(page, 1);
+
+          await switchToHighlight(page);
+          await page.click("#editorHighlightShowAll");
+          await page.waitForSelector(
+            `#editorHighlightShowAll[aria-pressed = "false"]`
+          );
+          await switchToHighlight(page, /* disable = */ true);
+
+          const hidden = await countHighlightPixels(page, 1);
+          expect(hidden)
+            .withContext(`In ${browserName}, once hidden`)
+            .toBeLessThan(shownAtStart);
+
+          const textSpan = await page.$(
+            `.page[data-page-number = "1"] .textLayer span`
+          );
+          const spanRect = await page.evaluate(el => {
+            const { x, y, width, height } = el.getBoundingClientRect();
+            return { x: x + width / 2, y: y + height / 2 };
+          }, textSpan);
+          await page.mouse.click(spanRect.x, spanRect.y, {
+            count: 2,
+            delay: 100,
+          });
+
+          await page.waitForSelector(".editToolbar .highlightButton");
+          await page.click(".editToolbar .highlightButton");
+          await page.waitForSelector(
+            `#editorHighlightShowAll[aria-pressed = "true"]`
+          );
+
+          await switchToHighlight(page, /* disable = */ true);
+          const shownAgain = await countHighlightPixels(page, 1);
+
+          // The new highlight can land on an already highlighted text, hence it
+          // doesn't necessarily add any ink: the restored ones are what
+          // matters here.
+          expect(shownAgain)
+            .withContext(`In ${browserName}, once shown back`)
+            .toBeGreaterThanOrEqual(shownAtStart);
         })
       );
     });

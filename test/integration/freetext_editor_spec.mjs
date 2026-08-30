@@ -1025,6 +1025,69 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (update existing and switch modes)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("freetexts.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep a modified annotation visible when re-entering editing mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const value = "Hello World from Acrobat and edited in Firefox";
+
+          await switchToFreeText(page);
+
+          const editorSelector = getEditorSelector(0);
+          await selectEditor(page, editorSelector, /* count = */ 2);
+          await kbGoToEnd(page);
+          await page.waitForFunction(
+            sel =>
+              document.getSelection().anchorOffset ===
+              document.querySelector(sel).innerText.length,
+            {},
+            `${editorSelector} .internal`
+          );
+
+          await page.type(
+            `${editorSelector} .internal`,
+            " and edited in Firefox"
+          );
+          await commit(page);
+          await waitForSerialized(page, 1);
+
+          await switchToFreeText(page, /* disable = */ true);
+          await page.waitForSelector(
+            `${getAnnotationSelector("26R")} div.annotationContent`
+          );
+
+          await switchToFreeText(page);
+          await page.waitForFunction(
+            text =>
+              Array.from(
+                document.querySelectorAll(".freeTextEditor:not(.hidden)")
+              ).some(
+                editor =>
+                  editor
+                    .querySelector(".internal")
+                    ?.innerText.replaceAll("\xa0", " ") === text
+              ),
+            {},
+            value
+          );
+
+          const editorIds = await getEditors(page, "freeText");
+          expect(editorIds.length).withContext(`In ${browserName}`).toEqual(6);
+        })
+      );
+    });
+  });
+
   describe("FreeText (update existing and popups)", () => {
     let pages;
 

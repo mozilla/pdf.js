@@ -2375,7 +2375,7 @@ class AnnotationEditor {
    * @param {boolean|undefined} visible
    */
   show(visible = this._isVisible) {
-    this.div.classList.toggle("hidden", !visible);
+    this.div?.classList.toggle("hidden", !visible);
     this._isVisible = visible;
   }
 

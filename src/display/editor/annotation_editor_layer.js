@@ -265,7 +265,7 @@ class AnnotationEditorLayer {
     const annotationElementIds = new Set();
     for (const editor of this.#allEditorsIterator) {
       editor.enableEditing();
-      editor.show();
+      editor.show(true);
       if (editor.annotationElementId) {
         this.#uiManager.removeChangedExistingAnnotation(editor);
         annotationElementIds.add(editor.annotationElementId);
@@ -357,6 +357,16 @@ class AnnotationEditorLayer {
     if (annotationLayer) {
       const changedAnnotations = new Map();
       const resetAnnotations = new Map();
+      const { highlightsAreHidden } = this.#uiManager;
+      const showUnlessHidden = editable => {
+        if (
+          !highlightsAreHidden ||
+          editable?.annotationEditorType !== AnnotationEditorType.HIGHLIGHT
+        ) {
+          editable?.show();
+        }
+      };
+
       for (const editor of this.#allEditorsIterator) {
         editor.disableEditing();
         if (!editor.annotationElementId) {
@@ -369,7 +379,9 @@ class AnnotationEditorLayer {
         } else {
           resetAnnotations.set(editor.annotationElementId, editor);
         }
-        this.getEditableAnnotation(editor.annotationElementId)?.show();
+        showUnlessHidden(
+          this.getEditableAnnotation(editor.annotationElementId)
+        );
         editor.remove();
       }
 
@@ -384,7 +396,7 @@ class AnnotationEditorLayer {
         if (editor) {
           editor.resetAnnotationElement(editable);
           editor.show(false);
-          editable.show();
+          showUnlessHidden(editable);
           continue;
         }
 
@@ -396,7 +408,7 @@ class AnnotationEditorLayer {
             editor.show(false);
           }
         }
-        editable.show();
+        showUnlessHidden(editable);
       }
     }
 
