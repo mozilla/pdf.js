@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { SimpleXMLParser, XMLParserBase } from "../../src/core/xml_parser.js";
+import {
+  SimpleXMLParser,
+  XMLParserBase,
+  XMLParserErrorCode,
+} from "../../src/core/xml_parser.js";
 import { parseXFAPath } from "../../src/core/core_utils.js";
 
 describe("XML", function () {
@@ -180,6 +184,83 @@ describe("XML", function () {
       const startTime = performance.now();
       expect(parseText(`<a>${text}</a>`)).toEqual(text);
       expect(performance.now() - startTime).toBeLessThan(1000);
+    });
+  });
+
+  describe("errors", function () {
+    class ErrorXMLParser extends SimpleXMLParser {
+      errorCode = XMLParserErrorCode.NoError;
+
+      onError(code) {
+        super.onError(code);
+        this.errorCode = code;
+      }
+    }
+
+    it("should handle unterminated closing elements", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("</a")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(
+        XMLParserErrorCode.UnterminatedElement
+      );
+    });
+
+    it("should handle unterminated XML declarations", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<?xml")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(
+        XMLParserErrorCode.UnterminatedXmlDeclaration
+      );
+    });
+
+    it("should handle unterminated comments", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<!-- Comment")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(
+        XMLParserErrorCode.UnterminatedComment
+      );
+    });
+
+    it("should handle unterminated CDATA sections", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<![CDATA[")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(XMLParserErrorCode.UnterminatedCdata);
+    });
+
+    it("should handle unterminated DOCTYPE declarations without internal DTD", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<!DOCTYPE foo")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(
+        XMLParserErrorCode.UnterminatedDoctypeDeclaration
+      );
+    });
+
+    it("should handle unterminated DOCTYPE declarations with internal DTD", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<!DOCTYPE foo [>")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(
+        XMLParserErrorCode.UnterminatedDoctypeDeclaration
+      );
+    });
+
+    it("should handle malformed elements", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<!foo")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(XMLParserErrorCode.MalformedElement);
+    });
+
+    it("should handle malformed element attributes", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<c a=/>")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(XMLParserErrorCode.MalformedElement);
+    });
+
+    it("should handle unterminated opening elements", function () {
+      const xmlParser = new ErrorXMLParser({});
+      expect(xmlParser.parseFromString("<a")).toEqual(undefined);
+      expect(xmlParser.errorCode).toEqual(
+        XMLParserErrorCode.UnterminatedElement
+      );
     });
   });
 });
