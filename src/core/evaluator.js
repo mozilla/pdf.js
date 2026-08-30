@@ -1836,7 +1836,7 @@ class PartialEvaluator {
                   );
                 }
                 resolveXObject();
-              }).catch(function (reason) {
+              }).catch(reason => {
                 if (reason instanceof AbortException) {
                   return;
                 }
@@ -2200,7 +2200,7 @@ class PartialEvaluator {
                     seenRefs,
                   })
                   .then(resolveGState, rejectGState);
-              }).catch(function (reason) {
+              }).catch(reason => {
                 if (reason instanceof AbortException) {
                   return;
                 }
@@ -3484,7 +3484,7 @@ class PartialEvaluator {
                     }
                     resolveXObject();
                   }, rejectXObject);
-              }).catch(function (reason) {
+              }).catch(reason => {
                 if (reason instanceof AbortException) {
                   return;
                 }
@@ -3540,7 +3540,7 @@ class PartialEvaluator {
                   resolveGState,
                   rejectGState
                 );
-              }).catch(function (reason) {
+              }).catch(reason => {
                 if (reason instanceof AbortException) {
                   return;
                 }

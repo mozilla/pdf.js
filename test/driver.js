@@ -1383,7 +1383,7 @@ class Driver {
                   completeRender(false);
                 }
               })
-              .catch(function (error) {
+              .catch(error => {
                 completeRender("render : " + error);
               });
           },
