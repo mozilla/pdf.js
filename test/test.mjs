@@ -1155,7 +1155,7 @@ async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
           session.page = pages[0];
           initializeSession(session);
         })
-        .catch(function (ex) {
+        .catch(ex => {
           console.log(`Error while starting ${browserName}: ${ex.message}`);
           session.numErrors = 1;
           closeSession(sessionName);

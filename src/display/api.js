@@ -3393,7 +3393,7 @@ class InternalRenderTask {
   }
 
   get completed() {
-    return this.capability.promise.catch(function () {
+    return this.capability.promise.catch(() => {
       // Ignoring errors, since we only want to know when rendering is
       // no longer pending.
     });
