@@ -728,7 +728,7 @@ class AnnotationEditorLayer {
    * Create and add a new editor.
    * @param {PointerEvent} event
    * @param {boolean} isCentered
-   * @param [Object] data
+   * @param {Object} [data]
    * @returns {AnnotationEditor}
    */
   createAndAddNewEditor(event, isCentered, data = {}) {
