@@ -2558,18 +2558,22 @@ class WorkerTransport {
 
     const { ids: modifiedIds, hash: modifiedIdsHash } =
       annotationStorage.modifiedIds;
+    const { ids: hiddenIds, hash: hiddenIdsHash } = annotationStorage.hiddenIds;
 
     const cacheKeyBuf = [
       renderingIntent,
       annotationStorageSerializable.hash,
       modifiedIdsHash,
+      hiddenIdsHash,
     ];
 
     return {
       renderingIntent,
       cacheKey: cacheKeyBuf.join("_"),
       annotationStorageSerializable,
-      modifiedIds,
+      modifiedIds: hiddenIds.size
+        ? new Set([...modifiedIds, ...hiddenIds])
+        : modifiedIds,
     };
   }
 
