@@ -97,6 +97,23 @@ class PDFObjects {
     obj.resolve();
   }
 
+  /**
+   * Rejects the object `objId`, signalling that it will never be resolved.
+   *
+   * @param {string} objId
+   * @param {Error} reason
+   */
+  reject(objId, reason) {
+    const obj = this.#objs.getOrInsertComputed(objId, dataObj);
+    if (obj.data !== INITIAL_DATA) {
+      return;
+    }
+    // Make sure a rejection that lands before a consumer calls
+    // `get` doesn't surface as an unhandled rejection
+    obj.promise.catch(() => {});
+    obj.reject(reason);
+  }
+
   clear() {
     for (const { data } of this.#objs.values()) {
       data?.bitmap?.close(); // Release any `ImageBitmap` data.

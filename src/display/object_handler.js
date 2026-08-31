@@ -21,6 +21,7 @@ import {
 } from "./obj_bin_transform_display.js";
 
 import { FontFaceObject } from "./font_loader.js";
+import { PDFObjects } from "./pdf_objects.js";
 
 class ObjectHandler {
   constructor({
@@ -29,12 +30,14 @@ class ObjectHandler {
     fontLoader,
     pageCache,
     pdfBug = null,
+    shouldCreatePageObjs = false,
   }) {
     this.messageHandler = messageHandler;
     this.commonObjs = commonObjs;
     this.fontLoader = fontLoader;
     this.pageCache = pageCache;
     this.pdfBug = pdfBug;
+    this.shouldCreatePageObjs = shouldCreatePageObjs;
   }
 
   resolveCommonObject(id, type, exportedData) {
@@ -62,7 +65,11 @@ class ObjectHandler {
         this.fontLoader
           .bind(font)
           .catch(() =>
-            this.messageHandler.sendWithPromise("FontFallback", { id })
+            this.messageHandler
+              .sendWithPromise("FontFallback", { id })
+              .catch(reason => {
+                warn(`FontFallback failed for "${id}": ${reason}`);
+              })
           )
           .finally(() => {
             if (!font.fontExtraProperties) {
@@ -80,8 +87,10 @@ class ObjectHandler {
         const { imageRef } = exportedData;
         assert(imageRef, "The imageRef must be defined.");
 
-        for (const pageProxy of this.pageCache.values()) {
-          for (const [, data] of pageProxy.objs) {
+        for (const pageOrObjs of this.pageCache.values()) {
+          const objs = pageOrObjs.objs || pageOrObjs;
+
+          for (const [, data] of objs) {
             if (data?.ref !== imageRef) {
               continue;
             }
@@ -113,13 +122,25 @@ class ObjectHandler {
     return null;
   }
 
-  resolveObject(id, pageIndex, type, exportedData) {
-    const pageProxy = this.pageCache.get(pageIndex);
-    if (pageProxy.objs.has(id)) {
+  // `pageKey` is the key into `pageCache` - each realm supplies its own
+  // keying (the display index on the main thread, the stable page id in the
+  // renderer worker).
+  resolveObject(id, pageKey, type, exportedData) {
+    let pageOrObjs = this.pageCache.get(pageKey);
+    if (!pageOrObjs) {
+      if (!this.shouldCreatePageObjs) {
+        return;
+      }
+      pageOrObjs = new PDFObjects();
+      this.pageCache.set(pageKey, pageOrObjs);
+    }
+
+    const objs = pageOrObjs.objs || pageOrObjs;
+    if (objs.has(id)) {
       return;
     }
     // Don't store data *after* cleanup has successfully run, see bug 1854145.
-    if (pageProxy._intentStates.size === 0) {
+    if (pageOrObjs._intentStates?.size === 0) {
       exportedData?.bitmap?.close(); // Release any `ImageBitmap` data.
       return;
     }
@@ -127,7 +148,7 @@ class ObjectHandler {
     switch (type) {
       case "Image":
       case "Pattern":
-        pageProxy.objs.resolve(id, exportedData);
+        objs.resolve(id, exportedData);
         break;
       default:
         throw new Error(`Got unknown object type ${type}`);
