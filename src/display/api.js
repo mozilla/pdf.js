@@ -475,7 +475,10 @@ function getDocument(src = {}) {
           messageHandler,
           task,
           networkStream,
-          transportParams,
+          {
+            ...transportParams,
+            rendererWorker: task._rendererWorker,
+          },
           transportFactory,
           pagesMapper
         );
@@ -1403,6 +1406,14 @@ class PDFPageProxy {
   }
 
   /**
+   * @type {number} The index of the page in the original document, stable
+   *   across page moves/copies, matching the `p<pageId>_<n>` object ids.
+   */
+  get #pageId() {
+    return this.#pagesMapper.getPageId(this._pageIndex + 1) - 1;
+  }
+
+  /**
    * @type {number} The number of degrees the page is rotated clockwise.
    */
   get rotate() {
@@ -1842,6 +1853,9 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
+    this._transport.rendererHandler?.send("cleanupPage", {
+      pageId: this.#pageId,
+    });
     this.#pendingCleanup = false;
 
     return Promise.all(waitOn);
@@ -1878,6 +1892,9 @@ class PDFPageProxy {
     }
     this._intentStates.clear();
     this.objs.clear();
+    this._transport.rendererHandler?.send("cleanupPage", {
+      pageId: this.#pageId,
+    });
     this.#pendingCleanup = false;
     return true;
   }
@@ -1935,11 +1952,17 @@ class PDFPageProxy {
       );
     }
     const { map, transfer } = annotationStorageSerializable;
+    const pageId = this.#pageId;
+
+    // Restore the page in the renderer worker before any `obj` message can
+    // be forwarded, since the core worker emits each object only once and a
+    // dropped one would hang `ExecuteOperatorList` on its dependency.
+    this._transport.rendererHandler?.send("restorePage", { pageId });
 
     const readableStream = this._transport.messageHandler.sendWithStream(
       "GetOperatorList",
       {
-        pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
+        pageId,
         pageIndex: this._pageIndex,
         intent: renderingIntent,
         cacheKey,
@@ -2616,6 +2639,7 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this.enableHWA = params.enableHWA;
+    this.rendererWorker = params.rendererWorker || null;
     this.loadingParams = params.loadingParams;
     this._params = params;
 
@@ -2688,6 +2712,13 @@ class WorkerTransport {
 
   get annotationStorage() {
     return shadow(this, "annotationStorage", new AnnotationStorage());
+  }
+
+  /**
+   * @type {MessageHandler | null} The renderer worker's message handler.
+   */
+  get rendererHandler() {
+    return this.rendererWorker?.messageHandler ?? null;
   }
 
   getRenderingIntent(
@@ -2803,6 +2834,7 @@ class WorkerTransport {
 
       this.messageHandler?.destroy();
       this.messageHandler = null;
+      this.rendererWorker = null;
 
       this.destroyCapability.resolve();
     }, this.destroyCapability.reject);
@@ -2982,10 +3014,63 @@ class WorkerTransport {
       pdfBug: this._params.pdfBug,
     });
 
+    // TODO: add a direct channel between the renderer worker and the core
+    // worker so these main-thread forwarders can be removed.
+    this.rendererHandler?.on("FontFallback", data => {
+      if (this.destroyed) {
+        return null;
+      }
+      return messageHandler.sendWithPromise("FontFallback", data);
+    });
+
+    const forwardToRenderer = (action, data) => {
+      const { rendererHandler } = this;
+      if (!rendererHandler) {
+        return;
+      }
+      try {
+        rendererHandler.send(action, data);
+      } catch (reason) {
+        warn(`forwardToRenderer("${action}") failed: ${reason}`);
+        rendererHandler.send("objFailed", {
+          id: data[0],
+          pageIndex: action === "obj" ? data[1] : null,
+          reason: reason.message,
+        });
+      }
+    };
+
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
         return null; // Ignore any pending requests if the worker was terminated.
       }
+
+      if (type === "CopyLocalImage") {
+        const dataLen = this.commonObjs.has(id)
+          ? null
+          : objectHandler.resolveCommonObject(id, type, exportedData);
+        const { rendererHandler } = this;
+        if (!dataLen || !rendererHandler) {
+          return dataLen;
+        }
+        // If the core worker doesn't re-send the image data, ensure that
+        // the renderer worker has a copy too
+        return rendererHandler
+          .sendWithPromise("commonobj", [id, type, exportedData])
+          .catch(() => null)
+          .then(rendererDataLen => {
+            if (!rendererDataLen) {
+              forwardToRenderer("commonobj", [
+                id,
+                "Image",
+                this.commonObjs.get(id),
+              ]);
+            }
+            return dataLen;
+          });
+      }
+
+      forwardToRenderer("commonobj", [id, type, exportedData]);
 
       if (this.commonObjs.has(id)) {
         return null;
@@ -3000,6 +3085,7 @@ class WorkerTransport {
         return;
       }
 
+      forwardToRenderer("obj", [id, pageIndex, type, imageData]);
       objectHandler.resolveObject(id, pageIndex, type, imageData);
     });
 
@@ -3325,6 +3411,9 @@ class WorkerTransport {
     if (!keepLoadedFonts) {
       this.fontLoader.clear();
     }
+    // Keep the renderer worker's document-level state in sync with the main
+    // thread.
+    this.rendererHandler?.send("Cleanup", { keepLoadedFonts });
     this.#methodPromises.clear();
     this.filterFactory.destroy(/* keepHCM = */ true);
     TextLayer.cleanup();
