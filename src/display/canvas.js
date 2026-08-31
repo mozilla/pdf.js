@@ -668,83 +668,92 @@ class CanvasGraphics {
   ) {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
-    let i = executionStartIdx || 0;
-    const argsArrayLen = argsArray.length;
+    // Cache materialized Path2D objects on the operator list itself rather
+    // than by mutating `argsArray[i][0]`, so that the arguments stay
+    // structured-cloneable.
+    const prevPathCache = this._pathCache;
+    this._pathCache = operatorList.pathCache ||= new Map();
+    try {
+      let i = executionStartIdx || 0;
+      const argsArrayLen = argsArray.length;
 
-    // Sometimes the OperatorList to execute is empty.
-    if (argsArrayLen === i) {
-      return i;
-    }
-
-    const chunkOperations =
-      argsArrayLen - i > EXECUTION_STEPS &&
-      typeof continueCallback === "function";
-    const endTime = chunkOperations ? Date.now() + EXECUTION_TIME : 0;
-    let steps = 0;
-
-    const commonObjs = this.commonObjs;
-    const objs = this.objs;
-    let fnId, fnArgs;
-
-    while (true) {
-      if (stepper !== undefined) {
-        if (i === stepper.nextBreakPoint) {
-          stepper.breakIt(i, continueCallback);
-          return i;
-        }
-        if (stepper.shouldSkip(i)) {
-          if (++i === argsArrayLen) {
-            return i;
-          }
-          continue;
-        }
-      }
-
-      if (!operationsFilter || operationsFilter(i)) {
-        fnId = fnArray[i];
-        // TODO: There is a `undefined` coming from somewhere.
-        fnArgs = argsArray[i] ?? null;
-
-        if (fnId !== OPS.dependency) {
-          if (fnArgs === null) {
-            this[fnId](i);
-          } else {
-            this[fnId](i, ...fnArgs);
-          }
-        } else {
-          for (const depObjId of fnArgs) {
-            this.dependencyTracker?.recordNamedData(depObjId, i);
-            const objsPool = depObjId.startsWith("g_") ? commonObjs : objs;
-
-            // If the promise isn't resolved yet, add the continueCallback
-            // to the promise and bail out.
-            if (!objsPool.has(depObjId)) {
-              objsPool.get(depObjId, continueCallback);
-              return i;
-            }
-          }
-        }
-      }
-
-      i++;
-
-      // If the entire operatorList was executed, stop as were done.
-      if (i === argsArrayLen) {
+      // Sometimes the OperatorList to execute is empty.
+      if (argsArrayLen === i) {
         return i;
       }
 
-      // If the execution took longer then a certain amount of time and
-      // `continueCallback` is specified, interrupt the execution.
-      if (chunkOperations && ++steps > EXECUTION_STEPS) {
-        if (Date.now() > endTime) {
-          continueCallback();
+      const chunkOperations =
+        argsArrayLen - i > EXECUTION_STEPS &&
+        typeof continueCallback === "function";
+      const endTime = chunkOperations ? Date.now() + EXECUTION_TIME : 0;
+      let steps = 0;
+
+      const commonObjs = this.commonObjs;
+      const objs = this.objs;
+      let fnId, fnArgs;
+
+      while (true) {
+        if (stepper !== undefined) {
+          if (i === stepper.nextBreakPoint) {
+            stepper.breakIt(i, continueCallback);
+            return i;
+          }
+          if (stepper.shouldSkip(i)) {
+            if (++i === argsArrayLen) {
+              return i;
+            }
+            continue;
+          }
+        }
+
+        if (!operationsFilter || operationsFilter(i)) {
+          fnId = fnArray[i];
+          // TODO: There is a `undefined` coming from somewhere.
+          fnArgs = argsArray[i] ?? null;
+
+          if (fnId !== OPS.dependency) {
+            if (fnArgs === null) {
+              this[fnId](i);
+            } else {
+              this[fnId](i, ...fnArgs);
+            }
+          } else {
+            for (const depObjId of fnArgs) {
+              this.dependencyTracker?.recordNamedData(depObjId, i);
+              const objsPool = depObjId.startsWith("g_") ? commonObjs : objs;
+
+              // If the promise isn't resolved yet, add the continueCallback
+              // to the promise and bail out.
+              if (!objsPool.has(depObjId)) {
+                objsPool.get(depObjId, continueCallback);
+                return i;
+              }
+            }
+          }
+        }
+
+        i++;
+
+        // If the entire operatorList was executed, stop as were done.
+        if (i === argsArrayLen) {
           return i;
         }
-        steps = 0;
-      }
 
-      // If the operatorList isn't executed completely yet OR the execution
-      // time was short enough, do another execution round.
+        // If the execution took longer then a certain amount of time and
+        // `continueCallback` is specified, interrupt the execution.
+        if (chunkOperations && ++steps > EXECUTION_STEPS) {
+          if (Date.now() > endTime) {
+            continueCallback();
+            return i;
+          }
+          steps = 0;
+        }
+
+        // If the operatorList isn't executed completely yet OR the execution
+        // time was short enough, do another execution round.
+      }
+    } finally {
+      this._pathCache = prevPathCache;
     }
   }
 
@@ -2064,10 +2073,12 @@ class CanvasGraphics {
 
   // Path
   constructPath(opIdx, op, data, minMax) {
-    let [path] = data;
+    let path = this._pathCache.get(opIdx);
     if (!minMax) {
-      // The path is empty, so no need to update the current minMax.
-      path ||= data[0] = new Path2D();
+      if (!path) {
+        path = new Path2D();
+        this._pathCache.set(opIdx, path);
+      }
       if (op !== OPS.stroke && op !== OPS.closeStroke) {
         this.current.tilingPatternDims = null;
       }
@@ -2090,8 +2101,9 @@ class CanvasGraphics {
         .recordDependencies(opIdx, ["transform"]);
     }
 
-    if (!(path instanceof Path2D)) {
-      path = data[0] = makePathFromDrawOPS(path);
+    if (!path) {
+      path = makePathFromDrawOPS(data[0]);
+      this._pathCache.set(opIdx, path);
     }
     Util.axialAlignedBoundingBox(
       minMax,
