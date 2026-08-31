@@ -2,14 +2,15 @@ name: Publish release
 on:
   release:
     types: [published]
-permissions:
-  contents: read
-  id-token: write
+permissions: {}
 
 jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
 
     strategy:
       matrix:
@@ -23,7 +24,7 @@ jobs:
           persist-credentials: false
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0 # zizmor: ignore[cache-poisoning]
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
