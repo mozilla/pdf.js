@@ -23,7 +23,6 @@ const REF_RE = /^\d+ \d+ R$/;
 
 /**
  * Renders and manages the PDF internal structure tree.
- *
  * @param {HTMLElement} treeEl
  * @param {object}      options
  * @param {Function}    options.onMarkLoading  Called with +1/-1 to track

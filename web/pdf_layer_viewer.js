@@ -23,13 +23,13 @@ import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { internalOpt } from "./internal_evt.js";
 
 /**
- * @typedef {Object} PDFLayerViewerOptions
+ * @typedef {object} PDFLayerViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  */
 
 /**
- * @typedef {Object} PDFLayerViewerRenderParameters
+ * @typedef {object} PDFLayerViewerRenderParameters
  * @property {OptionalContentConfig|null} optionalContentConfig - An
  *   {OptionalContentConfig} instance.
  * @property {PDFDocumentProxy} pdfDocument - A {PDFDocument} instance.

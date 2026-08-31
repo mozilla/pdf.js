@@ -19,9 +19,9 @@ import { shadow } from "../shared/util.js";
 /**
  * @typedef DrawLayerOptions
  *   Configuration for {@linkcode DrawLayer}.
- * @property {Object | null} [filterFactory]
+ * @property {object | null} [filterFactory]
  *   Filter factory used to style selections (optional).
- * @property {Object | null} [pageColors]
+ * @property {object | null} [pageColors]
  *   Page foreground/background colors for HCM (optional).
  * @property {number} pageIndex
  *   Zero-based page index.
@@ -80,7 +80,6 @@ import { shadow } from "../shared/util.js";
 
 /**
  * Compare the document position of two text layers.
- *
  * @param {Element} a
  *   Text layer.
  * @param {Element} b
@@ -99,7 +98,6 @@ function compareTextLayers(a, b) {
 
 /**
  * Find the closest text layer upwards.
- *
  * @param {Node | null} node
  *   Node.
  * @returns {Element | null}
@@ -117,7 +115,6 @@ function getTextLayer(node) {
 
 /**
  * Compare the position of two points in the document order.
- *
  * @param {Node} nodeA
  *   Node.
  * @param {number} offsetA
@@ -150,7 +147,6 @@ function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
  * In that case, we want to move it to the last valid position within
  * the text layer, which can be either the end of the last text node or the end
  * of the last text node before the endOfContent element if it exists.
- *
  * @param {Node} container
  *   Container.
  * @param {number} offset
@@ -197,10 +193,10 @@ class DrawLayer {
   /** @type {Element | null} */
   #textLayer = null;
 
-  /** @type {Object | null} */
+  /** @type {object | null} */
   #filterFactory = null;
 
-  /** @type {Object | null} */
+  /** @type {object | null} */
   #pageColors = null;
 
   /** @type {MutationObserver | null} */
@@ -230,8 +226,6 @@ class DrawLayer {
   /**
    * @param {DrawLayerOptions} options
    *   Configuration.
-   * @returns
-   *   Instance.
    */
   constructor({
     filterFactory = null,
@@ -335,7 +329,6 @@ class DrawLayer {
 
   /**
    * Clean up the selection for a text layer.
-   *
    * @param {Element} textLayer
    *   Text layer.
    * @returns {undefined}
@@ -378,7 +371,6 @@ class DrawLayer {
    * We want to display the selection in a separate layer on top of the text
    * layer because the text layer has `mix-blend-mode: multiply` and we want
    * the selection to have a different blend mode.
-   *
    * @returns {undefined}
    *   Nothing.
    */

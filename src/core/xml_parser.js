@@ -342,7 +342,6 @@ class SimpleDOMNode {
    * Search a node in the tree with the given path
    * foo.bar[nnn], i.e. find the nnn-th node named
    * bar under a node named foo.
-   *
    * @param {Array} paths - an array of objects as
    * returned by {parseXFAPath}.
    * @param {number} pos - the current position in

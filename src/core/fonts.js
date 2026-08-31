@@ -272,7 +272,7 @@ class Glyph {
   /**
    * This property, which is only used by `PartialEvaluator.getTextContent`,
    * is purposely made non-serializable.
-   * @type {Object}
+   * @type {object}
    */
   get category() {
     return shadow(
@@ -456,7 +456,7 @@ function convertCidString(charCode, cid, shouldThrow = false) {
  * private use area. This is done to avoid issues with various problematic
  * unicode areas where either a glyph won't be drawn or is deformed by a
  * shaper.
- * @returns {Object} Two properties:
+ * @returns {object} Two properties:
  * 'toFontChar' - maps original char codes(the value that will be read
  * from commands such as show text) to the char codes that will be used in the
  * font that we build
@@ -3689,7 +3689,7 @@ class Font {
 
   /**
    * Chars can have different sizes (depends on the encoding).
-   * @param {String} a string encoded with font encoding.
+   * @param {string} chars - A string encoded with font encoding.
    * @returns {Array<Array<number>>} the positions of each char in the string.
    */
   getCharPositions(chars) {
@@ -3723,8 +3723,8 @@ class Font {
    * Encode a js string using font encoding.
    * The resulting array contains an encoded string at even positions
    * (can be empty) and a non-encoded one at odd positions.
-   * @param {String} a js string.
-   * @returns {Array<String>} an array of encoded strings or non-encoded ones.
+   * @param {string} str - A js string.
+   * @returns {Array<string>} an array of encoded strings or non-encoded ones.
    */
   encodeString(str) {
     const buffers = [];

@@ -41,7 +41,7 @@ class Sidebar {
   #prevX = 0;
 
   /**
-   * @typedef {Object} SidebarElements
+   * @typedef {object} SidebarElements
    * @property {HTMLElement} sidebar - The sidebar element.
    * @property {HTMLElement} resizer - The sidebar resizer element.
    * @property {HTMLElement} toggleButton - The button used to toggle the
@@ -206,7 +206,7 @@ class Sidebar {
 
   /**
    * Callback to be executed when the sidebar is being resized.
-   * @param {number} newWidth - The new width of the sidebar in pixels.
+   * @param {number} _newWidth - The new width of the sidebar in pixels.
    */
   onResizing(_newWidth) {}
 

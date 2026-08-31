@@ -36,7 +36,6 @@ import { Name } from "./primitives.js";
 
 /**
  * Configuration for {@linkcode PDFImage.fillGrayBuffer}.
- *
  * @typedef FillGrayBufferOptions
  * @property {number} [destWidth]
  *   Destination width; defaults to the source image width (no resampling).
@@ -54,7 +53,6 @@ import { Name } from "./primitives.js";
 
 /**
  * Configuration for {@linkcode FillMaskAlphaCallback} functions.
- *
  * @typedef FillMaskAlphaOptions
  * @property {number} maxRows
  *   Maximum number of image rows to write; defaults to the full image height.
@@ -66,13 +64,12 @@ import { Name } from "./primitives.js";
 
 /**
  * Fills the alpha values for the mask.
- *
  * @callback FillMaskAlphaCallback
  * @param {Uint8ClampedArray} buffer
  *   Buffer to write the alpha values to.
  * @param {FillMaskAlphaOptions} options
  *   Configuration for filling the alpha values.
- * @return {Promise<undefined> | undefined | void}
+ * @returns {Promise<undefined> | undefined | void}
  *   Optional promise that resolves when the alpha values have been filled.
  */
 
@@ -980,7 +977,6 @@ class PDFImage {
    * omitted), pixels are sampled linearly with no extra allocation.
    * When they differ, nearest-neighbour resampling is used, sampling decoded
    * pixels directly from the `comps` array with no intermediate buffer.
-   *
    * @param {Uint8ClampedArray} buffer
    *   Buffer to fill with grayscale values.
    * @param {FillGrayBufferOptions} [options]

@@ -26,21 +26,21 @@ import { normalizeUnicode, stopEvent, TextLayer } from "pdfjs-lib";
 import { removeNullCharacters } from "./ui_utils.js";
 
 /**
- * @typedef {Object} TextLayerBuilderOptions
+ * @typedef {object} TextLayerBuilderOptions
  * @property {PDFPageProxy} pdfPage
  * @property {TextHighlighter} [highlighter] - Optional object that will handle
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {boolean} [enablePermissions]
- * @property {function} [onAppend]
+ * @property {Function} [onAppend]
  * @property {AbortSignal} [abortSignal]
  */
 
 /**
- * @typedef {Object} TextLayerBuilderRenderOptions
+ * @typedef {object} TextLayerBuilderRenderOptions
  * @property {PageViewport} viewport
  * @property {TextLayerImages} images
- * @property {Object} [textContentParams]
+ * @property {object} [textContentParams]
  */
 
 /**

@@ -218,15 +218,17 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /**
-   * @param {Object} options
-   * @return {DrawingOptions} the default options to use for a new editor.
+   * @abstract
+   * @param {object} _options
+   * @returns {DrawingOptions} the default options to use for a new editor.
    */
   static getDefaultDrawingOptions(_options) {
     unreachable("Not implemented");
   }
 
   /**
-   * @return {Map<AnnotationEditorParamsType, string>} a map between the
+   * @abstract
+   * @returns {Map<AnnotationEditorParamsType, string>} a map between the
    *   parameter types and the name of the options.
    */
   // eslint-disable-next-line getter-return
@@ -840,13 +842,15 @@ class DrawingEditor extends AnnotationEditor {
   }
 
   /**
-   * @param {Object} params
-   * @param {number} params.x - The x coordinate of the event.
-   * @param {number} params.y - The y coordinate of the event.
-   * @param {Array<number>} params.box - The target's client bounding box.
-   * @param {number} params.rotation - The viewport rotation.
-   * @param {AnnotationEditorLayer} params.parent - The parent layer.
-   * @param {boolean} params.isLTR - Whether the direction is left-to-right.
+   * @abstract
+   * @param {object} _params
+   * @param {number} _params.x - The x coordinate of the event.
+   * @param {number} _params.y - The y coordinate of the event.
+   * @param {[number, number, number, number]} _params.box - The target's
+   *   client bounding box.
+   * @param {number} _params.rotation - The viewport rotation.
+   * @param {AnnotationEditorLayer} _params.parent - The parent layer.
+   * @param {boolean} _params.isLTR - Whether the direction is left-to-right.
    */
   static createDrawerInstance(_params) {
     unreachable("Not implemented");
@@ -1173,20 +1177,21 @@ class DrawingEditor extends AnnotationEditor {
 
   /**
    * Create the drawing options.
-   * @param {Object} _data
+   * @param {object} _data
    */
   createDrawingOptions(_data) {}
 
   /**
    * Deserialize the drawing outlines.
-   * @param {number} pageX - The x coordinate of the page.
-   * @param {number} pageY - The y coordinate of the page.
-   * @param {number} pageWidth - The width of the page.
-   * @param {number} pageHeight - The height of the page.
-   * @param {number} innerMargin - The outline's inner margin.
-   * @param {Object} data - The data to deserialize.
-   * @param {AnnotationEditorUIManager} uiManager
-   * @returns {Object} The deserialized outlines.
+   * @abstract
+   * @param {number} _pageX - The x coordinate of the page.
+   * @param {number} _pageY - The y coordinate of the page.
+   * @param {number} _pageWidth - The width of the page.
+   * @param {number} _pageHeight - The height of the page.
+   * @param {number} _innerMargin - The outline's inner margin.
+   * @param {object} _data - The data to deserialize.
+   * @param {AnnotationEditorUIManager} _uiManager
+   * @returns {object} The deserialized outlines.
    */
   static deserializeDraw(
     _pageX,

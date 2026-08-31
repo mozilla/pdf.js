@@ -789,7 +789,6 @@ class PSStackBasedInterpreter {
 
 /**
  * Tries PSStackToTree-optimized IR first; falls back to direct interpreter.
- *
  * @param {string}   source
  * @param {number[]} domain  – flat [min0,max0, …]
  * @param {number[]} range   – flat [min0,max0, …]

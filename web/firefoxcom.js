@@ -38,7 +38,7 @@ class FirefoxCom {
    * Creates an event that the extension is listening for and will
    * asynchronously respond to.
    * @param {string} action - The action to trigger.
-   * @param {Object|string} [data] - The data to send.
+   * @param {object | string} [data] - The data to send.
    * @returns {Promise<any>} A promise that is resolved with the response data.
    */
   static requestAsync(action, data) {
@@ -51,7 +51,7 @@ class FirefoxCom {
    * Creates an event that the extension is listening for and will, optionally,
    * asynchronously respond to.
    * @param {string} action - The action to trigger.
-   * @param {Object|string} [data] - The data to send.
+   * @param {object | string} [data] - The data to send.
    */
   static request(action, data, callback = null) {
     const request = document.createTextNode("");

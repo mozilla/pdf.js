@@ -31,14 +31,14 @@ const SIDEBAR_RESIZING_CLASS = "viewsManagerResizing";
 const UI_NOTIFICATION_CLASS = "pdfSidebarNotification";
 
 /**
- * @typedef {Object} PDFSidebarOptions
+ * @typedef {object} PDFSidebarOptions
  * @property {PDFSidebarElements} elements - The DOM elements.
  * @property {EventBus} eventBus - The application event bus.
  * @property {L10n} l10n - The localization service.
  */
 
 /**
- * @typedef {Object} PDFSidebarElements
+ * @typedef {object} PDFSidebarElements
  * @property {HTMLDivElement} outerContainer - The outer container
  *   (encasing both the viewer and sidebar elements).
  * @property {HTMLDivElement} sidebarContainer - The sidebar container

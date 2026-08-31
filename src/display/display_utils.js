@@ -287,7 +287,6 @@ class PDFDateString {
    * Moreover, Adobe Acrobat doesn't handle changing the date to universal time
    * and doesn't use the user's time zone (effectively ignoring the HH' and mm'
    * parts of the date string).
-   *
    * @param {string} input
    * @returns {Date|null}
    */

@@ -29,7 +29,7 @@ import { AnnotationEditorLayer } from "pdfjs-lib";
 import { GenericL10n } from "web-null_l10n";
 
 /**
- * @typedef {Object} AnnotationEditorLayerBuilderOptions
+ * @typedef {object} AnnotationEditorLayerBuilderOptions
  * @property {AnnotationEditorUIManager} [uiManager]
  * @property {number} pageIndex
  * @property {L10n} [l10n]
@@ -38,11 +38,11 @@ import { GenericL10n } from "web-null_l10n";
  * @property {AnnotationLayer} [annotationLayer]
  * @property {TextLayer} [textLayer]
  * @property {DrawLayer} [drawLayer]
- * @property {function} [onAppend]
+ * @property {Function} [onAppend]
  */
 
 /**
- * @typedef {Object} AnnotationEditorLayerBuilderRenderOptions
+ * @typedef {object} AnnotationEditorLayerBuilderRenderOptions
  * @property {PageViewport} viewport
  * @property {string} [intent] - The default value is "display".
  */

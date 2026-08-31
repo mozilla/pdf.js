@@ -1322,7 +1322,7 @@ const PDFViewerApplication = {
 
   /**
    * Opens a new PDF document.
-   * @param {Object} args - Accepts any/all of the properties from
+   * @param {object} args - Accepts any/all of the properties from
    *   {@link DocumentInitParameters}, and also a `originalUrl` string.
    * @returns {Promise} - Promise that is resolved when the document is opened.
    */
@@ -1517,7 +1517,7 @@ const PDFViewerApplication = {
   /**
    * Report the error; used for errors affecting e.g. only a single page.
    * @param {string} key - The localization key for the error.
-   * @param {Object} [moreInfo] - Further information about the error that is
+   * @param {object} [moreInfo] - Further information about the error that is
    *                              more technical. Should have a 'message' and
    *                              optionally a 'stack' property.
    * @returns {string} A (localized) error message that is human readable.

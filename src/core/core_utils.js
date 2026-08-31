@@ -141,15 +141,15 @@ async function fetchBinaryData(url) {
  * If the key is not found in the tree, `undefined` is returned. Otherwise,
  * the value for the key is returned or, if `stopWhenFound` is `false`, a list
  * of values is returned.
- *
- * @param {Dict} dict - Dictionary from where to start the traversal.
- * @param {string} key - The key of the property to find the value for.
- * @param {boolean} getArray - Whether or not the value should be fetched as an
- *   array. The default value is `false`.
- * @param {boolean} stopWhenFound - Whether or not to stop the traversal when
- *   the key is found. If set to `false`, we always walk up the entire parent
- *   chain, for example to be able to find `\Resources` placed on multiple
- *   levels of the tree. The default value is `true`.
+ * @param {object} params
+ * @param {Dict} params.dict - Dictionary from where to start the traversal.
+ * @param {string} params.key - The key of the property to find the value for.
+ * @param {boolean} params.getArray - Whether or not the value should be fetched
+ *   as an array. The default value is `false`.
+ * @param {boolean} params.stopWhenFound - Whether or not to stop the traversal
+ *   when the key is found. If set to `false`, we always walk up the entire
+ *   parent chain, for example to be able to find `\Resources` placed on
+ *   multiple levels of the tree. The default value is `true`.
  */
 function getInheritableProperty({
   dict,
@@ -178,7 +178,6 @@ function getInheritableProperty({
 
 /**
  * Get the parent dictionary to update when a property is set.
- *
  * @param {Dict} dict - Dictionary from where to start the traversal.
  * @param {Ref} ref - The reference to the dictionary.
  * @param {XRef} xref - The `XRef` instance.
@@ -336,7 +335,6 @@ function lookupNormalRect(arr, fallback) {
  * AcroForm field names use an array like notation to refer to
  * repeated XFA elements e.g. foo.bar[nnn].
  * see: XFA Spec Chapter 3 - Repeated Elements
- *
  * @param {string} path - XFA path name.
  * @returns {Array} - Array of Objects with the name and pos of
  * each part of the path.

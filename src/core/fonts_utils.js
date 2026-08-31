@@ -101,12 +101,12 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
 /**
  * Shared logic for building a char code to glyph id mapping for Type1 and
  * simple CFF fonts. See section 9.6.6.2 of the spec.
- * @param {Object} properties Font properties object.
- * @param {Object} builtInEncoding The encoding contained within the actual font
+ * @param {object} properties Font properties object.
+ * @param {object} builtInEncoding The encoding contained within the actual font
  *   data.
  * @param {Array} glyphNames Array of glyph names where the index is the
  *   glyph ID.
- * @returns {Object} A char code to glyph ID map.
+ * @returns {object} A char code to glyph ID map.
  */
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   const charCodeToGlyphId = Object.create(null);

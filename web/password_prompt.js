@@ -18,7 +18,7 @@
 import { PasswordResponses } from "pdfjs-lib";
 
 /**
- * @typedef {Object} PasswordPromptOptions
+ * @typedef {object} PasswordPromptOptions
  * @property {HTMLDialogElement} dialog - The overlay's DOM element.
  * @property {HTMLParagraphElement} label - Label containing instructions for
  *                                          entering the password.

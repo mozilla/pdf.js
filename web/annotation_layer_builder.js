@@ -39,7 +39,7 @@ import { internalOpt } from "./internal_evt.js";
 import { PresentationModeState } from "./ui_utils.js";
 
 /**
- * @typedef {Object} AnnotationLayerBuilderOptions
+ * @typedef {object} AnnotationLayerBuilderOptions
  * @property {PDFPageProxy} pdfPage
  * @property {AnnotationStorage} [annotationStorage]
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
@@ -50,17 +50,17 @@ import { PresentationModeState } from "./ui_utils.js";
  * @property {boolean} [enableComment]
  * @property {boolean} [enableScripting]
  * @property {Promise<boolean>} [hasJSActionsPromise]
- * @property {Promise<Object<string, Array<Object>> | null>}
+ * @property {Promise<Record<string, Array<object>> | null>}
  *   [fieldObjectsPromise]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationEditorUIManager} [annotationEditorUIManager]
- * @property {function} [onAppend]
+ * @property {Function} [onAppend]
  * @property {CommentManager} [commentManager]
  */
 
 /**
- * @typedef {Object} AnnotationLayerBuilderRenderOptions
+ * @typedef {object} AnnotationLayerBuilderRenderOptions
  * @property {PageViewport} viewport
  * @property {string} [intent] - The default value is "display".
  * @property {StructTreeLayerBuilder} [structTreeLayer]
@@ -241,7 +241,7 @@ class AnnotationLayerBuilder {
   }
 
   /**
-   * @param {Array<Object>} inferredLinks
+   * @param {Array<object>} inferredLinks
    * @returns {Promise<void>} A promise that is resolved when the inferred links
    *   are added to the annotation layer.
    */

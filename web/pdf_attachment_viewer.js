@@ -30,7 +30,7 @@ import { internalOpt } from "./internal_evt.js";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
 /**
- * @typedef {Object} PDFAttachmentViewerOptions
+ * @typedef {object} PDFAttachmentViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {DownloadManager} downloadManager - The download manager.

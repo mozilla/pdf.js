@@ -399,7 +399,7 @@ function getOriginalIndex(diffs, pos, len) {
 }
 
 /**
- * @typedef {Object} PDFFindControllerOptions
+ * @typedef {object} PDFFindControllerOptions
  * @property {PDFLinkService} linkService - The navigation/linking service.
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} [delay] - The number of milliseconds to delay execution of
@@ -443,7 +443,7 @@ class PDFFindController {
 
     /**
      * Callback used to check if a `pageNumber` is currently visible.
-     * @type {function}
+     * @type {Function}
      */
     this.onIsPageVisible = null;
 
@@ -476,7 +476,6 @@ class PDFFindController {
   /**
    * Set a reference to the PDF document in order to search it.
    * Note that searching is not possible if this method is not called.
-   *
    * @param {PDFDocumentProxy} pdfDocument - The PDF document to search.
    */
   setDocument(pdfDocument) {
@@ -558,7 +557,7 @@ class PDFFindController {
   }
 
   /**
-   * @typedef {Object} PDFFindControllerScrollMatchIntoViewParams
+   * @typedef {object} PDFFindControllerScrollMatchIntoViewParams
    * @property {HTMLElement} element
    * @property {number} pageIndex
    * @property {number} matchIndex
@@ -566,7 +565,7 @@ class PDFFindController {
 
   /**
    * Scroll the current match into view.
-   * @param {PDFFindControllerScrollMatchIntoViewParams}
+   * @param {PDFFindControllerScrollMatchIntoViewParams} params
    */
   scrollMatchIntoView({ element = null, pageIndex = -1, matchIndex = -1 }) {
     if (!this._scrollMatches || !element) {
@@ -807,7 +806,7 @@ class PDFFindController {
   }
 
   /**
-   * @typedef {Object} FindMatch
+   * @typedef {object} FindMatch
    * @property {number} index - The start of the matched text in the page's
    *   string contents.
    * @property {number} length - The length of the matched text.

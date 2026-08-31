@@ -300,8 +300,9 @@ class CanvasBBoxTracker {
 
   /**
    * @param {number} idx
-   * @param {boolean} [preserve=false] - When false, the pending bounding box is
-   *   cleared once recorded; pass true to keep it for subsequent operations.
+   * @param {boolean} [preserve=false] - When false, the pending bounding box
+   *   is cleared once recorded; pass true to keep it for subsequent
+   *   operations.
    * @param {Iterable<Iterable<number>>} [dependencyLists] - Groups of operation
    *   indices whose bounding boxes are also expanded to cover this operation.
    */
@@ -803,7 +804,6 @@ class CanvasDependencyTracker {
  * Used to track dependencies of nested operations list, that
  * should actually all map to the index of the operation that
  * contains the nested list.
- *
  * @implements {CanvasDependencyTracker}
  */
 class CanvasNestedDependencyTracker {

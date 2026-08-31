@@ -77,10 +77,9 @@ const XY = new Float32Array(2);
  * only state modifiers that we cannot copy over when we switch contexts.
  *
  * To remove mirroring call `ctx._removeMirroring()`.
- *
- * @param {Object} ctx - The 2d canvas context that will duplicate its calls on
+ * @param {object} ctx - The 2d canvas context that will duplicate its calls on
  *   the destCtx.
- * @param {Object} destCtx - The 2d canvas context that will receive the
+ * @param {object} destCtx - The 2d canvas context that will receive the
  *   forwarded calls.
  */
 function mirrorContextOperations(ctx, destCtx) {
@@ -1652,7 +1651,6 @@ class CanvasGraphics {
    * not) rather than against the running group result. We render onto a temp
    * canvas; path/clip/transform ops are mirrored back to the group canvas so
    * its state stays in sync for the next element.
-   *
    * @returns {boolean} true if a knockout element was started.
    */
   #beginKnockoutElement(alpha = 1) {
@@ -1707,7 +1705,6 @@ class CanvasGraphics {
    * coverage when alpha_s < 1), destination-out the group canvas over that
    * mask, restore the initial backdrop into the cleared footprint
    * (non-isolated only), then paint the element on top.
-   *
    * @param {boolean} started - the value returned by `#beginKnockoutElement`.
    */
   #endKnockoutElement(started) {

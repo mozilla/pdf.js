@@ -72,7 +72,7 @@ const AutoPrintRegExp = /\bprint\s*\(/;
 /**
  * Scrolls specified element into view of its parent.
  * @param {HTMLElement} element - The element to be visible.
- * @param {Object} [spot] - An object with optional top and left properties,
+ * @param {object} [spot] - An object with optional top and left properties,
  *   specifying the offset from the top left edge.
  * @param {number} [spot.left]
  * @param {number} [spot.top]
@@ -194,7 +194,6 @@ function removeNullCharacters(str, replaceInvisible = false) {
  * passes a given condition. The items are expected to be sorted in the sense
  * that if the condition is true for one item in the array, then it is also true
  * for all following items.
- *
  * @returns {number} Index of the first array element to pass the test,
  *                   or |items.length| if no such element exists.
  */
@@ -280,14 +279,14 @@ function floorToDivide(x, div) {
 }
 
 /**
- * @typedef {Object} GetPageSizeInchesParameters
+ * @typedef {object} GetPageSizeInchesParameters
  * @property {number[]} view
  * @property {number} userUnit
  * @property {number} rotate
  */
 
 /**
- * @typedef {Object} PageSize
+ * @typedef {object} PageSize
  * @property {number} width - In inches.
  * @property {number} height - In inches.
  */
@@ -313,7 +312,6 @@ function getPageSizeInches({ view, userUnit, rotate }) {
 
 /**
  * Helper function for getVisibleElements.
- *
  * @param {number} index - initial guess at the first visible element
  * @param {Array} views - array of pages, into which `index` is an index
  * @param {number} top - the top of the scroll pane
@@ -402,7 +400,7 @@ function visibleSort(a, b) {
 }
 
 /**
- * @typedef {Object} GetVisibleElementsParameters
+ * @typedef {object} GetVisibleElementsParameters
  * @property {HTMLElement} scrollEl - A container that can possibly scroll.
  * @property {Array} views - Objects with a `div` property that contains an
  *   HTMLElement, which should all be descendants of `scrollEl` satisfying the
@@ -432,9 +430,8 @@ function visibleSort(a, b) {
  * question. For pages, that ends up being equivalent to the bounding box of the
  * rendering canvas. Earlier and later refer to index in `views`, not page
  * layout.)
- *
  * @param {GetVisibleElementsParameters} params
- * @returns {Object} `{ first, last, views: [{ id, x, y, view, percent }] }`
+ * @returns {object} `{ first, last, views: [{ id, x, y, view, percent }] }`
  */
 function getVisibleElements({
   scrollEl,
@@ -740,7 +737,6 @@ class ProgressBar {
  *
  * Recursively search for the truly active or focused element in case there are
  * shadow DOMs.
- *
  * @returns {Element} the truly active or focused element.
  */
 function getActiveOrFocusedElement() {
@@ -760,7 +756,7 @@ function getActiveOrFocusedElement() {
 /**
  * Converts API PageLayout values to the format used by `BaseViewer`.
  * @param {string} layout - The API PageLayout value.
- * @returns {Object}
+ * @returns {object}
  */
 function apiPageLayoutToViewerModes(layout) {
   let scrollMode = ScrollMode.VERTICAL,

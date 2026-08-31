@@ -56,7 +56,6 @@ class PdfTextExtractor {
 
   /**
    * Builds up all of the text from a PDF.
-   *
    * @param {number} requestId
    */
   async extractTextContent(requestId) {

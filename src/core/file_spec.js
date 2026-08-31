@@ -85,7 +85,6 @@ class FileSpec {
    *
    * Search order follows the PDF platform keys: `UF`, `F`, `Unix`, `Mac`,
    * `DOS`.
-   *
    * @param {Dict | null | undefined} dict
    *   Dictionary.
    * @param {boolean} [raw]
@@ -107,7 +106,6 @@ class FileSpec {
 
   /**
    * Whether a file specification carries an embedded file we can read.
-   *
    * @param {Dict} fileSpecDict
    * @returns {boolean}
    */
@@ -117,7 +115,6 @@ class FileSpec {
 
   /**
    * Read attachment bytes from a file-spec dictionary.
-   *
    * @param {Dict | null | undefined} dict
    *   File-spec dictionary containing an `EF` entry.
    * @returns {CatalogAttachmentContent}
@@ -141,7 +138,6 @@ class FileSpec {
 
   /**
    * Read the bytes of an embedded-file stream.
-   *
    * @param {BaseStream} stream
    *   Embedded-file stream.
    * @returns {CatalogAttachmentContent}

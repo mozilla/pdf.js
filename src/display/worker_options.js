@@ -26,7 +26,7 @@ class GlobalWorkerOptions {
   }
 
   /**
-   * @param {Worker | null} workerPort - Defines global port for worker process.
+   * @param {Worker | null} val - Defines global port for worker process.
    *   Overrides the `workerSrc` option.
    */
   static set workerPort(val) {
@@ -47,7 +47,7 @@ class GlobalWorkerOptions {
   }
 
   /**
-   * @param {string} workerSrc - A string containing the path and filename of
+   * @param {string} val - A string containing the path and filename of
    *   the worker file.
    *
    *   NOTE: The `workerSrc` option should always be set, in order to prevent

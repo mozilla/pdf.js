@@ -80,7 +80,7 @@ class FreeDrawOutliner {
     return this.#points.length <= 10;
   }
 
-  /** @returns {Object} The SVG properties to apply. */
+  /** @returns {object} The SVG properties to apply. */
   removeLastElement() {
     this.#last.fill(NaN);
     this.#top.length = this.#bottom.length = this.#points.length = 0;

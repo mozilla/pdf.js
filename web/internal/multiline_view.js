@@ -150,8 +150,10 @@ class MultilineView {
     return this.#element;
   }
 
-  /** The inner content container (between the sentinels). Useful for setting
-   *  ARIA attributes and attaching keyboard listeners. */
+  /**
+   * The inner content container (between the sentinels). Useful for setting
+   *  ARIA attributes and attaching keyboard listeners.
+   */
   get inner() {
     return this.#pre;
   }

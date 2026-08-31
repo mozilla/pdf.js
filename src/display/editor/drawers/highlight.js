@@ -19,7 +19,7 @@ import { Outline } from "./outline.js";
 
 /**
  * @param {Outline} outline
- * @returns {Object}
+ * @returns {object}
  */
 function getHighlightSVGProperties(outline) {
   return {
@@ -40,7 +40,7 @@ function getHighlightSVGProperties(outline) {
 /**
  * @param {Outline} outline
  * @param {number} rotation
- * @returns {Object}
+ * @returns {object}
  */
 function getHighlightFocusSVGProperties(outline, rotation) {
   const { focusOutline } = outline;
@@ -72,7 +72,7 @@ class HighlightOutliner {
 
   /**
    * Construct an outliner.
-   * @param {Array<Object>} boxes - An array of axis-aligned rectangles.
+   * @param {Array<object>} boxes - An array of axis-aligned rectangles.
    * @param {number} borderWidth - The width of the border of the boxes, it
    *   allows to make the boxes bigger (or smaller).
    * @param {number} innerMargin - The margin between the boxes and the
@@ -344,7 +344,7 @@ class HighlightOutline extends Outline {
 
   /**
    * Build a text selection and its hover/selection outline.
-   * @param {Array<Object>} boxes - the boxes of the selected text.
+   * @param {Array<object>} boxes - the boxes of the selected text.
    * @param {boolean} isLTR
    * @returns {HighlightOutline}
    */

@@ -48,7 +48,7 @@ const PIXELS_TO_SCROLL_WHEN_DRAGGING = 20;
 const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
 
 /**
- * @typedef {Object} PDFThumbnailViewerOptions
+ * @typedef {object} PDFThumbnailViewerOptions
  * @property {HTMLDivElement} container - The container for the thumbnail
  *   elements.
  * @property {EventBus} eventBus - The application event bus.
@@ -60,7 +60,7 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
- * @property {Object} [pageColors] - Overwrites background and foreground colors
+ * @property {object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
  * @property {AbortSignal} [abortSignal] - The AbortSignal for the window
@@ -71,15 +71,15 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  *   The default value is `false`.
  * @property {boolean} [enableSplitMerge] - Enables split and merge features.
  *   The default value is `false`.
- * @property {Object} [statusBar] - The status bar elements to manage the status
+ * @property {object} [statusBar] - The status bar elements to manage the status
  *   label and action when editing pages.
- * @property {Object} [undoBar] - The undo bar elements to manage the undo
+ * @property {object} [undoBar] - The undo bar elements to manage the undo
  *   action.
- * @property {Object} [manageMenu] - The menu elements to manage saving edited
+ * @property {object} [manageMenu] - The menu elements to manage saving edited
  *   PDF.
- * @property {Object} [waitingBar] - The waiting bar elements shown during
+ * @property {object} [waitingBar] - The waiting bar elements shown during
  *   long-running operations.
- * @property {Object} [addFileComponent] - The file picker and button used to
+ * @property {object} [addFileComponent] - The file picker and button used to
  *   add one or more PDF files to merge with the current one.
  */
 

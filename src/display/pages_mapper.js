@@ -103,7 +103,6 @@ class PagesMapper {
 
   /**
    * Move a set of pages to a new position.
-   *
    * @param {Set<number>} selectedPages - Page numbers being moved (1-indexed).
    * @param {number[]} pagesToMove - Ordered list of page numbers to move.
    * @param {number} index - Zero-based insertion index in the page-number list.
@@ -265,7 +264,6 @@ class PagesMapper {
   /**
    * Recomputes #prevPageNumbers after a mutation, using the pre-mutation
    * id to pageNumbers map to track where each page came from.
-   *
    * @param {Map<number, Array<number>>} prevIdToPageNumber - Id to pageNumbers
    *   before the mutation.
    * @param {Set<number>|null} [deletedPageNumbers] - Page numbers that were
@@ -352,7 +350,7 @@ class PagesMapper {
    * Gets the current page mapping suitable for saving.
    * @param {Map<number, Array<number>>} [idToPageNumber]
    * @param {Int32Array} [copyLevels]
-   * @returns {{pageInfos: Array<Object>, copyLevels: Int32Array|null}}
+   * @returns {{pageInfos: Array<object>, copyLevels: Int32Array | null}}
    */
   getPageMappingForSaving(
     idToPageNumber = null,

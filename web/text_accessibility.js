@@ -38,7 +38,6 @@ class TextAccessibilityManager {
   /**
    * Compare the positions of two elements, it must correspond to
    * the visual ordering.
-   *
    * @param {HTMLElement} e1
    * @param {HTMLElement} e2
    * @returns {number}
@@ -219,7 +218,10 @@ class TextAccessibilityManager {
 
   /**
    * Move a div in the DOM in order to respect the visual order.
+   * @param {HTMLElement} container
    * @param {HTMLDivElement} element
+   * @param {HTMLElement} contentElement
+   * @param {boolean} isRemovable
    * @returns {string|null} The id in the struct tree if any.
    */
   moveElementInDOM(container, element, contentElement, isRemovable) {

@@ -22,14 +22,14 @@ import { DrawLayer } from "pdfjs-lib";
  *   Zero-based page index.
  * @property {Element | null} [textLayer]
  *   Text layer element (optional).
- * @property {Object | null} [filterFactory]
+ * @property {object | null} [filterFactory]
  *   Filter factory used to style selections (optional).
- * @property {Object | null} [pageColors]
+ * @property {object | null} [pageColors]
  *   Page foreground/background colors for HCM (optional).
  */
 
 /**
- * @typedef {Object} DrawLayerBuilderRenderOptions
+ * @typedef {object} DrawLayerBuilderRenderOptions
  * @property {string} [intent] - The default value is "display".
  */
 
@@ -39,8 +39,6 @@ class DrawLayerBuilder {
   /**
    * @param {DrawLayerBuilderOptions} options
    *   Configuration.
-   * @returns
-   *   Instance.
    */
   constructor(options) {
     this.pageIndex = options.pageIndex;

@@ -26,6 +26,7 @@ class BaseStream {
   }
 
   /**
+   * @abstract
    * @returns {number}
    */
   // eslint-disable-next-line getter-return
@@ -34,6 +35,7 @@ class BaseStream {
   }
 
   /**
+   * @abstract
    * @returns {boolean}
    */
   // eslint-disable-next-line getter-return
@@ -50,6 +52,7 @@ class BaseStream {
   }
 
   /**
+   * @abstract
    * @param {number | undefined} [length]
    * @returns {Uint8Array}
    */

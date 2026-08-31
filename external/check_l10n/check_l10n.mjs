@@ -112,7 +112,6 @@ function isUsed(id, sources) {
  * gap. The prefix must appear immediately followed by `${` in a template
  * literal; the suffix (if non-empty) must also appear in the same file.
  * Minimum length guards prevent matches on trivially short fragments.
- *
  * @param {string} id - Message ID to test.
  * @param {{ path: string, content: string }[]} sources
  * @returns {{ path: string, line: number } | null} Location of the first

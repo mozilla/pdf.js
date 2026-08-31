@@ -61,8 +61,8 @@ class AnnotationStorage {
   /**
    * Get the value for a given key if it exists, or return the default value.
    * @param {string} key
-   * @param {Object} defaultValue
-   * @returns {Object}
+   * @param {object} defaultValue
+   * @returns {object}
    */
   getValue(key, defaultValue) {
     const value = this.#storage.get(key);
@@ -76,7 +76,7 @@ class AnnotationStorage {
   /**
    * Get the value for a given key.
    * @param {string} key
-   * @returns {Object}
+   * @returns {object}
    */
   getRawValue(key) {
     return this.#storage.get(key);
@@ -109,7 +109,7 @@ class AnnotationStorage {
   /**
    * Set the value for a given key
    * @param {string} key
-   * @param {Object} value
+   * @param {object} value
    */
   setValue(key, value) {
     const obj = this.#storage.get(key);
@@ -345,7 +345,8 @@ class PrintAnnotationStorage extends AnnotationStorage {
   }
 
   /**
-   * @returns {PrintAnnotationStorage}
+   * @type {PrintAnnotationStorage}
+   * @throws {Error} Always, since a `PrintAnnotationStorage` cannot be nested.
    */
   // eslint-disable-next-line getter-return
   get print() {

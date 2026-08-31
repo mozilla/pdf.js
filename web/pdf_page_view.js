@@ -56,7 +56,7 @@ import { TextLayerBuilder } from "./text_layer_builder.js";
 import { XfaLayerBuilder } from "./xfa_layer_builder.js";
 
 /**
- * @typedef {Object} PDFPageViewOptions
+ * @typedef {object} PDFPageViewOptions
  * @property {HTMLDivElement} [container] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} id - The page unique ID (normally its number).
@@ -101,11 +101,11 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   affects. Then, when rendering a partial page (if `enableDetailCanvas` is
  *   enabled), it will only run through the operations that affect that portion.
  *   The default value is `false`.
- * @property {Object} [pageColors] - Overwrites background and foreground colors
+ * @property {object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
  * @property {L10n} [l10n] - Localization service.
- * @property {Object} [layerProperties] - The object that is used to lookup
+ * @property {object} [layerProperties] - The object that is used to lookup
  *   the necessary layer-properties.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
  *   text that look like URLs. The default value is `true`.
@@ -754,7 +754,7 @@ class PDFPageView extends BasePDFPageView {
   }
 
   /**
-   * @typedef {Object} PDFPageViewUpdateParameters
+   * @typedef {object} PDFPageViewUpdateParameters
    * @property {number} [scale] The new scale, if specified.
    * @property {number} [rotation] The new rotation, if specified.
    * @property {Promise<OptionalContentConfig>} [optionalContentConfigPromise]

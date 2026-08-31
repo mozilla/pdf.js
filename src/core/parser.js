@@ -629,7 +629,6 @@ class Parser {
 
   /**
    * Resolve indirect objects when `xref` is available.
-   *
    * @param {unknown} obj
    * @returns {unknown}
    */
@@ -639,7 +638,6 @@ class Parser {
 
   /**
    * Check if a stream filter chain contains `/Crypt`.
-   *
    * @param {unknown} [filter]
    *   Object, probably a name or an array of names.
    * @returns {boolean}

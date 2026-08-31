@@ -26,7 +26,7 @@ import { internalOpt } from "./internal_evt.js";
 import { PagesCountLimit } from "./pdf_viewer.js";
 
 /**
- * @typedef {Object} SecondaryToolbarOptions
+ * @typedef {object} SecondaryToolbarOptions
  * @property {HTMLDivElement} toolbar - Container for the secondary toolbar.
  * @property {HTMLButtonElement} toggleButton - Button to toggle the visibility
  *   of the secondary toolbar.

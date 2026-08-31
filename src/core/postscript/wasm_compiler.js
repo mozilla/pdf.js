@@ -870,7 +870,6 @@ class PsWasmCompiler {
    * Convert the parser AST to a tree, compile each output expression, clamp
    * results to the declared range, store to linear memory, and assemble the
    * Wasm binary.
-   *
    * @param {import("./ast.js").PsProgram} program
    * @returns {Uint8Array|null}  Wasm binary, or null if compilation failed.
    */
@@ -963,7 +962,6 @@ class PsWasmCompiler {
  * Parse and compile a PostScript Type 4 function source string into a Wasm
  * binary.  PSStackToTree handles constant folding and algebraic simplifications
  * during the parse-to-tree conversion, so no separate optimizer pass is needed.
- *
  * @param {string} source    – raw PostScript source (decoded PDF stream)
  * @param {number[]} domain  – flat [min0,max0, min1,max1, ...] array
  * @param {number[]} range   – flat [min0,max0, min1,max1, ...] array
@@ -1073,7 +1071,6 @@ function _makeWrapper(exports, nIn, nOut) {
  *
  * Note: synchronous Wasm compilation is only allowed for small modules
  * (< 4 KB in most browsers).  Type 4 functions always qualify.
- *
  * @param {string} source    – raw PostScript source (decoded PDF stream)
  * @param {number[]} domain  – flat [min0,max0, min1,max1, ...] array
  * @param {number[]} range   – flat [min0,max0, min1,max1, ...] array

@@ -19,7 +19,7 @@
 // eslint-disable-next-line no-restricted-syntax
 export class SandboxSupportBase {
   /**
-   * @param {DOMWindow} - win
+   * @param {DOMWindow} win
    */
   constructor(win) {
     this.win = win;
@@ -38,29 +38,29 @@ export class SandboxSupportBase {
   }
 
   /**
-   * @param {Object} val - Export a value in the sandbox.
+   * @param {object} val - Export a value in the sandbox.
    */
   exportValueToSandbox(val) {
     throw new Error("Not implemented");
   }
 
   /**
-   * @param {Object} val - Import a value from the sandbox.
+   * @param {object} val - Import a value from the sandbox.
    */
   importValueFromSandbox(val) {
     throw new Error("Not implemented");
   }
 
   /**
-   * @param {String} errorMessage - Create an error in the sandbox.
+   * @param {string} errorMessage - Create an error in the sandbox.
    */
   createErrorForSandbox(errorMessage) {
     throw new Error("Not implemented");
   }
 
   /**
-   * @param {String} name - Name of the function to call in the sandbox
-   * @param {Array<Object>} args - Arguments of the function.
+   * @param {string} name - Name of the function to call in the sandbox
+   * @param {Array<object>} args - Arguments of the function.
    */
   callSandboxFunction(name, args) {
     if (!this.commFun) {

@@ -35,9 +35,8 @@ class PDFObjects {
    * If called *with* a callback, the callback is called with the data of the
    * object once the object is resolved. That means, if you call this method
    * and the object is already resolved, the callback gets called right away.
-   *
    * @param {string} objId
-   * @param {function} [callback]
+   * @param {Function} [callback]
    * @returns {any}
    */
   get(objId, callback = null) {
@@ -84,7 +83,6 @@ class PDFObjects {
 
   /**
    * Resolves the object `objId` with optional `data`.
-   *
    * @param {string} objId
    * @param {any} [data]
    */

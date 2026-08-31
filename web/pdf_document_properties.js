@@ -45,9 +45,9 @@ function getPageName(size, isPortrait, pageNames) {
 }
 
 /**
- * @typedef {Object} PDFDocumentPropertiesOptions
+ * @typedef {object} PDFDocumentPropertiesOptions
  * @property {HTMLDialogElement} dialog - The overlay's DOM element.
- * @property {Object} fields - Names and elements of the overlay's fields.
+ * @property {object} fields - Names and elements of the overlay's fields.
  * @property {HTMLButtonElement} closeButton - Button for closing the overlay.
  */
 
@@ -59,7 +59,7 @@ class PDFDocumentProperties {
    * @param {OverlayManager} overlayManager - Manager for the viewer overlays.
    * @param {EventBus} eventBus - The application event bus.
    * @param {L10n} l10n - Localization service.
-   * @param {function} fileNameLookup - The function that is used to lookup
+   * @param {Function} fileNameLookup - The function that is used to lookup
    *   the document fileName.
    */
   constructor(
@@ -201,7 +201,6 @@ class PDFDocumentProperties {
    * Set a reference to the PDF document in order to populate the dialog fields
    * with the document properties. Note that the dialog will contain no
    * information if this method is not called.
-   *
    * @param {PDFDocumentProxy} pdfDocument - A reference to the PDF document.
    */
   setDocument(pdfDocument) {

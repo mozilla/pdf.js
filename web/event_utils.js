@@ -22,8 +22,8 @@ const WaitOnType = {
 };
 
 /**
- * @typedef {Object} WaitOnEventOrTimeoutParameters
- * @property {Object} target - The event target, can for example be:
+ * @typedef {object} WaitOnEventOrTimeoutParameters
+ * @property {object} target - The event target, can for example be:
  *   `window`, `document`, a DOM element, or an {EventBus} instance.
  * @property {string} name - The name of the event.
  * @property {number} delay - The delay, in milliseconds, after which the
@@ -34,8 +34,7 @@ const WaitOnType = {
  * Allows waiting for an event or a timeout, whichever occurs first.
  * Can be used to ensure that an action always occurs, even when an event
  * arrives late or not at all.
- *
- * @param {WaitOnEventOrTimeoutParameters}
+ * @param {WaitOnEventOrTimeoutParameters} params
  * @returns {Promise} A promise that is resolved with a {WaitOnType} value.
  */
 async function waitOnEventOrTimeout({ target, name, delay = 0 }) {
@@ -85,8 +84,8 @@ class EventBus {
 
   /**
    * @param {string} eventName
-   * @param {function} listener
-   * @param {Object} [options]
+   * @param {Function} listener
+   * @param {object} [options]
    */
   on(eventName, listener, options = null) {
     let rmAbort = null;
@@ -112,8 +111,8 @@ class EventBus {
 
   /**
    * @param {string} eventName
-   * @param {function} listener
-   * @param {Object} [options]
+   * @param {Function} listener
+   * @param {object} [options]
    */
   off(eventName, listener, options = null) {
     const eventListeners = this.#listeners.get(eventName);
@@ -126,7 +125,7 @@ class EventBus {
 
   /**
    * @param {string} eventName
-   * @param {Object} data
+   * @param {object} data
    */
   dispatch(eventName, data) {
     const eventListeners = this.#listeners.get(eventName);

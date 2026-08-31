@@ -64,7 +64,6 @@ class BaseFilterFactory {
 
   /**
    * Create a filter for the selection of text, given colors.
-   *
    * @param {string} fgColor
    * @param {string} bgColor
    * @returns {string}
@@ -75,7 +74,6 @@ class BaseFilterFactory {
 
   /**
    * Create a filter for the selection of text.
-   *
    * @returns {string}
    */
   addSelectionFilter() {
@@ -83,7 +81,7 @@ class BaseFilterFactory {
   }
 
   /**
-   * @param {Object} [pageColors]
+   * @param {object} [pageColors]
    * @param {string} [pageColors.background]
    * @param {string} [pageColors.foreground]
    * @returns {Record<string, string> | null}
@@ -314,7 +312,6 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   /**
    * Create a filter for the selection of text, given colors.
-   *
    * @param {string} fgColor
    * @param {string} bgColor
    * @returns {string}
@@ -332,9 +329,6 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   /**
    * Create a filter for the selection of text.
-   *
-   * @param {string} fgColor
-   * @param {string} bgColor
    * @returns {string}
    */
   addSelectionFilter() {
@@ -348,7 +342,7 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 
   /**
-   * @param {Object} [pageColors]
+   * @param {object} [pageColors]
    * @param {string} [pageColors.background]
    * @param {string} [pageColors.foreground]
    * @returns {Record<string, string> | null}
@@ -640,7 +634,6 @@ class DOMFilterFactory extends BaseFilterFactory {
 
   /**
    * Get the RGB channels of a color.
-   *
    * @param {string} color
    *   Color in any valid CSS format (such as `x` in `color: x`).
    * @returns {[number, number, number, number]}
@@ -678,7 +671,6 @@ class DOMFilterFactory extends BaseFilterFactory {
   /**
    * Get the opaque text color by, if it has an alpha layer, blending it with
    * the `Canvas` background.
-   *
    * @param {string} color
    *   Color in any valid CSS format (such as `x` in `color: x`).
    * @returns {[number, number, number]}
@@ -703,7 +695,6 @@ class DOMFilterFactory extends BaseFilterFactory {
 
 /**
  * Blend a foreground color with a background color using the alpha value.
- *
  * @param {number} fg
  *   Foreground color channel value in the range `[0, 255]`.
  * @param {number} bg
