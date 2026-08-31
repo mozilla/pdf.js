@@ -14533,5 +14533,12 @@
     "lastPage": 1,
     "type": "eq",
     "print": true
+  },
+  {
+    "id": "issue20294",
+    "file": "pdfs/issue20294_reduced.pdf",
+    "md5": "29bdb56f4249dc642556c36ecb8de22b",
+    "rounds": 1,
+    "type": "eq"
   }
 ]
