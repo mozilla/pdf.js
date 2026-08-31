@@ -326,20 +326,19 @@ class PDFDocumentProperties {
       }
     }
 
-    const [{ width, height }, unit, name, orientation] = await Promise.all([
-      nonMetric ? sizeInches : sizeMillimeters,
-      this.l10n.get(
-        nonMetric
-          ? "pdfjs-document-properties-page-size-unit-inches"
-          : "pdfjs-document-properties-page-size-unit-millimeters"
-      ),
-      nameId && this.l10n.get(nameId),
-      this.l10n.get(
-        isPortrait
-          ? "pdfjs-document-properties-page-size-orientation-portrait"
-          : "pdfjs-document-properties-page-size-orientation-landscape"
-      ),
-    ]);
+    const { width, height } = nonMetric ? sizeInches : sizeMillimeters;
+    const ids = [
+      nonMetric
+        ? "pdfjs-document-properties-page-size-unit-inches"
+        : "pdfjs-document-properties-page-size-unit-millimeters",
+      isPortrait
+        ? "pdfjs-document-properties-page-size-orientation-portrait"
+        : "pdfjs-document-properties-page-size-orientation-landscape",
+    ];
+    if (nameId) {
+      ids.push(nameId);
+    }
+    const [unit, orientation, name] = await this.l10n.get(ids);
 
     return this.l10n.get(
       name
