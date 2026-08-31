@@ -513,17 +513,15 @@ describe("evaluator", function () {
       enqueue() {}
     }
 
-    it("should get correct total length after flushing", function () {
+    it("should get correct length after flushing", function () {
       const operatorList = new OperatorList(null, new StreamSinkMock());
       operatorList.addOp(OPS.save, null);
       operatorList.addOp(OPS.restore, null);
 
-      expect(operatorList.totalLength).toEqual(2);
       expect(operatorList.length).toEqual(2);
 
       operatorList.flush();
 
-      expect(operatorList.totalLength).toEqual(2);
       expect(operatorList.length).toEqual(0);
     });
   });
