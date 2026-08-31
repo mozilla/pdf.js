@@ -7,7 +7,9 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    environment: code-coverage
+    environment:
+      name: code-coverage
+      deployment: false
 
     strategy:
       fail-fast: false
