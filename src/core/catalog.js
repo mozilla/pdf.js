@@ -138,6 +138,8 @@ class Catalog {
 
   nonBlendModesSet = new RefSet();
 
+  nonCanvasFiltersSet = new RefSet();
+
   pageDictCache = new RefMap();
 
   pageIndexCache = new RefMap();
@@ -1293,6 +1295,7 @@ class Catalog {
     this.pageIndexCache.clear();
     this.pageDictCache.clear();
     this.nonBlendModesSet.clear();
+    this.nonCanvasFiltersSet.clear();
 
     for (const { dict } of await Promise.all(this.fontCache)) {
       delete dict.cacheKey;
