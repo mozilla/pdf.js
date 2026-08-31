@@ -21,6 +21,7 @@ import {
   AbortException,
   AnnotationMode,
   assert,
+  FeatureTest,
   getVerbosityLevel,
   info,
   isNodeJS,
@@ -215,6 +216,11 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {Object} [pagesMapper] - The pages mapper that will be used to map
  *   page ids and page numbers. It's used when the page order is changed or some
  *   pages are removed, cloned, etc.
+ * @property {boolean} [disableWorkerRendering] - Disables rendering of pages in
+ *   a worker thread. Note that worker rendering also requires
+ *   `GlobalWorkerOptions.rendererSrc` to be set; when it's unset, or the
+ *   renderer worker fails to start, rendering falls back to the main-thread.
+ *   The default value is `false`.
  */
 
 /**
@@ -329,6 +335,13 @@ function getDocument(src = {}) {
     typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
       ? src.styleElement
       : null;
+  const disableWorkerRendering =
+    src.disableWorkerRendering === true ||
+    !GlobalWorkerOptions.rendererSrc ||
+    typeof Worker === "undefined" ||
+    !FeatureTest.isOffscreenCanvasSupported ||
+    ownerDocument !== globalThis.document ||
+    !!styleElement;
 
   // Set the main-thread verbosity level.
   setVerbosityLevel(verbosity);
@@ -353,6 +366,9 @@ function getDocument(src = {}) {
       port: GlobalWorkerOptions.workerPort,
     });
     task._worker = worker;
+  }
+  if (!disableWorkerRendering) {
+    task._rendererWorker = new RendererWorker({ verbosity });
   }
 
   const docParams = {
@@ -397,7 +413,18 @@ function getDocument(src = {}) {
     },
   };
 
-  Promise.all([worker.promise, gpuPromise])
+  const workerPromises = [worker.promise, gpuPromise];
+  if (task._rendererWorker) {
+    workerPromises.push(
+      task._rendererWorker.promise.catch(reason => {
+        warn(`Renderer worker disabled: ${reason.message}`);
+        task._rendererWorker.destroy();
+        task._rendererWorker = null;
+      })
+    );
+  }
+
+  Promise.all(workerPromises)
     .then(function ([, hasGPU]) {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
@@ -511,6 +538,11 @@ class PDFDocumentLoadingTask {
   _worker = null;
 
   /**
+   * @private
+   */
+  _rendererWorker = null;
+
+  /**
    * Unique identifier for the document loading task.
    * @type {string}
    */
@@ -583,6 +615,9 @@ class PDFDocumentLoadingTask {
 
     this._worker?.destroy();
     this._worker = null;
+
+    this._rendererWorker?.destroy();
+    this._rendererWorker = null;
   }
 
   /**
@@ -2051,6 +2086,164 @@ class PDFPageProxy {
    */
   get stats() {
     return this._stats;
+  }
+}
+
+/**
+ * @typedef {Object} RendererWorkerParameters
+ * @property {number} [verbosity] - Controls the logging level;
+ *   the constants from {@link VerbosityLevel} should be used.
+ */
+
+/**
+ * Renderer worker abstraction that controls the instantiation of a dedicated
+ * worker that can host canvas rendering.
+ *
+ * @param {RendererWorkerParameters} params - The worker initialization
+ *   parameters.
+ */
+class RendererWorker {
+  #capability = Promise.withResolvers();
+
+  #messageHandler = null;
+
+  #webWorker = null;
+
+  destroyed = false;
+
+  constructor({ verbosity = getVerbosityLevel() } = {}) {
+    this.verbosity = verbosity;
+    this.#initialize();
+  }
+
+  /**
+   * Promise for worker initialization completion.
+   * @type {Promise<void>}
+   */
+  get promise() {
+    return this.#capability.promise;
+  }
+
+  /**
+   * The current MessageHandler-instance.
+   * @type {MessageHandler | null}
+   */
+  get messageHandler() {
+    return this.#messageHandler;
+  }
+
+  #resolve() {
+    this.#capability.resolve();
+    // Send global setting, e.g. verbosity level.
+    this.#messageHandler.send("configure", {
+      verbosity: this.verbosity,
+    });
+  }
+
+  #initialize() {
+    try {
+      let { rendererSrc } = RendererWorker;
+
+      // Wraps rendererSrc path into blob URL, if the former does not belong
+      // to the same origin.
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("GENERIC") &&
+        !PDFWorker._isSameOrigin(window.location, rendererSrc)
+      ) {
+        rendererSrc = PDFWorker._createCDNWrapper(
+          new URL(rendererSrc, window.location).href
+        );
+      }
+      const worker = new Worker(rendererSrc, { type: "module" });
+      const messageHandler = new MessageHandler("main", "renderer", worker);
+      const terminateEarly = reason => {
+        ac.abort();
+        messageHandler.destroy();
+        worker.terminate();
+
+        this.#capability.reject(
+          new Error(
+            `Renderer worker failed to initialize: "${reason?.message ?? reason}".`
+          )
+        );
+      };
+
+      const ac = new AbortController();
+      worker.addEventListener(
+        "error",
+        event => {
+          if (!this.#webWorker) {
+            // Worker failed to initialize due to an error.
+            terminateEarly(event.error || event.message);
+          }
+        },
+        { signal: ac.signal }
+      );
+
+      messageHandler.on("test", data => {
+        ac.abort();
+        if (this.destroyed || !data) {
+          terminateEarly("TypedArray transfer test failed.");
+          return;
+        }
+        this.#messageHandler = messageHandler;
+        this.#webWorker = worker;
+
+        this.#resolve();
+      });
+
+      messageHandler.on("ready", data => {
+        ac.abort();
+        if (this.destroyed) {
+          terminateEarly("Worker was destroyed.");
+          return;
+        }
+        try {
+          sendTest();
+        } catch (reason) {
+          terminateEarly(reason);
+        }
+      });
+
+      const sendTest = () => {
+        const testObj = new Uint8Array();
+        // Ensure that we can use `postMessage` transfers.
+        messageHandler.send("test", testObj, [testObj.buffer]);
+      };
+
+      // It might take time for the worker to initialize. We will try to send
+      // the "test" message immediately, and once the "ready" message arrives.
+      // The worker shall process only the first received "test" message.
+      sendTest();
+    } catch (reason) {
+      this.#capability.reject(reason);
+    }
+  }
+
+  /**
+   * Destroys the worker instance.
+   */
+  destroy() {
+    this.destroyed = true;
+
+    // We need to terminate only web worker created resource.
+    this.#webWorker?.terminate();
+    this.#webWorker = null;
+
+    this.#messageHandler?.destroy();
+    this.#messageHandler = null;
+  }
+
+  /**
+   * The current `rendererSrc`, when it exists.
+   * @type {string}
+   */
+  static get rendererSrc() {
+    if (GlobalWorkerOptions.rendererSrc) {
+      return GlobalWorkerOptions.rendererSrc;
+    }
+    throw new Error('No "GlobalWorkerOptions.rendererSrc" specified.');
   }
 }
 

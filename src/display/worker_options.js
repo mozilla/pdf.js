@@ -16,7 +16,31 @@
 class GlobalWorkerOptions {
   static #port = null;
 
+  static #rendererSrc = "";
+
   static #src = "";
+
+  /**
+   * @type {string}
+   */
+  static get rendererSrc() {
+    return this.#rendererSrc;
+  }
+
+  /**
+   * @param {string} rendererSrc - A string containing the path and
+   *   filename of the renderer worker file.
+   *
+   *   NOTE: The `rendererSrc` option must be set in order to render pages in a
+   *         worker thread; when it's unset, rendering falls back to the
+   *         main-thread.
+   */
+  static set rendererSrc(val) {
+    if (typeof val !== "string") {
+      throw new Error("Invalid `rendererSrc` type.");
+    }
+    this.#rendererSrc = val;
+  }
 
   /**
    * @type {Worker | null}
