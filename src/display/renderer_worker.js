@@ -14,9 +14,22 @@
  */
 
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
+import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
+import { ObjectHandler } from "./object_handler.js";
+import { PDFObjects } from "./pdf_objects.js";
 
 class RendererMessageHandler {
+  static #cleanedPages = new Set();
+
+  static #commonObjs = new PDFObjects();
+
+  static #fontLoader = new FontLoader({
+    ownerDocument: globalThis,
+  });
+
+  static #objsMap = new Map();
+
   static {
     // Worker thread (and not Node.js)?
     if (
@@ -31,9 +44,81 @@ class RendererMessageHandler {
     }
   }
 
+  static #getPageObjs(pageProxyId) {
+    return this.#objsMap.getOrInsertComputed(
+      pageProxyId,
+      () => new PDFObjects()
+    );
+  }
+
+  static #cleanupPage(pageProxyId) {
+    this.#cleanedPages.add(pageProxyId);
+    this.#objsMap.get(pageProxyId)?.clear();
+    this.#objsMap.delete(pageProxyId);
+  }
+
+  static #setupObjectHandler(handler) {
+    const objectHandler = new ObjectHandler({
+      messageHandler: handler,
+      commonObjs: this.#commonObjs,
+      fontLoader: this.#fontLoader,
+      pageCache: this.#objsMap,
+      shouldCreatePageObjs: true,
+    });
+
+    handler.on("commonobj", ([id, type, exportedData]) =>
+      this.#commonObjs.has(id)
+        ? null
+        : objectHandler.resolveCommonObject(id, type, exportedData)
+    );
+
+    handler.on("obj", ([id, pageProxyId, type, imageData]) => {
+      // The page may have been cleaned up before this message was processed;
+      // drop the data and release any `ImageBitmap` instead of resurrecting
+      // an empty object bag for a dead page.
+      if (this.#cleanedPages.has(pageProxyId)) {
+        imageData?.bitmap?.close();
+        return;
+      }
+      objectHandler.resolveObject(id, pageProxyId, type, imageData);
+    });
+
+    handler.on("objFailed", ({ id, pageProxyId, reason }) => {
+      const error = new Error(reason);
+      if (pageProxyId === null) {
+        this.#commonObjs.reject(id, error);
+        return;
+      }
+      if (this.#cleanedPages.has(pageProxyId)) {
+        return;
+      }
+      this.#getPageObjs(pageProxyId).reject(id, error);
+    });
+  }
+
   static #setup(handler) {
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
+    });
+
+    this.#setupObjectHandler(handler);
+
+    handler.on("cleanupPage", ({ pageProxyId }) => {
+      this.#cleanupPage(pageProxyId);
+    });
+
+    handler.on("restorePage", ({ pageProxyId }) => {
+      this.#cleanedPages.delete(pageProxyId);
+    });
+
+    // Mirrors the document-level cleanup the main thread performs in
+    // `WorkerTransport.startCleanup`; without this the worker's copies of
+    // `commonObjs`/`fontLoader` would outlive their main-thread counterparts.
+    handler.on("Cleanup", ({ keepLoadedFonts }) => {
+      this.#commonObjs.clear();
+      if (!keepLoadedFonts) {
+        this.#fontLoader.clear();
+      }
     });
   }
 
