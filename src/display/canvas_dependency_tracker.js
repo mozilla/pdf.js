@@ -1028,7 +1028,6 @@ class CanvasNestedDependencyTracker {
 
   /**
    * @param {number} idx
-   * @param {SimpleDependency[]} dependencyNames
    */
   recordOperation(idx) {
     this.#dependencyTracker.recordOperation(this.#opIdx, true);

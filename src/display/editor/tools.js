@@ -2254,7 +2254,7 @@ class AnnotationEditorUIManager {
   /**
    * Update the toolbar if it's required to reflect the tool currently used.
    * @param {Object} options
-   * @param {number} mode
+   * @param {number} options.mode
    * @returns {undefined}
    */
   updateToolbar(options) {

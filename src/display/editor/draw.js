@@ -311,7 +311,9 @@ class DrawingEditor extends AnnotationEditor {
 
   /**
    * Update a property and make this action undoable.
-   * @param {string} color
+   * @param {number} type
+   * @param {string} name
+   * @param {*} value
    */
   _updateProperty(type, name, value) {
     const options = this._drawingOptions;
