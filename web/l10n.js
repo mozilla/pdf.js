@@ -50,7 +50,7 @@ class L10n {
   }
 
   /** @inheritdoc */
-  async get(ids, args = null, fallback) {
+  async get(ids, args = null) {
     if (Array.isArray(ids)) {
       ids = ids.map(id => ({ id }));
       const messages = await this.#l10n.formatMessages(ids);
@@ -63,7 +63,7 @@ class L10n {
         args,
       },
     ]);
-    return messages[0]?.value || fallback;
+    return messages[0]?.value;
   }
 
   /** @inheritdoc */
