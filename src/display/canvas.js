@@ -699,7 +699,7 @@ class CanvasGraphics {
         }
       }
 
-      if (!operationsFilter || operationsFilter(i)) {
+      if (!operationsFilter || operationsFilter(i, operatorList)) {
         fnId = fnArray[i];
         // TODO: There is a `undefined` coming from somewhere.
         fnArgs = argsArray[i] ?? null;
