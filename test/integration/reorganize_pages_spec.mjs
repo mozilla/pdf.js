@@ -3883,4 +3883,81 @@ describe("Reorganize Pages View", () => {
       );
     });
   });
+
+  describe("Rendering a moved page", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`,
+        "page-fit",
+        null,
+        { enableSplitMerge: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must re-render a moved page that was rendered before the move", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // The page that will be moved must have been rendered before the
+          // pages are renumbered, so that its operator list and its image
+          // objects are cached. It may already have been pre-rendered as the
+          // neighbour of the first page, hence don't wait for a `pagerendered`
+          // event but for its rendering state.
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.currentPageNumber = 2;
+          });
+          await page.waitForFunction(
+            () =>
+              // RenderingStates.FINISHED
+              window.PDFViewerApplication.pdfViewer.getPageView(1)
+                .renderingState === 3
+          );
+
+          const handlePagesEdited = await waitForPagesEdited(page, "move");
+          await page.evaluate(() => {
+            const { eventBus, pdfDocument } = window.PDFViewerApplication;
+            const { pagesMapper } = pdfDocument;
+            pagesMapper.movePages(new Set([1]), [1], 2);
+            eventBus.dispatch("pagesedited", {
+              source: null,
+              pagesMapper,
+              type: "move",
+            });
+          });
+          const pagesMapping = await awaitPromise(handlePagesEdited);
+          expect(pagesMapping.slice(0, 3))
+            .withContext(`In ${browserName}`)
+            .toEqual([2, 1, 3]);
+
+          // Zoom and go to the moved page: it must be re-rendered, at the new
+          // scale, with the operator list and the image objects cached before
+          // the move.
+          const prevCanvasWidth = await page.evaluate(() => {
+            const { pdfViewer } = window.PDFViewerApplication;
+            const width = pdfViewer.getPageView(0).canvas.width;
+            pdfViewer.increaseScale({ drawingDelay: 0, scaleFactor: 2 });
+            pdfViewer.currentPageNumber = 1;
+            return width;
+          });
+          await page.waitForFunction(
+            prevWidth => {
+              const view = window.PDFViewerApplication.pdfViewer.getPageView(0);
+              return (
+                // RenderingStates.FINISHED
+                view.renderingState === 3 && view.canvas?.width > prevWidth
+              );
+            },
+            {},
+            prevCanvasWidth
+          );
+        })
+      );
+    });
+  });
 });
