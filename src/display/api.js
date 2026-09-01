@@ -187,6 +187,7 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
  *   context to create elements with and to load resources, such as fonts,
  *   into. Defaults to the current document.
+ *   NOTE: Worker rendering is disabled when this is set to a custom document.
  * @property {boolean} [disableRange] - Disable range request loading of PDF
  *   files. When enabled, and if the server supports partial content requests,
  *   then the PDF will be fetched in chunks. The default value is `false`.
@@ -309,6 +310,12 @@ function getDocument(src = {}) {
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
+  // Parameters only intended for development/testing purposes.
+  const styleElement =
+    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
+      ? src.styleElement
+      : null;
+
   // Parameters whose default values depend on other parameters.
   const useSystemFonts =
     typeof src.useSystemFonts === "boolean"
@@ -329,11 +336,6 @@ function getDocument(src = {}) {
           isValidFetchUrl(wasmUrl, document.baseURI)
         );
 
-  // Parameters only intended for development/testing purposes.
-  const styleElement =
-    typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
-      ? src.styleElement
-      : null;
   const disableWorkerRendering =
     src.disableWorkerRendering === true ||
     !GlobalWorkerOptions.rendererSrc ||
@@ -3663,9 +3665,8 @@ class InternalRenderTask {
     const { viewport, transform, background } = this.params;
 
     // The stepper-driven debug recording path needs `gfx` on the main thread,
-    // so we have to fall back to local rendering when it's enabled; the same
-    // holds for `pageColors`, which needs DOM-based SVG filters. Plain
-    // `recordOperations`/`recordImages` are handled inside the worker.
+    // so we have to fall back to local rendering when it's enabled. Plain
+    // `recordOperations`/`recordImages` are now handled inside the worker.
     let useWorkerRendering =
       this.rendererHandler &&
       !this.params.canvasContext &&
