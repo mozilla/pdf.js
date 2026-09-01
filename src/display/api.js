@@ -1268,6 +1268,7 @@ class PDFDocumentProxy {
 /**
  * @callback OperationsFilter
  * @param {number} index - The index of the operation.
+ * @param {PDFOperatorList} operatorList - The operator list being rendered.
  * @returns {boolean} If false, the operation is ignored.
  */
 

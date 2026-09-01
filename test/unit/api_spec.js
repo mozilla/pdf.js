@@ -53,6 +53,7 @@ import {
   RenderTask,
 } from "../../src/display/api.js";
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
+import { CanvasGraphics } from "../../src/display/canvas.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { Metadata } from "../../src/display/metadata.js";
@@ -5330,6 +5331,56 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(statEntry.end - statEntry.start).toBeGreaterThanOrEqual(0);
 
       await loadingTask.destroy();
+    });
+
+    it("passes the rendered operator list to operationsFilter", async function () {
+      let activeOperatorList = null;
+      const filterCalls = [];
+      const executeOperatorList = CanvasGraphics.prototype.executeOperatorList;
+      spyOn(CanvasGraphics.prototype, "executeOperatorList").and.callFake(
+        function (...args) {
+          const previousOperatorList = activeOperatorList;
+          activeOperatorList = args[0];
+          try {
+            return executeOperatorList.apply(this, args);
+          } finally {
+            activeOperatorList = previousOperatorList;
+          }
+        }
+      );
+
+      const viewport = page.getViewport({ scale: 1 });
+      const { canvasFactory } = pdfDocument;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = page.render({
+        canvas: canvasAndCtx.canvas,
+        viewport,
+        operationsFilter(index, operatorList) {
+          filterCalls.push({ index, operatorList, activeOperatorList });
+          return true;
+        },
+      });
+
+      await renderTask.promise;
+
+      expect(filterCalls.length).toBeGreaterThan(0);
+      for (const {
+        index,
+        operatorList,
+        activeOperatorList: activeList,
+      } of filterCalls) {
+        expect(operatorList).toBe(activeList);
+        expect(index).toBeGreaterThanOrEqual(0);
+        expect(index).toBeLessThan(operatorList.fnArray.length);
+        expect(operatorList.argsArray.length).toEqual(
+          operatorList.fnArray.length
+        );
+      }
+
+      canvasFactory.destroy(canvasAndCtx);
     });
 
     it("gets page stats after rendering page, with `pdfBug` set", async function () {
