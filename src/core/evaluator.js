@@ -388,6 +388,109 @@ class PartialEvaluator {
     return false;
   }
 
+  hasCanvasFilters(resources, nonCanvasFiltersSet) {
+    if (!(resources instanceof Dict)) {
+      return false;
+    }
+    if (resources.objId && nonCanvasFiltersSet.has(resources.objId)) {
+      return false;
+    }
+
+    const processed = new RefSet(nonCanvasFiltersSet);
+    if (resources.objId) {
+      processed.put(resources.objId);
+    }
+    const xref = this.xref;
+    const nodes = [resources];
+    while (nodes.length) {
+      const node = nodes.shift();
+
+      const graphicStates = node.get("ExtGState");
+      if (graphicStates instanceof Dict) {
+        for (let graphicState of graphicStates.getRawValues()) {
+          if (graphicState instanceof Ref) {
+            if (processed.has(graphicState)) {
+              continue;
+            }
+            try {
+              graphicState = xref.fetch(graphicState);
+            } catch (ex) {
+              info(`hasCanvasFilters - failed to fetch ExtGState: "${ex}".`);
+              // A fetch failure means we can't inspect the resource, so fall
+              // back to main-thread rendering rather than misclassify a corrupt
+              // PDF as filter-free.
+              return true;
+            }
+          }
+          if (!(graphicState instanceof Dict)) {
+            continue;
+          }
+          if (graphicState.objId) {
+            processed.put(graphicState.objId);
+          }
+          try {
+            const transferObj = graphicState.has("TR2")
+              ? graphicState.get("TR2")
+              : graphicState.get("TR");
+            if (this._getTransferFunctions(transferObj) !== null) {
+              return true;
+            }
+          } catch (ex) {
+            info(`hasCanvasFilters - failed to inspect filter data: "${ex}".`);
+            return true;
+          }
+        }
+      }
+
+      for (const resourceType of ["XObject", "Pattern"]) {
+        const resourceEntries = node.get(resourceType);
+        if (resourceEntries instanceof Dict) {
+          for (let entry of resourceEntries.getRawValues()) {
+            if (entry instanceof Ref) {
+              if (processed.has(entry)) {
+                continue;
+              }
+              try {
+                entry = xref.fetch(entry);
+              } catch (ex) {
+                info(
+                  `hasCanvasFilters - failed to fetch ${resourceType}: "${ex}".`
+                );
+                return true;
+              }
+            }
+            if (!(entry instanceof BaseStream)) {
+              continue;
+            }
+            if (entry.dict.objId) {
+              processed.put(entry.dict.objId);
+            }
+            const nestedResources = entry.dict.get("Resources");
+            if (!(nestedResources instanceof Dict)) {
+              continue;
+            }
+            if (nestedResources.objId && processed.has(nestedResources.objId)) {
+              continue;
+            }
+
+            nodes.push(nestedResources);
+            if (nestedResources.objId) {
+              processed.put(nestedResources.objId);
+            }
+          }
+        }
+      }
+    }
+
+    // When no canvas filters exist, there's no need to re-fetch/re-parse any
+    // of the processed `Ref`s again for subsequent pages; the early
+    // `return true`s above skip this, since those subtrees weren't inspected.
+    for (const ref of processed) {
+      nonCanvasFiltersSet.put(ref);
+    }
+    return false;
+  }
+
   async fetchBuiltInCMap(name) {
     const cachedData = this.builtInCMapCache.get(name);
     if (cachedData) {
@@ -929,7 +1032,7 @@ class PartialEvaluator {
     );
   }
 
-  handleTransferFunction(tr) {
+  _getTransferFunctions(tr) {
     let transferArray;
     if (Array.isArray(tr)) {
       // If all entries in the array are the same, we can just use one of them.
@@ -940,29 +1043,44 @@ class PartialEvaluator {
     } else {
       return null; // Not a valid transfer function entry.
     }
+    if (!(transferArray.length === 1 || transferArray.length === 4)) {
+      return null; // Only 1 or 4 functions are supported, by the specification.
+    }
 
-    const transferMaps = [];
-    let numFns = 0,
-      numEffectfulFns = 0;
+    const transferFns = [];
+    let numEffectfulFns = 0;
     for (const entry of transferArray) {
       const transferObj = this.xref.fetchIfRef(entry);
-      numFns++;
 
       if (isName(transferObj, "Identity")) {
-        transferMaps.push(null);
+        transferFns.push(null);
         continue;
       } else if (!isPDFFunction(transferObj)) {
         return null; // Not a valid transfer function object.
       }
-      transferMaps.push(this.#createTransferMap(transferObj));
+      transferFns.push(transferObj);
       numEffectfulFns++;
     }
 
-    if (!(numFns === 1 || numFns === 4)) {
-      return null; // Only 1 or 4 functions are supported, by the specification.
-    }
     if (numEffectfulFns === 0) {
       return null; // Only /Identity transfer functions found, which are no-ops.
+    }
+    return transferFns;
+  }
+
+  handleTransferFunction(tr) {
+    const transferFns = this._getTransferFunctions(tr);
+    if (!transferFns) {
+      return null;
+    }
+
+    const transferMaps = [];
+    for (const transferObj of transferFns) {
+      if (!transferObj) {
+        transferMaps.push(null); // An `/Identity` entry.
+        continue;
+      }
+      transferMaps.push(this.#createTransferMap(transferObj));
     }
     return transferMaps;
   }
