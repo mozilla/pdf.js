@@ -13,6 +13,11 @@
  * limitations under the License.
  */
 
+import {
+  CanvasBBoxTracker,
+  CanvasDependencyTracker,
+  CanvasImagesTracker,
+} from "./canvas_dependency_tracker.js";
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
 import { FontLoader } from "./font_loader.js";
@@ -145,6 +150,9 @@ class RendererMessageHandler {
       }
     }
     operatorList.lastChunk = lastChunk;
+    renderTaskState.gfx.dependencyTracker?.growOperationsCount(
+      operatorList.fnArray.length
+    );
   }
 
   // `renderTaskState.gfx` is always non-null here: the main thread awaits the
@@ -270,6 +278,8 @@ class RendererMessageHandler {
         viewport,
         transparency,
         background,
+        recordOperations = false,
+        recordImages = false,
       } = data;
       const canvas = new OffscreenCanvas(width, height);
       const renderTaskState = {
@@ -303,10 +313,24 @@ class RendererMessageHandler {
         const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
         const filterFactory = new WorkerFilterFactory();
         const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
+        let bboxTracker = null;
+        let dependencyTracker = null;
+        let imagesTracker = null;
+        if (recordOperations || recordImages) {
+          bboxTracker = new CanvasBBoxTracker(canvas, 0);
+        }
+        if (recordOperations) {
+          dependencyTracker = new CanvasDependencyTracker(
+            bboxTracker,
+            /* recordDebugMetadata = */ false
+          );
+        }
+        if (recordImages) {
+          imagesTracker = new CanvasImagesTracker(canvas);
+        }
 
-        // Operation recording is not supported yet; `pageColors` requires
-        // DOM-based SVG filters, so pages that need it never render in the
-        // worker.
+        // `pageColors` requires DOM-based SVG filters, so pages that need it
+        // never render in the worker.
         const gfx = new CanvasGraphics(
           ctx,
           this.#commonObjs,
@@ -316,8 +340,8 @@ class RendererMessageHandler {
           { optionalContentConfig },
           annotationCanvases,
           /* pageColors = */ null,
-          /* dependencyTracker = */ null,
-          /* imagesTracker = */ null
+          dependencyTracker ?? bboxTracker,
+          imagesTracker
         );
 
         gfx.beginDrawing({
@@ -362,11 +386,18 @@ class RendererMessageHandler {
       const currentOperatorListIdx =
         await this.#executeOperatorList(renderTaskState);
 
+      let recordedBBoxesBuffer = null;
+      let imageCoordinates = null;
       if (
         renderTaskState.operatorList.lastChunk &&
         currentOperatorListIdx === renderTaskState.operatorList.argsArray.length
       ) {
+        const reader = renderTaskState.gfx.dependencyTracker?.take();
+        recordedBBoxesBuffer = reader?.buffer;
+        const images = renderTaskState.gfx.imagesTracker?.take();
+        imageCoordinates = images || null;
         const aborted = renderTaskState.aborted;
+
         // `endDrawing` applies the final filter, so snapshot after it. The
         // frame is sent before this reply, so the main thread has drawn the
         // canvas by the time the render task reports completion.
@@ -375,7 +406,11 @@ class RendererMessageHandler {
           this.#sendFrame(handler, renderTaskState);
         }
       }
-      return { operatorListIdx: currentOperatorListIdx };
+      return {
+        operatorListIdx: currentOperatorListIdx,
+        recordedBBoxesBuffer,
+        imageCoordinates,
+      };
     });
   }
 
