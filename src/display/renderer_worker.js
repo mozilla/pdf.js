@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
-import { CanvasGraphics } from "./canvas.js";
 import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
@@ -57,10 +57,37 @@ class RendererMessageHandler {
     );
   }
 
+  // Flatten the annotation canvases into `[id, canvasName, bitmap]` tuples so
+  // the main thread can rebuild the map with DOM canvases of its own.
+  static #collectAnnotationBitmaps(renderTaskState, transfers) {
+    const map = renderTaskState.gfx?.annotationCanvasMap;
+    if (!map?.size) {
+      return null;
+    }
+    const tuples = [];
+    for (const [id, value] of map) {
+      for (const canvas of Array.isArray(value) ? value : [value]) {
+        const bitmap = canvas.transferToImageBitmap();
+        tuples.push([id, getAnnotationCanvasName(canvas), bitmap]);
+        transfers.push(bitmap);
+      }
+    }
+    return tuples;
+  }
+
   static #sendFrame(handler, renderTaskState) {
     const { canvas, renderTaskId } = renderTaskState;
     const bitmap = canvas.transferToImageBitmap();
-    handler.send("RenderFrame", { renderTaskId, bitmap }, [bitmap]);
+    const transfers = [bitmap];
+    const annotationBitmaps = this.#collectAnnotationBitmaps(
+      renderTaskState,
+      transfers
+    );
+    handler.send(
+      "RenderFrame",
+      { renderTaskId, bitmap, annotationBitmaps },
+      transfers
+    );
   }
 
   static #cleanupPage(pageProxyId) {
@@ -213,6 +240,7 @@ class RendererMessageHandler {
         pageProxyId,
         renderTaskId,
         enableHWA = false,
+        hasAnnotationCanvasMap = false,
         transform,
         viewport,
         transparency,
@@ -249,10 +277,11 @@ class RendererMessageHandler {
         });
         const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
         const filterFactory = new WorkerFilterFactory();
+        const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
 
-        // Annotation canvases and operation recording are not supported yet;
-        // `pageColors` requires DOM-based SVG filters, so pages that need it
-        // never render in the worker.
+        // Operation recording is not supported yet; `pageColors` requires
+        // DOM-based SVG filters, so pages that need it never render in the
+        // worker.
         const gfx = new CanvasGraphics(
           ctx,
           this.#commonObjs,
@@ -260,7 +289,7 @@ class RendererMessageHandler {
           canvasFactory,
           filterFactory,
           { optionalContentConfig },
-          /* annotationCanvasMap = */ null,
+          annotationCanvases,
           /* pageColors = */ null,
           /* dependencyTracker = */ null,
           /* imagesTracker = */ null
