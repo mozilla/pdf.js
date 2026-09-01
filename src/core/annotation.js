@@ -5696,21 +5696,13 @@ class ScreenAnnotation extends MediaAnnotation {
     // The rendition action may be the activation action (/A) or one of the
     // additional actions (/AA), e.g. page-open.
     const action = dict.get("A");
-    if (
-      action instanceof Dict &&
-      isName(action.get("S"), "Rendition") &&
-      this.#isPlayAction(action)
-    ) {
+    if (this.#isPlayAction(action)) {
       yield action;
     }
     const additionalActions = dict.get("AA");
     if (additionalActions instanceof Dict) {
       for (const [, aa] of additionalActions) {
-        if (
-          aa instanceof Dict &&
-          isName(aa.get("S"), "Rendition") &&
-          this.#isPlayAction(aa)
-        ) {
+        if (this.#isPlayAction(aa)) {
           yield aa;
         }
       }
@@ -5718,6 +5710,9 @@ class ScreenAnnotation extends MediaAnnotation {
   }
 
   static #isPlayAction(action) {
+    if (!(action instanceof Dict) || !isName(action.get("S"), "Rendition")) {
+      return false;
+    }
     // Rendition action /OP (ISO 32000-1, Table 214): PLAY_OR_RESUME and PLAY
     // play; STOP/PAUSE/RESUME don't start playback. When absent, the action is
     // JS-driven (/JS), which we can't run, so assume play.
