@@ -1293,6 +1293,9 @@ class PDFDocumentProxy {
  * @property {boolean} [recordImages] - Record the location of images in the PDF
  * @property {boolean} [recordOperations] - Record the dependencies and bounding
  *   boxes of all PDF operations that render onto the canvas.
+ * @property {boolean} [partialFrames] - Emit partial renderings of the page
+ *   through `RenderTask.onFrame` while it is being drawn. Only has an effect
+ *   when the page is rendered in a renderer worker.
  * @property {OperationsFilter} [operationsFilter] - If provided, only
  *   run for which this function returns `true`.
  */
@@ -1539,6 +1542,7 @@ class PDFPageProxy {
     isEditing = false,
     recordImages = false,
     recordOperations = false,
+    partialFrames = false,
     operationsFilter = null,
   }) {
     this._stats?.time("Overall");
@@ -1665,6 +1669,7 @@ class PDFPageProxy {
         background,
         recordOperations: shouldRecordOperations,
         recordImages: shouldRecordImages,
+        partialFrames,
         recordForDebugger,
       },
       objs: this.objs,
@@ -3434,6 +3439,13 @@ class RenderTask {
    */
   onError = null;
 
+  /**
+   * Callback invoked after a frame from the renderer worker has been drawn
+   * onto the canvas, including the final one.
+   * @type {Function}
+   */
+  onFrame = null;
+
   constructor(internalRenderTask) {
     this._internalRenderTask = internalRenderTask;
 
@@ -3482,6 +3494,13 @@ class RenderTask {
   get imageCoordinates() {
     return this._internalRenderTask.imageCoordinates || null;
   }
+
+  /**
+   * @type {boolean} Whether this render task draws in a renderer worker.
+   */
+  get isWorkerRendering() {
+    return !!this._internalRenderTask.rendererHandler;
+  }
 }
 
 /**
@@ -3516,7 +3535,9 @@ class InternalRenderTask {
       internalTask.#drawFrame(frame);
     } catch (ex) {
       internalTask.cancel(ex);
+      return;
     }
+    internalTask.task.onFrame?.();
   }
 
   constructor({
@@ -3570,6 +3591,7 @@ class InternalRenderTask {
     this._recordOperations = !!params.recordOperations;
     this._recordImages = !!params.recordImages;
     this._recordForDebugger = !!params.recordForDebugger;
+    this._partialFrames = !!params.partialFrames;
     this._operationsFilter = operationsFilter;
     this._rendererWorker = rendererWorker;
     this._renderTaskId = InternalRenderTask.#renderTaskId++;
@@ -3688,6 +3710,7 @@ class InternalRenderTask {
           hasAnnotationCanvasMap: !!this.annotationCanvasMap,
           recordOperations: this._recordOperations,
           recordImages: this._recordImages,
+          partialFrames: this._partialFrames,
           optionalContentConfig: optionalContentConfig.serializable,
           transform,
           viewport,
