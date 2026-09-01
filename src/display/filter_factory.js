@@ -683,6 +683,8 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 }
 
+class WorkerFilterFactory extends BaseFilterFactory {}
+
 /**
  * Blend a foreground color with a background color using the alpha value.
  * @param {number} fg
@@ -698,4 +700,4 @@ function blend(fg, bg, alpha) {
   return Math.round(alpha * fg + (1 - alpha) * bg);
 }
 
-export { BaseFilterFactory, DOMFilterFactory };
+export { BaseFilterFactory, DOMFilterFactory, WorkerFilterFactory };
