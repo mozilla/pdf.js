@@ -28,6 +28,8 @@ import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFObjects } from "./pdf_objects.js";
 import { WorkerFilterFactory } from "./filter_factory.js";
 
+const PARTIAL_FRAME_TIME = 500; // ms
+
 class RendererMessageHandler {
   static #cleanedPages = new Set();
 
@@ -82,19 +84,40 @@ class RendererMessageHandler {
     return tuples;
   }
 
-  static #sendFrame(handler, renderTaskState) {
+  static async #sendFrame(handler, renderTaskState, isFinal) {
     const { canvas, renderTaskId } = renderTaskState;
-    const bitmap = canvas.transferToImageBitmap();
+    // We need to use createImageBitmap for interim frames because
+    // `transferToImageBitmap` would clear the canvas that is still
+    // being drawn into
+    const bitmap = isFinal
+      ? canvas.transferToImageBitmap()
+      : await createImageBitmap(canvas);
     const transfers = [bitmap];
-    const annotationBitmaps = this.#collectAnnotationBitmaps(
-      renderTaskState,
-      transfers
-    );
+    const annotationBitmaps = isFinal
+      ? this.#collectAnnotationBitmaps(renderTaskState, transfers)
+      : null;
     handler.send(
       "RenderFrame",
       { renderTaskId, bitmap, annotationBitmaps },
       transfers
     );
+  }
+
+  // We try sending the interim frame at pauses: at each operator list chunk
+  // and when a chunk is paused mid-way.
+  static async #maybeSendInterimFrame(handler, renderTaskState) {
+    if (!renderTaskState.partialFrames || renderTaskState.aborted) {
+      return;
+    }
+    if (Date.now() - renderTaskState.lastFrameTime < PARTIAL_FRAME_TIME) {
+      return;
+    }
+    if (renderTaskState.operatorListIdx === renderTaskState.lastFrameIdx) {
+      return;
+    }
+    await this.#sendFrame(handler, renderTaskState, /* isFinal = */ false);
+    renderTaskState.lastFrameTime = Date.now();
+    renderTaskState.lastFrameIdx = renderTaskState.operatorListIdx;
   }
 
   // Object ids contain the id of the page they were parsed from
@@ -158,7 +181,7 @@ class RendererMessageHandler {
   // `renderTaskState.gfx` is always non-null here: the main thread awaits the
   // `InitializeGraphics` reply, which assigns it, before sending
   // `ExecuteOperatorList`.
-  static async #executeOperatorList(renderTaskState) {
+  static async #executeOperatorList(handler, renderTaskState) {
     const { operatorList, gfx, operationsFilterMask } = renderTaskState;
     const operationsFilter = operationsFilterMask
       ? i => operationsFilterMask[i]
@@ -179,7 +202,14 @@ class RendererMessageHandler {
       if (renderTaskState.operatorListIdx === operatorList.argsArray.length) {
         return renderTaskState.operatorListIdx;
       }
+      // Flush painted content both before the wait, since it may be a long
+      // stall on a dependency, e.g. a font or an image that has not been
+      // forwarded yet and after it. The lastFrameIdx check in
+      // #maybeSendInterimFrame ensures that at most one frame is sent
+      // when nothing was painted in between.
+      await this.#maybeSendInterimFrame(handler, renderTaskState);
       await promise;
+      await this.#maybeSendInterimFrame(handler, renderTaskState);
     }
     return renderTaskState.operatorListIdx;
   }
@@ -280,12 +310,15 @@ class RendererMessageHandler {
         background,
         recordOperations = false,
         recordImages = false,
+        partialFrames = false,
       } = data;
       const canvas = new OffscreenCanvas(width, height);
       const renderTaskState = {
         pageId,
         renderTaskId,
         canvas,
+        partialFrames,
+        lastFrameTime: Date.now(),
         gfx: null,
         operatorList: {
           fnArray: [],
@@ -294,6 +327,7 @@ class RendererMessageHandler {
           pathCache: null,
         },
         operatorListIdx: 0,
+        lastFrameIdx: 0,
         operationsFilterMask: null,
         continueResolve: null,
         aborted: false,
@@ -383,8 +417,10 @@ class RendererMessageHandler {
         lastChunk
       );
 
-      const currentOperatorListIdx =
-        await this.#executeOperatorList(renderTaskState);
+      const currentOperatorListIdx = await this.#executeOperatorList(
+        handler,
+        renderTaskState
+      );
 
       let recordedBBoxesBuffer = null;
       let imageCoordinates = null;
@@ -403,8 +439,10 @@ class RendererMessageHandler {
         // canvas by the time the render task reports completion.
         this.#cleanupRenderTask(renderTaskId);
         if (!aborted) {
-          this.#sendFrame(handler, renderTaskState);
+          await this.#sendFrame(handler, renderTaskState, /* isFinal = */ true);
         }
+      } else {
+        await this.#maybeSendInterimFrame(handler, renderTaskState);
       }
       return {
         operatorListIdx: currentOperatorListIdx,
