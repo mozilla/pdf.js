@@ -19,6 +19,7 @@ import {
   AnnotationType,
   bytesToString,
   DrawOPS,
+  FeatureTest,
   ImageKind,
   InvalidPDFException,
   isNodeJS,
@@ -5854,6 +5855,83 @@ have written that much by now. So, here’s to squashing bugs.`);
       ).toBeTrue();
 
       canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
+    it("should render with operationsFilter", async function () {
+      const BLACK = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff,
+        WHITE = 0xffffffff;
+
+      const loadingTask = getDocument(buildGetDocumentParams("clippath.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      const { canvasFactory } = pdfDoc;
+
+      // Normal rendering.
+      const canvasAndCtx1 = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask1 = pdfPage.render({
+        canvasContext: canvasAndCtx1.context,
+        viewport,
+      });
+      expect(renderTask1).toBeInstanceOf(RenderTask);
+
+      await renderTask1.promise;
+      const uint32Img1 = new Uint32Array(
+        canvasAndCtx1.context.getImageData(
+          0,
+          0,
+          viewport.width,
+          viewport.height
+        ).data.buffer
+      );
+      // The page should render with a black rectangle on a white background.
+      const numPixels = { black: 0, white: 0, other: 0 };
+      uint32Img1.forEach(p => {
+        switch (p) {
+          case BLACK:
+            numPixels.black++;
+            break;
+          case WHITE:
+            numPixels.white++;
+            break;
+          default:
+            numPixels.other++;
+        }
+      });
+      expect(numPixels).toEqual({ black: 7200, white: 12800, other: 0 });
+      canvasFactory.destroy(canvasAndCtx1);
+
+      // operationsFilter rendering, skipping all path-rendering operators.
+      const canvasAndCtx2 = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask2 = pdfPage.render({
+        canvasContext: canvasAndCtx2.context,
+        viewport,
+        operationsFilter: (i, operatorList) =>
+          operatorList.fnArray[i] !== OPS.constructPath,
+      });
+      expect(renderTask2).toBeInstanceOf(RenderTask);
+
+      await renderTask2.promise;
+      const uint32Img2 = new Uint32Array(
+        canvasAndCtx2.context.getImageData(
+          0,
+          0,
+          viewport.width,
+          viewport.height
+        ).data.buffer
+      );
+      // The page should render completely white.
+      expect(uint32Img2.every(p => p === WHITE)).toBeTrue();
+      canvasFactory.destroy(canvasAndCtx2);
+
       await loadingTask.destroy();
     });
   });
