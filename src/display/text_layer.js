@@ -27,7 +27,7 @@ import {
 import { OutputScale, setLayerDimensions } from "./display_utils.js";
 
 /**
- * @typedef {Object} TextLayerParameters
+ * @typedef {object} TextLayerParameters
  * @property {ReadableStream | TextContent} textContentSource - Text content to
  *   render, i.e. the value returned by the page's `streamTextContent` or
  *   `getTextContent` method.
@@ -40,10 +40,10 @@ import { OutputScale, setLayerDimensions } from "./display_utils.js";
  */
 
 /**
- * @typedef {Object} TextLayerUpdateParameters
+ * @typedef {object} TextLayerUpdateParameters
  * @property {PageViewport} viewport - The target viewport to properly layout
  *   the text runs.
- * @property {function} [onBefore] - Callback invoked before the textLayer is
+ * @property {Function} [onBefore] - Callback invoked before the textLayer is
  *   updated in the DOM.
  */
 

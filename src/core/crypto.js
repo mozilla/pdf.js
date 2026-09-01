@@ -1256,7 +1256,6 @@ class CipherTransformFactory {
 
   /**
    * Set password.
-   *
    * @param {string} password
    *   New password.
    * @returns {undefined}

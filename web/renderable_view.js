@@ -33,7 +33,7 @@ class RenderableView {
   renderTask = null;
 
   /**
-   * @type {function | null}
+   * @type {Function | null}
    */
   resume = null;
 

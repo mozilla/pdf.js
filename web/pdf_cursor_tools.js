@@ -21,7 +21,7 @@ import { GrabToPan } from "./grab_to_pan.js";
 import { internalOpt } from "./internal_evt.js";
 
 /**
- * @typedef {Object} PDFCursorToolsOptions
+ * @typedef {object} PDFCursorToolsOptions
  * @property {HTMLDivElement} container - The document container.
  * @property {EventBus} eventBus - The application event bus.
  * @property {number} [cursorToolOnLoad] - The cursor tool that will be enabled

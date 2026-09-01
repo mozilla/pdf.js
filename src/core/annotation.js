@@ -125,15 +125,14 @@ class AnnotationFactory {
    * Create an `Annotation` object of the correct type for the given reference
    * to an annotation dictionary. This yields a promise that is resolved when
    * the `Annotation` object is constructed.
-   *
    * @param {XRef} xref
-   * @param {Object} ref
-   * @params {Object} annotationGlobals
-   * @param {Object} idFactory
+   * @param {object} ref
+   * @param {object} annotationGlobals
+   * @param {object} idFactory
    * @param {boolean} [collectFields]
-   * @param {Object} [orphanFields]
+   * @param {object} [orphanFields]
    * @param {Array<string>} [collectByType]
-   * @param {Object} [pageRef]
+   * @param {object} [pageRef]
    * @returns {Promise} A promise that is resolved with an {Annotation}
    *   instance.
    */
@@ -888,7 +887,6 @@ class Annotation {
    * Check if the annotation must be displayed by taking into account
    * the value found in the annotationStorage which may have been set
    * through JS.
-   *
    * @public
    * @memberof Annotation
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
@@ -907,7 +905,6 @@ class Annotation {
    * Check if the annotation must be printed by taking into account
    * the value found in the annotationStorage which may have been set
    * through JS.
-   *
    * @public
    * @memberof Annotation
    * @param {AnnotationStorage} [annotationStorage] - Storage for annotation
@@ -975,7 +972,6 @@ class Annotation {
 
   /**
    * Set the title.
-   *
    * @param {string} title - The title of the annotation, used e.g. with
    *   PopupAnnotations.
    */
@@ -985,7 +981,6 @@ class Annotation {
 
   /**
    * Set the contents.
-   *
    * @param {string} contents - Text to display for the annotation or, if the
    *                            type of annotation does not display text, a
    *                            description of the annotation's contents
@@ -996,7 +991,6 @@ class Annotation {
 
   /**
    * Set the modification date.
-   *
    * @public
    * @memberof Annotation
    * @param {string} modificationDate - PDF date string that indicates when the
@@ -1009,7 +1003,6 @@ class Annotation {
 
   /**
    * Set the flags.
-   *
    * @public
    * @memberof Annotation
    * @param {number} flags - Unsigned 32-bit integer specifying annotation
@@ -1033,7 +1026,6 @@ class Annotation {
 
   /**
    * Check if a provided flag is set.
-   *
    * @public
    * @memberof Annotation
    * @param {number} flag - Hexadecimal representation for an annotation
@@ -1047,7 +1039,6 @@ class Annotation {
 
   /**
    * Set the rectangle.
-   *
    * @public
    * @memberof Annotation
    * @param {Array} rectangle - The rectangle array with exactly four entries
@@ -1059,7 +1050,6 @@ class Annotation {
   /**
    * Set the color and take care of color space conversion.
    * The default value is black, in RGB color space.
-   *
    * @public
    * @memberof Annotation
    * @param {Array} color - The color array containing either 0
@@ -1123,7 +1113,6 @@ class Annotation {
   /**
    * Set the color for background and border if any.
    * The default values are transparent.
-   *
    * @public
    * @memberof Annotation
    * @param {Dict} mk - The MK dictionary
@@ -1139,7 +1128,6 @@ class Annotation {
 
   /**
    * Set the border style (as AnnotationBorderStyle object).
-   *
    * @public
    * @memberof Annotation
    * @param {Dict} borderStyle - The border style dictionary
@@ -1193,7 +1181,6 @@ class Annotation {
 
   /**
    * Set the (normal) appearance.
-   *
    * @public
    * @memberof Annotation
    * @param {Dict} dict - The annotation's data dictionary
@@ -1427,10 +1414,9 @@ class Annotation {
    *
    * Field object is defined here:
    * https://www.adobe.com/content/dam/acom/en/devnet/acrobat/pdfs/js_api_reference.pdf#page=16
-   *
    * @public
    * @memberof Annotation
-   * @returns {Object | null}
+   * @returns {object | null}
    */
   getFieldObject() {
     if (this.data.kidIds) {
@@ -1454,7 +1440,6 @@ class Annotation {
    *
    * This involves resetting the various streams that are either cached on the
    * annotation instance or created during its construction.
-   *
    * @public
    * @memberof Annotation
    */
@@ -1475,7 +1460,6 @@ class Annotation {
   /**
    * Construct the (fully qualified) field name from the (partial) field
    * names of the field and its ancestors.
-   *
    * @private
    * @memberof Annotation
    * @param {Dict} dict - Complete widget annotation dictionary
@@ -1577,7 +1561,6 @@ class AnnotationBorderStyle {
 
   /**
    * Set the width.
-   *
    * @public
    * @memberof AnnotationBorderStyle
    * @param {number} width - The width.
@@ -1621,7 +1604,6 @@ class AnnotationBorderStyle {
 
   /**
    * Set the style.
-   *
    * @public
    * @memberof AnnotationBorderStyle
    * @param {Name} style - The annotation style.
@@ -1659,7 +1641,6 @@ class AnnotationBorderStyle {
 
   /**
    * Set the dash array.
-   *
    * @public
    * @memberof AnnotationBorderStyle
    * @param {Array} dashArray - The dash array with at least one element
@@ -1701,7 +1682,6 @@ class AnnotationBorderStyle {
 
   /**
    * Set the horizontal corner radius (from a Border dictionary).
-   *
    * @public
    * @memberof AnnotationBorderStyle
    * @param {number} radius - The horizontal corner radius.
@@ -1714,7 +1694,6 @@ class AnnotationBorderStyle {
 
   /**
    * Set the vertical corner radius (from a Border dictionary).
-   *
    * @public
    * @memberof AnnotationBorderStyle
    * @param {number} radius - The vertical corner radius.
@@ -1799,7 +1778,6 @@ class MarkupAnnotation extends Annotation {
 
   /**
    * Set the creation date.
-   *
    * @public
    * @memberof MarkupAnnotation
    * @param {string} creationDate - PDF date string that indicates when the
@@ -2055,7 +2033,6 @@ class WidgetAnnotation extends Annotation {
 
   /**
    * Decode the given form value.
-   *
    * @private
    * @memberof WidgetAnnotation
    * @param {Array<string>|Name|string} formValue - The (possibly encoded)
@@ -2078,7 +2055,6 @@ class WidgetAnnotation extends Annotation {
 
   /**
    * Check if a provided field flag is set.
-   *
    * @public
    * @memberof WidgetAnnotation
    * @param {number} flag - Hexadecimal representation for an annotation
@@ -5463,8 +5439,7 @@ class MediaAnnotation extends Annotation {
 
   /**
    * Expose a resolved embedded media asset as `data.richMedia`.
-   *
-   * @param {Object} asset
+   * @param {object} asset
    * @param {Ref | null} asset.assetRef
    *   Reference to the file-spec dictionary (or, for an inline file-spec, the
    *   embedded-file stream); used to lazily fetch the bytes on the main thread.
@@ -5476,7 +5451,7 @@ class MediaAnnotation extends Annotation {
    * @param {boolean} [asset.wrapSound]
    *   When set, the embedded bytes are raw PDF sound samples that the catalog
    *   wraps in a WAV container when fetched (see `soundStreamToWav`).
-   * @param {Object} annotationGlobals
+   * @param {object} annotationGlobals
    */
   _setMediaData(
     { assetRef, assetDict, filename, contentType, wrapSound = false },
@@ -5507,7 +5482,6 @@ class MediaAnnotation extends Annotation {
    * extension. Returns `null` when the asset isn't a recognized audio/video
    * type (e.g. Flash `.swf` or 3D models), so we don't build a player that
    * can't play anything.
-   *
    * @param {Dict} assetDict
    * @param {string} filename
    * @param {string | null} [contentType]
@@ -5588,7 +5562,6 @@ class RichMediaAnnotation extends MediaAnnotation {
    * merely enumerates every embedded file; we don't use it as a fallback, since
    * Acrobat itself won't play media that's only reachable that way. Flash
    * instances are skipped, since they can't be played natively.
-   *
    * @returns {{
    *   assetRef: Ref | null,
    *   assetDict: Dict,
@@ -5670,7 +5643,6 @@ class ScreenAnnotation extends MediaAnnotation {
    * Selector renditions (`/SR`) are unwrapped to their first playable media
    * rendition. This mirrors `RichMediaAnnotation`, which also targets the
    * common single embedded-media case.
-   *
    * @returns {{
    *   assetRef: Ref | null,
    *   assetDict: Dict,

@@ -367,10 +367,10 @@ class CommandManager {
   }
 
   /**
-   * @typedef {Object} addOptions
-   * @property {function} cmd
-   * @property {function} undo
-   * @property {function} [post]
+   * @typedef {object} addOptions
+   * @property {Function} cmd
+   * @property {Function} undo
+   * @property {Function} [post]
    * @property {boolean} mustExec
    * @property {number} type
    * @property {boolean} overwriteIfSameType
@@ -611,9 +611,8 @@ class KeyboardManager {
   /**
    * Execute a callback, if any, for a given keyboard event.
    * The self is used as `this` in the callback.
-   * @param {Object} self
+   * @param {object} self
    * @param {KeyboardEvent} event
-   * @returns
    */
   exec(self, event) {
     let shortcuts = this.callbacks.get(event.key);
@@ -1256,7 +1255,7 @@ class AnnotationEditorUIManager {
   /**
    * Delete a comment from an editor with undo support.
    * @param {AnnotationEditor} editor - The editor whose comment to delete.
-   * @param {Object} savedData - The comment data to save for undo.
+   * @param {object} savedData - The comment data to save for undo.
    */
   deleteComment(editor, savedData) {
     const undo = () => {
@@ -1490,7 +1489,7 @@ class AnnotationEditorUIManager {
    * So this function retrieves the data from the storage and removes
    * them from the storage in order to be able to save them later.
    * @param {string} annotationId
-   * @returns {Object|null} The data associated to the annotation or null.
+   * @returns {object | null} The data associated to the annotation or null.
    */
   getAndRemoveDataFromAnnotationStorage(annotationId) {
     if (!this.#annotationStorage) {
@@ -1999,7 +1998,7 @@ class AnnotationEditorUIManager {
   /**
    * Update the different possible states of this manager, e.g. is there
    * something to undo, redo, ...
-   * @param {Object} details
+   * @param {object} details
    */
   #dispatchUpdateStates(details) {
     const hasChanged = Object.entries(details).some(
@@ -2253,7 +2252,7 @@ class AnnotationEditorUIManager {
 
   /**
    * Update the toolbar if it's required to reflect the tool currently used.
-   * @param {Object} options
+   * @param {object} options
    * @param {number} options.mode
    * @returns {undefined}
    */
@@ -2375,7 +2374,7 @@ class AnnotationEditorUIManager {
   /**
    * Get all the editors belonging to a given page.
    * @param {number} pageIndex
-   * @yields {AnnotationEditor}
+   * @yields {AnnotationEditor} An editor on the given page.
    */
   *getEditors(pageIndex) {
     for (const editor of this.#allEditors.values()) {
@@ -2613,7 +2612,7 @@ class AnnotationEditorUIManager {
 
   /**
    * Add a command to execute (cmd) and another one to undo it.
-   * @param {Object} params
+   * @param {object} params
    */
   addCommands(params) {
     this.#commandManager.add(params);
@@ -2927,7 +2926,7 @@ class AnnotationEditorUIManager {
   /**
    * Is the current editor the one passed as argument?
    * @param {AnnotationEditor} editor
-   * @returns
+   * @returns {boolean}
    */
   isActive(editor) {
     return this.#activeEditor === editor;

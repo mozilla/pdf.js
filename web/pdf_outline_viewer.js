@@ -28,7 +28,7 @@ import { internalOpt } from "./internal_evt.js";
 import { SidebarView } from "./ui_utils.js";
 
 /**
- * @typedef {Object} PDFOutlineViewerOptions
+ * @typedef {object} PDFOutlineViewerOptions
  * @property {HTMLDivElement} container - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
  * @property {PDFLinkService} linkService - The navigation/linking service.
@@ -36,7 +36,7 @@ import { SidebarView } from "./ui_utils.js";
  */
 
 /**
- * @typedef {Object} PDFOutlineViewerRenderParameters
+ * @typedef {object} PDFOutlineViewerRenderParameters
  * @property {Array|null} outline - An array of outline objects.
  * @property {PDFDocumentProxy} pdfDocument - A {PDFDocument} instance.
  */

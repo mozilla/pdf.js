@@ -16,7 +16,7 @@
 import { shadow, Util } from "../shared/util.js";
 
 /**
- * @typedef {Object} PageViewportParameters
+ * @typedef {object} PageViewportParameters
  * @property {Array<number>} viewBox - The xMin, yMin, xMax and
  *   yMax coordinates.
  * @property {number} userUnit - The size of units.
@@ -31,7 +31,7 @@ import { shadow, Util } from "../shared/util.js";
  */
 
 /**
- * @typedef {Object} PageViewportCloneParameters
+ * @typedef {object} PageViewportCloneParameters
  * @property {number} [scale] - The scale, overriding the one in the cloned
  *   viewport. The default value is `this.scale`.
  * @property {number} [rotation] - The rotation, in degrees, overriding the one
@@ -49,7 +49,7 @@ import { shadow, Util } from "../shared/util.js";
  */
 class PageViewport {
   /**
-   * @param {PageViewportParameters}
+   * @param {PageViewportParameters} params
    */
   constructor({
     viewBox,
@@ -146,7 +146,7 @@ class PageViewport {
 
   /**
    * The original, un-scaled, viewport dimensions.
-   * @type {Object}
+   * @type {object}
    */
   get rawDims() {
     const dims = this.viewBox;

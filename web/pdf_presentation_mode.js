@@ -38,7 +38,7 @@ const SWIPE_MIN_DISTANCE_THRESHOLD = 50;
 const SWIPE_ANGLE_THRESHOLD = Math.PI / 6;
 
 /**
- * @typedef {Object} PDFPresentationModeOptions
+ * @typedef {object} PDFPresentationModeOptions
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {PDFViewer} pdfViewer - The document viewer.
  * @property {EventBus} eventBus - The application event bus.

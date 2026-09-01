@@ -155,7 +155,6 @@ class BasePdfManager {
 
   /**
    * Set password.
-   *
    * @param {string} password
    *   New password.
    * @returns {undefined}

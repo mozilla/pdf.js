@@ -496,7 +496,7 @@ class Rasterize {
 }
 
 /**
- * @typedef {Object} DriverOptions
+ * @typedef {object} DriverOptions
  * @property {HTMLSpanElement} inflight - Field displaying the number of
  *   inflight requests.
  * @property {HTMLInputElement} disableScrolling - Checkbox to disable
@@ -643,7 +643,6 @@ class Driver {
    * A debugging tool to log to the terminal while tests are running.
    * XXX: This isn't currently referenced, but it's useful for debugging so
    * do not remove it.
-   *
    * @param {string} msg - The message to log, it will be prepended with the
    *    current PDF ID if there is one.
    */

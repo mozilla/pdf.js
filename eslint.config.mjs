@@ -2,6 +2,7 @@ import globals from "globals";
 
 import import_ from "eslint-plugin-import-x";
 import jasmine from "eslint-plugin-jasmine";
+import jsdoc from "eslint-plugin-jsdoc";
 import json from "@eslint/json";
 import noUnsanitized from "eslint-plugin-no-unsanitized";
 import perfectionist from "eslint-plugin-perfectionist";
@@ -407,6 +408,61 @@ export default [
     files: jsFiles("src"),
     rules: {
       "no-console": "error",
+    },
+  },
+
+  /* ======================================================================== *\
+                                   JSDoc
+  \* ======================================================================== */
+
+  {
+    files: jsFiles("."),
+
+    plugins: { jsdoc },
+
+    settings: {
+      jsdoc: {
+        tagNamePreference: { return: "returns" },
+      },
+    },
+
+    rules: {
+      "jsdoc/check-access": "error",
+      "jsdoc/check-alignment": "error",
+      "jsdoc/check-param-names": "error",
+      "jsdoc/check-property-names": "error",
+      // `@licstart`/`@licend` are GNU LibreJS tags, used in the license header.
+      "jsdoc/check-tag-names": [
+        "error",
+        { definedTags: ["licend", "licstart"] },
+      ],
+      "jsdoc/check-template-names": "error",
+      "jsdoc/check-types": "error",
+      "jsdoc/check-values": "error",
+      "jsdoc/empty-tags": "error",
+      "jsdoc/escape-inline-tags": "error",
+      "jsdoc/implements-on-classes": "error",
+      "jsdoc/multiline-blocks": "error",
+      "jsdoc/no-bad-blocks": "error",
+      "jsdoc/no-blank-block-descriptions": "error",
+      "jsdoc/no-blank-blocks": "error",
+      "jsdoc/no-multi-asterisks": "error",
+      "jsdoc/normalize-see-links": "error",
+      "jsdoc/require-asterisk-prefix": "error",
+      "jsdoc/require-param-name": "error",
+      "jsdoc/require-param-type": "error",
+      "jsdoc/require-property": "error",
+      "jsdoc/require-property-name": "error",
+      "jsdoc/require-property-type": "error",
+      "jsdoc/require-returns-check": "error",
+      "jsdoc/require-returns-type": "error",
+      "jsdoc/require-throws-description": "error",
+      "jsdoc/require-throws-type": "error",
+      "jsdoc/require-yields-check": "error",
+      "jsdoc/require-yields-description": "error",
+      "jsdoc/require-yields-type": "error",
+      "jsdoc/tag-lines": "error",
+      "jsdoc/valid-types": "error",
     },
   },
 

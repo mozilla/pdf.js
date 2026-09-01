@@ -31,7 +31,7 @@ import { MathClamp } from "../../shared/math_clamp.js";
 import { TouchManager } from "../touch_manager.js";
 
 /**
- * @typedef {Object} AnnotationEditorParameters
+ * @typedef {object} AnnotationEditorParameters
  * @property {AnnotationEditorUIManager} uiManager - the global manager
  * @property {AnnotationEditorLayer} parent - the layer containing this editor
  * @property {string} id - editor id
@@ -241,7 +241,7 @@ class AnnotationEditor {
 
   /**
    * Initialize the l10n stuff for this type of editor.
-   * @param {Object} l10n
+   * @param {object} l10n
    */
   static initialize(l10n, _uiManager) {
     AnnotationEditor._l10n ??= l10n;
@@ -361,7 +361,7 @@ class AnnotationEditor {
 
   /**
    * Add some commands into the CommandManager (undo/redo stuff).
-   * @param {Object} params
+   * @param {object} params
    */
   addCommands(params) {
     this._uiManager.addCommands(params);
@@ -1828,7 +1828,7 @@ class AnnotationEditor {
 
   /**
    * Rotate the editor when the page is rotated.
-   * @param {number} angle
+   * @param {number} _angle
    */
   rotate(_angle) {}
 
@@ -1839,7 +1839,7 @@ class AnnotationEditor {
 
   /**
    * Serialize the editor when it has been deleted.
-   * @returns {Object}
+   * @returns {object}
    */
   serializeDeleted() {
     return {
@@ -1857,8 +1857,8 @@ class AnnotationEditor {
    *
    * To implement in subclasses.
    * @param {boolean} [isForCopying]
-   * @param {Object | null} [context]
-   * @returns {Object | null}
+   * @param {object | null} [context]
+   * @returns {object | null}
    */
   serialize(isForCopying = false, context = null) {
     return {
@@ -1874,8 +1874,7 @@ class AnnotationEditor {
   /**
    * Deserialize the editor.
    * The result of the deserialization is a new editor.
-   *
-   * @param {Object} data
+   * @param {object} data
    * @param {AnnotationEditorLayer} parent
    * @param {AnnotationEditorUIManager} uiManager
    * @returns {Promise<AnnotationEditor | null>}
@@ -2329,7 +2328,7 @@ class AnnotationEditor {
 
   /**
    * Get the data to report to the telemetry when the editor is added.
-   * @returns {Object}
+   * @returns {object}
    */
   get telemetryInitialData() {
     return { action: "added" };
@@ -2337,7 +2336,7 @@ class AnnotationEditor {
 
   /**
    * The telemetry data to use when saving/printing.
-   * @returns {Object|null}
+   * @returns {object | null}
    */
   get telemetryFinalData() {
     return null;
@@ -2414,7 +2413,7 @@ class AnnotationEditor {
 
   /**
    * Render an annotation in the annotation layer.
-   * @param {Object} annotation
+   * @param {object} annotation
    * @returns {HTMLElement|null}
    */
   renderAnnotationElement(annotation) {

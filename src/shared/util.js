@@ -441,11 +441,10 @@ function _isValidProtocol(url) {
 
 /**
  * Attempts to create a valid absolute URL.
- *
  * @param {URL|string} url - An absolute, or relative, URL.
  * @param {URL|string} [baseUrl] - An absolute URL.
- * @param {Object} [options]
- * @returns Either a valid {URL}, or `null` otherwise.
+ * @param {object} [options]
+ * @returns {URL | null} Either a valid {@link URL}, or `null` otherwise.
  */
 function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
   if (!url) {
@@ -477,7 +476,6 @@ function createValidAbsoluteUrl(url, baseUrl = null, options = null) {
 
 /**
  * Remove, or replace, the hash property of the URL.
- *
  * @param {URL|string} url - The absolute, or relative, URL.
  * @param {string} hash - The hash property (use an empty string to remove it).
  * @param {boolean} [allowRel] - Allow relative URLs.

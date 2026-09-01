@@ -1024,7 +1024,7 @@ class StructTreePage {
   /**
    * Convert the tree structure into a simplified object literal that can
    * be sent to the main thread.
-   * @returns {Object}
+   * @returns {object}
    */
   get serializable() {
     function nodeToSerializable(node, parent, level = 0) {

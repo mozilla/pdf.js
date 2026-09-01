@@ -153,11 +153,10 @@ class WebGPU {
    * GPU-resident; `ctx2d.drawImage(bitmap)` is a zero-copy GPU-to-GPU blit.
    *
    * The GPU device must already be initialized (`this.isReady === true`).
-   *
    * @param {Float32Array} posData  flat vertex positions (x,y per vertex)
    * @param {Uint8Array}   colData  flat vertex colors (r,g,b,_ per vertex)
    * @param {number}       vertexCount
-   * @param {Object} context offsetX/offsetY/scaleX/scaleY
+   * @param {object} context offsetX/offsetY/scaleX/scaleY
    * @param {Uint8Array|null} backgroundColor  [r,g,b] or null for transparent
    * @param {number} paddedWidth  render-target width
    * @param {number} paddedHeight render-target height

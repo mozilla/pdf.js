@@ -181,9 +181,9 @@ class MathMLSanitizer {
 const HEADING_PATTERN = /^H(\d+)$/;
 
 /**
- * @typedef {Object} StructTreeLayerBuilderOptions
+ * @typedef {object} StructTreeLayerBuilderOptions
  * @property {PDFPageProxy} pdfPage
- * @property {Object} rawDims
+ * @property {object} rawDims
  */
 
 class StructTreeLayerBuilder {
@@ -216,7 +216,8 @@ class StructTreeLayerBuilder {
   #elementsToStealFromTextLayer = null;
 
   /**
-   * @param {StructTreeLayerBuilderOptions} options
+   * @param {PDFPageProxy} pdfPage
+   * @param {object} rawDims
    */
   constructor(pdfPage, rawDims) {
     this.#promise = pdfPage.getStructTree();
@@ -251,7 +252,7 @@ class StructTreeLayerBuilder {
 
   /**
    * @param {string} annotationId
-   * @param {Object} [options]
+   * @param {object} [options]
    * @param {boolean} [options.enableLinkOwnership]
    * @returns {Promise<Map<string, string>|null|undefined>}
    */

@@ -770,7 +770,7 @@ class PDFEditor {
   }
 
   /**
-   * @typedef {Object} PageInfo
+   * @typedef {object} PageInfo
    * @property {PDFDocument} [document]
    * @property {ImageBitmap} [image]
    *  image to insert as a synthetic page.
@@ -965,7 +965,7 @@ class PDFEditor {
   /**
    * Extract pages from the given documents.
    * @param {Array<PageInfo>} pageInfos
-   * @param {Object} annotationStorage - The annotation storage containing the
+   * @param {object} annotationStorage - The annotation storage containing the
    *  annotations to be merged into the new document.
    * @param {PDFDocument} primaryDocument - The document the annotation storage
    *  belongs to.
@@ -973,7 +973,7 @@ class PDFEditor {
    *  the annotations.
    * @param {WorkerTask} task - The worker task to use for reporting progress
    *  and cancellation.
-   * @return {Promise<void>}
+   * @returns {Promise<void>}
    */
   async extractPages(
     pageInfos,
@@ -1157,7 +1157,7 @@ class PDFEditor {
   /**
    * Collect the document data.
    * @param {DocumentData} documentData
-   * @return {Promise<void>}
+   * @returns {Promise<void>}
    */
   async #collectDocumentData(documentData) {
     const {
@@ -1780,7 +1780,7 @@ class PDFEditor {
 
   /**
    * Check whether an outline item has a valid destination in the output doc.
-   * @param {Object} item
+   * @param {object} item
    * @param {DocumentData} documentData
    * @returns {boolean}
    */
@@ -1857,7 +1857,7 @@ class PDFEditor {
   /**
    * Write the destination or action of an outline item into the given dict.
    * @param {Dict} itemDict
-   * @param {Object} item
+   * @param {object} item
    * @returns {Promise<void>}
    */
   async #setOutlineItemDest(itemDict, item) {

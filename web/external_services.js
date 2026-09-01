@@ -62,8 +62,7 @@ class BaseExternalServices {
    * an object exposing `verify(signature)` (and optionally
    * `viewCertificate(certificate)`) that resolves to a
    * `VerificationResult` — see `web/firefoxcom.js` for the exact shape.
-   *
-   * @returns {Object|null}
+   * @returns {object | null}
    */
   createSignatureVerifier() {
     return null;

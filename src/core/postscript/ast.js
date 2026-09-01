@@ -250,7 +250,6 @@ class Parser {
    *                 | operator          (any PS_OPERATOR except if / ifelse)
    *                 | '{' block '}' 'if'
    *                 | '{' block '}' '{' block '}' 'ifelse'
-   *
    * @returns {PsProgram}
    */
   parse() {
@@ -327,7 +326,6 @@ class Parser {
 /**
  * Convenience function: tokenize and parse a PostScript Type 4 function body
  * given as a plain string (already decoded from the PDF stream).
- *
  * @param {string} source
  * @returns {PsProgram}
  */

@@ -63,7 +63,7 @@ const defaultOptions = new Map([
   [
     "allowedGlobalEvents",
     {
-      /** @type {Object} */
+      /** @type {object} */
       value: null,
       kind: OptionKind.BROWSER,
     },
@@ -87,7 +87,7 @@ const defaultOptions = new Map([
   [
     "localeProperties",
     {
-      /** @type {Object} */
+      /** @type {object} */
       value:
         typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
           ? { lang: navigator.language || "en-US" }
@@ -916,7 +916,7 @@ const defaultOptions = new Map([
   [
     "workerPort",
     {
-      /** @type {Object} */
+      /** @type {object} */
       value:
         typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
           ? globalThis.pdfjsPreloadedWorker || null

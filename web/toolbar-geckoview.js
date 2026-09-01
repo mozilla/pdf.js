@@ -14,7 +14,7 @@
  */
 
 /**
- * @typedef {Object} ToolbarOptions
+ * @typedef {object} ToolbarOptions
  * @property {HTMLDivElement} mainContainer - Main container.
  * @property {HTMLDivElement} container - Container for the toolbar.
  * @property {HTMLButtonElement} download - Button to download the document.
@@ -28,7 +28,7 @@ class Toolbar {
   /**
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
-   * @param {Object} nimbusData - Nimbus configuration.
+   * @param {object} nimbusData - Nimbus configuration.
    */
   constructor(options, eventBus, nimbusData) {
     this.#eventBus = eventBus;

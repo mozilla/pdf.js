@@ -29,13 +29,13 @@ const POSITION_UPDATED_THRESHOLD = 50;
 const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
 
 /**
- * @typedef {Object} PDFHistoryOptions
+ * @typedef {object} PDFHistoryOptions
  * @property {PDFLinkService} linkService - The navigation/linking service.
  * @property {EventBus} eventBus - The application event bus.
  */
 
 /**
- * @typedef {Object} InitializeParameters
+ * @typedef {object} InitializeParameters
  * @property {string} fingerprint - The PDF document's unique fingerprint.
  * @property {boolean} [resetHistory] - Reset the browsing history.
  * @property {boolean} [updateUrl] - Attempt to update the document URL, with
@@ -43,7 +43,7 @@ const UPDATE_VIEWAREA_TIMEOUT = 1000; // milliseconds
  */
 
 /**
- * @typedef {Object} PushParameters
+ * @typedef {object} PushParameters
  * @property {string} [namedDest] - The named destination. If absent, a
  *   stringified version of `explicitDest` is used.
  * @property {Array} explicitDest - The explicit destination array.
@@ -188,7 +188,7 @@ class PDFHistory {
 
   /**
    * Push an internal destination to the browser history.
-   * @param {PushParameters}
+   * @param {PushParameters} params
    */
   push({ namedDest = null, explicitDest, pageNumber }) {
     if (!this._initialized) {

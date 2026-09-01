@@ -170,7 +170,6 @@ describe("Text layer", () => {
 
     /**
      * Pick a point outside the page while remaining inside the viewer.
-     *
      * @param {Rect} page
      *   Page rectangle.
      * @param {Rect} viewer
@@ -223,7 +222,6 @@ describe("Text layer", () => {
 
     /**
      * Get current selection.
-     *
      * @param {Page} page
      * @returns {Promise<string>}
      */
@@ -235,7 +233,6 @@ describe("Text layer", () => {
 
     /**
      * Check if the draw layer contains a non-empty selection.
-     *
      * @param {Page} page
      * @returns {Promise<boolean>}
      */
@@ -255,7 +252,6 @@ describe("Text layer", () => {
 
     /**
      * Get the first non-empty text span on a page.
-     *
      * @param {Page} page
      * @param {number} pageNumber
      * @returns {Promise<SpanInfo | null>}
@@ -281,7 +277,6 @@ describe("Text layer", () => {
 
     /**
      * Get the last non-empty text span on a page.
-     *
      * @param {Page} page
      * @param {number} pageNumber
      * @returns {Promise<SpanInfo | null>}
@@ -1363,7 +1358,6 @@ describe("Text layer", () => {
       /**
        * Return the set of page numbers that have a non-empty selection
        * overlay path in their draw layer.
-       *
        * @param {Page} page
        * @returns {Promise<Array<number>>}
        */

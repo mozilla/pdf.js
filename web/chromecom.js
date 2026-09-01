@@ -63,7 +63,6 @@ const ChromeCom = {
   /**
    * Creates an event that the extension is listening for and will
    * asynchronously respond by calling the callback.
-   *
    * @param {string} action - The action to trigger.
    * @param {string} [data] - The data to send.
    * @param {Function} [callback] - Response callback that will be called with
@@ -87,7 +86,6 @@ const ChromeCom = {
 
   /**
    * Resolves a PDF file path and attempts to detects length.
-   *
    * @param {string} file - Absolute URL of PDF file.
    * @param {Function} callback - A callback with resolved URL and file length.
    */

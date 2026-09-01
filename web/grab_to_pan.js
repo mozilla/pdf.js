@@ -20,7 +20,7 @@ import { stopEvent } from "pdfjs-lib";
 const CSS_CLASS_GRAB = "grab-to-pan-grab";
 
 /**
- * @typedef {Object} GrabToPanOptions
+ * @typedef {object} GrabToPanOptions
  * @property {HTMLElement} element
  */
 
@@ -76,7 +76,6 @@ class GrabToPan {
   /**
    * Whether to not pan if the target element is clicked.
    * Override this method to change the default behaviour.
-   *
    * @param {Element} node - The target of the event.
    * @returns {boolean} Whether to not react to the click event.
    */

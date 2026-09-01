@@ -89,7 +89,6 @@ class BaseTreeViewer {
 
   /**
    * Collapse or expand the subtree of a tree item.
-   *
    * @param {Element} root - the root of the item (sub)tree.
    * @param {boolean} show - whether to show the item (sub)tree. If false,
    *   the item subtree rooted at `root` will be collapsed.

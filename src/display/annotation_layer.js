@@ -63,8 +63,8 @@ const GetElementsByNameSet = new WeakSet();
 const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
 
 /**
- * @typedef {Object} AnnotationElementParameters
- * @property {Object} data
+ * @typedef {object} AnnotationElementParameters
+ * @property {object} data
  * @property {HTMLDivElement} layer
  * @property {PDFLinkService} linkService
  * @property {BaseDownloadManager} [downloadManager]
@@ -72,7 +72,7 @@ const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
- * @property {Object} svgFactory
+ * @property {object} svgFactory
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
  * @property {Map} [fieldObjects]
@@ -391,7 +391,6 @@ class AnnotationElement {
 
   /**
    * Create an empty container for the annotation's HTML element.
-   *
    * @private
    * @param {boolean} ignoreBorder
    * @memberof AnnotationElement
@@ -641,7 +640,6 @@ class AnnotationElement {
 
   /**
    * Create quadrilaterals from the annotation's quadpoints.
-   *
    * @private
    * @memberof AnnotationElement
    */
@@ -739,9 +737,7 @@ class AnnotationElement {
    * Create a popup for the annotation's HTML element. This is used for
    * annotations that do not have a Popup entry in the dictionary, but
    * are of a type that works with popups (such as Highlight annotations).
-   *
-   * @param {Object} [popupData] - The data for the popup, if any.
-   *
+   * @param {object} [popupData] - The data for the popup, if any.
    * @private
    * @memberof AnnotationElement
    */
@@ -787,7 +783,6 @@ class AnnotationElement {
 
   /**
    * Render the annotation's HTML element(s).
-   *
    * @public
    * @memberof AnnotationElement
    */
@@ -856,7 +851,6 @@ class AnnotationElement {
 
   /**
    * Get the HTML element(s) which can trigger a popup when clicked or hovered.
-   *
    * @public
    * @memberof AnnotationElement
    * @returns {Array<HTMLElement>|HTMLElement} An array of elements or an
@@ -1046,10 +1040,9 @@ class LinkAnnotationElement extends AnnotationElement {
 
   /**
    * Bind internal links to the link element.
-   *
    * @private
-   * @param {Object} link
-   * @param {Object} destination
+   * @param {object} link
+   * @param {object} destination
    * @param {string} [overlaidText]
    * @memberof LinkAnnotationElement
    */
@@ -1071,10 +1064,9 @@ class LinkAnnotationElement extends AnnotationElement {
 
   /**
    * Bind named actions to the link element.
-   *
    * @private
-   * @param {Object} link
-   * @param {Object} action
+   * @param {object} link
+   * @param {object} action
    * @param {string} [overlaidText]
    * @memberof LinkAnnotationElement
    */
@@ -1092,7 +1084,7 @@ class LinkAnnotationElement extends AnnotationElement {
 
   /**
    * Bind attachments to the link element.
-   * @param {Object} link
+   * @param {object} link
    * @param {string} attachmentId
    * @param {CatalogAttachment} attachment
    * @param {string} [overlaidText]
@@ -1134,8 +1126,8 @@ class LinkAnnotationElement extends AnnotationElement {
 
   /**
    * Bind SetOCGState actions to the link element.
-   * @param {Object} link
-   * @param {Object} action
+   * @param {object} link
+   * @param {object} action
    * @param {string} [overlaidText]
    */
   #bindSetOCGState(link, action, overlaidText = "") {
@@ -1152,10 +1144,12 @@ class LinkAnnotationElement extends AnnotationElement {
 
   /**
    * Bind JS actions to the link element.
-   *
    * @private
-   * @param {Object} link
-   * @param {Object} data
+   * @param {object} link
+   * @param {object} data
+   * @param {Map<string, Array<string>>} data.actions
+   * @param {string} data.id
+   * @param {string} [data.overlaidText]
    * @memberof LinkAnnotationElement
    */
   _bindJSAction(link, { actions, id, overlaidText }) {
@@ -1402,7 +1396,6 @@ class WidgetAnnotationElement extends AnnotationElement {
 
   /**
    * Apply text styles to the text in the element.
-   *
    * @private
    * @param {HTMLDivElement} element
    * @memberof TextWidgetAnnotationElement
@@ -3939,7 +3932,7 @@ class MediaAnnotationElement extends AnnotationElement {
 }
 
 /**
- * @typedef {Object} AnnotationLayerParameters
+ * @typedef {object} AnnotationLayerParameters
  * @property {PageViewport} viewport
  * @property {HTMLDivElement} div
  * @property {Array} annotations
@@ -3953,7 +3946,7 @@ class MediaAnnotationElement extends AnnotationElement {
  * @property {boolean} [enableScripting] - Enable embedded script execution.
  * @property {boolean} [hasJSActions] - Some fields have JS actions.
  *   The default value is `false`.
- * @property {Map<string, Array<Object>> | null} [fieldObjects]
+ * @property {Map<string, Array<object>> | null} [fieldObjects]
  * @property {Map<string, HTMLCanvasElement>} [annotationCanvasMap]
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {AnnotationEditorUIManager} [annotationEditorUIManager]
@@ -4025,7 +4018,6 @@ class AnnotationLayer {
 
   /**
    * Render a new annotation layer with all annotation elements.
-   *
    * @param {AnnotationLayerParameters} params
    * @memberof AnnotationLayer
    */
@@ -4235,8 +4227,7 @@ class AnnotationLayer {
 
   /**
    * Add link annotations to the annotation layer.
-   *
-   * @param {Array<Object>} annotations
+   * @param {Array<object>} annotations
    */
   async addLinkAnnotations(annotations) {
     const elementParams = {
@@ -4264,7 +4255,6 @@ class AnnotationLayer {
 
   /**
    * Update the annotation elements on existing annotation layer.
-   *
    * @param {AnnotationLayerParameters} viewport
    * @memberof AnnotationLayer
    */

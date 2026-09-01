@@ -316,7 +316,7 @@ class Comment {
 
   /**
    * Restore the comment data (used for undo).
-   * @param {Object} data - The comment data to restore.
+   * @param {object} data - The comment data to restore.
    * @param {string} data.text - The comment text.
    * @param {string|null} data.richText - The rich text content.
    * @param {Date|null} data.date - The original date.

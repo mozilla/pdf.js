@@ -64,7 +64,6 @@ class BasePDFStream {
    *
    * NOTE: Currently this method is only expected to be invoked *after*
    * the `BasePDFStreamReader.prototype.headersReady` promise has resolved.
-   *
    * @param {number} begin - the start offset of the data.
    * @param {number} end - the end offset of the data.
    * @returns {BasePDFStreamRangeReader}
@@ -80,7 +79,7 @@ class BasePDFStream {
 
   /**
    * Cancels all opened reader and closes all their opened requests.
-   * @param {Object} reason - the reason for cancelling
+   * @param {object} reason - the reason for cancelling
    */
   cancelAllRequests(reason) {
     this._fullReader?.cancel(reason);
@@ -193,7 +192,7 @@ class BasePDFStreamReader {
 
   /**
    * Cancels all pending read requests and closes the stream.
-   * @param {Object} reason
+   * @param {object} reason
    */
   cancel(reason) {
     unreachable("Abstract method `cancel` called");
@@ -230,7 +229,7 @@ class BasePDFStreamRangeReader {
 
   /**
    * Cancels all pending read requests and closes the stream.
-   * @param {Object} reason
+   * @param {object} reason
    */
   cancel(reason) {
     unreachable("Abstract method `cancel` called");

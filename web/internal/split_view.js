@@ -17,7 +17,6 @@ import { MathClamp } from "pdfjs-lib";
 
 /**
  * Wraps two elements with a drag-to-resize handle between them.
- *
  * @param {HTMLElement} firstEl
  * @param {HTMLElement} secondEl
  * @param {object} [options]

@@ -221,7 +221,7 @@ class MessageHandler {
    * Expect that the other side will callback to signal 'start_complete'.
    * @param {string} actionName - Action to call.
    * @param {JSON} data - JSON data to send.
-   * @param {Object} queueingStrategy - Strategy to signal backpressure based on
+   * @param {object} queueingStrategy - Strategy to signal backpressure based on
    *                 internal queue.
    * @param {Array} [transfers] - List of transfers/ArrayBuffers.
    * @returns {ReadableStream} ReadableStream to read data in chunks.

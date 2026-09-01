@@ -623,13 +623,22 @@ function getFamilyName(str) {
 
 /**
  * Generate font description.
- * @param {Object} param0, font substitution description.
- * @param {Array<String>} src, contains src values (local(...) or url(...)).
- * @param {String} localFontPath, path to local fonts.
- * @param {boolean} useFallback, whether to use fallback font.
- * @param {boolean} usePath, whether to use path to font.
- * @param {String} append, style (Bold, Italic, ...) to append to font name.
- * @return {Object} { style, ultimate }.
+ * @param {object} substitution - Font substitution description.
+ * @param {string} [substitution.alias] - Key of another substitution to
+ *   inherit the src values from.
+ * @param {Array<string>} [substitution.local] - Local font names.
+ * @param {string} [substitution.path] - Font file name, relative to
+ *   `localFontPath`.
+ * @param {string} [substitution.fallback] - Key of the substitution to take
+ *   the ultimate font from.
+ * @param {object} [substitution.style] - CSS `font-style` and `font-weight`.
+ * @param {string} [substitution.ultimate] - Ultimate (generic) font family.
+ * @param {Array<string>} src - Contains src values (local(...) or url(...)).
+ * @param {string} localFontPath - Path to local fonts.
+ * @param {boolean} useFallback - Whether to use fallback font.
+ * @param {boolean} usePath - Whether to use path to font.
+ * @param {string} append - Style (Bold, Italic, ...) to append to font name.
+ * @returns {object} The resolved `style` and `ultimate` values.
  */
 function generateFont(
   { alias, local, path, fallback, style, ultimate },
@@ -691,9 +700,9 @@ function generateFont(
 
 /**
  * Get a font substitution for a given font.
- * The general idea is to have enough information to create a CSS rule like
- * this:
- *   @font-face {
+ * The general idea is to have enough information to create a CSS `@font-face`
+ * rule like this:
+ *   {
  *    font-family: 'Times';
  *    src: local('Times New Roman'), local('Subst1'), local('Subst2'),
  *         url(.../TimesNewRoman.ttf)
@@ -701,15 +710,15 @@ function generateFont(
  *    font-style: normal;
  *   }
  * or use the FontFace API.
- *
  * @param {Map} systemFontCache The cache of local fonts.
- * @param {Object} idFactory The ids factory.
- * @param {String} localFontPath Path to the fonts directory.
- * @param {String} baseFontName The font name to be substituted.
- * @param {String|undefined} standardFontName The standard font name to use
+ * @param {object} idFactory The ids factory.
+ * @param {string} localFontPath Path to the fonts directory.
+ * @param {string} baseFontName The font name to be substituted.
+ * @param {string | undefined} standardFontName The standard font name to use
  *   if the base font is not available.
- * @param {String} type The font type.
- * @returns an Object with the CSS, the loaded name, the src and the style.
+ * @param {string} type The font type.
+ * @returns {object | null} An object with the CSS, the loaded name, the src
+ *   and the style, or `null` when no substitution can be made.
  */
 function getFontSubstitution(
   systemFontCache,

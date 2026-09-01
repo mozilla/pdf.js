@@ -24,7 +24,7 @@ import {
 import { internalOpt } from "./internal_evt.js";
 
 /**
- * @typedef {Object} AnnotationEditorParamsOptions
+ * @typedef {object} AnnotationEditorParamsOptions
  * @property {HTMLInputElement} editorFreeTextFontSize
  * @property {HTMLInputElement} editorFreeTextColor
  * @property {HTMLInputElement} editorInkColor

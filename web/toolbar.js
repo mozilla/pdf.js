@@ -26,7 +26,7 @@ import {
 import { internalOpt } from "./internal_evt.js";
 
 /**
- * @typedef {Object} ToolbarOptions
+ * @typedef {object} ToolbarOptions
  * @property {HTMLDivElement} container - Container for the secondary toolbar.
  * @property {HTMLSpanElement} numPages - Label that contains number of pages.
  * @property {HTMLInputElement} pageNumber - Control for display and user input

@@ -217,10 +217,10 @@ class XFAObject {
   }
 
   /**
-     Return true if this node (typically a container)
-     can provide more width during layout.
-     The goal is to help to know what a descendant must
-     do in case of horizontal overflow.
+   * Return true if this node (typically a container)
+   * can provide more width during layout.
+   * The goal is to help to know what a descendant must
+   * do in case of horizontal overflow.
    */
   [$isThereMoreWidth]() {
     return false;
