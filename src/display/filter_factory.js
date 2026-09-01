@@ -95,6 +95,8 @@ class BaseFilterFactory {
   destroy(keepHCM = false) {}
 }
 
+class WorkerFilterFactory extends BaseFilterFactory {}
+
 /**
  * FilterFactory aims to create some SVG filters we can use when drawing an
  * image (or whatever) on a canvas.
@@ -717,4 +719,4 @@ function blend(fg, bg, alpha) {
   return Math.round(alpha * fg + (1 - alpha) * bg);
 }
 
-export { BaseFilterFactory, DOMFilterFactory };
+export { BaseFilterFactory, DOMFilterFactory, WorkerFilterFactory };
