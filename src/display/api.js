@@ -42,6 +42,7 @@ import {
   CanvasDependencyTracker,
   CanvasImagesTracker,
 } from "./canvas_dependency_tracker.js";
+import { CanvasGraphics, setAnnotationCanvasName } from "./canvas.js";
 import {
   getDataProp,
   getFactoryUrlProp,
@@ -61,7 +62,6 @@ import {
   NodeCanvasFactory,
   NodeFilterFactory,
 } from "display-node_utils";
-import { CanvasGraphics } from "./canvas.js";
 import { DOMBinaryDataFactory } from "display-binary_data_factory";
 import { DOMCanvasFactory } from "./canvas_factory.js";
 import { DOMFilterFactory } from "./filter_factory.js";
@@ -3634,15 +3634,52 @@ class InternalRenderTask {
     return this._rendererWorker?.messageHandler ?? null;
   }
 
-  #drawFrame({ bitmap }) {
+  // Rebuild the worker's annotation canvases as DOM canvases for the
+  // annotation layer. The first tuple for an id replaces any previous entry,
+  // later ones (checkbox/radio states) append.
+  #drawAnnotationFrames(annotationBitmaps) {
+    const { ownerDocument } = this._canvas;
+    if (typeof ownerDocument?.createElement !== "function") {
+      return;
+    }
+    const seen = new Set();
+    for (const [id, canvasName, bitmap] of annotationBitmaps) {
+      const canvas = ownerDocument.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      canvas.getContext("2d").drawImage(bitmap, 0, 0);
+
+      if (!canvasName) {
+        this.annotationCanvasMap.set(id, canvas);
+        continue;
+      }
+      setAnnotationCanvasName(canvas, canvasName);
+      if (seen.has(id)) {
+        this.annotationCanvasMap.get(id).push(canvas);
+      } else {
+        seen.add(id);
+        this.annotationCanvasMap.set(id, [canvas]);
+      }
+    }
+  }
+
+  #drawFrame({ bitmap, annotationBitmaps }) {
     try {
       if (this.cancelled) {
         return;
       }
       const ctx = this._canvas.getContext("2d", { alpha: false });
       ctx.drawImage(bitmap, 0, 0);
+      if (annotationBitmaps) {
+        this.#drawAnnotationFrames(annotationBitmaps);
+      }
     } finally {
       bitmap.close();
+      if (annotationBitmaps) {
+        for (const [, , annotationBitmap] of annotationBitmaps) {
+          annotationBitmap.close();
+        }
+      }
     }
   }
 
@@ -3676,13 +3713,12 @@ class InternalRenderTask {
 
     // The stepper needs `gfx` on the main thread, so we have to fall back to
     // local rendering when it's enabled; the same holds for `pageColors`,
-    // which needs DOM-based SVG filters. Annotation canvases and operation
-    // recording move into the worker in follow-up commits.
+    // which needs DOM-based SVG filters. Operation recording moves into the
+    // worker in a follow-up commit.
     let useWorkerRendering =
       this.rendererHandler &&
       !this.params.canvasContext &&
       (!background || typeof background === "string") &&
-      !this.annotationCanvasMap &&
       !dependencyTracker &&
       !imagesTracker &&
       !this.pageColors &&
@@ -3699,6 +3735,7 @@ class InternalRenderTask {
           pageId: this._pageId,
           renderTaskId: this._renderTaskId,
           enableHWA: this._enableHWA,
+          hasAnnotationCanvasMap: !!this.annotationCanvasMap,
           optionalContentConfig: optionalContentConfig.serializable,
           transform,
           viewport,

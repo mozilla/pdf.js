@@ -447,6 +447,15 @@ function copyCtxState(sourceCtx, destCtx) {
   }
 }
 
+function setAnnotationCanvasName(canvas, canvasName) {
+  canvas.setAttribute?.("data-canvas-name", canvasName);
+  canvas._pdfjsCanvasName = canvasName;
+}
+
+function getAnnotationCanvasName(canvas) {
+  return canvas._pdfjsCanvasName ?? null;
+}
+
 function resetCtxToDefault(ctx) {
   ctx.strokeStyle = ctx.fillStyle = "#000000";
   ctx.fillRule = "nonzero";
@@ -3736,11 +3745,11 @@ class CanvasGraphics {
             id,
             makeArr
           );
-          canvas.setAttribute("data-canvas-name", canvasName);
+          setAnnotationCanvasName(canvas, canvasName);
           // Replace any same-named canvas from a previous render so stale
           // low-resolution canvases don't pile up across zooms.
           const index = canvases.findIndex(
-            c => c.getAttribute("data-canvas-name") === canvasName
+            c => getAnnotationCanvasName(c) === canvasName
           );
           if (index === -1) {
             canvases.push(canvas);
@@ -4378,4 +4387,4 @@ for (const op in OPS) {
   }
 }
 
-export { CanvasGraphics };
+export { CanvasGraphics, getAnnotationCanvasName, setAnnotationCanvasName };
