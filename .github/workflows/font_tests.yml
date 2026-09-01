@@ -45,7 +45,9 @@ jobs:
             skip: --noFirefox
 
     runs-on: ${{ matrix.os }}
-    environment: code-coverage
+    environment:
+      name: code-coverage
+      deployment: false
 
     steps:
       - name: Checkout repository
