@@ -410,6 +410,7 @@ function getDocument(src = {}) {
     pdfBug,
     styleElement,
     enableHWA,
+    enableWebGPU,
     loadingParams: {
       disableAutoFetch,
       enableXfa,
@@ -1684,6 +1685,7 @@ class PDFPageProxy {
       pdfBug: this._pdfBug,
       pageColors,
       enableHWA: this._transport.enableHWA,
+      enableWebGPU: this._transport.enableWebGPU,
       operationsFilter,
       rendererWorker: this._transport.rendererWorker,
     });
@@ -2605,6 +2607,7 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this.enableHWA = params.enableHWA;
+    this.enableWebGPU = params.enableWebGPU === true;
     this.rendererWorker = params.rendererWorker || null;
     this.loadingParams = params.loadingParams;
     this._params = params;
@@ -3555,6 +3558,7 @@ class InternalRenderTask {
     pdfBug = false,
     pageColors = null,
     enableHWA = false,
+    enableWebGPU = false,
     operationsFilter = null,
     rendererWorker = null,
   }) {
@@ -3588,6 +3592,7 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._enableHWA = enableHWA;
+    this._enableWebGPU = enableWebGPU;
     this._recordOperations = !!params.recordOperations;
     this._recordImages = !!params.recordImages;
     this._recordForDebugger = !!params.recordForDebugger;
@@ -3707,6 +3712,7 @@ class InternalRenderTask {
           pageId: this._pageId,
           renderTaskId: this._renderTaskId,
           enableHWA: this._enableHWA,
+          enableWebGPU: this._enableWebGPU,
           hasAnnotationCanvasMap: !!this.annotationCanvasMap,
           recordOperations: this._recordOperations,
           recordImages: this._recordImages,

@@ -21,6 +21,7 @@ import {
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
 import { FontLoader } from "./font_loader.js";
+import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
 import { OffscreenCanvasFactory } from "./canvas_factory.js";
@@ -301,6 +302,7 @@ class RendererMessageHandler {
         pageId,
         renderTaskId,
         enableHWA = false,
+        enableWebGPU = false,
         hasAnnotationCanvasMap = false,
         transform,
         viewport,
@@ -333,6 +335,12 @@ class RendererMessageHandler {
       this.#renderTaskStates.set(renderTaskId, renderTaskState);
 
       try {
+        if (enableWebGPU) {
+          await initGPU();
+          if (renderTaskState.aborted) {
+            return;
+          }
+        }
         const objs = this.#getPageObjs(pageId);
         const optionalContentConfig = OptionalContentConfig.fromSerializable(
           data.optionalContentConfig
