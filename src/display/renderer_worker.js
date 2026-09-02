@@ -413,7 +413,7 @@ class RendererMessageHandler {
       if (!renderTaskState) {
         // A render task can be cleaned up before queued
         // ExecuteOperatorList messages for that task are processed.
-        return { operatorListIdx };
+        return { operatorListIdx, aborted: true };
       }
 
       renderTaskState.operatorListIdx = operatorListIdx;
