@@ -59,12 +59,7 @@ class RendererMessageHandler {
   }
 
   static #getPageObjs(pageId) {
-    let objs = this.#objsMap.get(pageId);
-    if (!objs) {
-      objs = new PDFObjects();
-      this.#objsMap.set(pageId, objs);
-    }
-    return objs;
+    return this.#objsMap.getOrInsertComputed(pageId, () => new PDFObjects());
   }
 
   // Flatten the annotation canvases into `[id, canvasName, bitmap]` tuples so
