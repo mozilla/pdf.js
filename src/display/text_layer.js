@@ -69,6 +69,8 @@ class TextLayer {
 
   #pageWidth = 0;
 
+  #pixelRatio = OutputScale.pixelRatio;
+
   #reader = null;
 
   #rootContainer = null;
@@ -122,7 +124,7 @@ class TextLayer {
 
     this.#imagesHandler = images;
 
-    this.#scale = viewport.scale * OutputScale.pixelRatio;
+    this.#scale = viewport.scale * this.#pixelRatio;
     this.#rotation = viewport.rotation;
     this.#layoutTextParams = {
       div: null,
@@ -229,6 +231,7 @@ class TextLayer {
     if (scale !== this.#scale) {
       onBefore?.();
       this.#scale = scale;
+      this.#pixelRatio = OutputScale.pixelRatio;
       const params = {
         div: null,
         properties: null,
@@ -362,10 +365,13 @@ class TextLayer {
     // should be OK since the `textDiv` isn't appended to the document yet.
     divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(2)}%`;
     divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
-    divStyle.setProperty("--font-height", `${fontHeight.toFixed(2)}px`);
+    // The text is laid out with the rounded value, hence keep it around in
+    // order to measure the text with the very same size, see `#layout`.
+    const roundedFontHeight = Math.round(fontHeight * 100) / 100;
+    divStyle.setProperty("--font-height", `${roundedFontHeight}px`);
     divStyle.fontFamily = fontFamily;
 
-    textDivProperties.fontSize = fontHeight;
+    textDivProperties.fontSize = roundedFontHeight;
 
     // Keeps screen readers from pausing on every new text span.
     textDiv.setAttribute("role", "presentation");
@@ -424,17 +430,26 @@ class TextLayer {
   #layout(params) {
     const { div, properties, ctx } = params;
     const { style } = div;
+    const { canvasWidth, fontSize } = properties;
 
-    if (properties.canvasWidth !== 0 && properties.hasText) {
+    if (canvasWidth !== 0 && fontSize !== 0 && properties.hasText) {
       const { fontFamily } = style;
-      const { canvasWidth, fontSize } = properties;
+      // Firefox quantizes canvas font sizes after dividing by the device-pixel
+      // ratio. Measure at a quantized size, then rescale the width.
+      const pixelRatio = this.#pixelRatio;
+      const measuredSize =
+        TextLayer.#quantizeFontSize((fontSize * this.#scale) / pixelRatio) *
+        pixelRatio;
 
-      TextLayer.#ensureCtxFont(ctx, fontSize * this.#scale, fontFamily);
+      TextLayer.#ensureCtxFont(ctx, measuredSize, fontFamily);
       // Only measure the width for multi-char text divs, see `appendText`.
       const { width } = ctx.measureText(div.textContent);
 
       if (width > 0) {
-        style.setProperty("--scale-x", (canvasWidth * this.#scale) / width);
+        style.setProperty(
+          "--scale-x",
+          (canvasWidth * measuredSize) / (width * fontSize)
+        );
       }
     }
     if (properties.angle !== 0) {
@@ -487,6 +502,14 @@ class TextLayer {
       this.#canvasCtxFonts.set(ctx, { size: 0, family: "" });
     }
     return ctx;
+  }
+
+  // Match Firefox's 7-bit `QuantizeFontSize` implementation:
+  // https://searchfox.org/firefox-main/rev/04b29f9c2d2dbf5639c3f45ea812bb4c21dc81c6/dom/canvas/CanvasRenderingContext2D.cpp#4205-4215
+  static #quantizeFontSize(size) {
+    size = Math.fround(size);
+    const d = Math.fround(size * ((1 << 17) + 1));
+    return Math.fround(d - Math.fround(d - size));
   }
 
   static #ensureCtxFont(ctx, size, family) {
