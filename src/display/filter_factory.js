@@ -93,8 +93,6 @@ class BaseFilterFactory {
   destroy(keepHCM = false) {}
 }
 
-class WorkerFilterFactory extends BaseFilterFactory {}
-
 /**
  * FilterFactory aims to create some SVG filters we can use when drawing an
  * image (or whatever) on a canvas.
@@ -684,6 +682,8 @@ class DOMFilterFactory extends BaseFilterFactory {
     ];
   }
 }
+
+class WorkerFilterFactory extends BaseFilterFactory {}
 
 /**
  * Blend a foreground color with a background color using the alpha value.
