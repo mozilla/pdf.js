@@ -672,6 +672,11 @@ class SignatureVerifier {
 }
 
 class ExternalServices extends BaseExternalServices {
+  printToPDF = async data => {
+    const buffer = await FirefoxCom.requestAsync("printToPDF", data);
+    return buffer ? new Uint8Array(buffer) : null;
+  };
+
   updateFindControlState(data) {
     FirefoxCom.request("updateFindControlState", data);
   }

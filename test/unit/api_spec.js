@@ -143,6 +143,51 @@ describe("api", function () {
     ]);
   }
 
+  function buildGeneratedAppearancePdf(pageContents = null) {
+    pageContents ??= [
+      [
+        "/NonStruct <</MCID 0>> BDC",
+        "/Artifact BMC",
+        "/Span MP",
+        "/Span <</ActualText (source)>> DP",
+        "q",
+        "1 0 0 -1 0 44 cm",
+        "0 4 40 20 re W n",
+        "BT /F1 10 Tf 1 0 0 -1 2 22 Tm (Generated appearance) Tj ET",
+        "BT /F1 10 Tf [(Array) 0.123456789012345 (operand)] TJ ET",
+        "Q",
+        "EMC",
+        "EMC",
+      ].join("\n"),
+    ];
+    const kids = pageContents.map((_, i) => `${2 * i + 4} 0 R`).join(" ");
+    const objects = [
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      `2 0 obj\n<< /Type /Pages /Kids [${kids}] ` +
+        `/Count ${pageContents.length} >>\nendobj\n`,
+      // Share one font object across all pages.
+      "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    ];
+    for (const [i, content] of pageContents.entries()) {
+      objects.push(
+        `${2 * i + 4} 0 obj\n<< /Type /Page /Parent 2 0 R ` +
+          "/MediaBox [0 0 72 72] /Resources << /Font << /F1 3 0 R >> >> " +
+          `/Contents ${2 * i + 5} 0 R >>\nendobj\n`,
+        `${2 * i + 5} 0 obj\n<< /Length ${content.length} >>\n` +
+          `stream\n${content}\nendstream\nendobj\n`
+      );
+    }
+    return assemblePdf(objects);
+  }
+
+  function buildEmptyPagePdf() {
+    return assemblePdf([
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>\nendobj\n",
+    ]);
+  }
+
   function getNamedNodeInXML(node, path) {
     for (const component of path.split(".")) {
       if (!node.childNodes) {
@@ -2973,6 +3018,153 @@ describe("api", function () {
       expect(!!field).toBeTrue();
       expect(field.fieldValue).toEqual(value);
 
+      await loadingTask.destroy();
+    });
+
+    it("embeds an externally generated FreeText appearance", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const rect = [12, 34, 56, 78];
+      const value = "Hello from Firefox";
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect,
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value,
+        pageIndex: 0,
+      });
+
+      let generatedEntries;
+      const data = await pdfDoc.saveDocument(entries => {
+        generatedEntries = entries;
+        return buildGeneratedAppearancePdf();
+      });
+      expect(generatedEntries).toEqual([
+        {
+          data: {
+            width: 44,
+            height: 44,
+            text: value,
+            color: "#000000",
+            fontSize: 10,
+            verticalAlign: "top",
+          },
+        },
+      ]);
+      const savedString = bytesToString(data);
+      // Preserve drawing operators, but drop marked-content operators.
+      expect(savedString).not.toContain(`(${value}) Tj`);
+      expect(savedString).toContain("/BBox [0 0 44 44]");
+      expect(savedString).toContain("1 0 0 -1 0 44 cm");
+      expect(savedString).toContain("0 4 40 20 re");
+      expect(savedString).toContain("1 0 0 -1 2 22 Tm");
+      expect(savedString).toContain("[(Array) 0.123456789012345 (operand)] TJ");
+      expect(savedString).not.toContain("/NonStruct");
+      expect(savedString).not.toContain("/Artifact");
+      expect(savedString).not.toContain("/ActualText");
+      expect(savedString).not.toContain("/MCID");
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+      expect(annotations[0].contentsObj.str).toEqual(value);
+
+      const operatorList = await page.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE,
+      });
+      expect(operatorList.fnArray).toContain(OPS.showText);
+
+      await loadingTask.destroy();
+    });
+
+    it("copies an appearance image stream having an indirect filter", async function () {
+      const hexData = "0123456789abcdef".repeat(18) + ">";
+      const content = "q 44 0 0 44 0 0 cm /Im0 Do Q";
+      const generated = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] " +
+          "/Resources << /XObject << /Im0 4 0 R >> >> /Contents 6 0 R >>\nendobj\n",
+        "4 0 obj\n<< /Type /XObject /Subtype /Image /Width 12 /Height 12 " +
+          "/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter 5 0 R " +
+          `/Length ${hexData.length} >>\nstream\n${hexData}\nendstream\nendobj\n`,
+        "5 0 obj\n/ASCIIHexDecode\nendobj\n",
+        `6 0 obj\n<< /Length ${content.length} >>\n` +
+          `stream\n${content}\nendstream\nendobj\n`,
+      ]);
+
+      let loadingTask = getDocument({ data: buildEmptyPagePdf() });
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument(() => generated);
+      const savedString = bytesToString(data);
+      expect(savedString).toContain("/Filter [/FlateDecode /ASCIIHexDecode]");
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const operatorList = await page.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE,
+      });
+      expect(operatorList.fnArray).toContain(OPS.paintImageXObject);
+      await loadingTask.destroy();
+    });
+
+    it("embeds externally generated FreeText appearances sharing their font", async function () {
+      let loadingTask = getDocument({ data: buildEmptyPagePdf() });
+      let pdfDoc = await loadingTask.promise;
+      for (let i = 0; i < 2; i++) {
+        pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
+          annotationType: AnnotationEditorType.FREETEXT,
+          rect: [12 + 50 * i, 34, 56 + 50 * i, 78],
+          rotation: 0,
+          fontSize: 10,
+          color: [0, 0, 0],
+          value: `Hello n°${i}`,
+          pageIndex: 0,
+        });
+      }
+
+      let generatedEntries;
+      const data = await pdfDoc.saveDocument(entries => {
+        generatedEntries = entries;
+        return buildGeneratedAppearancePdf([
+          "BT /F1 10 Tf (App0) Tj ET",
+          "BT /F1 10 Tf (App1) Tj ET",
+        ]);
+      });
+      expect(generatedEntries.map(entry => entry.data.text)).toEqual([
+        "Hello n°0",
+        "Hello n°1",
+      ]);
+      const savedString = bytesToString(data);
+      expect(savedString).toContain("(App0) Tj");
+      expect(savedString).toContain("(App1) Tj");
+      expect(savedString.match(/\/Subtype \/Form/g).length).toEqual(2);
+      expect(savedString.match(/\/BaseFont \/Helvetica/g).length).toEqual(1);
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+      expect(annotations.map(annotation => annotation.contentsObj.str)).toEqual(
+        ["Hello n°0", "Hello n°1"]
+      );
       await loadingTask.destroy();
     });
 

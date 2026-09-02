@@ -975,12 +975,17 @@ class PDFDocumentProxy {
   }
 
   /**
+   * @param {function(Array<Object>): Promise<Uint8Array|null>} [printToPDF] -
+   *   Firefox-only platform appearance renderer. It receives ordered
+   *   `{ data }` entries and returns a PDF with one page per entry, or `null`.
+   *   Each page must place its appearance in
+   *   `[0, 0, data.width, data.height]`, with dimensions in points.
    * @returns {Promise<Uint8Array<ArrayBuffer>>} A promise that is
    *   resolved with a {Uint8Array<ArrayBuffer>} containing the
    *   full data of the saved document.
    */
-  saveDocument() {
-    return this._transport.saveDocument();
+  saveDocument(printToPDF) {
+    return this._transport.saveDocument(printToPDF);
   }
 
   /**
@@ -2410,6 +2415,8 @@ class WorkerTransport {
 
   #passwordCapability = null;
 
+  #printToPDF = null;
+
   constructor(
     messageHandler,
     loadingTask,
@@ -2915,13 +2922,20 @@ class WorkerTransport {
         return this.binaryDataFactory.fetch(data);
       });
     }
+
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("TESTING || MOZCENTRAL")
+    ) {
+      messageHandler.on("PrintToPDF", data => this.#printToPDF?.(data) ?? null);
+    }
   }
 
   getData() {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
-  saveDocument() {
+  saveDocument(printToPDF = null) {
     if (this.annotationStorage.size <= 0) {
       warn(
         "saveDocument called while `annotationStorage` is empty, " +
@@ -2929,6 +2943,12 @@ class WorkerTransport {
       );
     }
     const { map, transfer } = this.annotationStorage.serializable;
+    if (
+      typeof PDFJSDev === "undefined" ||
+      PDFJSDev.test("TESTING || MOZCENTRAL")
+    ) {
+      this.#printToPDF = printToPDF;
+    }
 
     return this.messageHandler
       .sendWithPromise(
@@ -2937,11 +2957,13 @@ class WorkerTransport {
           isPureXfa: !!this._htmlForXfa,
           numPages: this._numPages,
           annotationStorage: map,
+          supportsPrintToPDF: this.#printToPDF !== null,
           filename: this.#fullReader?.filename ?? null,
         },
         transfer
       )
       .finally(() => {
+        this.#printToPDF = null;
         this.annotationStorage.resetModified();
       });
   }
