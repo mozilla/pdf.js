@@ -183,7 +183,10 @@ class BasePDFPageView extends RenderableView {
   }
 
   #renderContinueCallback = cont => {
-    this.#showCanvas?.(false);
+    // In the worker path the canvas only gains pixels in `onFrame`.
+    if (!this.renderTask?.isWorkerRendering) {
+      this.#showCanvas?.(false);
+    }
     if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
       this.renderingState = RenderingStates.PAUSED;
       this.resume = () => {
