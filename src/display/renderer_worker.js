@@ -87,12 +87,24 @@ class RendererMessageHandler {
 
   static async #sendFrame(handler, renderTaskState, isFinal) {
     const { canvas, renderTaskId } = renderTaskState;
-    // We need to use createImageBitmap for interim frames because
-    // `transferToImageBitmap` would clear the canvas that is still
-    // being drawn into
-    const bitmap = isFinal
-      ? canvas.transferToImageBitmap()
-      : await createImageBitmap(canvas);
+    let bitmap;
+    if (isFinal) {
+      bitmap = canvas.transferToImageBitmap();
+    } else {
+      // We need to use createImageBitmap for interim frames because
+      // `transferToImageBitmap` would clear the canvas that is still
+      // being drawn into
+      const { transparentCanvas } = renderTaskState.gfx;
+      if (transparentCanvas) {
+        const composite = new OffscreenCanvas(canvas.width, canvas.height);
+        const ctx = composite.getContext("2d");
+        ctx.drawImage(canvas, 0, 0);
+        ctx.drawImage(transparentCanvas, 0, 0);
+        bitmap = composite.transferToImageBitmap();
+      } else {
+        bitmap = await createImageBitmap(canvas);
+      }
+    }
     const transfers = [bitmap];
     const annotationBitmaps = isFinal
       ? this.#collectAnnotationBitmaps(renderTaskState, transfers)
