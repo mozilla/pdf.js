@@ -382,6 +382,40 @@ body {
 }
 /*#endif*/
 
+/* Match the bar styles used by about:pdf. */
+/*#if MOZCENTRAL*/
+#pdfFeaturesNotification {
+  border-radius: 0;
+  border-inline: none;
+  border-block-start: none;
+  font: message-box;
+  font-size: var(--font-size-root);
+
+  a {
+    color: var(--link-color);
+
+    &:visited {
+      color: var(--link-color-visited);
+    }
+
+    &:hover {
+      color: var(--link-color-hover);
+    }
+
+    &:hover:active {
+      color: var(--link-color-active);
+      text-decoration: none;
+    }
+
+    &:focus-visible {
+      outline: var(--focus-outline);
+      outline-offset: var(--link-focus-outline-offset);
+      border-radius: var(--border-radius-small);
+    }
+  }
+}
+/*#endif*/
+
 #sidebarContainer :is(input, button, select) {
   font: message-box;
 }
