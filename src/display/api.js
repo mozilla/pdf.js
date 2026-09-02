@@ -3564,6 +3564,11 @@ class InternalRenderTask {
     );
     if (!internalTask) {
       frame.bitmap.close();
+      if (frame.annotationBitmaps) {
+        for (const [, , annotationBitmap] of frame.annotationBitmaps) {
+          annotationBitmap.close();
+        }
+      }
       return;
     }
     try {
