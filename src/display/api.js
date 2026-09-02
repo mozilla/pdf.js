@@ -3966,6 +3966,9 @@ class InternalRenderTask {
       if (this.cancelled) {
         return;
       }
+      if (response.aborted) {
+        throw new Error("Render task was aborted in the renderer worker.");
+      }
 
       if (this.operatorListIdx === operatorList.argsArray.length) {
         this.running = false;
