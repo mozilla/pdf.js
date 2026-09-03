@@ -596,15 +596,17 @@ class TilingPattern {
   // Converts clippedBBox from device space to pattern space and stores it
   // as [width, height, offsetX, offsetY] in dims.
   updatePatternDims(clippedBBox, dims) {
-    const inv = Util.inverseTransform(this.patternBaseMatrix);
-    const c1 = [clippedBBox[0], clippedBBox[1]];
-    const c2 = [clippedBBox[2], clippedBBox[3]];
-    Util.applyTransform(c1, inv);
-    Util.applyTransform(c2, inv);
-    dims[0] = Math.abs(c2[0] - c1[0]);
-    dims[1] = Math.abs(c2[1] - c1[1]);
-    dims[2] = Math.min(c1[0], c2[0]);
-    dims[3] = Math.min(c1[1], c2[1]);
+    // Two diagonal corners aren't enough when the pattern matrix is rotated.
+    const bbox = [Infinity, Infinity, -Infinity, -Infinity];
+    Util.axialAlignedBoundingBox(
+      clippedBBox,
+      Util.inverseTransform(this.patternBaseMatrix),
+      bbox
+    );
+    dims[0] = bbox[2] - bbox[0];
+    dims[1] = bbox[3] - bbox[1];
+    dims[2] = bbox[0];
+    dims[3] = bbox[1];
   }
 
   // Renders the tile operators onto a fresh canvas and returns it.
