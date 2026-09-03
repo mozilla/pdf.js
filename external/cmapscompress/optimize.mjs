@@ -29,9 +29,9 @@ function optimizeCMap(data) {
   i = 0;
   while (i < data.body.length) {
     const item = data.body[i];
-    const keys = Object.keys(item.items[0]).filter(function (val) {
-      return typeof item.items[0][val] === "string";
-    });
+    const keys = Object.keys(item.items[0]).filter(
+      val => typeof item.items[0][val] === "string"
+    );
     let j = 1;
     while (j < item.items.length) {
       let different = false;
@@ -76,16 +76,17 @@ function optimizeCMap(data) {
           if (q > 0) {
             data.body.splice(i + 1, 0, {
               type: item.type - 1,
-              items: item.items.splice(q, j - q).map(function (val) {
-                return { char: val.start, code: val.code };
-              }),
+              items: item.items
+                .splice(q, j - q)
+                .map(val => ({ char: val.start, code: val.code })),
             });
             i++;
           } else {
             item.type -= 1;
-            item.items = item.items.map(function (val) {
-              return { char: val.start, code: val.code };
-            });
+            item.items = item.items.map(val => ({
+              char: val.start,
+              code: val.code,
+            }));
           }
           continue;
         }
@@ -142,12 +143,7 @@ function optimizeCMap(data) {
     const item = data.body[i];
     if (!item.sequence && (item.type === 2 || item.type === 3)) {
       const subitems = item.items;
-      const codes = subitems.map(function (val) {
-        return val.code;
-      });
-      codes.sort(function (a, b) {
-        return a - b;
-      });
+      const codes = subitems.map(val => val.code).sort((a, b) => a - b);
       const maxDistance = 100,
         minItems = 10,
         itemsPerBucket = 50;
@@ -176,15 +172,9 @@ function optimizeCMap(data) {
           gaps[q0] = { length: gapLength, boundary: codes[j] };
         }
         const groups = gaps
-          .filter(function (g) {
-            return g.length >= maxDistance;
-          })
-          .map(function (g) {
-            return g.boundary;
-          });
-        groups.sort(function (a, b) {
-          return a - b;
-        });
+          .filter(g => g.length >= maxDistance)
+          .map(g => g.boundary)
+          .sort((a, b) => a - b);
         if (groups.length > 1) {
           const buckets = [(item.items = [])];
           for (let j = 0; j < groups.length; j++) {

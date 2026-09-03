@@ -154,9 +154,7 @@ function createExtensionGlobal() {
 function updateBrowser(window) {
   window.navigator.userAgent = window.navigator.userAgent.replace(
     /Chrome\/(\d+)/,
-    function (_, v) {
-      return "Chrome/" + (parseInt(v, 10) + 1);
-    }
+    (_, v) => "Chrome/" + (parseInt(v, 10) + 1)
   );
 }
 

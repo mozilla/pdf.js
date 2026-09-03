@@ -1132,8 +1132,8 @@ class Driver {
                   includeMarkedContent: true,
                   disableNormalization: true,
                 })
-                .then(function (textContent) {
-                  return task.type === "text"
+                .then(textContent =>
+                  task.type === "text"
                     ? Rasterize.textLayer(
                         textLayerContext,
                         viewport,
@@ -1143,8 +1143,8 @@ class Driver {
                         textLayerContext,
                         viewport,
                         textContent
-                      );
-                });
+                      )
+                );
             } else {
               textLayerCanvas = null;
               // We fetch the `eq` specific test subtypes here, to avoid
@@ -1184,16 +1184,18 @@ class Driver {
                   initPromise = page.getAnnotations({ intent: "display" });
                   annotationCanvasMap = new Map();
                 } else {
-                  initPromise = page.getXfa().then(function (xfaHtml) {
-                    return Rasterize.xfaLayer(
-                      annotationLayerContext,
-                      viewport,
-                      xfaHtml,
-                      task.fontRules,
-                      task.pdfDoc.annotationStorage,
-                      task.renderPrint
+                  initPromise = page
+                    .getXfa()
+                    .then(xfaHtml =>
+                      Rasterize.xfaLayer(
+                        annotationLayerContext,
+                        viewport,
+                        xfaHtml,
+                        task.fontRules,
+                        task.pdfDoc.annotationStorage,
+                        task.renderPrint
+                      )
                     );
-                  });
                 }
               } else {
                 annotationLayerCanvas = null;
