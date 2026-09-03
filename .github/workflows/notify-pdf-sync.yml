@@ -52,6 +52,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
           owner: mozilla
           repositories: pdf.js.pdfs
+          permission-contents: write
 
       - name: Trigger sync
         if: steps.check.outputs.has_added == 'true'
