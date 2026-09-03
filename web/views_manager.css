@@ -221,7 +221,7 @@
   }
 
   display: flex;
-  padding-bottom: 16px;
+  padding-block: 0 16px;
   flex-direction: column;
   align-items: flex-start;
   inset-block-start: calc(100% + var(--sidebar-block-padding));
@@ -289,19 +289,6 @@
     }
   }
 
-  /* Radius the opaque header instead of clipping the panel, which would hide
-     the protruding resizer. */
-  /*#if MOZCENTRAL*/
-  @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
-    padding-block-start: 0;
-
-    #viewsManagerHeader {
-      border-start-start-radius: var(--panel-border-radius);
-      border-start-end-radius: var(--panel-border-radius);
-    }
-  }
-  /*#endif*/
-
   #viewsManagerHeader {
     display: flex;
     flex-direction: column;
@@ -311,6 +298,11 @@
     box-shadow: var(--header-shadow);
     flex: 0 0 auto;
     background-color: var(--header-bg);
+    /* Radius the opaque header instead of clipping the panel, which would hide
+       the protruding resizer. Subtract the panel's 1px border to follow its
+       inner curve. */
+    border-start-start-radius: calc(var(--sidebar-border-radius) - 1px);
+    border-start-end-radius: calc(var(--sidebar-border-radius) - 1px);
 
     .viewsManagerLabel {
       flex: 1 1 auto;
