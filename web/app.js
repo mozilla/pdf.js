@@ -516,7 +516,7 @@ const PDFViewerApplication = {
       !AppOptions.get("featuresNotificationDismissed")
     ) {
       const { featuresNotification } = appConfig;
-      customElements.whenDefined("pdf-features-notification").then(() => {
+      customElements.whenDefined("moz-message-bar").then(() => {
         if (AppOptions.get("featuresNotificationDismissed")) {
           return;
         }
@@ -524,7 +524,7 @@ const PDFViewerApplication = {
         featuresNotification.addEventListener(
           "click",
           event => {
-            if (!event.target.closest(".cta")) {
+            if (!event.target.closest("a")) {
               return;
             }
             event.preventDefault();
@@ -548,8 +548,12 @@ const PDFViewerApplication = {
           featuresNotification.hidden = true;
         };
         featuresNotification.addEventListener(
-          "pdf-features-notification:dismissed",
+          "message-bar:user-dismissed",
           () => {
+            // Move focus before the bar removes itself.
+            if (featuresNotification.matches(":focus-within")) {
+              container.focus();
+            }
             hideBar();
             this.preferences.set("featuresNotificationDismissed", true);
           },
@@ -564,7 +568,7 @@ const PDFViewerApplication = {
           },
           { signal: abortSignal, ...internalOpt }
         );
-        featuresNotification.show();
+        featuresNotification.hidden = false;
       });
     }
 

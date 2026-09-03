@@ -68,7 +68,10 @@
   --icon-color-information: initial;
   --input-search-border-radius: initial;
   --link-color: initial;
+  --link-color-active: initial;
   --link-color-hover: initial;
+  --link-color-visited: initial;
+  --link-focus-outline-offset: initial;
   --panel-border-radius: initial;
   --panel-menuitem-border-radius: initial;
   --panel-menuitem-margin: initial;
