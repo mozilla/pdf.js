@@ -9,12 +9,8 @@ let errors = 0;
 const baseDir = path.join(__dirname, "fixtures");
 const files = fs
   .readdirSync(baseDir)
-  .filter(function (name) {
-    return /-expected\./.test(name);
-  })
-  .map(function (name) {
-    return path.join(baseDir, name);
-  });
+  .filter(name => /-expected\./.test(name))
+  .map(name => path.join(baseDir, name));
 files.forEach(function (expectationFilename) {
   const inFilename = expectationFilename.replace("-expected", "");
   const expectation = fs

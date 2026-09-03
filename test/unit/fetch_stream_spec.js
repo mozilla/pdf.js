@@ -96,8 +96,8 @@ describe("fetch_stream", function () {
 
     const result1 = { value: 0 },
       result2 = { value: 0 };
-    const read = function (reader, lenResult) {
-      return reader.read().then(function (result) {
+    const read = (reader, lenResult) =>
+      reader.read().then(function (result) {
         if (result.done) {
           return undefined;
         }
@@ -105,7 +105,6 @@ describe("fetch_stream", function () {
         lenResult.value += result.value.byteLength;
         return read(reader, lenResult);
       });
-    };
 
     await Promise.all([
       read(rangeReader1, result1),

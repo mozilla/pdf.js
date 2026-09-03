@@ -470,9 +470,9 @@ function incHex(a) {
 }
 
 function compressCmaps(src, dest, verify) {
-  const files = fs.readdirSync(src).filter(function (fn) {
-    return !fn.includes("."); // skipping files with the extension
-  });
+  const files = fs.readdirSync(src).filter(
+    fn => !fn.includes(".") // skipping files with the extension
+  );
   files.forEach(function (fn) {
     const srcPath = path.join(src, fn);
     const destPath = path.join(dest, fn + ".bcmap");
