@@ -1479,8 +1479,12 @@ class AnnotationEditorUIManager {
     if (!boxes) {
       return;
     }
+    const parent = textLayer.parentElement;
+    if (!parent) {
+      return;
+    }
     this.#floatingToolbar ||= new FloatingToolbar(this);
-    this.#floatingToolbar.show(textLayer, boxes, this.direction === "ltr");
+    this.#floatingToolbar.show(parent, boxes, this.direction === "ltr");
   }
 
   /**
