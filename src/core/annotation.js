@@ -5506,7 +5506,8 @@ class MediaAnnotation extends Annotation {
       return subtype.name;
     }
 
-    const ext = filename.split(".").at(-1)?.toLowerCase();
+    const extPos = filename.lastIndexOf(".") + 1,
+      ext = extPos > 0 && filename.substring(extPos).toLowerCase();
     switch (ext) {
       case "mp4":
       case "m4v":
