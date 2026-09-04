@@ -1109,7 +1109,8 @@ describe("api", function () {
         const docWorker = loadingTask._worker;
         expect(!!docWorker).toBeFalse();
         // checking is the same port is used in the MessageHandler
-        const messageHandlerPort = loadingTask._transport.messageHandler.comObj;
+        const messageHandlerPort =
+          loadingTask._transport.messageHandler._comObj;
         expect(messageHandlerPort === worker.port).toBeTrue();
       });
 
