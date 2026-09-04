@@ -225,8 +225,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Cerca
     .placeholder = Cerca al document…
+    .title = Cerca
 pdfjs-find-previous-button =
     .title = Cerca l'anterior coincidència de l'expressió
 pdfjs-find-previous-button-label = Anterior
@@ -318,8 +318,8 @@ pdfjs-editor-highlight-button =
     .title = Ressalta
 pdfjs-editor-highlight-button-label = Ressalta
 pdfjs-highlight-floating-button1 =
-    .title = Ressalta
     .aria-label = Ressalta
+    .title = Ressalta
 pdfjs-highlight-floating-button-label = Ressalta
 pdfjs-editor-signature-button =
     .title = Afegeix una signatura
@@ -387,8 +387,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Comentaris
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Tanca la barra lateral
     .aria-label = Tanca la barra lateral
+    .title = Tanca la barra lateral
 pdfjs-editor-comments-sidebar-close-button-label = Tanca la barra lateral
 pdfjs-editor-comments-sidebar-no-comments-link = Més informació
 
@@ -489,6 +489,95 @@ pdfjs-editor-undo-bar-close-button =
     .title = Tanca
 pdfjs-editor-undo-bar-close-button-label = Tanca
 
+## Tab names
+
+# Type is a verb (you can type your name as signature)
+pdfjs-editor-add-signature-type-button = Tipus
+    .title = Tipus
+
+## Controls
+
+pdfjs-editor-add-signature-save-checkbox = Desa la signatura
+pdfjs-editor-add-signature-error-close-button = Tanca
+
 ## Dialog buttons
 
 pdfjs-editor-add-signature-cancel-button = Cancel·la
+pdfjs-editor-add-signature-add-button = Afegeix
+pdfjs-editor-edit-signature-update-button = Actualitza
+
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Edita el comentari
+pdfjs-editor-delete-comment-popup-button-label = Elimina el comentari
+pdfjs-editor-delete-comment-popup-button =
+    .title = Elimina el comentari
+pdfjs-show-comment-button =
+    .title = Mostra el comentari
+
+##  Edit a comment dialog
+
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Edita el comentari
+pdfjs-editor-edit-comment-dialog-save-button-when-editing = Actualitza
+pdfjs-editor-edit-comment-dialog-save-button-when-adding = Afegeix
+pdfjs-editor-edit-comment-dialog-cancel-button = Cancel·la
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button1-label = Gestiona les pàgines
+pdfjs-views-manager-sidebar =
+    .aria-label = Barra lateral
+pdfjs-views-manager-view-selector-button =
+    .title = Vistes
+pdfjs-views-manager-view-selector-button-label = Vistes
+pdfjs-views-manager-pages-title = Pàgines
+pdfjs-views-manager-pages-option-label = Pàgines
+pdfjs-views-manager-layers-option-label = Capes
+pdfjs-views-manager-add-file-button-label = Afegeix un fitxer
+pdfjs-views-manager-pages-status-copy-button-label = Copia
+pdfjs-views-manager-pages-status-cut-button-label = Retalla
+pdfjs-views-manager-pages-status-delete-button-label = Suprimeix
+pdfjs-views-manager-status-close-button =
+    .title = Tanca
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Propietats de la signatura digital
+    .title = Propietats de la signatura digital
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-invalid = Estat: signatura no vàlida
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-revoked = Certificat: revocat
+
+## Main menu for adding/removing signatures
+
+pdfjs-editor-delete-signature-button1 =
+    .title = Elimina la signatura desada
+pdfjs-editor-delete-signature-button-label1 = Elimina la signatura desada
+
+## Editor toolbar
+
+pdfjs-editor-add-signature-edit-button-label = Edita la descripció
+
+## Edit signature description dialog
+
+pdfjs-editor-edit-signature-dialog-title = Edita la descripció
