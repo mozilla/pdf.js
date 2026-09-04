@@ -33,6 +33,10 @@ class AnnotationStorage {
 
   #editorsMap = null;
 
+  #hiddenIds = null;
+
+  #hiddenIdsCache = null;
+
   #storage = new Map();
 
   // Callbacks to signal when the modification state is set or reset.
@@ -271,8 +275,51 @@ class AnnotationStorage {
     return stats;
   }
 
+  /**
+   * Build the {ids, hash} pair used to tell the renderer which annotations
+   * must be skipped, the hash being part of the rendering cache key.
+   * @param {Array<string>} ids
+   * @returns {{ids: Set<string>, hash: string}}
+   */
+  static #makeIdsWithHash(ids) {
+    let hash = "";
+    if (ids.length) {
+      const h = new MurmurHash3_64();
+      h.update(ids.join(","));
+      hash = h.hexdigest();
+    }
+    return { ids: new Set(ids), hash };
+  }
+
   resetModifiedIds() {
     this.#modifiedIds = null;
+  }
+
+  /**
+   * @param {Set<string>|null} ids
+   */
+  setHiddenIds(ids) {
+    const previous = this.#hiddenIds;
+    if (
+      previous?.size === ids?.size &&
+      (!ids || ids.values().every(id => previous.has(id)))
+    ) {
+      return;
+    }
+    this.#hiddenIds = ids?.size ? ids : null;
+    this.#hiddenIdsCache = null;
+  }
+
+  /**
+   * @returns {{ids: Set<string>, hash: string}}
+   */
+  get hiddenIds() {
+    if (this.#hiddenIdsCache) {
+      return this.#hiddenIdsCache;
+    }
+    return (this.#hiddenIdsCache = AnnotationStorage.#makeIdsWithHash(
+      this.#hiddenIds ? Array.from(this.#hiddenIds) : []
+    ));
   }
 
   updateEditor(annotationId, data) {
@@ -304,16 +351,7 @@ class AnnotationStorage {
         ids.push(value.annotationElementId);
       }
     }
-    let hash = "";
-    if (ids.length) {
-      const h = new MurmurHash3_64();
-      h.update(ids.join(","));
-      hash = h.hexdigest();
-    }
-    return (this.#modifiedIds = {
-      ids: new Set(ids),
-      hash,
-    });
+    return (this.#modifiedIds = AnnotationStorage.#makeIdsWithHash(ids));
   }
 
   [Symbol.iterator]() {
@@ -363,6 +401,13 @@ class PrintAnnotationStorage extends AnnotationStorage {
 
   get modifiedIds() {
     return shadow(this, "modifiedIds", {
+      ids: new Set(),
+      hash: "",
+    });
+  }
+
+  get hiddenIds() {
+    return shadow(this, "hiddenIds", {
       ids: new Set(),
       hash: "",
     });
