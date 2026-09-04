@@ -127,6 +127,7 @@ pdfjs-document-properties-linearized = Ātrā tīmekļa skats:
 pdfjs-document-properties-linearized-yes = Jā
 pdfjs-document-properties-linearized-no = Nē
 pdfjs-document-properties-close-button = Aizvērt
+pdfjs-digital-signature-properties-view-certificate = Apskatīt sertifikātu
 
 ## Print
 
@@ -170,8 +171,8 @@ pdfjs-thumb-page-canvas =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Meklēt
     .placeholder = Meklēt dokumentā…
+    .title = Meklēt
 pdfjs-find-previous-button =
     .title = Atrast iepriekšējo
 pdfjs-find-previous-button-label = Iepriekšējā
