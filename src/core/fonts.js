@@ -3596,7 +3596,9 @@ class Font {
           // Ensure that other relevant glyph properties are also updated
           // (fixes issue18059.pdf).
           width ||= this._spaceWidth;
-          unicode = String.fromCharCode(fontCharCode);
+          if (!this.toUnicode.has(charcode)) {
+            unicode = String.fromCharCode(fontCharCode);
+          }
         }
       }
       fontCharCode = mapSpecialUnicodeValues(fontCharCode);

@@ -4290,6 +4290,24 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
+    it("gets text content, with ToUnicode entries for unencoded glyphs in a non-embedded Type1 font", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("nonembedded_type1_tounicode.pdf", {
+          useSystemFonts: true,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("óº€íºXABéê");
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with no extra spaces (issue 16119)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue16119.pdf"));
       const pdfDoc = await loadingTask.promise;
