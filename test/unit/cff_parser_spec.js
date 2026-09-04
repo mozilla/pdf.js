@@ -486,12 +486,8 @@ describe("CFFParser", function () {
     });
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0).length).toEqual(1);
-    expect(result.seacs.length).toEqual(1);
-    expect(result.seacs[0].length).toEqual(4);
-    expect(result.seacs[0][0]).toEqual(130);
-    expect(result.seacs[0][1]).toEqual(180);
-    expect(result.seacs[0][2]).toEqual(65);
-    expect(result.seacs[0][3]).toEqual(194);
+    expect(result.seacs.size).toEqual(1);
+    expect(result.seacs.get(0)).toEqual([130, 180, 65, 194]);
   });
 
   it("parses a CharString endchar with 4 args w/seac disabled", function () {
@@ -516,7 +512,7 @@ describe("CFFParser", function () {
     });
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0).length).toEqual(9);
-    expect(result.seacs.length).toEqual(0);
+    expect(result.seacs.size).toEqual(0);
   });
 
   it("parses a CharString endchar no args", function () {
@@ -533,7 +529,7 @@ describe("CFFParser", function () {
     });
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0)[0]).toEqual(14);
-    expect(result.seacs.length).toEqual(0);
+    expect(result.seacs.size).toEqual(0);
   });
 
   it("parses predefined charsets", function () {

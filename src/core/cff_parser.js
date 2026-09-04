@@ -740,7 +740,7 @@ class CFFParser {
     fdArray,
     privateDict,
   }) {
-    const seacs = [];
+    const seacs = new Map();
     const widths = [];
     const count = charStrings.count;
     for (let i = 0; i < count; i++) {
@@ -789,7 +789,7 @@ class CFFParser {
         widths[i] = defaultWidth;
       }
       if (state.seac !== null) {
-        seacs[i] = state.seac;
+        seacs.set(i, state.seac);
       }
       if (!valid) {
         // resetting invalid charstring to single 'endchar'

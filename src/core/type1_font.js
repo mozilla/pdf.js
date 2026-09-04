@@ -315,15 +315,15 @@ class Type1Font {
   }
 
   getSeacs(charstrings) {
-    const seacMap = [];
+    const seacs = new Map();
     for (let i = 0, ii = charstrings.length; i < ii; i++) {
-      const charstring = charstrings[i];
-      if (charstring.seac) {
+      const { seac } = charstrings[i];
+      if (seac) {
         // Offset by 1 for .notdef
-        seacMap[i + 1] = charstring.seac;
+        seacs.set(i + 1, seac);
       }
     }
-    return seacMap;
+    return seacs;
   }
 
   getType2Charstrings(type1Charstrings) {

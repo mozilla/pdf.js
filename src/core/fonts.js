@@ -3313,7 +3313,7 @@ class Font {
       newCharCodeToGlyphId = newMapping.charCodeToGlyphId;
       toUnicodeExtraMap = newMapping.toUnicodeExtraMap;
     }
-    const numGlyphs = font.numGlyphs;
+    const { numGlyphs, seacs } = font;
 
     function getCharCodes(charCodeToGlyphId, glyphId) {
       let charCodes = null;
@@ -3336,14 +3336,11 @@ class Font {
       return newMapping.nextAvailableFontCharCode++;
     }
 
-    const seacs = font.seacs;
-    if (newMapping && SEAC_ANALYSIS_ENABLED && seacs?.length) {
+    if (newMapping && SEAC_ANALYSIS_ENABLED && seacs?.size) {
       const matrix = properties.fontMatrix || FONT_IDENTITY_MATRIX;
       const charset = font.getCharset();
-      const seacMap = Object.create(null);
-      for (let glyphId in seacs) {
-        glyphId |= 0;
-        const seac = seacs[glyphId];
+      const seacMap = new Map();
+      for (const [glyphId, seac] of seacs) {
         const baseGlyphName = StandardEncoding[seac[2]];
         const accentGlyphName = StandardEncoding[seac[3]];
         const baseGlyphId = charset.indexOf(baseGlyphName);
@@ -3374,11 +3371,11 @@ class Font {
             charCodeToGlyphId,
             accentGlyphId
           );
-          seacMap[charCode] = {
+          seacMap.set(charCode, {
             baseFontCharCode,
             accentFontCharCode,
             accentOffset,
-          };
+          });
         }
       }
       properties.seacMap = seacMap;
@@ -3608,9 +3605,9 @@ class Font {
     }
 
     let accent = null;
-    if (this.seacMap?.[charcode]) {
+    const seac = this.seacMap?.get(charcode);
+    if (seac) {
       isInFont = true;
-      const seac = this.seacMap[charcode];
       fontCharCode = seac.baseFontCharCode;
       accent = {
         fontChar: String.fromCodePoint(seac.accentFontCharCode),
