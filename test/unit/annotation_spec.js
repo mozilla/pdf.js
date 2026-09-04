@@ -1658,6 +1658,46 @@ describe("annotation", function () {
       expect(data.multiLine).toBeTrue();
     });
 
+    it("should inherit text alignment from acroform", async function () {
+      const annotationGlobals =
+        await AnnotationFactory.createGlobals(pdfManagerMock);
+      annotationGlobals.acroForm = new Dict();
+      annotationGlobals.acroForm.set("Q", 2);
+
+      const textWidgetRef = Ref.get(84, 0);
+      const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        annotationGlobals,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.textAlignment).toEqual(2);
+    });
+
+    it("should not inherit text alignment from acroform if field has its own", async function () {
+      const annotationGlobals =
+        await AnnotationFactory.createGlobals(pdfManagerMock);
+      annotationGlobals.acroForm = new Dict();
+      annotationGlobals.acroForm.set("Q", 2);
+
+      textWidgetDict.set("Q", 0);
+
+      const textWidgetRef = Ref.get(84, 0);
+      const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        annotationGlobals,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.textAlignment).toEqual(0);
+    });
+
     it("should reject comb fields without a maximum length", async function () {
       textWidgetDict.set("Ff", AnnotationFieldFlag.COMB);
 
