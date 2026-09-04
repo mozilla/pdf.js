@@ -1013,14 +1013,6 @@ async function startBrowser({
   const printFile = path.join(tempDir, "print.pdf");
 
   if (browserName === "chrome") {
-    // Slow down protocol calls by the given number of milliseconds. In Chrome
-    // protocol calls are faster than in Firefox and thus trigger in quicker
-    // succession. This can cause intermittent failures because new protocol
-    // calls can run before events triggered by the previous protocol calls had
-    // a chance to be processed (essentially causing events to get lost). This
-    // value gives Chrome a more similar execution speed as Firefox.
-    options.slowMo = 2;
-
     options.args = [
       // Avoid crashing because no sandbox is shipped by default and we only run
       // our own trusted content in the scope of the tests (for more information
