@@ -2856,7 +2856,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
   constructor(params) {
     super(params);
 
-    const { dict } = params;
+    const { annotationGlobals, dict } = params;
 
     if (dict.has("PMD")) {
       // It's used to display a barcode but it isn't specified so we just hide
@@ -2875,11 +2875,12 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     }
 
     // Determine the alignment of text in the field.
-    let alignment = getInheritableProperty({ dict, key: "Q" });
-    if (!Number.isInteger(alignment) || alignment < 0 || alignment > 2) {
-      alignment = null;
-    }
-    this.data.textAlignment = alignment;
+    const getAlignment = q =>
+      Number.isInteger(q) && q >= 0 && q <= 2 ? q : null;
+    this.data.textAlignment =
+      getAlignment(getInheritableProperty({ dict, key: "Q" })) ??
+      getAlignment(annotationGlobals.acroForm.get("Q")) ??
+      null;
 
     // Determine the maximum length of text in the field.
     let maximumLength = getInheritableProperty({ dict, key: "MaxLen" });
