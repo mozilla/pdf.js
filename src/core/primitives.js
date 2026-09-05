@@ -18,14 +18,14 @@ import { assert, makeArr, shadow, unreachable } from "../shared/util.js";
 const CIRCULAR_REF = Symbol("CIRCULAR_REF");
 const EOF = Symbol("EOF");
 
-let CmdCache = Object.create(null);
-let NameCache = Object.create(null);
-let RefCache = Object.create(null);
+const CmdCache = new Map();
+const NameCache = new Map();
+const RefCache = new Map();
 
 function clearPrimitiveCaches() {
-  CmdCache = Object.create(null);
-  NameCache = Object.create(null);
-  RefCache = Object.create(null);
+  CmdCache.clear();
+  NameCache.clear();
+  RefCache.clear();
 }
 
 class Name {
@@ -39,9 +39,18 @@ class Name {
     this.name = name;
   }
 
+  /**
+   * NOTE: This method is invoked a lot, hence `getOrInsertComputed` is
+   *       purposely *not* used to avoid creating unneeded callback functions.
+   */
   static get(name) {
-    // eslint-disable-next-line no-restricted-syntax
-    return (NameCache[name] ||= new Name(name));
+    let n = NameCache.get(name);
+    if (!n) {
+      // eslint-disable-next-line no-restricted-syntax
+      n = new Name(name);
+      NameCache.set(name, n);
+    }
+    return n;
   }
 }
 
@@ -56,9 +65,18 @@ class Cmd {
     this.cmd = cmd;
   }
 
+  /**
+   * NOTE: This method is invoked a lot, hence `getOrInsertComputed` is
+   *       purposely *not* used to avoid creating unneeded callback functions.
+   */
   static get(cmd) {
-    // eslint-disable-next-line no-restricted-syntax
-    return (CmdCache[cmd] ||= new Cmd(cmd));
+    let c = CmdCache.get(cmd);
+    if (!c) {
+      // eslint-disable-next-line no-restricted-syntax
+      c = new Cmd(cmd);
+      CmdCache.set(cmd, c);
+    }
+    return c;
   }
 }
 
@@ -291,8 +309,12 @@ class Ref {
     return this.#str;
   }
 
+  /**
+   * NOTE: This method is invoked a lot, hence `getOrInsertComputed` is
+   *       purposely *not* used to avoid creating unneeded callback functions.
+   */
   static fromString(str) {
-    const ref = RefCache[str];
+    let ref = RefCache.get(str);
     if (ref) {
       return ref;
     }
@@ -303,13 +325,24 @@ class Ref {
     const num = parseInt(m[1], 10),
       gen = !m[2] ? 0 : parseInt(m[2], 10);
     // eslint-disable-next-line no-restricted-syntax
-    return (RefCache[str] = new Ref(str, num, gen));
+    ref = new Ref(str, num, gen);
+    RefCache.set(str, ref);
+    return ref;
   }
 
+  /**
+   * NOTE: This method is invoked a lot, hence `getOrInsertComputed` is
+   *       purposely *not* used to avoid creating unneeded callback functions.
+   */
   static get(num, gen) {
     const str = gen === 0 ? `${num}R` : `${num}R${gen}`;
-    // eslint-disable-next-line no-restricted-syntax
-    return (RefCache[str] ||= new Ref(str, num, gen));
+    let ref = RefCache.get(str);
+    if (!ref) {
+      // eslint-disable-next-line no-restricted-syntax
+      ref = new Ref(str, num, gen);
+      RefCache.set(str, ref);
+    }
+    return ref;
   }
 }
 
