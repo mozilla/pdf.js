@@ -21,10 +21,6 @@ if (typeof window !== "undefined" && "Worker" in window) {
     new URL("./build/pdf.worker.mjs", import.meta.url),
     { type: "module" }
   );
-  GlobalWorkerOptions.rendererSrc = new URL(
-    "./build/pdf.renderer.mjs",
-    import.meta.url
-  ).href;
 }
 
 export * from "./build/pdf.mjs";
