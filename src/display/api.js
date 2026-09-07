@@ -2221,10 +2221,6 @@ class RendererWorker {
         }
       });
 
-      messageHandler.on("RenderFrame", frame => {
-        InternalRenderTask.handleRenderFrame(frame);
-      });
-
       const sendTest = () => {
         const testObj = new Uint8Array();
         // Ensure that we can use `postMessage` transfers.
@@ -3043,6 +3039,10 @@ class WorkerTransport {
       }
       return messageHandler.sendWithPromise("FontFallback", data);
     });
+    this.rendererHandler?.on(
+      "RenderFrame",
+      InternalRenderTask.handleRenderFrame
+    );
 
     const forwardToRenderer = (action, data) => {
       const { rendererHandler } = this;
