@@ -234,6 +234,20 @@ if (PDFJSDev.test("GECKOVIEW")) {
       );
     });
   })();
+
+  (function listenAddSignatureEvent() {
+    const handleEvent = function ({ detail }) {
+      if (!viewerApp.initialized) {
+        return;
+      }
+      viewerApp.eventBus.dispatch("addsignature", {
+        source: window,
+        text: detail?.text,
+      });
+    };
+
+    window.addEventListener("addsignature", handleEvent);
+  })();
 }
 
 class FirefoxComDataRangeTransport extends PDFDataRangeTransport {

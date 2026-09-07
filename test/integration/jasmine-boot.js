@@ -38,6 +38,7 @@ async function runTests(results) {
       "document_properties_spec.mjs",
       "find_spec.mjs",
       "freetext_editor_spec.mjs",
+      "geckoview_spec.mjs",
       "highlight_editor_spec.mjs",
       "ink_editor_spec.mjs",
       "presentation_mode_spec.mjs",

@@ -262,6 +262,7 @@ function createWebpackAlias(defines) {
   } else if (defines.MOZCENTRAL) {
     if (defines.GECKOVIEW) {
       const gvAlias = {
+        "web-signature_manager": "web/signature_manager-geckoview.js",
         "web-toolbar": "web/toolbar-geckoview.js",
       };
       for (const key in viewerAlias) {

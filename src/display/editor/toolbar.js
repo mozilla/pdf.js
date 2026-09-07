@@ -193,6 +193,9 @@ class EditorToolbar {
   async addEditSignatureButton(signatureManager) {
     const button = (this.#signatureDescriptionButton =
       await signatureManager.renderEditButton(this.#editor));
+    if (!button) {
+      return;
+    }
     this.#addListenersToElement(button);
     this.#buttons.append(button, this.#divider);
   }
