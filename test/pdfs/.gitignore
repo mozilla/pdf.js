@@ -920,6 +920,7 @@
 !smask_alpha_oob.pdf
 !smask_alpha_oob_transfer.pdf
 !smask_alpha_bc.pdf
+!devicen-none-zero-domain.pdf
 !smask_luminosity_oob_transfer.pdf
 !operator_list_cycle.pdf
 !knockout_groups_test.pdf

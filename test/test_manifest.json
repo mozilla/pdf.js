@@ -14535,6 +14535,13 @@
     "print": true
   },
   {
+    "id": "devicen-none-zero-domain",
+    "file": "pdfs/devicen-none-zero-domain.pdf",
+    "md5": "65f0b4ca54f82d440e579638ab8abc96",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "issue20294",
     "file": "pdfs/issue20294_reduced.pdf",
     "md5": "29bdb56f4249dc642556c36ecb8de22b",

@@ -905,5 +905,58 @@ describe("colorspace", function () {
       expect(colorSpace.isDefaultDecode([0, 1])).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
+
+    it("should handle a sampled function with a degenerate Domain", function () {
+      const fnDict = new Dict();
+      fnDict.set("FunctionType", FunctionType.SAMPLED);
+      fnDict.set("Domain", [0, 1, 0, 0, 0, 1]);
+      fnDict.set("Range", [0, 1, 0, 1, 0, 1, 0, 1]);
+      fnDict.set("Size", [2, 2, 2]);
+      fnDict.set("BitsPerSample", 8);
+
+      // Samples are ordered with the first input varying fastest, i.e.
+      // index = spot + 2 * (none + 2 * black); the /None input has no effect.
+      const samples = [];
+      for (let index = 0; index < 8; index++) {
+        const spot = index & 1;
+        const black = (index >> 2) & 1;
+        samples.push(spot * 255, spot * 51, spot * 184, black * 255);
+      }
+      const fnRef = Ref.get(10, 0);
+      const fn = new Stream(new Uint8Array(samples), 0, samples.length, fnDict);
+
+      const cs = [
+        Name.get("DeviceN"),
+        [Name.get("Spot"), Name.get("None"), Name.get("Black")],
+        Name.get("DeviceCMYK"),
+        fnRef,
+      ];
+      const xref = new XRefMock([
+        {
+          ref: fnRef,
+          data: fn,
+        },
+      ]);
+      const resources = new Dict();
+
+      const pdfFunctionFactory = new PDFFunctionFactory({
+        xref,
+      });
+      const colorSpace = ColorSpaceUtils.parse({
+        cs,
+        xref,
+        resources,
+        pdfFunctionFactory,
+        globalColorSpaceCache,
+        localColorSpaceCache: new LocalColorSpaceCache(),
+      });
+
+      expect(colorSpace.getRgb([0.5, 0, 0], 0)).toEqual(
+        new Uint8ClampedArray([123, 195, 175])
+      );
+      expect(colorSpace.getRgb([0, 0, 1], 0)).toEqual(
+        new Uint8ClampedArray([44, 46, 53])
+      );
+    });
   });
 });
