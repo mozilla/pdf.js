@@ -3482,7 +3482,7 @@ class RenderTask {
   /**
    * Callback invoked after a frame from the renderer worker has been drawn
    * onto the canvas, including the final one.
-   * @type {function}
+   * @type {Function}
    */
   onFrame = null;
 
