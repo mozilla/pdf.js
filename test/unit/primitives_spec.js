@@ -477,18 +477,29 @@ describe("primitives", function () {
 
     it("should create reference from string representation", function () {
       expect(Ref.fromString("4R")).toBe(Ref.get(4, 0));
-      expect(Ref.fromString("4R0")).toBe(Ref.get(4, 0));
       expect(Ref.fromString("4R2")).toBe(Ref.get(4, 2));
       expect(Ref.fromString("4R8")).toBe(Ref.get(4, 8));
-      expect(Ref.fromString("04R08")).toBe(Ref.get(4, 8));
+      // Purposely test the same string again, to ensure that the fast-path
+      // for an already cached `Ref` instance is fully covered by tests.
+      expect(Ref.fromString("4R8")).toBe(Ref.get(4, 8));
+
+      expect(Ref.fromString("200R")).toBe(Ref.get(200, 0));
+      expect(Ref.fromString("200R10")).toBe(Ref.get(200, 10));
     });
 
     it("should not create reference from invalid string representation", function () {
-      expect(Ref.fromString("")).toBeNull();
-      expect(Ref.fromString("4")).toBeNull();
-      expect(Ref.fromString("R2")).toBeNull();
-      expect(Ref.fromString("0R2")).toBeNull();
-      expect(Ref.fromString("abc")).toBeNull();
+      for (const str of [
+        "",
+        "4",
+        "4R0",
+        "R2",
+        "0R2",
+        "04R08",
+        "fourRtwo",
+        "abc",
+      ]) {
+        expect(Ref.fromString(str)).toBeNull();
+      }
     });
   });
 
