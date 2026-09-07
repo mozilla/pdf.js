@@ -100,7 +100,6 @@ class PDFObjects {
 
   /**
    * Rejects the object `objId`, signalling that it will never be resolved.
-   *
    * @param {string} objId
    * @param {Error} reason
    */
