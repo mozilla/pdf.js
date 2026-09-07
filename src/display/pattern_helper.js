@@ -885,23 +885,23 @@ class TilingPattern {
   }
 
   setFillAndStrokeStyleToContext(graphics, paintType, color) {
-    const context = graphics.ctx,
-      current = graphics.current;
-    current.patternFill = current.patternStroke = false;
     switch (paintType) {
       case PaintType.COLORED:
-        const { fillStyle, strokeStyle } = this.ctx;
-        context.fillStyle = current.fillColor = fillStyle;
-        context.strokeStyle = current.strokeColor = strokeStyle;
+        // The cell starts from the initial graphics state of its parent
+        // content stream (PDF 32000-1, 8.7.3.1), hence black and not the
+        // colours in effect when the pattern was selected.
+        color = "#000000";
         break;
       case PaintType.UNCOLORED:
-        context.fillStyle = context.strokeStyle = color;
-        // Set color needed by image masks (fixes issues 3226 and 8741).
-        current.fillColor = current.strokeColor = color;
         break;
       default:
         throw new FormatError(`Unsupported paint type: ${paintType}`);
     }
+    const { ctx, current } = graphics;
+    current.patternFill = current.patternStroke = false;
+    ctx.fillStyle = ctx.strokeStyle = color;
+    // Also needed by image masks (fixes issues 3226 and 8741).
+    current.fillColor = current.strokeColor = color;
   }
 
   isModifyingCurrentTransform() {

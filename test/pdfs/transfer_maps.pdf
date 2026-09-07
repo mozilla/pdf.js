@@ -1,0 +1,153 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200]
+   /Resources <<
+     /ExtGState << /GStr 4 0 R /GSid 5 0 R /GSmul 6 0 R /GSsq 16 0 R /GSpart 18 0 R >>
+     /Shading << /Sh1 8 0 R /Sh2 14 0 R >>
+     /XObject << /Fx1 9 0 R >>
+     /Pattern << /P1 10 0 R /P2 11 0 R /PSh 19 0 R /P3 20 0 R /P4 22 0 R >>
+     /ColorSpace << /CS0 [/Pattern /DeviceRGB] >>
+   >>
+   /Contents 12 0 R >>
+endobj
+4 0 obj
+<< /Type /ExtGState /TR 7 0 R >>
+endobj
+5 0 obj
+<< /Type /ExtGState /TR /Identity >>
+endobj
+6 0 obj
+<< /Type /ExtGState /BM /Multiply >>
+endobj
+7 0 obj
+<< /FunctionType 2 /Domain [0 1] /Range [0 1] /N 1 /C0 [1] /C1 [0] >>
+endobj
+8 0 obj
+<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [160 150 190 150]
+   /Function 13 0 R /Extend [true true] >>
+endobj
+9 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 200]
+   /Group << /S /Transparency /CS /DeviceRGB /I true >> /Length 26 >>
+stream
+0 0 1 rg 10 100 40 40 re f
+endstream
+endobj
+10 0 obj
+<< /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 10 10]
+   /XStep 10 /YStep 10 /Resources << >> /Length 23 >>
+stream
+0 0 1 rg 0 0 10 10 re f
+endstream
+endobj
+11 0 obj
+<< /PatternType 1 /PaintType 2 /TilingType 1 /BBox [0 0 10 10]
+   /XStep 10 /YStep 10 /Resources << >> /Length 14 >>
+stream
+0 0 10 10 re f
+endstream
+endobj
+12 0 obj
+<<  /Length 669 >>
+stream
+/GStr gs
+q 1 0 0 rg 10 150 40 40 re f Q
+q 40 0 0 40 60 150 cm BI /W 2 /H 2 /CS /RGB /BPC 8 /F /AHx ID
+ff0000ff0000ff0000ff0000>
+EI Q
+q 1 0 0 rg 40 0 0 40 110 150 cm BI /IM true /W 2 /H 2 /BPC 1 /F /AHx ID
+4080>
+EI Q
+q 160 150 30 40 re W n /Sh1 sh Q
+q /GSmul gs /Fx1 Do Q
+q /Pattern cs /P1 scn 60 100 40 40 re f Q
+q /CS0 cs 1 0 0 /P2 scn 110 100 40 40 re f Q
+q 1 0 0 rg /GSid gs 160 100 30 40 re f Q
+q 0 0 1 RG 10 w 10 70 m 50 70 l S Q
+q /GSsq gs 60 50 100 40 re W n /Sh2 sh Q
+q /GSpart gs 1 0 0 rg 170 50 20 40 re f Q
+q /Pattern cs /PSh scn 10 10 40 30 re f Q
+q 1 0 0 rg /Pattern cs /P3 scn 60 10 40 30 re f Q
+q 1 0 0 rg /Pattern cs /P4 scn /GSid gs 110 10 40 30 re f Q
+endstream
+endobj
+13 0 obj
+<< /FunctionType 2 /Domain [0 1] /N 1 /C0 [1 0 0] /C1 [1 0 0] >>
+endobj
+14 0 obj
+<< /ShadingType 2 /ColorSpace /DeviceRGB /Coords [60 70 160 70]
+   /Function 15 0 R /Extend [true true] >>
+endobj
+15 0 obj
+<< /FunctionType 2 /Domain [0 1] /N 1 /C0 [0 0 0] /C1 [1 1 1] >>
+endobj
+16 0 obj
+<< /Type /ExtGState /TR 17 0 R >>
+endobj
+17 0 obj
+<< /FunctionType 2 /Domain [0 1] /Range [0 1] /N 2 /C0 [0] /C1 [1] >>
+endobj
+18 0 obj
+<< /Type /ExtGState /TR [/Identity 7 0 R /Identity /Identity] >>
+endobj
+19 0 obj
+<< /PatternType 2 /Shading 8 0 R >>
+endobj
+20 0 obj
+<< /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 10 10]
+   /XStep 10 /YStep 10
+   /Resources << /ExtGState << /GSmul 6 0 R >> /XObject << /Fx2 21 0 R >> >> /Length 17 >>
+stream
+/GSmul gs /Fx2 Do
+endstream
+endobj
+21 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 10 10]
+   /Group << /S /Transparency /CS /DeviceRGB /I true >> /Length 14 >>
+stream
+0 0 10 10 re f
+endstream
+endobj
+22 0 obj
+<< /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 10 10]
+   /XStep 10 /YStep 10 /Resources << >> /Length 14 >>
+stream
+0 0 10 10 re f
+endstream
+endobj
+xref
+0 23
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000516 00000 n 
+0000000564 00000 n 
+0000000616 00000 n 
+0000000668 00000 n 
+0000000753 00000 n 
+0000000878 00000 n 
+0000001060 00000 n 
+0000001234 00000 n 
+0000001399 00000 n 
+0000002121 00000 n 
+0000002202 00000 n 
+0000002325 00000 n 
+0000002406 00000 n 
+0000002456 00000 n 
+0000002542 00000 n 
+0000002623 00000 n 
+0000002675 00000 n 
+0000002903 00000 n 
+0000003072 00000 n 
+trailer
+<< /Size 23 /Root 1 0 R >>
+startxref
+3237
+%%EOF
