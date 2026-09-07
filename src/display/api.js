@@ -3910,78 +3910,8 @@ class InternalRenderTask {
     if (this.cancelled) {
       return;
     }
-    const { operatorList, operatorListIdx } = this;
     if (this._rendererWorker) {
-      const { rendererHandler } = this;
-      if (!rendererHandler) {
-        throw new Error("Renderer worker was destroyed during rendering.");
-      }
-      const operatorListArgsArrayLen = operatorList.argsArray.length;
-      const sentLength = this._sentOperatorListLength;
-      const hasNewOps = sentLength < operatorListArgsArrayLen;
-      const fnArray = hasNewOps
-        ? operatorList.fnArray.slice(sentLength, operatorListArgsArrayLen)
-        : null;
-      const argsArray = hasNewOps
-        ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
-        : null;
-      // Since operationsFilter is a function and cannot be structured-cloned,
-      // precomputing the results for the ops being sent as a mask that the
-      // worker can index into.
-      let operationsFilterMask = null;
-      if (fnArray && this._operationsFilter) {
-        operationsFilterMask = new Uint8Array(fnArray.length);
-        for (let i = 0, ii = fnArray.length; i < ii; i++) {
-          operationsFilterMask[i] = this._operationsFilter(
-            sentLength + i,
-            operatorList
-          )
-            ? 1
-            : 0;
-        }
-      }
-      const sentLastChunk = operatorList.lastChunk;
-      const response = await rendererHandler.sendWithPromise(
-        "ExecuteOperatorList",
-        {
-          renderTaskId: this._renderTaskId,
-          fnArray,
-          argsArray,
-          operatorListIdx,
-          operationsFilterMask,
-          lastChunk: sentLastChunk,
-        }
-      );
-      this.operatorListIdx = response.operatorListIdx;
-      // Only the final chunk carries `recordedBBoxes` / `imageCoordinates`.
-      if (response.recordedBBoxesBuffer) {
-        this.recordedBBoxes = BBoxReader.fromBuffer(
-          response.recordedBBoxesBuffer
-        );
-      }
-      if (response.imageCoordinates) {
-        this.imageCoordinates = response.imageCoordinates;
-      }
-      this._sentOperatorListLength = operatorListArgsArrayLen;
-      if (this.cancelled) {
-        return;
-      }
-      if (response.aborted) {
-        throw new Error("Render task was aborted in the renderer worker.");
-      }
-
-      if (this.operatorListIdx === operatorList.argsArray.length) {
-        this.running = false;
-        if (sentLastChunk) {
-          InternalRenderTask.#activeRenderTasks.delete(this._renderTaskId);
-          InternalRenderTask.#canvasInUse.delete(this._canvas);
-          this.callback();
-        } else if (this.operatorList.lastChunk) {
-          this._continue();
-        }
-      } else {
-        this._continue();
-      }
+      await this.#executeOperatorListInWorker();
       return;
     }
     this.operatorListIdx = this.gfx.executeOperatorList(
@@ -4000,6 +3930,79 @@ class InternalRenderTask {
         InternalRenderTask.#canvasInUse.delete(this._canvas);
         this.callback();
       }
+    }
+  }
+
+  async #executeOperatorListInWorker() {
+    const { rendererHandler, operatorList, operatorListIdx } = this;
+    if (!rendererHandler) {
+      throw new Error("Renderer worker was destroyed during rendering.");
+    }
+    const operatorListArgsArrayLen = operatorList.argsArray.length;
+    const sentLength = this._sentOperatorListLength;
+    const hasNewOps = sentLength < operatorListArgsArrayLen;
+    const fnArray = hasNewOps
+      ? operatorList.fnArray.slice(sentLength, operatorListArgsArrayLen)
+      : null;
+    const argsArray = hasNewOps
+      ? operatorList.argsArray.slice(sentLength, operatorListArgsArrayLen)
+      : null;
+    // Since operationsFilter is a function and cannot be structured-cloned,
+    // precomputing the results for the ops being sent as a mask that the
+    // worker can index into.
+    let operationsFilterMask = null;
+    if (fnArray && this._operationsFilter) {
+      operationsFilterMask = new Uint8Array(fnArray.length);
+      for (let i = 0, ii = fnArray.length; i < ii; i++) {
+        operationsFilterMask[i] = this._operationsFilter(
+          sentLength + i,
+          operatorList
+        )
+          ? 1
+          : 0;
+      }
+    }
+    const sentLastChunk = operatorList.lastChunk;
+    const response = await rendererHandler.sendWithPromise(
+      "ExecuteOperatorList",
+      {
+        renderTaskId: this._renderTaskId,
+        fnArray,
+        argsArray,
+        operatorListIdx,
+        operationsFilterMask,
+        lastChunk: sentLastChunk,
+      }
+    );
+    this.operatorListIdx = response.operatorListIdx;
+    // Only the final chunk carries `recordedBBoxes` / `imageCoordinates`.
+    if (response.recordedBBoxesBuffer) {
+      this.recordedBBoxes = BBoxReader.fromBuffer(
+        response.recordedBBoxesBuffer
+      );
+    }
+    if (response.imageCoordinates) {
+      this.imageCoordinates = response.imageCoordinates;
+    }
+    this._sentOperatorListLength = operatorListArgsArrayLen;
+    if (this.cancelled) {
+      return;
+    }
+    if (response.aborted) {
+      throw new Error("Render task was aborted in the renderer worker.");
+    }
+
+    if (this.operatorListIdx === operatorList.argsArray.length) {
+      this.running = false;
+      if (sentLastChunk) {
+        InternalRenderTask.#activeRenderTasks.delete(this._renderTaskId);
+        InternalRenderTask.#canvasInUse.delete(this._canvas);
+        this.callback();
+      } else if (operatorList.lastChunk) {
+        this._continue();
+      }
+    } else {
+      this._continue();
     }
   }
 }
