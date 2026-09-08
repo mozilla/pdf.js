@@ -39,7 +39,6 @@ import {
   unselectEditor,
   waitAndClick,
   waitForAnnotationModeChanged,
-  waitForEditorFocusSettled,
   waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
@@ -2881,7 +2880,6 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(
             ".inkEditor.selectedEditor.draggable.disabled"
           );
-          await waitForEditorFocusSettled(page);
 
           await selectEditor(page, editorSelector0);
           for (let i = 0; i < 6; i++) {

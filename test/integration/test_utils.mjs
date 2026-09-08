@@ -36,6 +36,7 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
   return Promise.all(
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
+      settleEditorBeforeInput(page);
 
       if (viewport) {
         await page.setViewport(viewport);
@@ -431,7 +432,6 @@ async function selectEditor(page, selector, count = 1) {
     { count }
   );
   await waitForSelectedEditor(page, selector);
-  await waitForEditorFocusSettled(page);
 }
 
 async function waitForSelectedEditor(page, selector) {
@@ -754,6 +754,25 @@ function waitForEditorFocusSettled(page) {
         setTimeout(() => setTimeout(resolve, 0), 0);
       })
   );
+}
+
+/**
+ * Make every keyboard/mouse input wait for the deferred editor changes first,
+ * so the tests don't have to care about them.
+ */
+function settleEditorBeforeInput(page) {
+  for (const [target, names] of [
+    [page.keyboard, ["down", "up", "press", "type", "sendCharacter"]],
+    [page.mouse, ["down", "click"]],
+  ]) {
+    for (const name of names) {
+      const method = target[name].bind(target);
+      target[name] = async (...args) => {
+        await waitForEditorFocusSettled(page);
+        return method(...args);
+      };
+    }
+  }
 }
 
 async function scrollIntoView(page, selector) {
@@ -1127,14 +1146,11 @@ function waitForPositionChange(page, selector, xy) {
 }
 
 async function moveEditor(page, selector, n, pressKey) {
-  await waitForEditorFocusSettled(page);
   let xy = await getXY(page, selector);
   for (let i = 0; i < n; i++) {
     const handle = await waitForEditorMovedInDOM(page);
     await pressKey();
     await awaitPromise(handle);
-    // `editormovedindom` is dispatched before focus is restored.
-    await waitForEditorFocusSettled(page);
     await waitForPositionChange(page, selector, xy);
     xy = await getXY(page, selector);
   }
@@ -1286,7 +1302,6 @@ export {
   waitForAnnotationModeChanged,
   waitForBrowserTrip,
   waitForDOMMutation,
-  waitForEditorFocusSettled,
   waitForEntryInStorage,
   waitForEvent,
   waitForNoElement,
