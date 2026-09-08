@@ -293,7 +293,7 @@ class CMap {
       }
     } else {
       for (const i in map) {
-        callback(i, map[i]);
+        callback(+i, map[i]);
       }
     }
   }
