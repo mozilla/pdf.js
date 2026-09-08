@@ -2353,6 +2353,53 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Editing stays disabled after opening another PDF (issue 21899)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        undefined,
+        undefined,
+        { annotationEditorMode: -1 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not enable editing for the new document", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const isEditingDisabled = () =>
+            window.PDFViewerApplication.pdfViewer.annotationEditorMode === -1;
+
+          expect(await page.evaluate(isEditingDisabled))
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+
+          // Editor manager creation, if enabled, precedes "pagesinit".
+          const handle = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on("pagesinit", resolve, {
+              once: true,
+            });
+          });
+          const fileInput = await page.$("#fileInput");
+          await fileInput.uploadFile(
+            path.join(__dirname, "../pdfs/basicapi.pdf")
+          );
+          await awaitPromise(handle);
+
+          expect(await page.evaluate(isEditingDisabled))
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+        })
+      );
+    });
+  });
+
   describe("Preferences", () => {
     describe('handles "updatedPreference" event correctly', () => {
       let pages;
