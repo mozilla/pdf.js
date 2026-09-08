@@ -33,7 +33,6 @@ import {
   switchToEditor,
   waitAndClick,
   waitForBrowserTrip,
-  waitForEditorFocusSettled,
   waitForSerialized,
   waitForTimeout,
   waitForTooltipToBe,
@@ -887,10 +886,8 @@ describe("Comment", () => {
           const data = "Hello PDF.js World !!";
           await page.mouse.click(rect.x + 100, rect.y + 100);
           await page.waitForSelector(editorSelector, { visible: true });
-          await waitForEditorFocusSettled(page);
           await page.type(`${editorSelector} .internal`, data);
           await page.keyboard.press("Escape");
-          await waitForEditorFocusSettled(page);
 
           await page.waitForSelector(`${editorSelector} .editToolbar`, {
             visible: true,

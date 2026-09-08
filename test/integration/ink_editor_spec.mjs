@@ -39,7 +39,6 @@ import {
   unselectEditor,
   waitForAnnotationModeChanged,
   waitForBrowserTrip,
-  waitForEditorFocusSettled,
   waitForNoElement,
   waitForPointerUp,
   waitForSelectedEditor,
@@ -1359,13 +1358,11 @@ describe("Should switch from an editor and mode to others by double clicking", (
           editorLayerRect.y + 200
         );
         await page.waitForSelector(freeTextSelector, { visible: true });
-        await waitForEditorFocusSettled(page);
         await page.type(`${freeTextSelector} .internal`, data);
         await page.keyboard.press("Escape");
         await page.waitForSelector(
           ".freeTextEditor.selectedEditor .overlay.enabled"
         );
-        await waitForEditorFocusSettled(page);
 
         await page.waitForSelector("#editorInkButton:not(.toggled)");
         let modeChangedHandle = await waitForAnnotationModeChanged(page);
