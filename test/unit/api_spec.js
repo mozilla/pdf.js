@@ -5534,6 +5534,89 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("applies the transfer function of the graphics state", async function () {
+      // The page applies transfer functions to fills, strokes, images,
+      // shadings, patterns, and groups. Node.js exercises the fallback.
+      const loadingTask = getDocument(
+        buildGetDocumentParams("transfer_maps.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = pdfPage.render({
+        canvas: canvasAndCtx.canvas,
+        viewport,
+      });
+      await renderTask.promise;
+
+      const getPixel = (x, y) =>
+        Array.from(canvasAndCtx.context.getImageData(x, y, 1, 1).data);
+      const CYAN = [0, 255, 255, 255],
+        YELLOW = [255, 255, 0, 255];
+      expect(getPixel(30, 30)).withContext("fill").toEqual(CYAN);
+      expect(getPixel(80, 30)).withContext("inline image").toEqual(CYAN);
+      // Two of the four mask pixels are painted.
+      expect(getPixel(120, 20)).withContext("image mask").toEqual(CYAN);
+      expect(getPixel(140, 40)).withContext("image mask").toEqual(CYAN);
+      expect(getPixel(140, 20))
+        .withContext("image mask")
+        .toEqual([255, 255, 255, 255]);
+      expect(getPixel(175, 30)).withContext("shading").toEqual(CYAN);
+      expect(getPixel(30, 80))
+        .withContext("transparency group")
+        .toEqual(YELLOW);
+      expect(getPixel(80, 80))
+        .withContext("colored tiling pattern")
+        .toEqual(YELLOW);
+      expect(getPixel(130, 80))
+        .withContext("uncolored tiling pattern")
+        .toEqual(CYAN);
+      // The transfer function was reset to /Identity before this fill.
+      expect(getPixel(175, 80))
+        .withContext("identity")
+        .toEqual([255, 0, 0, 255]);
+      expect(getPixel(30, 130)).withContext("stroke").toEqual(YELLOW);
+      expect(getPixel(30, 175)).withContext("shading pattern").toEqual(CYAN);
+      // P3 transfers the cell's initial black to white.
+      expect(getPixel(80, 175))
+        .withContext("colored tiling pattern with a group")
+        .toEqual([255, 255, 255, 255]);
+      // /Identity is set after selecting P4, so its black stays black.
+      expect(getPixel(130, 175))
+        .withContext("colored tiling pattern after a TR change")
+        .toEqual([0, 0, 0, 255]);
+      // Only the green component has an (inverting) transfer function.
+      expect(getPixel(180, 130))
+        .withContext("partial identity array")
+        .toEqual(YELLOW);
+      // A nonlinear map must be applied after gradient interpolation.
+      for (const [x, expected] of [
+        [85, 16],
+        [110, 65],
+        [135, 145],
+      ]) {
+        const [r, g, b, a] = getPixel(x, 130);
+        expect([g, b, a])
+          .withContext(`gradient at x=${x}`)
+          .toEqual([r, r, 255]);
+        expect(Math.abs(r - expected))
+          .withContext(`gradient at x=${x}`)
+          .toBeLessThanOrEqual(3);
+      }
+      expect(getPixel(5, 5))
+        .withContext("background")
+        .toEqual([255, 255, 255, 255]);
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
     it("cleans up document resources during rendering of page", async function () {
       const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;

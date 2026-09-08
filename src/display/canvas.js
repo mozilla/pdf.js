@@ -259,6 +259,9 @@ class CanvasExtraState {
 
   transferMaps = "none";
 
+  // Software fallback for transfer maps when canvas filters are unavailable.
+  transferMapsFallback = null;
+
   minMax = F32_BBOX_INIT.slice();
 
   constructor(width, height) {
@@ -463,6 +466,64 @@ function resetCtxToDefault(ctx) {
   const { filter } = ctx;
   if (filter !== "none" && filter !== "") {
     ctx.filter = "none";
+  }
+}
+
+/**
+ * Applies transfer maps when canvas filters are unavailable.
+ * The SVG filters aren't available in all environments (especially in workers
+ * with OffscreenCanvas), so this class provides a fallback mechanism for
+ * applying transfer maps directly to canvas image data.
+ */
+class TransferMapsFallback {
+  #maps;
+
+  constructor(maps) {
+    // One map applies to R, G, and B; `null` maps are identities.
+    const [mapR, mapG = mapR, mapB = mapR] = maps;
+    const { identityMap } = TransferMapsFallback;
+    this.#maps = [
+      mapR || identityMap,
+      mapG || identityMap,
+      mapB || identityMap,
+    ];
+  }
+
+  static get identityMap() {
+    return shadow(
+      this,
+      "identityMap",
+      Uint8Array.from({ length: 256 }, (_, i) => i)
+    );
+  }
+
+  /**
+   * @param {string} color
+   * @returns {string}
+   */
+  applyToColor(color) {
+    if (typeof color !== "string" || !color.startsWith("#")) {
+      return color; // E.g. "transparent".
+    }
+    const [r, g, b] = getRGBA(color);
+    const [mapR, mapG, mapB] = this.#maps;
+    return Util.makeHexColor(mapR[r], mapG[g], mapB[b]);
+  }
+
+  applyToImageData({ data }) {
+    const [mapR, mapG, mapB] = this.#maps;
+    for (let i = 0, ii = data.length; i < ii; i += 4) {
+      data[i] = mapR[data[i]];
+      data[i + 1] = mapG[data[i + 1]];
+      data[i + 2] = mapB[data[i + 2]];
+    }
+  }
+
+  applyToCanvas(ctx) {
+    const { width, height } = ctx.canvas;
+    const imgData = ctx.getImageData(0, 0, width, height);
+    this.applyToImageData(imgData);
+    ctx.putImageData(imgData, 0, 0);
   }
 }
 
@@ -936,8 +997,9 @@ class CanvasGraphics {
   _createMaskCanvas(opIdx, img) {
     const ctx = this.ctx;
     const { width, height } = img;
-    const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
+    // Solid-color styles contain the transferred fallback value.
+    const fillColor = isPatternFill ? this.current.fillColor : ctx.fillStyle;
     const currentTransform = getCurrentTransform(ctx);
 
     let cache, cacheKey, scaled, maskCanvas;
@@ -1194,11 +1256,38 @@ class CanvasGraphics {
           this.tempSMask = null;
           this.checkSMaskState(opIdx);
           break;
-        case "TR":
+        case "TR": {
           this.dependencyTracker?.recordSimpleData("filter", opIdx);
-          this.ctx.filter = this.current.transferMaps =
-            this.filterFactory.addFilter(value);
+          let filter = this.filterFactory.addFilter(value);
+          this.ctx.filter = filter;
+          let fallback = null;
+          if (
+            value &&
+            // Fall back if no SVG filter was created or canvas filters are
+            // unavailable or rejected.
+            (filter === "none" ||
+              !FeatureTest.isCanvasFilterSupported ||
+              this.ctx.filter === "none" ||
+              this.ctx.filter === "")
+          ) {
+            this.ctx.filter = filter = "none";
+            fallback = new TransferMapsFallback(value);
+          }
+          this.current.transferMaps = filter;
+          if (fallback || this.current.transferMapsFallback) {
+            this.current.transferMapsFallback = fallback;
+            // Reapply the maps to the current solid colors.
+            if (!this.current.patternFill) {
+              this.ctx.fillStyle = this.#transferColor(this.current.fillColor);
+            }
+            if (!this.current.patternStroke) {
+              this.ctx.strokeStyle = this.#transferColor(
+                this.current.strokeColor
+              );
+            }
+          }
           break;
+        }
       }
     }
   }
@@ -3058,9 +3147,14 @@ class CanvasGraphics {
       pattern instanceof TilingPattern ? [0, 0, 0, 0] : null;
   }
 
+  #transferColor(color) {
+    return this.current.transferMapsFallback?.applyToColor(color) ?? color;
+  }
+
   setStrokeRGBColor(opIdx, color) {
     this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
-    this.ctx.strokeStyle = this.current.strokeColor = color;
+    this.current.strokeColor = color;
+    this.ctx.strokeStyle = this.#transferColor(color);
     this.current.patternStroke = false;
   }
 
@@ -3072,7 +3166,8 @@ class CanvasGraphics {
 
   setFillRGBColor(opIdx, color) {
     this.dependencyTracker?.recordSimpleData("fillColor", opIdx);
-    this.ctx.fillStyle = this.current.fillColor = color;
+    this.current.fillColor = color;
+    this.ctx.fillStyle = this.#transferColor(color);
     this.current.patternFill = false;
     this.current.tilingPatternDims = null;
   }
@@ -3337,7 +3432,8 @@ class CanvasGraphics {
       group.hasSoftMask &&
       currentCtx.globalAlpha === 1 &&
       currentCtx.globalCompositeOperation === "source-over" &&
-      this.current.transferMaps === "none";
+      this.current.transferMaps === "none" &&
+      !this.current.transferMapsFallback;
     if (needsBackdropCopy && (inSMaskMode || replaceBackdrop)) {
       // A non-isolated group that needs isolation (because of an inner blend
       // mode and/or a soft mask) can't use the direct path above, so it
@@ -3369,10 +3465,8 @@ class CanvasGraphics {
       //     non-1 group alpha would likewise mix the copied backdrop back in.
       //     Those groups keep the transparent canvas and blend against the
       //     real backdrop instead.
-      //   - isGray groups are grayscaled wholesale in endGroup, and an
-      //     inherited transfer filter (`transferMaps`) would be applied on
-      //     write-back, both of which would corrupt the copied backdrop, so
-      //     they're excluded too.
+      //   - isGray groups are grayscaled in endGroup, and inherited transfer
+      //     maps would also alter the copied backdrop.
       groupCtx.save();
       groupCtx.setTransform(1, 0, 0, 1, 0, 0);
       groupCtx.drawImage(currentCtx.canvas, -offsetX, -offsetY);
@@ -3501,6 +3595,8 @@ class CanvasGraphics {
       this.ctx.restore();
       const currentMtx = getCurrentTransform(this.ctx);
       this.restore(opIdx);
+      // Canvas filters run below; fallback maps must run here.
+      this.current.transferMapsFallback?.applyToCanvas(groupCtx);
       this.ctx.save();
       this.ctx.setTransform(...currentMtx);
       const dirtyBox = F32_BBOX_INIT.slice();
@@ -3879,8 +3975,9 @@ class CanvasGraphics {
     const started = this.#beginKnockoutElement(this.current.fillAlpha);
     const ctx = this.ctx;
 
-    const fillColor = this.current.fillColor;
     const isPatternFill = this.current.patternFill;
+    // Solid-color styles contain the transferred fallback value.
+    const fillColor = isPatternFill ? this.current.fillColor : ctx.fillStyle;
 
     this.dependencyTracker
       ?.resetBBox(opIdx)
@@ -3979,20 +4076,24 @@ class CanvasGraphics {
       ctx.filter = this.current.transferMaps;
       ctx.drawImage(ctx.canvas, 0, 0);
       ctx.filter = "none";
+    } else {
+      this.current.transferMapsFallback?.applyToCanvas(ctx);
     }
     return ctx.canvas;
   }
 
   applyTransferMapsToBitmap(imgData) {
-    if (this.current.transferMaps === "none") {
+    const { transferMaps, transferMapsFallback } = this.current;
+    if (transferMaps === "none" && !transferMapsFallback) {
       return { img: imgData.bitmap, canvasEntry: null };
     }
     const { bitmap, width, height } = imgData;
     const tmpCanvas = this.canvasFactory.create(width, height);
     const tmpCtx = tmpCanvas.context;
-    tmpCtx.filter = this.current.transferMaps;
+    tmpCtx.filter = transferMaps;
     tmpCtx.drawImage(bitmap, 0, 0);
     tmpCtx.filter = "none";
+    transferMapsFallback?.applyToCanvas(tmpCtx);
 
     return { img: tmpCanvas.canvas, canvasEntry: tmpCanvas };
   }
@@ -4087,8 +4188,12 @@ class CanvasGraphics {
     const ctx = this.ctx;
     let imgToPaint;
     let inlineImgCanvas = null;
-    if (imgData.bitmap) {
+    if (imgData.bitmap && !this.current.transferMapsFallback) {
       imgToPaint = imgData.bitmap;
+    } else if (imgData.bitmap) {
+      // Apply the fallback once before drawing the repeated copies.
+      ({ img: imgToPaint, canvasEntry: inlineImgCanvas } =
+        this.applyTransferMapsToBitmap(imgData));
     } else {
       const w = imgData.width;
       const h = imgData.height;
