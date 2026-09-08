@@ -1109,7 +1109,7 @@ const Dependencies = {
     "sameLineText",
   ],
   transform: ["transform"],
-  transformAndFill: ["transform", "fillColor"],
+  transformAndFill: ["transform", "filter", "fillColor"],
 };
 
 /**
