@@ -1343,7 +1343,7 @@ class Font {
           this.toUnicode.forEach(function (charCode, unicodeCharCode) {
             const cid = map[charCode];
             if (cidToGidMap[cid] === undefined) {
-              map[+charCode] = unicodeCharCode;
+              map[charCode] = unicodeCharCode;
             }
           });
         }
@@ -1351,7 +1351,7 @@ class Font {
 
       if (!(this.toUnicode instanceof IdentityToUnicodeMap)) {
         this.toUnicode.forEach(function (charCode, unicodeCharCode) {
-          map[+charCode] = unicodeCharCode;
+          map[charCode] = unicodeCharCode;
         });
       }
       this.toFontChar = map;
@@ -1386,7 +1386,7 @@ class Font {
         !(this.toUnicode instanceof IdentityToUnicodeMap)
       ) {
         this.toUnicode.forEach(function (charCode, unicodeCharCode) {
-          map[+charCode] = unicodeCharCode;
+          map[charCode] = unicodeCharCode;
         });
       }
       this.toFontChar = map;
@@ -1402,7 +1402,7 @@ class Font {
             unicodeCharCode = unicode;
           }
         }
-        map[+charCode] = unicodeCharCode;
+        map[charCode] = unicodeCharCode;
       });
 
       // Attempt to improve the glyph mapping for (some) composite fonts that
@@ -2267,7 +2267,7 @@ class Font {
         locaEntries,
         numGlyphs
       );
-      const missingGlyphs = Object.create(null);
+      const missingGlyphs = new Set();
       let writeOffset = 0;
       itemEncode(locaData, 0, writeOffset);
       for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
@@ -2283,7 +2283,7 @@ class Font {
             );
         const newLength = glyphProfile.length;
         if (newLength === 0) {
-          missingGlyphs[i] = true;
+          missingGlyphs.add(i);
         }
         if (glyphProfile.sizeOfInstructions > maxSizeOfInstructions) {
           maxSizeOfInstructions = glyphProfile.sizeOfInstructions;
@@ -2963,7 +2963,7 @@ class Font {
 
     sanitizeHead(tables.head, numGlyphs, isTrueType ? tables.loca.length : 0);
 
-    let missingGlyphs = Object.create(null);
+    let missingGlyphs = new Set();
     if (isTrueType) {
       const glyphsInfo = sanitizeGlyphLocations(
         tables.loca,
@@ -3032,7 +3032,7 @@ class Font {
 
     // Helper function to try to skip mapping of empty glyphs.
     function hasGlyph(glyphId) {
-      return !missingGlyphs[glyphId];
+      return !missingGlyphs.has(glyphId);
     }
 
     if (properties.composite) {
