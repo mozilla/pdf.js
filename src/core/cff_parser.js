@@ -1437,31 +1437,31 @@ class CFFFDSelect {
 // Helper class to keep track of where an offset is within the data and helps
 // filling in that offset once it's known.
 class CFFOffsetTracker {
-  offsets = Object.create(null);
+  #offsets = new Map();
 
   isTracking(key) {
-    return key in this.offsets;
+    return this.#offsets.has(key);
   }
 
   track(key, location) {
-    if (key in this.offsets) {
+    if (this.#offsets.has(key)) {
       throw new FormatError(`Already tracking location of ${key}`);
     }
-    this.offsets[key] = location;
+    this.#offsets.set(key, location);
   }
 
   offset(value) {
-    for (const key in this.offsets) {
-      this.offsets[key] += value;
+    for (const [key, val] of this.#offsets) {
+      this.#offsets.set(key, val + value);
     }
   }
 
   setEntryLocation(key, values, output) {
-    if (!(key in this.offsets)) {
+    if (!this.#offsets.has(key)) {
       throw new FormatError(`Not tracking location of ${key}`);
     }
     const data = output.data;
-    const dataOffset = this.offsets[key];
+    const dataOffset = this.#offsets.get(key);
     const size = 5;
     for (let i = 0, ii = values.length; i < ii; ++i) {
       const offset0 = i * size + dataOffset;
