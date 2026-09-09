@@ -30,7 +30,7 @@ function buildSVG(viewport, textContent) {
   svg.setAttribute("font-size", 1);
 
   // processing all items
-  textContent.items.forEach(function (textItem) {
+  textContent.items.forEach(textItem => {
     // we have to take in account viewport transform, which includes scale,
     // rotation and Y-axis flip, and not forgetting to flip text.
     const tx = pdfjsLib.Util.transform(

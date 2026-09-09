@@ -1384,7 +1384,7 @@ gulp.task("cmaps", async function () {
   }
 
   // Remove old bcmap files.
-  fs.readdirSync(VIEWER_CMAP_OUTPUT).forEach(function (file) {
+  fs.readdirSync(VIEWER_CMAP_OUTPUT).forEach(file => {
     if (/\.bcmap$/i.test(file)) {
       fs.unlinkSync(VIEWER_CMAP_OUTPUT + "/" + file);
     }

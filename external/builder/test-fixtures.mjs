@@ -11,7 +11,7 @@ const files = fs
   .readdirSync(baseDir)
   .filter(name => /-expected\./.test(name))
   .map(name => path.join(baseDir, name));
-files.forEach(function (expectationFilename) {
+files.forEach(expectationFilename => {
   const inFilename = expectationFilename.replace("-expected", "");
   const expectation = fs
     .readFileSync(expectationFilename)

@@ -21,7 +21,7 @@ function copySubtreeSync(src, dest) {
   if (!fs.existsSync(dest)) {
     fs.mkdirSync(dest);
   }
-  files.forEach(function (filename) {
+  files.forEach(filename => {
     const srcFile = path.join(src, filename);
     const file = path.join(dest, filename);
     const stats = fs.statSync(srcFile);

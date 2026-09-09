@@ -1340,7 +1340,7 @@ class Font {
           properties.hasIncludedToUnicodeMap &&
           this.toUnicode instanceof IdentityToUnicodeMap
         ) {
-          this.toUnicode.forEach(function (charCode, unicodeCharCode) {
+          this.toUnicode.forEach((charCode, unicodeCharCode) => {
             const cid = map[charCode];
             if (cidToGidMap[cid] === undefined) {
               map[charCode] = unicodeCharCode;
@@ -1350,7 +1350,7 @@ class Font {
       }
 
       if (!(this.toUnicode instanceof IdentityToUnicodeMap)) {
-        this.toUnicode.forEach(function (charCode, unicodeCharCode) {
+        this.toUnicode.forEach((charCode, unicodeCharCode) => {
           map[charCode] = unicodeCharCode;
         });
       }
@@ -1385,7 +1385,7 @@ class Font {
         !this.cidEncoding.startsWith("Identity-") &&
         !(this.toUnicode instanceof IdentityToUnicodeMap)
       ) {
-        this.toUnicode.forEach(function (charCode, unicodeCharCode) {
+        this.toUnicode.forEach((charCode, unicodeCharCode) => {
           map[charCode] = unicodeCharCode;
         });
       }
@@ -3039,7 +3039,7 @@ class Font {
       const cidToGidMap = properties.cidToGidMap || [];
       const isCidToGidMapEmpty = cidToGidMap.length === 0;
 
-      properties.cMap.forEach(function (charCode, cid) {
+      properties.cMap.forEach((charCode, cid) => {
         if (typeof cid === "string") {
           cid = convertCidString(charCode, cid, /* shouldThrow = */ true);
         }
