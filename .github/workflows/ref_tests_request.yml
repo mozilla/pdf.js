@@ -1,0 +1,116 @@
+name: Request reference tests
+# Adding the `browsertest` label to a pull request asks mozilla/pdf.js.pdfs to
+# run the reference tests (Firefox, Linux + Windows) on the PR head. The label
+# is removed once the request has been sent, so re-adding it acts as a button.
+# The results are published to https://mozilla.github.io/pdf.js.refs/pr/<n>/
+# and posted as a comment on the PR.
+#
+# `pull_request_target` gives access to the secrets needed to dispatch to the
+# private repository; this workflow must therefore never check out or run any
+# code from the pull request. Since the dispatched tests run the PR code with
+# access to the private PDFs, only a user with write access to this repository
+# can request them, and only for pull requests opened in mozilla/pdf.js (the
+# receiving workflow checks the latter again on its side).
+#
+# The trigger is required to get the label event and the secrets for fork PRs;
+# every value taken from the event is passed through `env`, never interpolated.
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    types: [labeled]
+permissions:
+  contents: read
+
+jobs:
+  request:
+    if: >-
+      github.repository == 'mozilla/pdf.js' &&
+      github.event.label.name == 'browsertest'
+    runs-on: ubuntu-latest
+    environment: sync_pdfs
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Remove the label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/browsertest" \
+            --method DELETE --silent || true
+
+      - name: Check the requester's permission
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          set -euo pipefail
+          permission="$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${SENDER}/permission" \
+            --jq .permission || echo none)"
+          case "$permission" in
+            admin|write)
+              echo "allowed=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "allowed=false" >> "$GITHUB_OUTPUT"
+              echo "::error::${SENDER} has '${permission}' access; write access is required"
+              gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+                --method POST --silent \
+                -f body=":no_entry_sign: Only users with write access can request the reference tests."
+              exit 1
+              ;;
+          esac
+
+      - name: Generate app token for pdf.js.pdfs
+        if: steps.check.outputs.allowed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mozilla
+          repositories: pdf.js.pdfs
+          permission-contents: write
+
+      - name: Dispatch the reference tests
+        if: steps.check.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SENDER: ${{ github.event.sender.login }}
+        run: |
+          payload=$(jq -nc \
+            --argjson pr "$PR" \
+            --arg sender "$SENDER" \
+            '{
+              event_type: "ref-tests",
+              client_payload: { pr: $pr, sender: $sender }
+            }')
+          gh api repos/mozilla/pdf.js.pdfs/dispatches \
+            --method POST \
+            --input - <<< "$payload"
+
+      - name: Acknowledge the request
+        if: steps.check.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          marker="<!-- ref-tests-report -->"
+          body="${marker}
+          ### Reference tests
+
+          :hourglass_flowing_sand: Running on \`${SHA}\`; the results will be posted here."
+          comment_id=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+            --jq "[.[] | select(.body | startswith(\"${marker}\"))] | last | .id // empty" | tail -n1)
+          if [ -n "$comment_id" ]; then
+            gh api "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" \
+              --method PATCH -f body="$body" --silent
+          else
+            gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+              --method POST -f body="$body" --silent
+          fi

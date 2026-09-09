@@ -1,0 +1,52 @@
+name: Update reference images
+# Every push to master asks mozilla/pdf.js.pdfs to regenerate the reference
+# images (Firefox, Linux + Windows) and commit the changes to
+# mozilla/pdf.js.refs, so that the references always track master.
+on:
+  push:
+    paths:
+      - 'gulpfile.mjs'
+      - 'external/**'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'test/images/**'
+      - 'test/pdfs/**'
+      - 'test/resources/**'
+      - 'test/*.css'
+      - 'test/driver.js'
+      - 'test/test.mjs'
+      - 'test/test_manifest.json'
+      - 'test/test_slave.html'
+      - 'web/**'
+      - '.github/workflows/ref_tests_makeref.yml'
+    branches:
+      - master
+permissions:
+  contents: read
+
+jobs:
+  request:
+    if: github.repository == 'mozilla/pdf.js'
+    runs-on: ubuntu-latest
+    environment: sync_pdfs
+
+    steps:
+      - name: Generate app token for pdf.js.pdfs
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mozilla
+          repositories: pdf.js.pdfs
+          permission-contents: write
+
+      - name: Dispatch the reference update
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          payload=$(jq -nc --arg sha "$GITHUB_SHA" \
+            '{ event_type: "ref-tests-makeref", client_payload: { sha: $sha } }')
+          gh api repos/mozilla/pdf.js.pdfs/dispatches \
+            --method POST \
+            --input - <<< "$payload"
