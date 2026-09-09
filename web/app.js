@@ -572,19 +572,28 @@ const PDFViewerApplication = {
       });
     }
 
-    const signatureManager =
-      AppOptions.get("enableSignatureEditor") && appConfig.addSignatureDialog
-        ? new SignatureManager(
-            appConfig.addSignatureDialog,
-            appConfig.editSignatureDialog,
-            appConfig.annotationEditorParams?.editorSignatureAddSignature ||
-              null,
-            overlayManager,
-            l10n,
-            externalServices.createSignatureStorage(eventBus, abortSignal),
-            eventBus
-          )
-        : null;
+    let signatureManager = null;
+    if (AppOptions.get("enableSignatureEditor")) {
+      if (
+        typeof PDFJSDev === "undefined"
+          ? window.isGECKOVIEW
+          : PDFJSDev.test("GECKOVIEW")
+      ) {
+        if (annotationEditorMode !== AnnotationEditorType.DISABLE) {
+          signatureManager = new SignatureManager(eventBus, abortSignal);
+        }
+      } else if (appConfig.addSignatureDialog) {
+        signatureManager = new SignatureManager(
+          appConfig.addSignatureDialog,
+          appConfig.editSignatureDialog,
+          appConfig.annotationEditorParams?.editorSignatureAddSignature || null,
+          overlayManager,
+          l10n,
+          externalServices.createSignatureStorage(eventBus, abortSignal),
+          eventBus
+        );
+      }
+    }
 
     const commentManager =
       AppOptions.get("enableComment") && appConfig.editCommentDialog
