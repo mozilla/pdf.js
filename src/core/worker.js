@@ -31,6 +31,7 @@ import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
+import { importPrintedAppearances } from "./editor/print_appearances.js";
 import { incrementalUpdate } from "./writer.js";
 import { PDFEditor } from "./editor/pdf_editor.js";
 import { PDFWorkerStream } from "./worker_stream.js";
@@ -705,10 +706,6 @@ class WorkerMessageHandler {
         if (!buffer) {
           return;
         }
-        const { importPrintedAppearances } =
-          typeof PDFJSDev === "undefined"
-            ? await import("./editor/print_appearances.js")
-            : await __eager_import__("./editor/print_appearances.js");
         const appearances = await importPrintedAppearances({
           buffer,
           changes,
