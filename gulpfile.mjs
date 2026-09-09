@@ -817,6 +817,8 @@ function runTests(testsName, { bot = false } = {}) {
           [
             { names: ["-t", "--testfilter"], hasValue: true },
             { names: ["-j", "--jobs"], hasValue: true },
+            { names: ["--shard"], hasValue: true },
+            { names: ["--summaryFile"], hasValue: true },
           ],
           args
         );
@@ -1118,6 +1120,8 @@ function makeRef(done, bot) {
     [
       { names: ["-t", "--testfilter"], hasValue: true },
       { names: ["-j", "--jobs"], hasValue: true },
+      { names: ["--shard"], hasValue: true },
+      { names: ["--summaryFile"], hasValue: true },
     ],
     args
   );

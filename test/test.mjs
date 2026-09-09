@@ -103,9 +103,11 @@ function parseOptions() {
       noPrompts: { type: "boolean", default: false },
       port: { type: "string", default: "0" },
       reftest: { type: "boolean", default: false },
+      shard: { type: "string", default: "" },
       statsDelay: { type: "string", default: "0" },
       statsFile: { type: "string", default: "" },
       strictVerify: { type: "boolean", default: false },
+      summaryFile: { type: "string", default: "" },
       testfilter: { type: "string", short: "t", multiple: true, default: [] },
       unitTest: { type: "boolean", default: false },
     },
@@ -158,10 +160,22 @@ function parseOptions() {
     );
   }
 
+  let shard = null;
+  if (values.shard) {
+    const match = /^(\d+)\/(\d+)$/.exec(values.shard);
+    const index = match ? parseInt(match[1], 10) : 0;
+    const count = match ? parseInt(match[2], 10) : 0;
+    if (!match || index < 1 || index > count) {
+      throw new Error("--shard must be of the form k/N with 1 <= k <= N.");
+    }
+    shard = { index, count };
+  }
+
   return {
     ...values,
     jobs: parseInt(values.jobs, 10) || 1,
     port: parseInt(values.port, 10) || 0,
+    shard,
     statsDelay: parseInt(values.statsDelay, 10) || 0,
   };
 }
@@ -270,6 +284,22 @@ async function startRefTest(masterMode, showRefImages) {
 
     if (options.statsFile) {
       fs.writeFileSync(options.statsFile, JSON.stringify(stats, null, 2));
+    }
+    if (options.summaryFile) {
+      fs.writeFileSync(
+        options.summaryFile,
+        JSON.stringify({
+          platform: os.platform(),
+          masterMode,
+          shard: options.shard,
+          numRuns,
+          numErrors,
+          numFBFFailures,
+          numEqFailures,
+          numEqNoSnapshot,
+          runtime,
+        })
+      );
     }
     if (masterMode) {
       if (numEqFailures + numEqNoSnapshot > 0) {
@@ -476,6 +506,10 @@ function getTestManifest() {
       console.error("Unrecognized test IDs: " + testFilter.join(" "));
       return undefined;
     }
+  }
+  if (options.shard) {
+    const { index, count } = options.shard;
+    manifest = manifest.filter((_, i) => i % count === index - 1);
   }
   return manifest;
 }
