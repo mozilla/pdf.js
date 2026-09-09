@@ -33,8 +33,8 @@
 @import url(text_layer_builder.css);
 @import url(annotation_layer_builder.css);
 @import url(xfa_layer_builder.css);
-/* Ignored in GECKOVIEW: begin */
 @import url(annotation_editor_layer_builder.css);
+/* Ignored in GECKOVIEW: begin */
 @import url(menu.css);
 @import url(tree.css);
 @import url(views_manager.css);
