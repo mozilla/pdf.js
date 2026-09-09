@@ -660,7 +660,7 @@ async function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
   }
   // Merge the map into the current one, making sure not to override
   // any previously defined entries.
-  cMap.useCMap.forEach(function (key, value) {
+  cMap.useCMap.forEach((key, value) => {
     if (!cMap.contains(key)) {
       cMap.mapOne(key, value);
     }

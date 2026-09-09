@@ -240,7 +240,7 @@ async function startRefTest(masterMode, showRefImages) {
     var numFBFFailures = 0;
     var numEqFailures = 0;
     var numEqNoSnapshot = 0;
-    sessions.forEach(function (session) {
+    sessions.forEach(session => {
       numRuns += session.numRuns;
       numErrors += session.numErrors;
       numFBFFailures += session.numFBFFailures;
@@ -699,8 +699,8 @@ async function checkRefTestResults(browser, id, results) {
   var task = session.tasks[id];
   session.numRuns++;
 
-  results.forEach(function (roundResults, round) {
-    roundResults.forEach(function (pageResult, page) {
+  results.forEach((roundResults, round) => {
+    roundResults.forEach((pageResult, page) => {
       if (!pageResult) {
         return; // no results
       }
@@ -760,8 +760,8 @@ async function checkRefTestResults(browser, id, results) {
     }
   }
   // Clear snapshot buffers and drop the task entry from the session.
-  results.forEach(function (roundResults) {
-    roundResults.forEach(function (pageResult) {
+  results.forEach(roundResults => {
+    roundResults.forEach(pageResult => {
       if (pageResult) {
         pageResult.snapshot = null;
         pageResult.baselineSnapshot = null;
@@ -853,7 +853,7 @@ function onAllSessionsClosedAfterTests(name) {
     stopServer();
     var numRuns = 0,
       numErrors = 0;
-    sessions.forEach(function (session) {
+    sessions.forEach(session => {
       numRuns += session.numRuns;
       numErrors += session.numErrors;
     });
