@@ -493,7 +493,7 @@ class TransferMapsFallback {
     return shadow(
       this,
       "identityMap",
-      Uint8Array.from({ length: 256 }, (_, i) => i)
+      Uint8Array.from({ length: 255 + 1 }, (_, i) => i)
     );
   }
 
