@@ -210,14 +210,18 @@ class RendererMessageHandler {
       if (renderTaskState.operatorListIdx === operatorList.argsArray.length) {
         return renderTaskState.operatorListIdx;
       }
-      // Flush painted content both before the wait, since it may be a long
-      // stall on a dependency, e.g. a font or an image that has not been
-      // forwarded yet and after it. The lastFrameIdx check in
-      // #maybeSendInterimFrame ensures that at most one frame is sent
-      // when nothing was painted in between.
+      // Send pending painted content, if eligible, before waiting for a
+      // dependency such as a font or image that has not been forwarded yet.
       await this.#maybeSendInterimFrame(handler, renderTaskState);
       await promise;
-      await this.#maybeSendInterimFrame(handler, renderTaskState);
+      if (renderTaskState.aborted) {
+        break;
+      }
+      // The continuation may have resolved synchronously. Yield to the event
+      // loop so cancellation messages can be processed before the next slice.
+      await new Promise(resolveYield => {
+        setTimeout(resolveYield, 0);
+      });
     }
     return renderTaskState.operatorListIdx;
   }
