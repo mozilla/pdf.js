@@ -2833,7 +2833,7 @@ function onSidebarViewChanged({ view }) {
 
   if (this.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.set("sidebarView", view).catch(() => {
+    this.store?.setMultiple({ sidebarView: view }).catch(() => {
       // Unable to write to storage.
     });
   }
@@ -2863,7 +2863,7 @@ function onUpdateViewarea({ location }) {
 function onViewerModesChanged(name, evt) {
   if (this.isInitialViewSet && !this.pdfViewer.isInPresentationMode) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.set(name, evt.mode).catch(() => {
+    this.store?.setMultiple({ [name]: evt.mode }).catch(() => {
       // Unable to write to storage.
     });
   }
