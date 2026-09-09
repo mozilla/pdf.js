@@ -79,12 +79,6 @@ class ViewHistory {
     return this._writeToStorage();
   }
 
-  async get(name, defaultValue) {
-    await this._initializedPromise;
-    const val = this.file[name];
-    return val !== undefined ? val : defaultValue;
-  }
-
   async getMultiple(properties) {
     await this._initializedPromise;
     const values = Object.create(null);
