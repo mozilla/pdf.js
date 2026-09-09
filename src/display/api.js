@@ -186,8 +186,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
  *   context to create elements with and to load resources, such as fonts,
- *   into. Defaults to the current document. Renderer-worker rendering is
- *   disabled when this is set to a custom document.
+ *   into. Defaults to the current document.
+ *   NOTE: Worker rendering is disabled when this is set to a custom document.
  * @property {boolean} [disableRange] - Disable range request loading of PDF
  *   files. When enabled, and if the server supports partial content requests,
  *   then the PDF will be fetched in chunks. The default value is `false`.
@@ -1690,7 +1690,7 @@ class PDFPageProxy {
       intentState.displayReadyCapability.promise,
       optionalContentConfigPromise,
     ])
-      .then(async ([renderPageData, optionalContentConfig]) => {
+      .then(async ([transparency, optionalContentConfig]) => {
         if (this.destroyed) {
           complete();
           return;
@@ -1703,10 +1703,8 @@ class PDFPageProxy {
               "and `PDFDocumentProxy.getOptionalContentConfig` methods."
           );
         }
-        const { transparency, hasCanvasFilters } = renderPageData;
         await internalRenderTask.initializeGraphics({
           transparency,
-          hasCanvasFilters,
           optionalContentConfig,
         });
         internalRenderTask.operatorListChanged();
@@ -1911,7 +1909,7 @@ class PDFPageProxy {
   /**
    * @private
    */
-  _startRenderPage(transparency, cacheKey, hasCanvasFilters = false) {
+  _startRenderPage(transparency, cacheKey) {
     const intentState = this._intentStates.get(cacheKey);
     if (!intentState) {
       return; // Rendering was cancelled.
@@ -1920,10 +1918,7 @@ class PDFPageProxy {
 
     // TODO Refactor RenderPageRequest to separate rendering
     // and operator list logic
-    intentState.displayReadyCapability?.resolve({
-      transparency,
-      hasCanvasFilters,
-    });
+    intentState.displayReadyCapability?.resolve(transparency);
   }
 
   /**
@@ -3016,11 +3011,7 @@ class WorkerTransport {
       }
 
       const page = this.#pageCache.get(data.pageIndex);
-      page._startRenderPage(
-        data.transparency,
-        data.cacheKey,
-        data.hasCanvasFilters
-      );
+      page._startRenderPage(data.transparency, data.cacheKey);
     });
 
     const objectHandler = new ObjectHandler({
@@ -3706,11 +3697,7 @@ class InternalRenderTask {
     }
   }
 
-  async initializeGraphics({
-    transparency = false,
-    hasCanvasFilters = false,
-    optionalContentConfig,
-  }) {
+  async initializeGraphics({ transparency = false, optionalContentConfig }) {
     if (this.cancelled) {
       return;
     }
@@ -3735,14 +3722,10 @@ class InternalRenderTask {
     // The stepper-driven debug recording path needs `gfx` on the main thread,
     // so we have to fall back to local rendering when it's enabled. Plain
     // `recordOperations`/`recordImages` are now handled inside the worker.
-    // Worker rendering is also disabled when canvas filters (TR) are present
-    // because OffscreenCanvas's OffscreenCanvasRenderingContext2D ignores
-    // `.filter` values set from a data URL. See bug 2011237.
     let useWorkerRendering =
       this.rendererHandler &&
       !this.params.canvasContext &&
       (!background || typeof background === "string") &&
-      !hasCanvasFilters &&
       !this.pageColors &&
       !this._recordForDebugger;
 
