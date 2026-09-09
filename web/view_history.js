@@ -65,12 +65,6 @@ class ViewHistory {
     return localStorage.getItem("pdfjs.history");
   }
 
-  async set(name, val) {
-    await this._initializedPromise;
-    this.file[name] = val;
-    return this._writeToStorage();
-  }
-
   async setMultiple(properties) {
     await this._initializedPromise;
     for (const name in properties) {
