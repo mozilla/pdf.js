@@ -1154,9 +1154,16 @@ if (
 }
 
 // TODO: Remove this once `Iterator.prototype.join` is generally available.
-if (typeof Iterator.prototype.join !== "function") {
+// Note that `typeof` cannot guard a member expression, hence the `Iterator`
+// global must not be dereferenced directly since that throws a `ReferenceError`
+// on engines without it; `%IteratorPrototype%` is instead reachable through any
+// built-in iterator, and is the very same object as `Iterator.prototype`.
+const iteratorPrototype = Object.getPrototypeOf(
+  Object.getPrototypeOf([][Symbol.iterator]())
+);
+if (typeof iteratorPrototype.join !== "function") {
   // eslint-disable-next-line no-extend-native
-  Iterator.prototype.join = function (separator) {
+  iteratorPrototype.join = function (separator) {
     return [...this].join(separator);
   };
 }
