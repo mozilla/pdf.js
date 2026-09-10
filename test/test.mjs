@@ -1088,9 +1088,16 @@ async function startBrowser({
       // Disable WebGPU (prevents log spam on Windows, and environments like
       // GitHub Actions don't expose GPUs anyway).
       "dom.webgpu.enabled": false,
-      // Don't derive the DirectWrite rendering mode from the system settings:
-      // the text rendering is otherwise not reproducible on Windows.
+      // Pin the ClearType parameters to the values a content process starts
+      // with: with the defaults, Firefox derives them from the system settings
+      // and pushes them to the content processes later, so system fonts
+      // rendered before and after that update differ (the reference images of
+      // PDFs with non-embedded fonts weren't reproducible on Windows).
       "gfx.font_rendering.cleartype_params.rendering_mode": 0,
+      "gfx.font_rendering.cleartype_params.cleartype_level": 100,
+      "gfx.font_rendering.cleartype_params.enhanced_contrast": 100,
+      "gfx.font_rendering.cleartype_params.gamma": 2200,
+      "gfx.font_rendering.cleartype_params.pixel_structure": 1,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
       // Disable the newtabpage stuff.
