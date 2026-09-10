@@ -323,6 +323,9 @@ class OptionalContentConfig {
   }
 
   getOrder() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: getOrder");
+    }
     if (!this.#groups.size) {
       return null;
     }
