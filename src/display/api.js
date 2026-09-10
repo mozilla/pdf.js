@@ -343,6 +343,7 @@ function getDocument(src = {}) {
     !isOffscreenCanvasSupported ||
     !FeatureTest.isOffscreenCanvasSupported ||
     ownerDocument !== globalThis.document ||
+    !ownerDocument?.fonts ||
     !!styleElement;
 
   // Set the main-thread verbosity level.
