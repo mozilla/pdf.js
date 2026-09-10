@@ -443,7 +443,11 @@ window.onload = function () {
     p.x = evt.clientX;
     p.y = evt.clientY;
     p = p.matrixTransform(m);
-    return { x: Math.floor(p.x), y: Math.floor(p.y) };
+    // The images are displayed scaled (see showImages): convert the position
+    // in the SVG to image pixels.
+    const scale =
+      parseFloat(ID("svg").getAttribute("width")) / gImage1Data.width;
+    return { x: Math.floor(p.x / scale), y: Math.floor(p.y / scale) };
   }
 
   function hex2(i) {
@@ -451,7 +455,7 @@ window.onload = function () {
   }
 
   function canvasPixelAsHex(data, x, y) {
-    const offset = (y * data.width + x) * 4 * window.devicePixelRatio;
+    const offset = (y * data.width + x) * 4;
     const r = data.data[offset];
     const g = data.data[offset + 1];
     const b = data.data[offset + 2];
