@@ -1088,6 +1088,9 @@ async function startBrowser({
       // Disable WebGPU (prevents log spam on Windows, and environments like
       // GitHub Actions don't expose GPUs anyway).
       "dom.webgpu.enabled": false,
+      // Don't derive the DirectWrite rendering mode from the system settings:
+      // the text rendering is otherwise not reproducible on Windows.
+      "gfx.font_rendering.cleartype_params.rendering_mode": 0,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
       // Disable the newtabpage stuff.
