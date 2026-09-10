@@ -25,6 +25,8 @@ import { makePathFromDrawOPS } from "./display_utils.js";
 import { serializeFontFamily } from "../shared/css_utils.js";
 
 class FontLoader {
+  #nativeFontFaces = new Set();
+
   #systemFonts = new Set();
 
   #styleSheet = null;
@@ -35,34 +37,44 @@ class FontLoader {
   }) {
     this._document = ownerDocument;
 
-    this.nativeFontFaces = new Set();
     this.styleElement =
       typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")
         ? styleElement
         : null;
 
-    if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      typeof PDFJSDev === "undefined" ||
+      !PDFJSDev.test("MOZCENTRAL || WORKER_THREAD")
+    ) {
       this.loadingRequests = [];
       this.loadTestFontId = 0;
     }
   }
 
   addNativeFontFace(nativeFontFace) {
-    this.nativeFontFaces.add(nativeFontFace);
+    this.#nativeFontFaces.add(nativeFontFace);
     this._document.fonts.add(nativeFontFace);
   }
 
   removeNativeFontFace(nativeFontFace) {
-    this.nativeFontFaces.delete(nativeFontFace);
+    this.#nativeFontFaces.delete(nativeFontFace);
     this._document.fonts.delete(nativeFontFace);
   }
 
   insertRule(rule) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: insertRule");
+    }
+
     const styleSheet = this.#getStyleSheet();
     styleSheet.insertRule(rule, styleSheet.cssRules.length);
   }
 
   #getStyleSheet() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: #getStyleSheet");
+    }
+
     if (this.#styleSheet) {
       return this.#styleSheet;
     }
@@ -93,12 +105,15 @@ class FontLoader {
   }
 
   clear() {
-    for (const nativeFontFace of this.nativeFontFaces) {
+    for (const nativeFontFace of this.#nativeFontFaces) {
       this._document.fonts.delete(nativeFontFace);
     }
-    this.nativeFontFaces.clear();
+    this.#nativeFontFaces.clear();
     this.#systemFonts.clear();
 
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      return;
+    }
     if (this.#styleSheet) {
       const { adoptedStyleSheets } = this._document;
       if (adoptedStyleSheets?.includes(this.#styleSheet)) {
@@ -108,12 +123,8 @@ class FontLoader {
       }
       this.#styleSheet = null;
     }
-
-    if (this.styleElement) {
-      // Note: ChildNode.remove doesn't throw if the parentNode is undefined.
-      this.styleElement.remove();
-      this.styleElement = null;
-    }
+    this.styleElement?.remove();
+    this.styleElement = null;
   }
 
   async loadSystemFont({
@@ -182,6 +193,9 @@ class FontLoader {
     }
 
     // !this.isFontLoadingAPISupported
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: sync font loading");
+    }
     const rule = font.createFontFaceRule();
     if (rule) {
       this.insertRule(rule);
@@ -228,7 +242,10 @@ class FontLoader {
   }
 
   _queueLoadingCallback(callback) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("MOZCENTRAL || WORKER_THREAD")
+    ) {
       throw new Error("Not implemented: _queueLoadingCallback");
     }
 
@@ -254,7 +271,10 @@ class FontLoader {
   }
 
   get _loadTestFont() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("MOZCENTRAL || WORKER_THREAD")
+    ) {
       throw new Error("Not implemented: _loadTestFont");
     }
 
@@ -288,7 +308,10 @@ class FontLoader {
   }
 
   _prepareFontLoadEvent(font, request) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("MOZCENTRAL || WORKER_THREAD")
+    ) {
       throw new Error("Not implemented: _prepareFontLoadEvent");
     }
 
@@ -451,6 +474,10 @@ class FontFaceObject {
   }
 
   createFontFaceRule() {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: createFontFaceRule");
+    }
+
     if (!this.data || this.disableFontFace) {
       return null;
     }
