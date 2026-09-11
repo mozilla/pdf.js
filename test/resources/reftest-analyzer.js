@@ -147,12 +147,15 @@ window.onload = function () {
   }
 
   async function loadFromWeb(url) {
-    const lastSlash = url.lastIndexOf("/");
-    if (lastSlash) {
-      gPath = url.substring(0, lastSlash + 1);
+    // The log and the images next to it are only loaded from this origin.
+    const logUrl = new URL(url, window.location.href);
+    if (logUrl.origin !== window.location.origin) {
+      throw new Error("The log must be on the same origin as the analyzer.");
     }
+    const { pathname } = logUrl;
+    gPath = pathname.substring(0, pathname.lastIndexOf("/") + 1);
 
-    const response = await fetch(url);
+    const response = await fetch(window.location.origin + pathname);
     if (!response.ok) {
       throw new Error(response.statusText);
     }
@@ -313,6 +316,21 @@ window.onload = function () {
     showPhase("viewer");
   }
 
+  // Besides the images next to the log, only the references published in
+  // mozilla/pdf.js.refs can be shown; their URL is rebuilt from its parts.
+  const REFS_URL = "https://raw.githubusercontent.com/mozilla/pdf.js.refs/";
+  const REFS_URL_PATTERN =
+    /^https:\/\/raw\.githubusercontent\.com\/mozilla\/pdf\.js\.refs\/([0-9a-f]{40})\/((?:[\w-][\w.-]*\/){3}[1-9]\d*\.png)$/;
+
+  function refsUrl(file) {
+    const match = REFS_URL_PATTERN.exec(file);
+    return match ? `${REFS_URL}${match[1]}/${match[2]}` : null;
+  }
+
+  function imageUrl(file) {
+    return refsUrl(file) ?? gPath + file;
+  }
+
   function getImageData(src, whenReady) {
     const img = new Image();
     img.onload = function () {
@@ -325,7 +343,13 @@ window.onload = function () {
 
       whenReady(ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight));
     };
-    img.src = gPath + src;
+    const url = refsUrl(src);
+    if (url) {
+      // Images from another origin must be fetched with CORS for their pixels
+      // to be readable.
+      img.crossOrigin = "anonymous";
+    }
+    img.src = url ?? gPath + src;
   }
 
   function showImages(i) {
@@ -357,13 +381,13 @@ window.onload = function () {
     ID("image1").setAttributeNS(
       XLINK_NS,
       "xlink:href",
-      gPath + item.images[0].file
+      imageUrl(item.images[0].file)
     );
     // Making the href be #image1 doesn't seem to work
     ID("feimage1").setAttributeNS(
       XLINK_NS,
       "xlink:href",
-      gPath + item.images[0].file
+      imageUrl(item.images[0].file)
     );
     if (item.images.length === 1) {
       ID("imgcontrols").style.display = "none";
@@ -372,13 +396,13 @@ window.onload = function () {
       ID("image2").setAttributeNS(
         XLINK_NS,
         "xlink:href",
-        gPath + item.images[1].file
+        imageUrl(item.images[1].file)
       );
       // Making the href be #image2 doesn't seem to work
       ID("feimage2").setAttributeNS(
         XLINK_NS,
         "xlink:href",
-        gPath + item.images[1].file
+        imageUrl(item.images[1].file)
       );
     }
     cell.style.display = "";
@@ -419,7 +443,11 @@ window.onload = function () {
     p.x = evt.clientX;
     p.y = evt.clientY;
     p = p.matrixTransform(m);
-    return { x: Math.floor(p.x), y: Math.floor(p.y) };
+    // The images are displayed scaled (see showImages): convert the position
+    // in the SVG to image pixels.
+    const scale =
+      parseFloat(ID("svg").getAttribute("width")) / gImage1Data.width;
+    return { x: Math.floor(p.x / scale), y: Math.floor(p.y / scale) };
   }
 
   function hex2(i) {
@@ -427,7 +455,7 @@ window.onload = function () {
   }
 
   function canvasPixelAsHex(data, x, y) {
-    const offset = (y * data.width + x) * 4 * window.devicePixelRatio;
+    const offset = (y * data.width + x) * 4;
     const r = data.data[offset];
     const g = data.data[offset + 1];
     const b = data.data[offset + 2];

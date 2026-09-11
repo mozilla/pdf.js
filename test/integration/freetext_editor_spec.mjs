@@ -55,7 +55,6 @@ import {
   unselectEditor,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
-  waitForEditorFocusSettled,
   waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
@@ -71,7 +70,6 @@ const clearAll = clearEditors.bind(null, "freeText");
 const commit = async page => {
   await page.keyboard.press("Escape");
   await page.waitForSelector(".freeTextEditor.selectedEditor .overlay.enabled");
-  await waitForEditorFocusSettled(page);
 };
 
 const switchToFreeText = switchToEditor.bind(null, "FreeText");
@@ -103,7 +101,6 @@ const createFreeTextEditor = async ({
 
   await page.mouse.click(x, y);
   await page.waitForSelector(editorSelector, { visible: true });
-  await waitForEditorFocusSettled(page);
   if (data) {
     await page.type(`${editorSelector} .internal`, data);
   }

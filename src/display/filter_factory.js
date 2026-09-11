@@ -157,27 +157,14 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 
   #createTables(maps) {
+    // A `null` map is an /Identity entry, no feFunc is needed for it.
+    const toTable = map => map && Array.from(map, v => v / 255).join(",");
     if (maps.length === 1) {
-      const mapR = maps[0];
-      const buffer = new Array(256);
-      for (let i = 0; i < 256; i++) {
-        buffer[i] = mapR[i] / 255;
-      }
-
-      const table = buffer.join(",");
+      const table = toTable(maps[0]);
       return [table, table, table];
     }
-
     const [mapR, mapG, mapB] = maps;
-    const bufferR = new Array(256);
-    const bufferG = new Array(256);
-    const bufferB = new Array(256);
-    for (let i = 0; i < 256; i++) {
-      bufferR[i] = mapR[i] / 255;
-      bufferG[i] = mapG[i] / 255;
-      bufferB[i] = mapB[i] / 255;
-    }
-    return [bufferR.join(","), bufferG.join(","), bufferB.join(",")];
+    return [toTable(mapR), toTable(mapG), toTable(mapB)];
   }
 
   #createUrl(id) {
@@ -606,6 +593,9 @@ class DOMFilterFactory extends BaseFilterFactory {
   }
 
   #appendFeFunc(feComponentTransfer, func, table) {
+    if (!table) {
+      return;
+    }
     const feFunc = this.#document.createElementNS(SVG_NS, func);
     feFunc.setAttribute("type", "discrete");
     feFunc.setAttribute("tableValues", table);

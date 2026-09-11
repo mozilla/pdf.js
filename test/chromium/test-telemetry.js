@@ -96,7 +96,7 @@ function createExtensionGlobal() {
   };
   window.Headers = function (headers) {
     headers = JSON.parse(JSON.stringify(headers)); // Clone.
-    Object.keys(headers).forEach(function (k) {
+    Object.keys(headers).forEach(k => {
       headers[k] = String(headers[k]);
     });
     return headers;
@@ -142,7 +142,7 @@ function createExtensionGlobal() {
   };
   window.test_fireTimers = function () {
     assert.ok(timers.length);
-    timers.forEach(function (timer) {
+    timers.forEach(timer => {
       timer();
     });
   };

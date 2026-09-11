@@ -143,6 +143,51 @@ describe("api", function () {
     ]);
   }
 
+  function buildGeneratedAppearancePdf(pageContents = null) {
+    pageContents ??= [
+      [
+        "/NonStruct <</MCID 0>> BDC",
+        "/Artifact BMC",
+        "/Span MP",
+        "/Span <</ActualText (source)>> DP",
+        "q",
+        "1 0 0 -1 0 44 cm",
+        "0 4 40 20 re W n",
+        "BT /F1 10 Tf 1 0 0 -1 2 22 Tm (Generated appearance) Tj ET",
+        "BT /F1 10 Tf [(Array) 0.123456789012345 (operand)] TJ ET",
+        "Q",
+        "EMC",
+        "EMC",
+      ].join("\n"),
+    ];
+    const kids = pageContents.map((_, i) => `${2 * i + 4} 0 R`).join(" ");
+    const objects = [
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      `2 0 obj\n<< /Type /Pages /Kids [${kids}] ` +
+        `/Count ${pageContents.length} >>\nendobj\n`,
+      // Share one font object across all pages.
+      "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    ];
+    for (const [i, content] of pageContents.entries()) {
+      objects.push(
+        `${2 * i + 4} 0 obj\n<< /Type /Page /Parent 2 0 R ` +
+          "/MediaBox [0 0 72 72] /Resources << /Font << /F1 3 0 R >> >> " +
+          `/Contents ${2 * i + 5} 0 R >>\nendobj\n`,
+        `${2 * i + 5} 0 obj\n<< /Length ${content.length} >>\n` +
+          `stream\n${content}\nendstream\nendobj\n`
+      );
+    }
+    return assemblePdf(objects);
+  }
+
+  function buildEmptyPagePdf() {
+    return assemblePdf([
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>\nendobj\n",
+    ]);
+  }
+
   function getNamedNodeInXML(node, path) {
     for (const component of path.split(".")) {
       if (!node.childNodes) {
@@ -2977,6 +3022,153 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("embeds an externally generated FreeText appearance", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const rect = [12, 34, 56, 78];
+      const value = "Hello from Firefox";
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect,
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value,
+        pageIndex: 0,
+      });
+
+      let generatedEntries;
+      const data = await pdfDoc.saveDocument(entries => {
+        generatedEntries = entries;
+        return buildGeneratedAppearancePdf();
+      });
+      expect(generatedEntries).toEqual([
+        {
+          data: {
+            width: 44,
+            height: 44,
+            text: value,
+            color: "#000000",
+            fontSize: 10,
+            verticalAlign: "top",
+          },
+        },
+      ]);
+      const savedString = bytesToString(data);
+      // Preserve drawing operators, but drop marked-content operators.
+      expect(savedString).not.toContain(`(${value}) Tj`);
+      expect(savedString).toContain("/BBox [0 0 44 44]");
+      expect(savedString).toContain("1 0 0 -1 0 44 cm");
+      expect(savedString).toContain("0 4 40 20 re");
+      expect(savedString).toContain("1 0 0 -1 2 22 Tm");
+      expect(savedString).toContain("[(Array) 0.123456789012345 (operand)] TJ");
+      expect(savedString).not.toContain("/NonStruct");
+      expect(savedString).not.toContain("/Artifact");
+      expect(savedString).not.toContain("/ActualText");
+      expect(savedString).not.toContain("/MCID");
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+      expect(annotations[0].contentsObj.str).toEqual(value);
+
+      const operatorList = await page.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE,
+      });
+      expect(operatorList.fnArray).toContain(OPS.showText);
+
+      await loadingTask.destroy();
+    });
+
+    it("copies an appearance image stream having an indirect filter", async function () {
+      const hexData = "0123456789abcdef".repeat(18) + ">";
+      const content = "q 44 0 0 44 0 0 cm /Im0 Do Q";
+      const generated = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] " +
+          "/Resources << /XObject << /Im0 4 0 R >> >> /Contents 6 0 R >>\nendobj\n",
+        "4 0 obj\n<< /Type /XObject /Subtype /Image /Width 12 /Height 12 " +
+          "/ColorSpace /DeviceGray /BitsPerComponent 8 /Filter 5 0 R " +
+          `/Length ${hexData.length} >>\nstream\n${hexData}\nendstream\nendobj\n`,
+        "5 0 obj\n/ASCIIHexDecode\nendobj\n",
+        `6 0 obj\n<< /Length ${content.length} >>\n` +
+          `stream\n${content}\nendstream\nendobj\n`,
+      ]);
+
+      let loadingTask = getDocument({ data: buildEmptyPagePdf() });
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        annotationType: AnnotationEditorType.FREETEXT,
+        rect: [12, 34, 56, 78],
+        rotation: 0,
+        fontSize: 10,
+        color: [0, 0, 0],
+        value: "Hello",
+        pageIndex: 0,
+      });
+
+      const data = await pdfDoc.saveDocument(() => generated);
+      const savedString = bytesToString(data);
+      expect(savedString).toContain("/Filter [/FlateDecode /ASCIIHexDecode]");
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const operatorList = await page.getOperatorList({
+        annotationMode: AnnotationMode.ENABLE,
+      });
+      expect(operatorList.fnArray).toContain(OPS.paintImageXObject);
+      await loadingTask.destroy();
+    });
+
+    it("embeds externally generated FreeText appearances sharing their font", async function () {
+      let loadingTask = getDocument({ data: buildEmptyPagePdf() });
+      let pdfDoc = await loadingTask.promise;
+      for (let i = 0; i < 2; i++) {
+        pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
+          annotationType: AnnotationEditorType.FREETEXT,
+          rect: [12 + 50 * i, 34, 56 + 50 * i, 78],
+          rotation: 0,
+          fontSize: 10,
+          color: [0, 0, 0],
+          value: `Hello n°${i}`,
+          pageIndex: 0,
+        });
+      }
+
+      let generatedEntries;
+      const data = await pdfDoc.saveDocument(entries => {
+        generatedEntries = entries;
+        return buildGeneratedAppearancePdf([
+          "BT /F1 10 Tf (App0) Tj ET",
+          "BT /F1 10 Tf (App1) Tj ET",
+        ]);
+      });
+      expect(generatedEntries.map(entry => entry.data.text)).toEqual([
+        "Hello n°0",
+        "Hello n°1",
+      ]);
+      const savedString = bytesToString(data);
+      expect(savedString).toContain("(App0) Tj");
+      expect(savedString).toContain("(App1) Tj");
+      expect(savedString.match(/\/Subtype \/Form/g).length).toEqual(2);
+      expect(savedString.match(/\/BaseFont \/Helvetica/g).length).toEqual(1);
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+      expect(annotations.map(annotation => annotation.contentsObj.str)).toEqual(
+        ["Hello n°0", "Hello n°1"]
+      );
+      await loadingTask.destroy();
+    });
+
     it("write a value in an annotation, save the pdf and check the value in xfa datasets (1)", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("issue16081.pdf"));
       let pdfDoc = await loadingTask.promise;
@@ -5529,6 +5721,89 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       await pdfDoc.cleanup();
       expect(true).toBeTrue();
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
+    it("applies the transfer function of the graphics state", async function () {
+      // The page applies transfer functions to fills, strokes, images,
+      // shadings, patterns, and groups. Node.js exercises the fallback.
+      const loadingTask = getDocument(
+        buildGetDocumentParams("transfer_maps.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = pdfPage.render({
+        canvas: canvasAndCtx.canvas,
+        viewport,
+      });
+      await renderTask.promise;
+
+      const getPixel = (x, y) =>
+        Array.from(canvasAndCtx.context.getImageData(x, y, 1, 1).data);
+      const CYAN = [0, 255, 255, 255],
+        YELLOW = [255, 255, 0, 255];
+      expect(getPixel(30, 30)).withContext("fill").toEqual(CYAN);
+      expect(getPixel(80, 30)).withContext("inline image").toEqual(CYAN);
+      // Two of the four mask pixels are painted.
+      expect(getPixel(120, 20)).withContext("image mask").toEqual(CYAN);
+      expect(getPixel(140, 40)).withContext("image mask").toEqual(CYAN);
+      expect(getPixel(140, 20))
+        .withContext("image mask")
+        .toEqual([255, 255, 255, 255]);
+      expect(getPixel(175, 30)).withContext("shading").toEqual(CYAN);
+      expect(getPixel(30, 80))
+        .withContext("transparency group")
+        .toEqual(YELLOW);
+      expect(getPixel(80, 80))
+        .withContext("colored tiling pattern")
+        .toEqual(YELLOW);
+      expect(getPixel(130, 80))
+        .withContext("uncolored tiling pattern")
+        .toEqual(CYAN);
+      // The transfer function was reset to /Identity before this fill.
+      expect(getPixel(175, 80))
+        .withContext("identity")
+        .toEqual([255, 0, 0, 255]);
+      expect(getPixel(30, 130)).withContext("stroke").toEqual(YELLOW);
+      expect(getPixel(30, 175)).withContext("shading pattern").toEqual(CYAN);
+      // P3 transfers the cell's initial black to white.
+      expect(getPixel(80, 175))
+        .withContext("colored tiling pattern with a group")
+        .toEqual([255, 255, 255, 255]);
+      // /Identity is set after selecting P4, so its black stays black.
+      expect(getPixel(130, 175))
+        .withContext("colored tiling pattern after a TR change")
+        .toEqual([0, 0, 0, 255]);
+      // Only the green component has an (inverting) transfer function.
+      expect(getPixel(180, 130))
+        .withContext("partial identity array")
+        .toEqual(YELLOW);
+      // A nonlinear map must be applied after gradient interpolation.
+      for (const [x, expected] of [
+        [85, 16],
+        [110, 65],
+        [135, 145],
+      ]) {
+        const [r, g, b, a] = getPixel(x, 130);
+        expect([g, b, a])
+          .withContext(`gradient at x=${x}`)
+          .toEqual([r, r, 255]);
+        expect(Math.abs(r - expected))
+          .withContext(`gradient at x=${x}`)
+          .toBeLessThanOrEqual(3);
+      }
+      expect(getPixel(5, 5))
+        .withContext("background")
+        .toEqual([255, 255, 255, 255]);
 
       canvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();

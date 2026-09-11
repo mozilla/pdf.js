@@ -48,8 +48,8 @@ function group(stats, groupBy) {
  */
 function flatten(stats) {
   let rows = [];
-  stats.forEach(function (curStat) {
-    curStat.stats.forEach(function (s) {
+  stats.forEach(curStat => {
+    curStat.stats.forEach(s => {
       rows.push({
         browser: curStat.browser,
         page: curStat.page,

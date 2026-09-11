@@ -4006,7 +4006,7 @@ class PartialEvaluator {
       });
       const toUnicode = [],
         buf = [];
-      properties.cMap.forEach(function (charcode, cid) {
+      properties.cMap.forEach((charcode, cid) => {
         if (cid > 0xffff) {
           throw new FormatError("Max size of CID is 65,535");
         }
@@ -4060,7 +4060,7 @@ class PartialEvaluator {
         // Convert UTF-16BE
         // NOTE: cmap can be a sparse array, so use forEach instead of
         // `for(;;)` to iterate over all keys.
-        cmap.forEach(function (charCode, token) {
+        cmap.forEach((charCode, token) => {
           // Some cmaps contain *only* CID characters (fixes issue9367.pdf).
           if (typeof token === "number") {
             map[charCode] = String.fromCodePoint(token);

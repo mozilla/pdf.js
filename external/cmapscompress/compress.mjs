@@ -473,7 +473,7 @@ function compressCmaps(src, dest, verify) {
   const files = fs.readdirSync(src).filter(
     fn => !fn.includes(".") // skipping files with the extension
   );
-  files.forEach(function (fn) {
+  files.forEach(fn => {
     const srcPath = path.join(src, fn);
     const destPath = path.join(dest, fn + ".bcmap");
     const stats = compressCmap(srcPath, destPath, verify);

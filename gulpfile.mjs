@@ -262,6 +262,7 @@ function createWebpackAlias(defines) {
   } else if (defines.MOZCENTRAL) {
     if (defines.GECKOVIEW) {
       const gvAlias = {
+        "web-signature_manager": "web/signature_manager-geckoview.js",
         "web-toolbar": "web/toolbar-geckoview.js",
       };
       for (const key in viewerAlias) {
@@ -816,6 +817,8 @@ function runTests(testsName, { bot = false } = {}) {
           [
             { names: ["-t", "--testfilter"], hasValue: true },
             { names: ["-j", "--jobs"], hasValue: true },
+            { names: ["--shard"], hasValue: true },
+            { names: ["--summaryFile"], hasValue: true },
           ],
           args
         );
@@ -1117,6 +1120,8 @@ function makeRef(done, bot) {
     [
       { names: ["-t", "--testfilter"], hasValue: true },
       { names: ["-j", "--jobs"], hasValue: true },
+      { names: ["--shard"], hasValue: true },
+      { names: ["--summaryFile"], hasValue: true },
     ],
     args
   );
@@ -1384,7 +1389,7 @@ gulp.task("cmaps", async function () {
   }
 
   // Remove old bcmap files.
-  fs.readdirSync(VIEWER_CMAP_OUTPUT).forEach(function (file) {
+  fs.readdirSync(VIEWER_CMAP_OUTPUT).forEach(file => {
     if (/\.bcmap$/i.test(file)) {
       fs.unlinkSync(VIEWER_CMAP_OUTPUT + "/" + file);
     }

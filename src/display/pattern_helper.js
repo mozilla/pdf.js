@@ -178,10 +178,44 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
     return grad;
   }
 
+  /** Rasterize a shading within its device-space bounding box. */
+  _createRasterPattern(ctx, owner, inverse, bbox, transform, transferMaps) {
+    // Limit the temporary canvas to `bbox` (see bug 1722807).
+    const width = Math.ceil(bbox[2] - bbox[0]) || 1;
+    const height = Math.ceil(bbox[3] - bbox[1]) || 1;
+
+    const tmpCanvas = owner.canvasFactory.create(width, height);
+
+    const tmpCtx = tmpCanvas.context;
+    tmpCtx.clearRect(0, 0, width, height);
+    tmpCtx.beginPath();
+    tmpCtx.rect(0, 0, width, height);
+    // Account for the `bbox` origin.
+    tmpCtx.translate(-bbox[0], -bbox[1]);
+    inverse = Util.transform(inverse, [1, 0, 0, 1, bbox[0], bbox[1]]);
+
+    tmpCtx.transform(...transform);
+    applyBoundingBox(tmpCtx, this._bbox);
+
+    if (this.areConic()) {
+      tmpCtx.fillStyle = this._createReversedGradient(tmpCtx);
+      tmpCtx.fill();
+    }
+    tmpCtx.fillStyle = this._createGradient(tmpCtx);
+    tmpCtx.fill();
+    // Apply maps after interpolation by filtering the raster, not the stops.
+    transferMaps?.applyToCanvas(tmpCtx);
+
+    const pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
+    owner.canvasFactory.destroy(tmpCanvas);
+    pattern.setTransform(new DOMMatrix(inverse));
+    return pattern;
+  }
+
   getPattern(ctx, owner, inverse, pathType) {
-    let pattern;
+    const transferMaps = owner.current.transferMapsFallback;
     if (pathType === PathType.STROKE || pathType === PathType.FILL) {
-      if (this.isOriginBased()) {
+      if (this.isOriginBased() && !transferMaps) {
         let transf = Util.transform(inverse, owner.baseTransform);
         if (this.matrix) {
           transf = Util.transform(transf, this.matrix);
@@ -211,65 +245,42 @@ class RadialAxialShadingPattern extends BaseShadingPattern {
         pathType,
         getCurrentTransform(ctx)
       ) || [0, 0, 0, 0];
-      // Create a canvas that is only as big as the current path. This doesn't
-      // allow us to cache the pattern, but it generally creates much smaller
-      // canvases and saves memory use. See bug 1722807 for an example.
-      const width = Math.ceil(ownerBBox[2] - ownerBBox[0]) || 1;
-      const height = Math.ceil(ownerBBox[3] - ownerBBox[1]) || 1;
-
-      const tmpCanvas = owner.canvasFactory.create(width, height);
-
-      const tmpCtx = tmpCanvas.context;
-      tmpCtx.clearRect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-      tmpCtx.beginPath();
-      tmpCtx.rect(0, 0, tmpCtx.canvas.width, tmpCtx.canvas.height);
-      // Non shading fill patterns are positioned relative to the base transform
-      // (usually the page's initial transform), but we may have created a
-      // smaller canvas based on the path, so we must account for the shift.
-      tmpCtx.translate(-ownerBBox[0], -ownerBBox[1]);
-      inverse = Util.transform(inverse, [
-        1,
-        0,
-        0,
-        1,
-        ownerBBox[0],
-        ownerBBox[1],
-      ]);
-
-      tmpCtx.transform(...owner.baseTransform);
-      if (this.matrix) {
-        tmpCtx.transform(...this.matrix);
-      }
-      applyBoundingBox(tmpCtx, this._bbox);
-
-      if (this.areConic()) {
-        tmpCtx.fillStyle = this._createReversedGradient(tmpCtx);
-        tmpCtx.fill();
-      }
-      tmpCtx.fillStyle = this._createGradient(tmpCtx);
-      tmpCtx.fill();
-
-      pattern = ctx.createPattern(tmpCanvas.canvas, "no-repeat");
-      owner.canvasFactory.destroy(tmpCanvas);
-      const domMatrix = new DOMMatrix(inverse);
-      pattern.setTransform(domMatrix);
-    } else {
-      // Shading fills are applied relative to the current matrix which is also
-      // how canvas gradients work, so there's no need to do anything special
-      // here.
-      if (this.areConic()) {
-        // Draw the reversed gradient first so the normal gradient can
-        // correctly overlay it (see _isCircleCenterOutside for details).
-        ctx.save();
-        applyBoundingBox(ctx, this._bbox);
-        ctx.fillStyle = this._createReversedGradient(ctx);
-        ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
-        ctx.restore();
-      }
-      applyBoundingBox(ctx, this._bbox);
-      pattern = this._createGradient(ctx);
+      // Fill and stroke patterns use the owner's base transform.
+      const transform = this.matrix
+        ? Util.transform(owner.baseTransform, this.matrix)
+        : owner.baseTransform;
+      return this._createRasterPattern(
+        ctx,
+        owner,
+        inverse,
+        ownerBBox,
+        transform,
+        transferMaps
+      );
     }
-    return pattern;
+
+    // Direct gradients work unless the maps require a raster.
+    if (transferMaps && inverse) {
+      return this._createRasterPattern(
+        ctx,
+        owner,
+        inverse,
+        owner.current.clipBox,
+        getCurrentTransform(ctx),
+        transferMaps
+      );
+    }
+    if (this.areConic()) {
+      // Draw the reversed gradient first so the normal gradient can
+      // correctly overlay it (see _isCircleCenterOutside for details).
+      ctx.save();
+      applyBoundingBox(ctx, this._bbox);
+      ctx.fillStyle = this._createReversedGradient(ctx);
+      ctx.fillRect(-1e10, -1e10, 2e10, 2e10);
+      ctx.restore();
+    }
+    applyBoundingBox(ctx, this._bbox);
+    return this._createGradient(ctx);
   }
 }
 
@@ -393,7 +404,12 @@ class MeshShadingPattern extends BaseShadingPattern {
     loadMeshShader();
   }
 
-  _createMeshCanvas(combinedScale, backgroundColor, canvasFactory) {
+  _createMeshCanvas(
+    combinedScale,
+    backgroundColor,
+    canvasFactory,
+    transferMaps = null
+  ) {
     // we will increase scale on some weird factor to let antialiasing take
     // care of "rough" edges
     const EXPECTED_SCALE = 1.1;
@@ -472,6 +488,8 @@ class MeshShadingPattern extends BaseShadingPattern {
       }
       tmpCanvas.context.putImageData(data, BORDER_SIZE, BORDER_SIZE);
     }
+    // Filter the raster when using the software fallback.
+    transferMaps?.applyToCanvas(tmpCanvas.context);
 
     return {
       canvas: tmpCanvas.canvas,
@@ -507,7 +525,8 @@ class MeshShadingPattern extends BaseShadingPattern {
     const temporaryPatternCanvas = this._createMeshCanvas(
       scale,
       pathType === PathType.SHADING ? null : this._background,
-      owner.canvasFactory
+      owner.canvasFactory,
+      owner.current.transferMapsFallback
     );
 
     if (pathType !== PathType.SHADING) {
@@ -625,6 +644,8 @@ class TilingPattern {
       opIdx
     );
     graphics.groupLevel = owner.groupLevel;
+    // Inherit the owner's fallback while rendering the tile.
+    graphics.current.transferMapsFallback = owner.current.transferMapsFallback;
 
     this.setFillAndStrokeStyleToContext(graphics, this.paintType, this.color);
 
@@ -885,23 +906,25 @@ class TilingPattern {
   }
 
   setFillAndStrokeStyleToContext(graphics, paintType, color) {
-    const context = graphics.ctx,
-      current = graphics.current;
-    current.patternFill = current.patternStroke = false;
     switch (paintType) {
       case PaintType.COLORED:
-        const { fillStyle, strokeStyle } = this.ctx;
-        context.fillStyle = current.fillColor = fillStyle;
-        context.strokeStyle = current.strokeColor = strokeStyle;
+        // The cell starts from the initial graphics state of its parent
+        // content stream (PDF 32000-1, 8.7.3.1), hence black and not the
+        // colours in effect when the pattern was selected.
+        color = "#000000";
         break;
       case PaintType.UNCOLORED:
-        context.fillStyle = context.strokeStyle = color;
-        // Set color needed by image masks (fixes issues 3226 and 8741).
-        current.fillColor = current.strokeColor = color;
         break;
       default:
         throw new FormatError(`Unsupported paint type: ${paintType}`);
     }
+    const { ctx, current } = graphics;
+    current.patternFill = current.patternStroke = false;
+    // Pre-transfer solid colors in fallback mode.
+    ctx.fillStyle = ctx.strokeStyle =
+      current.transferMapsFallback?.applyToColor(color) ?? color;
+    // Also needed by image masks (fixes issues 3226 and 8741).
+    current.fillColor = current.strokeColor = color;
   }
 
   isModifyingCurrentTransform() {

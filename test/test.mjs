@@ -103,9 +103,11 @@ function parseOptions() {
       noPrompts: { type: "boolean", default: false },
       port: { type: "string", default: "0" },
       reftest: { type: "boolean", default: false },
+      shard: { type: "string", default: "" },
       statsDelay: { type: "string", default: "0" },
       statsFile: { type: "string", default: "" },
       strictVerify: { type: "boolean", default: false },
+      summaryFile: { type: "string", default: "" },
       testfilter: { type: "string", short: "t", multiple: true, default: [] },
       unitTest: { type: "boolean", default: false },
     },
@@ -158,10 +160,22 @@ function parseOptions() {
     );
   }
 
+  let shard = null;
+  if (values.shard) {
+    const match = /^(\d+)\/(\d+)$/.exec(values.shard);
+    const index = match ? parseInt(match[1], 10) : 0;
+    const count = match ? parseInt(match[2], 10) : 0;
+    if (!match || index < 1 || index > count) {
+      throw new Error("--shard must be of the form k/N with 1 <= k <= N.");
+    }
+    shard = { index, count };
+  }
+
   return {
     ...values,
     jobs: parseInt(values.jobs, 10) || 1,
     port: parseInt(values.port, 10) || 0,
+    shard,
     statsDelay: parseInt(values.statsDelay, 10) || 0,
   };
 }
@@ -240,7 +254,7 @@ async function startRefTest(masterMode, showRefImages) {
     var numFBFFailures = 0;
     var numEqFailures = 0;
     var numEqNoSnapshot = 0;
-    sessions.forEach(function (session) {
+    sessions.forEach(session => {
       numRuns += session.numRuns;
       numErrors += session.numErrors;
       numFBFFailures += session.numFBFFailures;
@@ -270,6 +284,22 @@ async function startRefTest(masterMode, showRefImages) {
 
     if (options.statsFile) {
       fs.writeFileSync(options.statsFile, JSON.stringify(stats, null, 2));
+    }
+    if (options.summaryFile) {
+      fs.writeFileSync(
+        options.summaryFile,
+        JSON.stringify({
+          platform: os.platform(),
+          masterMode,
+          shard: options.shard,
+          numRuns,
+          numErrors,
+          numFBFFailures,
+          numEqFailures,
+          numEqNoSnapshot,
+          runtime,
+        })
+      );
     }
     if (masterMode) {
       if (numEqFailures + numEqNoSnapshot > 0) {
@@ -476,6 +506,10 @@ function getTestManifest() {
       console.error("Unrecognized test IDs: " + testFilter.join(" "));
       return undefined;
     }
+  }
+  if (options.shard) {
+    const { index, count } = options.shard;
+    manifest = manifest.filter((_, i) => i % count === index - 1);
   }
   return manifest;
 }
@@ -699,8 +733,8 @@ async function checkRefTestResults(browser, id, results) {
   var task = session.tasks[id];
   session.numRuns++;
 
-  results.forEach(function (roundResults, round) {
-    roundResults.forEach(function (pageResult, page) {
+  results.forEach((roundResults, round) => {
+    roundResults.forEach((pageResult, page) => {
       if (!pageResult) {
         return; // no results
       }
@@ -760,8 +794,8 @@ async function checkRefTestResults(browser, id, results) {
     }
   }
   // Clear snapshot buffers and drop the task entry from the session.
-  results.forEach(function (roundResults) {
-    roundResults.forEach(function (pageResult) {
+  results.forEach(roundResults => {
+    roundResults.forEach(pageResult => {
       if (pageResult) {
         pageResult.snapshot = null;
         pageResult.baselineSnapshot = null;
@@ -853,7 +887,7 @@ function onAllSessionsClosedAfterTests(name) {
     stopServer();
     var numRuns = 0,
       numErrors = 0;
-    sessions.forEach(function (session) {
+    sessions.forEach(session => {
       numRuns += session.numRuns;
       numErrors += session.numErrors;
     });
@@ -1054,6 +1088,16 @@ async function startBrowser({
       // Disable WebGPU (prevents log spam on Windows, and environments like
       // GitHub Actions don't expose GPUs anyway).
       "dom.webgpu.enabled": false,
+      // Pin the ClearType parameters to the values a content process starts
+      // with: with the defaults, Firefox derives them from the system settings
+      // and pushes them to the content processes later, so system fonts
+      // rendered before and after that update differ (the reference images of
+      // PDFs with non-embedded fonts weren't reproducible on Windows).
+      "gfx.font_rendering.cleartype_params.rendering_mode": 0,
+      "gfx.font_rendering.cleartype_params.cleartype_level": 100,
+      "gfx.font_rendering.cleartype_params.enhanced_contrast": 100,
+      "gfx.font_rendering.cleartype_params.gamma": 2200,
+      "gfx.font_rendering.cleartype_params.pixel_structure": 1,
       // It's helpful to see where the caret is.
       "accessibility.browsewithcaret": true,
       // Disable the newtabpage stuff.
