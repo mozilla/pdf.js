@@ -56,12 +56,9 @@ class ARCFourCipher {
   b = 0;
 
   constructor(key) {
-    const s = new Uint8Array(256);
+    const s = Uint8Array.from({ length: 256 }, (_, i) => i);
     const keyLength = key.length;
 
-    for (let i = 0; i < 256; ++i) {
-      s[i] = i;
-    }
     for (let i = 0, j = 0; i < 256; ++i) {
       const tmp = s[i];
       j = (j + tmp + key[i % keyLength]) & 0xff;

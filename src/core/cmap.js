@@ -422,11 +422,7 @@ class IdentityCMap extends CMap {
 
   getMap() {
     // Sometimes identity maps must be instantiated, but it's rare.
-    const map = new Array(0x10000);
-    for (let i = 0; i <= 0xffff; i++) {
-      map[i] = i;
-    }
-    return map;
+    return Array.from({ length: 0x10000 }, (_, i) => i);
   }
 
   get length() {
