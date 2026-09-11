@@ -183,23 +183,6 @@ pdfjs-printing-not-ready = 경고: 이 PDF를 인쇄를 할 수 있을 정도로
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = 사이드바 표시/숨기기
-pdfjs-toggle-sidebar-notification-button =
-    .title = 사이드바 표시/숨기기 (문서에 아웃라인/첨부파일/레이어 포함됨)
-pdfjs-toggle-sidebar-button-label = 사이드바 표시/숨기기
-pdfjs-document-outline-button =
-    .title = 문서 아웃라인 보기 (더블 클릭해서 모든 항목 펼치기/접기)
-pdfjs-document-outline-button-label = 문서 아웃라인
-pdfjs-attachments-button =
-    .title = 첨부파일 보기
-pdfjs-attachments-button-label = 첨부파일
-pdfjs-layers-button =
-    .title = 레이어 보기 (더블 클릭해서 모든 레이어를 기본 상태로 재설정)
-pdfjs-layers-button-label = 레이어
-pdfjs-thumbs-button =
-    .title = 미리보기
-pdfjs-thumbs-button-label = 미리보기
 pdfjs-current-outline-item-button =
     .title = 현재 아웃라인 항목 찾기
 pdfjs-current-outline-item-button-label = 현재 아웃라인 항목
@@ -210,10 +193,6 @@ pdfjs-additional-layers = 추가 레이어
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = { $page } 페이지
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -231,8 +210,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = 찾기
     .placeholder = 문서에서 찾기…
+    .title = 찾기
 pdfjs-find-previous-button =
     .title = 지정 문자열에 일치하는 1개 부분을 검색
 pdfjs-find-previous-button-label = 이전
@@ -319,16 +298,16 @@ pdfjs-editor-highlight-button =
     .title = 강조 표시
 pdfjs-editor-highlight-button-label = 강조 표시
 pdfjs-highlight-floating-button1 =
-    .title = 강조 표시
     .aria-label = 강조 표시
+    .title = 강조 표시
 pdfjs-highlight-floating-button-label = 강조 표시
 pdfjs-comment-floating-button =
-    .title = 주석
     .aria-label = 주석
+    .title = 주석
 pdfjs-comment-floating-button-label = 주석
 pdfjs-editor-comment-button =
-    .title = 주석
     .aria-label = 주석
+    .title = 주석
 pdfjs-editor-comment-button-label = 주석
 pdfjs-editor-signature-button =
     .title = 서명 추가
@@ -397,8 +376,8 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title = 주석
 pdfjs-editor-comments-sidebar-close-button =
-    .title = 사이드바 닫기
     .aria-label = 사이드바 닫기
+    .title = 사이드바 닫기
 pdfjs-editor-comments-sidebar-close-button-label = 사이드바 닫기
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = 눈에 띄는 내용이 있나요? 해당 부분을 강조 표시하고 주석을 남겨주세요.
@@ -521,13 +500,6 @@ pdfjs-editor-alt-text-settings-dialog-label = 이미지 대체 텍스트 설정
 pdfjs-editor-alt-text-settings-automatic-title = 자동 대체 텍스트
 pdfjs-editor-alt-text-settings-create-model-button-label = 자동으로 대체 텍스트 생성
 pdfjs-editor-alt-text-settings-create-model-description = 이미지가 보이지 않거나 이미지가 로딩되지 않을 때 도움이 되는 설명을 제안합니다.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = 대체 텍스트 AI 모델 ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = 사용자의 장치에서 로컬로 실행되므로 데이터가 비공개로 유지됩니다. 자동 대체 텍스트에 필요합니다.
-pdfjs-editor-alt-text-settings-delete-model-button = 삭제
-pdfjs-editor-alt-text-settings-download-model-button = 다운로드
-pdfjs-editor-alt-text-settings-downloading-model-button = 다운로드 중…
 pdfjs-editor-alt-text-settings-editor-title = 대체 텍스트 편집기
 pdfjs-editor-alt-text-settings-show-dialog-button-label = 이미지 추가 시 바로 대체 텍스트 편집기 표시
 pdfjs-editor-alt-text-settings-show-dialog-description = 모든 이미지에 대체 텍스트가 있는지 확인하는 데 도움이 됩니다.
@@ -720,8 +692,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = 디지털 서명 속성
     .aria-label = 디지털 서명 속성
+    .title = 디지털 서명 속성
 pdfjs-digital-signature-properties-button-label = 디지털 서명 속성
 
 ## Banner shown above the signature list summarising the overall

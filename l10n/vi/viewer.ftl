@@ -183,23 +183,6 @@ pdfjs-printing-not-ready = Cảnh báo: PDF chưa được tải hết để in.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Bật/Tắt thanh lề
-pdfjs-toggle-sidebar-notification-button =
-    .title = Bật tắt thanh lề (tài liệu bao gồm bản phác thảo/tập tin đính kèm/lớp)
-pdfjs-toggle-sidebar-button-label = Bật/Tắt thanh lề
-pdfjs-document-outline-button =
-    .title = Hiển thị tài liệu phác thảo (nhấp đúp vào để mở rộng/thu gọn tất cả các mục)
-pdfjs-document-outline-button-label = Bản phác tài liệu
-pdfjs-attachments-button =
-    .title = Hiện nội dung đính kèm
-pdfjs-attachments-button-label = Nội dung đính kèm
-pdfjs-layers-button =
-    .title = Hiển thị các lớp (nhấp đúp để đặt lại tất cả các lớp về trạng thái mặc định)
-pdfjs-layers-button-label = Lớp
-pdfjs-thumbs-button =
-    .title = Hiển thị ảnh thu nhỏ
-pdfjs-thumbs-button-label = Ảnh thu nhỏ
 pdfjs-current-outline-item-button =
     .title = Tìm mục phác thảo hiện tại
 pdfjs-current-outline-item-button-label = Mục phác thảo hiện tại
@@ -210,10 +193,6 @@ pdfjs-additional-layers = Các lớp bổ sung
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Trang { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -231,8 +210,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Tìm
     .placeholder = Tìm trong tài liệu…
+    .title = Tìm
 pdfjs-find-previous-button =
     .title = Tìm cụm từ ở phần trước
 pdfjs-find-previous-button-label = Trước
@@ -319,16 +298,16 @@ pdfjs-editor-highlight-button =
     .title = Đánh dấu
 pdfjs-editor-highlight-button-label = Đánh dấu
 pdfjs-highlight-floating-button1 =
-    .title = Đánh dấu
     .aria-label = Đánh dấu
+    .title = Đánh dấu
 pdfjs-highlight-floating-button-label = Đánh dấu
 pdfjs-comment-floating-button =
-    .title = Chú thích
     .aria-label = Chú thích
+    .title = Chú thích
 pdfjs-comment-floating-button-label = Chú thích
 pdfjs-editor-comment-button =
-    .title = Chú thích
     .aria-label = Chú thích
+    .title = Chú thích
 pdfjs-editor-comment-button-label = Chú thích
 pdfjs-editor-signature-button =
     .title = Thêm chữ ký
@@ -397,8 +376,8 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title = Chú thích
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Đóng thanh lề
     .aria-label = Đóng thanh lề
+    .title = Đóng thanh lề
 pdfjs-editor-comments-sidebar-close-button-label = Đóng thanh lề
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Bạn thấy điều gì đáng chú ý? Hãy đánh dấu và để lại chú thích.
@@ -521,13 +500,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Cài đặt văn bản thay thế 
 pdfjs-editor-alt-text-settings-automatic-title = Văn bản thay thế tự động
 pdfjs-editor-alt-text-settings-create-model-button-label = Tạo văn bản thay thế tự động
 pdfjs-editor-alt-text-settings-create-model-description = Đề xuất mô tả giúp ích cho những người không xem được ảnh hoặc khi không thể tải ảnh.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Mô hình AI văn bản khác ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Chạy cục bộ trên thiết bị của bạn để dữ liệu của bạn luôn ở chế độ riêng tư. Bắt buộc đối với văn bản thay thế tự động.
-pdfjs-editor-alt-text-settings-delete-model-button = Xóa
-pdfjs-editor-alt-text-settings-download-model-button = Tải xuống
-pdfjs-editor-alt-text-settings-downloading-model-button = Đang tải xuống…
 pdfjs-editor-alt-text-settings-editor-title = Trình soạn thảo văn bản thay thế
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Hiển thị ngay trình soạn thảo văn bản thay thế khi thêm hình ảnh
 pdfjs-editor-alt-text-settings-show-dialog-description = Giúp bạn đảm bảo tất cả hình ảnh của bạn đều có văn bản thay thế.
@@ -720,8 +692,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Thuộc tính chữ ký điện tử
     .aria-label = Thuộc tính chữ ký điện tử
+    .title = Thuộc tính chữ ký điện tử
 pdfjs-digital-signature-properties-button-label = Thuộc tính chữ ký điện tử
 
 ## Banner shown above the signature list summarising the overall

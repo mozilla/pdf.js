@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = چتاوݨی: PDF چھپائی کیتے پوری طر
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = سائیڈ بار ٹوگل کرو
-pdfjs-toggle-sidebar-notification-button =
-    .title = سائیڈ بار ٹوگل کرو (دستاویز وِچ آؤٹ لائن/ منسلکات/ پرتاں شامل ہن)
-pdfjs-toggle-sidebar-button-label = سائیڈ بار ٹوگل کرو
-pdfjs-document-outline-button =
-    .title = دستاویز دا خاکہ ݙکھاؤ (تمام آئٹمز کوں پھیلاوݨ/سنگوڑݨ کیتے ڈبل کلک کرو)
-pdfjs-document-outline-button-label = دستاویز آؤٹ لائن
-pdfjs-attachments-button =
-    .title = نتھیاں ݙکھاؤ
-pdfjs-attachments-button-label = منسلکات
-pdfjs-layers-button =
-    .title = پرتاں ݙکھاؤ (تمام پرتاں کوں ڈیفالٹ حالت وِچ دوبارہ ترتیب ݙیوݨ کیتے ڈبل کلک کرو)
-pdfjs-layers-button-label = پرتاں
-pdfjs-thumbs-button =
-    .title = تھمبنیل ݙکھاؤ
-pdfjs-thumbs-button-label = تھمبنیلز
 pdfjs-current-outline-item-button =
     .title = موجودہ آؤٹ لائن آئٹم لبھو
 pdfjs-current-outline-item-button-label = موجودہ آؤٹ لائن آئٹم
@@ -195,18 +178,14 @@ pdfjs-additional-layers = اضافی پرتاں
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = ورقہ { $page }
-# Variables:
-#   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = ورقے دا تھمبنیل { $page }
 
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = لبھو
     .placeholder = دستاویز وِچ لبھو …
+    .title = لبھو
 pdfjs-find-previous-button =
     .title = فقرے دا پچھلا واقعہ لبھو
 pdfjs-find-previous-button-label = پچھلا
@@ -297,8 +276,8 @@ pdfjs-editor-highlight-button =
     .title = نمایاں کرو
 pdfjs-editor-highlight-button-label = نمایاں کرو
 pdfjs-highlight-floating-button1 =
-    .title = نمایاں کرو
     .aria-label = نمایاں کرو
+    .title = نمایاں کرو
 pdfjs-highlight-floating-button-label = نمایاں کرو
 
 ## Remove button for the various kind of editor.
@@ -443,13 +422,6 @@ pdfjs-editor-alt-text-settings-dialog-label = تصویر آلٹ عبارت تر�
 pdfjs-editor-alt-text-settings-automatic-title = خودکار آلٹ عبارت
 pdfjs-editor-alt-text-settings-create-model-button-label = آلٹ عبارت خودکار بݨاؤ
 pdfjs-editor-alt-text-settings-create-model-description = اُنہاں لوکاں دی مدد کیتے  تفصیل تجویز کرو جہڑے تصویر کائنی ݙیکھ سڳدے یا ڄݙݨ تصویر لوڈ کائبی تھیندی۔
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = آلٹ عبارت اے آئی ماڈل ({ $totalSize } ایم بی)
-pdfjs-editor-alt-text-settings-ai-model-description = تہاݙی ڈیوائس تے مقامی طور تے چلدا ہے تاں جو تہاݙا ڈیٹا نجی رہوے۔ خودکار آلٹ عبارت کیتے ضروری ہے۔
-pdfjs-editor-alt-text-settings-delete-model-button = مٹاؤ
-pdfjs-editor-alt-text-settings-download-model-button = ڈاؤن لوڈ
-pdfjs-editor-alt-text-settings-downloading-model-button = ڈاؤن لوڈ تھیندا پئے …
 pdfjs-editor-alt-text-settings-editor-title = متبادل ٹیکسٹ ایڈیٹر
 pdfjs-editor-alt-text-settings-show-dialog-button-label = تصویر شامل کرݨ ویلے فوری طور تے آلٹ ٹیکسٹ ایڈیٹر ݙکھاؤ
 pdfjs-editor-alt-text-settings-show-dialog-description = ایہ تہاکوں یقینی بݨاوݨ وچ مدد کریندے جو تہاݙیاں ساریاں تصویراں وچ آلٹ عبارت ہے۔

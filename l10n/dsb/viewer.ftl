@@ -189,23 +189,6 @@ pdfjs-printing-not-ready = Warnowanje: PDF njejo se za śišćanje dopołnje zac
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Bocnicu pokazaś/schowaś
-pdfjs-toggle-sidebar-notification-button =
-    .title = Bocnicu pśešaltowaś (dokument rozrědowanje/pśipiski/warstwy wopśimujo)
-pdfjs-toggle-sidebar-button-label = Bocnicu pokazaś/schowaś
-pdfjs-document-outline-button =
-    .title = Dokumentowe naraźenje pokazaś (dwójne kliknjenje, aby se wšykne zapiski pokazali/schowali)
-pdfjs-document-outline-button-label = Dokumentowa struktura
-pdfjs-attachments-button =
-    .title = Pśidanki pokazaś
-pdfjs-attachments-button-label = Pśidanki
-pdfjs-layers-button =
-    .title = Warstwy pokazaś (klikniśo dwójcy, aby wšykne warstwy na standardny staw slědk stajił)
-pdfjs-layers-button-label = Warstwy
-pdfjs-thumbs-button =
-    .title = Miniatury pokazaś
-pdfjs-thumbs-button-label = Miniatury
 pdfjs-current-outline-item-button =
     .title = Aktualny rozrědowański zapisk pytaś
 pdfjs-current-outline-item-button-label = Aktualny rozrědowański zapisk
@@ -216,10 +199,6 @@ pdfjs-additional-layers = Dalšne warstwy
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Bok { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -237,8 +216,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Pytaś
     .placeholder = W dokumenśe pytaś…
+    .title = Pytaś
 pdfjs-find-previous-button =
     .title = Pjerwjejšne wustupowanje pytańskego wuraza pytaś
 pdfjs-find-previous-button-label = Slědk
@@ -337,16 +316,16 @@ pdfjs-editor-highlight-button =
     .title = Wuzwignuś
 pdfjs-editor-highlight-button-label = Wuzwignuś
 pdfjs-highlight-floating-button1 =
-    .title = Wuzwignuś
     .aria-label = Wuzwignuś
+    .title = Wuzwignuś
 pdfjs-highlight-floating-button-label = Wuzwignuś
 pdfjs-comment-floating-button =
-    .title = Komentěrowaś
     .aria-label = Komentěrowaś
+    .title = Komentěrowaś
 pdfjs-comment-floating-button-label = Komentěrowaś
 pdfjs-editor-comment-button =
-    .title = Komentěrowaś
     .aria-label = Komentěrowaś
+    .title = Komentěrowaś
 pdfjs-editor-comment-button-label = Komentar
 pdfjs-editor-signature-button =
     .title = Signaturu pśidaś
@@ -421,8 +400,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] { $count } komentarow
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Bocnicu zacyniś
     .aria-label = Bocnicu zacyniś
+    .title = Bocnicu zacyniś
 pdfjs-editor-comments-sidebar-close-button-label = Bocnicu zacyniś
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Wiźiśo něco wobspomnjeśa gódnego? Wuzwigniśo to a zawóstajśo komentar.
@@ -545,13 +524,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Nastajenja alternatiwnego wobrazow
 pdfjs-editor-alt-text-settings-automatic-title = Awtomatiski alternatiwny tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Alternatiwny tekst awtomatiski napóraś
 pdfjs-editor-alt-text-settings-create-model-description = Naraźujo wopisanja, aby pomagał ludam, kótarež njamóžośo wobraz wiźeś abo gaž se wobraz njezacytajo.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model KI alternatiwnego teksta ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Běžy lokalnje na wašom rěźe, aby waše daty priwatne wóstali. Za awtomatiski alternatiwny tekst trjebny.
-pdfjs-editor-alt-text-settings-delete-model-button = Lašowaś
-pdfjs-editor-alt-text-settings-download-model-button = Ześěgnuś
-pdfjs-editor-alt-text-settings-downloading-model-button = Ześěgujo se…
 pdfjs-editor-alt-text-settings-editor-title = Editor za alternatiwny tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Editor alternatiwnego teksta ned pokazaś, gaž se wobraz pśidawa
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga, wam wšym swójim wobrazam alternatiwny tekst pśidaś.
@@ -774,8 +746,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Kakosći digitalneje signatury
     .aria-label = Kakosći digitalneje signatury
+    .title = Kakosći digitalneje signatury
 pdfjs-digital-signature-properties-button-label = Kakosći digitalneje signatury
 
 ## Banner shown above the signature list summarising the overall

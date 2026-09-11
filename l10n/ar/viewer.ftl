@@ -179,23 +179,6 @@ pdfjs-printing-not-ready = تحذير: ملف PDF لم يُحمّل كاملًا
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = بدّل ظهور الشريط الجانبي
-pdfjs-toggle-sidebar-notification-button =
-    .title = بدّل ظهور الشريط الجانبي (يحتوي المستند على مخطط أو مرفقات أو طبقات)
-pdfjs-toggle-sidebar-button-label = بدّل ظهور الشريط الجانبي
-pdfjs-document-outline-button =
-    .title = اعرض فهرس المستند (نقر مزدوج لتمديد أو تقليص كل العناصر)
-pdfjs-document-outline-button-label = مخطط المستند
-pdfjs-attachments-button =
-    .title = اعرض المرفقات
-pdfjs-attachments-button-label = المُرفقات
-pdfjs-layers-button =
-    .title = اعرض الطبقات (انقر مرتين لتصفير كل الطبقات إلى الحالة المبدئية)
-pdfjs-layers-button-label = ‏‏الطبقات
-pdfjs-thumbs-button =
-    .title = اعرض مُصغرات
-pdfjs-thumbs-button-label = مُصغّرات
 pdfjs-current-outline-item-button =
     .title = ابحث عن عنصر المخطّط التفصيلي الحالي
 pdfjs-current-outline-item-button-label = عنصر المخطّط التفصيلي الحالي
@@ -206,10 +189,6 @@ pdfjs-additional-layers = الطبقات الإضافية
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = صفحة { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -227,8 +206,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = ابحث
     .placeholder = ابحث في المستند…
+    .title = ابحث
 pdfjs-find-previous-button =
     .title = ابحث عن التّواجد السّابق للعبارة
 pdfjs-find-previous-button-label = السابق
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = أبرِز
 pdfjs-editor-highlight-button-label = أبرِز
 pdfjs-highlight-floating-button1 =
-    .title = أبرِز
     .aria-label = أبرِز
+    .title = أبرِز
 pdfjs-highlight-floating-button-label = أبرِز
 pdfjs-comment-floating-button =
-    .title = علق
     .aria-label = علق
+    .title = علق
 pdfjs-comment-floating-button-label = علق
 pdfjs-editor-comment-button =
-    .title = علق
     .aria-label = علق
+    .title = علق
 pdfjs-editor-comment-button-label = التعليق
 pdfjs-editor-signature-button =
     .title = أضِف توقيع
@@ -417,8 +396,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] تعليقات
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = أغلِق الشريط الجانبي
     .aria-label = أغلِق الشريط الجانبي
+    .title = أغلِق الشريط الجانبي
 pdfjs-editor-comments-sidebar-close-button-label = أغلِق الشريط الجانبي
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = هل رأيت شيئاً جديرًا بالملاحظة؟ ابرزه واترك تعليقًا.
@@ -541,13 +520,6 @@ pdfjs-editor-alt-text-settings-dialog-label = إعدادات النص البدي
 pdfjs-editor-alt-text-settings-automatic-title = نص بديل تلقائي
 pdfjs-editor-alt-text-settings-create-model-button-label = أنشئ نص بديل تلقائيًا
 pdfjs-editor-alt-text-settings-create-model-description = يقترح أوصافًا لمساعدة الأشخاص الذين لا يستطيعون رؤية الصورة أو عندما لا يتم تحميل الصورة.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = نموذج الذكاء الاصطناعي للنص البديل ({ $totalSize } م.بايت)
-pdfjs-editor-alt-text-settings-ai-model-description = يتم تشغيله محليًا على جهازك حتى تظل بياناتك خاصة. مطلوب للنص البديل التلقائي.
-pdfjs-editor-alt-text-settings-delete-model-button = احذف
-pdfjs-editor-alt-text-settings-download-model-button = نزّل
-pdfjs-editor-alt-text-settings-downloading-model-button = يُنزل…
 pdfjs-editor-alt-text-settings-editor-title = مُحرِّر النص البديل
 pdfjs-editor-alt-text-settings-show-dialog-button-label = أظهِر مُحرِّر النص البديل على الفور عند إضافة صورة
 pdfjs-editor-alt-text-settings-show-dialog-description = يساعدك على التأكد من أن جميع صورك تحتوي على نص بديل.
@@ -780,8 +752,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = خصائص التوقيع الرقمي
     .aria-label = خصائص التوقيع الرقمي
+    .title = خصائص التوقيع الرقمي
 pdfjs-digital-signature-properties-button-label = خصائص التوقيع الرقمي
 
 ## Banner shown above the signature list summarising the overall

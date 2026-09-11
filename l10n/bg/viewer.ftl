@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Внимание: Този PDF файл не е на�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Превключване на страничната лента
-pdfjs-toggle-sidebar-notification-button =
-    .title = Превключване на страничната лента (документът има структура/прикачени файлове/слоеве)
-pdfjs-toggle-sidebar-button-label = Превключване на страничната лента
-pdfjs-document-outline-button =
-    .title = Показване на структурата на документа (двукратно щракване за свиване/разгъване на всичко)
-pdfjs-document-outline-button-label = Структура на документа
-pdfjs-attachments-button =
-    .title = Показване на притурките
-pdfjs-attachments-button-label = Притурки
-pdfjs-layers-button =
-    .title = Показване на слоевете (двукратно щракване за възстановяване на всички слоеве към състоянието по подразбиране)
-pdfjs-layers-button-label = Слоеве
-pdfjs-thumbs-button =
-    .title = Показване на миниатюрите
-pdfjs-thumbs-button-label = Миниатюри
 pdfjs-current-outline-item-button =
     .title = Намиране на текущия елемент от структурата
 pdfjs-current-outline-item-button-label = Текущ елемент от структурата
@@ -195,18 +178,14 @@ pdfjs-additional-layers = Допълнителни слоеве
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Страница { $page }
-# Variables:
-#   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Миниатюра на страница { $page }
 
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Търсене
     .placeholder = Търсене в документа…
+    .title = Търсене
 pdfjs-find-previous-button =
     .title = Намиране на предишно съвпадение на фразата
 pdfjs-find-previous-button-label = Предишна
@@ -385,7 +364,6 @@ pdfjs-editor-new-alt-text-not-now-button = Не сега
 
 ## Image alt-text settings
 
-pdfjs-editor-alt-text-settings-delete-model-button = Изтриване
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Показване на заместващ текстов редактор веднага при добавяне на изображение
 
 ## Controls

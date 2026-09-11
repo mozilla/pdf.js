@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Warning: The PDF is not fully loaded for printing.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Toggle Sidebar
-pdfjs-toggle-sidebar-notification-button =
-    .title = Toggle Sidebar (document contains outline/attachments/layers)
-pdfjs-toggle-sidebar-button-label = Toggle Sidebar
-pdfjs-document-outline-button =
-    .title = Show Document Outline (double-click to expand/collapse all items)
-pdfjs-document-outline-button-label = Document Outline
-pdfjs-attachments-button =
-    .title = Show Attachments
-pdfjs-attachments-button-label = Attachments
-pdfjs-layers-button =
-    .title = Show Layers (double-click to reset all layers to the default state)
-pdfjs-layers-button-label = Layers
-pdfjs-thumbs-button =
-    .title = Show Thumbnails
-pdfjs-thumbs-button-label = Thumbnails
 pdfjs-current-outline-item-button =
     .title = Find Current Outline Item
 pdfjs-current-outline-item-button-label = Current Outline Item
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Additional Layers
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Page { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Find
     .placeholder = Find in document…
+    .title = Find
 pdfjs-find-previous-button =
     .title = Find the previous occurrence of the phrase
 pdfjs-find-previous-button-label = Previous
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Highlight
 pdfjs-editor-highlight-button-label = Highlight
 pdfjs-highlight-floating-button1 =
-    .title = Highlight
     .aria-label = Highlight
+    .title = Highlight
 pdfjs-highlight-floating-button-label = Highlight
 pdfjs-comment-floating-button =
-    .title = Comment
     .aria-label = Comment
+    .title = Comment
 pdfjs-comment-floating-button-label = Comment
 pdfjs-editor-comment-button =
-    .title = Comment
     .aria-label = Comment
+    .title = Comment
 pdfjs-editor-comment-button-label = Comment
 pdfjs-editor-signature-button =
     .title = Add signature
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Comments
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Close the sidebar
     .aria-label = Close the sidebar
+    .title = Close the sidebar
 pdfjs-editor-comments-sidebar-close-button-label = Close the sidebar
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = See something noteworthy? Highlight it and leave a comment.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Image alt text settings
 pdfjs-editor-alt-text-settings-automatic-title = Automatic alt text
 pdfjs-editor-alt-text-settings-create-model-button-label = Create alt text automatically
 pdfjs-editor-alt-text-settings-create-model-description = Suggests descriptions to help people who can’t see the image or when the image doesn’t load.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alt text AI model ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Runs locally on your device so your data stays private. Required for automatic alt text.
-pdfjs-editor-alt-text-settings-delete-model-button = Delete
-pdfjs-editor-alt-text-settings-download-model-button = Download
-pdfjs-editor-alt-text-settings-downloading-model-button = Downloading…
 pdfjs-editor-alt-text-settings-editor-title = Alt text editor
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Show alt text editor right away when adding an image
 pdfjs-editor-alt-text-settings-show-dialog-description = Helps you make sure all your images have alt text.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Digital signature properties
     .aria-label = Digital signature properties
+    .title = Digital signature properties
 pdfjs-digital-signature-properties-button-label = Digital signature properties
 
 ## Banner shown above the signature list summarising the overall

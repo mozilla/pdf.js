@@ -175,23 +175,6 @@ pdfjs-printing-not-ready = Զգուշացում. PDF-ը ամբողջությամ
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Բացել/Փակել կողագոտին
-pdfjs-toggle-sidebar-notification-button =
-    .title = Փոխարկել Կողագոտին (փաստաթուղթը պարունակում է ուրվագիծ/կցորդներ)
-pdfjs-toggle-sidebar-button-label = Բացել/Փակել կողագոտին
-pdfjs-document-outline-button =
-    .title = Ցուցադրել փաստաթղթի ուրվագիծը (կրկնակի սեղմեք՝ միավորները ընդարձակելու/կոծկելու համար)
-pdfjs-document-outline-button-label = Փաստաթղթի բովանդակությունը
-pdfjs-attachments-button =
-    .title = Ցուցադրել կցորդները
-pdfjs-attachments-button-label = Կցորդներ
-pdfjs-layers-button =
-    .title = Ցուցադրել շերտերը (կրկնակի սեղմեք բոլոր շերտերը սկզբնական վիճակին վերականգնելու համար)
-pdfjs-layers-button-label = Շերտեր
-pdfjs-thumbs-button =
-    .title = Ցուցադրել մանրապատկերը
-pdfjs-thumbs-button-label = Մանրապատկերը
 pdfjs-current-outline-item-button =
     .title = Գտեք ընթացիկ ուրվագծային տարրը
 pdfjs-current-outline-item-button-label = Ընթացիկ ուրվագծային տարր
@@ -204,18 +187,14 @@ pdfjs-additional-layers = Լրացուցիչ շերտեր
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Էջը { $page }
-# Variables:
-#   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Էջի մանրապատկերը { $page }
 
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Որոնում
     .placeholder = Գտնել փաստաթղթում...
+    .title = Որոնում
 pdfjs-find-previous-button =
     .title = Գտնել անրահայտության նախորդ հանդիպումը
 pdfjs-find-previous-button-label = Նախորդը
@@ -310,12 +289,12 @@ pdfjs-editor-highlight-button =
     .title = Գունանշում
 pdfjs-editor-highlight-button-label = Գունանշում
 pdfjs-highlight-floating-button1 =
-    .title = Գունանշում
     .aria-label = Գունանշում
+    .title = Գունանշում
 pdfjs-highlight-floating-button-label = Գունանշում
 pdfjs-comment-floating-button =
-    .title = Մեկնաբանություն
     .aria-label = Մեկնաբանություն
+    .title = Մեկնաբանություն
 pdfjs-comment-floating-button-label = Մեկնաբանություն
 pdfjs-editor-signature-button =
     .title = Ավելացնել ստորագրություն
@@ -508,13 +487,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Պատկերի այլընտրան�
 pdfjs-editor-alt-text-settings-automatic-title = Ինքնաշխատ այլընտրանքային գրվածք
 pdfjs-editor-alt-text-settings-create-model-button-label = Ինքնաշխատ ստեղծել այլընտրանքային գրվածք
 pdfjs-editor-alt-text-settings-create-model-description = Կարճ նկարագրություն նրանց համար, ովքեր չեն կարող տեսնել պատկերը կամ երբ պատկերը չի բեռնվում։
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Այլընտրանքային գրվածքի արհեստական բանականության մոդել ({ $totalSize } ՄԲ)
-pdfjs-editor-alt-text-settings-ai-model-description = Աշխատում է տեղայնորեն ձեր սարքի վրա, որպեսզի ձեր տվյալները մնան գաղտնի: Պահանջվում է ինքնաշխատ այլընտրանքային գրվածքի համար:
-pdfjs-editor-alt-text-settings-delete-model-button = Ջնջել
-pdfjs-editor-alt-text-settings-download-model-button = Ներբեռնել
-pdfjs-editor-alt-text-settings-downloading-model-button = Ներբեռնվում է…
 pdfjs-editor-alt-text-settings-editor-title = Այլընտրանքային գրվածքի խմբագիր
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Պատկեր ավելացնելիս անմիջապես ցուցադրել այլընտրանքային գրվածքի խմբագիրը
 pdfjs-editor-alt-text-settings-show-dialog-description = Օգնում է  համոզվել, որ ձեր բոլոր պատկերներն ունեն այլընտրանքային գրվածք։

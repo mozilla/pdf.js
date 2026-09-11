@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Attenzione: il PDF non è ancora stato caricato compl
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Attiva/disattiva barra laterale
-pdfjs-toggle-sidebar-notification-button =
-    .title = Attiva/disattiva barra laterale (il documento contiene struttura/allegati/livelli)
-pdfjs-toggle-sidebar-button-label = Attiva/disattiva barra laterale
-pdfjs-document-outline-button =
-    .title = Visualizza la struttura del documento (doppio clic per visualizzare/comprimere tutti gli elementi)
-pdfjs-document-outline-button-label = Struttura documento
-pdfjs-attachments-button =
-    .title = Visualizza allegati
-pdfjs-attachments-button-label = Allegati
-pdfjs-layers-button =
-    .title = Visualizza livelli (doppio clic per ripristinare tutti i livelli allo stato predefinito)
-pdfjs-layers-button-label = Livelli
-pdfjs-thumbs-button =
-    .title = Mostra le miniature
-pdfjs-thumbs-button-label = Miniature
 pdfjs-current-outline-item-button =
     .title = Trova elemento struttura corrente
 pdfjs-current-outline-item-button-label = Elemento struttura corrente
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Livelli aggiuntivi
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pagina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Impostazioni testo alternativo per
 pdfjs-editor-alt-text-settings-automatic-title = Testo alternativo automatico
 pdfjs-editor-alt-text-settings-create-model-button-label = Crea testo alternativo automaticamente
 pdfjs-editor-alt-text-settings-create-model-description = Suggerisce una descrizione per le persone che non possono vedere l’immagine, o mostrata quando l’immagine non si carica.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modello IA per il testo alternativo ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Viene eseguito localmente sul tuo dispositivo in modo che i tuoi dati rimangano riservati. È richiesto per la generazione automatica del testo alternativo.
-pdfjs-editor-alt-text-settings-delete-model-button = Elimina
-pdfjs-editor-alt-text-settings-download-model-button = Scarica
-pdfjs-editor-alt-text-settings-downloading-model-button = Download…
 pdfjs-editor-alt-text-settings-editor-title = Modifica testo alternativo
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Mostra l’editor del testo alternativo non appena si aggiunge un’immagine
 pdfjs-editor-alt-text-settings-show-dialog-description = Ti aiuta ad assicurarti che tutte le tue immagini abbiano il testo alternativo.

@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Προειδοποίηση: Το PDF δεν φορτ�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = (Απ)ενεργοποίηση πλαϊνής γραμμής
-pdfjs-toggle-sidebar-notification-button =
-    .title = (Απ)ενεργοποίηση πλαϊνής γραμμής (το έγγραφο περιέχει περίγραμμα/συνημμένα/επίπεδα)
-pdfjs-toggle-sidebar-button-label = (Απ)ενεργοποίηση πλαϊνής γραμμής
-pdfjs-document-outline-button =
-    .title = Εμφάνιση διάρθρωσης εγγράφου (διπλό κλικ για ανάπτυξη/σύμπτυξη όλων των στοιχείων)
-pdfjs-document-outline-button-label = Διάρθρωση εγγράφου
-pdfjs-attachments-button =
-    .title = Εμφάνιση συνημμένων
-pdfjs-attachments-button-label = Συνημμένα
-pdfjs-layers-button =
-    .title = Εμφάνιση επιπέδων (διπλό κλικ για επαναφορά όλων των επιπέδων στην προεπιλεγμένη κατάσταση)
-pdfjs-layers-button-label = Επίπεδα
-pdfjs-thumbs-button =
-    .title = Εμφάνιση μικρογραφιών
-pdfjs-thumbs-button-label = Μικρογραφίες
 pdfjs-current-outline-item-button =
     .title = Εύρεση τρέχοντος στοιχείου διάρθρωσης
 pdfjs-current-outline-item-button-label = Τρέχον στοιχείο διάρθρωσης
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Επιπρόσθετα επίπεδα
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Σελίδα { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Εύρεση
     .placeholder = Εύρεση στο έγγραφο…
+    .title = Εύρεση
 pdfjs-find-previous-button =
     .title = Εύρεση της προηγούμενης εμφάνισης της φράσης
 pdfjs-find-previous-button-label = Προηγούμενο
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Επισήμανση
 pdfjs-editor-highlight-button-label = Επισήμανση
 pdfjs-highlight-floating-button1 =
-    .title = Επισήμανση
     .aria-label = Επισήμανση
+    .title = Επισήμανση
 pdfjs-highlight-floating-button-label = Επισήμανση
 pdfjs-comment-floating-button =
-    .title = Σχόλιο
     .aria-label = Σχόλιο
+    .title = Σχόλιο
 pdfjs-comment-floating-button-label = Σχόλιο
 pdfjs-editor-comment-button =
-    .title = Σχόλιο
     .aria-label = Σχόλιο
+    .title = Σχόλιο
 pdfjs-editor-comment-button-label = Σχόλιο
 pdfjs-editor-signature-button =
     .title = Προσθήκη υπογραφής
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Σχόλια
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Κλείσιμο πλευρικής στήλης
     .aria-label = Κλείσιμο πλευρικής στήλης
+    .title = Κλείσιμο πλευρικής στήλης
 pdfjs-editor-comments-sidebar-close-button-label = Κλείσιμο πλευρικής στήλης
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Βλέπετε κάτι αξιοσημείωτο; Επισημάνετε το και αφήστε ένα σχόλιο.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Ρυθμίσεις εναλλακ�
 pdfjs-editor-alt-text-settings-automatic-title = Αυτόματο εναλλακτικό κείμενο
 pdfjs-editor-alt-text-settings-create-model-button-label = Αυτόματη δημιουργία εναλλακτικού κειμένου
 pdfjs-editor-alt-text-settings-create-model-description = Προτείνει περιγραφές για άτομα που δεν μπορούν να δουν την εικόνα ή όταν η εικόνα δεν φορτώνεται.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Μοντέλο ΤΝ εναλλακτικού κειμένου ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Εκτελείται τοπικά στη συσκευή σας, ώστε τα δεδομένα σας να παραμένουν ιδιωτικά. Απαιτείται για τη δημιουργία του αυτόματου εναλλακτικού κειμένου.
-pdfjs-editor-alt-text-settings-delete-model-button = Διαγραφή
-pdfjs-editor-alt-text-settings-download-model-button = Λήψη
-pdfjs-editor-alt-text-settings-downloading-model-button = Λήψη…
 pdfjs-editor-alt-text-settings-editor-title = Επεξεργασία εναλλακτικού κειμένου
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Άμεση εμφάνιση της επεξεργασίας εναλλακτικού κειμένου κατά την προσθήκη εικόνας
 pdfjs-editor-alt-text-settings-show-dialog-description = Σας βοηθά να βεβαιωθείτε ότι όλες οι εικόνες σας έχουν εναλλακτικό κείμενο.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Ιδιότητες ψηφιακής υπογραφής
     .aria-label = Ιδιότητες ψηφιακής υπογραφής
+    .title = Ιδιότητες ψηφιακής υπογραφής
 pdfjs-digital-signature-properties-button-label = Ιδιότητες ψηφιακής υπογραφής
 
 ## Banner shown above the signature list summarising the overall

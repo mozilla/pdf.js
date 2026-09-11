@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Varoitus: PDF-tiedosto ei ole vielä latautunut kokon
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Näytä/piilota sivupaneeli
-pdfjs-toggle-sidebar-notification-button =
-    .title = Näytä/piilota sivupaneeli (dokumentissa on sisällys/liitteitä/tasoja)
-pdfjs-toggle-sidebar-button-label = Näytä/piilota sivupaneeli
-pdfjs-document-outline-button =
-    .title = Näytä dokumentin sisällys (laajenna tai kutista kohdat kaksoisnapsauttamalla)
-pdfjs-document-outline-button-label = Dokumentin sisällys
-pdfjs-attachments-button =
-    .title = Näytä liitteet
-pdfjs-attachments-button-label = Liitteet
-pdfjs-layers-button =
-    .title = Näytä tasot (kaksoisnapsauta palauttaaksesi kaikki tasot oletustilaan)
-pdfjs-layers-button-label = Tasot
-pdfjs-thumbs-button =
-    .title = Näytä pienoiskuvat
-pdfjs-thumbs-button-label = Pienoiskuvat
 pdfjs-current-outline-item-button =
     .title = Etsi nykyinen sisällyksen kohta
 pdfjs-current-outline-item-button-label = Nykyinen sisällyksen kohta
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Lisätasot
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Sivu { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Etsi
     .placeholder = Etsi dokumentista…
+    .title = Etsi
 pdfjs-find-previous-button =
     .title = Etsi hakusanan edellinen osuma
 pdfjs-find-previous-button-label = Edellinen
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Korostus
 pdfjs-editor-highlight-button-label = Korostus
 pdfjs-highlight-floating-button1 =
-    .title = Korostus
     .aria-label = Korostus
+    .title = Korostus
 pdfjs-highlight-floating-button-label = Korostus
 pdfjs-comment-floating-button =
-    .title = Kommentti
     .aria-label = Kommentti
+    .title = Kommentti
 pdfjs-comment-floating-button-label = Kommentti
 pdfjs-editor-comment-button =
-    .title = Kommentti
     .aria-label = Kommentti
+    .title = Kommentti
 pdfjs-editor-comment-button-label = Kommentti
 pdfjs-editor-signature-button =
     .title = Lisää allekirjoitus
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Kommenttia
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Sulje sivupaneeli
     .aria-label = Sulje sivupaneeli
+    .title = Sulje sivupaneeli
 pdfjs-editor-comments-sidebar-close-button-label = Sulje sivupaneeli
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Näetkö jotain huomionarvoista? Korosta se ja jätä kommentti.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Kuvan vaihtoehtoisen tekstin asetu
 pdfjs-editor-alt-text-settings-automatic-title = Automaattinen vaihtoehtoinen teksti
 pdfjs-editor-alt-text-settings-create-model-button-label = Luo vaihtoehtoinen teksti automaattisesti
 pdfjs-editor-alt-text-settings-create-model-description = Ehdottaa kuvauksia, jotka auttavat ihmisiä, jotka eivät näe kuvaa tai kun kuva ei lataudu.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Vaihtoehtoisen tekstin tekoälymalli ({ $totalSize } Mt)
-pdfjs-editor-alt-text-settings-ai-model-description = Toimii paikallisesti laitteellasi, joten tietosi pysyvät yksityisinä. Vaadittu automaattiselle vaihtoehtoiselle tekstille.
-pdfjs-editor-alt-text-settings-delete-model-button = Poista
-pdfjs-editor-alt-text-settings-download-model-button = Lataa
-pdfjs-editor-alt-text-settings-downloading-model-button = Ladataan…
 pdfjs-editor-alt-text-settings-editor-title = Vaihtoehtoisen tekstin muokkain
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Näytä vaihtoehtoisen tekstin muokkain heti, kun lisäät kuvan
 pdfjs-editor-alt-text-settings-show-dialog-description = Auttaa varmistamaan, että kaikissa kuvissasi on vaihtoehtoinen teksti.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Digitaalisen allekirjoituksen ominaisuudet
     .aria-label = Digitaalisen allekirjoituksen ominaisuudet
+    .title = Digitaalisen allekirjoituksen ominaisuudet
 pdfjs-digital-signature-properties-button-label = Digitaalisen allekirjoituksen ominaisuudet
 
 ## Banner shown above the signature list summarising the overall

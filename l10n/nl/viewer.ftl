@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Waarschuwing: de PDF is niet volledig geladen voor af
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Zijbalk in-/uitschakelen
-pdfjs-toggle-sidebar-notification-button =
-    .title = Zijbalk in-/uitschakelen (document bevat overzicht/bijlagen/lagen)
-pdfjs-toggle-sidebar-button-label = Zijbalk in-/uitschakelen
-pdfjs-document-outline-button =
-    .title = Documentoverzicht tonen (dubbelklik om alle items uit/samen te vouwen)
-pdfjs-document-outline-button-label = Documentoverzicht
-pdfjs-attachments-button =
-    .title = Bijlagen tonen
-pdfjs-attachments-button-label = Bijlagen
-pdfjs-layers-button =
-    .title = Lagen tonen (dubbelklik om alle lagen naar de standaardstatus terug te zetten)
-pdfjs-layers-button-label = Lagen
-pdfjs-thumbs-button =
-    .title = Miniaturen tonen
-pdfjs-thumbs-button-label = Miniaturen
 pdfjs-current-outline-item-button =
     .title = Huidig item in inhoudsopgave zoeken
 pdfjs-current-outline-item-button-label = Huidig item in inhoudsopgave
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Aanvullende lagen
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pagina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Zoeken
     .placeholder = Zoeken in document…
+    .title = Zoeken
 pdfjs-find-previous-button =
     .title = De vorige overeenkomst van de tekst zoeken
 pdfjs-find-previous-button-label = Vorige
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Markeren
 pdfjs-editor-highlight-button-label = Markeren
 pdfjs-highlight-floating-button1 =
-    .title = Markeren
     .aria-label = Markeren
+    .title = Markeren
 pdfjs-highlight-floating-button-label = Markeren
 pdfjs-comment-floating-button =
-    .title = Opmerking
     .aria-label = Opmerking
+    .title = Opmerking
 pdfjs-comment-floating-button-label = Opmerking
 pdfjs-editor-comment-button =
-    .title = Opmerking
     .aria-label = Opmerking
+    .title = Opmerking
 pdfjs-editor-comment-button-label = Opmerking
 pdfjs-editor-signature-button =
     .title = Handtekening toevoegen
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Opmerkingen
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = De zijbalk sluiten
     .aria-label = De zijbalk sluiten
+    .title = De zijbalk sluiten
 pdfjs-editor-comments-sidebar-close-button-label = De zijbalk sluiten
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Ziet u iets noemenswaardigs? Markeer het en laat een opmerking achter.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Instellingen voor alternatieve tek
 pdfjs-editor-alt-text-settings-automatic-title = Automatische alternatieve tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Alternatieve tekst automatisch aanmaken
 pdfjs-editor-alt-text-settings-create-model-description = Stelt beschrijvingen voor om mensen te helpen die de afbeelding niet kunnen zien of voor wie de afbeelding niet wordt geladen.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = AI-model voor alternatieve tekst ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Wordt lokaal op uw apparaat uitgevoerd, zodat uw gegevens privé blijven. Vereist voor automatische alternatieve tekst.
-pdfjs-editor-alt-text-settings-delete-model-button = Verwijderen
-pdfjs-editor-alt-text-settings-download-model-button = Downloaden
-pdfjs-editor-alt-text-settings-downloading-model-button = Downloaden…
 pdfjs-editor-alt-text-settings-editor-title = Alternatieve-tekstbewerker
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Alternatieve-tekstbewerker meteen tonen bij toevoegen van een afbeelding
 pdfjs-editor-alt-text-settings-show-dialog-description = Helpt u ervoor te zorgen dat al uw afbeeldingen alternatieve tekst hebben.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Eigenschappen digitale handtekening
     .aria-label = Eigenschappen digitale handtekening
+    .title = Eigenschappen digitale handtekening
 pdfjs-digital-signature-properties-button-label = Eigenschappen digitale handtekening
 
 ## Banner shown above the signature list summarising the overall

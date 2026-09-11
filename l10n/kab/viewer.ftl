@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Ɣuṛ-k: Afaylu PDF ur d-yuli ara imeṛṛa akken a
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Sken/Fer agalis adisan
-pdfjs-toggle-sidebar-notification-button =
-    .title = Ffer/Sekn agalis adisan (isemli yegber aɣawas/ticeqqufin yeddan/tissiwin)
-pdfjs-toggle-sidebar-button-label = Sken/Fer agalis adisan
-pdfjs-document-outline-button =
-    .title = Sken isemli (Senned snat tikal i wesemɣer/Afneẓ n iferdisen meṛṛa)
-pdfjs-document-outline-button-label = Isɣalen n isebtar
-pdfjs-attachments-button =
-    .title = Sken ticeqqufin yeddan
-pdfjs-attachments-button-label = Ticeqqufin yeddan
-pdfjs-layers-button =
-    .title = Skeen tissiwin (sit sin yiberdan i uwennez n meṛṛa tissiwin ɣer waddad amezwer)
-pdfjs-layers-button-label = Tissiwin
-pdfjs-thumbs-button =
-    .title = Sken tanfult.
-pdfjs-thumbs-button-label = Tinfulin
 pdfjs-current-outline-item-button =
     .title = Af-d aferdis n uɣawas amiran
 pdfjs-current-outline-item-button-label = Aferdis n uɣawas amiran
@@ -195,18 +178,14 @@ pdfjs-additional-layers = Tissiwin-nniḍen
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Asebter { $page }
-# Variables:
-#   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Tanfult n usebter { $page }
 
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Nadi
     .placeholder = Nadi deg isemli…
+    .title = Nadi
 pdfjs-find-previous-button =
     .title = Aff-d tamseḍriwt n twinest n deffir
 pdfjs-find-previous-button-label = Azewwar
@@ -301,16 +280,16 @@ pdfjs-editor-highlight-button =
     .title = Derrer
 pdfjs-editor-highlight-button-label = Derrer
 pdfjs-highlight-floating-button1 =
-    .title = Derrer
     .aria-label = Derrer
+    .title = Derrer
 pdfjs-highlight-floating-button-label = Derrer
 pdfjs-comment-floating-button =
-    .title = Wennet
     .aria-label = Wennet
+    .title = Wennet
 pdfjs-comment-floating-button-label = Awennit
 pdfjs-editor-comment-button =
-    .title = Wennet
     .aria-label = Wennet
+    .title = Wennet
 pdfjs-editor-comment-button-label = Awennit
 pdfjs-editor-signature-button =
     .title = Rnu azmul
@@ -383,8 +362,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Iwenniten
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Mdel agalis adisan
     .aria-label = Mdel agalis adisan
+    .title = Mdel agalis adisan
 pdfjs-editor-comments-sidebar-close-button-label = Mdel agalis adisan
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Twalaḍ ayen i ak⋅akem-iɛeǧben? Sebrureq-it, ternuḍ eǧǧ awennit.
@@ -502,12 +481,6 @@ pdfjs-image-alt-text-settings-button-label = Iɣewwaṛen n weḍris amlellay n 
 pdfjs-editor-alt-text-settings-dialog-label = Iɣewwaṛen n weḍris amlellay n tugna
 pdfjs-editor-alt-text-settings-automatic-title = Aḍris amlellay awurman
 pdfjs-editor-alt-text-settings-create-model-button-label = Rnu aḍris niḍen s wudem awurman
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Tamudemt n IA n uḍris amlellay ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-delete-model-button = Kkes
-pdfjs-editor-alt-text-settings-download-model-button = Sader
-pdfjs-editor-alt-text-settings-downloading-model-button = Asader…
 pdfjs-editor-alt-text-settings-editor-title = Amaẓrag n weḍris amlellay
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Sken amaẓrag n uḍris amlellay akken kan ara ternuḍ tugna
 pdfjs-editor-alt-text-settings-show-dialog-description = Yettall ad tḍemneḍ tugniwin sɛant aḍris amlellay.

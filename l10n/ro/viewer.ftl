@@ -188,23 +188,6 @@ pdfjs-printing-not-ready = Avertisment: PDF-ul nu este încărcat complet pentru
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Comută bara laterală
-pdfjs-toggle-sidebar-notification-button =
-    .title = Comută bara laterală (documentul conține schițe/atașamente/straturi)
-pdfjs-toggle-sidebar-button-label = Comută bara laterală
-pdfjs-document-outline-button =
-    .title = Afișează schița documentului (dă dublu clic pentru a extinde/restrânge toate elementele)
-pdfjs-document-outline-button-label = Schiță a documentului
-pdfjs-attachments-button =
-    .title = Afișează atașamentele
-pdfjs-attachments-button-label = Atașamente
-pdfjs-layers-button =
-    .title = Afișează straturile (dă dublu clic pentru resetarea tuturor straturilor la starea implicită)
-pdfjs-layers-button-label = Straturi
-pdfjs-thumbs-button =
-    .title = Afișează miniaturi
-pdfjs-thumbs-button-label = Miniaturi
 pdfjs-current-outline-item-button =
     .title = Găsește elementul pe schița actuală
 pdfjs-current-outline-item-button-label = Element al schiței actuale
@@ -215,10 +198,6 @@ pdfjs-additional-layers = Straturi suplimentare
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pagina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -236,8 +215,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Caută
     .placeholder = Caută în document…
+    .title = Caută
 pdfjs-find-previous-button =
     .title = Mergi la apariția anterioară a textului
 pdfjs-find-previous-button-label = Înapoi
@@ -334,16 +313,16 @@ pdfjs-editor-highlight-button =
     .title = Evidențiere
 pdfjs-editor-highlight-button-label = Evidențiere
 pdfjs-highlight-floating-button1 =
-    .title = Evidențiază
     .aria-label = Evidențiere
+    .title = Evidențiază
 pdfjs-highlight-floating-button-label = Evidențiază
 pdfjs-comment-floating-button =
-    .title = Comentează
     .aria-label = Comentariu
+    .title = Comentează
 pdfjs-comment-floating-button-label = Comentează
 pdfjs-editor-comment-button =
-    .title = Comentariu
     .aria-label = Comentează
+    .title = Comentariu
 pdfjs-editor-comment-button-label = Comentariu
 pdfjs-editor-signature-button =
     .title = Adaugă semnătură
@@ -417,8 +396,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] de comentarii
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Închide bara laterală
     .aria-label = Închide bara laterală
+    .title = Închide bara laterală
 pdfjs-editor-comments-sidebar-close-button-label = Închide bara laterală
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Vezi ceva care merită comentat? Evidențiază-l și lasă un comentariu.
@@ -541,13 +520,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Setări text alternativ imagini
 pdfjs-editor-alt-text-settings-automatic-title = Text alternativ automat
 pdfjs-editor-alt-text-settings-create-model-button-label = Creează automat texte alternative
 pdfjs-editor-alt-text-settings-create-model-description = Sugerează descrieri ca să îi ajuți pe cei care nu pot vedea imaginea sau pentru când nu se încarcă imaginea.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model AI de text alternativ ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Rulează local pe dispozitiv, deci datele tale rămân private. Necesar pentru text alternativ automat.
-pdfjs-editor-alt-text-settings-delete-model-button = Șterge
-pdfjs-editor-alt-text-settings-download-model-button = Descarcă
-pdfjs-editor-alt-text-settings-downloading-model-button = Se descarcă…
 pdfjs-editor-alt-text-settings-editor-title = Editor de text alternativ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Afișează editorul de text alternativ imediat când adaugi o imagine
 pdfjs-editor-alt-text-settings-show-dialog-description = Te ajută să te asiguri că toate imaginile au text alternativ.
@@ -765,8 +737,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Proprietățile semnăturii digitale
     .aria-label = Proprietățile semnăturii digitale
+    .title = Proprietățile semnăturii digitale
 pdfjs-digital-signature-properties-button-label = Proprietățile semnăturii digitale
 
 ## Banner shown above the signature list summarising the overall

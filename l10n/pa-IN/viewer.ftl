@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = ਸਾਵਧਾਨ: PDF ਨੂੰ ਪਰਿੰਟ ਕ
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = ਬਾਹੀ ਬਦਲੋ
-pdfjs-toggle-sidebar-notification-button =
-    .title = ਬਾਹੀ ਨੂੰ ਬਦਲੋ (ਦਸਤਾਵੇਜ਼ ਖਾਕਾ/ਅਟੈਚਮੈਂਟ/ਪਰਤਾਂ ਰੱਖਦਾ ਹੈ)
-pdfjs-toggle-sidebar-button-label = ਬਾਹੀ ਬਦਲੋ
-pdfjs-document-outline-button =
-    .title = ਦਸਤਾਵੇਜ਼ ਖਾਕਾ ਦਿਖਾਓ (ਸਾਰੀਆਂ ਆਈਟਮਾਂ ਨੂੰ ਫੈਲਾਉਣ/ਸਮੇਟਣ ਲਈ ਦੋ ਵਾਰ ਕਲਿੱਕ ਕਰੋ)
-pdfjs-document-outline-button-label = ਦਸਤਾਵੇਜ਼ ਖਾਕਾ
-pdfjs-attachments-button =
-    .title = ਅਟੈਚਮੈਂਟ ਵੇਖਾਓ
-pdfjs-attachments-button-label = ਅਟੈਚਮੈਂਟਾਂ
-pdfjs-layers-button =
-    .title = ਪਰਤਾਂ ਵੇਖਾਓ (ਸਾਰੀਆਂ ਪਰਤਾਂ ਨੂੰ ਮੂਲ ਹਾਲਤ ਉੱਤੇ ਮੁੜ-ਸੈੱਟ ਕਰਨ ਲਈ ਦੋ ਵਾਰ ਕਲਿੱਕ ਕਰੋ)
-pdfjs-layers-button-label = ਪਰਤਾਂ
-pdfjs-thumbs-button =
-    .title = ਥੰਮਨੇਲ ਨੂੰ ਵੇਖਾਓ
-pdfjs-thumbs-button-label = ਥੰਮਨੇਲ
 pdfjs-current-outline-item-button =
     .title = ਮੌੌਜੂਦਾ ਖਾਕਾ ਚੀਜ਼ ਲੱਭੋ
 pdfjs-current-outline-item-button-label = ਮੌਜੂਦਾ ਖਾਕਾ ਚੀਜ਼
@@ -214,10 +197,6 @@ pdfjs-additional-layers = ਵਾਧੂ ਪਰਤਾਂ
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = ਸਫ਼ਾ { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = ਲੱਭੋ
     .placeholder = …ਦਸਤਾਵੇਜ਼ 'ਚ ਲੱਭੋ
+    .title = ਲੱਭੋ
 pdfjs-find-previous-button =
     .title = ਵਾਕ ਦੀ ਪਿਛਲੀ ਮੌਜੂਦਗੀ ਲੱਭੋ
 pdfjs-find-previous-button-label = ਪਿੱਛੇ
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = ਹਾਈਲਾਈਟ
 pdfjs-editor-highlight-button-label = ਹਾਈਲਾਈਟ
 pdfjs-highlight-floating-button1 =
-    .title = ਹਾਈਲਾਈਟ
     .aria-label = ਹਾਈਲਾਈਟ
+    .title = ਹਾਈਲਾਈਟ
 pdfjs-highlight-floating-button-label = ਹਾਈਲਾਈਟ
 pdfjs-comment-floating-button =
-    .title = ਟਿੱਪਣੀ
     .aria-label = ਟਿੱਪਣੀ
+    .title = ਟਿੱਪਣੀ
 pdfjs-comment-floating-button-label = ਟਿੱਪਣੀ
 pdfjs-editor-comment-button =
-    .title = ਟਿੱਪਣੀ
     .aria-label = ਟਿੱਪਣੀ
+    .title = ਟਿੱਪਣੀ
 pdfjs-editor-comment-button-label = ਟਿੱਪਣੀ
 pdfjs-editor-signature-button =
     .title = ਦਸਤਖ਼ਤ ਜੋੜੋ
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] ਟਿੱਪਣੀਆਂ
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
     .aria-label = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
+    .title = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
 pdfjs-editor-comments-sidebar-close-button-label = ਬਾਹੀ ਨੂੰ ਬੰਦ ਕਰੋ
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = ਕੀ ਕੁਝ ਧਿਆਨ ਦੇਣ ਯੋਗ ਵੇਖਿਆ ਹੈ? ਇਸ ਨੂੰ ਉਘਾੜੋ ਅਤੇ ਟਿੱਪਣੀ ਦਿਓ।
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = ਚਿੱਤਰ ਬਦਲਵੀਂ
 pdfjs-editor-alt-text-settings-automatic-title = ਆਟੋਮਮੈਟਿਕ ਬਦਲਵੀਂ ਲਿਖਤ
 pdfjs-editor-alt-text-settings-create-model-button-label = ਬਲਦਵੀਂ ਲਿਖਤ ਆਪਣੇ-ਆਪ ਬਣਾਓ
 pdfjs-editor-alt-text-settings-create-model-description = ਚਿੱਤਰ ਨਾ ਵੇਖ ਸਕਣ ਵਾਲੇ ਲੋਕਾਂ ਦੀ ਮਦਦ ਜਾਂ ਜਦ ਵੀ ਚਿੱਤਰਾਂ ਨੂੰ ਲੋਡ ਨਹੀਂ ਜਾ ਸਕਦਾ, ਉਸ ਲਈ ਛੋਟਾ ਵੇਰਵਾ ਦਿਓ।
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = ਬਦਲਵੀ ਲਿਖਤ ਲਈ AI ਮਾਡਲ ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = ਤੁਹਾਡੇ ਡਿਵਾਈਸ ਉੱਤੇ ਲੋਕਲ ਹੀ ਚੱਲਦਾ ਹੋਣ ਕਰਕੇ ਤੁਹਾਡਾ ਡਾਟਾ ਪ੍ਰਾਈਵੇਟ ਹੀ ਰਹਿੰਦਾ ਹੈ। ਆਟੋਮੈਟਿਕ ਬਦਲਵੀਂ ਲਿਖਤ ਲਈ ਚਾਹੀਦਾ ਹੈ।
-pdfjs-editor-alt-text-settings-delete-model-button = ਹਟਾਓ
-pdfjs-editor-alt-text-settings-download-model-button = ਡਾਊਨਲੋਡ
-pdfjs-editor-alt-text-settings-downloading-model-button = …ਨੂੰ ਡਾਊਨਲੋਡ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ
 pdfjs-editor-alt-text-settings-editor-title = ਬਦਲਵੀਂ ਲਿਖਤ ਐਡੀਟਰ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = ਜਦੋਂ ਵਿੱਚ ਚਿੱਤਰ ਜੋੜਿਆ ਜਾਵੇ ਤਾਂ ਫ਼ੌਰਨ ਬਦਲਵੀ ਲਿਖਤ ਸੰਪਾਦਕ ਵੇਖਾਓ
 pdfjs-editor-alt-text-settings-show-dialog-description = ਤੁਹਾਡੀ ਮਦਦ ਕਰਦਾ ਹੈ ਕਿ ਤੁਹਾਡੇ ਸਾਰੇ ਚਿੱਤਰਾਂ ਲਈ ਬਦਲਵੀਂ ਲਿਖਤ ਮੌਜੂਦ ਹੋਵੇ।
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
     .aria-label = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
+    .title = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
 pdfjs-digital-signature-properties-button-label = ਡਿਜੀਟਲ ਦਸਤਖਤ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ
 
 ## Banner shown above the signature list summarising the overall
