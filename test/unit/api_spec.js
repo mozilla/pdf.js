@@ -1189,11 +1189,7 @@ describe("api", function () {
     });
 
     it("gets current workerSrc", function () {
-      if (isNodeJS) {
-        pending("Worker is not supported in Node.js.");
-      }
-
-      const workerSrc = PDFWorker.workerSrc;
+      const { workerSrc } = PDFWorker;
       expect(typeof workerSrc).toEqual("string");
       expect(workerSrc).toEqual(GlobalWorkerOptions.workerSrc);
     });
