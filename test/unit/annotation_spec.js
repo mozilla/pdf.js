@@ -675,6 +675,7 @@ describe("annotation", function () {
       annotationDict.set("Subtype", Name.get("Text"));
       annotationDict.set("T", "ParentTitle");
       annotationDict.set("Contents", "ParentText");
+      annotationDict.set("Subj", "ParentSubject");
       annotationDict.set("CreationDate", "D:20180423");
       annotationDict.set("M", "D:20190423");
       annotationDict.set("C", [0, 0, 1]);
@@ -694,6 +695,7 @@ describe("annotation", function () {
       replyDict.set("RT", Name.get("Group"));
       replyDict.set("T", "ReplyTitle");
       replyDict.set("Contents", "ReplyText");
+      replyDict.set("Subj", "ReplySubject");
       replyDict.set("CreationDate", "D:20180523");
       replyDict.set("M", "D:20190523");
       replyDict.set("C", [0.4]);
@@ -717,10 +719,86 @@ describe("annotation", function () {
       expect(data.replyType).toEqual("Group");
       expect(data.titleObj).toEqual({ str: "ParentTitle", dir: "ltr" });
       expect(data.contentsObj).toEqual({ str: "ParentText", dir: "ltr" });
+      expect(data.subjectObj).toEqual({ str: "ParentSubject", dir: "ltr" });
       expect(data.creationDate).toEqual("D:20180423");
       expect(data.modificationDate).toEqual("D:20190423");
       expect(data.color).toEqual(new Uint8ClampedArray([0, 0, 255]));
       expect(data.popupRef).toEqual("820R");
+    });
+
+    it("should parse the annotation name", async function () {
+      const annotationDict = new Dict();
+      annotationDict.set("Type", Name.get("Annot"));
+      annotationDict.set("Subtype", Name.get("Text"));
+      annotationDict.set("NM", "the-name-the-document-gives-it");
+
+      const annotationRef = Ref.get(1, 0);
+      const xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotationRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationName).toEqual("the-name-the-document-gives-it");
+      // The object id is a separate thing, and stays what it was.
+      expect(data.id).toEqual("1R");
+    });
+
+    it("should handle a missing annotation name", async function () {
+      const annotationDict = new Dict();
+      annotationDict.set("Type", Name.get("Annot"));
+      annotationDict.set("Subtype", Name.get("Text"));
+
+      const annotationRef = Ref.get(1, 0);
+      const xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotationRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationName).toEqual(null);
+    });
+
+    it("should parse the subject", async function () {
+      const annotationDict = new Dict();
+      annotationDict.set("Type", Name.get("Annot"));
+      annotationDict.set("Subtype", Name.get("Text"));
+      annotationDict.set("Subj", "What this is about");
+
+      const annotationRef = Ref.get(1, 0);
+      const xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotationRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.subjectObj).toEqual({
+        str: "What this is about",
+        dir: "ltr",
+      });
+    });
+
+    it("should handle a missing subject", async function () {
+      const annotationDict = new Dict();
+      annotationDict.set("Type", Name.get("Annot"));
+      annotationDict.set("Subtype", Name.get("Text"));
+
+      const annotationRef = Ref.get(1, 0);
+      const xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        annotationRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.subjectObj).toEqual({ str: "", dir: "ltr" });
     });
 
     it("should parse IRT/RT for a reply type", async function () {
