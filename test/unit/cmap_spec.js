@@ -146,6 +146,34 @@ describe("cmap", function () {
     expect(cmap.isIdentityCMap).toBeFalse();
   });
 
+  it("prefers its own mappings over those inherited through usecmap", async function () {
+    const cmap = await CMapFactory.create({
+      encoding: Name.get("ETenms-B5-H"),
+      fetchBuiltInCMap,
+      useCMap: null,
+    });
+
+    expect(cmap.lookup(0x41)).toEqual(34);
+    expect(cmap.lookup(0xa140)).toEqual(99);
+  });
+
+  it("prefers embedded mappings over those inherited through usecmap", async function () {
+    // prettier-ignore
+    const str = "/ETen-B5-H usecmap\n" +
+              "1 begincidchar\n" +
+              "<41> 34\n" +
+              "endcidchar\n";
+    const stream = new StringStream(str);
+    const cmap = await CMapFactory.create({
+      encoding: stream,
+      fetchBuiltInCMap,
+      useCMap: null,
+    });
+
+    expect(cmap.lookup(0x41)).toEqual(34);
+    expect(cmap.lookup(0xa140)).toEqual(99);
+  });
+
   it("parses cmapname", async function () {
     const str = "/CMapName /Identity-H def\n";
     const stream = new StringStream(str);
