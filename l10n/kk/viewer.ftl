@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Ескерту: Баспаға шығару үшін,
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Бүйір панелін көрсету/жасыру
-pdfjs-toggle-sidebar-notification-button =
-    .title = Бүйір панелін көрсету/жасыру (құжатта құрылымы/салынымдар/қабаттар бар)
-pdfjs-toggle-sidebar-button-label = Бүйір панелін көрсету/жасыру
-pdfjs-document-outline-button =
-    .title = Құжат құрылымын көрсету (барлық нәрселерді жазық қылу/жинау үшін қос шерту керек)
-pdfjs-document-outline-button-label = Құжат құрамасы
-pdfjs-attachments-button =
-    .title = Салынымдарды көрсету
-pdfjs-attachments-button-label = Салынымдар
-pdfjs-layers-button =
-    .title = Қабаттарды көрсету (барлық қабаттарды бастапқы күйге келтіру үшін екі рет шертіңіз)
-pdfjs-layers-button-label = Қабаттар
-pdfjs-thumbs-button =
-    .title = Кіші көріністерді көрсету
-pdfjs-thumbs-button-label = Кіші көріністер
 pdfjs-current-outline-item-button =
     .title = Құрылымның ағымдағы элементін табу
 pdfjs-current-outline-item-button-label = Құрылымның ағымдағы элементі
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Қосымша қабаттар
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = { $page } парағы
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Табу
     .placeholder = Құжаттан табу…
+    .title = Табу
 pdfjs-find-previous-button =
     .title = Осы сөздердің мәтіннен алдыңғы кездесуін табу
 pdfjs-find-previous-button-label = Алдыңғысы
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Ерекшелеу
 pdfjs-editor-highlight-button-label = Ерекшелеу
 pdfjs-highlight-floating-button1 =
-    .title = Ерекшелеу
     .aria-label = Ерекшелеу
+    .title = Ерекшелеу
 pdfjs-highlight-floating-button-label = Ерекшелеу
 pdfjs-comment-floating-button =
-    .title = Түсіндірме
     .aria-label = Түсіндірме
+    .title = Түсіндірме
 pdfjs-comment-floating-button-label = Түсіндірме
 pdfjs-editor-comment-button =
-    .title = Түсіндірме
     .aria-label = Түсіндірме
+    .title = Түсіндірме
 pdfjs-editor-comment-button-label = Түсіндірме
 pdfjs-editor-signature-button =
     .title = Қолтаңбаны қосу
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Түсіндірмелер
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Бүйір панелін жабу
     .aria-label = Бүйір панелін жабу
+    .title = Бүйір панелін жабу
 pdfjs-editor-comments-sidebar-close-button-label = Бүйір панелін жабу
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Назар аударарлық бірдеңе көрдіңіз бе? Оны ерекшелеп, түсіндірме қалдырыңыз.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Суреттің балама мә
 pdfjs-editor-alt-text-settings-automatic-title = Автоматты балама мәтін
 pdfjs-editor-alt-text-settings-create-model-button-label = Балама мәтінді автоматты түрде жасау
 pdfjs-editor-alt-text-settings-create-model-description = Суретті көре алмайтын адамдар үшін немесе сурет жүктелмеген кезіне арналған сипаттамаларды ұсынады.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Баламалы мәтіннің ЖИ моделі ({ $totalSize } МБ)
-pdfjs-editor-alt-text-settings-ai-model-description = Деректеріңіз жеке болып қалуы үшін құрылғыңызда жергілікті түрде жұмыс істейді. Автоматты балама мәтін үшін қажет.
-pdfjs-editor-alt-text-settings-delete-model-button = Өшіру
-pdfjs-editor-alt-text-settings-download-model-button = Жүктеп алу
-pdfjs-editor-alt-text-settings-downloading-model-button = Жүктеліп алынуда…
 pdfjs-editor-alt-text-settings-editor-title = Баламалы мәтін редакторы
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Суретті қосқанда балама мәтін редакторын бірден көрсету
 pdfjs-editor-alt-text-settings-show-dialog-description = Барлық суреттерде балама мәтін бар екеніне көз жеткізуге көмектеседі.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Цифрлық қолтаңба қасиеттері
     .aria-label = Цифрлық қолтаңба қасиеттері
+    .title = Цифрлық қолтаңба қасиеттері
 pdfjs-digital-signature-properties-button-label = Цифрлық қолтаңба қасиеттері
 
 ## Banner shown above the signature list summarising the overall

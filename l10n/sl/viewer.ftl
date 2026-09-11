@@ -189,23 +189,6 @@ pdfjs-printing-not-ready = Opozorilo: PDF ni v celoti naložen za tiskanje.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Preklopi stransko vrstico
-pdfjs-toggle-sidebar-notification-button =
-    .title = Preklopi stransko vrstico (dokument vsebuje oris/priponke/plasti)
-pdfjs-toggle-sidebar-button-label = Preklopi stransko vrstico
-pdfjs-document-outline-button =
-    .title = Prikaži oris dokumenta (dvokliknite za razširitev/strnitev vseh predmetov)
-pdfjs-document-outline-button-label = Oris dokumenta
-pdfjs-attachments-button =
-    .title = Prikaži priponke
-pdfjs-attachments-button-label = Priponke
-pdfjs-layers-button =
-    .title = Prikaži plasti (dvokliknite za ponastavitev vseh plasti na privzeto stanje)
-pdfjs-layers-button-label = Plasti
-pdfjs-thumbs-button =
-    .title = Prikaži sličice
-pdfjs-thumbs-button-label = Sličice
 pdfjs-current-outline-item-button =
     .title = Najdi trenutni predmet orisa
 pdfjs-current-outline-item-button-label = Trenutni predmet orisa
@@ -216,10 +199,6 @@ pdfjs-additional-layers = Dodatne plasti
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Stran { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -237,8 +216,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Najdi
     .placeholder = Najdi v dokumentu …
+    .title = Najdi
 pdfjs-find-previous-button =
     .title = Najdi prejšnjo ponovitev iskanega
 pdfjs-find-previous-button-label = Najdi nazaj
@@ -337,16 +316,16 @@ pdfjs-editor-highlight-button =
     .title = Označevalnik
 pdfjs-editor-highlight-button-label = Označevalnik
 pdfjs-highlight-floating-button1 =
-    .title = Označi
     .aria-label = Označi
+    .title = Označi
 pdfjs-highlight-floating-button-label = Označi
 pdfjs-comment-floating-button =
-    .title = Komentiraj
     .aria-label = Komentiraj
+    .title = Komentiraj
 pdfjs-comment-floating-button-label = Komentiraj
 pdfjs-editor-comment-button =
-    .title = Komentiraj
     .aria-label = Komentiraj
+    .title = Komentiraj
 pdfjs-editor-comment-button-label = Komentiraj
 pdfjs-editor-signature-button =
     .title = Dodaj podpis
@@ -421,8 +400,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Komentarji
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Zapri stransko vrstico
     .aria-label = Zapri stransko vrstico
+    .title = Zapri stransko vrstico
 pdfjs-editor-comments-sidebar-close-button-label = Zapri stransko vrstico
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Ste zasledili kaj omembe vrednega? Narišite oznako in dopišite komentar.
@@ -545,13 +524,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Nastavitve nadomestnega besedila s
 pdfjs-editor-alt-text-settings-automatic-title = Samodejno nadomestno besedilo
 pdfjs-editor-alt-text-settings-create-model-button-label = Samodejno ustvari nadomestno besedilo
 pdfjs-editor-alt-text-settings-create-model-description = Predlaga opise za pomoč ljudem, ki ne morejo videti slike, ali za primer, ko se slika ne naloži.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model UI za nadomestno besedilo ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Izvaja se lokalno na vaši napravi, tako da vaši podatki ostajajo zasebni. Zahtevano za samodejno nadomestno besedilo.
-pdfjs-editor-alt-text-settings-delete-model-button = Izbriši
-pdfjs-editor-alt-text-settings-download-model-button = Prenesi
-pdfjs-editor-alt-text-settings-downloading-model-button = Prenašanje ...
 pdfjs-editor-alt-text-settings-editor-title = Urejevalnik nadomestnega besedila
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Ob dodajanju slike takoj prikaži urejevalnik nadomestnega besedila
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga vam zagotoviti, da imajo vse vaše slike nadomestno besedilo.
@@ -774,8 +746,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Lastnosti digitalnega podpisa
     .aria-label = Lastnosti digitalnega podpisa
+    .title = Lastnosti digitalnega podpisa
 pdfjs-digital-signature-properties-button-label = Lastnosti digitalnega podpisa
 
 ## Banner shown above the signature list summarising the overall

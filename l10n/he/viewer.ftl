@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = אזהרה: מסמך ה־PDF לא נטען לחלוט
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = הצגה/הסתרה של סרגל הצד
-pdfjs-toggle-sidebar-notification-button =
-    .title = החלפת תצוגת סרגל צד (מסמך שמכיל תוכן עניינים/קבצים מצורפים/שכבות)
-pdfjs-toggle-sidebar-button-label = הצגה/הסתרה של סרגל הצד
-pdfjs-document-outline-button =
-    .title = הצגת תוכן העניינים של המסמך (לחיצה כפולה כדי להרחיב או לצמצם את כל הפריטים)
-pdfjs-document-outline-button-label = תוכן העניינים של המסמך
-pdfjs-attachments-button =
-    .title = הצגת צרופות
-pdfjs-attachments-button-label = צרופות
-pdfjs-layers-button =
-    .title = הצגת שכבות (יש ללחוץ לחיצה כפולה כדי לאפס את כל השכבות למצב ברירת המחדל)
-pdfjs-layers-button-label = שכבות
-pdfjs-thumbs-button =
-    .title = הצגת תצוגה מקדימה
-pdfjs-thumbs-button-label = תצוגה מקדימה
 pdfjs-current-outline-item-button =
     .title = מציאת פריט תוכן העניינים הנוכחי
 pdfjs-current-outline-item-button-label = פריט תוכן העניינים הנוכחי
@@ -214,10 +197,6 @@ pdfjs-additional-layers = שכבות נוספות
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = עמוד { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = חיפוש
     .placeholder = חיפוש במסמך…
+    .title = חיפוש
 pdfjs-find-previous-button =
     .title = מציאת המופע הקודם של הביטוי
 pdfjs-find-previous-button-label = קודם
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = סימון
 pdfjs-editor-highlight-button-label = סימון
 pdfjs-highlight-floating-button1 =
-    .title = סימון
     .aria-label = סימון
+    .title = סימון
 pdfjs-highlight-floating-button-label = סימון
 pdfjs-comment-floating-button =
-    .title = הערה
     .aria-label = הערה
+    .title = הערה
 pdfjs-comment-floating-button-label = הערה
 pdfjs-editor-comment-button =
-    .title = הערה
     .aria-label = הערה
+    .title = הערה
 pdfjs-editor-comment-button-label = הערה
 pdfjs-editor-signature-button =
     .title = הוספת חתימה
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] הערות
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = סגירת סרגל הצד
     .aria-label = סגירת סרגל הצד
+    .title = סגירת סרגל הצד
 pdfjs-editor-comments-sidebar-close-button-label = סגירת סרגל הצד
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = ראית משהו ראוי לציון? ניתן לסמן אותו ולהשאיר הערה.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = הגדרות טקסט חלופי �
 pdfjs-editor-alt-text-settings-automatic-title = טקסט חלופי אוטומטי
 pdfjs-editor-alt-text-settings-create-model-button-label = יצירת טקסט חלופי באופן אוטומטי
 pdfjs-editor-alt-text-settings-create-model-description = הצעת תיאורים כדי לסייע לאנשים שאינם יכולים לראות את התמונה או כאשר התמונה אינה נטענת.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = מודל AI לטקסט חלופי ({ $totalSize } מ״ב)
-pdfjs-editor-alt-text-settings-ai-model-description = פועל באופן מקומי במכשיר שלך כך שהנתונים שלך נשארים פרטיים. נדרש עבור טקסט חלופי אוטומטי.
-pdfjs-editor-alt-text-settings-delete-model-button = מחיקה
-pdfjs-editor-alt-text-settings-download-model-button = הורדה
-pdfjs-editor-alt-text-settings-downloading-model-button = בהורדה…
 pdfjs-editor-alt-text-settings-editor-title = עורך טקסט חלופי
 pdfjs-editor-alt-text-settings-show-dialog-button-label = הצגת עורך טקסט חלופי מיד בעת הוספת תמונה
 pdfjs-editor-alt-text-settings-show-dialog-description = מסייע לך לוודא שלכל התמונות שלך יש טקסט חלופי.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = מאפייני חתימה דיגיטלית
     .aria-label = מאפייני חתימה דיגיטלית
+    .title = מאפייני חתימה דיגיטלית
 pdfjs-digital-signature-properties-button-label = מאפייני חתימה דיגיטלית
 
 ## Banner shown above the signature list summarising the overall

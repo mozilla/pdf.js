@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Advarsel: PDF-filen er ikke fuldt indlæst til udskri
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Slå sidepanel til eller fra
-pdfjs-toggle-sidebar-notification-button =
-    .title = Slå sidepanel til eller fra (dokumentet indeholder disposition/vedhæftede filer/lag)
-pdfjs-toggle-sidebar-button-label = Slå sidepanel til eller fra
-pdfjs-document-outline-button =
-    .title = Vis dokumentets disposition (dobbeltklik for at udvide/sammenfolde alle elementer)
-pdfjs-document-outline-button-label = Dokument-disposition
-pdfjs-attachments-button =
-    .title = Vis vedhæftede filer
-pdfjs-attachments-button-label = Vedhæftede filer
-pdfjs-layers-button =
-    .title = Vis lag (dobbeltklik for at nulstille alle lag til standard-tilstanden)
-pdfjs-layers-button-label = Lag
-pdfjs-thumbs-button =
-    .title = Vis miniaturer
-pdfjs-thumbs-button-label = Miniaturer
 pdfjs-current-outline-item-button =
     .title = Find det aktuelle dispositions-element
 pdfjs-current-outline-item-button-label = Aktuelt dispositions-element
@@ -193,10 +176,6 @@ pdfjs-additional-layers = Yderligere lag
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Side { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +193,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Find
     .placeholder = Find i dokument…
+    .title = Find
 pdfjs-find-previous-button =
     .title = Find den forrige forekomst
 pdfjs-find-previous-button-label = Forrige
@@ -310,16 +289,16 @@ pdfjs-editor-highlight-button =
     .title = Fremhæv
 pdfjs-editor-highlight-button-label = Fremhæv
 pdfjs-highlight-floating-button1 =
-    .title = Fremhæv
     .aria-label = Fremhæv
+    .title = Fremhæv
 pdfjs-highlight-floating-button-label = Fremhæv
 pdfjs-comment-floating-button =
-    .title = Kommenter
     .aria-label = Kommenter
+    .title = Kommenter
 pdfjs-comment-floating-button-label = Kommenter
 pdfjs-editor-comment-button =
-    .title = Kommentar
     .aria-label = Kommentar
+    .title = Kommentar
 pdfjs-editor-comment-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Tilføj signatur
@@ -392,8 +371,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Kommentarer
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Luk sidepanelet
     .aria-label = Luk sidepanelet
+    .title = Luk sidepanelet
 pdfjs-editor-comments-sidebar-close-button-label = Luk sidepanelet
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Har du fundet noget interessant? Fremhæv det og gem en kommentar.
@@ -516,13 +495,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Indstillinger for alternativ tekst
 pdfjs-editor-alt-text-settings-automatic-title = Automatisk alternativ tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Opret alternativ tekst automatisk
 pdfjs-editor-alt-text-settings-create-model-description = Foreslår beskrivelser for at hjælpe folk, der ikke kan se billedet, eller når billedet ikke indlæses.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = AI-model til at oprette alternative tekster ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Kører lokalt på din enhed, så dine data forbliver private. Påkrævet for at anvende automatisk alternativ tekst.
-pdfjs-editor-alt-text-settings-delete-model-button = Slet
-pdfjs-editor-alt-text-settings-download-model-button = Hent
-pdfjs-editor-alt-text-settings-downloading-model-button = Henter…
 pdfjs-editor-alt-text-settings-editor-title = Redigering af alternativ tekst
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis redigering af alternativ tekst med det samme, når et billede tilføjes
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjælper dig med at sikre, at alle dine billeder har alternativ tekst.

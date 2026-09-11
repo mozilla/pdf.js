@@ -183,23 +183,6 @@ pdfjs-printing-not-ready = 警告：此 PDF 未完成下載以供列印。
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = 切換側邊欄
-pdfjs-toggle-sidebar-notification-button =
-    .title = 切換側邊欄（包含大綱、附件、圖層的文件）
-pdfjs-toggle-sidebar-button-label = 切換側邊欄
-pdfjs-document-outline-button =
-    .title = 顯示文件大綱（雙擊展開/摺疊所有項目）
-pdfjs-document-outline-button-label = 文件大綱
-pdfjs-attachments-button =
-    .title = 顯示附件
-pdfjs-attachments-button-label = 附件
-pdfjs-layers-button =
-    .title = 顯示圖層（滑鼠雙擊即可將所有圖層重設為預設狀態）
-pdfjs-layers-button-label = 圖層
-pdfjs-thumbs-button =
-    .title = 顯示縮圖
-pdfjs-thumbs-button-label = 縮圖
 pdfjs-current-outline-item-button =
     .title = 尋找目前的大綱項目
 pdfjs-current-outline-item-button-label = 目前的大綱項目
@@ -210,10 +193,6 @@ pdfjs-additional-layers = 其他圖層
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = 第 { $page } 頁
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -231,8 +210,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = 尋找
     .placeholder = 在文件中搜尋…
+    .title = 尋找
 pdfjs-find-previous-button =
     .title = 尋找文字前次出現的位置
 pdfjs-find-previous-button-label = 上一個
@@ -319,16 +298,16 @@ pdfjs-editor-highlight-button =
     .title = 強調
 pdfjs-editor-highlight-button-label = 強調
 pdfjs-highlight-floating-button1 =
-    .title = 強調
     .aria-label = 強調
+    .title = 強調
 pdfjs-highlight-floating-button-label = 強調
 pdfjs-comment-floating-button =
-    .title = 註解
     .aria-label = 註解
+    .title = 註解
 pdfjs-comment-floating-button-label = 註解
 pdfjs-editor-comment-button =
-    .title = 註解
     .aria-label = 註解
+    .title = 註解
 pdfjs-editor-comment-button-label = 註解
 pdfjs-editor-signature-button =
     .title = 加入簽章
@@ -397,8 +376,8 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title = 註解
 pdfjs-editor-comments-sidebar-close-button =
-    .title = 關閉側邊欄
     .aria-label = 關閉側邊欄
+    .title = 關閉側邊欄
 pdfjs-editor-comments-sidebar-close-button-label = 關閉側邊欄
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = 想把哪個部分記下來？可以畫螢光強調，並且留下註解。
@@ -521,13 +500,6 @@ pdfjs-editor-alt-text-settings-dialog-label = 圖片替代文字設定
 pdfjs-editor-alt-text-settings-automatic-title = 自動化替代文字
 pdfjs-editor-alt-text-settings-create-model-button-label = 自動產生替代文字
 pdfjs-editor-alt-text-settings-create-model-description = 為您建議圖片描述，幫助看不到圖片的讀者，或於圖片無法載入時顯示。
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = 替代文字 AI 模型（{ $totalSize } MB）
-pdfjs-editor-alt-text-settings-ai-model-description = 在您的本機裝置上運作，以確保您的資料隱私。必須下載此模型才可以自動產生替代文字。
-pdfjs-editor-alt-text-settings-delete-model-button = 刪除
-pdfjs-editor-alt-text-settings-download-model-button = 下載
-pdfjs-editor-alt-text-settings-downloading-model-button = 下載中…
 pdfjs-editor-alt-text-settings-editor-title = 替代文字編輯器
 pdfjs-editor-alt-text-settings-show-dialog-button-label = 新增圖片後立即顯示替代文字編輯器
 pdfjs-editor-alt-text-settings-show-dialog-description = 幫助您確保所有圖片都有替代文字。
@@ -720,8 +692,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = 數位簽章屬性
     .aria-label = 數位簽章屬性
+    .title = 數位簽章屬性
 pdfjs-digital-signature-properties-button-label = 數位簽章屬性
 
 ## Banner shown above the signature list summarising the overall

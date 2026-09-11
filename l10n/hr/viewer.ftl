@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Upozorenje: PDF nije u potpunosti učitan za ispis.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Prikaži/sakrij bočnu traku
-pdfjs-toggle-sidebar-notification-button =
-    .title = Prikazivanje i sklanjanje bočne trake (dokument sadrži strukturu/privitke/slojeve)
-pdfjs-toggle-sidebar-button-label = Prikaži/sakrij bočnu traku
-pdfjs-document-outline-button =
-    .title = Prikaži strukturu dokumenta (dvoklik za rasklapanje/sklapanje svih stavki)
-pdfjs-document-outline-button-label = Struktura dokumenta
-pdfjs-attachments-button =
-    .title = Prikaži privitke
-pdfjs-attachments-button-label = Privitci
-pdfjs-layers-button =
-    .title = Prikaži slojeve (dvoklik za vraćanje svih slojeva u standardno stanje)
-pdfjs-layers-button-label = Slojevi
-pdfjs-thumbs-button =
-    .title = Prikaži minijature
-pdfjs-thumbs-button-label = Minijature
 pdfjs-current-outline-item-button =
     .title = Pronađi trenutačni element strukture
 pdfjs-current-outline-item-button-label = Trenutačni element strukture
@@ -193,10 +176,6 @@ pdfjs-additional-layers = Dodatni slojevi
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Stranica { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +193,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Pronađi
     .placeholder = Pronađi u dokumentu …
+    .title = Pronađi
 pdfjs-find-previous-button =
     .title = Pronađi prethodno pojavljivanje ovog izraza
 pdfjs-find-previous-button-label = Prethodno
@@ -312,16 +291,16 @@ pdfjs-editor-highlight-button =
     .title = Istakni
 pdfjs-editor-highlight-button-label = Istakni
 pdfjs-highlight-floating-button1 =
-    .title = Istakni
     .aria-label = Istakni
+    .title = Istakni
 pdfjs-highlight-floating-button-label = Istakni
 pdfjs-comment-floating-button =
-    .title = Komentiraj
     .aria-label = Komentiraj
+    .title = Komentiraj
 pdfjs-comment-floating-button-label = Komentiraj
 pdfjs-editor-comment-button =
-    .title = Komentar
     .aria-label = Komentar
+    .title = Komentar
 pdfjs-editor-comment-button-label = Komentar
 pdfjs-editor-signature-button =
     .title = Dodaj potpis
@@ -395,8 +374,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Komentara
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Zatvori bočnu traku
     .aria-label = Zatvori bočnu traku
+    .title = Zatvori bočnu traku
 pdfjs-editor-comments-sidebar-close-button-label = Zatvori bočnu traku
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Vidiš nešto vrijedno pažnje? Istakni to i ostavi komentar.
@@ -519,13 +498,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Postavke alternativnog teksta slik
 pdfjs-editor-alt-text-settings-automatic-title = Automatski alternativni tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Stvori alternativni tekst automatski
 pdfjs-editor-alt-text-settings-create-model-description = Predlaže opise koji pomažu osobama koji ne mogu vidjeti sliku ili kada se slika ne učita.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alternativni tekst UI modela ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Radi lokalno na tvom uređaju kako bi tvoji podaci ostali privatni. Potrebno za automatski alternativni tekst.
-pdfjs-editor-alt-text-settings-delete-model-button = Izbriši
-pdfjs-editor-alt-text-settings-download-model-button = Preuzmi
-pdfjs-editor-alt-text-settings-downloading-model-button = Preuzimanje …
 pdfjs-editor-alt-text-settings-editor-title = Uređivač alternativnog teksta
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Prikaži uređivač alternativnog teksta odmah pri dodavanju slike
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaže osigurati da sve tvoje slike imaju alternativni tekst.

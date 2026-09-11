@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = คำเตือน: PDF ไม่ได้รั�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = เปิด/ปิดแถบข้าง
-pdfjs-toggle-sidebar-notification-button =
-    .title = เปิด/ปิดแถบข้าง (เอกสารมีเค้าร่าง/ไฟล์แนบ/เลเยอร์)
-pdfjs-toggle-sidebar-button-label = เปิด/ปิดแถบข้าง
-pdfjs-document-outline-button =
-    .title = แสดงเค้าร่างเอกสาร (คลิกสองครั้งเพื่อขยาย/ยุบรายการทั้งหมด)
-pdfjs-document-outline-button-label = เค้าร่างเอกสาร
-pdfjs-attachments-button =
-    .title = แสดงไฟล์แนบ
-pdfjs-attachments-button-label = ไฟล์แนบ
-pdfjs-layers-button =
-    .title = แสดงเลเยอร์ (คลิกสองครั้งเพื่อรีเซ็ตเลเยอร์ทั้งหมดเป็นสถานะเริ่มต้น)
-pdfjs-layers-button-label = เลเยอร์
-pdfjs-thumbs-button =
-    .title = แสดงภาพขนาดย่อ
-pdfjs-thumbs-button-label = ภาพขนาดย่อ
 pdfjs-current-outline-item-button =
     .title = ค้นหารายการเค้าร่างปัจจุบัน
 pdfjs-current-outline-item-button-label = รายการเค้าร่างปัจจุบัน
@@ -193,10 +176,6 @@ pdfjs-additional-layers = เลเยอร์เพิ่มเติม
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = หน้า { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +193,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = ค้นหา
     .placeholder = ค้นหาในเอกสาร…
+    .title = ค้นหา
 pdfjs-find-previous-button =
     .title = หาตำแหน่งก่อนหน้าของวลี
 pdfjs-find-previous-button-label = ก่อนหน้า
@@ -302,16 +281,16 @@ pdfjs-editor-highlight-button =
     .title = เน้น
 pdfjs-editor-highlight-button-label = เน้น
 pdfjs-highlight-floating-button1 =
-    .title = เน้นสี
     .aria-label = เน้นสี
+    .title = เน้นสี
 pdfjs-highlight-floating-button-label = เน้นสี
 pdfjs-comment-floating-button =
-    .title = แสดงความคิดเห็น
     .aria-label = แสดงความคิดเห็น
+    .title = แสดงความคิดเห็น
 pdfjs-comment-floating-button-label = แสดงความคิดเห็น
 pdfjs-editor-comment-button =
-    .title = แสดงความคิดเห็น
     .aria-label = แสดงความคิดเห็น
+    .title = แสดงความคิดเห็น
 pdfjs-editor-comment-button-label = ความคิดเห็น
 pdfjs-editor-signature-button =
     .title = เพิ่มลายเซ็น
@@ -380,8 +359,8 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title = ความคิดเห็น
 pdfjs-editor-comments-sidebar-close-button =
-    .title = ปิดแถบข้าง
     .aria-label = ปิดแถบข้าง
+    .title = ปิดแถบข้าง
 pdfjs-editor-comments-sidebar-close-button-label = ปิดแถบข้าง
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = เห็นอะไรที่น่าสนใจใช่ไหม? เน้นสีไว้และแสดงความคิดเห็นได้เลย
@@ -504,13 +483,6 @@ pdfjs-editor-alt-text-settings-dialog-label = ตั้งค่าข้อค�
 pdfjs-editor-alt-text-settings-automatic-title = การทดแทนด้วยข้อความอัตโนมัติ
 pdfjs-editor-alt-text-settings-create-model-button-label = สร้างข้อความทดแทนอัตโนมัติ
 pdfjs-editor-alt-text-settings-create-model-description = แนะนำคำอธิบายเพื่อช่วยเหลือผู้ที่ไม่สามารถมองเห็นภาพหรือเมื่อภาพไม่โหลด
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = โมเดล AI สำหรับข้อความทดแทน ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = ทำงานในเครื่องของคุณเพื่อให้ข้อมูลของคุณเป็นส่วนตัว จำเป็นสำหรับข้อความทดแทนอัตโนมัติ
-pdfjs-editor-alt-text-settings-delete-model-button = ลบ
-pdfjs-editor-alt-text-settings-download-model-button = ดาวน์โหลด
-pdfjs-editor-alt-text-settings-downloading-model-button = กำลังดาวน์โหลด…
 pdfjs-editor-alt-text-settings-editor-title = ตัวแก้ไขข้อความทดแทน
 pdfjs-editor-alt-text-settings-show-dialog-button-label = แสดงตัวแก้ไขข้อความทดแทนทันทีเมื่อเพิ่มภาพ
 pdfjs-editor-alt-text-settings-show-dialog-description = ช่วยให้คุณแน่ใจว่าภาพทั้งหมดของคุณมีข้อความทดแทน

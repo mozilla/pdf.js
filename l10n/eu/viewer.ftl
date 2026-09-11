@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Abisua: PDFa ez dago erabat kargatuta inprimatzeko.
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Txandakatu alboko barra
-pdfjs-toggle-sidebar-notification-button =
-    .title = Txandakatu alboko barra (dokumentuak eskema/eranskinak/geruzak ditu)
-pdfjs-toggle-sidebar-button-label = Txandakatu alboko barra
-pdfjs-document-outline-button =
-    .title = Erakutsi dokumentuaren eskema (klik bikoitza elementu guztiak zabaltzeko/tolesteko)
-pdfjs-document-outline-button-label = Dokumentuaren eskema
-pdfjs-attachments-button =
-    .title = Erakutsi eranskinak
-pdfjs-attachments-button-label = Eranskinak
-pdfjs-layers-button =
-    .title = Erakutsi geruzak (klik bikoitza geruza guztiak egoera lehenetsira berrezartzeko)
-pdfjs-layers-button-label = Geruzak
-pdfjs-thumbs-button =
-    .title = Erakutsi koadro txikiak
-pdfjs-thumbs-button-label = Koadro txikiak
 pdfjs-current-outline-item-button =
     .title = Bilatu uneko eskemaren elementua
 pdfjs-current-outline-item-button-label = Uneko eskemaren elementua
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Geruza gehigarriak
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = { $page }. orria
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Bilatu
     .placeholder = Bilatu dokumentuan…
+    .title = Bilatu
 pdfjs-find-previous-button =
     .title = Bilatu esaldiaren aurreko parekatzea
 pdfjs-find-previous-button-label = Aurrekoa
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Nabarmendu
 pdfjs-editor-highlight-button-label = Nabarmendu
 pdfjs-highlight-floating-button1 =
-    .title = Nabarmendu
     .aria-label = Nabarmendu
+    .title = Nabarmendu
 pdfjs-highlight-floating-button-label = Nabarmendu
 pdfjs-comment-floating-button =
-    .title = Iruzkina
     .aria-label = Iruzkina
+    .title = Iruzkina
 pdfjs-comment-floating-button-label = Iruzkina
 pdfjs-editor-comment-button =
-    .title = Iruzkina
     .aria-label = Iruzkina
+    .title = Iruzkina
 pdfjs-editor-comment-button-label = Iruzkina
 pdfjs-editor-signature-button =
     .title = Gehitu sinadura
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Iruzkinak
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Itxi alboko barra
     .aria-label = Itxi alboko barra
+    .title = Itxi alboko barra
 pdfjs-editor-comments-sidebar-close-button-label = Itxi alboko barra
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Azpimarratzeko zerbait ikusi duzu? Nabarmen ezazu eta utzi iruzkina.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Irudien ordezko testuaren ezarpena
 pdfjs-editor-alt-text-settings-automatic-title = Ordezko testu automatikoa
 pdfjs-editor-alt-text-settings-create-model-button-label = Sortu ordezko testua automatikoki
 pdfjs-editor-alt-text-settings-create-model-description = Azalpenak iradokitzen ditu irudia ikusi ezin duen jendearentzat edo irudia kargatu ezin denerako.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Ordezko testuaren AA modeloa ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Zure gailuan modu lokalean exekutatzen da eta zure datuak pribatu mantentzen dira. Ordezko testu automatikorako beharrezkoa.
-pdfjs-editor-alt-text-settings-delete-model-button = Ezabatu
-pdfjs-editor-alt-text-settings-download-model-button = Deskargatu
-pdfjs-editor-alt-text-settings-downloading-model-button = Deskargatzen…
 pdfjs-editor-alt-text-settings-editor-title = Ordezko testuaren editorea
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Erakutsi ordezko testua irudi bat gehitzean berehala
 pdfjs-editor-alt-text-settings-show-dialog-description = Zure irudi guztiek ordezko testua dutela ziurtatzen laguntzen dizu.
@@ -760,8 +732,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Sinadura digitalaren propietateak
     .aria-label = Sinadura digitalaren propietateak
+    .title = Sinadura digitalaren propietateak
 pdfjs-digital-signature-properties-button-label = Sinadura digitalaren propietateak
 
 ## Banner shown above the signature list summarising the overall

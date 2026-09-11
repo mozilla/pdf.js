@@ -160,21 +160,6 @@ pdfjs-printing-not-ready = Atentzione: su PDF no est istadu carrigadu de su totu
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Ativa/disativa sa barra laterale
-pdfjs-toggle-sidebar-notification-button =
-    .title = Ativa/disativa sa barra laterale (su documentu cuntenet un'ischema, alligongiados o livellos)
-pdfjs-toggle-sidebar-button-label = Ativa/disativa sa barra laterale
-pdfjs-document-outline-button-label = Ischema de su documentu
-pdfjs-attachments-button =
-    .title = Ammustra alligongiados
-pdfjs-attachments-button-label = Alliongiados
-pdfjs-layers-button =
-    .title = Ammustra livellos (clic dòpiu pro ripristinare totu is livellos a s'istadu predefinidu)
-pdfjs-layers-button-label = Livellos
-pdfjs-thumbs-button =
-    .title = Ammustra miniaturas
-pdfjs-thumbs-button-label = Miniaturas
 pdfjs-current-outline-item-button =
     .title = Agata s'elementu atuale de s'ischema
 pdfjs-current-outline-item-button-label = Elementu atuale de s'ischema
@@ -185,10 +170,6 @@ pdfjs-additional-layers = Livellos additzionales
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pàgina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -206,8 +187,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Agata
     .placeholder = Agata in su documentu…
+    .title = Agata
 pdfjs-find-previous-button =
     .title = Agata s'ocurrèntzia pretzedente de sa fràsia
 pdfjs-find-previous-button-label = S'ischeda chi b'est primu
@@ -295,16 +276,16 @@ pdfjs-editor-highlight-button =
     .title = Evidèntzia
 pdfjs-editor-highlight-button-label = Evidèntzia
 pdfjs-highlight-floating-button1 =
-    .title = Evidèntzia
     .aria-label = Evidèntzia
+    .title = Evidèntzia
 pdfjs-highlight-floating-button-label = Evidèntzia
 pdfjs-comment-floating-button =
-    .title = Cummenta
     .aria-label = Cummenta
+    .title = Cummenta
 pdfjs-comment-floating-button-label = Cummenta
 pdfjs-editor-comment-button =
-    .title = Cummenta
     .aria-label = Cummenta
+    .title = Cummenta
 pdfjs-editor-comment-button-label = Cummenta
 pdfjs-editor-signature-button =
     .title = Agiunghe una firma
@@ -374,8 +355,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Cummentos
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Serra sa barra laterale
     .aria-label = Serra sa barra laterale
+    .title = Serra sa barra laterale
 pdfjs-editor-comments-sidebar-close-button-label = Serra sa barra laterale
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = As rilevadu una cosa de interessu? Sinnala·dda e agiunghe unu cummentu.
@@ -433,13 +414,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Cunfiguratzione de su testu altern
 pdfjs-editor-alt-text-settings-automatic-title = Testu alternativu automàticu
 pdfjs-editor-alt-text-settings-create-model-button-label = Crea testu alternativu in automàticu
 pdfjs-editor-alt-text-settings-create-model-description = Cussìgiat descritziones pro agiudare a gente chi non podet bìdere s’immàgine o cando non benit carrigada.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modellu de IA pro su testu alternativu ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Est esecutadu in locale in manera chi is datos tuos abarrent in privadu. Rechestu pro sa generatzione automàtica de testu alternativu.
-pdfjs-editor-alt-text-settings-delete-model-button = Cantzella
-pdfjs-editor-alt-text-settings-download-model-button = Iscàrriga
-pdfjs-editor-alt-text-settings-downloading-model-button = Iscarrighende…
 pdfjs-editor-alt-text-settings-editor-title = Editore de testu alternativu
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Mustra deretu s’editore de testu alternativu cando siat agiunta un’immàgine
 pdfjs-editor-alt-text-settings-show-dialog-description = T’agiudat a assegurare chi totu is immàgines tuas tèngiant unu testu alternativu.

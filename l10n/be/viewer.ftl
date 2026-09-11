@@ -188,23 +188,6 @@ pdfjs-printing-not-ready = Увага: PDF не сцягнуты цалкам д
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Паказаць/схаваць бакавую панэль
-pdfjs-toggle-sidebar-notification-button =
-    .title = Паказаць/схаваць бакавую панэль (дакумент мае змест/укладанні/пласты)
-pdfjs-toggle-sidebar-button-label = Паказаць/схаваць бакавую панэль
-pdfjs-document-outline-button =
-    .title = Паказаць структуру дакумента (двайная пстрычка, каб разгарнуць /згарнуць усе элементы)
-pdfjs-document-outline-button-label = Структура дакумента
-pdfjs-attachments-button =
-    .title = Паказаць далучэнні
-pdfjs-attachments-button-label = Далучэнні
-pdfjs-layers-button =
-    .title = Паказаць пласты (націсніце двойчы, каб скінуць усе пласты да прадвызначанага стану)
-pdfjs-layers-button-label = Пласты
-pdfjs-thumbs-button =
-    .title = Паказ мініяцюр
-pdfjs-thumbs-button-label = Мініяцюры
 pdfjs-current-outline-item-button =
     .title = Знайсці бягучы элемент структуры
 pdfjs-current-outline-item-button-label = Бягучы элемент структуры
@@ -215,10 +198,6 @@ pdfjs-additional-layers = Дадатковыя пласты
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Старонка { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -236,8 +215,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Шукаць
     .placeholder = Шукаць у дакуменце…
+    .title = Шукаць
 pdfjs-find-previous-button =
     .title = Знайсці папярэдні выпадак выразу
 pdfjs-find-previous-button-label = Папярэдні
@@ -334,16 +313,16 @@ pdfjs-editor-highlight-button =
     .title = Вылучэнне
 pdfjs-editor-highlight-button-label = Вылучэнне
 pdfjs-highlight-floating-button1 =
-    .title = Падфарбаваць
     .aria-label = Падфарбаваць
+    .title = Падфарбаваць
 pdfjs-highlight-floating-button-label = Падфарбаваць
 pdfjs-comment-floating-button =
-    .title = Каментаваць
     .aria-label = Каментаваць
+    .title = Каментаваць
 pdfjs-comment-floating-button-label = Каментаваць
 pdfjs-editor-comment-button =
-    .title = Каментарый
     .aria-label = Каментарый
+    .title = Каментарый
 pdfjs-editor-comment-button-label = Каментарый
 pdfjs-editor-signature-button =
     .title = Дадаць подпіс
@@ -417,8 +396,8 @@ pdfjs-editor-comments-sidebar-title =
        *[many] Каментарыі
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Закрыць бакавую панэль
     .aria-label = Закрыць бакавую панэль
+    .title = Закрыць бакавую панэль
 pdfjs-editor-comments-sidebar-close-button-label = Закрыць бакавую панэль
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Бачыце штосьці вартае ўвагі? Вылучыце і пакіньце каментарый.
@@ -541,13 +520,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Налады альтэрнаты�
 pdfjs-editor-alt-text-settings-automatic-title = Аўтаматычны тэкст для атрыбута alt
 pdfjs-editor-alt-text-settings-create-model-button-label = Ствараць тэкст для атрыбута alt аўтаматычна
 pdfjs-editor-alt-text-settings-create-model-description = Прапануе апісанні, каб дапамагчы людзям, якія не бачаць выяву, ці калі выява не загружаецца.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Мадэль ШІ для тэксту для атрыбута alt ({ $totalSize } МБ)
-pdfjs-editor-alt-text-settings-ai-model-description = Працуе лакальна на вашай прыладзе, таму вашы звесткі застаюцца прыватнымі. Патрабуецца для аўтаматычнага альтэрнатыўнага тэксту.
-pdfjs-editor-alt-text-settings-delete-model-button = Выдаліць
-pdfjs-editor-alt-text-settings-download-model-button = Сцягнуць
-pdfjs-editor-alt-text-settings-downloading-model-button = Сцягванне…
 pdfjs-editor-alt-text-settings-editor-title = Рэдактар тэксту для атрыбута alt
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Адразу паказваць рэдактар тэксту для атрыбута alt пры даданні выявы
 pdfjs-editor-alt-text-settings-show-dialog-description = Дапамагае пераканацца, што ўсе вашы выявы маюць альтэрнатыўны тэкст.
@@ -765,8 +737,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Уласцівасці лічбавага подпісу
     .aria-label = Уласцівасці лічбавага подпісу
+    .title = Уласцівасці лічбавага подпісу
 pdfjs-digital-signature-properties-button-label = Уласцівасці лічбавага подпісу
 
 ## Banner shown above the signature list summarising the overall

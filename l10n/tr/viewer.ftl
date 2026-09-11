@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Uyarı: PDF tamamen yüklenmedi ve yazdırmaya hazır
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Kenar çubuğunu aç/kapat
-pdfjs-toggle-sidebar-notification-button =
-    .title = Kenar çubuğunu aç/kapat (Belge ana hat/ekler/katmanlar içeriyor)
-pdfjs-toggle-sidebar-button-label = Kenar çubuğunu aç/kapat
-pdfjs-document-outline-button =
-    .title = Belge ana hatlarını göster (Tüm öğeleri genişletmek/daraltmak için çift tıklayın)
-pdfjs-document-outline-button-label = Belge ana hatları
-pdfjs-attachments-button =
-    .title = Ekleri göster
-pdfjs-attachments-button-label = Ekler
-pdfjs-layers-button =
-    .title = Katmanları göster (tüm katmanları varsayılan duruma sıfırlamak için çift tıklayın)
-pdfjs-layers-button-label = Katmanlar
-pdfjs-thumbs-button =
-    .title = Küçük resimleri göster
-pdfjs-thumbs-button-label = Küçük resimler
 pdfjs-current-outline-item-button =
     .title = Mevcut ana hat öğesini bul
 pdfjs-current-outline-item-button-label = Mevcut ana hat öğesi
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Ek katmanlar
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Sayfa { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Bul
     .placeholder = Belgede bul…
+    .title = Bul
 pdfjs-find-previous-button =
     .title = Önceki eşleşmeyi bul
 pdfjs-find-previous-button-label = Önceki
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Vurgula
 pdfjs-editor-highlight-button-label = Vurgula
 pdfjs-highlight-floating-button1 =
-    .title = Vurgula
     .aria-label = Vurgula
+    .title = Vurgula
 pdfjs-highlight-floating-button-label = Vurgula
 pdfjs-comment-floating-button =
-    .title = Yorum ekle
     .aria-label = Yorum ekle
+    .title = Yorum ekle
 pdfjs-comment-floating-button-label = Yorum ekle
 pdfjs-editor-comment-button =
-    .title = Yorum ekle
     .aria-label = Yorum ekle
+    .title = Yorum ekle
 pdfjs-editor-comment-button-label = Yorum ekle
 pdfjs-editor-signature-button =
     .title = İmza ekle
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Yorumlar
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Kenar çubuğunu kapat
     .aria-label = Kenar çubuğunu kapat
+    .title = Kenar çubuğunu kapat
 pdfjs-editor-comments-sidebar-close-button-label = Kenar çubuğunu kapat
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Not almaya değer bir şey mi gördünüz? Onu işaretleyip yorum yazabilirsiniz.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Resim alt metni ayarları
 pdfjs-editor-alt-text-settings-automatic-title = Otomatik alt metin
 pdfjs-editor-alt-text-settings-create-model-button-label = Otomatik olarak alt metin oluştur
 pdfjs-editor-alt-text-settings-create-model-description = Görme engelli kişilere gösterilecek veya resmin yüklenemediği durumlarda gösterilecek açıklamalar önerir.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alt metin yapay zekâ modeli ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Verilerinizin gizli kalması için cihazınızda yerel olarak çalışır. Otomatik alt metin için gereklidir.
-pdfjs-editor-alt-text-settings-delete-model-button = Sil
-pdfjs-editor-alt-text-settings-download-model-button = İndir
-pdfjs-editor-alt-text-settings-downloading-model-button = İndiriliyor…
 pdfjs-editor-alt-text-settings-editor-title = Alt metin düzenleyicisi
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Resim eklerken alt metin düzenleyicisini hemen göster
 pdfjs-editor-alt-text-settings-show-dialog-description = Tüm resimlerinizin alt metne sahip olduğundan emin olmanızı sağlar.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Dijital imza özellikleri
     .aria-label = Dijital imza özellikleri
+    .title = Dijital imza özellikleri
 pdfjs-digital-signature-properties-button-label = Dijital imza özellikleri
 
 ## Banner shown above the signature list summarising the overall

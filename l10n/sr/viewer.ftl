@@ -188,23 +188,6 @@ pdfjs-printing-not-ready = Упозорење: PDF није у потпунос�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Прикажи/сакриј бочни панел
-pdfjs-toggle-sidebar-notification-button =
-    .title = Прикажи/сакриј бочни панел (документ садржи контуру/прилоге/слојеве)
-pdfjs-toggle-sidebar-button-label = Прикажи/сакриј бочни панел
-pdfjs-document-outline-button =
-    .title = Прикажи структуру документа (двоструким кликом проширујете/скупљате све ставке)
-pdfjs-document-outline-button-label = Контура документа
-pdfjs-attachments-button =
-    .title = Прикажи прилоге
-pdfjs-attachments-button-label = Прилози
-pdfjs-layers-button =
-    .title = Прикажи слојеве (дупли клик за враћање свих слојева у подразумевано стање)
-pdfjs-layers-button-label = Слојеви
-pdfjs-thumbs-button =
-    .title = Прикажи сличице
-pdfjs-thumbs-button-label = Сличице
 pdfjs-current-outline-item-button =
     .title = Пронађите тренутни елемент структуре
 pdfjs-current-outline-item-button-label = Тренутна контура
@@ -215,10 +198,6 @@ pdfjs-additional-layers = Додатни слојеви
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Страница { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -236,8 +215,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Пронађи
     .placeholder = Пронађи у документу…
+    .title = Пронађи
 pdfjs-find-previous-button =
     .title = Пронађи претходно појављивање фразе
 pdfjs-find-previous-button-label = Претходна
@@ -334,16 +313,16 @@ pdfjs-editor-highlight-button =
     .title = Означи
 pdfjs-editor-highlight-button-label = Означи
 pdfjs-highlight-floating-button1 =
-    .title = Означи
     .aria-label = Означи
+    .title = Означи
 pdfjs-highlight-floating-button-label = Означи
 pdfjs-comment-floating-button =
-    .title = Коментар
     .aria-label = Коментар
+    .title = Коментар
 pdfjs-comment-floating-button-label = Напомена
 pdfjs-editor-comment-button =
-    .title = Коментар
     .aria-label = Коментар
+    .title = Коментар
 pdfjs-editor-comment-button-label = Коментар
 pdfjs-editor-signature-button =
     .title = Додај потпис
@@ -417,8 +396,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Напомене
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Затвори бочну површ
     .aria-label = Затвори бочну површ
+    .title = Затвори бочну површ
 pdfjs-editor-comments-sidebar-close-button-label = Затвори бочну површ
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Видите нешто вредно пажње? Истакните то и оставите напомену.
@@ -541,13 +520,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Подешавања алтерн�
 pdfjs-editor-alt-text-settings-automatic-title = Аутоматски алтернативни текст
 pdfjs-editor-alt-text-settings-create-model-button-label = Аутоматски прави алтернативни текст
 pdfjs-editor-alt-text-settings-create-model-description = Предлаже описе како би се помогло људима који не виде слику или када се слика не учита.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = ВИ модел за алтернативни текст ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Ради локално на вашем уређају тако да ваши подаци остају приватни. Потребно за аутоматски алтернативни текст.
-pdfjs-editor-alt-text-settings-delete-model-button = Обриши
-pdfjs-editor-alt-text-settings-download-model-button = Преузми
-pdfjs-editor-alt-text-settings-downloading-model-button = Преузимање…
 pdfjs-editor-alt-text-settings-editor-title = Уређивач алтернативног текста
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Прикажи уређивач алтернативног текста одмах при додавању слике
 pdfjs-editor-alt-text-settings-show-dialog-description = Помаже вам да све ваше слике имају алтернативни текст.
@@ -765,8 +737,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Својства дигиталног потписа
     .aria-label = Својства дигиталног потписа
+    .title = Својства дигиталног потписа
 pdfjs-digital-signature-properties-button-label = Својства дигиталног потписа
 
 ## Banner shown above the signature list summarising the overall

@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Advarsel: PDF er ikke fullstendig innlastet for utskr
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Slå av/på sidestolpe
-pdfjs-toggle-sidebar-notification-button =
-    .title = Vis/gjem sidestolpe (dokumentet inneholder oversikt/vedlegg/lag)
-pdfjs-toggle-sidebar-button-label = Slå av/på sidestolpe
-pdfjs-document-outline-button =
-    .title = Vis dokumentdisposisjonen (dobbeltklikk for å utvide/skjule alle elementer)
-pdfjs-document-outline-button-label = Dokumentdisposisjon
-pdfjs-attachments-button =
-    .title = Vis vedlegg
-pdfjs-attachments-button-label = Vedlegg
-pdfjs-layers-button =
-    .title = Vis lag (dobbeltklikk for å tilbakestille alle lag til standardtilstand)
-pdfjs-layers-button-label = Lag
-pdfjs-thumbs-button =
-    .title = Vis miniatyrbilde
-pdfjs-thumbs-button-label = Miniatyrbilde
 pdfjs-current-outline-item-button =
     .title = Finn gjeldende disposisjonselement
 pdfjs-current-outline-item-button-label = Gjeldende disposisjonselement
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Ytterligere lag
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Side { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Søk
     .placeholder = Søk i dokument…
+    .title = Søk
 pdfjs-find-previous-button =
     .title = Finn forrige forekomst av frasen
 pdfjs-find-previous-button-label = Forrige
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Markere
 pdfjs-editor-highlight-button-label = Markere
 pdfjs-highlight-floating-button1 =
-    .title = Markere
     .aria-label = Markere
+    .title = Markere
 pdfjs-highlight-floating-button-label = Markere
 pdfjs-comment-floating-button =
-    .title = Kommenter
     .aria-label = Kommenter
+    .title = Kommenter
 pdfjs-comment-floating-button-label = Kommenter
 pdfjs-editor-comment-button =
-    .title = Kommentar
     .aria-label = Kommentar
+    .title = Kommentar
 pdfjs-editor-comment-button-label = Kommentar
 pdfjs-editor-signature-button =
     .title = Legg til signatur
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Kommentarer
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Lukk sidestolpen
     .aria-label = Lukk sidestolpen
+    .title = Lukk sidestolpen
 pdfjs-editor-comments-sidebar-close-button-label = Lukk sidestolpen
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Ser du noe verdt å merke seg? Marker det og legg igjen en kommentar.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Innstillinger for alternativ tekst
 pdfjs-editor-alt-text-settings-automatic-title = Automatisk alternativ tekst
 pdfjs-editor-alt-text-settings-create-model-button-label = Opprett alternativ tekst automatisk
 pdfjs-editor-alt-text-settings-create-model-description = Foreslår beskrivelser for å hjelpe folk som ikke kan se bildet eller når bildet ikke lastes inn.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Alternativ tekst AI-modell ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Kjører lokalt på enheten din slik at dataene dine forblir private. Nødvendig for automatisk alternativ tekst.
-pdfjs-editor-alt-text-settings-delete-model-button = Slett
-pdfjs-editor-alt-text-settings-download-model-button = Last ned
-pdfjs-editor-alt-text-settings-downloading-model-button = Laster ned…
 pdfjs-editor-alt-text-settings-editor-title = Alternativ tekst-redigerer
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Vis alternativ tekst-redigerer direkte når du legger til et bilde
 pdfjs-editor-alt-text-settings-show-dialog-description = Hjelper deg å sørge for at alle bildene dine har alternativ tekst.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Egenskaper for digital signatur
     .aria-label = Egenskaper for digital signatur
+    .title = Egenskaper for digital signatur
 pdfjs-digital-signature-properties-button-label = Egenskaper for digital signatur
 
 ## Banner shown above the signature list summarising the overall

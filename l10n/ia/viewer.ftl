@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Attention: le file PDF non es integremente cargate pr
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Monstrar/celar le barra lateral
-pdfjs-toggle-sidebar-notification-button =
-    .title = Monstrar/celar le barra lateral (le documento contine structura/attachamentos/stratos)
-pdfjs-toggle-sidebar-button-label = Monstrar/celar le barra lateral
-pdfjs-document-outline-button =
-    .title = Monstrar le schema del documento (clic duple pro expander/contraher tote le elementos)
-pdfjs-document-outline-button-label = Schema del documento
-pdfjs-attachments-button =
-    .title = Monstrar le annexos
-pdfjs-attachments-button-label = Annexos
-pdfjs-layers-button =
-    .title = Monstrar stratos (clicca duple pro remontar tote le stratos al stato predefinite)
-pdfjs-layers-button-label = Stratos
-pdfjs-thumbs-button =
-    .title = Monstrar le vignettes
-pdfjs-thumbs-button-label = Vignettes
 pdfjs-current-outline-item-button =
     .title = Trovar le elemento de structura actual
 pdfjs-current-outline-item-button-label = Elemento de structura actual
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Altere stratos
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pagina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Cercar
     .placeholder = Cercar in le documento…
+    .title = Cercar
 pdfjs-find-previous-button =
     .title = Trovar le previe occurrentia del phrase
 pdfjs-find-previous-button-label = Previe
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Evidentia
 pdfjs-editor-highlight-button-label = Evidentia
 pdfjs-highlight-floating-button1 =
-    .title = Evidentiar
     .aria-label = Evidentiar
+    .title = Evidentiar
 pdfjs-highlight-floating-button-label = Evidentiar
 pdfjs-comment-floating-button =
-    .title = Commento
     .aria-label = Commento
+    .title = Commento
 pdfjs-comment-floating-button-label = Commento
 pdfjs-editor-comment-button =
-    .title = Commento
     .aria-label = Commento
+    .title = Commento
 pdfjs-editor-comment-button-label = Commento
 pdfjs-editor-signature-button =
     .title = Adder signatura
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Commentos
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Clauder le barra lateral
     .aria-label = Clauder le barra lateral
+    .title = Clauder le barra lateral
 pdfjs-editor-comments-sidebar-close-button-label = Clauder le barra lateral
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Vide tu alco notabile? Evidentia lo e lassa un commentario.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Parametros del texto alternative d
 pdfjs-editor-alt-text-settings-automatic-title = Texto alternative automatic
 pdfjs-editor-alt-text-settings-create-model-button-label = Crear texto alternative automaticamente
 pdfjs-editor-alt-text-settings-create-model-description = Suggere descriptiones pro adjutar le personas qui non pote vider le imagine o quando le imagine non carga.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modello de intelligentia artificial del texto alternative ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Flue localmente sur tu apparato assi tu datos remane private. Necessari pro texto alternative automatic.
-pdfjs-editor-alt-text-settings-delete-model-button = Deler
-pdfjs-editor-alt-text-settings-download-model-button = Discargar
-pdfjs-editor-alt-text-settings-downloading-model-button = Discargante…
 pdfjs-editor-alt-text-settings-editor-title = Rediger texto alternative
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Monstrar le redactor de texto alternative a pena on adde un imagine
 pdfjs-editor-alt-text-settings-show-dialog-description = Te adjuta a verifica que tote tu imagines ha un texto alternative.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Proprietates del firma digital
     .aria-label = Proprietates del firma digital
+    .title = Proprietates del firma digital
 pdfjs-digital-signature-properties-button-label = Proprietates del firma digital
 
 ## Banner shown above the signature list summarising the overall

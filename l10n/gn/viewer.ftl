@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Kyhyjerã: Ko PDF nahenyhẽmbái oñembokuatia hag̃
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Tenda yke moambue
-pdfjs-toggle-sidebar-notification-button =
-    .title = Embojopyru tenda ykegua (kuatia oguereko kuaakaha/moirũha/ñuãha)
-pdfjs-toggle-sidebar-button-label = Tenda yke moambue
-pdfjs-document-outline-button =
-    .title = Ehechauka kuatia rape (eikutu mokõi jey embotuicha/emomichĩ hag̃ua opavavete mba’eporu)
-pdfjs-document-outline-button-label = Kuatia apopyre
-pdfjs-attachments-button =
-    .title = Moirũha jehechauka
-pdfjs-attachments-button-label = Moirũha
-pdfjs-layers-button =
-    .title = Ehechauka ñuãha (eikutu jo’a emomba’apo hag̃ua opaite ñuãha tekoypýpe)
-pdfjs-layers-button-label = Ñuãha
-pdfjs-thumbs-button =
-    .title = Mba’emirĩ jehechauka
-pdfjs-thumbs-button-label = Mba’emirĩ
 pdfjs-current-outline-item-button =
     .title = Eheka mba’eporu ag̃aguaitéva
 pdfjs-current-outline-item-button-label = Mba’eporu ag̃aguaitéva
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Ñuãha moirũguáva
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Kuatiarogue { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Juhu
     .placeholder = Kuatiápe jejuhu…
+    .title = Juhu
 pdfjs-find-previous-button =
     .title = Ejuhu ñe’ẽrysýi osẽ’ypy hague
 pdfjs-find-previous-button-label = Mboyvegua
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Mbosa’y
 pdfjs-editor-highlight-button-label = Mbosa’y
 pdfjs-highlight-floating-button1 =
-    .title = Mbosa’y
     .aria-label = Mbosa’y
+    .title = Mbosa’y
 pdfjs-highlight-floating-button-label = Mbosa’y
 pdfjs-comment-floating-button =
-    .title = Je’erei
     .aria-label = Je’erei
+    .title = Je’erei
 pdfjs-comment-floating-button-label = Je’erei
 pdfjs-editor-comment-button =
-    .title = Je’erei
     .aria-label = Je’erei
+    .title = Je’erei
 pdfjs-editor-comment-button-label = Je’erei
 pdfjs-editor-signature-button =
     .title = Embojuaju teraguapy
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Je’ereieta
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Emboty ta'ãngarupa yke
     .aria-label = Emboty ta'ãngarupa yke
+    .title = Emboty ta'ãngarupa yke
 pdfjs-editor-comments-sidebar-close-button-label = Emboty ta'ãngarupa yke
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = ¿Ehechápa peteĩ mbaʼe iporãva? Emomba’e ha eheja jehaipy.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Ta’ãnga moñe’ẽrã mokõiha
 pdfjs-editor-alt-text-settings-automatic-title = Moñe’ẽrã mokõiha ijeheguíva
 pdfjs-editor-alt-text-settings-create-model-button-label = Emoheñói moñe’ẽrã mokõiha ijeheguíva
 pdfjs-editor-alt-text-settings-create-model-description = Ñemyesakã mbykymi opavave tapicha ohecha’ỹva upe ta’ãnga térã pe ta’ãnga nahenyhẽiramo.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Peteĩva IA moñe’ẽrã mokõiha ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Oku’e mba’e’okaitépe umi mba’ekuaarã hekoñemi hag̃ua. Tekotevẽva moñe’ẽrã ykegua ijeheguívape.
-pdfjs-editor-alt-text-settings-delete-model-button = Mboguete
-pdfjs-editor-alt-text-settings-download-model-button = Mboguejy
-pdfjs-editor-alt-text-settings-downloading-model-button = Emboguejyhína…
 pdfjs-editor-alt-text-settings-editor-title = Moñe’ẽrã mokõiha mbosako’iha
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Ehechauka moñe’ẽrã mokõiha mbosako’iha embojuajúvo ta’ãnga
 pdfjs-editor-alt-text-settings-show-dialog-description = Nepytyvõta ta’ãngakuéra orekotaha moñe’ẽrã mokõiha.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Firma digital oguerekóva
     .aria-label = Firma digital oguerekóva
+    .title = Firma digital oguerekóva
 pdfjs-digital-signature-properties-button-label = Firma digital oguerekóva
 
 ## Banner shown above the signature list summarising the overall

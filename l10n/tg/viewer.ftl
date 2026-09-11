@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Диққат: Файли «PDF» барои чопк�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Фаъол кардани навори ҷонибӣ
-pdfjs-toggle-sidebar-notification-button =
-    .title = Фаъол кардани навори ҷонибӣ (ҳуҷҷат дорои сохтор/замимаҳо/қабатҳо мебошад)
-pdfjs-toggle-sidebar-button-label = Фаъол кардани навори ҷонибӣ
-pdfjs-document-outline-button =
-    .title = Намоиш додани сохтори ҳуҷҷат (барои баркушодан/пеҷондани ҳамаи унсурҳо дубора зер кунед)
-pdfjs-document-outline-button-label = Сохтори ҳуҷҷат
-pdfjs-attachments-button =
-    .title = Намоиш додани замимаҳо
-pdfjs-attachments-button-label = Замимаҳо
-pdfjs-layers-button =
-    .title = Намоиш додани қабатҳо (барои барқарор кардани ҳамаи қабатҳо ба вазъияти пешфарз дубора зер кунед)
-pdfjs-layers-button-label = Қабатҳо
-pdfjs-thumbs-button =
-    .title = Намоиш додани тасвирчаҳо
-pdfjs-thumbs-button-label = Тасвирчаҳо
 pdfjs-current-outline-item-button =
     .title = Ёфтани унсури сохтори ҷорӣ
 pdfjs-current-outline-item-button-label = Унсури сохтори ҷорӣ
@@ -193,10 +176,6 @@ pdfjs-additional-layers = Қабатҳои иловагӣ
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Саҳифаи { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +193,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Ёфтан
     .placeholder = Ёфтан дар ҳуҷҷат…
+    .title = Ёфтан
 pdfjs-find-previous-button =
     .title = Ҷустуҷӯи мавриди қаблии ибораи пешниҳодшуда
 pdfjs-find-previous-button-label = Қаблӣ
@@ -310,16 +289,16 @@ pdfjs-editor-highlight-button =
     .title = Ҷудокунӣ
 pdfjs-editor-highlight-button-label = Ҷудокунӣ
 pdfjs-highlight-floating-button1 =
-    .title = Ҷудокунӣ
     .aria-label = Ҷудокунӣ
+    .title = Ҷудокунӣ
 pdfjs-highlight-floating-button-label = Ҷудокунӣ
 pdfjs-comment-floating-button =
-    .title = Шарҳ
     .aria-label = Шарҳ
+    .title = Шарҳ
 pdfjs-comment-floating-button-label = Шарҳ
 pdfjs-editor-comment-button =
-    .title = Шарҳ
     .aria-label = Шарҳ
+    .title = Шарҳ
 pdfjs-editor-comment-button-label = Шарҳ
 pdfjs-editor-signature-button =
     .title = Илова кардани имзо
@@ -392,8 +371,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Шарҳҳо
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Пӯшидани навори ҷонибӣ
     .aria-label = Пӯшидани навори ҷонибӣ
+    .title = Пӯшидани навори ҷонибӣ
 pdfjs-editor-comments-sidebar-close-button-label = Пӯшидани навори ҷонибӣ
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Чизи диққатангезро мушоҳида кардед? Онро қайд кунед ва ба он шарҳ гузоред.
@@ -516,13 +495,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Танзимоти матни ил
 pdfjs-editor-alt-text-settings-automatic-title = Матни иловагии худкор
 pdfjs-editor-alt-text-settings-create-model-button-label = Ба таври худкор эҷод кардани матни иловагӣ
 pdfjs-editor-alt-text-settings-create-model-description = Ин имкон барои расонидани кумак ба одамоне, ки аксҳоро дида наметавонанд ё вақте ки аксҳо кушода намешаванд, тавсифи аксҳоро пешниҳод мекунад.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Модели зеҳни сунъӣ «AI» барои матни ивазкунанда ({ $totalSize } МБ)
-pdfjs-editor-alt-text-settings-ai-model-description = Дар дастгоҳи шумо ба таври маҳаллӣ кор мекунад, бинобар ин махфияти маълумоти шахсии шумо нигоҳ дошта мешавад. Барои матни ивазкунандаи худкор лозим аст.
-pdfjs-editor-alt-text-settings-delete-model-button = Нест кардан
-pdfjs-editor-alt-text-settings-download-model-button = Боргирӣ кардан
-pdfjs-editor-alt-text-settings-downloading-model-button = Дар ҳоли боргирӣ…
 pdfjs-editor-alt-text-settings-editor-title = Муҳаррири матни иловагӣ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Дарҳол нишон додани муҳаррири матни ивазкунанда ҳангоми иловакунии тасвир
 pdfjs-editor-alt-text-settings-show-dialog-description = Ба шумо кумак мекунад, ки боварӣ ҳосил кунед, ки ҳамаи тасвирҳои шумо дорои матни ивазкунанда мебошанд.

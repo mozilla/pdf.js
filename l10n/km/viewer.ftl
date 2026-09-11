@@ -117,18 +117,6 @@ pdfjs-printing-not-ready = ព្រមាន៖ PDF មិន​ត្រូវ
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = បិទ/បើក​គ្រាប់​រំកិល
-pdfjs-toggle-sidebar-button-label = បិទ/បើក​គ្រាប់​រំកិល
-pdfjs-document-outline-button =
-    .title = បង្ហាញ​គ្រោង​ឯកសារ (ចុច​ទ្វេ​ដង​ដើម្បី​ពង្រីក/បង្រួម​ធាតុ​ទាំងអស់)
-pdfjs-document-outline-button-label = គ្រោង​ឯកសារ
-pdfjs-attachments-button =
-    .title = បង្ហាញ​ឯកសារ​ភ្ជាប់
-pdfjs-attachments-button-label = ឯកសារ​ភ្ជាប់
-pdfjs-thumbs-button =
-    .title = បង្ហាញ​រូបភាព​តូចៗ
-pdfjs-thumbs-button-label = រួបភាព​តូចៗ
 pdfjs-findbar-button =
     .title = រក​នៅ​ក្នុង​ឯកសារ
 pdfjs-findbar-button-label = រក
@@ -137,18 +125,14 @@ pdfjs-findbar-button-label = រក
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = ទំព័រ { $page }
-# Variables:
-#   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = រូបភាព​តូច​របស់​ទំព័រ { $page }
 
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = រក
     .placeholder = រក​នៅ​ក្នុង​ឯកសារ...
+    .title = រក
 pdfjs-find-previous-button =
     .title = រក​ពាក្យ ឬ​ឃ្លា​ដែល​បាន​ជួប​មុន
 pdfjs-find-previous-button-label = មុន
@@ -219,10 +203,6 @@ pdfjs-editor-highlight-show-all-button =
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
 pdfjs-editor-new-alt-text-not-now-button = មិន​មែន​ឥឡូវ
-
-## Image alt-text settings
-
-pdfjs-editor-alt-text-settings-delete-model-button = លុប
 
 ## Dialog buttons
 

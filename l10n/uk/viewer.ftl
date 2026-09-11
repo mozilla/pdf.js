@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Попередження: PDF не повністю �
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Бічна панель
-pdfjs-toggle-sidebar-notification-button =
-    .title = Перемкнути бічну панель (документ містить ескіз/вкладення/шари)
-pdfjs-toggle-sidebar-button-label = Перемкнути бічну панель
-pdfjs-document-outline-button =
-    .title = Показати схему документу (подвійний клік для розгортання/згортання елементів)
-pdfjs-document-outline-button-label = Схема документа
-pdfjs-attachments-button =
-    .title = Показати вкладення
-pdfjs-attachments-button-label = Вкладення
-pdfjs-layers-button =
-    .title = Показати шари (двічі клацніть, щоб скинути всі шари до типового стану)
-pdfjs-layers-button-label = Шари
-pdfjs-thumbs-button =
-    .title = Показати мініатюри
-pdfjs-thumbs-button-label = Мініатюри
 pdfjs-current-outline-item-button =
     .title = Знайти поточний елемент змісту
 pdfjs-current-outline-item-button-label = Поточний елемент змісту
@@ -195,18 +178,14 @@ pdfjs-additional-layers = Додаткові шари
 
 # Variables:
 #   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Сторінка { $page }
-# Variables:
-#   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Ескіз сторінки { $page }
 
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Знайти
     .placeholder = Знайти в документі…
+    .title = Знайти
 pdfjs-find-previous-button =
     .title = Знайти попереднє входження фрази
 pdfjs-find-previous-button-label = Попереднє
@@ -303,16 +282,16 @@ pdfjs-editor-highlight-button =
     .title = Підсвітити
 pdfjs-editor-highlight-button-label = Підсвітити
 pdfjs-highlight-floating-button1 =
-    .title = Підсвітити
     .aria-label = Підсвітити
+    .title = Підсвітити
 pdfjs-highlight-floating-button-label = Підсвітити
 pdfjs-comment-floating-button =
-    .title = Коментувати
     .aria-label = Коментувати
+    .title = Коментувати
 pdfjs-comment-floating-button-label = Коментувати
 pdfjs-editor-comment-button =
-    .title = Коментар
     .aria-label = Коментар
+    .title = Коментар
 pdfjs-editor-comment-button-label = Коментар
 pdfjs-editor-signature-button =
     .title = Додати підпис
@@ -386,8 +365,8 @@ pdfjs-editor-comments-sidebar-title =
        *[many] Коментарі
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Закрити бічну панель
     .aria-label = Закрити бічну панель
+    .title = Закрити бічну панель
 pdfjs-editor-comments-sidebar-close-button-label = Закрити бічну панель
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Бачите щось варте уваги? Підсвітіть і додайте коментар.
@@ -510,13 +489,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Налаштування альт�
 pdfjs-editor-alt-text-settings-automatic-title = Автоматичний альтернативний текст
 pdfjs-editor-alt-text-settings-create-model-button-label = Автоматично створювати альтернативний текст
 pdfjs-editor-alt-text-settings-create-model-description = Пропонує описи, щоб допомогти людям, які не бачать зображення, або якщо зображення не завантажується.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Модель ШІ для альтернативного тексту ({ $totalSize } МБ)
-pdfjs-editor-alt-text-settings-ai-model-description = Працює локально на вашому пристрої, тому приватність ваших даних захищена. Призначена для автоматичного створення альтернативного тексту.
-pdfjs-editor-alt-text-settings-delete-model-button = Видалити
-pdfjs-editor-alt-text-settings-download-model-button = Завантажити
-pdfjs-editor-alt-text-settings-downloading-model-button = Завантаження…
 pdfjs-editor-alt-text-settings-editor-title = Редактор альтернативного тексту
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Показувати редактор альтернативного тексту під час додавання зображення
 pdfjs-editor-alt-text-settings-show-dialog-description = Допомагає переконатися, що всі ваші зображення мають альтернативний текст.

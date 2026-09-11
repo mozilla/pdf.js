@@ -166,23 +166,6 @@ pdfjs-printing-not-ready = Предупредување: PDF документо�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Вклучи странична лента
-pdfjs-toggle-sidebar-notification-button =
-    .title = Вклучи странична лента (документот содржи преглед, прилози, или слоеви)
-pdfjs-toggle-sidebar-button-label = Вклучи странична лента
-pdfjs-document-outline-button =
-    .title = Прикажи го прегедот на документот (дво клик за да се прикажат/скријат сите елементи)
-pdfjs-document-outline-button-label = Преглед на документот
-pdfjs-attachments-button =
-    .title = Прикажување на прилози
-pdfjs-attachments-button-label = Прилози
-pdfjs-layers-button =
-    .title = Прикажи слоеви (двоклик за ресетирање на сите слоеви)
-pdfjs-layers-button-label = Слоеви
-pdfjs-thumbs-button =
-    .title = Прикажување на иконки
-pdfjs-thumbs-button-label = Иконки
 pdfjs-current-outline-item-button =
     .title = Барање на тековниот елемент од прегледот
 pdfjs-current-outline-item-button-label = Тековен елемент од прегледот
@@ -193,10 +176,6 @@ pdfjs-additional-layers = Дополнителни слоеви
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Страница { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -214,8 +193,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Пребарување
     .placeholder = Пронајди во документот…
+    .title = Пребарување
 pdfjs-find-previous-button =
     .title = Најди ја предходната појава на фразата
 pdfjs-find-previous-button-label = Претходно
@@ -310,16 +289,16 @@ pdfjs-editor-highlight-button =
     .title = Нагласување
 pdfjs-editor-highlight-button-label = Нагласи
 pdfjs-highlight-floating-button1 =
-    .title = Нагласување
     .aria-label = Нагласување
+    .title = Нагласување
 pdfjs-highlight-floating-button-label = Нагласи
 pdfjs-comment-floating-button =
-    .title = Коментар
     .aria-label = Коментар
+    .title = Коментар
 pdfjs-comment-floating-button-label = Коментар
 pdfjs-editor-comment-button =
-    .title = Коментар
     .aria-label = Коментар
+    .title = Коментар
 pdfjs-editor-comment-button-label = Коментар
 pdfjs-editor-signature-button =
     .title = Додавање на потпис
@@ -392,8 +371,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Коментари
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Затвори ја страничната лента
     .aria-label = Затвори ја страничната лента
+    .title = Затвори ја страничната лента
 pdfjs-editor-comments-sidebar-close-button-label = Затвори ја страничната лента
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Гледате нешто вредно за внимание? Истакнете го и напишете коментар.
@@ -516,13 +495,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Поставки за алтерн
 pdfjs-editor-alt-text-settings-automatic-title = Автоматски алтернативен текст
 pdfjs-editor-alt-text-settings-create-model-button-label = Креирај го алтернативниот текст автоматски
 pdfjs-editor-alt-text-settings-create-model-description = Предлага описи за да им помогне на луѓето кои не можат да ја видат сликата или кога сликата не се вчитува.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Модел на вештачка интелигенција со алтернативен текст ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Работи локално на вашиот уред, така што вашите податоци остануваат приватни. Задолжително за автоматски алтернативен текст.
-pdfjs-editor-alt-text-settings-delete-model-button = Избриши
-pdfjs-editor-alt-text-settings-download-model-button = Преземи
-pdfjs-editor-alt-text-settings-downloading-model-button = Се презема…
 pdfjs-editor-alt-text-settings-editor-title = Уредувач на алтернативен текст
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Прикажи го уредувачот на алтернативен текст веднаш при додавање на слика
 pdfjs-editor-alt-text-settings-show-dialog-description = Ви помага да се осигурате дека сите ваши слики имаат алтернативен текст.

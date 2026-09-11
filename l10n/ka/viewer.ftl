@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = გაფრთხილება: PDF სრულ�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = გვერდითა ზოლის გამოჩენა/დამალვა
-pdfjs-toggle-sidebar-notification-button =
-    .title = გვერდითი ზოლის გამოჩენა (შეიცავს სარჩევს/დანართს/შრეებს)
-pdfjs-toggle-sidebar-button-label = გვერდითა ზოლის გამოჩენა/დამალვა
-pdfjs-document-outline-button =
-    .title = დოკუმენტის სარჩევის ჩვენება (ორმაგი წკაპით თითოეულის ჩამოშლა/აკეცვა)
-pdfjs-document-outline-button-label = დოკუმენტის სარჩევი
-pdfjs-attachments-button =
-    .title = დანართების ჩვენება
-pdfjs-attachments-button-label = დანართები
-pdfjs-layers-button =
-    .title = შრეების გამოჩენა (ორმაგი წკაპით ყველა შრის ნაგულისხმევზე დაბრუნება)
-pdfjs-layers-button-label = შრეები
-pdfjs-thumbs-button =
-    .title = შეთვალიერება
-pdfjs-thumbs-button-label = ესკიზები
 pdfjs-current-outline-item-button =
     .title = მიმდინარე გვერდის მონახვა სარჩევში
 pdfjs-current-outline-item-button-label = მიმდინარე გვერდი სარჩევში
@@ -214,10 +197,6 @@ pdfjs-additional-layers = დამატებითი შრეები
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = გვერდი { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = ძიება
     .placeholder = პოვნა დოკუმენტში…
+    .title = ძიება
 pdfjs-find-previous-button =
     .title = წინა დამთხვევის პოვნა
 pdfjs-find-previous-button-label = წინა
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = მონიშვნა
 pdfjs-editor-highlight-button-label = მონიშვნა
 pdfjs-highlight-floating-button1 =
-    .title = მონიშვნა
     .aria-label = მონიშვნა
+    .title = მონიშვნა
 pdfjs-highlight-floating-button-label = მონიშვნა
 pdfjs-comment-floating-button =
-    .title = შენიშვნა
     .aria-label = შენიშვნა
+    .title = შენიშვნა
 pdfjs-comment-floating-button-label = შენიშვნა
 pdfjs-editor-comment-button =
-    .title = შენიშვნა
     .aria-label = შენიშვნა
+    .title = შენიშვნა
 pdfjs-editor-comment-button-label = შენიშვნა
 pdfjs-editor-signature-button =
     .title = ხელმოწერის დამატება
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] შენიშვნა
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = გვერდითი ზოლის დახურვა
     .aria-label = გვერდითი ზოლის დახურვა
+    .title = გვერდითი ზოლის დახურვა
 pdfjs-editor-comments-sidebar-close-button-label = გვერდითი ზოლის დახურვა
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = რამე საყურადღებოს წააწყდით? გააფერადეთ და დაურთეთ შენიშვნა.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = სურათის დართ
 pdfjs-editor-alt-text-settings-automatic-title = ავტომატურად დართული წარწერა
 pdfjs-editor-alt-text-settings-create-model-button-label = დართული წარწერის თვითშედგენა
 pdfjs-editor-alt-text-settings-create-model-description = აღწერს სურათს მათთვის, ვინც ვერ ხედავს ან ვისთანაც ვერ ჩაიტვირთება.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = დართული წარწერის შესადგენი AI-მოდელი ({ $totalSize } მბაიტი)
-pdfjs-editor-alt-text-settings-ai-model-description = ეშვება ადგილობრივად თქვენს მოწყობილობაზე, ასე რომ მონაცემები დარჩება პირადი. საჭიროა დართული წარწერების თვითშედგენისთვის.
-pdfjs-editor-alt-text-settings-delete-model-button = წაშლა
-pdfjs-editor-alt-text-settings-download-model-button = ჩამოტვირთვა
-pdfjs-editor-alt-text-settings-downloading-model-button = ჩამოიტვრითება...
 pdfjs-editor-alt-text-settings-editor-title = დართული წარწერის ჩამსწორებელი
 pdfjs-editor-alt-text-settings-show-dialog-button-label = გამოჩნდეს დართული წარწერის ჩამსწორებელი სურათის დამატებისთანავე
 pdfjs-editor-alt-text-settings-show-dialog-description = უზრუნველყოფს, რომ თქვენს ყველა სურათს ახლდეს დართული წარწერა.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = ციფრული ხელმოწერის პარამეტრები
     .aria-label = ციფრული ხელმოწერის პარამეტრები
+    .title = ციფრული ხელმოწერის პარამეტრები
 pdfjs-digital-signature-properties-button-label = ციფრული ხელმოწერის პარამეტრები
 
 ## Banner shown above the signature list summarising the overall

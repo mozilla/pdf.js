@@ -191,23 +191,6 @@ pdfjs-printing-not-ready = Rhybudd: Nid yw'r PDF wedi ei lwytho'n llawn ar gyfer
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Toglo'r Bar Ochr
-pdfjs-toggle-sidebar-notification-button =
-    .title = Toglo'r Bar Ochr (mae'r ddogfen yn cynnwys amlinelliadau/atodiadau/haenau)
-pdfjs-toggle-sidebar-button-label = Toglo'r Bar Ochr
-pdfjs-document-outline-button =
-    .title = Dangos Amlinell Dogfen (clic dwbl i ymestyn/cau pob eitem)
-pdfjs-document-outline-button-label = Amlinelliad Dogfen
-pdfjs-attachments-button =
-    .title = Dangos Atodiadau
-pdfjs-attachments-button-label = Atodiadau
-pdfjs-layers-button =
-    .title = Dangos Haenau (cliciwch ddwywaith i ailosod yr holl haenau i'r cyflwr rhagosodedig)
-pdfjs-layers-button-label = Haenau
-pdfjs-thumbs-button =
-    .title = Dangos Lluniau Bach
-pdfjs-thumbs-button-label = Lluniau Bach
 pdfjs-current-outline-item-button =
     .title = Canfod yr Eitem Amlinellol Gyfredol
 pdfjs-current-outline-item-button-label = Yr Eitem Amlinellol Gyfredol
@@ -218,10 +201,6 @@ pdfjs-additional-layers = Haenau Ychwanegol
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Tudalen { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -239,8 +218,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Canfod
     .placeholder = Canfod yn y ddogfen…
+    .title = Canfod
 pdfjs-find-previous-button =
     .title = Canfod enghraifft flaenorol o'r ymadrodd
 pdfjs-find-previous-button-label = Blaenorol
@@ -343,16 +322,16 @@ pdfjs-editor-highlight-button =
     .title = Amlygu
 pdfjs-editor-highlight-button-label = Amlygu
 pdfjs-highlight-floating-button1 =
-    .title = Amlygu
     .aria-label = Amlygu
+    .title = Amlygu
 pdfjs-highlight-floating-button-label = Amlygu
 pdfjs-comment-floating-button =
-    .title = Sylw
     .aria-label = Sylw
+    .title = Sylw
 pdfjs-comment-floating-button-label = Sylw
 pdfjs-editor-comment-button =
-    .title = Sylw
     .aria-label = Sylw
+    .title = Sylw
 pdfjs-editor-comment-button-label = Sylw
 pdfjs-editor-signature-button =
     .title = Ychwanegu llofnod
@@ -429,8 +408,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Sylw
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Cau'r bar ochr
     .aria-label = Cau'r bar ochr
+    .title = Cau'r bar ochr
 pdfjs-editor-comments-sidebar-close-button-label = Cau'r bar ochr
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Gweld rhywbeth nodedig? Amlygwch ef a gadael sylw.
@@ -553,13 +532,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Gosodiadau testun amgen delwedd
 pdfjs-editor-alt-text-settings-automatic-title = Testun amgen awtomatig
 pdfjs-editor-alt-text-settings-create-model-button-label = Creu testun amgen yn awtomatig
 pdfjs-editor-alt-text-settings-create-model-description = Yn awgrymu disgrifiadau i helpu pobl sydd ddim yn gallu gweld y ddelwedd neu pan nad yw'r ddelwedd yn llwytho.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model AI testun amgen ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Yn rhedeg yn lleol ar eich dyfais fel bod eich data'n aros yn breifat. Yn ofynnol ar gyfer testun amgen awtomatig.
-pdfjs-editor-alt-text-settings-delete-model-button = Dileu
-pdfjs-editor-alt-text-settings-download-model-button = Llwytho i Lawr
-pdfjs-editor-alt-text-settings-downloading-model-button = Wrthi'n llwytho i lawr…
 pdfjs-editor-alt-text-settings-editor-title = Golygydd testun amgen
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Dangoswch y golygydd testun amgen yn syth wrth ychwanegu delwedd
 pdfjs-editor-alt-text-settings-show-dialog-description = Yn eich helpu i wneud yn siŵr bod gan eich holl ddelweddau destun amgen.
@@ -792,8 +764,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Priodweddau llofnod digidol
     .aria-label = Priodweddau llofnod digidol
+    .title = Priodweddau llofnod digidol
 pdfjs-digital-signature-properties-button-label = Priodweddau llofnod digidol
 
 ## Banner shown above the signature list summarising the overall

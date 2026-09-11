@@ -188,23 +188,6 @@ pdfjs-printing-not-ready = Ostrzeżenie: dokument PDF nie jest całkowicie wczyt
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Przełącz panel boczny
-pdfjs-toggle-sidebar-notification-button =
-    .title = Przełącz panel boczny (dokument zawiera konspekt/załączniki/warstwy)
-pdfjs-toggle-sidebar-button-label = Przełącz panel boczny
-pdfjs-document-outline-button =
-    .title = Konspekt dokumentu (podwójne kliknięcie rozwija lub zwija wszystkie pozycje)
-pdfjs-document-outline-button-label = Konspekt dokumentu
-pdfjs-attachments-button =
-    .title = Załączniki
-pdfjs-attachments-button-label = Załączniki
-pdfjs-layers-button =
-    .title = Warstwy (podwójne kliknięcie przywraca wszystkie warstwy do stanu domyślnego)
-pdfjs-layers-button-label = Warstwy
-pdfjs-thumbs-button =
-    .title = Miniatury
-pdfjs-thumbs-button-label = Miniatury
 pdfjs-current-outline-item-button =
     .title = Znajdź bieżący element konspektu
 pdfjs-current-outline-item-button-label = Bieżący element konspektu
@@ -215,10 +198,6 @@ pdfjs-additional-layers = Dodatkowe warstwy
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = { $page }. strona
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -236,8 +215,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Znajdź
     .placeholder = Znajdź w dokumencie…
+    .title = Znajdź
 pdfjs-find-previous-button =
     .title = Znajdź poprzednie wystąpienie tekstu
 pdfjs-find-previous-button-label = Poprzednie
@@ -334,16 +313,16 @@ pdfjs-editor-highlight-button =
     .title = Wyróżnij
 pdfjs-editor-highlight-button-label = Wyróżnij
 pdfjs-highlight-floating-button1 =
-    .title = Wyróżnij
     .aria-label = Wyróżnij
+    .title = Wyróżnij
 pdfjs-highlight-floating-button-label = Wyróżnij
 pdfjs-comment-floating-button =
-    .title = Dodaj komentarz
     .aria-label = Dodaj komentarz
+    .title = Dodaj komentarz
 pdfjs-comment-floating-button-label = Dodaj komentarz
 pdfjs-editor-comment-button =
-    .title = Dodaj komentarz
     .aria-label = Dodaj komentarz
+    .title = Dodaj komentarz
 pdfjs-editor-comment-button-label = Dodaj komentarz
 pdfjs-editor-signature-button =
     .title = Dodaj podpis
@@ -416,8 +395,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Komentarze
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Zamknij panel boczny
     .aria-label = Zamknij panel boczny
+    .title = Zamknij panel boczny
 pdfjs-editor-comments-sidebar-close-button-label = Zamknij panel boczny
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Widzisz coś godnego uwagi? Wyróżnij to i zostaw komentarz.
@@ -540,13 +519,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Ustawienia tekstu alternatywnego o
 pdfjs-editor-alt-text-settings-automatic-title = Automatyczny tekst alternatywny
 pdfjs-editor-alt-text-settings-create-model-button-label = Automatyczne tworzenie tekstu alternatywnego
 pdfjs-editor-alt-text-settings-create-model-description = Podpowiada opisy, które mogą pomóc osobom, które nie widzą obrazu lub kiedy obraz się nie wczytuje.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model SI tekstu alternatywnego ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Działa lokalnie na urządzeniu użytkownika, więc Twoje dane pozostają prywatne. Wymagane do funkcji automatycznego tekstu alternatywnego.
-pdfjs-editor-alt-text-settings-delete-model-button = Usuń
-pdfjs-editor-alt-text-settings-download-model-button = Pobierz
-pdfjs-editor-alt-text-settings-downloading-model-button = Pobieranie…
 pdfjs-editor-alt-text-settings-editor-title = Edytor tekstu alternatywnego
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Wyświetlanie edytora tekstu alternatywnego od razu po dodaniu obrazu
 pdfjs-editor-alt-text-settings-show-dialog-description = Pomaga upewnić się, że wszystkie obrazy mają tekst alternatywny.
@@ -764,8 +736,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Właściwości podpisu cyfrowego
     .aria-label = Właściwości podpisu cyfrowego
+    .title = Właściwości podpisu cyfrowego
 pdfjs-digital-signature-properties-button-label = Właściwości podpisu cyfrowego
 
 ## Banner shown above the signature list summarising the overall

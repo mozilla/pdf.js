@@ -181,23 +181,6 @@ pdfjs-printing-not-ready = Atenció: el PDF no s'ha acabat de carregar per impri
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Mostra/amaga la barra lateral
-pdfjs-toggle-sidebar-notification-button =
-    .title = Mostra/amaga la barra lateral (el document conté un esquema, adjuncions o capes)
-pdfjs-toggle-sidebar-button-label = Mostra/amaga la barra lateral
-pdfjs-document-outline-button =
-    .title = Mostra l'esquema del document (doble clic per ampliar/reduir tots els elements)
-pdfjs-document-outline-button-label = Esquema del document
-pdfjs-attachments-button =
-    .title = Mostra les adjuncions
-pdfjs-attachments-button-label = Adjuncions
-pdfjs-layers-button =
-    .title = Mostra les capes (doble clic per restablir totes les capes al seu estat per defecte)
-pdfjs-layers-button-label = Capes
-pdfjs-thumbs-button =
-    .title = Mostra les miniatures
-pdfjs-thumbs-button-label = Miniatures
 pdfjs-current-outline-item-button =
     .title = Cerca l'element d'esquema actual
 pdfjs-current-outline-item-button-label = Element d'esquema actual
@@ -208,10 +191,6 @@ pdfjs-additional-layers = Capes addicionals
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Pàgina { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -465,9 +444,6 @@ pdfjs-editor-new-alt-text-added-button-label = Text alternatiu afegit.
 
 ## Image alt-text settings
 
-pdfjs-editor-alt-text-settings-delete-model-button = Suprimeix
-pdfjs-editor-alt-text-settings-download-model-button = Baixa
-pdfjs-editor-alt-text-settings-downloading-model-button = S'està descarregant…
 pdfjs-editor-alt-text-settings-close-button = Tanca
 
 ## "Annotations removed" bar
@@ -494,6 +470,8 @@ pdfjs-editor-undo-bar-close-button-label = Tanca
 # Type is a verb (you can type your name as signature)
 pdfjs-editor-add-signature-type-button = Tipus
     .title = Tipus
+pdfjs-editor-add-signature-image-button = Imatge
+    .title = Imatge
 
 ## Controls
 
@@ -537,6 +515,8 @@ pdfjs-views-manager-view-selector-button =
     .title = Vistes
 pdfjs-views-manager-view-selector-button-label = Vistes
 pdfjs-views-manager-pages-title = Pàgines
+pdfjs-views-manager-layers-title1 = Capes
+    .title = Capes (doble clic per a restablir totes les capes a l'estat per defecte)
 pdfjs-views-manager-pages-option-label = Pàgines
 pdfjs-views-manager-layers-option-label = Capes
 pdfjs-views-manager-add-file-button-label = Afegeix un fitxer

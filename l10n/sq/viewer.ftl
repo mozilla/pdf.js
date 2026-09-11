@@ -157,23 +157,6 @@ pdfjs-printing-not-ready = Kujdes: PDF-ja s’është ngarkuar plotësisht që t
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Shfaqni/Fshihni Anështyllën
-pdfjs-toggle-sidebar-notification-button =
-    .title = Hap/Mbyll Anështylë (dokumenti përmban përvijim/nashkëngjitje/shtresa)
-pdfjs-toggle-sidebar-button-label = Shfaq/Fshih Anështyllën
-pdfjs-document-outline-button =
-    .title = Shfaqni Përvijim Dokumenti (dyklikoni që të shfaqen/fshihen krejt elementët)
-pdfjs-document-outline-button-label = Përvijim Dokumenti
-pdfjs-attachments-button =
-    .title = Shfaqni Bashkëngjitje
-pdfjs-attachments-button-label = Bashkëngjitje
-pdfjs-layers-button =
-    .title = Shfaq Shtresa (dyklikoni që të rikthehen krejt shtresat në gjendjen e tyre parazgjedhje)
-pdfjs-layers-button-label = Shtresa
-pdfjs-thumbs-button =
-    .title = Shfaqni Miniatura
-pdfjs-thumbs-button-label = Miniatura
 pdfjs-current-outline-item-button =
     .title = Gjej Objektin e Tanishëm të Përvijuar
 pdfjs-current-outline-item-button-label = Objekt i Tanishëm i Përvijuar
@@ -184,10 +167,6 @@ pdfjs-additional-layers = Shtresa Shtesë
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Faqja { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -205,8 +184,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Gjej
     .placeholder = Gjeni në dokument…
+    .title = Gjej
 pdfjs-find-previous-button =
     .title = Gjeni hasjen e mëparshme të togfjalëshit
 pdfjs-find-previous-button-label = E mëparshmja
@@ -301,16 +280,16 @@ pdfjs-editor-highlight-button =
     .title = Theksim
 pdfjs-editor-highlight-button-label = Theksoje
 pdfjs-highlight-floating-button1 =
-    .title = Theksim
     .aria-label = Theksim
+    .title = Theksim
 pdfjs-highlight-floating-button-label = Theksim
 pdfjs-comment-floating-button =
-    .title = Komentoni
     .aria-label = Komentoni
+    .title = Komentoni
 pdfjs-comment-floating-button-label = Komentoni
 pdfjs-editor-comment-button =
-    .title = Koment
     .aria-label = Koment
+    .title = Koment
 pdfjs-editor-comment-button-label = Komentoni
 pdfjs-editor-signature-button =
     .title = Shtoni nënshkrim
@@ -383,8 +362,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Komente
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Mbylleni anështyllën
     .aria-label = Mbylleni anështyllën
+    .title = Mbylleni anështyllën
 pdfjs-editor-comments-sidebar-close-button-label = Mbylleni anështyllën
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Shihni diçka që ia vlen. Theksojeni dhe lini një koment.
@@ -507,13 +486,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Rregullime teksti alternativ figur
 pdfjs-editor-alt-text-settings-automatic-title = Tekst alternativ i automatizuar
 pdfjs-editor-alt-text-settings-create-model-button-label = Krijo automatikisht tekst alternativ
 pdfjs-editor-alt-text-settings-create-model-description = Sugjeron përshkrime, për të ndihmuar persona që s’munden të shohin figurën, ose për kur figura nuk ngarkohet dot.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Model IA teksti alternativ ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = Xhiron lokalisht në pajisjen tuaj, pra të dhënat tuaja mbeten private. E domosdoshme për tekst të automatizuar alternativ.
-pdfjs-editor-alt-text-settings-delete-model-button = Fshije
-pdfjs-editor-alt-text-settings-download-model-button = Shkarkoje
-pdfjs-editor-alt-text-settings-downloading-model-button = Po shkarkohet…
 pdfjs-editor-alt-text-settings-editor-title = Përpunues teksti alternativ
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Shfaq menjëherë përpunues teksti alternativ, kur shtohet një figurë
 pdfjs-editor-alt-text-settings-show-dialog-description = Ju ndihmon të siguroheni se krejt figurat tuaja kanë tekst alternativ.

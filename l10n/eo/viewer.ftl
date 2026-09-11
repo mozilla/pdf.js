@@ -187,23 +187,6 @@ pdfjs-printing-not-ready = Averto: la PDF dosiero ne estas plene ŝargita por pr
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = Montri/kaŝi flankan strion
-pdfjs-toggle-sidebar-notification-button =
-    .title = Montri/kaŝi flankan strion (la dokumento enhavas konturon/kunsendaĵojn/tavolojn)
-pdfjs-toggle-sidebar-button-label = Montri/kaŝi flankan strion
-pdfjs-document-outline-button =
-    .title = Montri la konturon de dokumento (alklaku duoble por faldi/malfaldi ĉiujn elementojn)
-pdfjs-document-outline-button-label = Konturo de dokumento
-pdfjs-attachments-button =
-    .title = Montri kunsendaĵojn
-pdfjs-attachments-button-label = Kunsendaĵojn
-pdfjs-layers-button =
-    .title = Montri tavolojn (duoble alklaku por remeti ĉiujn tavolojn en la norman staton)
-pdfjs-layers-button-label = Tavoloj
-pdfjs-thumbs-button =
-    .title = Montri miniaturojn
-pdfjs-thumbs-button-label = Miniaturoj
 pdfjs-current-outline-item-button =
     .title = Trovi nunan konturan elementon
 pdfjs-current-outline-item-button-label = Nuna kontura elemento
@@ -214,10 +197,6 @@ pdfjs-additional-layers = Aldonaj tavoloj
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = Paĝo { $page }
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -235,8 +214,8 @@ pdfjs-thumb-page-title1 =
 ## Find panel button title and messages
 
 pdfjs-find-input =
-    .title = Serĉi
     .placeholder = Serĉi en dokumento…
+    .title = Serĉi
 pdfjs-find-previous-button =
     .title = Serĉi la antaŭan aperon de la frazo
 pdfjs-find-previous-button-label = Malantaŭen
@@ -331,16 +310,16 @@ pdfjs-editor-highlight-button =
     .title = Elstarigi
 pdfjs-editor-highlight-button-label = Elstarigi
 pdfjs-highlight-floating-button1 =
-    .title = Elstarigi
     .aria-label = Elstarigi
+    .title = Elstarigi
 pdfjs-highlight-floating-button-label = Elstarigi
 pdfjs-comment-floating-button =
-    .title = Komenti
     .aria-label = Komenti
+    .title = Komenti
 pdfjs-comment-floating-button-label = Komenti
 pdfjs-editor-comment-button =
-    .title = Komenti
     .aria-label = Komenti
+    .title = Komenti
 pdfjs-editor-comment-button-label = Komenti
 pdfjs-editor-signature-button =
     .title = Aldoni subskribon
@@ -413,8 +392,8 @@ pdfjs-editor-comments-sidebar-title =
        *[other] Komentoj
     }
 pdfjs-editor-comments-sidebar-close-button =
-    .title = Fermi la flankan strion
     .aria-label = Fermi la flankan strion
+    .title = Fermi la flankan strion
 pdfjs-editor-comments-sidebar-close-button-label = Fermi la flankan strion
 # Instructional copy to add a comment by selecting text or an annotations.
 pdfjs-editor-comments-sidebar-no-comments1 = Ĉu vi rimarkas ion interesan? Elstarigu tion kaj aldonu komenton.
@@ -537,13 +516,6 @@ pdfjs-editor-alt-text-settings-dialog-label = Agordoj por alternativa teksto de 
 pdfjs-editor-alt-text-settings-automatic-title = Aŭtomata alternativa teksto
 pdfjs-editor-alt-text-settings-create-model-button-label = Aŭtomate krei alternativan tekston
 pdfjs-editor-alt-text-settings-create-model-description = Tio ĉi sugestas priskribojn por helpi personojn kiuj ne povas vidi aŭ ŝargi la bildon.
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = Modelo de artefarita intelekto por alternativa teksto ({ $totalSize } MO)
-pdfjs-editor-alt-text-settings-ai-model-description = Ĝi funkcias en via aparato, do viaj datumoj restas privataj. Ĝi estas postulata por aŭtomata kreado de alternativa teksto.
-pdfjs-editor-alt-text-settings-delete-model-button = Forigi
-pdfjs-editor-alt-text-settings-download-model-button = Elŝuti
-pdfjs-editor-alt-text-settings-downloading-model-button = Elŝuto…
 pdfjs-editor-alt-text-settings-editor-title = Redaktilo de alternativa teksto
 pdfjs-editor-alt-text-settings-show-dialog-button-label = Montri redaktilon de alternativa teksto tuj post aldono de bildo
 pdfjs-editor-alt-text-settings-show-dialog-description = Tio ĉi helpas vin kontroli ĉu ĉiuj bildoj havas alternativan tekston.
@@ -756,8 +728,8 @@ pdfjs-toggle-views-manager-button1 =
 ## Digital signature properties (signature verification panel)
 
 pdfjs-digital-signature-properties-button =
-    .title = Atributoj de cifereca subskribo
     .aria-label = Atributoj de cifereca subskribo
+    .title = Atributoj de cifereca subskribo
 pdfjs-digital-signature-properties-button-label = Atributoj de cifereca subskribo
 
 ## Banner shown above the signature list summarising the overall
