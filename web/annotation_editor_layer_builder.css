@@ -23,12 +23,21 @@
 
 :root {
   --editor-toolbar-vert-offset: 6px;
+  /*#if GECKOVIEW*/
+  --outline-width: 1px;
+  /*#else*/
   --outline-width: 2px;
+  /*#endif*/
   /* Palette primitives, not the semantic light-dark tokens: these are drawn on
      the always-light PDF page, where --color-accent-primary and friends would
      resolve to their dark value. */
+  /*#if GECKOVIEW*/
+  --outline-color: #67666a;
+  --outline-around-width: 0px;
+  /*#else*/
   --outline-color: var(--color-blue-60, #0060df);
   --outline-around-width: 1px;
+  /*#endif*/
   --outline-around-color: var(--color-gray-20, #f0f0f4);
   --hover-outline-around-color: var(--outline-around-color);
   --editor-selection-outline: solid var(--outline-width) var(--outline-color);
@@ -44,7 +53,13 @@
   --freetext-padding: 2px;
   /* Ignored in GECKOVIEW: end */
   --resizer-bg-color: var(--outline-color);
+  /*#if GECKOVIEW*/
+  --resizer-size: 10px;
+  --resizer-border-radius: 0;
+  /*#else*/
   --resizer-size: 6px;
+  --resizer-border-radius: 2px;
+  /*#endif*/
   --resizer-shift: calc(
     0px - (var(--outline-width) + var(--resizer-size)) / 2 -
       var(--outline-around-width)
@@ -254,11 +269,19 @@
   ),
 .textLayer {
   .editToolbar {
+    /*#if GECKOVIEW*/
+    --editor-toolbar-delete-image: url(images/gv-editor-toolbar-close.svg);
+    --editor-toolbar-bg-color: transparent;
+    --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
+    --editor-toolbar-fg-color: rgb(24 14 48 / 0.7);
+    --editor-toolbar-border-color: transparent;
+    /*#else*/
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: var(--border-color-interactive, #8f8f9d);
+    /*#endif*/
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
     --editor-toolbar-hover-bg-color: light-dark(#e0e0e6, #52525e);
     --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
@@ -267,9 +290,20 @@
       --focus-outline-color,
       light-dark(#0060df, #0df)
     );
+    /*#if GECKOVIEW*/
+    --editor-toolbar-shadow: none;
+    --editor-toolbar-height: 40px;
+    --editor-toolbar-padding: 0;
+    --editor-toolbar-inset-inline: calc(100% - 2px) auto;
+    --editor-toolbar-inset-block: auto calc(100% - 2px);
+    /*#else*/
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
     --editor-toolbar-height: 28px;
     --editor-toolbar-padding: 2px;
+    --editor-toolbar-inset-inline: auto 0;
+    --editor-toolbar-inset-block: calc(100% + var(--editor-toolbar-vert-offset))
+      auto;
+    /*#endif*/
     /* Ignored in GECKOVIEW: begin */
     --alt-text-done-color: var(
       --color-accent-attention,
@@ -344,8 +378,8 @@
     user-select: none;
 
     position: absolute;
-    inset-inline-end: 0;
-    inset-block-start: calc(100% + var(--editor-toolbar-vert-offset));
+    inset-inline: var(--editor-toolbar-inset-inline);
+    inset-block: var(--editor-toolbar-inset-block);
 
     border-radius: 6px;
     background-color: var(--editor-toolbar-bg-color);
@@ -750,7 +784,7 @@
         height: var(--resizer-size);
         background: content-box var(--resizer-bg-color);
         border: var(--focus-outline-around);
-        border-radius: 2px;
+        border-radius: var(--resizer-border-radius);
         position: absolute;
 
         &.topLeft {
