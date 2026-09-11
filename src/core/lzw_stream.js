@@ -30,14 +30,13 @@ class LZWStream extends DecodeStream {
       codeLength: 9,
       nextCode: 258,
       dictionaryValues: new Uint8Array(maxLzwDictionarySize),
-      dictionaryLengths: new Uint16Array(maxLzwDictionarySize),
+      dictionaryLengths: new Uint16Array(maxLzwDictionarySize).fill(1, 0, 256),
       dictionaryPrevCodes: new Uint16Array(maxLzwDictionarySize),
       currentSequence: new Uint8Array(maxLzwDictionarySize),
       currentSequenceLength: 0,
     };
     for (let i = 0; i < 256; ++i) {
       lzwState.dictionaryValues[i] = i;
-      lzwState.dictionaryLengths[i] = 1;
     }
     this.lzwState = lzwState;
   }
