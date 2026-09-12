@@ -63,6 +63,28 @@ import {
   waitForUnselectedEditor,
 } from "./test_utils.mjs";
 
+// The glyphs are antialiased (possibly with subpixel rendering), so a thin
+// stem can be spread over several light pixels and thresholding the pixels
+// isn't reliable: the centroid of the ink is used to locate a glyph instead.
+function getInkCentroid({ data, width, height }) {
+  let total = 0,
+    sumX = 0,
+    sumY = 0;
+  for (let i = 0; i < height; i++) {
+    for (let j = 0; j < width; j++) {
+      const idx = (width * i + j) << 2;
+      const ink =
+        1 -
+        (0.2126 * data[idx] + 0.7152 * data[idx + 1] + 0.0722 * data[idx + 2]) /
+          255;
+      total += ink;
+      sumX += ink * j;
+      sumY += ink * i;
+    }
+  }
+  return [sumX / total, sumY / total];
+}
+
 const selectAll = selectEditors.bind(null, "freeText");
 
 const clearAll = clearEditors.bind(null, "freeText");
@@ -1520,59 +1542,7 @@ describe("FreeText Editor", () => {
     it("must open an existing annotation and check that the position are good", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const toBinary = buf => {
-            for (let i = 0; i < buf.length; i += 4) {
-              const gray =
-                (0.2126 * buf[i] + 0.7152 * buf[i + 1] + 0.0722 * buf[i + 2]) /
-                255;
-              buf[i] = buf[i + 1] = buf[i + 2] = gray <= 0.5 ? 0 : 255;
-            }
-          };
-
-          // We want to detect the first non-white pixel in the image.
-          // But we can have some antialiasing...
-          // The idea to just try to detect the beginning of the vertical bar
-          // of the "H" letter.
-          // Hence we just take the first non-white pixel in the image which is
-          // the most repeated one.
-          const getFirstPixel = (buf, width, height) => {
-            toBinary(buf);
-            const firsts = [];
-            const stats = {};
-            // Get the position of the first pixels.
-            // The position of char depends on a lot of different parameters,
-            // hence it's possible to not have a pixel where we expect to have
-            // it. So we just collect the positions of the first black pixel and
-            // take the first one where its abscissa is the most frequent.
-            for (let i = height - 1; i >= 0; i--) {
-              for (let j = 0; j < width; j++) {
-                const idx = (width * i + j) << 2;
-                if (buf[idx] === 0) {
-                  firsts.push([j, i]);
-                  stats[j] = (stats[j] || 0) + 1;
-                  break;
-                }
-              }
-            }
-
-            let maxValue = -Infinity;
-            let maxJ = 0;
-            for (const [j, count] of Object.entries(stats)) {
-              if (count > maxValue) {
-                maxValue = count;
-                maxJ = j;
-              }
-            }
-            maxJ = parseInt(maxJ, 10);
-            for (const [j, i] of firsts) {
-              if (j === maxJ) {
-                return [j, i];
-              }
-            }
-            return null;
-          };
-
-          const firstPixelsAnnotations = new Map();
+          const centroidAnnotations = new Map();
 
           // [26, 32, ...] are the annotation ids
           for (const n of [26, 32, 42, 57, 35, 1]) {
@@ -1583,12 +1553,8 @@ describe("FreeText Editor", () => {
               type: "png",
             });
             const editorImage = await decodePNG(editorPng);
-            const editorFirstPix = getFirstPixel(
-              editorImage.data,
-              editorImage.width,
-              editorImage.height
-            );
-            firstPixelsAnnotations.set(id, { editorFirstPix, rect });
+            const annotationCentroid = getInkCentroid(editorImage);
+            centroidAnnotations.set(id, { annotationCentroid, rect });
           }
 
           await switchToFreeText(page);
@@ -1604,25 +1570,21 @@ describe("FreeText Editor", () => {
               );
               return editor.getAttribute("annotation-id");
             }, n);
-            const { editorFirstPix: annotationFirstPix, rect } =
-              firstPixelsAnnotations.get(annotationId);
+            const { annotationCentroid, rect } =
+              centroidAnnotations.get(annotationId);
             const editorPng = await page.screenshot({
               clip: rect,
               type: "png",
             });
             const editorImage = await decodePNG(editorPng);
-            const editorFirstPix = getFirstPixel(
-              editorImage.data,
-              editorImage.width,
-              editorImage.height
-            );
+            const editorCentroid = getInkCentroid(editorImage);
 
             expect(
-              Math.abs(editorFirstPix[0] - annotationFirstPix[0]) <= 3 &&
-                Math.abs(editorFirstPix[1] - annotationFirstPix[1]) <= 3
+              Math.abs(editorCentroid[0] - annotationCentroid[0]) <= 3 &&
+                Math.abs(editorCentroid[1] - annotationCentroid[1]) <= 3
             )
               .withContext(
-                `In ${browserName}, first pix coords in editor: ${editorFirstPix} and in annotation: ${annotationFirstPix}`
+                `In ${browserName}, ink centroid in editor: ${editorCentroid} and in annotation: ${annotationCentroid}`
               )
               .toBeTrue();
           }
@@ -1649,94 +1611,8 @@ describe("FreeText Editor", () => {
     it("must open an existing rotated annotation and check that the position are good", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const toBinary = buf => {
-            for (let i = 0; i < buf.length; i += 4) {
-              const gray =
-                (0.2126 * buf[i] + 0.7152 * buf[i + 1] + 0.0722 * buf[i + 2]) /
-                255;
-              buf[i] = buf[i + 1] = buf[i + 2] = gray >= 0.5 ? 255 : 0;
-            }
-          };
-
-          const getFirstPixel = (buf, width, height, start) => {
-            toBinary(buf);
-            const firsts = [];
-            const stats = {};
-            switch (start) {
-              case "TL":
-                for (let j = 0; j < width; j++) {
-                  for (let i = 0; i < height; i++) {
-                    const idx = (width * i + j) << 2;
-                    if (buf[idx] === 0) {
-                      firsts.push([j, i]);
-                      stats[j] = (stats[j] || 0) + 1;
-                      break;
-                    }
-                  }
-                }
-                break;
-              case "TR":
-                for (let i = 0; i < height; i++) {
-                  for (let j = width - 1; j >= 0; j--) {
-                    const idx = (width * i + j) << 2;
-                    if (buf[idx] === 0) {
-                      firsts.push([j, i]);
-                      stats[j] = (stats[j] || 0) + 1;
-                      break;
-                    }
-                  }
-                }
-                break;
-              case "BR":
-                for (let j = width - 1; j >= 0; j--) {
-                  for (let i = height - 1; i >= 0; i--) {
-                    const idx = (width * i + j) << 2;
-                    if (buf[idx] === 0) {
-                      firsts.push([j, i]);
-                      stats[j] = (stats[j] || 0) + 1;
-                      break;
-                    }
-                  }
-                }
-                break;
-              case "BL":
-                for (let i = height - 1; i >= 0; i--) {
-                  for (let j = 0; j < width; j++) {
-                    const idx = (width * i + j) << 2;
-                    if (buf[idx] === 0) {
-                      firsts.push([j, i]);
-                      stats[j] = (stats[j] || 0) + 1;
-                      break;
-                    }
-                  }
-                }
-                break;
-            }
-
-            let maxValue = -Infinity;
-            let maxJ = 0;
-            for (const [j, count] of Object.entries(stats)) {
-              if (count > maxValue) {
-                maxValue = count;
-                maxJ = j;
-              }
-            }
-            maxJ = parseInt(maxJ, 10);
-            for (const [j, i] of firsts) {
-              if (j === maxJ) {
-                return [j, i];
-              }
-            }
-            return null;
-          };
-
-          const firstPixelsAnnotations = new Map();
-          for (const [n, start] of [
-            [17, "BL"],
-            [18, "BR"],
-            [19, "TR"],
-            [20, "TL"],
-          ]) {
+          const centroidAnnotations = new Map();
+          for (const n of [17, 18, 19, 20]) {
             const id = `${n}R`;
             const rect = await getRect(page, getAnnotationSelector(id));
             const editorPng = await page.screenshot({
@@ -1744,13 +1620,8 @@ describe("FreeText Editor", () => {
               type: "png",
             });
             const editorImage = await decodePNG(editorPng);
-            const editorFirstPix = getFirstPixel(
-              editorImage.data,
-              editorImage.width,
-              editorImage.height,
-              start
-            );
-            firstPixelsAnnotations.set(id, { editorFirstPix, rect });
+            const annotationCentroid = getInkCentroid(editorImage);
+            centroidAnnotations.set(id, { annotationCentroid, rect });
           }
 
           await switchToFreeText(page);
@@ -1759,38 +1630,28 @@ describe("FreeText Editor", () => {
             document.getElementById("editorFreeTextParamsToolbar").remove();
           });
 
-          for (const [n, start] of [
-            [0, "BL"],
-            [1, "BR"],
-            [2, "TR"],
-            [3, "TL"],
-          ]) {
+          for (const n of [0, 1, 2, 3]) {
             const annotationId = await page.evaluate(N => {
               const editor = document.getElementById(
                 `pdfjs_internal_editor_${N}`
               );
               return editor.getAttribute("annotation-id");
             }, n);
-            const { editorFirstPix: annotationFirstPix, rect } =
-              firstPixelsAnnotations.get(annotationId);
+            const { annotationCentroid, rect } =
+              centroidAnnotations.get(annotationId);
             const editorPng = await page.screenshot({
               clip: rect,
               type: "png",
             });
             const editorImage = await decodePNG(editorPng);
-            const editorFirstPix = getFirstPixel(
-              editorImage.data,
-              editorImage.width,
-              editorImage.height,
-              start
-            );
+            const editorCentroid = getInkCentroid(editorImage);
 
             expect(
-              Math.abs(editorFirstPix[0] - annotationFirstPix[0]) <= 3 &&
-                Math.abs(editorFirstPix[1] - annotationFirstPix[1]) <= 3
+              Math.abs(editorCentroid[0] - annotationCentroid[0]) <= 3 &&
+                Math.abs(editorCentroid[1] - annotationCentroid[1]) <= 3
             )
               .withContext(
-                `In ${browserName}, first pix coords in editor: ${editorFirstPix} and in annotation: ${annotationFirstPix}`
+                `In ${browserName}, ink centroid in editor: ${editorCentroid} and in annotation: ${annotationCentroid}`
               )
               .toBeTrue();
           }

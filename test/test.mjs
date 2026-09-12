@@ -1088,13 +1088,11 @@ async function startBrowser({
       // Disable WebGPU (prevents log spam on Windows, and environments like
       // GitHub Actions don't expose GPUs anyway).
       "dom.webgpu.enabled": false,
-      // Pin the ClearType parameters to the values a content process starts
-      // with: with the defaults, Firefox derives them from the system settings
-      // and pushes them to the content processes later, so system fonts
-      // rendered before and after that update differ (the reference images of
-      // PDFs with non-embedded fonts weren't reproducible on Windows).
-      "gfx.font_rendering.cleartype_params.rendering_mode": 0,
-      "gfx.font_rendering.cleartype_params.cleartype_level": 100,
+      // Override system rendering parameters when Windows ClearType is enabled.
+      // Level 0 selects grayscale instead of subpixel antialiasing; mode 5
+      // selects natural symmetric rendering (antialiasing in both directions).
+      "gfx.font_rendering.cleartype_params.rendering_mode": 5,
+      "gfx.font_rendering.cleartype_params.cleartype_level": 0,
       "gfx.font_rendering.cleartype_params.enhanced_contrast": 100,
       "gfx.font_rendering.cleartype_params.gamma": 2200,
       "gfx.font_rendering.cleartype_params.pixel_structure": 1,
