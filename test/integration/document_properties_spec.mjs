@@ -52,20 +52,19 @@ async function closeDocumentProperties(page) {
 
 async function checkFieldProperties(page, expectedProps) {
   await page.waitForFunction(
-    `document.getElementById("fileSizeField").textContent !== "-"`
+    (fields, expected) => {
+      for (const name of fields) {
+        const field = document.getElementById(`${name}Field`);
+        if (field.textContent !== expected[name]) {
+          return false;
+        }
+      }
+      return true;
+    },
+    {},
+    FIELDS,
+    expectedProps
   );
-  const promises = [];
-
-  for (const name of FIELDS) {
-    promises.push(
-      page.evaluate(
-        n => [n, document.getElementById(`${n}Field`).textContent],
-        name
-      )
-    );
-  }
-  const props = Object.fromEntries(await Promise.all(promises));
-  expect(props).toEqual(expectedProps);
 }
 
 function getFieldDataLastUpdated(page) {
