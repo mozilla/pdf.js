@@ -889,6 +889,13 @@ class Parser {
         case "JBIG2Decode":
           return new Jbig2Stream(stream, maybeLength, params);
         case "BrotliDecode":
+          if (params) {
+            return new PredictorStream(
+              new BrotliStream(stream, maybeLength),
+              maybeLength,
+              params
+            );
+          }
           return new BrotliStream(stream, maybeLength);
         case "Crypt": {
           if (!cipherTransform) {
