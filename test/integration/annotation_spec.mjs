@@ -20,6 +20,7 @@ import {
   getRect,
   getSelector,
   loadAndWait,
+  waitForTooltipToBe,
 } from "./test_utils.mjs";
 
 describe("Annotation highlight", () => {
@@ -273,10 +274,7 @@ describe("Link annotations with internal destinations", () => {
           const pageOneSelector = ".page[data-page-number='1']";
           const linkSelector = `${pageOneSelector} #pdfjs_internal_id_42R`;
           await page.waitForSelector(linkSelector);
-          const linkTitle = await page.$eval(linkSelector, el => el.title);
-          expect(linkTitle)
-            .withContext(`In ${browserName}`)
-            .toEqual("Go to the last page");
+          await waitForTooltipToBe(page, linkSelector, "Go to the last page");
           await page.click(linkSelector);
           const pageSixTextLayerSelector =
             ".page[data-page-number='6'] .textLayer";
