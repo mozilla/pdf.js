@@ -43,9 +43,13 @@ function preprocess(inFilename, outFilename, defines) {
       // In Geckoview, we don't need some styles.
       const startComment = "/* Ignored in GECKOVIEW: begin */";
       const endComment = "/* Ignored in GECKOVIEW: end */";
-      const beginIndex = content.indexOf(startComment);
-      const endIndex = content.indexOf(endComment);
-      if (beginIndex >= 0 && endIndex > beginIndex) {
+
+      while (content.includes(startComment)) {
+        const beginIndex = content.indexOf(startComment);
+        const endIndex = content.indexOf(endComment);
+        if (endIndex < beginIndex) {
+          break;
+        }
         content =
           content.substring(0, beginIndex) +
           content.substring(endIndex + endComment.length);
