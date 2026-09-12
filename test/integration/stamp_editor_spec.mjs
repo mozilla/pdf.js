@@ -1107,12 +1107,7 @@ describe("Stamp Editor", () => {
         // Wait for the tooltip to be visible.
         const tooltipSelector = `${buttonSelector} .tooltip`;
         await page.waitForSelector(tooltipSelector, { visible: true });
-
-        const tooltipText = await page.evaluate(
-          sel => document.querySelector(`${sel}`).textContent,
-          tooltipSelector
-        );
-        expect(tooltipText).toEqual("Hello World");
+        await waitForTextToBe(page, tooltipSelector, "Hello World");
 
         // Click on the Review button.
         await page.click(buttonSelector);

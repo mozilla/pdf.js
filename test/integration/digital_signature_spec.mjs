@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { closePages, FSI, loadAndWait, PDI } from "./test_utils.mjs";
+import {
+  closePages,
+  FSI,
+  loadAndWait,
+  PDI,
+  waitForTextToBe,
+} from "./test_utils.mjs";
 
 describe("Digital signatures", () => {
   describe("Document without signatures", () => {
@@ -83,18 +89,11 @@ describe("Digital signatures", () => {
             hidden: false,
           });
 
-          await page.waitForFunction(
-            `document.getElementById("signaturePropertiesBanner").textContent !== ""`
-          );
-          const bannerMsg = await page.$eval(
+          await waitForTextToBe(
+            page,
             "#signaturePropertiesBanner",
-            el => el.textContent
+            `Document signed but ${FSI}2${PDI} digital signatures could not be verified`
           );
-          expect(bannerMsg)
-            .withContext(`In ${browserName}`)
-            .toEqual(
-              `Document signed but ${FSI}2${PDI} digital signatures could not be verified`
-            );
 
           await page.keyboard.press("Escape");
           await page.waitForSelector("#signaturePropertiesPanel", {

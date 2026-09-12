@@ -116,13 +116,7 @@ describe("find bar", () => {
             "#findResultsCount",
             `${FSI}1${PDI} of ${FSI}1${PDI} match`
           );
-          const selectedElement = await page.waitForSelector(
-            ".highlight.selected"
-          );
-          const selectedText = await selectedElement.evaluate(
-            el => el.textContent
-          );
-          expect(selectedText).toEqual("Preferences");
+          await waitForTextToBe(page, ".highlight.selected", "Preferences");
         })
       );
     });
