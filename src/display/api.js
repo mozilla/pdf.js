@@ -3342,6 +3342,25 @@ class InternalRenderTask {
 
   static #canvasInUse = new WeakSet();
 
+  /**
+   * The window that owns the canvas being rendered into, falling back to the
+   * global one.
+   *
+   * These are not always the same window. A canvas can live in another
+   * document -- one opened with `window.open`, or an iframe -- while the code
+   * driving the render runs in the opener. Animation frames have to be
+   * scheduled on the window that owns the canvas: browsers pause
+   * `requestAnimationFrame` for a window that is not visible, so scheduling on
+   * an occluded opener means the callback never runs and the render stalls
+   * partway through, leaving a partially drawn canvas.
+   */
+  get #ownerWindow() {
+    return (
+      (this._canvas ?? this._canvasContext?.canvas)?.ownerDocument
+        ?.defaultView ?? window
+    );
+  }
+
   constructor({
     callback,
     params,
@@ -3464,7 +3483,7 @@ class InternalRenderTask {
     this.cancelled = true;
     this.gfx?.endDrawing();
     if (this.#rAF) {
-      window.cancelAnimationFrame(this.#rAF);
+      this.#ownerWindow.cancelAnimationFrame(this.#rAF);
       this.#rAF = null;
     }
     InternalRenderTask.#canvasInUse.delete(this._canvas);
@@ -3508,7 +3527,7 @@ class InternalRenderTask {
 
   _scheduleNext() {
     if (this._useRequestAnimationFrame) {
-      this.#rAF = window.requestAnimationFrame(() => {
+      this.#rAF = this.#ownerWindow.requestAnimationFrame(() => {
         this.#rAF = null;
         this._nextBound().catch(this._cancelBound);
       });
