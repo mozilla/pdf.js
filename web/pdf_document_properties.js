@@ -127,51 +127,42 @@ class PDFDocumentProperties {
     // Get the document properties.
     const [
       { info, metadata, /* contentDispositionFilename, */ contentLength },
-      pdfPage,
+      pageSize,
     ] = await Promise.all([
       this.pdfDocument.getMetadata(),
-      this.pdfDocument.getPage(currentPageNumber).catch(reason => {
-        console.error(
-          `PDFDocumentProperties - unable to get page ${currentPageNumber}.`,
-          reason
-        );
-        return null;
-      }),
-    ]);
-
-    const [
-      fileName,
-      fileSize,
-      title,
-      creationDate,
-      modificationDate,
-      pageSize,
-      isLinearized,
-    ] = await Promise.all([
-      this._fileNameLookup(),
-      this.#parseFileSize(contentLength),
-      this._titleLookup(),
-      this.#parseDate(metadata?.get("xmp:createdate"), info.CreationDate),
-      this.#parseDate(metadata?.get("xmp:modifydate"), info.ModDate),
-      this.#parsePageSize(pdfPage, pagesRotation),
-      this.#parseLinearization(info.IsLinearized),
+      this.pdfDocument.getPage(currentPageNumber).then(
+        pdfPage => this.#parsePageSize(pdfPage, pagesRotation),
+        reason => {
+          console.error(
+            `PDFDocumentProperties - unable to get page ${currentPageNumber}.`,
+            reason
+          );
+          return undefined;
+        }
+      ),
     ]);
 
     this.#fieldData = Object.freeze({
-      fileName,
-      fileSize,
-      title,
+      fileName: this._fileNameLookup(),
+      fileSize: this.#parseFileSize(contentLength),
+      title: this._titleLookup(),
       author: metadata?.get("dc:creator")?.join("\n") || info.Author,
       subject: metadata?.get("dc:subject")?.join("\n") || info.Subject,
       keywords: metadata?.get("pdf:keywords") || info.Keywords,
-      creationDate,
-      modificationDate,
+      creationDate: this.#parseDate(
+        metadata?.get("xmp:createdate"),
+        info.CreationDate
+      ),
+      modificationDate: this.#parseDate(
+        metadata?.get("xmp:modifydate"),
+        info.ModDate
+      ),
       creator: metadata?.get("xmp:creatortool") || info.Creator,
       producer: metadata?.get("pdf:producer") || info.Producer,
       version: info.PDFFormatVersion,
       pageCount: this.pdfDocument.numPages,
       pageSize,
-      linearized: isLinearized,
+      linearized: this.#parseLinearization(info.IsLinearized),
       _currentPageNumber: currentPageNumber,
       _pagesRotation: pagesRotation,
     });
@@ -184,7 +175,7 @@ class PDFDocumentProperties {
       return; // The fileSize has already been correctly set.
     }
     const data = Object.assign(Object.create(null), this.#fieldData);
-    data.fileSize = await this.#parseFileSize(length);
+    data.fileSize = this.#parseFileSize(length);
 
     this.#fieldData = Object.freeze(data);
     this.#updateUI();
@@ -241,28 +232,38 @@ class PDFDocumentProperties {
       this.dialog.dataset.fieldDataLastUpdated = this._fieldDataLastUpdated;
     }
     for (const id in this.fields) {
-      const content = this.#fieldData?.[id];
-      this.fields[id].textContent = content || content === 0 ? content : "-";
+      const field = this.fields[id],
+        data = this.#fieldData?.[id];
+
+      if (data?.id) {
+        field.setAttribute("data-l10n-id", data.id);
+        if (data.args) {
+          field.setAttribute("data-l10n-args", JSON.stringify(data.args));
+        }
+      } else {
+        field.removeAttribute("data-l10n-id");
+        field.removeAttribute("data-l10n-args");
+
+        field.textContent = data || data === 0 ? data : "-";
+      }
     }
   }
 
-  async #parseFileSize(b = 0) {
+  #parseFileSize(b = 0) {
     const kb = b / 1024,
       mb = kb / 1024;
     return kb
-      ? this.l10n.get(
-          mb >= 1
-            ? "pdfjs-document-properties-size-mb"
-            : "pdfjs-document-properties-size-kb",
-          { mb, kb, b }
-        )
+      ? {
+          id:
+            mb >= 1
+              ? "pdfjs-document-properties-size-mb"
+              : "pdfjs-document-properties-size-kb",
+          args: { mb, kb, b },
+        }
       : undefined;
   }
 
   async #parsePageSize(pdfPage, pagesRotation) {
-    if (!pdfPage) {
-      return undefined;
-    }
     let pageSizeInches = getPageSizeInches(pdfPage);
     // Take the viewer rotation into account as well; compare with Adobe Reader.
     if (pagesRotation % 180 !== 0) {
@@ -339,30 +340,31 @@ class PDFDocumentProperties {
     }
     const [unit, orientation, name] = await this.l10n.get(ids);
 
-    return this.l10n.get(
-      name
+    return {
+      id: name
         ? "pdfjs-document-properties-page-size-dimension-name-string"
         : "pdfjs-document-properties-page-size-dimension-string",
-      { width, height, unit, name, orientation }
-    );
+      args: { width, height, unit, name, orientation },
+    };
   }
 
-  async #parseDate(metadataDate, infoDate) {
+  #parseDate(metadataDate, infoDate) {
     const dateObj =
       Date.parse(metadataDate) || PDFDateString.toDateObject(infoDate);
     return dateObj
-      ? this.l10n.get("pdfjs-document-properties-date-time-string", {
-          dateObj: dateObj.valueOf(),
-        })
+      ? {
+          id: "pdfjs-document-properties-date-time-string",
+          args: { dateObj: dateObj.valueOf() },
+        }
       : undefined;
   }
 
   #parseLinearization(isLinearized) {
-    return this.l10n.get(
-      isLinearized
+    return {
+      id: isLinearized
         ? "pdfjs-document-properties-linearized-yes"
-        : "pdfjs-document-properties-linearized-no"
-    );
+        : "pdfjs-document-properties-linearized-no",
+    };
   }
 }
 
