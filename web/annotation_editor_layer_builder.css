@@ -14,18 +14,30 @@
  */
 
 @import url(draw_layer_builder.css);
+/* Ignored in GECKOVIEW: begin */
+
 @import url(toggle_button.css);
 @import url(signature_manager.css);
 @import url(comment_manager.css);
+/* Ignored in GECKOVIEW: end */
 
 :root {
   --editor-toolbar-vert-offset: 6px;
+  /*#if GECKOVIEW*/
+  --outline-width: 1px;
+  /*#else*/
   --outline-width: 2px;
+  /*#endif*/
   /* Palette primitives, not the semantic light-dark tokens: these are drawn on
      the always-light PDF page, where --color-accent-primary and friends would
      resolve to their dark value. */
+  /*#if GECKOVIEW*/
+  --outline-color: #67666a;
+  --outline-around-width: 0px;
+  /*#else*/
   --outline-color: var(--color-blue-60, #0060df);
   --outline-around-width: 1px;
+  /*#endif*/
   --outline-around-color: var(--color-gray-20, #f0f0f4);
   --hover-outline-around-color: var(--outline-around-color);
   --editor-selection-outline: solid var(--outline-width) var(--outline-color);
@@ -36,14 +48,23 @@
   --hover-outline: solid var(--outline-width) var(--hover-outline-color);
   --hover-outline-around: solid var(--outline-around-width)
     var(--hover-outline-around-color);
+  /* Ignored in GECKOVIEW: begin */
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
+  /* Ignored in GECKOVIEW: end */
   --resizer-bg-color: var(--outline-color);
+  /*#if GECKOVIEW*/
+  --resizer-size: 10px;
+  --resizer-border-radius: 0;
+  /*#else*/
   --resizer-size: 6px;
+  --resizer-border-radius: 2px;
+  /*#endif*/
   --resizer-shift: calc(
     0px - (var(--outline-width) + var(--resizer-size)) / 2 -
       var(--outline-around-width)
   );
+  /* Ignored in GECKOVIEW: begin */
   --editorFreeText-editing-cursor: text;
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
   --editorHighlight-editing-cursor:
@@ -52,7 +73,9 @@
     url(images/cursor-editorFreeHighlight.svg) 1 18, pointer;
 
   --new-alt-text-warning-image: url(images/altText_warning.svg);
+  /* Ignored in GECKOVIEW: end */
 }
+/* Ignored in GECKOVIEW: begin */
 
 .textLayer {
   &.highlighting {
@@ -92,6 +115,7 @@
       url(images/cursor-editorFreeText.svg) 0 16, text;
   }
 }
+/* Ignored in GECKOVIEW: end */
 
 @media screen and (forced-colors: active) {
   :root {
@@ -162,6 +186,7 @@
     pointer-events: auto;
   }
 }
+/* Ignored in GECKOVIEW: begin */
 
 .annotationEditorLayer.freetextEditing {
   cursor: var(--editorFreeText-editing-cursor);
@@ -170,6 +195,7 @@
 .annotationEditorLayer.inkEditing {
   cursor: var(--editorInk-editing-cursor);
 }
+/* Ignored in GECKOVIEW: end */
 
 .annotationEditorLayer .draw {
   box-sizing: border-box;
@@ -243,11 +269,19 @@
   ),
 .textLayer {
   .editToolbar {
+    /*#if GECKOVIEW*/
+    --editor-toolbar-delete-image: url(images/gv-editor-toolbar-close.svg);
+    --editor-toolbar-bg-color: transparent;
+    --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
+    --editor-toolbar-fg-color: rgb(24 14 48 / 0.7);
+    --editor-toolbar-border-color: transparent;
+    /*#else*/
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: var(--border-color-interactive, #8f8f9d);
+    /*#endif*/
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
     --editor-toolbar-hover-bg-color: light-dark(#e0e0e6, #52525e);
     --editor-toolbar-hover-fg-color: var(--editor-toolbar-fg-color);
@@ -256,9 +290,21 @@
       --focus-outline-color,
       light-dark(#0060df, #0df)
     );
+    /*#if GECKOVIEW*/
+    --editor-toolbar-shadow: none;
+    --editor-toolbar-height: 40px;
+    --editor-toolbar-padding: 0;
+    --editor-toolbar-inset-inline: calc(100% - 2px) auto;
+    --editor-toolbar-inset-block: auto calc(100% - 2px);
+    /*#else*/
     --editor-toolbar-shadow: 0 2px 6px 0 rgb(58 57 68 / 0.2);
     --editor-toolbar-height: 28px;
     --editor-toolbar-padding: 2px;
+    --editor-toolbar-inset-inline: auto 0;
+    --editor-toolbar-inset-block: calc(100% + var(--editor-toolbar-vert-offset))
+      auto;
+    /*#endif*/
+    /* Ignored in GECKOVIEW: begin */
     --alt-text-done-color: var(
       --color-accent-attention,
       light-dark(#2ac3a2, #54ffbd)
@@ -266,6 +312,8 @@
     --alt-text-warning-color: light-dark(#0090ed, #80ebff);
     --alt-text-hover-done-color: var(--alt-text-done-color);
     --alt-text-hover-warning-color: var(--alt-text-warning-color);
+    /* Ignored in GECKOVIEW: end */
+    /* Ignored in GECKOVIEW: begin */
 
     /* Match Nova's panel surface and 32px toolbar controls. */
     /*#if MOZCENTRAL*/
@@ -281,6 +329,7 @@
       --alt-text-warning-color: var(--icon-color-information);
     }
     /*#endif*/
+    /* Ignored in GECKOVIEW: end */
 
     @media screen and (forced-colors: active) {
       --editor-toolbar-bg-color: var(--button-background-color, ButtonFace);
@@ -308,10 +357,12 @@
         ButtonBorder
       );
       --editor-toolbar-shadow: none;
+      /* Ignored in GECKOVIEW: begin */
       --alt-text-done-color: var(--editor-toolbar-fg-color);
       --alt-text-warning-color: var(--editor-toolbar-fg-color);
       --alt-text-hover-done-color: var(--editor-toolbar-hover-fg-color);
       --alt-text-hover-warning-color: var(--editor-toolbar-hover-fg-color);
+      /* Ignored in GECKOVIEW: end */
     }
 
     display: flex;
@@ -327,8 +378,8 @@
     user-select: none;
 
     position: absolute;
-    inset-inline-end: 0;
-    inset-block-start: calc(100% + var(--editor-toolbar-vert-offset));
+    inset-inline: var(--editor-toolbar-inset-inline);
+    inset-block: var(--editor-toolbar-inset-block);
 
     border-radius: 6px;
     background-color: var(--editor-toolbar-bg-color);
@@ -399,10 +450,12 @@
         &.highlightButton::before {
           mask-image: var(--editor-toolbar-highlight-image);
         }
+        /* Ignored in GECKOVIEW: begin */
 
         &.commentButton::before {
           mask-image: var(--comment-edit-button-icon);
         }
+        /* Ignored in GECKOVIEW: end */
 
         &.deleteButton::before {
           mask-image: var(--editor-toolbar-delete-image);
@@ -444,6 +497,7 @@
         }
         /*#endif*/
       }
+      /* Ignored in GECKOVIEW: begin */
 
       .altText {
         --alt-text-add-image: url(images/altText_add.svg);
@@ -564,6 +618,8 @@
           }
         }
       }
+      /* Ignored in GECKOVIEW: end */
+      /* Ignored in GECKOVIEW: begin */
 
       .comment {
         width: var(--editor-toolbar-height);
@@ -579,9 +635,11 @@
           height: 100%;
         }
       }
+      /* Ignored in GECKOVIEW: end */
     }
   }
 }
+/* Ignored in GECKOVIEW: begin */
 
 .annotationEditorLayer .freeTextEditor {
   padding: calc(var(--freetext-padding) * var(--total-scale-factor));
@@ -708,6 +766,7 @@
     }
   }
 }
+/* Ignored in GECKOVIEW: end */
 
 .annotationEditorLayer {
   :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
@@ -725,7 +784,7 @@
         height: var(--resizer-size);
         background: content-box var(--resizer-bg-color);
         border: var(--focus-outline-around);
-        border-radius: 2px;
+        border-radius: var(--resizer-border-radius);
         position: absolute;
 
         &.topLeft {
@@ -891,6 +950,7 @@
     }
   }
 }
+/* Ignored in GECKOVIEW: begin */
 
 .dialog.altText {
   &::backdrop {
@@ -1557,3 +1617,4 @@
     }
   }
 }
+/* Ignored in GECKOVIEW: end */
