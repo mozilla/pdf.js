@@ -185,6 +185,10 @@ var testResultDir = "test_snapshots";
 var refsDir = "ref";
 var eqLog = "eq.log";
 var browserTimeout = 120;
+// Seconds to wait for browser.close().
+var browserCloseTimeout = 15;
+var maxBrowserStartAttempts = 3;
+var maxSessionRestarts = 3;
 
 function monitorBrowserTimeout(session, onTimeout) {
   if (session.timeoutMonitor) {
@@ -254,12 +258,13 @@ async function startRefTest(masterMode, showRefImages) {
     var numFBFFailures = 0;
     var numEqFailures = 0;
     var numEqNoSnapshot = 0;
+    // Failed startup can leave counters uninitialized.
     sessions.forEach(session => {
-      numRuns += session.numRuns;
-      numErrors += session.numErrors;
-      numFBFFailures += session.numFBFFailures;
-      numEqFailures += session.numEqFailures;
-      numEqNoSnapshot += session.numEqNoSnapshot;
+      numRuns += session.numRuns ?? 0;
+      numErrors += session.numErrors ?? 0;
+      numFBFFailures += session.numFBFFailures ?? 0;
+      numEqFailures += session.numEqFailures ?? 0;
+      numEqNoSnapshot += session.numEqNoSnapshot ?? 0;
     });
     var numFatalFailures = numErrors + numFBFFailures;
     console.log();
@@ -469,24 +474,59 @@ async function handleSessionTimeout(session) {
   session.tasks = {};
 
   monitorBrowserTimeout(session, null);
-  if (session.page) {
-    session.recovering = true;
-    try {
-      await session.page.reload({
-        timeout: browserTimeout * 1000,
-        waitUntil: "domcontentloaded",
-      });
-      session.recovering = false;
-      monitorBrowserTimeout(session, handleSessionTimeout);
-      return;
-    } catch (err) {
-      console.log(
-        `Failed to reload ${session.name} after timeout: ${err.message}`
-      );
-      session.recovering = false;
+  session.recovering = true;
+  try {
+    if (session.page) {
+      try {
+        await session.page.reload({
+          timeout: browserTimeout * 1000,
+          waitUntil: "domcontentloaded",
+        });
+        monitorBrowserTimeout(session, handleSessionTimeout);
+        return;
+      } catch (err) {
+        console.log(
+          `Failed to reload ${session.name} after timeout: ${err.message}`
+        );
+      }
     }
+    // A new browser can continue taking tasks from the shared queue.
+    if (await restartSession(session)) {
+      return;
+    }
+  } finally {
+    session.recovering = false;
   }
   closeSession(session.name);
+}
+
+async function restartSession(session) {
+  if (session.restarts >= maxSessionRestarts) {
+    console.log(
+      `Not restarting ${session.name}: it was already restarted ${session.restarts} times.`
+    );
+    return false;
+  }
+  session.restarts++;
+  console.log(
+    `Restarting ${session.name} (${session.restarts}/${maxSessionRestarts})...`
+  );
+  await killBrowser(session.browser);
+  session.browser = undefined;
+  session.page = undefined;
+  try {
+    const browser = await startBrowser({
+      browserName: session.browserType,
+      startUrl: session.startUrl,
+    });
+    session.browser = browser;
+    session.page = (await browser.pages())[0];
+  } catch (ex) {
+    console.log(`Failed to restart ${session.name}: ${ex.message}`);
+    return false;
+  }
+  monitorBrowserTimeout(session, handleSessionTimeout);
+  return true;
 }
 
 function getTestManifest() {
@@ -888,8 +928,8 @@ function onAllSessionsClosedAfterTests(name) {
     var numRuns = 0,
       numErrors = 0;
     sessions.forEach(session => {
-      numRuns += session.numRuns;
-      numErrors += session.numErrors;
+      numRuns += session.numRuns ?? 0;
+      numErrors += session.numErrors ?? 0;
     });
     console.log();
     console.log("Run " + numRuns + " tests");
@@ -1124,12 +1164,54 @@ async function startBrowser({
   const browser = await puppeteer.launch(options);
 
   if (startUrl) {
-    const pages = await browser.pages();
-    const page = pages[0];
-    await page.goto(startUrl, { timeout: 0, waitUntil: "domcontentloaded" });
+    try {
+      const pages = await browser.pages();
+      const page = pages[0];
+      await page.goto(startUrl, {
+        timeout: browserTimeout * 1000,
+        waitUntil: "domcontentloaded",
+      });
+    } catch (ex) {
+      // Clean up the browser before propagating the startup error.
+      await killBrowser(browser);
+      throw ex;
+    }
   }
 
   return browser;
+}
+
+/**
+ * Try SIGKILL if browser.close() rejects or times out.
+ */
+async function killBrowser(browser) {
+  if (!browser) {
+    return;
+  }
+  let timeoutId;
+  try {
+    await Promise.race([
+      browser.close(),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(
+          () =>
+            reject(
+              new Error(`browser didn't close within ${browserCloseTimeout}s`)
+            ),
+          browserCloseTimeout * 1000
+        );
+      }),
+    ]);
+  } catch (ex) {
+    console.log(`Unable to close the browser (${ex.message}), killing it.`);
+    try {
+      browser.process()?.kill("SIGKILL");
+    } catch {
+      // Ignore kill errors during cleanup.
+    }
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
@@ -1149,6 +1231,9 @@ async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
   if (options.noFirefox) {
     browserNames.splice(0, 1);
   }
+  // Register every session before launching: closeSession finalizes the run
+  // once all registered sessions are closed.
+  const newSessions = [];
   for (const browserName of browserNames) {
     for (let i = 0; i < numSessions; i++) {
       // When running multiple sessions per browser, append an index suffix to
@@ -1156,25 +1241,6 @@ async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
       // name for backward compatibility.
       const sessionName =
         numSessions === 1 ? browserName : `${browserName}-${i}`;
-
-      // The session must be pushed first and augmented with the browser once
-      // it's initialized. The reason for this is that browser initialization
-      // takes more time when the browser is not found locally yet and we don't
-      // want `onAllSessionsClosed` to trigger if one of the browsers is done
-      // and the other one is still initializing, since that would mean that
-      // once the browser is initialized the server would have stopped already.
-      // Pushing the session first ensures that `onAllSessionsClosed` will
-      // only trigger once all browsers are initialized and done.
-      const session = {
-        name: sessionName,
-        browserType: browserName,
-        sessionIndex: i,
-        sessionCount: numSessions,
-        browser: undefined,
-        page: undefined,
-        closed: false,
-      };
-      sessions.push(session);
 
       let startUrl = "";
       if (baseUrl) {
@@ -1184,18 +1250,52 @@ async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
           `&delay=${options.statsDelay}&masterMode=${options.masterMode}` +
           `&coveragePerTest=${global.coveragePerTest || false}`;
       }
-      await startBrowser({ browserName, startUrl })
-        .then(async function (browser) {
-          session.browser = browser;
-          const pages = await browser.pages();
-          session.page = pages[0];
-          initializeSession(session);
-        })
-        .catch(ex => {
-          console.log(`Error while starting ${browserName}: ${ex.message}`);
-          session.numErrors = 1;
-          closeSession(sessionName);
+      const session = {
+        name: sessionName,
+        browserType: browserName,
+        sessionIndex: i,
+        sessionCount: numSessions,
+        startUrl,
+        browser: undefined,
+        page: undefined,
+        closed: false,
+        restarts: 0,
+      };
+      sessions.push(session);
+      newSessions.push(session);
+    }
+  }
+
+  for (const session of newSessions) {
+    let browser;
+    for (let attempt = 1; attempt <= maxBrowserStartAttempts; attempt++) {
+      try {
+        browser = await startBrowser({
+          browserName: session.browserType,
+          startUrl: session.startUrl,
         });
+        break;
+      } catch (ex) {
+        console.log(
+          `Error while starting ${session.name} ` +
+            `(attempt ${attempt}/${maxBrowserStartAttempts}): ${ex.message}`
+        );
+      }
+    }
+    if (!browser) {
+      session.numErrors = 1;
+      closeSession(session.name);
+      continue;
+    }
+    try {
+      session.browser = browser;
+      const pages = await browser.pages();
+      session.page = pages[0];
+      initializeSession(session);
+    } catch (ex) {
+      console.log(`Error while initializing ${session.name}: ${ex.message}`);
+      session.numErrors = 1;
+      closeSession(session.name);
     }
   }
 }
@@ -1357,7 +1457,7 @@ async function closeSession(browser) {
         }
       }
 
-      await session.browser.close();
+      await killBrowser(session.browser);
     }
     session.closed = true;
     const allClosed = sessions.every(s => s.closed);
