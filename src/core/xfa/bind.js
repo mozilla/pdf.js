@@ -31,6 +31,7 @@ import {
   $isBindable,
   $isDataValue,
   $isDescendent,
+  $isTransparent,
   $namespaceId,
   $nodeName,
   $removeChild,
@@ -595,7 +596,7 @@ class Binder {
           }
         }
       } else {
-        if (!child.name) {
+        if (child[$isTransparent]()) {
           this._setAndBind(child, dataNode);
           continue;
         }

@@ -13,12 +13,49 @@
  * limitations under the License.
  */
 
-import { $uid } from "../../src/core/xfa/symbol_utils.js";
+import { $data, $uid } from "../../src/core/xfa/symbol_utils.js";
+import { Binder } from "../../src/core/xfa/bind.js";
 import { DataHandler } from "../../src/core/xfa/data.js";
 import { searchNode } from "../../src/core/xfa/som.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";
 
 describe("Data serializer", function () {
+  for (const mergeMode of ["consumeData", "matchTemplate"]) {
+    it(`should save fields in named areas (${mergeMode})`, function () {
+      const xml = `
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3/">
+    <subform name="root" mergeMode="${mergeMode}">
+      <subform name="header">
+        <area name="details"><field name="heading"/></area>
+      </subform>
+      <subform name="details">
+        <area name="group"><field name="body"/></area>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data><root><header><heading>Title</heading></header><details><body/></details></root></xfa:data>
+  </xfa:datasets>
+</xdp:xdp>`;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      const form = binder.bind();
+      const data = binder.getData();
+      const field = searchNode(root, form, "root.details.body")[0];
+      const dataNode = searchNode(root, data, "root.details.body")[0];
+      expect(field[$data]).toBe(dataNode);
+
+      const storage = new Map([
+        [(field[$data] || field)[$uid], { value: "Saved text & more" }],
+      ]);
+      const serialized = new DataHandler(root, data).serialize(storage);
+      expect(serialized).toEqual(
+        '<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><xfa:data><root><header><heading>Title</heading></header><details><body>Saved text &amp; more</body></details></root></xfa:data></xfa:datasets>'
+      );
+    });
+  }
+
   it("should serialize data with an annotationStorage", function () {
     const xml = `
 <?xml version="1.0"?>
