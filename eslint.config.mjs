@@ -316,7 +316,14 @@ export default [
       // Stylistic Issues
       "lines-between-class-members": ["error", "always"],
       "max-len": ["error", { code: 1000, comments: 80, ignoreUrls: true }],
-      "new-cap": ["error", { newIsCap: true, capIsNew: false }],
+      "new-cap": [
+        "error",
+        {
+          newIsCap: true,
+          newIsCapExceptionPattern: "constructor",
+          capIsNew: false,
+        },
+      ],
       "no-array-constructor": "error",
       "no-multiple-empty-lines": ["error", { max: 1, maxEOF: 0, maxBOF: 1 }],
       "no-nested-ternary": "error",
