@@ -13,13 +13,85 @@
  * limitations under the License.
  */
 
-import { Cmd, EOF, Name } from "../../src/core/primitives.js";
+import { Cmd, Dict, EOF, Name } from "../../src/core/primitives.js";
 import { Lexer, Linearization, Parser } from "../../src/core/parser.js";
+import { Stream, StringStream } from "../../src/core/stream.js";
 import { FormatError } from "../../src/shared/util.js";
-import { StringStream } from "../../src/core/stream.js";
 
 describe("parser", function () {
   describe("Parser", function () {
+    describe("BrotliDecode", function () {
+      const expected = new Uint8Array([100, 3, 101, 2, 102, 1]);
+      // Raw Brotli streams containing synthetic predictor data (no PDF fixture
+      // or compression API is needed to run these tests in a browser).
+      const png = new Uint8Array([
+        11, 4, 128, 2, 100, 3, 2, 1, 255, 2, 1, 255, 3,
+      ]);
+      const tiff = new Uint8Array([
+        139, 2, 128, 100, 159, 101, 157, 102, 155, 3,
+      ]);
+
+      function createParser() {
+        return new Parser({
+          lexer: new Lexer(new StringStream("")),
+          xref: null,
+          allowStreams: true,
+        });
+      }
+
+      function parameters(predictor) {
+        const params = new Dict();
+        params.set("Predictor", predictor);
+        params.set("Colors", 1);
+        params.set("BitsPerComponent", 8);
+        params.set("Columns", 2);
+        return params;
+      }
+
+      it("should apply PNG predictors", function () {
+        const result = createParser().makeFilter(
+          new Stream(png),
+          "BrotliDecode",
+          png.length,
+          parameters(12)
+        );
+        expect(result.getBytes()).toEqual(expected);
+      });
+
+      it("should apply TIFF predictors", function () {
+        const result = createParser().makeFilter(
+          new Stream(tiff),
+          "BrotliDecode",
+          tiff.length,
+          parameters(2)
+        );
+        expect(result.getBytes()).toEqual(expected);
+      });
+
+      it("should use the matching DecodeParms entry in a filter chain", function () {
+        const input = new StringStream("0b04800264030201ff0201ff03>");
+        const dict = new Dict();
+        dict.set("Filter", [
+          Name.get("ASCIIHexDecode"),
+          Name.get("BrotliDecode"),
+        ]);
+        dict.set("DecodeParms", [null, parameters(12)]);
+        const result = createParser().filter(input, dict, input.length);
+        expect(result.getBytes()).toEqual(expected);
+      });
+
+      it("should retain asynchronous image decoding without predictors", async function () {
+        const input = new Uint8Array([139, 2, 128, 100, 3, 101, 2, 102, 1, 3]);
+        const result = createParser().makeFilter(
+          new Stream(input),
+          "BrotliDecode",
+          input.length,
+          null
+        );
+        expect(await result.getImageData(expected.length)).toEqual(expected);
+      });
+    });
+
     describe("inlineStreamSkipEI", function () {
       it("should skip over the EI marker if it is found", function () {
         const string =

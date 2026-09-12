@@ -14124,6 +14124,13 @@
     "type": "eq"
   },
   {
+    "id": "brotli_predictors",
+    "file": "pdfs/brotli_predictors.pdf",
+    "md5": "ad75625ab35e87a544d6ed3487535fde",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "Brotli-Prototype-FileA",
     "file": "pdfs/Brotli-Prototype-FileA.pdf",
     "md5": "9113370932798776ba91c807ce95082e",
