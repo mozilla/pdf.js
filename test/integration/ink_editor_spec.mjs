@@ -107,17 +107,13 @@ describe("Ink Editor", () => {
           await switchToInk(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-
           for (let i = 0; i < 3; i++) {
             const x = rect.x + 100 + i * 100;
             const y = rect.y + 100 + i * 100;
             await drawLine(page, x, y, x + 50, y + 50);
             await commit(page);
           }
-
-          await page.waitForFunction(
-            `document.getElementById("viewer-alert").textContent === "Drawing added"`
-          );
+          await waitForTextToBe(page, "#viewer-alert", "Drawing added");
 
           await clearAll(page);
 

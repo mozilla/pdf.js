@@ -26,6 +26,7 @@ import {
   PDI,
   switchToEditor,
   waitForPointerUp,
+  waitForTextToBe,
   waitForTimeout,
 } from "./test_utils.mjs";
 import fs from "fs";
@@ -180,10 +181,7 @@ describe("Signature Editor", () => {
             `.canvasWrapper > svg use[href="#path_0"]`,
             { visible: true }
           );
-
-          await page.waitForFunction(
-            `document.getElementById("viewer-alert").textContent === "Signature added"`
-          );
+          await waitForTextToBe(page, "#viewer-alert", "Signature added");
 
           // Check the tooltip.
           await page.waitForSelector(
