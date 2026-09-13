@@ -142,10 +142,7 @@ describe("FreeText Editor", () => {
             y: rect.y + 100,
             data,
           });
-
-          await page.waitForFunction(
-            `document.getElementById("viewer-alert").textContent === "Text added"`
-          );
+          await waitForTextToBe(page, "#viewer-alert", "Text added");
 
           let content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()

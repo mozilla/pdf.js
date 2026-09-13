@@ -118,15 +118,11 @@ describe("Stamp Editor", () => {
           );
           const editorSelector = getEditorSelector(0);
           await waitForImage(page, editorSelector);
-
-          await page.waitForFunction(
-            `document.getElementById("viewer-alert").textContent === "Image added"`
-          );
-
-          const { width } = await getEditorDimensions(page, editorSelector);
+          await waitForTextToBe(page, "#viewer-alert", "Image added");
 
           // The image is bigger than the page, so it has been scaled down to
           // 75% of the page width.
+          const { width } = await getEditorDimensions(page, editorSelector);
           expect(width).toEqual("75%");
 
           const [bitmap] = await serializeBitmapDimensions(page);

@@ -74,9 +74,7 @@ describe("Highlight Editor", () => {
           await switchToHighlight(page);
 
           await highlightSpan(page, 1, "Abstract");
-          await page.waitForFunction(
-            `document.getElementById("viewer-alert").textContent === "Highlight added"`
-          );
+          await waitForTextToBe(page, "#viewer-alert", "Highlight added");
 
           const oneToOne = Array.from(new Array(13).keys(), n => n + 2).concat(
             Array.from(new Array(13).keys(), n => 13 - n)
