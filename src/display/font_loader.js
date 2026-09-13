@@ -422,7 +422,7 @@ class FontLoader {
 }
 
 class FontFaceObject {
-  compiledGlyphs = Object.create(null);
+  #compiledPaths = new Map();
 
   #fontData;
 
@@ -502,24 +502,26 @@ class FontFaceObject {
   }
 
   getPathGenerator(objs, character) {
-    if (this.compiledGlyphs[character] !== undefined) {
-      return this.compiledGlyphs[character];
+    let path = this.#compiledPaths.get(character);
+    if (path) {
+      return path;
     }
 
-    const objId = this.loadedName + "_path_" + character;
+    const objId = `${this.loadedName}_path_${character}`;
     let cmds;
     try {
       cmds = objs.get(objId);
     } catch (ex) {
       warn(`getPathGenerator - ignoring character: "${ex}".`);
     }
-    const path = makePathFromDrawOPS(cmds?.path);
+    path = makePathFromDrawOPS(cmds?.path);
 
     if (!this.fontExtraProperties) {
-      // Remove the raw path-string, since we don't need it anymore.
+      // Remove the raw path-data, since we don't need it anymore.
       objs.delete(objId);
     }
-    return (this.compiledGlyphs[character] = path);
+    this.#compiledPaths.set(character, path);
+    return path;
   }
 
   get black() {
