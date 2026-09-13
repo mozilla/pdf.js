@@ -28,6 +28,7 @@ import {
   waitAndClick,
   waitForPageChanging,
   waitForPageRendered,
+  waitForTextToBe,
 } from "./test_utils.mjs";
 import path from "path";
 
@@ -1939,20 +1940,14 @@ describe("PDF viewer", () => {
           );
 
           // Wait for an outline item to receive the "selected" class.
-          const item = await page.waitForSelector(
-            "#outlinesView .treeItemToggler:not(.treeItemsHidden) + a + .treeItems > .treeItem.selected",
-            {
-              visible: true,
-            }
-          );
+          const itemSelector =
+            "#outlinesView .treeItemToggler:not(.treeItemsHidden) + a + .treeItems > .treeItem.selected";
+          const item = await page.waitForSelector(itemSelector, {
+            visible: true,
+          });
           const isVisible = await item.isIntersectingViewport();
           expect(isVisible).withContext(`In ${browserName}`).toBeTrue();
-          const outlineItemText = await item.evaluate(el =>
-            el.textContent.trim()
-          );
-          expect(outlineItemText)
-            .withContext(`In ${browserName}`)
-            .toBe("Fire Lots of Lawyers");
+          await waitForTextToBe(page, itemSelector, "Fire Lots of Lawyers");
         })
       );
     });

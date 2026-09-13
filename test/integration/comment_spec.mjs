@@ -314,11 +314,11 @@ describe("Comment", () => {
           await page.waitForSelector(popupSelector, {
             visible: true,
           });
-          let popupText = await page.evaluate(
-            selector => document.querySelector(selector).textContent,
-            `${popupSelector} .commentPopupText`
+          await waitForTextToBe(
+            page,
+            `${popupSelector} .commentPopupText`,
+            comment
           );
-          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
 
           await page.hover("#editorHighlightButton");
           await switchToHighlight(page, /* disable = */ true);
@@ -332,11 +332,11 @@ describe("Comment", () => {
           await page.waitForSelector(popupSelector, {
             visible: true,
           });
-          popupText = await page.evaluate(
-            selector => document.querySelector(selector).textContent,
-            `${popupSelector} .commentPopupText`
+          await waitForTextToBe(
+            page,
+            `${popupSelector} .commentPopupText`,
+            comment
           );
-          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
         })
       );
     });
@@ -656,17 +656,11 @@ describe("Comment", () => {
           await waitAndClick(page, firstElementSelector);
           const popupSelector = "#commentPopup";
           await page.waitForSelector(popupSelector, { visible: true });
-          const popupTextSelector = `${popupSelector} .commentPopupText`;
-          await page.waitForSelector(popupTextSelector, {
-            visible: true,
-          });
-          const popupText = await page.evaluate(
-            selector => document.querySelector(selector).textContent,
-            popupTextSelector
+          await waitForTextToBe(
+            page,
+            `${popupSelector} .commentPopupText`,
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
           );
-          expect(popupText)
-            .withContext(`In ${browserName}`)
-            .toEqual("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
 
           // Click again to unselect the comment.
           await waitAndClick(page, firstElementSelector);
@@ -958,12 +952,11 @@ describe("Comment", () => {
           await page.waitForSelector(commentPopupSelector, {
             visible: true,
           });
-          const popupTextSelector = `${commentPopupSelector} .commentPopupText`;
-          const popupText = await page.evaluate(
-            selector => document.querySelector(selector).textContent,
-            popupTextSelector
+          await waitForTextToBe(
+            page,
+            `${commentPopupSelector} .commentPopupText`,
+            comment
           );
-          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
         })
       );
     });
@@ -1021,12 +1014,11 @@ describe("Comment", () => {
           // Check that the comment is restored by hovering to show the popup
           await page.hover(`${editorSelector} .annotationCommentButton`);
           await page.waitForSelector("#commentPopup", { visible: true });
-          const popupText = await page.evaluate(
-            () =>
-              document.querySelector("#commentPopup .commentPopupText")
-                ?.textContent
+          await waitForTextToBe(
+            page,
+            "#commentPopup .commentPopupText",
+            comment
           );
-          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
 
           // Check that the date is preserved
           const dateAfter = await page.evaluate(
@@ -1119,12 +1111,11 @@ describe("Comment", () => {
           // Check that the comment is restored by hovering to show the popup
           await page.hover(`${editorSelector} .annotationCommentButton`);
           await page.waitForSelector("#commentPopup", { visible: true });
-          const popupText = await page.evaluate(
-            () =>
-              document.querySelector("#commentPopup .commentPopupText")
-                ?.textContent
+          await waitForTextToBe(
+            page,
+            "#commentPopup .commentPopupText",
+            comment
           );
-          expect(popupText).withContext(`In ${browserName}`).toEqual(comment);
         })
       );
     });

@@ -20,6 +20,7 @@ import {
   getRect,
   getSelector,
   loadAndWait,
+  waitForTextToBe,
   waitForTooltipToBe,
 } from "./test_utils.mjs";
 
@@ -758,11 +759,11 @@ describe("ResetForm action", () => {
       it("must check that the text under a highlight annotation exist in the DOM", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
-            const text = await page.$eval(
+            await waitForTextToBe(
+              page,
               `${getAnnotationSelector("56R")} mark`,
-              el => el.textContent
+              "Languages"
             );
-            expect(text).withContext(`In ${browserName}`).toEqual("Languages");
           })
         );
       });
@@ -770,11 +771,11 @@ describe("ResetForm action", () => {
       it("must check that the text under an underline annotation exist in the DOM", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
-            const text = await page.$eval(
+            await waitForTextToBe(
+              page,
               `${getAnnotationSelector("58R")} u`,
-              el => el.textContent
+              "machine"
             );
-            expect(text).withContext(`In ${browserName}`).toEqual("machine");
           })
         );
       });
@@ -782,13 +783,12 @@ describe("ResetForm action", () => {
       it("must check that the text under a squiggly annotation exist in the DOM", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
-            const text = await page.$eval(
+            await waitForTextToBe(
+              page,
               `${getAnnotationSelector("60R")} u`,
-              el => el.textContent
+              `paths through nested loops. We have implemented
+a dynamic compiler for JavaScript based on our`
             );
-            expect(text).withContext(`In ${browserName}`)
-              .toEqual(`paths through nested loops. We have implemented
-a dynamic compiler for JavaScript based on our`);
           })
         );
       });
@@ -796,13 +796,11 @@ a dynamic compiler for JavaScript based on our`);
       it("must check that the text under a strikeout annotation exist in the DOM", async () => {
         await Promise.all(
           pages.map(async ([browserName, page]) => {
-            const text = await page.$eval(
+            await waitForTextToBe(
+              page,
               `${getAnnotationSelector("65R")} s`,
-              el => el.textContent
+              "Experimentation,"
             );
-            expect(text)
-              .withContext(`In ${browserName}`)
-              .toEqual("Experimentation,");
           })
         );
       });
