@@ -34,6 +34,7 @@ import {
   waitAndClick,
   waitForBrowserTrip,
   waitForSerialized,
+  waitForTextToBe,
   waitForTimeout,
   waitForTooltipToBe,
 } from "./test_utils.mjs";
@@ -1056,21 +1057,11 @@ describe("Comment", () => {
 
           await page.waitForSelector("#commentPopup", { visible: true });
           await waitAndClick(page, "button.commentPopupDelete");
-
-          await page.waitForFunction(() => {
-            const messageElement = document.querySelector(
-              "#editorUndoBarMessage"
-            );
-            return messageElement && messageElement.textContent.trim() !== "";
-          });
-          const message = await page.waitForSelector("#editorUndoBarMessage");
-          const messageText = await page.evaluate(
-            el => el.textContent,
-            message
+          await waitForTextToBe(
+            page,
+            "#editorUndoBarMessage",
+            "Comment removed"
           );
-          expect(messageText)
-            .withContext(`In ${browserName}`)
-            .toContain("Comment removed");
         })
       );
     });

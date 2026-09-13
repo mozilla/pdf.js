@@ -16,6 +16,7 @@
 import {
   awaitPromise,
   closePages,
+  FSI,
   getAnnotationSelector,
   getEditorSelector,
   getFirstSerialized,
@@ -31,6 +32,7 @@ import {
   kbSave,
   kbUndo,
   loadAndWait,
+  PDI,
   scrollIntoView,
   selectEditor,
   selectEditors,
@@ -42,6 +44,7 @@ import {
   waitForPointerUp,
   waitForSelectedEditor,
   waitForSerialized,
+  waitForTextToBe,
   waitForTimeout,
 } from "./test_utils.mjs";
 import fs from "fs";
@@ -2401,20 +2404,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.deleteButton`);
           await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
-
-          await page.waitForFunction(() => {
-            const messageElement = document.querySelector(
-              "#editorUndoBarMessage"
-            );
-            return messageElement && messageElement.textContent.trim() !== "";
-          });
-
-          const message = await page.waitForSelector("#editorUndoBarMessage");
-          const messageText = await page.evaluate(
-            el => el.textContent,
-            message
+          await waitForTextToBe(
+            page,
+            "#editorUndoBarMessage",
+            "Highlight removed"
           );
-          expect(messageText).toContain("Highlight removed");
         })
       );
     });
@@ -2431,25 +2425,11 @@ describe("Highlight Editor", () => {
           await page.waitForSelector(`${editorSelector} button.deleteButton`);
           await page.click(`${editorSelector} button.deleteButton`);
           await waitForSerialized(page, 0);
-
-          await page.waitForFunction(() => {
-            const messageElement = document.querySelector(
-              "#editorUndoBarMessage"
-            );
-            return messageElement && messageElement.textContent.trim() !== "";
-          });
-
-          const message = await page.waitForSelector("#editorUndoBarMessage");
-          const messageText = await page.evaluate(
-            el => el.textContent,
-            message
+          await waitForTextToBe(
+            page,
+            "#editorUndoBarMessage",
+            `${FSI}2${PDI} annotations removed`
           );
-
-          // Cleans the message text by removing all non-ASCII characters.
-          // It eliminates any invisible characters such as directional marks
-          // that interfere with string comparisons
-          const cleanMessage = messageText.replaceAll(/\P{ASCII}/gu, "");
-          expect(cleanMessage).toContain(`2 annotations removed`);
         })
       );
     });
