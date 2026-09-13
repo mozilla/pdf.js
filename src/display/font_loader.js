@@ -206,10 +206,7 @@ class FontLoader {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
         throw new Error("Not implemented: async font loading");
       }
-      await new Promise(resolve => {
-        const request = this._queueLoadingCallback(resolve);
-        this._prepareFontLoadEvent(font, request);
-      });
+      await this.#testFontLoaded(font);
       // The font was, asynchronously, loaded.
     }
   }
@@ -239,12 +236,12 @@ class FontLoader {
     );
   }
 
-  _queueLoadingCallback(callback) {
+  #testFontLoaded(font) {
     if (
       typeof PDFJSDev !== "undefined" &&
       PDFJSDev.test("MOZCENTRAL || WORKER_THREAD")
     ) {
-      throw new Error("Not implemented: _queueLoadingCallback");
+      throw new Error("Not implemented: #testFontLoaded");
     }
 
     function completeRequest() {
@@ -254,27 +251,17 @@ class FontLoader {
       // Sending all completed requests in order of how they were queued.
       while (loadingRequests.length > 0 && loadingRequests[0].done) {
         const otherRequest = loadingRequests.shift();
-        setTimeout(otherRequest.callback, 0);
+        setTimeout(otherRequest.resolve, 0);
       }
     }
 
     const { loadingRequests } = this;
+    const { promise, resolve } = Promise.withResolvers();
     const request = {
       done: false,
-      complete: completeRequest,
-      callback,
+      resolve,
     };
     loadingRequests.push(request);
-    return request;
-  }
-
-  _prepareFontLoadEvent(font, request) {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      PDFJSDev.test("MOZCENTRAL || WORKER_THREAD")
-    ) {
-      throw new Error("Not implemented: _prepareFontLoadEvent");
-    }
 
     // This is a CFF font with 1 glyph for '.' that fills its entire width
     // and height.
@@ -403,9 +390,11 @@ class FontLoader {
 
     isFontReady(loadTestFontId, () => {
       div.remove();
-      request.complete();
+      completeRequest();
     });
     /** Hack end */
+
+    return promise;
   }
 }
 
