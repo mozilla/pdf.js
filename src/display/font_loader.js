@@ -194,7 +194,7 @@ class FontLoader {
 
     // !this.isFontLoadingAPISupported
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
-      throw new Error("Not implemented: sync font loading");
+      throw new Error("Not implemented: DOM font loading");
     }
     const rule = font.createFontFaceRule();
     if (rule) {
@@ -202,9 +202,6 @@ class FontLoader {
 
       if (this.isSyncFontLoadingSupported) {
         return; // The font was, synchronously, loaded.
-      }
-      if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-        throw new Error("Not implemented: async font loading");
       }
       await this.#testFontLoaded(font);
       // The font was, asynchronously, loaded.
