@@ -421,8 +421,7 @@ class IdentityCMap extends CMap {
   }
 
   getMap() {
-    // Sometimes identity maps must be instantiated, but it's rare.
-    return Array.from({ length: 0x10000 }, (_, i) => i);
+    unreachable("should not call getMap");
   }
 
   get length() {
