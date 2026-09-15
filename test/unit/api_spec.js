@@ -4515,6 +4515,38 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
+    it("gets text content, with no extra spaces (issue 21890)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("bug1108301.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("কিপরাইটঃ- এেসা দব্ীন িশিখ পর্কাশনী");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with the advance of a glyph containing a combining mark (issue 21890)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue21890.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(items).toEqual([
+        jasmine.objectContaining({
+          str: "सप्रणाम",
+          width: 109.12,
+        }),
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with merged spaces (issue 13201)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue13201.pdf"));
       const pdfDoc = await loadingTask.promise;
