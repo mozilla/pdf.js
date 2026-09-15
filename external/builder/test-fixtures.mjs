@@ -26,6 +26,7 @@ files.forEach(expectationFilename => {
   const defines = {
     TRUE: true,
     FALSE: false,
+    GECKOVIEW: true,
   };
   let out;
   try {
