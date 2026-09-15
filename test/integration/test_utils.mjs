@@ -1114,11 +1114,13 @@ function isCanvasMonochrome(page, pageNumber, rectangle, color) {
       const canvasRect = canvas.getBoundingClientRect();
       const ctx = canvas.getContext("2d");
       rect ||= canvasRect;
+      // The canvas is scaled by the devicePixelRatio: convert from CSS pixels.
+      const scale = canvas.width / canvasRect.width;
       const { data } = ctx.getImageData(
-        rect.x - canvasRect.x,
-        rect.y - canvasRect.y,
-        rect.width,
-        rect.height
+        Math.round((rect.x - canvasRect.x) * scale),
+        Math.round((rect.y - canvasRect.y) * scale),
+        Math.round(rect.width * scale),
+        Math.round(rect.height * scale)
       );
       return new Uint32Array(data.buffer).every(x => x === col);
     },
