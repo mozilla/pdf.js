@@ -286,7 +286,7 @@ describe("FreeText Editor", () => {
           await switchToFreeText(page);
 
           const rect = await getRect(page, ".annotationEditorLayer");
-          for (const n of [0, 1, 2]) {
+          for (const n of [1, 2, 3]) {
             const editorSelector = await createFreeTextEditor({
               page,
               x: rect.x + 100 * n,
