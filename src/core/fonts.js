@@ -463,7 +463,7 @@ function convertCidString(charCode, cid, shouldThrow = false) {
  * 'charCodeToGlyphId' - maps the new font char codes to glyph ids
  */
 function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
-  const newMap = Object.create(null);
+  const newMap = new Map();
   const toUnicodeExtraMap = new Map();
   const toFontChar = [];
   const usedGlyphIds = new Set();
@@ -476,11 +476,9 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
     (PRIVATE_USE_AREAS[1][0] <= code && code <= PRIVATE_USE_AREAS[1][1]);
   let LIGATURE_TO_UNICODE = null;
 
-  for (const originalCharCode in charCodeToGlyphId) {
-    let glyphId = charCodeToGlyphId[originalCharCode];
-    // For missing glyphs don't create the mappings so the glyph isn't
-    // drawn.
-    if (!hasGlyph(glyphId)) {
+  for (const [charCode, gid] of charCodeToGlyphId) {
+    // For missing glyphs don't create the mappings so the glyph isn't drawn.
+    if (!hasGlyph(gid)) {
       continue;
     }
     if (nextAvailableFontCharCode > privateUseOffetEnd) {
@@ -493,9 +491,7 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
       privateUseOffetEnd = PRIVATE_USE_AREAS[privateUseAreaIndex][1];
     }
     const fontCharCode = nextAvailableFontCharCode++;
-    if (glyphId === 0) {
-      glyphId = newGlyphZeroId;
-    }
+    const glyphId = gid === 0 ? newGlyphZeroId : gid;
 
     // Fix for bug 1778484:
     // The charcodes are moved into a private use area to fix some rendering
@@ -503,7 +499,7 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
     // to PDF the generated font will contain wrong chars. We can avoid that by
     // adding the unicode to the cmap and the print backend will then map the
     // glyph ids to the correct unicode.
-    let unicode = toUnicode.get(originalCharCode);
+    let unicode = toUnicode.get(charCode);
     if (typeof unicode === "string") {
       if (unicode.length === 1) {
         unicode = unicode.codePointAt(0);
@@ -528,8 +524,8 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
       usedGlyphIds.add(glyphId);
     }
 
-    newMap[fontCharCode] = glyphId;
-    toFontChar[originalCharCode] = fontCharCode;
+    newMap.set(fontCharCode, glyphId);
+    toFontChar[charCode] = fontCharCode;
   }
   return {
     toFontChar,
@@ -539,16 +535,16 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   };
 }
 
-function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
+function getRanges(charCodeToGlyphId, toUnicodeExtraMap, numGlyphs) {
   // Array.sort() sorts by characters, not numerically, so convert to an
   // array of characters.
   const codes = [];
-  for (const charCode in glyphs) {
+  for (const [charCode, glyphId] of charCodeToGlyphId) {
     // Remove an invalid glyph ID mappings to make OTS happy.
-    if (glyphs[charCode] >= numGlyphs) {
+    if (glyphId >= numGlyphs) {
       continue;
     }
-    codes.push({ fontCharCode: charCode | 0, glyphId: glyphs[charCode] });
+    codes.push({ fontCharCode: charCode, glyphId });
   }
   if (toUnicodeExtraMap) {
     for (const [unicode, glyphId] of toUnicodeExtraMap) {
@@ -587,8 +583,8 @@ function getRanges(glyphs, toUnicodeExtraMap, numGlyphs) {
   return ranges;
 }
 
-function createCmapTable(glyphs, toUnicodeExtraMap, numGlyphs) {
-  const ranges = getRanges(glyphs, toUnicodeExtraMap, numGlyphs);
+function createCmapTable(charCodeToGlyphId, toUnicodeExtraMap, numGlyphs) {
+  const ranges = getRanges(charCodeToGlyphId, toUnicodeExtraMap, numGlyphs);
   const hasNonBmp = ranges.at(-1)[1] > 0xffff;
 
   let i, ii, j, jj;
@@ -797,7 +793,7 @@ function validateOS2Table(os2, file) {
   return true;
 }
 
-function createOS2Table(properties, charstrings, override) {
+function createOS2Table(properties, charCodeToGlyphId, override) {
   override ||= {
     unitsPerEm: 0,
     yMax: 0,
@@ -815,9 +811,8 @@ function createOS2Table(properties, charstrings, override) {
   let lastCharIndex = 0;
   let position = -1;
 
-  if (charstrings) {
-    for (let code in charstrings) {
-      code |= 0;
+  if (charCodeToGlyphId) {
+    for (const code of charCodeToGlyphId.keys()) {
       if (firstCharIndex > code || !firstCharIndex) {
         firstCharIndex = code;
       }
@@ -3028,7 +3023,7 @@ class Font {
       data: createPostTable(properties),
     };
 
-    const charCodeToGlyphId = Object.create(null);
+    const charCodeToGlyphId = new Map();
 
     // Helper function to try to skip mapping of empty glyphs.
     function hasGlyph(glyphId) {
@@ -3054,7 +3049,7 @@ class Font {
         }
 
         if (glyphId >= 0 && glyphId < numGlyphs && hasGlyph(glyphId)) {
-          charCodeToGlyphId[charCode] = glyphId;
+          charCodeToGlyphId.set(charCode, glyphId);
         }
       });
     } else {
@@ -3137,14 +3132,14 @@ class Font {
             if (mapping.charCode !== unicodeOrCharCode) {
               continue;
             }
-            charCodeToGlyphId[charCode] = mapping.glyphId;
+            charCodeToGlyphId.set(charCode, mapping.glyphId);
             break;
           }
         }
       } else if (cmapPlatformId === 0) {
         // Default Unicode semantics, use the charcodes as is.
         for (const mapping of cmapMappings) {
-          charCodeToGlyphId[mapping.charCode] = mapping.glyphId;
+          charCodeToGlyphId.set(mapping.charCode, mapping.glyphId);
         }
         // Always prefer the BaseEncoding/Differences arrays, when they exist
         // (fixes issue13433.pdf).
@@ -3163,13 +3158,13 @@ class Font {
           if (charCode >= 0xf000 && charCode <= 0xf0ff) {
             charCode &= 0xff;
           }
-          charCodeToGlyphId[charCode] = mapping.glyphId;
+          charCodeToGlyphId.set(charCode, mapping.glyphId);
         }
       } else {
         // When there is only a (1, 0) cmap table, the char code is a single
         // byte and it is used directly as the char code.
         for (const mapping of cmapMappings) {
-          charCodeToGlyphId[mapping.charCode] = mapping.glyphId;
+          charCodeToGlyphId.set(mapping.charCode, mapping.glyphId);
         }
       }
 
@@ -3179,7 +3174,7 @@ class Font {
         (baseEncoding.length || this.differences.length)
       ) {
         for (let i = 0; i < 256; ++i) {
-          if (!forcePostTable && charCodeToGlyphId[i] !== undefined) {
+          if (!forcePostTable && charCodeToGlyphId.has(i)) {
             continue;
           }
           const glyphName = this.differences[i] || baseEncoding[i];
@@ -3188,7 +3183,7 @@ class Font {
           }
           const glyphId = properties.glyphNames.indexOf(glyphName);
           if (glyphId > 0 && hasGlyph(glyphId)) {
-            charCodeToGlyphId[i] = glyphId;
+            charCodeToGlyphId.set(i, glyphId);
           }
         }
       }
@@ -3204,16 +3199,16 @@ class Font {
       // never be rendered.
       if (
         !properties.isInternalFont &&
-        charCodeToGlyphId[0] === undefined &&
+        !charCodeToGlyphId.has(0) &&
         hasGlyph(0)
       ) {
-        charCodeToGlyphId[0] = 0;
+        charCodeToGlyphId.set(0, 0);
       }
     }
 
-    if (charCodeToGlyphId.length === 0) {
+    if (!charCodeToGlyphId.size) {
       // defines at least one glyph
-      charCodeToGlyphId[0] = 0;
+      charCodeToGlyphId.set(0, 0);
     }
 
     // Typically glyph 0 is duplicated and the mapping must be updated, but if
@@ -3317,22 +3312,24 @@ class Font {
 
     function getCharCodes(charCodeToGlyphId, glyphId) {
       let charCodes = null;
-      for (const charCode in charCodeToGlyphId) {
-        if (glyphId === charCodeToGlyphId[charCode]) {
-          (charCodes ||= []).push(charCode | 0);
+      for (const [charCode, gid] of charCodeToGlyphId) {
+        if (glyphId === gid) {
+          (charCodes ??= []).push(charCode);
         }
       }
       return charCodes;
     }
 
     function createCharCode(charCodeToGlyphId, glyphId) {
-      for (const charCode in charCodeToGlyphId) {
-        if (glyphId === charCodeToGlyphId[charCode]) {
-          return charCode | 0;
+      for (const [charCode, gid] of charCodeToGlyphId) {
+        if (glyphId === gid) {
+          return charCode;
         }
       }
-      newMapping.charCodeToGlyphId[newMapping.nextAvailableFontCharCode] =
-        glyphId;
+      newMapping.charCodeToGlyphId.set(
+        newMapping.nextAvailableFontCharCode,
+        glyphId
+      );
       return newMapping.nextAvailableFontCharCode++;
     }
 
@@ -3362,7 +3359,7 @@ class Font {
         for (const charCode of charCodes) {
           // Find a fontCharCode that maps to the base and accent glyphs.
           // If one doesn't exists, create it.
-          const charCodeToGlyphId = newMapping.charCodeToGlyphId;
+          const { charCodeToGlyphId } = newMapping;
           const baseFontCharCode = createCharCode(
             charCodeToGlyphId,
             baseGlyphId
