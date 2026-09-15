@@ -17,10 +17,10 @@ import {
   awaitPromise,
   clearEditors,
   closePages,
+  commitFreeTextEditor,
   copy,
   copyToClipboard,
-  countSerialized,
-  countStorageEntries,
+  createFreeTextEditor,
   createPromise,
   decodePNG,
   dragAndDrop,
@@ -29,7 +29,6 @@ import {
   getEditors,
   getEditorSelector,
   getFirstSerialized,
-  getNextEditorId,
   getRect,
   getSerialized,
   isCanvasMonochrome,
@@ -68,54 +67,7 @@ const selectAll = selectEditors.bind(null, "freeText");
 
 const clearAll = clearEditors.bind(null, "freeText");
 
-const commit = async page => {
-  await page.keyboard.press("Escape");
-  await page.waitForSelector(".freeTextEditor.selectedEditor .overlay.enabled");
-};
-
 const switchToFreeText = switchToEditor.bind(null, "FreeText");
-
-const cancelFocusIn = async (page, selector) => {
-  page.evaluate(sel => {
-    const el = document.querySelector(sel);
-    el.addEventListener(
-      "focusin",
-      evt => {
-        evt.preventDefault();
-        evt.stopPropagation();
-      },
-      { capture: true, once: true }
-    );
-  }, selector);
-};
-
-const createFreeTextEditor = async ({
-  page,
-  x,
-  y,
-  data = null,
-  noFocusIn = false,
-}) => {
-  const editorSelector = getEditorSelector(await getNextEditorId(page));
-  const serializedCount = await countSerialized(page);
-  const storageEntriesCount = await countStorageEntries(page);
-
-  await page.mouse.click(x, y);
-  await page.waitForSelector(editorSelector, { visible: true });
-  if (data) {
-    await page.type(`${editorSelector} .internal`, data);
-  }
-  if (noFocusIn) {
-    await cancelFocusIn(page, editorSelector);
-  }
-  await commit(page);
-
-  await waitForSelectedEditor(page, editorSelector);
-  await waitForStorageEntries(page, storageEntriesCount + 1);
-  await waitForSerialized(page, serializedCount + 1);
-
-  return editorSelector;
-};
 
 describe("FreeText Editor", () => {
   describe("FreeText", () => {
@@ -154,7 +106,7 @@ describe("FreeText Editor", () => {
           await page.waitForSelector(
             `${editorSelector} .overlay:not(.enabled)`
           );
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
@@ -392,7 +344,7 @@ describe("FreeText Editor", () => {
 
         for (let i = 0; i < 5; i++) {
           await page.type(`${editorSelector} .internal`, "A");
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           if (i < 4) {
             await selectEditor(page, editorSelector, /* count = */ 2);
@@ -456,7 +408,7 @@ describe("FreeText Editor", () => {
         // Add a new A.
         await selectEditor(page, editorSelector, /* count = */ 2);
         await page.type(`${editorSelector} .internal`, "A");
-        await commit(page);
+        await commitFreeTextEditor(page);
 
         text = await getText();
         expect(text).withContext(`In ${browserName}`).toEqual("AA");
@@ -965,7 +917,7 @@ describe("FreeText Editor", () => {
             `${editorSelector} .internal`,
             " and edited in Firefox"
           );
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           const serialized = await getSerialized(page);
           expect(serialized.length).withContext(`In ${browserName}`).toEqual(1);
@@ -1060,7 +1012,7 @@ describe("FreeText Editor", () => {
             `${editorSelector} .internal`,
             " and edited in Firefox"
           );
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           // Disable editing mode.
           await switchToFreeText(page, /* disable = */ true);
@@ -2110,7 +2062,7 @@ describe("FreeText Editor", () => {
           await moveEditor(page, editorSelector, 2, () => kbBigMoveLeft(page));
 
           await page.type(`${editorSelector} .internal`, data);
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           const [newX, newY] = await getFirstSerialized(page, x => x.rect);
           expect(Math.round(newX))
@@ -2613,7 +2565,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.type(`${editorSelector} .internal`, data);
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           let content = await page.$eval(editorSelector, el =>
             el.innerText.trimEnd()
@@ -2632,7 +2584,7 @@ describe("FreeText Editor", () => {
           await moveEditor(page, editorSelector, 5, () => kbBigMoveDown(page));
 
           await page.type(`${editorSelector} .internal`, data);
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           // Unselect.
           await unselectEditor(page, editorSelector);
@@ -2660,7 +2612,7 @@ describe("FreeText Editor", () => {
 
           const data = "Hello PDF.js World !!";
           await page.type(`${editorSelector} .internal`, data);
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           // Unselect.
           await unselectEditor(page, editorSelector);
@@ -2680,7 +2632,7 @@ describe("FreeText Editor", () => {
           );
 
           await page.type(`${editorSelector} .internal`, data);
-          await commit(page);
+          await commitFreeTextEditor(page);
 
           // Unselect.
           await unselectEditor(page, editorSelector);
@@ -3241,7 +3193,7 @@ describe("FreeText Editor", () => {
         const html = await getHTML();
         expect(html).withContext(`In ${browserName}`).toEqual(prevHTML);
 
-        await commit(page);
+        await commitFreeTextEditor(page);
 
         editorSelector = getEditorSelector(1);
         await page.mouse.click(rect.x + 200, rect.y + 200);
@@ -3403,7 +3355,7 @@ describe("FreeText Editor", () => {
             await page.keyboard.press("Enter");
             await page.keyboard.up("Shift");
           }
-          await commit(page);
+          await commitFreeTextEditor(page);
           await waitForSerialized(page, 1);
 
           const serialized = await getSerialized(page, x => x.value);
