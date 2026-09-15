@@ -97,6 +97,7 @@ function parseOptions() {
       jobs: { type: "string", short: "j", default: "1" },
       manifestFile: { type: "string", default: "test_manifest.json" },
       masterMode: { type: "boolean", short: "m", default: false },
+      noBrowserDownload: { type: "boolean", default: false },
       noChrome: { type: "boolean", default: false },
       noDownload: { type: "boolean", default: false },
       noFirefox: { type: "boolean", default: false },
@@ -128,6 +129,7 @@ function parseOptions() {
         "  --jobs, -j          Number of parallel tabs per browser. [1]\n" +
         "  --manifestFile      Path to manifest JSON file. [test_manifest.json]\n" +
         "  --masterMode, -m    Run the script in master mode.\n" +
+        "  --noBrowserDownload Use already installed browsers.\n" +
         "  --noChrome          Skip Chrome when running tests.\n" +
         "  --noDownload        Skip downloading of test PDFs.\n" +
         "  --noFirefox         Skip Firefox when running tests.\n" +
@@ -1131,15 +1133,6 @@ async function startBrowser({
 }
 
 async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
-  // Install the browsers.
-  for (const browser of ["firefox@nightly", "chrome@stable"]) {
-    execSync(`npx puppeteer browsers install ${browser}`, { stdio: "inherit" });
-  }
-
-  // Remove old browser revisions from Puppeteer's cache. The commands above can
-  // download new browser revisions, so this prevents the disk from filling up.
-  await puppeteer.trimCache();
-
   const browserNames = ["firefox", "chrome"];
   if (options.noChrome) {
     browserNames.splice(1, 1);
@@ -1147,6 +1140,19 @@ async function startBrowsers({ baseUrl, initializeSession, numSessions = 1 }) {
   if (options.noFirefox) {
     browserNames.splice(0, 1);
   }
+
+  if (!options.noBrowserDownload) {
+    for (const browserName of browserNames) {
+      const version = browserName === "firefox" ? "nightly" : "stable";
+      execSync(`npx puppeteer browsers install ${browserName}@${version}`, {
+        stdio: "inherit",
+      });
+    }
+
+    // Remove old browser revisions after installing new ones.
+    await puppeteer.trimCache();
+  }
+
   for (const browserName of browserNames) {
     for (let i = 0; i < numSessions; i++) {
       // When running multiple sessions per browser, append an index suffix to

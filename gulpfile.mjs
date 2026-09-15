@@ -839,6 +839,9 @@ function runTests(testsName, { bot = false } = {}) {
     if (bot) {
       args.push("--strictVerify");
     }
+    if (process.argv.includes("--noBrowserDownload")) {
+      args.push("--noBrowserDownload");
+    }
     if (process.argv.includes("--noChrome") || forceNoChrome) {
       args.push("--noChrome");
     }
@@ -1087,6 +1090,9 @@ function makeRef(done, bot) {
     forceNoChrome = true;
 
     args.push("--noPrompts", "--strictVerify");
+  }
+  if (process.argv.includes("--noBrowserDownload")) {
+    args.push("--noBrowserDownload");
   }
   if (process.argv.includes("--noChrome") || forceNoChrome) {
     args.push("--noChrome");
