@@ -3154,7 +3154,7 @@ class CanvasGraphics {
   setStrokeRGBColor(opIdx, color) {
     this.dependencyTracker?.recordSimpleData("strokeColor", opIdx);
     this.current.strokeColor = color;
-    this.ctx.strokeStyle = this.#transferColor(color);
+    this.ctx.strokeStyle =  this.#transferColor(color);
     this.current.patternStroke = false;
   }
 
