@@ -372,6 +372,13 @@ class AnnotationEditor {
   }
 
   /**
+   * @returns {number} the z-index used to stack this editor with the others.
+   */
+  get zIndex() {
+    return this.#zIndex;
+  }
+
+  /**
    * This editor will be behind the others.
    */
   setInBackground() {
