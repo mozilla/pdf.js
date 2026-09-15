@@ -51,23 +51,21 @@ class CFFFont {
     const properties = this.properties;
     const { cidToGidMap, cMap } = properties;
     const charsets = cff.charset.charset;
-    let charCodeToGlyphId;
-    let glyphId;
 
     if (properties.composite) {
       let invCidToGidMap;
       if (cidToGidMap?.length > 0) {
-        invCidToGidMap = Object.create(null);
+        invCidToGidMap = new Map();
         for (let i = 0, ii = cidToGidMap.length; i < ii; i++) {
           const gid = cidToGidMap[i];
           if (gid !== undefined) {
-            invCidToGidMap[gid] = i;
+            invCidToGidMap.set(gid, i);
           }
         }
       }
 
-      charCodeToGlyphId = Object.create(null);
-      let charCode;
+      const charCodeToGlyphId = new Map();
+      let charCode, glyphId;
       if (cff.isCIDFont) {
         // If the font is actually a CID font then we should use the charset
         // to map CIDs to GIDs.
@@ -75,7 +73,7 @@ class CFFFont {
           const cid = charsets[glyphId];
           charCode = cMap.charCodeOf(cid);
 
-          if (invCidToGidMap?.[charCode] !== undefined) {
+          if (invCidToGidMap?.has(charCode)) {
             // According to the PDF specification, see Table 117, it's not clear
             // that a /CIDToGIDMap should be used with any non-TrueType fonts,
             // however it's necessary to do so in order to fix issue 15559.
@@ -83,16 +81,16 @@ class CFFFont {
             // It seems, in the CFF-case, that the /CIDToGIDMap needs to be used
             // "inverted" compared to the TrueType-case. Here it thus seem to be
             // a charCode mapping, rather than the normal CID to GID mapping.
-            charCode = invCidToGidMap[charCode];
+            charCode = invCidToGidMap.get(charCode);
           }
-          charCodeToGlyphId[charCode] = glyphId;
+          charCodeToGlyphId.set(charCode, glyphId);
         }
       } else {
         // If it is NOT actually a CID font then CIDs should be mapped
         // directly to GIDs.
         for (glyphId = 0; glyphId < cff.charStrings.count; glyphId++) {
           charCode = cMap.charCodeOf(glyphId);
-          charCodeToGlyphId[charCode] = glyphId;
+          charCodeToGlyphId.set(charCode, glyphId);
         }
       }
       return charCodeToGlyphId;
@@ -102,8 +100,7 @@ class CFFFont {
     if (properties.isInternalFont) {
       encoding = properties.defaultEncoding;
     }
-    charCodeToGlyphId = type1FontGlyphMapping(properties, encoding, charsets);
-    return charCodeToGlyphId;
+    return type1FontGlyphMapping(properties, encoding, charsets);
   }
 
   hasGlyphId(id) {

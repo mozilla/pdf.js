@@ -106,10 +106,10 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
  *   data.
  * @param {Array} glyphNames Array of glyph names where the index is the
  *   glyph ID.
- * @returns {object} A char code to glyph ID map.
+ * @returns {Map} A char code to glyph ID map.
  */
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
-  const charCodeToGlyphId = Object.create(null);
+  const charCodeToGlyphId = new Map();
   let glyphId, charCode, baseEncoding;
   const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
@@ -117,7 +117,10 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
     baseEncoding = builtInEncoding;
     for (charCode = 0; charCode < baseEncoding.length; charCode++) {
       glyphId = glyphNames.indexOf(baseEncoding[charCode]);
-      charCodeToGlyphId[charCode] = glyphId >= 0 ? glyphId : /* notdef = */ 0;
+      charCodeToGlyphId.set(
+        charCode,
+        glyphId >= 0 ? glyphId : /* notdef = */ 0
+      );
     }
   } else if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
@@ -125,12 +128,15 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
     baseEncoding = getEncoding(properties.baseEncodingName);
     for (charCode = 0; charCode < baseEncoding.length; charCode++) {
       glyphId = glyphNames.indexOf(baseEncoding[charCode]);
-      charCodeToGlyphId[charCode] = glyphId >= 0 ? glyphId : /* notdef = */ 0;
+      charCodeToGlyphId.set(
+        charCode,
+        glyphId >= 0 ? glyphId : /* notdef = */ 0
+      );
     }
   } else if (isSymbolicFont) {
     // For a symbolic font the encoding should be the fonts built-in encoding.
     for (charCode in builtInEncoding) {
-      charCodeToGlyphId[charCode] = builtInEncoding[charCode];
+      charCodeToGlyphId.set(+charCode, builtInEncoding[charCode]);
     }
   } else {
     // For non-symbolic fonts that don't have a base encoding the standard
@@ -138,7 +144,10 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
     baseEncoding = StandardEncoding;
     for (charCode = 0; charCode < baseEncoding.length; charCode++) {
       glyphId = glyphNames.indexOf(baseEncoding[charCode]);
-      charCodeToGlyphId[charCode] = glyphId >= 0 ? glyphId : /* notdef = */ 0;
+      charCodeToGlyphId.set(
+        charCode,
+        glyphId >= 0 ? glyphId : /* notdef = */ 0
+      );
     }
   }
 
@@ -158,7 +167,10 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
           glyphId = glyphNames.indexOf(standardGlyphName);
         }
       }
-      charCodeToGlyphId[charCode] = glyphId >= 0 ? glyphId : /* notdef = */ 0;
+      charCodeToGlyphId.set(
+        +charCode,
+        glyphId >= 0 ? glyphId : /* notdef = */ 0
+      );
     }
   }
   return charCodeToGlyphId;

@@ -269,7 +269,7 @@ class Type1Font {
     const charstrings = this.charstrings;
 
     if (properties.composite) {
-      const charCodeToGlyphId = Object.create(null);
+      const charCodeToGlyphId = new Map();
       // Map CIDs directly to GIDs.
       for (
         let glyphId = 0, charstringsLen = charstrings.length;
@@ -278,7 +278,7 @@ class Type1Font {
       ) {
         const charCode = properties.cMap.charCodeOf(glyphId);
         // Add 1 because glyph 0 is duplicated.
-        charCodeToGlyphId[charCode] = glyphId + 1;
+        charCodeToGlyphId.set(charCode, glyphId + 1);
       }
       return charCodeToGlyphId;
     }
