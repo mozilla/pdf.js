@@ -628,6 +628,24 @@ function createWorkerBundle(defines) {
     .pipe(webpack2Stream(workerFileConfig));
 }
 
+function createRendererWorkerBundle(defines) {
+  const rendererWorkerDefines = {
+    ...defines,
+    WORKER_THREAD: true,
+  };
+  const rendererWorkerFileConfig = createWebpackConfig(rendererWorkerDefines, {
+    filename: rendererWorkerDefines.MINIFIED
+      ? "pdf.renderer.min.mjs"
+      : "pdf.renderer.mjs",
+    library: {
+      type: "module",
+    },
+  });
+  return gulp
+    .src("./src/pdf.renderer.js", { encoding: false })
+    .pipe(webpack2Stream(rendererWorkerFileConfig));
+}
+
 function createWebBundle(defines, options) {
   const viewerFileConfig = createWebpackConfig(defines, {
     filename: "viewer.mjs",
@@ -1443,6 +1461,7 @@ function buildGeneric(defines, dir) {
   return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createRendererWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createWebBundle(defines).pipe(gulp.dest(dir + "web")),
     gulp
@@ -1587,6 +1606,7 @@ function buildMinified(defines, dir) {
   return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createRendererWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
     createImageDecodersBundle({ ...defines, IMAGE_DECODERS: true }).pipe(
       gulp.dest(dir + "image_decoders")
@@ -1717,6 +1737,10 @@ async function buildMozcentral(changedFiles = null) {
       create: () => createScriptingBundle(defines),
     },
     { bundle: "pdf.worker.mjs", create: () => createWorkerBundle(defines) },
+    {
+      bundle: "pdf.renderer.mjs",
+      create: () => createRendererWorkerBundle(defines),
+    },
     {
       files: /^src\/pdf\.sandbox\.external\.js$/,
       create: () => createSandboxExternal(defines),
@@ -2155,6 +2179,9 @@ gulp.task(
         createWorkerBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
+        createRendererWorkerBundle(defines).pipe(
+          gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
+        ),
         createSandboxBundle(defines).pipe(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "build")
         ),
@@ -2348,7 +2375,7 @@ function buildLib(defines, dir) {
     gulp.src(
       [
         "src/{core,display,shared}/**/*.js",
-        "src/{pdf,pdf.image_decoders,pdf.worker}.js",
+        "src/{pdf,pdf.image_decoders,pdf.worker,pdf.renderer}.js",
       ],
       { base: "src/", encoding: false, sourcemaps: enableSourceMaps }
     ),
@@ -3207,6 +3234,7 @@ function buildInternalViewer(defines, dir) {
   return ordered([
     createMainBundle(defines).pipe(gulp.dest(dir + "build")),
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
+    createRendererWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createInternalViewerBundle(defines).pipe(gulp.dest(dir + "web")),
     preprocessHTML("web/internal/debugger.html", defines).pipe(
       gulp.dest(dir + "web")
@@ -3425,8 +3453,10 @@ gulp.task(
         gulp
           .src(
             [
-              GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
-              GENERIC_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs.map",
+              GENERIC_DIR +
+                "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.mjs",
+              GENERIC_DIR +
+                "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.mjs.map",
             ],
             { encoding: false }
           )
@@ -3434,16 +3464,22 @@ gulp.task(
         gulp
           .src(
             [
-              GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs",
-              GENERIC_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.mjs.map",
+              GENERIC_LEGACY_DIR +
+                "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.mjs",
+              GENERIC_LEGACY_DIR +
+                "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.mjs.map",
             ],
             { encoding: false }
           )
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
         gulp
-          .src(MINIFIED_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.min.mjs", {
-            encoding: false,
-          })
+          .src(
+            MINIFIED_DIR +
+              "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.min.mjs",
+            {
+              encoding: false,
+            }
+          )
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
           .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.min.mjs", {
@@ -3452,7 +3488,8 @@ gulp.task(
           .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
         gulp
           .src(
-            MINIFIED_LEGACY_DIR + "build/{pdf,pdf.worker,pdf.sandbox}.min.mjs",
+            MINIFIED_LEGACY_DIR +
+              "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.min.mjs",
             { encoding: false }
           )
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),

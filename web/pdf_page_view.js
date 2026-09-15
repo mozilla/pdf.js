@@ -1054,6 +1054,7 @@ class PDFPageView extends BasePDFPageView {
       isEditing: this.#isEditing,
       recordOperations,
       recordImages,
+      partialFrames: true,
     };
   }
 
