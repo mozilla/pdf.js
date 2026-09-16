@@ -126,6 +126,9 @@ const TEXT_CHUNK_BATCH_SIZE = 10;
 
 const deferred = Promise.resolve();
 
+// Callback function used when validating operation arguments.
+const argIsDict = arg => arg instanceof Dict;
+
 // Convert PDF blend mode names to HTML5 blend mode names.
 function normalizeBlendMode(value, parsingArray = false) {
   if (Array.isArray(value)) {
@@ -2339,14 +2342,14 @@ class PartialEvaluator {
 
             break;
           case OPS.beginMarkedContent:
-            if (args?.some(arg => arg instanceof Dict)) {
+            if (args?.some(argIsDict)) {
               warn(`getOperatorList - ignoring operator: ${fn}`);
               continue;
             }
             markedContentLevel++;
             break;
           case OPS.endMarkedContent:
-            if (args?.some(arg => arg instanceof Dict)) {
+            if (args?.some(argIsDict)) {
               warn(`getOperatorList - ignoring operator: ${fn}`);
               continue;
             }
@@ -2357,7 +2360,7 @@ class PartialEvaluator {
             break;
           default:
             // Avoid postMessage errors from `Dict` arguments.
-            if (args?.some(arg => arg instanceof Dict)) {
+            if (args?.some(argIsDict)) {
               warn(`getOperatorList - ignoring operator: ${fn}`);
               continue;
             }
