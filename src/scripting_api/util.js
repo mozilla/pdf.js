@@ -260,7 +260,7 @@ class Util extends PDFObject {
     const patterns =
       /(mmmm|mmm|mm|m|dddd|ddd|dd|d|yyyy|yy|HH|H|hh|h|MM|M|ss|s|tt|t|\\.)/g;
     return cFormat.replaceAll(patterns, (_, pattern) =>
-      pattern in handlers ? handlers[pattern](data) : pattern.charCodeAt(1)
+      pattern in handlers ? handlers[pattern](data) : pattern.charAt(1)
     );
   }
 
