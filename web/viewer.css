@@ -388,6 +388,8 @@ body {
   border-radius: 0;
   border-inline: none;
   border-block-start: none;
+  --message-bar-icon-container-border-radius-start-start: 0;
+  --message-bar-icon-container-border-radius-end-start: 0;
   font: message-box;
   font-size: var(--font-size-root);
 
