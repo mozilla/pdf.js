@@ -521,14 +521,22 @@ const PDFViewerApplication = {
           return;
         }
 
-        featuresNotification.addEventListener(
-          "click",
-          event => {
-            if (!event.target.closest("a")) {
-              return;
-            }
-            event.preventDefault();
+        // The link has no href on purpose: about:pdf cannot be loaded from
+        // content, so the parent process opens it when asked (bug 2071624).
+        const openFeatures = event => {
+          if (event.target.closest("a")) {
             externalServices.openAboutPdfFeatures();
+          }
+        };
+        featuresNotification.addEventListener("click", openFeatures, {
+          signal: abortSignal,
+        });
+        featuresNotification.addEventListener(
+          "keydown",
+          event => {
+            if (event.key === "Enter") {
+              openFeatures(event);
+            }
           },
           { signal: abortSignal }
         );

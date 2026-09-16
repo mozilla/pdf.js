@@ -393,10 +393,8 @@ body {
 
   a {
     color: var(--link-color);
-
-    &:visited {
-      color: var(--link-color-visited);
-    }
+    text-decoration: underline;
+    cursor: pointer;
 
     &:hover {
       color: var(--link-color-hover);
