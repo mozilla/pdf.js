@@ -3162,7 +3162,11 @@ class TextWidgetAnnotation extends WidgetAnnotation {
         if (lastSpacePosInStringStart !== -1) {
           chunks.push(line.substring(startChunk, lastSpacePosInStringEnd));
           startChunk = lastSpacePosInStringEnd;
-          i = lastSpacePos + 1;
+          // Resume at the space itself: the loop's own increment then lands on
+          // the first glyph of the new chunk, so its width is measured. Setting
+          // `lastSpacePos + 1` here skips that glyph, leaving the chunk one
+          // glyph of width short and letting it overflow `width`.
+          i = lastSpacePos;
           lastSpacePosInStringStart = -1;
           currentWidth = 0;
         } else {
