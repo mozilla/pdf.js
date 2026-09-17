@@ -73,6 +73,18 @@ describe("XML", function () {
       expect(getAttr("c[3]")).toEqual("101112");
     });
 
+    it("should search a node whose name contains a dot", function () {
+      const xml = `<a><b><c.d e="123"/></b></a>`;
+      const root = new SimpleXMLParser({ hasAttributes: true }).parseFromString(
+        xml
+      ).documentElement;
+      // A field name containing a dot is escaped in the fully qualified name,
+      // so this path names two components and not three.
+      expect(
+        root.searchNode(parseXFAPath("b.c\\.d"), 0).attributes[0].value
+      ).toEqual("123");
+    });
+
     it("should dump a xml tree", function () {
       const xml = `
       <a>

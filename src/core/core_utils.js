@@ -342,12 +342,28 @@ function lookupNormalRect(arr, fallback) {
 function parseXFAPath(path) {
   // Anchoring prevents retrying the match at every character.
   const positionPattern = /^(.+)\[(\d+)\]$/;
-  return path.split(".").map(component => {
-    const m = component.match(positionPattern);
+  // A field name may itself contain a dot, which the fully qualified name
+  // escapes as `\.`, so only the unescaped dots separate components.
+  const components = [];
+  let start = 0;
+  for (let i = 0, ii = path.length; i < ii; i++) {
+    const char = path.charCodeAt(i);
+    if (char === 0x5c /* \ */) {
+      i++;
+    } else if (char === 0x2e /* . */) {
+      components.push(path.substring(start, i));
+      start = i + 1;
+    }
+  }
+  components.push(path.substring(start));
+
+  return components.map(component => {
+    const name = component.replaceAll("\\.", ".");
+    const m = name.match(positionPattern);
     if (m) {
       return { name: m[1], pos: parseInt(m[2], 10) };
     }
-    return { name: component, pos: 0 };
+    return { name, pos: 0 };
   });
 }
 
