@@ -1,0 +1,23 @@
+.kept-first {
+  color: red;
+}
+
+/* Ignored in GECKOVIEW: begin */
+.dropped-first {
+  color: green;
+}
+/* Ignored in GECKOVIEW: end */
+
+.kept-second {
+  color: blue;
+}
+
+/* Ignored in GECKOVIEW: begin */
+.dropped-second {
+  color: yellow;
+}
+/* Ignored in GECKOVIEW: end */
+
+.kept-third {
+  color: black;
+}
