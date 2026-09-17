@@ -17,8 +17,9 @@ import { ToUnicodeMap } from "../../src/core/to_unicode_map.js";
 
 describe("ToUnicodeMap", () => {
   it("should correctly map Extension B characters using codePointAt", () => {
-    const cmap = [];
-    cmap[0x20] = "\uD840\uDC00"; // Example Extension B character
+    const cmap = new Map([
+      [0x20, "\uD840\uDC00"], // Example Extension B character
+    ]);
     const toUnicodeMap = new ToUnicodeMap(cmap);
 
     const expected = 0x20000; // Unicode code point for the character
