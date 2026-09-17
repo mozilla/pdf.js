@@ -16,48 +16,44 @@
 import { unreachable } from "../shared/util.js";
 
 class ToUnicodeMap {
-  constructor(cmap = []) {
-    // The elements of this._map can be integers or strings, depending on how
+  #map;
+
+  constructor(cmap) {
+    // The values of `this.#map` can be integers or strings, depending on how
     // `cmap` was created.
-    this._map = cmap;
+    this.#map = cmap;
   }
 
-  get length() {
-    return this._map.length;
+  get size() {
+    return this.#map.size;
   }
 
   forEach(callback) {
-    for (const charCode in this._map) {
-      callback(+charCode, this._map[charCode].codePointAt(0));
+    for (const [charCode, entry] of this.#map) {
+      callback(charCode, entry.codePointAt(0));
     }
   }
 
   has(i) {
-    return this._map[i] !== undefined;
+    return this.#map.has(i);
   }
 
   get(i) {
-    return this._map[i];
+    return this.#map.get(i);
   }
 
   charCodeOf(value) {
-    // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
-    // are both very sparse and very large (see issue8372.pdf).
-    const map = this._map;
-    if (map.length <= 0x10000) {
-      return map.indexOf(value);
-    }
-    for (const charCode in map) {
-      if (map[charCode] === value) {
-        return charCode | 0;
+    for (const [charCode, entry] of this.#map) {
+      if (entry === value) {
+        return charCode;
       }
     }
     return -1;
   }
 
   amend(map) {
-    for (const charCode in map) {
-      this._map[charCode] = map[charCode];
+    for (const [charCode, entry] of map) {
+      this.#map.set(charCode, entry);
     }
   }
 }
@@ -68,7 +64,7 @@ class IdentityToUnicodeMap {
     this.lastChar = lastChar;
   }
 
-  get length() {
+  get size() {
     return this.lastChar + 1 - this.firstChar;
   }
 

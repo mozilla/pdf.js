@@ -21,7 +21,7 @@ import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
 
-const BUILT_IN_CMAPS = [
+const BUILT_IN_CMAPS = new Set([
   // << Start unicode maps.
   "Adobe-GB1-UCS2",
   "Adobe-CNS1-UCS2",
@@ -192,7 +192,7 @@ const BUILT_IN_CMAPS = [
   "UniKS-UTF8-V",
   "V",
   "WP-Symbol",
-];
+]);
 
 // Heuristic to avoid hanging the worker-thread for CMap data with ridiculously
 // large ranges, such as e.g. 0xFFFFFFFF (fixes issue11922_reduced.pdf).
@@ -200,17 +200,19 @@ const MAX_MAP_RANGE = 2 ** 24 - 1; // = 0xFFFFFF
 
 // CMap, not to be confused with TrueType's cmap.
 class CMap {
+  // Map entries have one of two forms.
+  // - cid chars are 16-bit unsigned integers, stored as integers.
+  // - bf chars are variable-length byte sequences, stored as strings, with
+  //   one byte per character.
+  #map = new Map();
+
   constructor(builtInCMap = false) {
     // Codespace ranges are stored as follows:
     // [[1BytePairs], [2BytePairs], [3BytePairs], [4BytePairs]]
     // where nBytePairs are ranges e.g. [low1, high1, low2, high2, ...]
     this.codespaceRanges = [[], [], [], []];
     this.numCodespaceRanges = 0;
-    // Map entries have one of two forms.
-    // - cid chars are 16-bit unsigned integers, stored as integers.
-    // - bf chars are variable-length byte sequences, stored as strings, with
-    //   one byte per character.
-    this._map = [];
+
     this.name = "";
     this.vertical = false;
     this.useCMap = null;
@@ -227,7 +229,7 @@ class CMap {
       throw new Error("mapCidRange - ignoring data above MAX_MAP_RANGE.");
     }
     while (low <= high) {
-      this._map[low++] = dstLow++;
+      this.#map.set(low++, dstLow++);
     }
   }
 
@@ -237,7 +239,7 @@ class CMap {
     }
     const lastByte = dstLow.length - 1;
     while (low <= high) {
-      this._map[low++] = dstLow;
+      this.#map.set(low++, dstLow);
       // Only the last byte has to be incremented (in the normal case).
       const nextCharCode = dstLow.charCodeAt(lastByte) + 1;
       if (nextCharCode > 0xff) {
@@ -259,62 +261,40 @@ class CMap {
     const ii = array.length;
     let i = 0;
     while (low <= high && i < ii) {
-      this._map[low] = array[i++];
-      ++low;
+      this.#map.set(low++, array[i++]);
     }
   }
 
   // This is used for both bf and cid chars.
   mapOne(src, dst) {
-    this._map[src] = dst;
+    this.#map.set(src, dst);
   }
 
   lookup(code) {
-    return this._map[code];
+    return this.#map.get(code);
   }
 
   contains(code) {
-    return this._map[code] !== undefined;
+    return this.#map.has(code);
   }
 
   forEach(callback) {
-    // Most maps have fewer than 65536 entries, and for those we use normal
-    // array iteration. But really sparse tables are possible -- e.g. with
-    // indices in the *billions*. For such tables we use for..in, which isn't
-    // ideal because it stringifies the indices for all present elements, but
-    // it does avoid iterating over every undefined entry.
-    const map = this._map;
-    const length = map.length;
-    if (length <= 0x10000) {
-      for (let i = 0; i < length; i++) {
-        if (map[i] !== undefined) {
-          callback(i, map[i]);
-        }
-      }
-    } else {
-      for (const i in map) {
-        callback(+i, map[i]);
-      }
+    for (const [charCode, entry] of this.#map) {
+      callback(charCode, entry);
     }
   }
 
   charCodeOf(value) {
-    // `Array.prototype.indexOf` is *extremely* inefficient for arrays which
-    // are both very sparse and very large (see issue8372.pdf).
-    const map = this._map;
-    if (map.length <= 0x10000) {
-      return map.indexOf(value);
-    }
-    for (const charCode in map) {
-      if (map[charCode] === value) {
-        return charCode | 0;
+    for (const [charCode, entry] of this.#map) {
+      if (entry === value) {
+        return charCode;
       }
     }
     return -1;
   }
 
   getMap() {
-    return this._map;
+    return new Map(this.#map);
   }
 
   readCharCode(str, offset, out) {
@@ -356,19 +336,19 @@ class CMap {
     return 1;
   }
 
-  get length() {
-    return this._map.length;
+  get size() {
+    return this.#map.size;
   }
 
   get isIdentityCMap() {
     if (!(this.name === "Identity-H" || this.name === "Identity-V")) {
       return false;
     }
-    if (this._map.length !== 0x10000) {
+    if (this.#map.size !== 0x10000) {
       return false;
     }
     for (let i = 0; i < 0x10000; i++) {
-      if (this._map[i] !== i) {
+      if (this.#map.get(i) !== i) {
         return false;
       }
     }
@@ -424,7 +404,7 @@ class IdentityCMap extends CMap {
     unreachable("should not call getMap");
   }
 
-  get length() {
+  get size() {
     return 0x10000;
   }
 
@@ -670,7 +650,7 @@ async function createBuiltInCMap(name, fetchBuiltInCMap) {
   } else if (name === "Identity-V") {
     return new IdentityCMap(true, 2);
   }
-  if (!BUILT_IN_CMAPS.includes(name)) {
+  if (!BUILT_IN_CMAPS.has(name)) {
     throw new Error("Unknown CMap name: " + name);
   }
   if (!fetchBuiltInCMap) {
