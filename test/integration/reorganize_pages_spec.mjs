@@ -841,6 +841,74 @@ describe("Reorganize Pages View", () => {
       await closePages(pages);
     });
 
+    async function saveAfterDeletingTrailingPages(page, deletedCount) {
+      await waitForThumbnailVisible(page, 1);
+      const pagesNumber = await page.evaluate(
+        () => window.PDFViewerApplication.pdfDocument.numPages
+      );
+      for (let i = pagesNumber - deletedCount + 1; i <= pagesNumber; i++) {
+        const selector = `.thumbnail:has(${getThumbnailSelector(i)}) input`;
+        await scrollIntoView(page, selector);
+        await waitAndClick(page, selector);
+      }
+
+      const handlePagesEdited = await waitForPagesEdited(page, "delete");
+      await waitAndClick(page, "#viewsManagerStatusActionButton");
+      await waitAndClick(page, "#viewsManagerStatusActionDelete");
+      await awaitPromise(handlePagesEdited);
+
+      // Restore the remaining pages' order without restoring the
+      // deleted pages. Drag-and-drop itself is tested separately.
+      await movePages(page, [2], 0);
+      await movePages(page, [2], 0);
+      const expected = Array.from(
+        { length: pagesNumber - deletedCount },
+        (_, i) => i + 1
+      );
+      await waitForHavingContents(page, expected);
+
+      const handleSave = await createPromise(page, resolve => {
+        const app = window.PDFViewerApplication;
+        app.onSavePages = async ({ data }) => resolve(data.pageInfos);
+        // Resolve the original-download path too, so a regression
+        // fails the assertion instead of timing out.
+        app.download = async () => resolve(null);
+      });
+
+      await waitAndClick(page, "#downloadButton");
+      return awaitPromise(handleSave);
+    }
+
+    it("should save after deleting the last page and restoring page order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pageInfos = await saveAfterDeletingTrailingPages(page, 1);
+          const pageIndices = [
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+          ];
+          expect(pageInfos)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              { document: null, includePages: pageIndices, pageIndices },
+            ]);
+        })
+      );
+    });
+
+    it("should save after deleting three trailing pages and restoring order", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const pageInfos = await saveAfterDeletingTrailingPages(page, 3);
+          const pageIndices = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+          expect(pageInfos)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              { document: null, includePages: pageIndices, pageIndices },
+            ]);
+        })
+      );
+    });
+
     it("should check that a save is triggered", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
