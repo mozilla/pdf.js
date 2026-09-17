@@ -29,14 +29,6 @@ import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("CFFParser", function () {
-  function createWithNullProto(obj) {
-    const result = Object.create(null);
-    for (const i in obj) {
-      result[i] = obj[i];
-    }
-    return result;
-  }
-
   // Stub that returns `0` for any privateDict key.
   const privateDictStub = {
     getByName(name) {
@@ -598,7 +590,7 @@ describe("CFFParser", function () {
                               ]);
     parser.bytes = bytes;
     const encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
-    expect(encoding.encoding).toEqual(createWithNullProto({ 0x8: 1 }));
+    expect(encoding.encoding).toEqual({ 0x8: 1 });
   });
 
   it("parses encoding format 1", function () {
@@ -612,9 +604,7 @@ describe("CFFParser", function () {
                               ]);
     parser.bytes = bytes;
     const encoding = parser.parseEncoding(2, {}, new CFFStrings(), null);
-    expect(encoding.encoding).toEqual(
-      createWithNullProto({ 0x7: 0x01, 0x08: 0x02 })
-    );
+    expect(encoding.encoding).toEqual({ 0x7: 0x01, 0x08: 0x02 });
   });
 
   it("parses fdselect format 0", function () {
