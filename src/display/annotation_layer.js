@@ -3847,9 +3847,14 @@ class MediaAnnotationElement extends AnnotationElement {
     }
 
     const { signal } = this.#abortController;
-    const url = URL.createObjectURL(new Blob([content], { type: contentType }));
+    const blob = new Blob([content], { type: contentType });
+    // Blob clears types containing characters outside U+0020-U+007E.
+    if (!/^(?:video|audio)\//.test(blob.type)) {
+      return;
+    }
+    const url = URL.createObjectURL(blob);
     this.#contentUrl = url;
-    const isAudio = contentType.startsWith("audio/");
+    const isAudio = blob.type.startsWith("audio/");
     const media = document.createElement(isAudio ? "audio" : "video");
     this.#media = media;
     media.className = "mediaContent";
