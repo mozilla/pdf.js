@@ -5502,8 +5502,13 @@ class FileAttachmentAnnotation extends MarkupAnnotation {
  * `data.richMedia`, so the display layer can render them with one element.
  */
 class MediaAnnotation extends Annotation {
-  // The MIME types we can build a `<video>`/`<audio>` element for.
-  static #MEDIA_MIME_TYPE_RE = /^(?:video|audio)\//;
+  // Match audio/video names using the RFC 6838 restricted-name syntax.
+  static #MEDIA_MIME_TYPE_RE =
+    /^(?:video|audio)\/[a-z0-9][\w!#$&^.+-]{0,126}$/i;
+
+  // A MediaClip `/CT` string may also contain MIME parameters.
+  static #MEDIA_CONTENT_TYPE_RE =
+    /^(?:video|audio)\/[a-z0-9][\w!#$&^.+-]{0,126}(?: *; *[a-z0-9][\w!#$&^.+-]{0,126} *= *(?:[-!#$%&'*+.^\x60{|}~\w]+|"(?:[\x20\x21\x23-\x5b\x5d-\x7e]|\\[\x20-\x7e])*"))* *$/i;
 
   constructor(params) {
     super(params);
@@ -5560,12 +5565,21 @@ class MediaAnnotation extends Annotation {
    * @param {Dict} assetDict
    * @param {string} filename
    * @param {string | null} [contentType]
+   * @param {boolean} [contentTypeIsName]
    * @returns {string | null}
    */
-  static _getContentType(assetDict, filename, contentType = null) {
+  static _getContentType(
+    assetDict,
+    filename,
+    contentType = null,
+    contentTypeIsName = false
+  ) {
     if (
       typeof contentType === "string" &&
-      MediaAnnotation.#MEDIA_MIME_TYPE_RE.test(contentType)
+      (contentTypeIsName
+        ? MediaAnnotation.#MEDIA_MIME_TYPE_RE
+        : MediaAnnotation.#MEDIA_CONTENT_TYPE_RE
+      ).test(contentType)
     ) {
       return contentType;
     }
@@ -5816,6 +5830,7 @@ class ScreenAnnotation extends MediaAnnotation {
     const contentTypeHint = clip.get("CT");
     let explicitType =
       typeof contentTypeHint === "string" ? contentTypeHint : null;
+    let explicitTypeIsName = false;
 
     let assetDict, filename;
     if (data instanceof BaseStream) {
@@ -5831,6 +5846,7 @@ class ScreenAnnotation extends MediaAnnotation {
         const subtype = data.dict.get("Subtype");
         if (subtype instanceof Name) {
           explicitType = subtype.name;
+          explicitTypeIsName = true;
         }
       }
     } else if (data instanceof Dict) {
@@ -5847,7 +5863,8 @@ class ScreenAnnotation extends MediaAnnotation {
     const contentType = MediaAnnotation._getContentType(
       assetDict,
       filename,
-      explicitType
+      explicitType,
+      explicitTypeIsName
     );
     if (!contentType) {
       return null;
