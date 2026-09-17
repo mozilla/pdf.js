@@ -6,7 +6,13 @@
     "pdfjs/no-unused-custom-properties": [
       true,
       {
-        "ignoreList": ["scale-round-x", "scale-round-y", "input-width"]
+        "ignoreList": [
+          "scale-round-x",
+          "scale-round-y",
+          "input-width",
+          "message-bar-icon-container-border-radius-start-start",
+          "message-bar-icon-container-border-radius-end-start"
+        ]
       }
     ]
   }
