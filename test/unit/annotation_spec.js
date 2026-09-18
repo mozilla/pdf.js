@@ -2060,11 +2060,64 @@ describe("annotation", function () {
           "2 -6.93 Td (a aa aaa ) Tj\n" +
           "0 -8 Td (aaaa aaaaa ) Tj\n" +
           "0 -8 Td (aaaaaa ) Tj\n" +
-          "0 -8 Td (pneumonoultr) Tj\n" +
-          "0 -8 Td (amicroscopi) Tj\n" +
-          "0 -8 Td (csilicovolca) Tj\n" +
-          "0 -8 Td (noconiosis) Tj ET Q EMC"
+          "0 -8 Td (pneumonoul) Tj\n" +
+          "0 -8 Td (tramicrosco) Tj\n" +
+          "0 -8 Td (picsilicovolc) Tj\n" +
+          "0 -8 Td (anoconiosis) Tj ET Q EMC"
       );
+    });
+
+    it("should not emit a line wider than the field (issue with _splitLine)", async function () {
+      // `_splitLine` used to resume measuring one glyph past the start of each
+      // continuation line, so a line could be emitted up to one glyph wider
+      // than the field and the appearance stream would be clipped to the BBox,
+      // dropping that character from the printed page. 32pt of field less 2pt
+      // of horizontal padding on each side leaves 28pt at Helv 5.
+      textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      // Each word ends a line, so every line after the first begins with the
+      // glyph the old code skipped. "www" is the widest available, which makes
+      // the overflow largest and the assertion least sensitive to rounding.
+      annotationStorage.set(annotation.data.id, {
+        value: "aa www aa www aa www aa www aa",
+      });
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        annotationStorage
+      );
+
+      // Helv advances, 1/1000 em, for the characters used above.
+      const widths = { " ": 278, a: 556, w: 722 };
+      const emitted = appearance
+        .split(") Tj")
+        .slice(0, -1)
+        .map(part => part.slice(part.lastIndexOf("(") + 1));
+      expect(emitted.length).toBeGreaterThan(1);
+      for (const line of emitted) {
+        const advances = [...line.trimEnd()].reduce(
+          (sum, ch) => sum + widths[ch],
+          0
+        );
+        expect((advances / 1000) * 5).toBeLessThanOrEqual(28);
+      }
     });
 
     it("should render multiline text in Japanese for printing", async function () {
@@ -2134,7 +2187,8 @@ describe("annotation", function () {
         "0 -8 Td " +
         "(Nulla consectetur, ligula in tincidunt placerat, velit ) Tj\n" +
         "0 -8 Td " +
-        "(augue consectetur orci, sed mattis libero nunc ut massa.) Tj\n" +
+        "(augue consectetur orci, sed mattis libero nunc ut ) Tj\n" +
+        "0 -8 Td (massa.) Tj\n" +
         "0 -8 Td " +
         "(Etiam facilisis tempus interdum.) Tj ET Q EMC";
 
