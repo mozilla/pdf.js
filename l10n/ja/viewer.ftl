@@ -183,23 +183,6 @@ pdfjs-printing-not-ready = 警告: PDF を印刷するための読み込みが�
 
 ## Tooltips and alt text for side panel toolbar buttons
 
-pdfjs-toggle-sidebar-button =
-    .title = サイドバー表示を切り替えます
-pdfjs-toggle-sidebar-notification-button =
-    .title = サイドバー表示を切り替えます (文書に含まれるアウトライン / 添付 / レイヤー)
-pdfjs-toggle-sidebar-button-label = サイドバーの切り替え
-pdfjs-document-outline-button =
-    .title = 文書の目次を表示します (ダブルクリックで項目を開閉します)
-pdfjs-document-outline-button-label = 文書の目次
-pdfjs-attachments-button =
-    .title = 添付ファイルを表示します
-pdfjs-attachments-button-label = 添付ファイル
-pdfjs-layers-button =
-    .title = レイヤーを表示します (ダブルクリックですべてのレイヤーが初期状態に戻ります)
-pdfjs-layers-button-label = レイヤー
-pdfjs-thumbs-button =
-    .title = 縮小版を表示します
-pdfjs-thumbs-button-label = 縮小版
 pdfjs-current-outline-item-button =
     .title = 現在のアウトライン項目を検索
 pdfjs-current-outline-item-button-label = 現在のアウトライン項目
@@ -210,10 +193,6 @@ pdfjs-additional-layers = 追加レイヤー
 
 ## Thumbnails panel item (tooltip and alt text for images)
 
-# Variables:
-#   $page (Number) - the page number
-pdfjs-thumb-page-title =
-    .title = { $page } ページ
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
@@ -521,13 +500,6 @@ pdfjs-editor-alt-text-settings-dialog-label = 画像の代替テキスト設定
 pdfjs-editor-alt-text-settings-automatic-title = 自動代替テキスト
 pdfjs-editor-alt-text-settings-create-model-button-label = 代替テキストを自動生成
 pdfjs-editor-alt-text-settings-create-model-description = 画像が読み込まれない場合や見えない人のために説明を提案します。
-# Variables:
-#   $totalSize (Number) - the total size (in MB) of the AI model.
-pdfjs-editor-alt-text-settings-download-model-label = 代替テキスト AI モデル ({ $totalSize } MB)
-pdfjs-editor-alt-text-settings-ai-model-description = ローカルの端末上で実行されるためデータは非公開になります。代替テキストの自動生成に必要です。
-pdfjs-editor-alt-text-settings-delete-model-button = 削除
-pdfjs-editor-alt-text-settings-download-model-button = ダウンロード
-pdfjs-editor-alt-text-settings-downloading-model-button = ダウンロード中...
 pdfjs-editor-alt-text-settings-editor-title = 代替テキストエディター
 pdfjs-editor-alt-text-settings-show-dialog-button-label = 画像の追加時に代替テキストエディターを表示する
 pdfjs-editor-alt-text-settings-show-dialog-description = すべての画像に代替テキストを追加する助けになります。
