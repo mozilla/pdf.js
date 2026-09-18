@@ -238,6 +238,10 @@ pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Uzzināt vairāk
 
 pdfjs-editor-add-signature-dialog-title = Pievienot parakstu
 
+## Controls
+
+pdfjs-editor-add-signature-image-upload-error-description = Jāpŗabauda savienojums ar internetu vai jāmēģina cits attēls.
+
 ## Dialog buttons
 
 pdfjs-editor-add-signature-add-button = Pievienot

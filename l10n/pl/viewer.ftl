@@ -113,7 +113,7 @@ pdfjs-document-properties-size-kb = { NUMBER($kb, maximumSignificantDigits: 3) }
 #   $b (Number) - the PDF file size in bytes
 pdfjs-document-properties-size-mb = { NUMBER($mb, maximumSignificantDigits: 3) } MB ({ $b } B)
 pdfjs-document-properties-title = Tytuł:
-pdfjs-document-properties-author = Autor:
+pdfjs-document-properties-author = Autorzy:
 pdfjs-document-properties-subject = Temat:
 pdfjs-document-properties-keywords = Słowa kluczowe:
 pdfjs-document-properties-creation-date = Data utworzenia:
@@ -599,7 +599,7 @@ pdfjs-editor-add-signature-clear-button-label = Usuń podpis
 pdfjs-editor-add-signature-clear-button =
     .title = Usuń podpis
 pdfjs-editor-add-signature-save-checkbox = Zachowaj podpis
-pdfjs-editor-add-signature-save-warning-message = Osiągnięto ograniczenie wynoszące pięć zachowanych podpisów. Usuń jeden, aby zachować więcej.
+pdfjs-editor-add-signature-save-warning-message = Przekroczono ograniczenie wynoszące pięć zachowanych podpisów. Usuń jeden, aby zachować więcej.
 pdfjs-editor-add-signature-image-upload-error-title = Nie można przesłać obrazu
 pdfjs-editor-add-signature-image-upload-error-description = Sprawdź połączenie sieciowe lub spróbuj przesłać inny obraz.
 pdfjs-editor-add-signature-image-no-data-error-title = Nie można przekonwertować tego obrazu na podpis

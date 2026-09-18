@@ -184,8 +184,8 @@ pdfjs-printing-not-ready = 경고: 이 PDF를 인쇄를 할 수 있을 정도로
 ## Tooltips and alt text for side panel toolbar buttons
 
 pdfjs-current-outline-item-button =
-    .title = 현재 아웃라인 항목 찾기
-pdfjs-current-outline-item-button-label = 현재 아웃라인 항목
+    .title = 현재 개요 항목 찾기
+pdfjs-current-outline-item-button-label = 현재 개요 항목
 pdfjs-findbar-button =
     .title = 검색
 pdfjs-findbar-button-label = 검색
@@ -624,7 +624,7 @@ pdfjs-editor-add-comment-button =
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
 pdfjs-toggle-views-manager-notification-button =
-    .title = 사이드바 표시/숨기기 (문서에 미리보기/아웃라인/첨부파일/레이어 포함됨)
+    .title = 사이드바 표시/숨기기 (문서에 미리보기/개요/첨부파일/레이어 포함됨)
 pdfjs-toggle-views-manager-button1-label = 페이지 관리
 pdfjs-views-manager-sidebar =
     .aria-label = 사이드바
@@ -634,13 +634,13 @@ pdfjs-views-manager-view-selector-button =
     .title = 보기
 pdfjs-views-manager-view-selector-button-label = 보기
 pdfjs-views-manager-pages-title = 페이지
-pdfjs-views-manager-outlines-title1 = 문서 아웃라인
-    .title = 문서 아웃라인 (더블 클릭해서 모든 항목 펼치기/접기)
+pdfjs-views-manager-outlines-title1 = 문서 개요
+    .title = 문서 개요 (더블 클릭해서 모든 항목 펼치기/접기)
 pdfjs-views-manager-attachments-title = 첨부파일
 pdfjs-views-manager-layers-title1 = 레이어
     .title = 레이어 (더블 클릭해서 모든 레이어를 기본 상태로 재설정)
 pdfjs-views-manager-pages-option-label = 페이지
-pdfjs-views-manager-outlines-option-label = 문서 아웃라인
+pdfjs-views-manager-outlines-option-label = 문서 개요
 pdfjs-views-manager-attachments-option-label = 첨부파일
 pdfjs-views-manager-layers-option-label = 레이어
 pdfjs-views-manager-add-file-button =

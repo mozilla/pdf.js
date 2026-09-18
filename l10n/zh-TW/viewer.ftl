@@ -277,7 +277,7 @@ pdfjs-password-label = 請輸入用來開啟此 PDF 檔案的密碼。
 pdfjs-password-invalid = 密碼不正確，請再試一次。
 pdfjs-password-ok-button = 確定
 pdfjs-password-cancel-button = 取消
-pdfjs-web-fonts-disabled = 已停用網路字型 (Web fonts): 無法使用 PDF 內嵌字型。
+pdfjs-web-fonts-disabled = 已停用網路字型：無法使用 PDF 內嵌字型。
 
 ## Editing
 
