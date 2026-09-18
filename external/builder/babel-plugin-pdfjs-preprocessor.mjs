@@ -289,16 +289,46 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
         },
       },
       MemberExpression(path) {
-        // The Emscripten Compiler (emcc) generates code that allows the caller
-        // to provide the Wasm module (thorugh Module.instantiateWasm), with
-        // a fallback in case .instantiateWasm is not provided.
-        // We always define instantiateWasm, so we can hard-code the check
-        // and let our dead code elimination logic remove the unused fallback.
-        if (
-          path.parentPath.isIfStatement({ test: path.node }) &&
-          path.matchesPattern("Module.instantiateWasm")
-        ) {
+        // WasmImage provides Module.instantiateWasm, so remove Emscripten's
+        // fallback when guarded by this property.
+        if (!path.matchesPattern("Module.instantiateWasm")) {
+          return;
+        }
+        const { parentPath } = path;
+        if (parentPath.isIfStatement({ test: path.node })) {
           path.replaceWith(t.booleanLiteral(true));
+          return;
+        }
+        let initPath = path;
+        while (
+          initPath.parentPath.isSequenceExpression() &&
+          initPath.parentPath.node.expressions.at(-1) === initPath.node
+        ) {
+          initPath = initPath.parentPath;
+        }
+        const declarationPath = initPath.parentPath;
+        if (
+          declarationPath.isVariableDeclarator({ init: initPath.node }) &&
+          t.isIdentifier(declarationPath.node.id)
+        ) {
+          // Emscripten may guard an alias instead.
+          const binding = path.scope.getBinding(declarationPath.node.id.name);
+          if (
+            !binding?.constant ||
+            binding.path.node !== declarationPath.node ||
+            !Number.isInteger(declarationPath.node.end)
+          ) {
+            return;
+          }
+          for (const refPath of binding?.referencePaths ?? []) {
+            if (
+              Number.isInteger(refPath.node.start) &&
+              refPath.node.start >= declarationPath.node.end &&
+              refPath.parentPath.isIfStatement({ test: refPath.node })
+            ) {
+              refPath.replaceWith(t.booleanLiteral(true));
+            }
+          }
         }
       },
     },
