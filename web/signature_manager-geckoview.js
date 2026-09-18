@@ -23,6 +23,8 @@ import { internalOpt } from "./internal_evt.js";
 // Initial height in page units.
 const DEFAULT_HEIGHT_IN_PAGE = 40;
 
+const DEFAULT_INK_COLOR = "#180e30";
+
 const SIGNATURE_FONT = Object.freeze({
   fontFamily: "cursive",
   fontStyle: "normal",
@@ -115,6 +117,7 @@ class SignatureManager {
       description: text,
       uuid: null,
       heightInPage: DEFAULT_HEIGHT_IN_PAGE,
+      fill: DEFAULT_INK_COLOR,
     };
   }
 

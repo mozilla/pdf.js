@@ -167,6 +167,7 @@ class SignatureEditor extends DrawingEditor {
           description,
           uuid,
           heightInPage,
+          fill,
         } = this.#signatureData;
         const {
           rawDims: { pageWidth, pageHeight },
@@ -181,7 +182,7 @@ class SignatureEditor extends DrawingEditor {
           mustSmooth,
           areContours,
         });
-        this.addSignature(outline, heightInPage, description, uuid);
+        this.addSignature(outline, heightInPage, description, uuid, fill);
       } else {
         // Avoid Firefox crashing (with a local build) because the description
         // parameter is missing.
@@ -259,14 +260,16 @@ class SignatureEditor extends DrawingEditor {
       : super.toolbarButtons;
   }
 
-  addSignature(data, heightInPage, description, uuid) {
+  addSignature(data, heightInPage, description, uuid, fill = null) {
     const { x: savedX, y: savedY } = this;
     const { outline } = (this.#signatureData = data);
     this.#isExtracted = outline instanceof ContourDrawOutline;
     this.description = description;
     let drawingOptions;
     if (this.#isExtracted) {
-      drawingOptions = SignatureEditor.getDefaultDrawingOptions();
+      drawingOptions = SignatureEditor.getDefaultDrawingOptions(
+        fill ? { fill } : null
+      );
     } else {
       drawingOptions = SignatureEditor._defaultDrawnSignatureOptions.clone();
       drawingOptions.updateProperties({ "stroke-width": outline.thickness });
