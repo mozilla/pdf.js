@@ -258,6 +258,22 @@ describe("core_utils", function () {
       expect(parseXFAPath("foo[1][2]")).toEqual([{ name: "foo[1]", pos: 2 }]);
     });
 
+    it("should only split on unescaped dots", function () {
+      // A field whose own name contains a dot appears escaped in the fully
+      // qualified name, and names one component rather than two.
+      expect(parseXFAPath("foo.bar\\.oof[3].rab")).toEqual([
+        { name: "foo", pos: 0 },
+        { name: "bar.oof", pos: 3 },
+        { name: "rab", pos: 0 },
+      ]);
+    });
+
+    it("should unescape a dot in a component without a position", function () {
+      expect(parseXFAPath("TextFried\\.5")).toEqual([
+        { name: "TextFried.5", pos: 0 },
+      ]);
+    });
+
     it("should handle a long component efficiently", function () {
       // Looking for the position with a leading `.+` is quadratic in the
       // length of a component which doesn't end with one.
