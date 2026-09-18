@@ -743,9 +743,7 @@ function waitForEditorMovedInDOM(page) {
 }
 
 /**
- * Editor operations can queue zero-delay timers to move an editor in the DOM
- * and then restore its focus. A tool change can also queue a timer to focus its
- * selected editor. Wait through both timer turns before sending more input.
+ * Wait two timer turns for deferred editor DOM and focus updates.
  */
 function waitForEditorFocusSettled(page) {
   return page.evaluate(
@@ -757,13 +755,13 @@ function waitForEditorFocusSettled(page) {
 }
 
 /**
- * Make every keyboard/mouse input wait for the deferred editor changes first,
- * so the tests don't have to care about them.
+ * Wait for deferred editor updates before input or focus.
  */
 function settleEditorBeforeInput(page) {
   for (const [target, names] of [
     [page.keyboard, ["down", "up", "press", "type", "sendCharacter"]],
     [page.mouse, ["down", "click"]],
+    [page, ["focus"]],
   ]) {
     for (const name of names) {
       const method = target[name].bind(target);
