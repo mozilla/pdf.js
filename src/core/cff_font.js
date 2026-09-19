@@ -54,13 +54,10 @@ class CFFFont {
 
     if (properties.composite) {
       let invCidToGidMap;
-      if (cidToGidMap?.length > 0) {
+      if (cidToGidMap?.size) {
         invCidToGidMap = new Map();
-        for (let i = 0, ii = cidToGidMap.length; i < ii; i++) {
-          const gid = cidToGidMap[i];
-          if (gid !== undefined) {
-            invCidToGidMap.set(gid, i);
-          }
+        for (const [i, gid] of cidToGidMap) {
+          invCidToGidMap.set(gid, i);
         }
       }
 

@@ -98,7 +98,7 @@ describe("font_glyf", function () {
       const font = new Font(
         "font",
         new Stream(buggy),
-        makeProperties(new ToUnicodeMap([])),
+        makeProperties(new ToUnicodeMap(new Map())),
         {}
       );
       const output = await ttx(font.data);
@@ -126,7 +126,7 @@ describe("font_glyf", function () {
       const font = new Font(
         "font",
         new Stream(buggy),
-        makeProperties(new ToUnicodeMap([])),
+        makeProperties(new ToUnicodeMap(new Map())),
         {}
       );
       const output = await ttx(font.data);
