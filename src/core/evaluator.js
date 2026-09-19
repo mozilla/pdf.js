@@ -3668,7 +3668,7 @@ class PartialEvaluator {
     // glyph mapping in the font.
     // TODO: Loading the built in encoding in the font would allow the
     // differences to be merged in here not require us to hold on to it.
-    const differences = [];
+    const differences = new Map();
     let baseEncodingName = null;
     let encoding;
     if (dict.has("Encoding")) {
@@ -3686,7 +3686,7 @@ class PartialEvaluator {
             if (typeof data === "number") {
               index = data;
             } else if (data instanceof Name) {
-              differences[index++] = data.name;
+              differences.set(index++, data.name);
             } else {
               throw new FormatError(
                 `Invalid entry in 'Differences' array: ${data}`
@@ -3779,13 +3779,12 @@ class PartialEvaluator {
       // The PDF specs state that the flags Symbolic and Nonsymbolic must be
       // mutually exclusive. However, some fonts are marked as both.
       // In that case we ignore the Symbolic flag when there is a Differences
-      // entry (which indicates that the font is used as a non-symbolic
-      // font).
+      // entry (which indicates that the font is used as a non-symbolic font).
       if (
         properties.type === "TrueType" &&
         isSymbolicFont &&
         isNonsymbolicFont &&
-        differences.length !== 0
+        differences.size
       ) {
         properties.flags &= ~FontFlags.Symbolic;
         isSymbolicFont = false;
@@ -3817,7 +3816,7 @@ class PartialEvaluator {
 
     properties.differences = differences;
     properties.baseEncodingName = baseEncodingName;
-    properties.hasEncoding = !!baseEncodingName || differences.length > 0;
+    properties.hasEncoding = !!baseEncodingName || !!differences.size;
     properties.dict = dict;
 
     properties.toUnicode = await toUnicodePromise;
@@ -3844,16 +3843,14 @@ class PartialEvaluator {
     const toUnicode = [];
     const encoding = properties.defaultEncoding.slice();
     const baseEncodingName = properties.baseEncodingName;
-    // Merge in the differences array.
-    const differences = properties.differences;
-    for (const charcode in differences) {
-      const glyphName = differences[charcode];
+    // Merge in the differences.
+    for (const [charCode, glyphName] of properties.differences) {
       if (glyphName === ".notdef") {
         // Skip .notdef to prevent rendering errors, e.g. boxes appearing
         // where there should be spaces (fixes issue5256.pdf).
         continue;
       }
-      encoding[charcode] = glyphName;
+      encoding[charCode] = glyphName;
     }
     const glyphsUnicodeMap = getGlyphsUnicode();
     for (const charcode in encoding) {
@@ -4296,16 +4293,14 @@ class PartialEvaluator {
 
   buildCharCodeToWidth(widthsByGlyphName, properties) {
     const widths = Object.create(null);
-    const differences = properties.differences;
-    const encoding = properties.defaultEncoding;
+    const diffs = properties.differences,
+      encoding = properties.defaultEncoding;
     for (let charCode = 0; charCode < 256; charCode++) {
-      if (charCode in differences && widthsByGlyphName[differences[charCode]]) {
-        widths[charCode] = widthsByGlyphName[differences[charCode]];
-        continue;
-      }
-      if (charCode in encoding && widthsByGlyphName[encoding[charCode]]) {
-        widths[charCode] = widthsByGlyphName[encoding[charCode]];
-        continue;
+      const width =
+        (diffs.has(charCode) && widthsByGlyphName[diffs.get(charCode)]) ||
+        (charCode in encoding && widthsByGlyphName[encoding[charCode]]);
+      if (width) {
+        widths[charCode] = width;
       }
     }
     return widths;

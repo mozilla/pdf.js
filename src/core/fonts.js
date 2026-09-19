@@ -207,7 +207,7 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
     if (properties.hasEncoding) {
       if (
         properties.baseEncodingName ||
-        properties.differences[charCode] !== undefined
+        properties.differences.has(+charCode)
       ) {
         continue; // The font dictionary has an `Encoding`/`Differences` entry.
       }
@@ -414,10 +414,10 @@ function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
       toFontChar[i] = unicode;
     }
   }
-  for (const charCode in differences) {
-    unicode = getUnicodeForGlyph(differences[charCode], glyphsUnicodeMap);
+  for (const [charCode, glyphName] of differences) {
+    unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
     if (unicode !== -1) {
-      toFontChar[+charCode] = unicode;
+      toFontChar[charCode] = unicode;
     }
   }
   return toFontChar;
@@ -1129,7 +1129,8 @@ class Font {
     if (properties.type === "Type3") {
       for (let charCode = 0; charCode < 256; charCode++) {
         this.toFontChar[charCode] =
-          this.differences[charCode] || properties.defaultEncoding[charCode];
+          this.differences.get(charCode) ||
+          properties.defaultEncoding[charCode];
       }
       return;
     }
@@ -1391,7 +1392,7 @@ class Font {
       this.toUnicode.forEach((charCode, unicodeCharCode) => {
         if (!this.composite) {
           const glyphName =
-            this.differences[charCode] || this.defaultEncoding[charCode];
+            this.differences.get(charCode) || this.defaultEncoding[charCode];
           const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
           if (unicode !== -1) {
             unicodeCharCode = unicode;
@@ -3085,8 +3086,8 @@ class Font {
         const glyphsUnicodeMap = getGlyphsUnicode();
         for (let charCode = 0; charCode < 256; charCode++) {
           let glyphName;
-          if (this.differences[charCode] !== undefined) {
-            glyphName = this.differences[charCode];
+          if (this.differences.has(charCode)) {
+            glyphName = this.differences.get(charCode);
           } else if (baseEncoding.length && baseEncoding[charCode] !== "") {
             glyphName = baseEncoding[charCode];
           } else {
@@ -3141,7 +3142,7 @@ class Font {
         for (const mapping of cmapMappings) {
           charCodeToGlyphId.set(mapping.charCode, mapping.glyphId);
         }
-        // Always prefer the BaseEncoding/Differences arrays, when they exist
+        // Always prefer the BaseEncoding/Differences entries, when they exist
         // (fixes issue13433.pdf).
         forcePostTable = true;
       } else if (cmapPlatformId === 3 && cmapEncodingId === 0) {
@@ -3171,13 +3172,13 @@ class Font {
       // Last, try to map any missing charcodes using the post table.
       if (
         properties.glyphNames &&
-        (baseEncoding.length || this.differences.length)
+        (baseEncoding.length || this.differences.size)
       ) {
         for (let i = 0; i < 256; ++i) {
           if (!forcePostTable && charCodeToGlyphId.has(i)) {
             continue;
           }
-          const glyphName = this.differences[i] || baseEncoding[i];
+          const glyphName = this.differences.get(i) || baseEncoding[i];
           if (!glyphName) {
             continue;
           }
@@ -3577,7 +3578,7 @@ class Font {
     fontCharCode = this.toFontChar[charcode] || charcode;
     if (this.missingFile) {
       const glyphName =
-        this.differences[charcode] || this.defaultEncoding[charcode];
+        this.differences.get(charcode) || this.defaultEncoding[charcode];
       if (
         (glyphName === ".notdef" || glyphName === "") &&
         this.type === "Type1"
