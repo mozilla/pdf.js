@@ -123,10 +123,7 @@ class PDFPresentationMode {
   }
 
   #mouseWheel(evt) {
-    if (!this.active) {
-      return;
-    }
-    if (evt.target.closest?.(".mediaAnnotation")) {
+    if (!this.active || evt.target.closest?.(".mediaAnnotation")) {
       return;
     }
     evt.preventDefault();

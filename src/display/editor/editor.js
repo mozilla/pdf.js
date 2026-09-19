@@ -419,11 +419,7 @@ class AnnotationEditor {
    * @param {FocusEvent} event
    */
   focusout(event) {
-    if (!this._focusEventsAllowed) {
-      return;
-    }
-
-    if (!this.isAttachedToDOM) {
+    if (!this._focusEventsAllowed || !this.isAttachedToDOM) {
       return;
     }
 

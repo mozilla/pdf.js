@@ -119,10 +119,10 @@ class ChunkedStream extends Stream {
     }
 
     const chunk = Math.floor(pos / this.chunkSize);
-    if (chunk > this.numChunks) {
-      return;
-    }
-    if (chunk === this._lastSuccessfulEnsureByteChunk) {
+    if (
+      chunk > this.numChunks ||
+      chunk === this._lastSuccessfulEnsureByteChunk
+    ) {
       return;
     }
 
@@ -133,10 +133,7 @@ class ChunkedStream extends Stream {
   }
 
   ensureRange(begin, end) {
-    if (begin >= end) {
-      return;
-    }
-    if (end <= this.progressiveDataLength) {
+    if (begin >= end || end <= this.progressiveDataLength) {
       return;
     }
 

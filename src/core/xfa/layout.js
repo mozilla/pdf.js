@@ -260,11 +260,11 @@ function getTransformedBBox(node) {
  * in case of lr-tb or changing content area...).
  */
 function checkDimensions(node, space) {
-  if (node[$getTemplateRoot]()[$extra].firstUnsplittable === null) {
-    return true;
-  }
-
-  if (node.w === 0 || node.h === 0) {
+  if (
+    node[$getTemplateRoot]()[$extra].firstUnsplittable === null ||
+    node.w === 0 ||
+    node.h === 0
+  ) {
     return true;
   }
 
@@ -355,11 +355,11 @@ function checkDimensions(node, space) {
 
       return space.height > ERROR;
     case "position":
-      if (node[$getTemplateRoot]()[$extra].noLayoutFailure) {
-        return true;
-      }
-
-      if (node.h === "" || Math.round(h + y - space.height) <= ERROR) {
+      if (
+        node[$getTemplateRoot]()[$extra].noLayoutFailure ||
+        node.h === "" ||
+        Math.round(h + y - space.height) <= ERROR
+      ) {
         return true;
       }
 

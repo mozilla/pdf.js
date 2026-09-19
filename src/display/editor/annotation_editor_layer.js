@@ -277,10 +277,10 @@ class AnnotationEditorLayer {
       for (const editable of annotationLayer.getEditableAnnotations()) {
         // The element must be hidden whatever its state is.
         editable.hide();
-        if (this.#uiManager.isDeletedAnnotationElement(editable.data.id)) {
-          continue;
-        }
-        if (annotationElementIds.has(editable.data.id)) {
+        if (
+          this.#uiManager.isDeletedAnnotationElement(editable.data.id) ||
+          annotationElementIds.has(editable.data.id)
+        ) {
           continue;
         }
         const editor = await this.deserialize(editable);

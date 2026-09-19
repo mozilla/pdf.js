@@ -76,10 +76,11 @@ function validateRangeRequestCapabilities({
     // make any sense to abort the request and retry with a range request.
     return rv;
   }
-  if (disableRange || !isHttp) {
-    return rv;
-  }
-  if (responseHeaders.get("Accept-Ranges") !== "bytes") {
+  if (
+    disableRange ||
+    !isHttp ||
+    responseHeaders.get("Accept-Ranges") !== "bytes"
+  ) {
     return rv;
   }
 

@@ -795,10 +795,7 @@ class AnnotationElement {
       const fieldObj = this._fieldObjects.get(name) || [];
 
       for (const { page, id, exportValues } of fieldObj) {
-        if (page === -1) {
-          continue;
-        }
-        if (id === skipId) {
+        if (page === -1 || id === skipId) {
           continue;
         }
         const exportValue =
@@ -818,10 +815,7 @@ class AnnotationElement {
     for (const domElement of document.getElementsByName(name)) {
       const { exportValue } = domElement;
       const id = domElement.getAttribute("data-element-id");
-      if (id === skipId) {
-        continue;
-      }
-      if (!GetElementsByNameSet.has(domElement)) {
+      if (id === skipId || !GetElementsByNameSet.has(domElement)) {
         continue;
       }
       fields.push({ id, exportValue, domElement });

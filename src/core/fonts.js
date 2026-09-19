@@ -124,10 +124,10 @@ const EXPORT_DATA_EXTRA_PROPERTIES = [
 ];
 
 function adjustWidths(properties) {
-  if (!properties.fontMatrix) {
-    return;
-  }
-  if (properties.fontMatrix[0] === FONT_IDENTITY_MATRIX[0]) {
+  if (
+    !properties.fontMatrix ||
+    properties.fontMatrix[0] === FONT_IDENTITY_MATRIX[0]
+  ) {
     return;
   }
   // adjusting width to fontMatrix scale
@@ -228,10 +228,10 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
  *       after e.g. `adjustType1ToUnicode` has run, to prevent any issues.
  */
 function amendFallbackToUnicode(properties) {
-  if (!properties.fallbackToUnicode) {
-    return;
-  }
-  if (properties.toUnicode instanceof IdentityToUnicodeMap) {
+  if (
+    !properties.fallbackToUnicode ||
+    properties.toUnicode instanceof IdentityToUnicodeMap
+  ) {
     return;
   }
   const toUnicode = [];
