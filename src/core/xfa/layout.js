@@ -86,11 +86,7 @@ function flushHTML(node) {
     }
   }
 
-  if (html.children.length === 0) {
-    return null;
-  }
-
-  return html;
+  return html.children.length === 0 ? null : html;
 }
 
 function addHTML(node, html, bbox) {
@@ -277,6 +273,7 @@ function checkDimensions(node, space) {
   const attempt = parent[$extra]?.attempt || 0;
 
   const [, y, w, h] = getTransformedBBox(node);
+  /* eslint-disable unicorn/prefer-ternary */
   switch (parent.layout) {
     case "lr-tb":
     case "rl-tb":
@@ -382,6 +379,7 @@ function checkDimensions(node, space) {
       // No layout, so accept everything.
       return true;
   }
+  /* eslint-enable unicorn/prefer-ternary */
 }
 
 export { addHTML, checkDimensions, flushHTML, getAvailableSpace };

@@ -3120,10 +3120,9 @@ class WorkerTransport {
   }
 
   getDestination(id) {
-    if (typeof id !== "string") {
-      return Promise.reject(new Error("Invalid destination request."));
-    }
-    return this.messageHandler.sendWithPromise("GetDestination", { id });
+    return typeof id !== "string"
+      ? Promise.reject(new Error("Invalid destination request."))
+      : this.messageHandler.sendWithPromise("GetDestination", { id });
   }
 
   getPageLabels() {

@@ -900,11 +900,7 @@ class Util {
       Math.max(rect1[1], rect1[3]),
       Math.max(rect2[1], rect2[3])
     );
-    if (yLow > yHigh) {
-      return null;
-    }
-
-    return [xLow, yLow, xHigh, yHigh];
+    return yLow > yHigh ? null : [xLow, yLow, xHigh, yHigh];
   }
 
   static pointBoundingBox(x, y, minMax) {

@@ -66,11 +66,9 @@ class AnnotationStorage {
    */
   getValue(key, defaultValue) {
     const value = this.#storage.get(key);
-    if (value === undefined) {
-      return defaultValue;
-    }
-
-    return Object.assign(defaultValue, value);
+    return value === undefined
+      ? defaultValue
+      : Object.assign(defaultValue, value);
   }
 
   /**

@@ -1798,10 +1798,11 @@ class PDFEditor {
       const name = documentData.dedupNamedDestinations.get(dest) || dest;
       return this.namedDestinations.has(name);
     }
-    if (Array.isArray(dest) && dest[0] instanceof Ref) {
-      return !!documentData.oldRefMapping.get(dest[0]);
-    }
-    return false;
+    return (
+      Array.isArray(dest) &&
+      dest[0] instanceof Ref &&
+      !!documentData.oldRefMapping.get(dest[0])
+    );
   }
 
   /**
@@ -2729,10 +2730,7 @@ class PDFEditor {
             if (keyA < keyB) {
               return -1;
             }
-            if (keyA > keyB) {
-              return 1;
-            }
-            return 0;
+            return keyA > keyB ? 1 : 0;
           }
         : ([keyA], [keyB]) => keyA - keyB
     );

@@ -344,10 +344,9 @@ function parseXFAPath(path) {
   const positionPattern = /^(.+)\[(\d+)\]$/;
   return path.split(".").map(component => {
     const m = component.match(positionPattern);
-    if (m) {
-      return { name: m[1], pos: parseInt(m[2], 10) };
-    }
-    return { name: component, pos: 0 };
+    return m
+      ? { name: m[1], pos: parseInt(m[2], 10) }
+      : { name: component, pos: 0 };
   });
 }
 
@@ -677,11 +676,7 @@ function numberToString(value) {
     return (roundedValue / 100).toString();
   }
 
-  if (roundedValue % 10 === 0) {
-    return value.toFixed(1);
-  }
-
-  return value.toFixed(2);
+  return roundedValue % 10 === 0 ? value.toFixed(1) : value.toFixed(2);
 }
 
 function getNewAnnotationsMap(annotationStorage) {

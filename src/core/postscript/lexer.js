@@ -168,10 +168,7 @@ class Lexer {
     this.pos = this._identifierPattern.lastIndex;
     const op = match[0];
     const token = Lexer.#operatorSingletons[op];
-    if (!token) {
-      return new Token(TOKEN.number, 0);
-    }
-    return token;
+    return token ?? new Token(TOKEN.number, 0);
   }
 
   // Return the next token, or Lexer.#singletons.eof at end of input.

@@ -114,10 +114,7 @@ class BaseStream {
   getUint16() {
     const b0 = this.getByte();
     const b1 = this.getByte();
-    if (b0 === -1 || b1 === -1) {
-      return -1;
-    }
-    return (b0 << 8) + b1;
+    return b0 === -1 || b1 === -1 ? -1 : (b0 << 8) + b1;
   }
 
   getInt32() {

@@ -23,10 +23,7 @@ function rewriteWebArchiveUrl(url) {
   const webArchiveRegex =
     /(^https?:\/\/web\.archive\.org\/web\/)(\d+)(\/https?:\/\/.+)/;
   const urlParts = webArchiveRegex.exec(url);
-  if (urlParts) {
-    return `${urlParts[1]}${urlParts[2]}if_${urlParts[3]}`;
-  }
-  return url;
+  return urlParts ? `${urlParts[1]}${urlParts[2]}if_${urlParts[3]}` : url;
 }
 
 async function downloadFile(file, url) {

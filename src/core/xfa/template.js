@@ -4228,11 +4228,7 @@ class PageSet extends XFAObject {
     page = this.pageArea.children.find(
       p => p.oddOrEven === "any" && p.pagePosition === "any"
     );
-    if (page) {
-      return page;
-    }
-
-    return this.pageArea.children[0];
+    return page ?? this.pageArea.children[0];
   }
 }
 
@@ -4900,10 +4896,7 @@ class Subform extends XFAObject {
 
   [$getSubformParent]() {
     const parent = this[$getParent]();
-    if (parent instanceof SubformSet) {
-      return parent[$getSubformParent]();
-    }
-    return parent;
+    return parent instanceof SubformSet ? parent[$getSubformParent]() : parent;
   }
 
   [$isBindable]() {
@@ -5975,10 +5968,7 @@ class Ui extends XFAObject {
   [$toHTML](availableSpace) {
     // TODO: picture.
     const obj = this[$getExtra]();
-    if (obj) {
-      return obj[$toHTML](availableSpace);
-    }
-    return HTMLResult.EMPTY;
+    return obj ? obj[$toHTML](availableSpace) : HTMLResult.EMPTY;
   }
 }
 

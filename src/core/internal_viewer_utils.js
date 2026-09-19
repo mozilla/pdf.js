@@ -161,10 +161,9 @@ function _binaryToExpr(node, argNames, cseMap) {
     if (amt > 0) {
       return { expr: `${base} << ${amt}`, prec: PREC.SHIFT };
     }
-    if (amt < 0) {
-      return { expr: `${base} >> ${-amt}`, prec: PREC.SHIFT };
-    }
-    return { expr: base, prec: PREC.ATOM };
+    return amt < 0
+      ? { expr: `${base} >> ${-amt}`, prec: PREC.SHIFT }
+      : { expr: base, prec: PREC.ATOM };
   }
   // second is left operand (below on stack), first is right (top).
   const a = _nodeToExpr(second, argNames, cseMap);
@@ -544,10 +543,7 @@ const InternalViewerUtils = {
     if (typeof obj === "boolean") {
       return { type: "boolean", value: obj };
     }
-    if (obj === null) {
-      return { type: "null" };
-    }
-    return null;
+    return obj === null ? { type: "null" } : null;
   },
 };
 

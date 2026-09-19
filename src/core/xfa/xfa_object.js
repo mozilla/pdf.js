@@ -625,10 +625,9 @@ class XFAObject {
     if (Array.isArray(obj)) {
       return obj.map(x => XFAObject[_cloneAttribute](x));
     }
-    if (typeof obj === "object" && obj !== null) {
-      return Object.assign({}, obj);
-    }
-    return obj;
+    return typeof obj === "object" && obj !== null
+      ? Object.assign({}, obj)
+      : obj;
   }
 
   [$clone]() {
@@ -903,10 +902,7 @@ class XmlObject extends XFAObject {
 
   [$getChildrenByClass](name) {
     const value = this[_attributes].get(name);
-    if (value !== undefined) {
-      return value;
-    }
-    return this[$getChildren](name);
+    return value !== undefined ? value : this[$getChildren](name);
   }
 
   *[$getChildrenByNameIt](name, allTransparent) {
@@ -967,10 +963,9 @@ class XmlObject extends XFAObject {
       if (this[_children].length === 0) {
         return this[$content].trim();
       }
-      if (this[_children][0][$namespaceId] === NamespaceIds.xhtml.id) {
-        return this[_children][0][$text]().trim();
-      }
-      return null;
+      return this[_children][0][$namespaceId] === NamespaceIds.xhtml.id
+        ? this[_children][0][$text]().trim()
+        : null;
     }
     return this[$content].trim();
   }

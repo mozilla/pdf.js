@@ -230,10 +230,7 @@ class AnnotationElement {
   get commentData() {
     const { data } = this;
     const editor = this.annotationStorage?.getEditor(data.id);
-    if (editor) {
-      return editor.getData();
-    }
-    return data;
+    return editor ? editor.getData() : data;
   }
 
   get hasCommentButton() {
@@ -274,10 +271,7 @@ class AnnotationElement {
         return [maxX, maxY];
       }
     }
-    if (rect) {
-      return [rect[2], rect[3]];
-    }
-    return null;
+    return rect ? [rect[2], rect[3]] : null;
   }
 
   _normalizePoint(point) {
@@ -2707,10 +2701,9 @@ class PopupElement {
 
   get commentButtonColor() {
     const { color, opacity } = this.#firstElement.commentData;
-    if (!color) {
-      return null;
-    }
-    return this.#parent._commentManager.makeCommentColor(color, opacity);
+    return !color
+      ? null
+      : this.#parent._commentManager.makeCommentColor(color, opacity);
   }
 
   focusCommentButton() {

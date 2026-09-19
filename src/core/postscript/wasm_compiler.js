@@ -773,11 +773,9 @@ class PsWasmCompiler {
       return this._compileAtanNode(first, second);
     }
 
-    if (op === TOKEN.and || op === TOKEN.or || op === TOKEN.xor) {
-      return this._compileBitwiseNode(op, first, second);
-    }
-
-    return this._compileStandardBinaryNode(op, first, second);
+    return op === TOKEN.and || op === TOKEN.or || op === TOKEN.xor
+      ? this._compileBitwiseNode(op, first, second)
+      : this._compileStandardBinaryNode(op, first, second);
   }
 
   /**

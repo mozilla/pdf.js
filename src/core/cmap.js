@@ -636,10 +636,7 @@ async function parseCMap(cMap, lexer, fetchBuiltInCMap, useCMap) {
     // specified.
     useCMap = embeddedUseCMap;
   }
-  if (useCMap) {
-    return extendCMap(cMap, fetchBuiltInCMap, useCMap);
-  }
-  return cMap;
+  return useCMap ? extendCMap(cMap, fetchBuiltInCMap, useCMap) : cMap;
 }
 
 async function extendCMap(cMap, fetchBuiltInCMap, useCMap) {
@@ -707,10 +704,9 @@ class CMapFactory {
         useCMap
       );
 
-      if (parsedCMap.isIdentityCMap) {
-        return createBuiltInCMap(parsedCMap.name, fetchBuiltInCMap);
-      }
-      return parsedCMap;
+      return parsedCMap.isIdentityCMap
+        ? createBuiltInCMap(parsedCMap.name, fetchBuiltInCMap)
+        : parsedCMap;
     }
     throw new Error("Encoding required.");
   }

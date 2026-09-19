@@ -951,6 +951,7 @@ class Driver {
       useWorkerFetch: task.useWorkerFetch,
       enableXfa: task.enableXfa,
       isOffscreenCanvasSupported:
+        // eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
         task.isOffscreenCanvasSupported === false ? false : undefined,
       disableFontFace: task.disableFontFace === true,
       ...(this.#pdfWorker ? { worker: this.#pdfWorker } : {}),

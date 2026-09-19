@@ -1001,7 +1001,9 @@ class PSStackToTree {
           // Boolean operands: true xor true = false xor false = false.
           // Integer operands: n xor n = 0.
           return new PsConstNode(
+            /* eslint-disable unicorn/prefer-logical-operator-over-ternary */
             first.valueType === PS_VALUE_TYPE.boolean ? false : 0
+            /* eslint-enable unicorn/prefer-logical-operator-over-ternary */
           );
         // TOKEN.mod, TOKEN.div, TOKEN.idiv are NOT simplified here:
         // x op x is undefined when x = 0, so we cannot fold without knowing
