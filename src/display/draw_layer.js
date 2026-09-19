@@ -107,10 +107,9 @@ function getTextLayer(node) {
   if (!node) {
     return null;
   }
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    return node.closest(".textLayer");
-  }
-  return node.parentElement?.closest(".textLayer") || null;
+  return node.nodeType === Node.ELEMENT_NODE
+    ? node.closest(".textLayer")
+    : node.parentElement?.closest(".textLayer") || null;
 }
 
 /**
@@ -132,6 +131,7 @@ function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
     return offsetA <= offsetB;
   }
   const relation = nodeA.compareDocumentPosition(nodeB);
+  /* eslint-disable unicorn/prefer-ternary */
   if (relation & Node.DOCUMENT_POSITION_FOLLOWING) {
     return true;
   }
@@ -139,6 +139,7 @@ function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
     return false;
   }
   return null;
+  /* eslint-enable unicorn/prefer-ternary */
 }
 
 /**
@@ -174,10 +175,9 @@ function normalizeEdgeBoundary(container, offset, textLayer) {
   if (!lastNode || !textLayer.contains(lastNode)) {
     return null;
   }
-  if (lastNode.nodeType === Node.TEXT_NODE) {
-    return { container: lastNode, offset: lastNode.textContent.length };
-  }
-  return { container: lastNode, offset: lastNode.childNodes.length };
+  return lastNode.nodeType === Node.TEXT_NODE
+    ? { container: lastNode, offset: lastNode.textContent.length }
+    : { container: lastNode, offset: lastNode.childNodes.length };
 }
 
 /**

@@ -496,10 +496,7 @@ class P extends XhtmlObject {
 
   [$text]() {
     const siblings = this[$getParent]()[$getChildren]();
-    if (siblings.at(-1) === this) {
-      return super[$text]();
-    }
-    return super[$text]() + "\n";
+    return siblings.at(-1) === this ? super[$text]() : super[$text]() + "\n";
   }
 }
 
@@ -529,10 +526,9 @@ class Ul extends XhtmlObject {
 
 class XhtmlNamespace {
   static [$buildXFAObject](name, attributes) {
-    if (Object.hasOwn(XhtmlNamespace, name)) {
-      return XhtmlNamespace[name](attributes);
-    }
-    return undefined;
+    return Object.hasOwn(XhtmlNamespace, name)
+      ? XhtmlNamespace[name](attributes)
+      : undefined;
   }
 
   static a(attributes) {

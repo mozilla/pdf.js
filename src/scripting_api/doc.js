@@ -964,10 +964,7 @@ class Doc extends PDFObject {
 
   getField(cName) {
     const field = this._getField(cName);
-    if (!field) {
-      return null;
-    }
-    return field.wrapped;
+    return !field ? null : field.wrapped;
   }
 
   _getChildren(fieldName) {
@@ -1024,10 +1021,9 @@ class Doc extends PDFObject {
     if (typeof nIndex !== "number") {
       throw new TypeError("Invalid field index: must be a number");
     }
-    if (0 <= nIndex && nIndex < this.numFields) {
-      return this._fieldNames[Math.trunc(nIndex)];
-    }
-    return null;
+    return nIndex >= 0 && nIndex < this.numFields
+      ? this._fieldNames[Math.trunc(nIndex)]
+      : null;
   }
 
   getNthTemplate() {

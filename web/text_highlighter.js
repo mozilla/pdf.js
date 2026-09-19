@@ -195,10 +195,7 @@ class TextHighlighter {
         span.append(node);
         div.append(span);
 
-        if (className.includes("selected")) {
-          return span;
-        }
-        return null;
+        return className.includes("selected") ? span : null;
       }
 
       div.append(node);

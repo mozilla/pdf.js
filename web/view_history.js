@@ -59,10 +59,9 @@ class ViewHistory {
   }
 
   async _readFromStorage() {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      return sessionStorage.getItem("pdfjs.history");
-    }
-    return localStorage.getItem("pdfjs.history");
+    return typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+      ? sessionStorage.getItem("pdfjs.history")
+      : localStorage.getItem("pdfjs.history");
   }
 
   async setMultiple(properties) {

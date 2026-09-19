@@ -588,10 +588,9 @@ class CommentSidebar extends Sidebar {
     if (a.rect[1] !== b.rect[1]) {
       return b.rect[1] - a.rect[1];
     }
-    if (a.rect[2] !== b.rect[2]) {
-      return a.rect[2] - b.rect[2];
-    }
-    return a.id.localeCompare(b.id);
+    return a.rect[2] !== b.rect[2]
+      ? a.rect[2] - b.rect[2]
+      : a.id.localeCompare(b.id);
   }
 }
 
@@ -1101,6 +1100,7 @@ class CommentPopup {
 
     if (isSelected) {
       visibility ??=
+        // eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
         this.#editor === editor ? !this.#selected || !this.#visible : true;
     } else {
       if (this.#selected) {

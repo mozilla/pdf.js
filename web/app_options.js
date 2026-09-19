@@ -880,6 +880,7 @@ const defaultOptions = new Map([
       // On Android, there is almost no chance to have the font we want so we
       // don't use the system fonts in this case (bug 1882613).
       /** @type {boolean|undefined} */
+      // eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
       value: (
         typeof PDFJSDev === "undefined"
           ? window.isGECKOVIEW

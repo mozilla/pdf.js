@@ -701,10 +701,9 @@ class TreeView {
     if (typeof value === "number") {
       return this.#makeSpan("num-value", String(value));
     }
-    if (typeof value === "boolean") {
-      return this.#makeSpan("bool-value", String(value));
-    }
-    return this.#makeSpan("null-value", "null");
+    return typeof value === "boolean"
+      ? this.#makeSpan("bool-value", String(value))
+      : this.#makeSpan("null-value", "null");
   }
 
   /**

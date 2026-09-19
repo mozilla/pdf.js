@@ -7632,15 +7632,10 @@ small scripts as well as for`);
           ],
           role: "Root",
         });
-        const filterItems = item => {
-          if (item.type === "beginMarkedContentProps") {
-            return item.id;
-          }
-          if (item.str !== undefined) {
-            return item.str;
-          }
-          return null;
-        };
+        const filterItems = item =>
+          item.type === "beginMarkedContentProps"
+            ? item.id
+            : (item.str ?? null);
         let { items } = await pdfPage.getTextContent({
           includeMarkedContent: true,
           disableNormalization: true,

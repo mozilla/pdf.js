@@ -107,11 +107,7 @@ class XFAFactory {
       }
     }
 
-    if (missingFonts.length > 0) {
-      return missingFonts;
-    }
-
-    return null;
+    return missingFonts.length > 0 ? missingFonts : null;
   }
 
   appendFonts(fonts, reallyMissingFonts) {

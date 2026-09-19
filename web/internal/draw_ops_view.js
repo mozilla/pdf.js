@@ -192,10 +192,9 @@ function formatArg(arg, full) {
     if (arg.length === 0) {
       return "[]";
     }
-    if (!full && arg.length > 4) {
-      return `[…${arg.length}]`;
-    }
-    return `[${arg.map(a => formatArg(a, full)).join(", ")}]`;
+    return !full && arg.length > 4
+      ? `[…${arg.length}]`
+      : `[${arg.map(a => formatArg(a, full)).join(", ")}]`;
   }
   if (typeof arg === "object") {
     if (!full) {

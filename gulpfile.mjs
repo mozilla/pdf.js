@@ -151,12 +151,11 @@ function safeSpawnSync(command, parameters, options = {}) {
   // Execute all commands in a shell.
   options.shell = true;
   // `options.shell = true` requires parameters to be quoted.
-  parameters = parameters.map(param => {
-    if (!/[\s`~!#$*(){[|\\;'"<>?]/.test(param)) {
-      return param;
-    }
-    return '"' + param.replaceAll(/([$\\"`])/g, "\\$1") + '"';
-  });
+  parameters = parameters.map(param =>
+    !/[\s`~!#$*(){[|\\;'"<>?]/.test(param)
+      ? param
+      : '"' + param.replaceAll(/([$\\"`])/g, "\\$1") + '"'
+  );
 
   const result = spawnSync(command, parameters, options);
   if (result.status !== 0) {

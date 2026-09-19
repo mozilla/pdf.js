@@ -180,11 +180,9 @@ class Lexer {
     this.pos += match[0].length;
 
     const lower = identifier.toLowerCase();
-    if (!KEYWORDS.has(lower)) {
-      return new Token(TOKEN.identifier, identifier);
-    }
-
-    return Singletons[lower];
+    return !KEYWORDS.has(lower)
+      ? new Token(TOKEN.identifier, identifier)
+      : Singletons[lower];
   }
 
   getString() {

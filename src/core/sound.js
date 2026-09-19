@@ -64,10 +64,9 @@ function getSoundFormat(dict) {
   if (e !== undefined) {
     encoding = e instanceof Name ? e.name : null;
   }
-  if (encoding !== "Raw" && encoding !== "Signed") {
-    return null;
-  }
-  return { channels, sampleRate, bitsPerSample, encoding };
+  return encoding !== "Raw" && encoding !== "Signed"
+    ? null
+    : { channels, sampleRate, bitsPerSample, encoding };
 }
 
 /**

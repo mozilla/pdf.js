@@ -854,10 +854,9 @@ class Annotation {
       if (noPrint === undefined) {
         return undefined;
       }
-      if (noPrint) {
-        return flags & ~AnnotationFlag.PRINT;
-      }
-      return (flags & ~AnnotationFlag.HIDDEN) | AnnotationFlag.PRINT;
+      return noPrint
+        ? flags & ~AnnotationFlag.PRINT
+        : (flags & ~AnnotationFlag.HIDDEN) | AnnotationFlag.PRINT;
     }
 
     if (noView) {
@@ -915,10 +914,9 @@ class Annotation {
    */
   mustBeViewed(annotationStorage, _renderForms) {
     const noView = annotationStorage?.get(this.data.id)?.noView;
-    if (noView !== undefined) {
-      return !noView;
-    }
-    return this.viewable && !this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
+    return noView !== undefined
+      ? !noView
+      : this.viewable && !this._hasFlag(this.flags, AnnotationFlag.HIDDEN);
   }
 
   /**
@@ -931,10 +929,7 @@ class Annotation {
    */
   mustBePrinted(annotationStorage) {
     const noPrint = annotationStorage?.get(this.data.id)?.noPrint;
-    if (noPrint !== undefined) {
-      return !noPrint;
-    }
-    return this.printable;
+    return noPrint !== undefined ? !noPrint : this.printable;
   }
 
   mustBeViewedWhenEditing(isEditing, modifiedIds = null) {
@@ -945,26 +940,21 @@ class Annotation {
    * @type {boolean}
    */
   get viewable() {
-    if (this.data.quadPoints === null) {
-      return false;
-    }
-    if (this.flags === 0) {
-      return true;
-    }
-    return this._isViewable(this.flags);
+    return (
+      this.data.quadPoints !== null &&
+      (this.flags === 0 || this._isViewable(this.flags))
+    );
   }
 
   /**
    * @type {boolean}
    */
   get printable() {
-    if (this.data.quadPoints === null) {
-      return false;
-    }
-    if (this.flags === 0) {
-      return false;
-    }
-    return this._isPrintable(this.flags);
+    return (
+      this.data.quadPoints !== null &&
+      this.flags !== 0 &&
+      this._isPrintable(this.flags)
+    );
   }
 
   /**
@@ -3659,10 +3649,9 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     }
 
     const index = parseInt(state, 10);
-    if (Number.isInteger(index) && String(index) === state) {
-      return this._getExportValueForOptIndex(index, optInfo.opt, xref) || state;
-    }
-    return state;
+    return Number.isInteger(index) && String(index) === state
+      ? this._getExportValueForOptIndex(index, optInfo.opt, xref) || state
+      : state;
   }
 
   _processCheckBox(params) {

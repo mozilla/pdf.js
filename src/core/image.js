@@ -878,10 +878,7 @@ class PDFImage {
             forceRGB: true,
             internal: mustBeResized,
           });
-          if (mustBeResized) {
-            return ImageResizer.createImage(imgData);
-          }
-          return imgData;
+          return mustBeResized ? ImageResizer.createImage(imgData) : imgData;
         }
       }
     }
@@ -964,10 +961,7 @@ class PDFImage {
     }
 
     imgData.data = data;
-    if (mustBeResized) {
-      return ImageResizer.createImage(imgData);
-    }
-    return imgData;
+    return mustBeResized ? ImageResizer.createImage(imgData) : imgData;
   }
 
   /**

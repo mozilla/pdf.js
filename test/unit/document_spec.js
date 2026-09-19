@@ -115,10 +115,7 @@ describe("document", function () {
         },
         async ensure(obj, prop, args) {
           const value = obj[prop];
-          if (typeof value === "function") {
-            return value.apply(obj, args);
-          }
-          return value;
+          return typeof value === "function" ? value.apply(obj, args) : value;
         },
         get evaluatorOptions() {
           return { isOffscreenCanvasSupported: false };

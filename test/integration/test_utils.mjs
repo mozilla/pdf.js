@@ -336,8 +336,10 @@ async function waitForEvent({
               if (timeoutId) {
                 clearTimeout(timeoutId);
               }
+              /* eslint-disable unicorn/prefer-logical-operator-over-ternary */
               // eslint-disable-next-line no-eval
               resolve(validate ? eval(`(${validate})`)(e) : true);
+              /* eslint-enable unicorn/prefer-logical-operator-over-ternary */
             };
             element.addEventListener(name, callback, { once: true });
           }),

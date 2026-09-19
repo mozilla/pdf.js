@@ -429,10 +429,7 @@ class EquateRange extends XFAObject {
       .filter(Boolean)) {
       range = range.split("-", 2).map(x => {
         const found = x.match(unicodeRegex);
-        if (!found) {
-          return 0;
-        }
-        return parseInt(found[1], 16);
+        return !found ? 0 : parseInt(found[1], 16);
       });
       if (range.length === 1) {
         range.push(range[0]);
@@ -1355,10 +1352,9 @@ class Zpl extends XFAObject {
 
 class ConfigNamespace {
   static [$buildXFAObject](name, attributes) {
-    if (Object.hasOwn(ConfigNamespace, name)) {
-      return ConfigNamespace[name](attributes);
-    }
-    return undefined;
+    return Object.hasOwn(ConfigNamespace, name)
+      ? ConfigNamespace[name](attributes)
+      : undefined;
   }
 
   static acrobat(attrs) {
