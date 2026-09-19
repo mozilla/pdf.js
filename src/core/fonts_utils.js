@@ -110,12 +110,12 @@ function recoverGlyphName(name, glyphsUnicodeMap) {
  */
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   const charCodeToGlyphId = new Map();
-  let glyphId, charCode, baseEncoding;
+  let glyphId, baseEncoding;
   const isSymbolicFont = !!(properties.flags & FontFlags.Symbolic);
 
   if (properties.isInternalFont) {
     baseEncoding = builtInEncoding;
-    for (charCode = 0; charCode < baseEncoding.length; charCode++) {
+    for (let charCode = 0; charCode < baseEncoding.length; charCode++) {
       glyphId = glyphNames.indexOf(baseEncoding[charCode]);
       charCodeToGlyphId.set(
         charCode,
@@ -126,7 +126,7 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
     // If a valid base encoding name was used, the mapping is initialized with
     // that.
     baseEncoding = getEncoding(properties.baseEncodingName);
-    for (charCode = 0; charCode < baseEncoding.length; charCode++) {
+    for (let charCode = 0; charCode < baseEncoding.length; charCode++) {
       glyphId = glyphNames.indexOf(baseEncoding[charCode]);
       charCodeToGlyphId.set(
         charCode,
@@ -135,14 +135,14 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
     }
   } else if (isSymbolicFont) {
     // For a symbolic font the encoding should be the fonts built-in encoding.
-    for (charCode in builtInEncoding) {
+    for (const charCode in builtInEncoding) {
       charCodeToGlyphId.set(+charCode, builtInEncoding[charCode]);
     }
   } else {
     // For non-symbolic fonts that don't have a base encoding the standard
     // encoding should be used.
     baseEncoding = StandardEncoding;
-    for (charCode = 0; charCode < baseEncoding.length; charCode++) {
+    for (let charCode = 0; charCode < baseEncoding.length; charCode++) {
       glyphId = glyphNames.indexOf(baseEncoding[charCode]);
       charCodeToGlyphId.set(
         charCode,
@@ -152,11 +152,9 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   }
 
   // Lastly, merge in the differences.
-  const differences = properties.differences;
   let glyphsUnicodeMap;
-  if (differences) {
-    for (charCode in differences) {
-      const glyphName = differences[charCode];
+  if (properties.differences) {
+    for (const [charCode, glyphName] of properties.differences) {
       glyphId = glyphNames.indexOf(glyphName);
 
       if (glyphId === -1) {
@@ -168,7 +166,7 @@ function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
         }
       }
       charCodeToGlyphId.set(
-        +charCode,
+        charCode,
         glyphId >= 0 ? glyphId : /* notdef = */ 0
       );
     }
