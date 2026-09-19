@@ -362,6 +362,8 @@ body {
 }
 
 #viewerContainer:not(.pdfPresentationMode) {
+  /* Don't animate the block-start offset below the notification bar. */
+  transition-property: inset-inline-start;
   transition-duration: var(--sidebar-transition-duration);
   transition-timing-function: var(--sidebar-transition-timing-function);
 }

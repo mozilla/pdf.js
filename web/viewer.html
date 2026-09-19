@@ -63,17 +63,12 @@ See https://github.com/adobe-type-tools/cmap-resources
     <!--#if MOZCENTRAL-->
     <!--<link rel="stylesheet" href="resource://pdf.js/web/viewer.css">-->
     <!--<link rel="localization" href="toolkit/pdfviewer/viewer.ftl"/>-->
-    <!--<link rel="localization" href="branding/brand.ftl"/>-->
-    <!--<link rel="localization" href="toolkit/global/mozMessageBar.ftl"/>-->
-    <!--<link rel="localization" href="toolkit/about/pdfFeaturesNotification.ftl"/>-->
     <!--#else-->
     <link rel="stylesheet" href="viewer.css" />
     <!--#endif-->
 
     <!--#if MOZCENTRAL-->
     <!--<script src="resource://pdf.js/web/viewer.mjs" type="module"></script>-->
-
-    <!--<script src="chrome://global/content/elements/moz-message-bar.mjs" type="module"></script>-->
     <!--#elif !MOZCENTRAL-->
     <!--<script src="viewer.mjs" type="module"></script>-->
     <!--#elif /* Development mode. */-->
@@ -886,8 +881,8 @@ See https://github.com/adobe-type-tools/cmap-resources
         </div>
 
         <!--#if MOZCENTRAL-->
-        <!--<moz-message-bar id="pdfFeaturesNotification" type="info" role="region" aria-live="polite" dismissable hidden data-l10n-id="pdf-features-notification">
-          <span slot="message" data-l10n-id="pdf-features-notification-message"><a role="link" tabindex="0" data-l10n-name="features-link"></a></span>
+        <!--<moz-message-bar id="pdfFeaturesNotification" type="info" role="region" aria-live="polite" dismissable hidden>
+          <span slot="message"><a role="link" tabindex="0" data-l10n-name="features-link"></a></span>
         </moz-message-bar>-->
         <!--#endif-->
 

@@ -793,7 +793,12 @@ class ExternalServices extends BaseExternalServices {
   }
 
   async createL10n() {
-    await document.l10n.ready;
+    try {
+      await document.l10n.ready;
+    } catch (ex) {
+      // In automation, initial translation errors reject this promise.
+      console.error(`createL10n: "${ex}".`);
+    }
     return new L10n(AppOptions.get("localeProperties"), document.l10n);
   }
 
