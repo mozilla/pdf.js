@@ -358,10 +358,12 @@ class XRef {
       if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(`Invalid XRef range fields: ${first}, ${n}`);
       }
+      // Each entry must consume a byte to bound the loop by the stream length.
       if (
-        !Number.isInteger(typeFieldWidth) ||
-        !Number.isInteger(offsetFieldWidth) ||
-        !Number.isInteger(generationFieldWidth)
+        ![typeFieldWidth, offsetFieldWidth, generationFieldWidth].every(
+          width => Number.isInteger(width) && width >= 0
+        ) ||
+        typeFieldWidth + offsetFieldWidth + generationFieldWidth === 0
       ) {
         throw new FormatError(
           `Invalid XRef entry fields length: ${first}, ${n}`

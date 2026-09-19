@@ -18,6 +18,7 @@ import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import { PDFDocument } from "../../src/core/document.js";
 import { StringStream } from "../../src/core/stream.js";
 import { XRef } from "../../src/core/xref.js";
+import { XRefParseException } from "../../src/core/core_utils.js";
 
 describe("document", function () {
   describe("Page", function () {
@@ -71,6 +72,21 @@ describe("document", function () {
 
       expect(xref.readXRef()).toBeInstanceOf(Dict);
       expect(xref.countUpdatesAfter(0)).toBeNull();
+    });
+
+    it("rejects an xref stream whose entries have zero width", function () {
+      const stream = new StringStream(
+        "%PDF-1.5\n" +
+          "1 0 obj\n" +
+          "<</Type/XRef/W[0 0 0]/Index[0 10000000]/Size 10000001" +
+          "/Root 2 0 R/Length 0>>\n" +
+          "stream\nendstream\nendobj\n" +
+          "startxref\n9\n%%EOF\n"
+      );
+      const xref = new XRef(stream, {});
+      xref.setStartXRef(9);
+
+      expect(() => xref.readXRef()).toThrowError(XRefParseException);
     });
   });
 
