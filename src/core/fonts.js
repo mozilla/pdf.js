@@ -386,7 +386,7 @@ function getFontFileType(file, { type, subtype, composite }) {
 
 function applyStandardFontGlyphMap(map, glyphMap) {
   for (const charCode in glyphMap) {
-    map[+charCode] = glyphMap[charCode];
+    map.set(+charCode, glyphMap[charCode]);
   }
 }
 
@@ -406,18 +406,18 @@ const getSymbolGlyphIdEncoding = getLookupTableFactory(t => {
 }, /* useArray = */ true);
 
 function buildToFontChar(encoding, glyphsUnicodeMap, differences) {
-  const toFontChar = [];
+  const toFontChar = new Map();
   let unicode;
   for (let i = 0, ii = encoding.length; i < ii; i++) {
     unicode = getUnicodeForGlyph(encoding[i], glyphsUnicodeMap);
     if (unicode !== -1) {
-      toFontChar[i] = unicode;
+      toFontChar.set(i, unicode);
     }
   }
   for (const [charCode, glyphName] of differences) {
     unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
     if (unicode !== -1) {
-      toFontChar[charCode] = unicode;
+      toFontChar.set(charCode, unicode);
     }
   }
   return toFontChar;
@@ -465,7 +465,7 @@ function convertCidString(charCode, cid, shouldThrow = false) {
 function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   const newMap = new Map();
   const toUnicodeExtraMap = new Map();
-  const toFontChar = [];
+  const toFontChar = new Map();
   const usedGlyphIds = new Set();
   let privateUseAreaIndex = 0;
   const privateUseOffetStart = PRIVATE_USE_AREAS[privateUseAreaIndex][0];
@@ -525,7 +525,7 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
     }
 
     newMap.set(fontCharCode, glyphId);
-    toFontChar[charCode] = fontCharCode;
+    toFontChar.set(charCode, fontCharCode);
   }
   return {
     toFontChar,
@@ -1053,6 +1053,8 @@ class Font {
 
   charProcOperatorList;
 
+  toFontChar = new Map();
+
   constructor(name, file, properties, evaluatorOptions) {
     this.name = name;
     this.psName = null;
@@ -1122,15 +1124,14 @@ class Font {
     this.fontMatrix = properties.fontMatrix;
     this.bbox = properties.bbox;
     this.defaultEncoding = properties.defaultEncoding;
-
     this.toUnicode = properties.toUnicode;
-    this.toFontChar = [];
 
     if (properties.type === "Type3") {
       for (let charCode = 0; charCode < 256; charCode++) {
-        this.toFontChar[charCode] =
-          this.differences.get(charCode) ||
-          properties.defaultEncoding[charCode];
+        this.toFontChar.set(
+          charCode,
+          this.differences.get(charCode) || properties.defaultEncoding[charCode]
+        );
       }
       return;
     }
@@ -1301,7 +1302,7 @@ class Font {
       const cidToGidMap = properties.cidToGidMap;
       // Standard fonts might be embedded as CID font without glyph mapping.
       // Building one based on GlyphMapForStandardFonts.
-      const map = [];
+      const map = new Map();
       if (/Trebuchet/i.test(name)) {
         // TrebuchetMS doesn't share the glyph ordering of the standard fonts,
         // hence using the latter would map e.g. "š" to "ž" (issue 21713).
@@ -1323,10 +1324,9 @@ class Font {
       // Always update the glyph mapping with the `cidToGidMap` when it exists
       // (fixes issue12418_reduced.pdf).
       if (cidToGidMap) {
-        for (const charCode in map) {
-          const cid = map[charCode];
+        for (const [charCode, cid] of map) {
           if (cidToGidMap[cid] !== undefined) {
-            map[+charCode] = cidToGidMap[cid];
+            map.set(charCode, cidToGidMap[cid]);
           }
         }
         // When the /CIDToGIDMap is "incomplete", fallback to the included
@@ -1337,9 +1337,9 @@ class Font {
           this.toUnicode instanceof IdentityToUnicodeMap
         ) {
           this.toUnicode.forEach((charCode, unicodeCharCode) => {
-            const cid = map[charCode];
+            const cid = map.get(charCode);
             if (cidToGidMap[cid] === undefined) {
-              map[charCode] = unicodeCharCode;
+              map.set(charCode, unicodeCharCode);
             }
           });
         }
@@ -1347,11 +1347,15 @@ class Font {
 
       if (!(this.toUnicode instanceof IdentityToUnicodeMap)) {
         this.toUnicode.forEach((charCode, unicodeCharCode) => {
-          map[charCode] = unicodeCharCode;
+          map.set(charCode, unicodeCharCode);
         });
       }
       this.toFontChar = map;
-      this.toUnicode = new ToUnicodeMap(map);
+      const arr = [];
+      for (const [charCode, cid] of map) {
+        arr[charCode] = cid;
+      }
+      this.toUnicode = new ToUnicodeMap(arr);
     } else if (/Symbol/i.test(fontName)) {
       // The non-embedded SymbolMT font in issue 21523 uses Identity encoding
       // and an Identity CIDToGIDMap, hence its CIDs are glyph ids.
@@ -1382,13 +1386,13 @@ class Font {
         !(this.toUnicode instanceof IdentityToUnicodeMap)
       ) {
         this.toUnicode.forEach((charCode, unicodeCharCode) => {
-          map[charCode] = unicodeCharCode;
+          map.set(charCode, unicodeCharCode);
         });
       }
       this.toFontChar = map;
     } else {
       const glyphsUnicodeMap = getGlyphsUnicode();
-      const map = [];
+      const map = new Map();
       this.toUnicode.forEach((charCode, unicodeCharCode) => {
         if (!this.composite) {
           const glyphName =
@@ -1398,7 +1402,7 @@ class Font {
             unicodeCharCode = unicode;
           }
         }
-        map[charCode] = unicodeCharCode;
+        map.set(charCode, unicodeCharCode);
       });
 
       // Attempt to improve the glyph mapping for (some) composite fonts that
@@ -3572,10 +3576,10 @@ class Font {
       unicode = String.fromCharCode(unicode);
     }
 
-    let isInFont = this.toFontChar[charcode] !== undefined;
+    let isInFont = this.toFontChar.has(charcode);
     // First try the toFontChar map, if it's not there then try falling
     // back to the char code.
-    fontCharCode = this.toFontChar[charcode] || charcode;
+    fontCharCode = this.toFontChar.get(charcode) || charcode;
     if (this.missingFile) {
       const glyphName =
         this.differences.get(charcode) || this.defaultEncoding[charcode];
