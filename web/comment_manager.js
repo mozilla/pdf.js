@@ -270,9 +270,7 @@ class CommentSidebar extends Sidebar {
     if (ids.length === 0 || !this.#idsToElements) {
       return;
     }
-    if (
-      new Set(this.#idsToElements.keys()).difference(new Set(ids)).size === 0
-    ) {
+    if (new Set(this.#idsToElements.keys()).isSubsetOf(new Set(ids))) {
       this.#removeAll();
       return;
     }
