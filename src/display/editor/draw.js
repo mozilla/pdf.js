@@ -1041,10 +1041,10 @@ class DrawingEditor extends AnnotationEditor {
 
   static _drawMove(event) {
     CurrentPointers.isSameTimeStamp(event.timeStamp);
-    if (!DrawingEditor.#currentDraw) {
-      return;
-    }
-    if (!CurrentPointers.isSamePointerId(event.pointerId)) {
+    if (
+      !DrawingEditor.#currentDraw ||
+      !CurrentPointers.isSamePointerId(event.pointerId)
+    ) {
       return;
     }
     if (CurrentPointers.isUsingMultiplePointers()) {

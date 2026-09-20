@@ -183,6 +183,7 @@ export default [
       "unicorn/prefer-at": "error",
       "unicorn/prefer-class-fields": "error",
       "unicorn/prefer-classlist-toggle": "error",
+      "unicorn/prefer-combined-guards": "error",
       "unicorn/prefer-date-now": "error",
       "unicorn/prefer-dom-node-append": "error",
       "unicorn/prefer-dom-node-remove": "error",

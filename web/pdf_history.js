@@ -484,10 +484,12 @@ class PDFHistory {
         return false;
       }
     }
-    if (!Number.isInteger(state.uid) || state.uid < 0) {
-      return false;
-    }
-    if (state.destination === null || typeof state.destination !== "object") {
+    if (
+      !Number.isInteger(state.uid) ||
+      state.uid < 0 ||
+      state.destination === null ||
+      typeof state.destination !== "object"
+    ) {
       return false;
     }
     return true;
@@ -712,10 +714,11 @@ function isDestHashesEqual(destHash, pushHash) {
 
 function isDestArraysEqual(firstDest, secondDest) {
   function isEntryEqual(first, second) {
-    if (typeof first !== typeof second) {
-      return false;
-    }
-    if (Array.isArray(first) || Array.isArray(second)) {
+    if (
+      typeof first !== typeof second ||
+      Array.isArray(first) ||
+      Array.isArray(second)
+    ) {
       return false;
     }
     if (first !== null && typeof first === "object" && second !== null) {

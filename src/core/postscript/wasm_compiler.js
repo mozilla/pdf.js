@@ -492,10 +492,7 @@ class PsWasmCompiler {
     // Returns 0 when divisor == 0 (IEEE 754 gives ±Inf/NaN; pdfium returns 0).
     const tmp = this._allocLocal();
     try {
-      if (!this._compileNode(second)) {
-        return false;
-      }
-      if (!this._compileNode(first)) {
+      if (!this._compileNode(second) || !this._compileNode(first)) {
         return false;
       }
       const code = this._code;
@@ -516,10 +513,7 @@ class PsWasmCompiler {
     // Same select pattern as _compileSafeDivNode with an extra f64_trunc.
     const tmp = this._allocLocal();
     try {
-      if (!this._compileNode(second)) {
-        return false;
-      }
-      if (!this._compileNode(first)) {
+      if (!this._compileNode(second) || !this._compileNode(first)) {
         return false;
       }
       const code = this._code;
@@ -536,10 +530,11 @@ class PsWasmCompiler {
   }
 
   _compileBitshiftNode(first, second) {
-    if (first.type !== PS_NODE.const || !Number.isInteger(first.value)) {
-      return false;
-    }
-    if (!this._compileNode(second)) {
+    if (
+      first.type !== PS_NODE.const ||
+      !Number.isInteger(first.value) ||
+      !this._compileNode(second)
+    ) {
       return false;
     }
 
@@ -615,10 +610,7 @@ class PsWasmCompiler {
   _compileAtanNode(first, second) {
     const localR = this._allocLocal();
     try {
-      if (!this._compileNode(second)) {
-        return false;
-      }
-      if (!this._compileNode(first)) {
+      if (!this._compileNode(second) || !this._compileNode(first)) {
         return false;
       }
 
@@ -643,10 +635,10 @@ class PsWasmCompiler {
   }
 
   _compileBitwiseNode(op, first, second) {
-    if (!this._compileBitwiseOperandI32(second)) {
-      return false;
-    }
-    if (!this._compileBitwiseOperandI32(first)) {
+    if (
+      !this._compileBitwiseOperandI32(second) ||
+      !this._compileBitwiseOperandI32(first)
+    ) {
       return false;
     }
     const code = this._code;
@@ -697,13 +689,8 @@ class PsWasmCompiler {
       } finally {
         this._releaseLocal(tmp);
       }
-    } else {
-      if (!this._compileNode(second)) {
-        return false;
-      }
-      if (!this._compileNode(first)) {
-        return false;
-      }
+    } else if (!this._compileNode(second) || !this._compileNode(first)) {
+      return false;
     }
 
     const code = this._code;
@@ -787,10 +774,7 @@ class PsWasmCompiler {
       // Comparison: leaves i32 directly.
       const wasmOp = PsWasmCompiler.#comparisonToOp.get(node.op);
       if (wasmOp !== undefined) {
-        if (!this._compileNode(node.second)) {
-          return false;
-        }
-        if (!this._compileNode(node.first)) {
+        if (!this._compileNode(node.second) || !this._compileNode(node.first)) {
           return false;
         }
         this._code.push(wasmOp);
@@ -801,10 +785,10 @@ class PsWasmCompiler {
         node.valueType === PS_VALUE_TYPE.boolean &&
         (node.op === TOKEN.and || node.op === TOKEN.or || node.op === TOKEN.xor)
       ) {
-        if (!this._compileNodeAsBoolI32(node.second)) {
-          return false;
-        }
-        if (!this._compileNodeAsBoolI32(node.first)) {
+        if (
+          !this._compileNodeAsBoolI32(node.second) ||
+          !this._compileNodeAsBoolI32(node.first)
+        ) {
           return false;
         }
         switch (node.op) {

@@ -245,11 +245,7 @@ function searchNode(
 
 function createDataNode(root, container, expr) {
   const parsed = parseExpression(expr);
-  if (!parsed) {
-    return null;
-  }
-
-  if (parsed.some(x => x.operator === operators.dotDot)) {
+  if (!parsed || parsed.some(x => x.operator === operators.dotDot)) {
     return null;
   }
 

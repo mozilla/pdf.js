@@ -196,10 +196,7 @@ class AForm {
   }
 
   AFPercent_Format(nDec, sepStyle, percentPrepend = false) {
-    if (typeof nDec !== "number") {
-      return;
-    }
-    if (typeof sepStyle !== "number") {
+    if (typeof nDec !== "number" || typeof sepStyle !== "number") {
       return;
     }
     if (nDec < 0) {

@@ -229,11 +229,11 @@ class XfaLayer {
       attributes.name = `${attributes.name}-${intent}`;
     }
     for (const [key, value] of Object.entries(attributes)) {
-      if (value === null || value === undefined) {
-        continue;
-      }
-
-      if (disallowedEventHandlerAttrRegExp.test(key)) {
+      if (
+        value === null ||
+        value === undefined ||
+        disallowedEventHandlerAttrRegExp.test(key)
+      ) {
         continue;
       }
 

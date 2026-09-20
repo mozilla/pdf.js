@@ -200,20 +200,18 @@ class PsJsCompiler {
 
     // bitshift requires a constant shift amount.
     if (op === TOKEN.bitshift) {
-      if (first.type !== PS_NODE.const || !Number.isInteger(first.value)) {
-        return false;
-      }
-      if (!this._compileNode(second)) {
+      if (
+        first.type !== PS_NODE.const ||
+        !Number.isInteger(first.value) ||
+        !this._compileNode(second)
+      ) {
         return false;
       }
       this.ir.push(OP.SHIFT, first.value);
       return true;
     }
 
-    if (!this._compileNode(second)) {
-      return false;
-    }
-    if (!this._compileNode(first)) {
+    if (!this._compileNode(second) || !this._compileNode(first)) {
       return false;
     }
 

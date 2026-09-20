@@ -1762,10 +1762,10 @@ class Catalog {
           break;
         }
         const parentDict = xref.fetch(parentRaw);
-        if (!(parentDict instanceof Dict)) {
-          break;
-        }
-        if (isName(parentDict.get("Type"), "StructTreeRoot")) {
+        if (
+          !(parentDict instanceof Dict) ||
+          isName(parentDict.get("Type"), "StructTreeRoot")
+        ) {
           break;
         }
         const pg = parentDict.getRaw("Pg");
