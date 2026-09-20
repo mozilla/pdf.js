@@ -156,10 +156,7 @@ class FlateStream extends DecodeStream {
     if (!data) {
       return this.getBytes(length);
     }
-    if (data.length <= length) {
-      return data;
-    }
-    return data.subarray(0, length);
+    return data.length <= length ? data : data.subarray(0, length);
   }
 
   async asyncGetBytes() {

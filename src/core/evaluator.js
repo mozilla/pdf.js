@@ -4040,10 +4040,9 @@ class PartialEvaluator {
         useCMap: null,
       });
 
-      if (cmap instanceof IdentityCMap) {
-        return new IdentityToUnicodeMap(0, 0xffff);
-      }
-      return new ToUnicodeMap(cmap.getMap());
+      return cmap instanceof IdentityCMap
+        ? new IdentityToUnicodeMap(0, 0xffff)
+        : new ToUnicodeMap(cmap.getMap());
     }
     if (cmapObj instanceof BaseStream) {
       try {

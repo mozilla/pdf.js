@@ -75,11 +75,7 @@ class AForm {
     }
 
     const numbers = str.match(/(\d+)/g);
-    if (numbers.length === 0) {
-      return null;
-    }
-
-    return numbers;
+    return numbers.length === 0 ? null : numbers;
   }
 
   AFMakeNumber(str) {
@@ -92,11 +88,7 @@ class AForm {
 
     str = str.trim().replace(",", ".");
     const number = parseFloat(str);
-    if (isNaN(number) || !isFinite(number)) {
-      return null;
-    }
-
-    return number;
+    return isNaN(number) || !isFinite(number) ? null : number;
   }
 
   AFMakeArrayFromList(string) {

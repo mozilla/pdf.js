@@ -80,10 +80,9 @@ class MetadataParser {
 
   _getSequence(entry) {
     const name = entry.nodeName;
-    if (name !== "rdf:bag" && name !== "rdf:seq" && name !== "rdf:alt") {
-      return null;
-    }
-    return entry.childNodes.filter(node => node.nodeName === "rdf:li");
+    return name !== "rdf:bag" && name !== "rdf:seq" && name !== "rdf:alt"
+      ? null
+      : entry.childNodes.filter(node => node.nodeName === "rdf:li");
   }
 
   _parseArray(entry) {

@@ -977,20 +977,16 @@ class CalRGBCS extends ColorSpace {
     // the threshold, the final result is larger than 254.5 since
     // ((1 + 0.055) * 0.99554525 ** (1 / 2.4) - 0.055) * 255 ===
     // 254.50000003134699
-    if (color >= 0.99554525) {
-      return 1;
-    }
-    return MathClamp((1 + 0.055) * color ** (1 / 2.4) - 0.055, 0, 1);
+    return color >= 0.99554525
+      ? 1
+      : MathClamp((1 + 0.055) * color ** (1 / 2.4) - 0.055, 0, 1);
   }
 
   #decodeL(L) {
     if (L < 0) {
       return -this.#decodeL(-L);
     }
-    if (L > 8.0) {
-      return ((L + 16) / 116) ** 3;
-    }
-    return L * CalRGBCS.#DECODE_L_CONSTANT;
+    return L > 8.0 ? ((L + 16) / 116) ** 3 : L * CalRGBCS.#DECODE_L_CONSTANT;
   }
 
   #compensateBlackPoint(sourceBlackPoint, XYZ_Flat, result) {

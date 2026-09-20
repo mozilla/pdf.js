@@ -23,20 +23,14 @@ class ProxyHandler {
     // script may add some properties to the object
     if (prop in obj._expandos) {
       const val = obj._expandos[prop];
-      if (typeof val === "function") {
-        return val.bind(obj);
-      }
-      return val;
+      return typeof val === "function" ? val.bind(obj) : val;
     }
 
     if (typeof prop === "string" && !prop.startsWith("_") && prop in obj) {
       // return only public properties
       // i.e. the ones not starting with a '_'
       const val = obj[prop];
-      if (typeof val === "function") {
-        return val.bind(obj);
-      }
-      return val;
+      return typeof val === "function" ? val.bind(obj) : val;
     }
 
     return undefined;
@@ -106,11 +100,9 @@ class ProxyHandler {
       };
     }
 
-    if (typeof prop === "string" && !prop.startsWith("_") && prop in obj) {
-      return { configurable: true, enumerable: true, value: obj[prop] };
-    }
-
-    return undefined;
+    return typeof prop === "string" && !prop.startsWith("_") && prop in obj
+      ? { configurable: true, enumerable: true, value: obj[prop] }
+      : undefined;
   }
 
   defineProperty(obj, key, descriptor) {

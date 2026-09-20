@@ -65,10 +65,7 @@ class FileSpec {
 
   get description() {
     const desc = this.root?.get("Desc");
-    if (desc && typeof desc === "string") {
-      return stringToPDFString(desc);
-    }
-    return "";
+    return desc && typeof desc === "string" ? stringToPDFString(desc) : "";
   }
 
   get serializable() {

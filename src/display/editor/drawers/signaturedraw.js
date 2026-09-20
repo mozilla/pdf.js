@@ -47,11 +47,7 @@ class SignatureExtractor {
       return j > 0 ? 0 : 4;
     }
 
-    if (i === 1) {
-      return j + 6;
-    }
-
-    return 2 - j;
+    return i === 1 ? j + 6 : 2 - j;
   }
 
   static #neighborIdToIndex = new Int32Array([

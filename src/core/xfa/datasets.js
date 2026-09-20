@@ -57,10 +57,9 @@ class Datasets extends XFAObject {
 
 class DatasetsNamespace {
   static [$buildXFAObject](name, attributes) {
-    if (Object.hasOwn(DatasetsNamespace, name)) {
-      return DatasetsNamespace[name](attributes);
-    }
-    return undefined;
+    return Object.hasOwn(DatasetsNamespace, name)
+      ? DatasetsNamespace[name](attributes)
+      : undefined;
   }
 
   static datasets(attributes) {

@@ -40,10 +40,9 @@ class Xdp extends XFAObject {
 
 class XdpNamespace {
   static [$buildXFAObject](name, attributes) {
-    if (Object.hasOwn(XdpNamespace, name)) {
-      return XdpNamespace[name](attributes);
-    }
-    return undefined;
+    return Object.hasOwn(XdpNamespace, name)
+      ? XdpNamespace[name](attributes)
+      : undefined;
   }
 
   static xdp(attributes) {

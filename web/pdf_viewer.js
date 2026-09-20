@@ -1771,10 +1771,7 @@ class PDFViewer {
       return null;
     }
     const i = this._pageLabels.indexOf(label);
-    if (i < 0) {
-      return null;
-    }
-    return i + 1;
+    return i < 0 ? null : i + 1;
   }
 
   /**
@@ -2078,15 +2075,17 @@ class PDFViewer {
   }
 
   get isHorizontalScrollbarEnabled() {
-    return this.isInPresentationMode
-      ? false
-      : this.container.scrollWidth > this.container.clientWidth;
+    return (
+      !this.isInPresentationMode &&
+      this.container.scrollWidth > this.container.clientWidth
+    );
   }
 
   get isVerticalScrollbarEnabled() {
-    return this.isInPresentationMode
-      ? false
-      : this.container.scrollHeight > this.container.clientHeight;
+    return (
+      !this.isInPresentationMode &&
+      this.container.scrollHeight > this.container.clientHeight
+    );
   }
 
   _getVisiblePages() {

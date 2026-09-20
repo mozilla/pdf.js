@@ -164,11 +164,7 @@ class Binder {
     // Thirdly, try to find it in attributes.
     generator = this.data[$getAttributeIt](name, /* skipConsumed = */ true);
     match = generator.next().value;
-    if (match?.[$isDataValue]()) {
-      return match;
-    }
-
-    return null;
+    return match?.[$isDataValue]() ? match : null;
   }
 
   _setProperties(formNode, dataNode) {

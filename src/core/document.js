@@ -160,10 +160,9 @@ class Page {
     if (!Array.isArray(value)) {
       return value;
     }
-    if (value.length === 1 || !(value[0] instanceof Dict)) {
-      return value[0];
-    }
-    return Dict.merge({ xref: this.xref, dictArray: value });
+    return value.length === 1 || !(value[0] instanceof Dict)
+      ? value[0]
+      : Dict.merge({ xref: this.xref, dictArray: value });
   }
 
   get content() {

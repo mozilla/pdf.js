@@ -228,11 +228,7 @@ class Catalog {
    */
   get needsRendering() {
     const needsRendering = this.#catDict.get("NeedsRendering");
-    return shadow(
-      this,
-      "needsRendering",
-      typeof needsRendering === "boolean" ? needsRendering : false
-    );
+    return shadow(this, "needsRendering", needsRendering === true);
   }
 
   get collection() {
@@ -330,7 +326,7 @@ class Catalog {
 
     for (const key of ["Marked", "UserProperties", "Suspects"]) {
       const val = obj.get(key);
-      markInfo.set(key, typeof val === "boolean" ? val : false);
+      markInfo.set(key, val === true);
     }
     return markInfo;
   }
@@ -673,10 +669,9 @@ class Catalog {
         return null;
       }
       const nestedOrder = parseOrder(value.slice(1), nestedLevels);
-      if (!nestedOrder?.length) {
-        return null;
-      }
-      return { name: stringToPDFString(nestedName), order: nestedOrder };
+      return !nestedOrder?.length
+        ? null
+        : { name: stringToPDFString(nestedName), order: nestedOrder };
     }
 
     function parseRBGroups(rbGroups) {
@@ -1184,10 +1179,9 @@ class Catalog {
       const target = this.xref.fetch(ref);
       if (target instanceof BaseStream) {
         const content = FileSpec.readStreamContent(target);
-        if (this.#soundAttachmentIds.has(id)) {
-          return soundStreamToWav(target, content) ?? content;
-        }
-        return content;
+        return this.#soundAttachmentIds.has(id)
+          ? (soundStreamToWav(target, content) ?? content)
+          : content;
       }
       return target instanceof Dict ? FileSpec.readContent(target) : null;
     }
@@ -1969,7 +1963,7 @@ class Catalog {
           }
           resultObj.setOCGState = {
             state: stateArr,
-            preserveRB: typeof preserveRB === "boolean" ? preserveRB : true,
+            preserveRB: preserveRB !== false,
           };
           break;
 

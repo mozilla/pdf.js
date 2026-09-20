@@ -183,10 +183,9 @@ function removeNullCharacters(str, replaceInvisible = false) {
   if (!InvisibleCharsRegExp.test(str)) {
     return str;
   }
-  if (replaceInvisible) {
-    return str.replaceAll(InvisibleCharsRegExp, m => (m === "\x00" ? "" : " "));
-  }
-  return str.replaceAll("\x00", "");
+  return replaceInvisible
+    ? str.replaceAll(InvisibleCharsRegExp, m => (m === "\x00" ? "" : " "))
+    : str.replaceAll("\x00", "");
 }
 
 /**

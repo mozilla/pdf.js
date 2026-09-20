@@ -108,10 +108,7 @@ class ImageResizer {
     }
     const area = width * height;
     if (!this.needsToBeResized(width, height)) {
-      if (area > maxArea) {
-        return Math.ceil(Math.log2(area / maxArea));
-      }
-      return 0;
+      return area > maxArea ? Math.ceil(Math.log2(area / maxArea)) : 0;
     }
     const { MAX_DIM, MAX_AREA } = this;
     const minFactor = Math.max(

@@ -1176,10 +1176,9 @@ class CFFStrings {
     if (index >= 0 && index <= NUM_STANDARD_CFF_STRINGS - 1) {
       return CFFStandardStrings[index];
     }
-    if (index - NUM_STANDARD_CFF_STRINGS <= this.strings.length) {
-      return this.strings[index - NUM_STANDARD_CFF_STRINGS];
-    }
-    return CFFStandardStrings[0];
+    return index - NUM_STANDARD_CFF_STRINGS <= this.strings.length
+      ? this.strings[index - NUM_STANDARD_CFF_STRINGS]
+      : CFFStandardStrings[0];
   }
 
   getSID(str) {
@@ -1188,10 +1187,7 @@ class CFFStrings {
       return index;
     }
     index = this.strings.indexOf(str);
-    if (index !== -1) {
-      return index + NUM_STANDARD_CFF_STRINGS;
-    }
-    return -1;
+    return index !== -1 ? index + NUM_STANDARD_CFF_STRINGS : -1;
   }
 
   add(value) {
@@ -1609,10 +1605,9 @@ class CFFCompiler {
   }
 
   encodeNumber(value) {
-    if (Number.isInteger(value)) {
-      return this.encodeInteger(value);
-    }
-    return this.encodeFloat(value);
+    return Number.isInteger(value)
+      ? this.encodeInteger(value)
+      : this.encodeFloat(value);
   }
 
   static get EncodeFloatRegExp() {

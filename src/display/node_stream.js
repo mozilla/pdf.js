@@ -128,10 +128,9 @@ class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
   async read() {
     await this._readCapability.promise;
     const { value, done } = await this._reader.read();
-    if (done) {
-      return { value, done };
-    }
-    return { value: getArrayBuffer(value), done: false };
+    return done
+      ? { value, done }
+      : { value: getArrayBuffer(value), done: false };
   }
 
   cancel(reason) {

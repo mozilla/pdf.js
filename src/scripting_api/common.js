@@ -41,10 +41,7 @@ function getFieldType(actions) {
   if (format.startsWith("AFDate_")) {
     return FieldType.date;
   }
-  if (format.startsWith("AFTime_")) {
-    return FieldType.time;
-  }
-  return FieldType.none;
+  return format.startsWith("AFTime_") ? FieldType.time : FieldType.none;
 }
 
 export { createMap, FieldType, getFieldType };

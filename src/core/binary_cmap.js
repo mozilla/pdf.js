@@ -30,10 +30,9 @@ function hexToStr(a, size) {
   if (size === 1) {
     return String.fromCharCode(a[0], a[1]);
   }
-  if (size === 3) {
-    return String.fromCharCode(a[0], a[1], a[2], a[3]);
-  }
-  return String.fromCharCode(...a.subarray(0, size + 1));
+  return size === 3
+    ? String.fromCharCode(a[0], a[1], a[2], a[3])
+    : String.fromCharCode(...a.subarray(0, size + 1));
 }
 
 function addHex(a, b, size) {
@@ -313,10 +312,7 @@ class BinaryCMapReader {
       }
     }
 
-    if (useCMap) {
-      return extend(useCMap);
-    }
-    return cMap;
+    return useCMap ? extend(useCMap) : cMap;
   }
 }
 

@@ -612,10 +612,9 @@ function mapVerificationStatus(signatureCode, certificateCode) {
   if (NSS_ERR_CODES.EXPIRED.has(certificateCode)) {
     return { status: "expired", errorCode: certificateCode };
   }
-  if (NSS_ERR_CODES.UNTRUSTED.has(certificateCode)) {
-    return { status: "untrusted", errorCode: certificateCode };
-  }
-  return { status: "untrusted", errorCode: certificateCode };
+  return NSS_ERR_CODES.UNTRUSTED.has(certificateCode)
+    ? { status: "untrusted", errorCode: certificateCode }
+    : { status: "untrusted", errorCode: certificateCode };
 }
 
 class SignatureVerifier {

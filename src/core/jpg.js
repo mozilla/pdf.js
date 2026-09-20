@@ -221,10 +221,7 @@ function decodeScan(
       return readBit() === 1 ? 1 : -1;
     }
     const n = receive(length);
-    if (n >= 1 << (length - 1)) {
-      return n;
-    }
-    return n + (-1 << length) + 1;
+    return n >= 1 << (length - 1) ? n : n + (-1 << length) + 1;
   }
 
   function decodeBaseline(component, blockOffset) {
@@ -797,10 +794,7 @@ function skipData(data, view, offset) {
   const endOffset = offset + length - 2;
 
   const fileMarker = findNextFileMarker(data, view, endOffset, offset);
-  if (fileMarker?.invalid) {
-    return fileMarker.offset;
-  }
-  return endOffset;
+  return fileMarker?.invalid ? fileMarker.offset : endOffset;
 }
 
 class JpegImage {
@@ -1424,10 +1418,9 @@ class JpegImage {
         if (forceRGBA) {
           return this._convertYcckToRgba(data);
         }
-        if (forceRGB) {
-          return this._convertYcckToRgb(data);
-        }
-        return this._convertYcckToCmyk(data);
+        return forceRGB
+          ? this._convertYcckToRgb(data)
+          : this._convertYcckToCmyk(data);
       } else if (forceRGBA) {
         return this._convertCmykToRgba(data);
       } else if (forceRGB) {

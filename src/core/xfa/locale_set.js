@@ -239,10 +239,9 @@ class TypeFaces extends XFAObject {
 
 class LocaleSetNamespace {
   static [$buildXFAObject](name, attributes) {
-    if (Object.hasOwn(LocaleSetNamespace, name)) {
-      return LocaleSetNamespace[name](attributes);
-    }
-    return undefined;
+    return Object.hasOwn(LocaleSetNamespace, name)
+      ? LocaleSetNamespace[name](attributes)
+      : undefined;
   }
 
   static calendarSymbols(attrs) {

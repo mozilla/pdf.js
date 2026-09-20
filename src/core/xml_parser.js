@@ -318,10 +318,7 @@ class SimpleDOMNode {
       return undefined;
     }
     const index = childNodes.indexOf(this);
-    if (index === -1) {
-      return undefined;
-    }
-    return childNodes[index + 1];
+    return index === -1 ? undefined : childNodes[index + 1];
   }
 
   get textContent() {

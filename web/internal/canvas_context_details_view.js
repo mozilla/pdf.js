@@ -361,10 +361,7 @@ class CanvasContextDetailsView {
       if (Array.isArray(v)) {
         return [...v];
       }
-      if (typeof v === "object" && v !== null) {
-        return { ...v };
-      }
-      return v;
+      return typeof v === "object" && v !== null ? { ...v } : v;
     };
     return new Map([...state].map(([k, v]) => [k, clone(v)]));
   }
