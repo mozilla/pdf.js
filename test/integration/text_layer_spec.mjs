@@ -18,6 +18,12 @@
  */
 
 import {
+  browserCloseTimeout,
+  browserTimeout,
+  killBrowser,
+  startBrowser,
+} from "../test.mjs";
+import {
   closePages,
   closeSinglePage,
   firstPageOnTop,
@@ -28,7 +34,6 @@ import {
   waitForEvent,
 } from "./test_utils.mjs";
 import { MathClamp } from "../../src/shared/math_clamp.js";
-import { startBrowser } from "../test.mjs";
 
 /**
  * @typedef Point
@@ -58,9 +63,13 @@ const describeFirefoxOnly = global.integrationSessions.some(
   ? describe
   : xdescribe;
 
-// Dedicated browser setup can exceed Jasmine's 30-second default. Keep this
-// above `startBrowser`'s protocol timeout so protocol errors surface first.
-const BROWSER_HOOK_TIMEOUT = 60000;
+// Allow one protocol timeout, the close fallback, and a 10-second margin.
+const DEDICATED_BROWSER_TIMEOUT =
+  (browserTimeout + browserCloseTimeout + 10) * 1000;
+
+function dedicatedBrowserTest(description, test) {
+  it(description, test, DEDICATED_BROWSER_TIMEOUT);
+}
 
 /**
  * @param {Browser} [browser]
@@ -72,7 +81,7 @@ async function closeDedicatedBrowser(browser, page) {
       await closeSinglePage(page);
     }
   } finally {
-    await browser?.close();
+    await killBrowser(browser);
   }
 }
 
@@ -1285,13 +1294,13 @@ describe("Text layer", () => {
           `.page[data-page-number = "1"] .endOfContent`,
           { timeout: 0 }
         );
-      }, BROWSER_HOOK_TIMEOUT);
+      }, DEDICATED_BROWSER_TIMEOUT);
 
       afterEach(async () => {
         await closeDedicatedBrowser(browser, page);
-      }, BROWSER_HOOK_TIMEOUT);
+      }, DEDICATED_BROWSER_TIMEOUT);
 
-      it("doesn't jump when moving selection", async () => {
+      dedicatedBrowserTest("doesn't jump when moving selection", async () => {
         const [initialStart, initialEnd, finalEnd] = await Promise.all([
           getSpanRectFromText(
             page,
@@ -1508,13 +1517,13 @@ describe("Text layer", () => {
         `.page[data-page-number = "1"] .endOfContent`,
         { timeout: 0 }
       );
-    }, BROWSER_HOOK_TIMEOUT);
+    }, DEDICATED_BROWSER_TIMEOUT);
 
     afterEach(async () => {
       await closeDedicatedBrowser(browser, page);
-    }, BROWSER_HOOK_TIMEOUT);
+    }, DEDICATED_BROWSER_TIMEOUT);
 
-    it("renders spans with the right size", async () => {
+    dedicatedBrowserTest("renders spans with the right size", async () => {
       const rect = await getSpanRectFromText(
         page,
         1,

@@ -186,8 +186,8 @@ var refsTmpDir = "tmp";
 var testResultDir = "test_snapshots";
 var refsDir = "ref";
 var eqLog = "eq.log";
-var browserTimeout = 120;
-var browserCloseTimeout = 15;
+const browserTimeout = 120;
+const browserCloseTimeout = 15;
 var maxBrowserStartAttempts = 3;
 var maxSessionRestarts = 3;
 
@@ -504,8 +504,6 @@ async function startSessionBrowser(session) {
   const browser = await startBrowser({
     browserName: session.browserType,
     startUrl: session.startUrl,
-    // Use the same timeout for test-page navigation and protocol calls.
-    protocolTimeout: session.startUrl ? browserTimeout * 1000 : undefined,
   });
   try {
     const page = (await browser.pages())[0];
@@ -1081,7 +1079,6 @@ async function startBrowser({
   headless = options.headless,
   startUrl,
   extraPrefsFirefox = {},
-  protocolTimeout = 0.75 * /* jasmine.DEFAULT_TIMEOUT_INTERVAL = */ 30000,
 }) {
   const options = {
     browser: browserName,
@@ -1090,7 +1087,8 @@ async function startBrowser({
     dumpio: true,
     defaultViewport: null,
     ignoreDefaultArgs: ["--disable-extensions"],
-    protocolTimeout,
+    // Firefox's `session.new` launch command uses this timeout.
+    protocolTimeout: browserTimeout * 1000,
   };
 
   tempDir ||= fs.mkdtempSync(path.join(os.tmpdir(), "pdfjs-"));
@@ -1569,4 +1567,4 @@ const perTestFileIndex = new Map();
 
 main();
 
-export { startBrowser };
+export { browserCloseTimeout, browserTimeout, killBrowser, startBrowser };
