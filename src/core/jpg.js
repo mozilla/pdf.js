@@ -1214,9 +1214,7 @@ class JpegImage {
 
     let component, componentScaleX, componentScaleY, blocksPerScanline;
     let x, y, i, j, k;
-    let index;
     let offset = 0;
-    let output;
     const numComponents = this.components.length;
     const dataLength = width * height * numComponents;
     const data = new Uint8ClampedArray(dataLength);
@@ -1229,7 +1227,7 @@ class JpegImage {
       componentScaleX = component.scaleX * scaleX;
       componentScaleY = component.scaleY * scaleY;
       offset = i;
-      output = component.output;
+      const output = component.output;
       blocksPerScanline = (component.blocksPerLine + 1) << 3;
       // Precalculate the `xScaleBlockOffset`. Since it doesn't depend on the
       // component data, that's only necessary when `componentScaleX` changes.
@@ -1243,7 +1241,7 @@ class JpegImage {
       // linearize the blocks of the component
       for (y = 0; y < height; y++) {
         j = 0 | (y * componentScaleY);
-        index = (blocksPerScanline * (j & mask3LSB)) | ((j & 7) << 3);
+        const index = (blocksPerScanline * (j & mask3LSB)) | ((j & 7) << 3);
         for (x = 0; x < width; x++) {
           data[offset] = output[index + xScaleBlockOffset[x]];
           offset += numComponents;
@@ -1396,10 +1394,10 @@ class JpegImage {
     if (this.numComponents === 1 && (forceRGBA || forceRGB)) {
       const len = data.length * (forceRGBA ? 4 : 3);
       const rgbaData = new Uint8ClampedArray(len);
-      let offset = 0;
       if (forceRGBA) {
         grayToRGBA(data, new Uint32Array(rgbaData.buffer));
       } else {
+        let offset = 0;
         for (const grayColor of data) {
           rgbaData[offset++] = grayColor;
           rgbaData[offset++] = grayColor;
