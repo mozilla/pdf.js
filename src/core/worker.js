@@ -82,17 +82,6 @@ class WorkerMessageHandler {
   }
 
   static setup(handler, port) {
-    let testMessageProcessed = false;
-    handler.on("test", data => {
-      if (testMessageProcessed) {
-        return; // we already processed 'test' message once
-      }
-      testMessageProcessed = true;
-
-      // Ensure that `TypedArray`s can be sent to the worker.
-      handler.send("test", data instanceof Uint8Array);
-    });
-
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
     });
@@ -1106,7 +1095,10 @@ class WorkerMessageHandler {
   static initializeFromPort(port) {
     const handler = new MessageHandler("worker", "main", port);
     this.setup(handler, port);
-    handler.send("ready", null);
+
+    const testObj = new Uint8Array();
+    // Ensure that we can use `postMessage` transfers.
+    handler.send("ready", testObj, [testObj.buffer]);
   }
 }
 

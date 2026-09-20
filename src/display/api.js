@@ -2243,9 +2243,9 @@ class PDFWorker {
         { signal: ac.signal }
       );
 
-      messageHandler.on("test", data => {
+      messageHandler.on("ready", data => {
         ac.abort();
-        if (this.destroyed || !data) {
+        if (this.destroyed || !(data instanceof Uint8Array)) {
           terminateEarly();
           return;
         }
@@ -2255,38 +2255,10 @@ class PDFWorker {
 
         this.#resolve();
       });
-
-      messageHandler.on("ready", data => {
-        ac.abort();
-        if (this.destroyed) {
-          terminateEarly();
-          return;
-        }
-        try {
-          sendTest();
-        } catch {
-          // We need fallback to a faked worker.
-          this.#setupFakeWorker();
-        }
-      });
-
-      const sendTest = () => {
-        const testObj = new Uint8Array();
-        // Ensure that we can use `postMessage` transfers.
-        messageHandler.send("test", testObj, [testObj.buffer]);
-      };
-
-      // It might take time for the worker to initialize. We will try to send
-      // the "test" message immediately, and once the "ready" message arrives.
-      // The worker shall process only the first received "test" message.
-      sendTest();
-      return;
     } catch {
       info("The worker has been disabled.");
+      this.#setupFakeWorker();
     }
-    // Either workers are not supported or have thrown an exception.
-    // Thus, we fallback to a faked worker.
-    this.#setupFakeWorker();
   }
 
   #setupFakeWorker() {
