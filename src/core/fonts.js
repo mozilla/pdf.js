@@ -1321,8 +1321,14 @@ class Font {
             map.set(charCode, cidToGidMap.get(cid));
           }
         }
-        // When the /CIDToGIDMap is "incomplete", fallback to the included
-        // /ToUnicode-map regardless of its encoding (fixes issue11915.pdf).
+        // When the /CIDToGIDMap is "incomplete", fallback to an included
+        // identity /ToUnicode-map (fixes issue11915.pdf).
+        //
+        // The `_charToGlyph` method will fallback to an identity `fontCharCode`
+        // mapping, and this is a non-embedded font (i.e. the `isInFont` value
+        // won't affect glyph-rendering), hence it's more efficient to simply
+        // remove any entries not found in the /CIDToGIDMap rather than creating
+        // a large and *almost* identity `toFontChar` mapping here.
         if (
           cidToGidMap.size !== this.toUnicode.size &&
           properties.hasIncludedToUnicodeMap &&
@@ -1331,7 +1337,7 @@ class Font {
           this.toUnicode.forEach((charCode, unicodeCharCode) => {
             const cid = map.get(charCode);
             if (!cidToGidMap.has(cid)) {
-              map.set(charCode, unicodeCharCode);
+              map.delete(charCode);
             }
           });
         }
