@@ -23,18 +23,16 @@ describe("dependencies tracking", function () {
   beforeAll(() => {
     globalThis.StepperManager = {
       enabled: true,
-      create() {
-        return {
-          init() {},
-          updateOperatorList() {},
-          getNextBreakPoint: () => null,
-          nextBreakPoint: null,
-          shouldSkip: () => false,
-          setOperatorBBoxes(_bboxes, deps) {
-            dependencies = deps;
-          },
-        };
-      },
+      create: () => ({
+        init() {},
+        updateOperatorList() {},
+        getNextBreakPoint: () => null,
+        nextBreakPoint: null,
+        shouldSkip: () => false,
+        setOperatorBBoxes(_bboxes, deps) {
+          dependencies = deps;
+        },
+      }),
     };
   });
 

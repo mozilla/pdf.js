@@ -242,9 +242,7 @@ class PageView {
       _isTextExecOp: i => TEXT_EXEC_OP_IDS.has(this.#currentOpList?.fnArray[i]),
       // Returns the total number of ops in the current op list.
       _opCount: () => this.#currentOpList?.fnArray.length ?? 0,
-      create() {
-        return globalThis.StepperManager._active;
-      },
+      create: () => globalThis.StepperManager._active,
     };
 
     // Keep --dpr in sync so CSS can scale temp canvases correctly.

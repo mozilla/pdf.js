@@ -136,9 +136,7 @@ function createExtensionGlobal() {
   };
   window.Date = {
     test_now_value: Date.now(),
-    now() {
-      return window.Date.test_now_value;
-    },
+    now: () => window.Date.test_now_value,
   };
   window.test_fireTimers = function () {
     assert.ok(timers.length);

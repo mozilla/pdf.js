@@ -305,43 +305,41 @@ describe("Text layer", () => {
       jasmine.addAsyncMatchers({
         // Check that a page has a selection containing the given text, with
         // some tolerance for extra characters before/after.
-        toHaveRoughlySelected({ pp }) {
-          return {
-            async compare(page, expected) {
-              const TOLERANCE = 10;
-              const actual = await getSelectionText(page);
+        toHaveRoughlySelected: ({ pp }) => ({
+          async compare(page, expected) {
+            const TOLERANCE = 10;
+            const actual = await getSelectionText(page);
 
-              let start, end;
-              if (expected instanceof RegExp) {
-                const match = expected.exec(actual);
-                start = -1;
-                if (match) {
-                  start = match.index;
-                  end = start + match[0].length;
-                }
-              } else {
-                start = actual.indexOf(expected);
-                if (start !== -1) {
-                  end = start + expected.length;
-                }
+            let start, end;
+            if (expected instanceof RegExp) {
+              const match = expected.exec(actual);
+              start = -1;
+              if (match) {
+                start = match.index;
+                end = start + match[0].length;
               }
+            } else {
+              start = actual.indexOf(expected);
+              if (start !== -1) {
+                end = start + expected.length;
+              }
+            }
 
-              const pass =
-                start !== -1 &&
-                start < TOLERANCE &&
-                end > actual.length - TOLERANCE;
+            const pass =
+              start !== -1 &&
+              start < TOLERANCE &&
+              end > actual.length - TOLERANCE;
 
-              return {
-                pass,
-                message: `Expected ${pp(
-                  actual.length > 200
-                    ? actual.slice(0, 100) + "[...]" + actual.slice(-100)
-                    : actual
-                )} to ${pass ? "not " : ""}roughly match ${pp(expected)}.`,
-              };
-            },
-          };
-        },
+            return {
+              pass,
+              message: `Expected ${pp(
+                actual.length > 200
+                  ? actual.slice(0, 100) + "[...]" + actual.slice(-100)
+                  : actual
+              )} to ${pass ? "not " : ""}roughly match ${pp(expected)}.`,
+            };
+          },
+        }),
       });
     });
 

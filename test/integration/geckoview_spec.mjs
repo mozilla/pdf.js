@@ -31,14 +31,10 @@ function loadAndWait(filename, selector) {
       // Keep locale-dependent checks deterministic.
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, "language", {
-          get() {
-            return "en-US";
-          },
+          get: () => "en-US",
         });
         Object.defineProperty(navigator, "languages", {
-          get() {
-            return ["en-US", "en"];
-          },
+          get: () => ["en-US", "en"],
         });
       });
 

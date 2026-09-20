@@ -107,12 +107,8 @@ describe("document", function () {
         get docId() {
           return "d0";
         },
-        ensureDoc(prop, args) {
-          return pdfManager.ensure(pdfDocument, prop, args);
-        },
-        ensureCatalog(prop, args) {
-          return pdfManager.ensure(catalog, prop, args);
-        },
+        ensureDoc: (prop, args) => pdfManager.ensure(pdfDocument, prop, args),
+        ensureCatalog: (prop, args) => pdfManager.ensure(catalog, prop, args),
         async ensure(obj, prop, args) {
           const value = obj[prop];
           return typeof value === "function" ? value.apply(obj, args) : value;

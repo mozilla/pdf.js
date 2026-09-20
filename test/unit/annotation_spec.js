@@ -59,9 +59,8 @@ describe("annotation", function () {
       this.pdfDocument = {
         catalog: {
           baseUrl: params.docBaseUrl || null,
-          getAttachmentIdForAnnotation(ref) {
-            return `attachmentRef:${ref.toString()}`;
-          },
+          getAttachmentIdForAnnotation: ref =>
+            `attachmentRef:${ref.toString()}`,
         },
       };
       this.evaluatorOptions = {

@@ -63,9 +63,7 @@ describe("message_handler", function () {
         {},
         {
           highWaterMark: 1,
-          size() {
-            return 1;
-          },
+          size: () => 1,
         }
       );
 
@@ -123,9 +121,7 @@ describe("message_handler", function () {
         {},
         {
           highWaterMark: 4,
-          size(arr) {
-            return arr.length;
-          },
+          size: arr => arr.length,
         }
       );
 
@@ -173,9 +169,7 @@ describe("message_handler", function () {
         {},
         {
           highWaterMark: 4,
-          size(arr) {
-            return arr.length;
-          },
+          size: arr => arr.length,
         }
       );
 
@@ -233,9 +227,7 @@ describe("message_handler", function () {
         {},
         {
           highWaterMark: 4,
-          size(arr) {
-            return arr.length;
-          },
+          size: arr => arr.length,
         }
       );
 
@@ -302,9 +294,7 @@ describe("message_handler", function () {
           {},
           {
             highWaterMark: 8,
-            size(arr) {
-              return arr.length;
-            },
+            size: arr => arr.length,
           }
         );
 
@@ -360,9 +350,7 @@ describe("message_handler", function () {
         {},
         {
           highWaterMark: 10,
-          size(arr) {
-            return arr.length;
-          },
+          size: arr => arr.length,
         }
       );
 

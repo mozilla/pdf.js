@@ -83,9 +83,8 @@ const preferMathClampRule = {
           context.report({
             node,
             messageId: "useClamp",
-            fix(fixer) {
-              return fixer.replaceText(node, `MathClamp(${v}, ${min}, ${max})`);
-            },
+            fix: fixer =>
+              fixer.replaceText(node, `MathClamp(${v}, ${min}, ${max})`),
           });
         }
 

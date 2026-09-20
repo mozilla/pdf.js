@@ -53,14 +53,10 @@ describe("pattern", function () {
       });
 
       const pdfFunctionFactory = {
-        create(fnObj) {
-          return fnObj.fn;
-        },
+        create: fnObj => fnObj.fn,
       };
       const xref = {
-        fetchIfRef(obj) {
-          return obj;
-        },
+        fetchIfRef: obj => obj,
       };
 
       return Pattern.parseShading(

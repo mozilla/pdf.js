@@ -106,9 +106,7 @@ class MessageHandler {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
       Object.defineProperty(this, "_comObj", {
-        get() {
-          return comObj;
-        },
+        get: () => comObj,
       });
     }
   }

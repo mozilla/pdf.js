@@ -201,6 +201,7 @@ export default [
       "unicorn/prefer-optional-catch-binding": "error",
       "unicorn/prefer-regexp-test": "error",
       "unicorn/prefer-set-methods": "error",
+      "unicorn/prefer-short-arrow-method": "error",
       "unicorn/prefer-single-call": "error",
       "unicorn/prefer-string-replace-all": "error",
       "unicorn/prefer-string-starts-ends-with": "error",
