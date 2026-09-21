@@ -1331,8 +1331,12 @@ class PDFPageProxy {
 
   #pagesMapper = null;
 
+  static #idCounter = 0;
+
   constructor(pageIndex, pageInfo, transport, pagesMapper, pdfBug = false) {
     this._pageIndex = pageIndex;
+    // Stable identifier for worker messages targeting this page proxy.
+    this._id = PDFPageProxy.#idCounter++;
     this._pageInfo = pageInfo;
     this._transport = transport;
     this._stats = pdfBug ? new StatTimer() : null;
@@ -1915,6 +1919,7 @@ class PDFPageProxy {
       {
         pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
         pageIndex: this._pageIndex,
+        pageProxyId: this._id,
         intent: renderingIntent,
         cacheKey,
         annotationStorage: map,
@@ -2379,8 +2384,10 @@ class WorkerTransport {
 
   #networkStream = null;
 
+  // Keyed by the stable `PDFPageProxy._id`.
   #pageCache = new Map();
 
+  // Keyed by `pageIndex`.
   #pagePromises = new Map();
 
   #pageRefCache = new Map();
@@ -2456,9 +2463,8 @@ class WorkerTransport {
   }
 
   updatePage(page) {
-    const { _pageIndex } = page;
-    this.#pageCache.set(_pageIndex, page);
-    this.#pagePromises.set(_pageIndex, Promise.resolve(page));
+    this.#pageCache.set(page._id, page);
+    this.#pagePromises.set(page._pageIndex, Promise.resolve(page));
   }
 
   #cacheSimpleMethod(name, data = null) {
@@ -2761,7 +2767,7 @@ class WorkerTransport {
         return; // Ignore any pending requests if the worker was terminated.
       }
 
-      const page = this.#pageCache.get(data.pageIndex);
+      const page = this.#pageCache.get(data.pageProxyId);
       page._startRenderPage(data.transparency, data.cacheKey);
     });
 
@@ -2848,13 +2854,13 @@ class WorkerTransport {
       return null;
     });
 
-    messageHandler.on("obj", ([id, pageIndex, type, imageData]) => {
+    messageHandler.on("obj", ([id, pageProxyId, type, imageData]) => {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return;
       }
 
-      const pageProxy = this.#pageCache.get(pageIndex);
+      const pageProxy = this.#pageCache.get(pageProxyId);
       if (pageProxy.objs.has(id)) {
         return;
       }
@@ -3035,7 +3041,7 @@ class WorkerTransport {
           this.pagesMapper,
           this._params.pdfBug
         );
-        this.#pageCache.set(pageIndex, page);
+        this.#pageCache.set(page._id, page);
         return page;
       });
     this.#pagePromises.set(pageIndex, promise);

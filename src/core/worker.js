@@ -935,7 +935,15 @@ class WorkerMessageHandler {
     handler.on(
       "GetOperatorList",
       function (
-        { pageId, pageIndex, intent, cacheKey, annotationStorage, modifiedIds },
+        {
+          pageId,
+          pageIndex,
+          pageProxyId,
+          intent,
+          cacheKey,
+          annotationStorage,
+          modifiedIds,
+        },
         sink
       ) {
         pdfManager.getPage(pageId).then(function (page) {
@@ -952,6 +960,7 @@ class WorkerMessageHandler {
               annotationStorage,
               modifiedIds,
               pageIndex,
+              pageProxyId,
             })
             .then(
               () => {
