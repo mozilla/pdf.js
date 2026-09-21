@@ -307,7 +307,9 @@ class CMap {
     }
     for (const charCode in map) {
       if (map[charCode] === value) {
-        return charCode | 0;
+        // `| 0` truncates character codes above 0x7FFFFFFF
+        // to a negative Int32 (see issue_cmap_4byte_charcode_reduced.pdf).
+        return +charCode;
       }
     }
     return -1;

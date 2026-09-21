@@ -5097,6 +5097,13 @@
     "annotations": true
   },
   {
+    "id": "issue_cmap_4byte_charcode_reduced",
+    "file": "pdfs/issue_cmap_4byte_charcode_reduced.pdf",
+    "md5": "2db56b695e0e498ecdf2f0188f89f7b7",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "multiple-filters-length-zero",
     "file": "pdfs/multiple-filters-length-zero.pdf",
     "md5": "c273c3a6fb79cbf3034fe1b62b204728",

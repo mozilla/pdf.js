@@ -31,4 +31,15 @@ describe("ToUnicodeMap", () => {
 
     expect(actual).toBe(expected);
   });
+
+  it("returns unsigned char codes for sparse large reverse lookups", function () {
+    const cmap = [];
+    cmap[0x2699] = "⚙";
+    cmap[0xd83ddd12] = "🔒";
+    const toUnicodeMap = new ToUnicodeMap(cmap);
+
+    expect(toUnicodeMap.charCodeOf("⚙")).toEqual(0x2699);
+    expect(toUnicodeMap.charCodeOf("🔒")).toEqual(0xd83ddd12);
+    expect(toUnicodeMap.charCodeOf("🔒")).toBeGreaterThan(0x7fffffff);
+  });
 });

@@ -286,4 +286,33 @@ describe("cmap", function () {
       expect(message.endsWith("/external/bcmaps/Adobe-Japan1-1")).toBeTrue();
     }
   });
+
+  it("returns unsigned char codes for 4-byte cidchar reverse lookups", async function () {
+    // Codespaces that include UTF-16 surrogate-pair packed values produce
+    // character codes above 0x7FFFFFFF. charCodeOf must not coerce those with
+    // `| 0`, or glyph mapping for the corresponding CIDs breaks.
+    // prettier-ignore
+    const str =
+      "3 begincodespacerange\n" +
+      "<0000> <D7FF>\n" +
+      "<D800DC00> <DBFFDFFF>\n" +
+      "<E000> <FFFF>\n" +
+      "endcodespacerange\n" +
+      "1 begincidchar\n" +
+      "<2699> 1\n" +
+      "endcidchar\n" +
+      "3 begincidchar\n" +
+      "<D83DDCA1> 2\n" +
+      "<D83DDCC8> 3\n" +
+      "<D83DDD12> 4\n" +
+      "endcidchar\n";
+    const stream = new StringStream(str);
+    const cmap = await CMapFactory.create({ encoding: stream });
+
+    expect(cmap.charCodeOf(1)).toEqual(0x2699);
+    expect(cmap.charCodeOf(2)).toEqual(0xd83ddca1);
+    expect(cmap.charCodeOf(3)).toEqual(0xd83ddcc8);
+    expect(cmap.charCodeOf(4)).toEqual(0xd83ddd12);
+    expect(cmap.charCodeOf(4)).toBeGreaterThan(0x7fffffff);
+  });
 });
