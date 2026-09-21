@@ -3369,6 +3369,9 @@ function onKeyDown(evt) {
 
   // No control key pressed at all.
   if (cmd === 0) {
+    const isPageHeightMode =
+      pdfViewer.scrollMode === ScrollMode.PAGE &&
+      pdfViewer.currentScaleValue === "page-height";
     let turnPage = 0,
       turnOnlyIfPageFit = false;
     switch (evt.keyCode) {
@@ -3381,7 +3384,7 @@ function onKeyDown(evt) {
       /* falls through */
       case 33: // pg up
         // vertical scrolling using arrow/pg keys
-        if (pdfViewer.isVerticalScrollbarEnabled) {
+        if (pdfViewer.isVerticalScrollbarEnabled && !isPageHeightMode) {
           turnOnlyIfPageFit = true;
         }
         turnPage = -1;
@@ -3428,7 +3431,7 @@ function onKeyDown(evt) {
       /* falls through */
       case 34: // pg down
         // vertical scrolling using arrow/pg keys
-        if (pdfViewer.isVerticalScrollbarEnabled) {
+        if (pdfViewer.isVerticalScrollbarEnabled && !isPageHeightMode) {
           turnOnlyIfPageFit = true;
         }
         turnPage = 1;

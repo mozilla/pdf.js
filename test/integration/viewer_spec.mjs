@@ -1435,6 +1435,109 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Keyboard navigation with page-height zoom (issue 21974)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        "page-height",
+        {
+          earlySetup: () => {
+            document.addEventListener("webviewerloaded", () => {
+              window.PDFViewerApplicationOptions.set("scrollModeOnLoad", 3);
+            });
+          },
+        },
+        null,
+        { width: 500, height: 900 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    for (const [key, startPage, endPage] of [
+      ["ArrowDown", 1, 2],
+      ["PageDown", 1, 2],
+      ["ArrowUp", 2, 1],
+      ["PageUp", 2, 1],
+    ]) {
+      it(`must turn pages with ${key} in page scrolling mode`, async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            await page.evaluate(number => {
+              window.PDFViewerApplication.page = number;
+            }, startPage);
+
+            await page.keyboard.press(key);
+            const currentPage = await page.evaluate(
+              () => window.PDFViewerApplication.page
+            );
+            expect(currentPage).withContext(`In ${browserName}`).toBe(endPage);
+          })
+        );
+      });
+    }
+
+    it("must leave horizontal arrow scrolling to the browser", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const hasScrollbar = await page.evaluate(() => {
+            const viewer = window.PDFViewerApplication.pdfViewer;
+            window.addEventListener(
+              "keydown",
+              event => {
+                window.keyDefaultPrevented = event.defaultPrevented;
+              },
+              { once: true }
+            );
+            return viewer.isHorizontalScrollbarEnabled;
+          });
+          expect(hasScrollbar).withContext(`In ${browserName}`).toBeTrue();
+          await page.keyboard.press("ArrowRight");
+          const prevented = await page.evaluate(
+            () => window.keyDefaultPrevented
+          );
+          expect(prevented).withContext(`In ${browserName}`).toBeFalse();
+        })
+      );
+    });
+
+    for (const mode of ["zoomed in", "continuous scrolling"]) {
+      it(`must leave vertical scrolling to the browser when ${mode}`, async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const hasScrollbar = await page.evaluate(value => {
+              const viewer = window.PDFViewerApplication.pdfViewer;
+              if (value === "zoomed in") {
+                viewer.currentScale = 2;
+              } else {
+                viewer.scrollMode = 0;
+              }
+              window.addEventListener(
+                "keydown",
+                event => {
+                  window.keyDefaultPrevented = event.defaultPrevented;
+                },
+                { once: true }
+              );
+              return viewer.isVerticalScrollbarEnabled;
+            }, mode);
+            expect(hasScrollbar).withContext(`In ${browserName}`).toBeTrue();
+            await page.keyboard.press("ArrowDown");
+            const prevented = await page.evaluate(
+              () => window.keyDefaultPrevented
+            );
+            expect(prevented).withContext(`In ${browserName}`).toBeFalse();
+          })
+        );
+      });
+    }
+  });
+
   describe("Printing can be disallowed for some pdfs (bug 1978985)", () => {
     let pages;
 
