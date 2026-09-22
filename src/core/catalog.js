@@ -430,6 +430,7 @@ class Catalog {
         action: data.action,
         attachmentId: data.attachmentId,
         attachment: data.attachment,
+        attachmentDest: data.attachmentDest,
         dest: data.dest,
         url: data.url,
         unsafeUrl: data.unsafeUrl,
