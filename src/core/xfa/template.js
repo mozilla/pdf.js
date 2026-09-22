@@ -3002,9 +3002,8 @@ class Field extends XFAObject {
     if (!this.ui.imageEdit && ui.children?.[0] && this.h) {
       borderDims ||= getBorderDims(this.ui[$getExtra]());
 
-      let captionHeight = 0;
       if (this.caption && ["top", "bottom"].includes(this.caption.placement)) {
-        captionHeight = this.caption.reserve;
+        let captionHeight = this.caption.reserve;
         if (captionHeight <= 0) {
           captionHeight = this.caption[$getExtra](availableSpace).h;
         }

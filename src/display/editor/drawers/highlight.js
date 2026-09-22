@@ -200,7 +200,6 @@ class HighlightOutliner {
       allEdges.add(edge2);
     }
     const outlines = [];
-    let outline;
 
     while (allEdges.size > 0) {
       const edge = allEdges.values().next().value;
@@ -209,7 +208,7 @@ class HighlightOutliner {
       let lastPointX = x;
       let lastPointY = y1;
 
-      outline = [x, y2];
+      const outline = [x, y2];
       outlines.push(outline);
 
       while (true) {

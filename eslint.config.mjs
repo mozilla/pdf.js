@@ -202,6 +202,7 @@ export default [
       "unicorn/prefer-regexp-test": "error",
       "unicorn/prefer-set-methods": "error",
       "unicorn/prefer-single-call": "error",
+      "unicorn/prefer-smaller-scope": "error",
       "unicorn/prefer-string-replace-all": "error",
       "unicorn/prefer-string-starts-ends-with": "error",
       "unicorn/prefer-ternary": ["error", "only-single-line"],
