@@ -131,7 +131,16 @@ class PDFOutlineViewer extends BaseTreeViewer {
    */
   _bindLink(
     element,
-    { url, newWindow, action, attachmentId, attachment, dest, setOCGState }
+    {
+      url,
+      newWindow,
+      action,
+      attachmentId,
+      attachment,
+      attachmentDest,
+      dest,
+      setOCGState,
+    }
   ) {
     const { linkService } = this;
 
@@ -157,7 +166,8 @@ class PDFOutlineViewer extends BaseTreeViewer {
         if (content) {
           this.downloadManager?.openOrDownloadData(
             content,
-            attachment.filename
+            attachment.filename,
+            attachmentDest
           );
         }
       };
