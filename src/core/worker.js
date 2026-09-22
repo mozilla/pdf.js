@@ -479,7 +479,7 @@ class WorkerMessageHandler {
         const annotationPromises = [];
         let task = null;
         try {
-          for (let i = 0, ii = numPages; i < ii; i++) {
+          for (let i = 0; i < numPages; i++) {
             if (pageIndexesToSkip?.has(i)) {
               continue;
             }

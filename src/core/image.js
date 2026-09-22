@@ -545,7 +545,6 @@ class PDFImage {
 
     const max = (1 << bpc) - 1;
     let i = 0,
-      ii,
       buf;
 
     if (bpc === 1) {
@@ -583,7 +582,7 @@ class PDFImage {
       // The general case that handles all other bpc values.
       let bits = 0;
       buf = 0;
-      for (i = 0, ii = length; i < ii; ++i) {
+      for (i = 0; i < length; ++i) {
         if (i % rowComps === 0) {
           buf = 0;
           bits = 0;

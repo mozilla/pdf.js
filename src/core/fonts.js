@@ -587,7 +587,7 @@ function createCmapTable(charCodeToGlyphId, toUnicodeExtraMap, numGlyphs) {
   const ranges = getRanges(charCodeToGlyphId, toUnicodeExtraMap, numGlyphs);
   const hasNonBmp = ranges.at(-1)[1] > 0xffff;
 
-  let i, ii, j, jj;
+  let i, j, jj;
   for (i = ranges.length - 1; i >= 0; --i) {
     if (ranges[i][0] <= 0xffff) {
       break;
@@ -616,7 +616,7 @@ function createCmapTable(charCodeToGlyphId, toUnicodeExtraMap, numGlyphs) {
   // (see below) and skip the format 4 one altogether.
   let format4Overflow = false;
 
-  for (i = 0, ii = bmpLength; i < ii; i++) {
+  for (i = 0; i < bmpLength; i++) {
     const [start, end, codes] = ranges[i];
     startCount.setInt16(start);
     endCount.setInt16(end);
@@ -3470,7 +3470,7 @@ class Font {
         // Fake .notdef (width=0 and lsb=0) first, skip redundant assignment.
         hmtx.skip(4);
 
-        for (let i = 1, ii = numGlyphs; i < ii; i++) {
+        for (let i = 1; i < numGlyphs; i++) {
           let width = 0;
           if (charstrings) {
             width = charstrings[i - 1].width || 0;
