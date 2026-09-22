@@ -1,0 +1,106 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names << /EmbeddedFiles << /Names [(chapter.pdf) 6 0 R] >> >> /Outlines 8 0 R /PageMode /UseOutlines >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R /Annots [11 0 R 12 0 R] >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Length 216  >>
+stream
+BT /F1 20 Tf 45 700 Td (GoToE bookmark destination regression) Tj 0 -35 Td (Use the two bookmarks on the left.) Tj 0 -35 Td (Page-link control: explicit page TWO) Tj 0 -35 Td (Page-link control: named page TWO) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Filespec /F (chapter.pdf) /UF (chapter.pdf) /EF << /F 7 0 R >> >>
+endobj
+7 0 obj
+<< /Length 1056 /Type /EmbeddedFile /Subtype /application#2Fpdf >>
+stream
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /Names << /Dests << /Names [(second-page) [4 0 R /Fit]] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << /Font << /F1 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 600 800] /Resources << /Font << /F1 5 0 R >> >> /Contents 7 0 R >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Length 112  >>
+stream
+BT /F1 20 Tf 45 700 Td (Attachment page ONE) Tj 0 -35 Td (Expected only when no destination is requested.) Tj ET
+endstream
+endobj
+7 0 obj
+<< /Length 112  >>
+stream
+BT /F1 20 Tf 45 700 Td (Attachment page TWO) Tj 0 -35 Td (Both bookmarks and page links should open here.) Tj ET
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000120 00000 n 
+0000000183 00000 n 
+0000000309 00000 n 
+0000000435 00000 n 
+0000000505 00000 n 
+0000000669 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+833
+%%EOF
+
+endstream
+endobj
+8 0 obj
+<< /Type /Outlines /First 9 0 R /Last 10 0 R /Count 2 >>
+endobj
+9 0 obj
+<< /Title (Explicit destination: page TWO) /Parent 8 0 R /Next 10 0 R /A << /S /GoToE /T << /R /C /N (chapter.pdf) >> /D [1 /Fit] >> >>
+endobj
+10 0 obj
+<< /Title (Named destination: page TWO) /Parent 8 0 R /Prev 9 0 R /A << /S /GoToE /T << /R /C /N (chapter.pdf) >> /D (second-page) >> >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Link /Rect [40 620 480 646] /Border [0 0 1] /A << /S /GoToE /T << /R /C /N (chapter.pdf) >> /D [1 /Fit] >> >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Link /Rect [40 585 480 611] /Border [0 0 1] /A << /S /GoToE /T << /R /C /N (chapter.pdf) >> /D (second-page) >> >>
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000009 00000 n 
+0000000160 00000 n 
+0000000217 00000 n 
+0000000367 00000 n 
+0000000437 00000 n 
+0000000705 00000 n 
+0000000796 00000 n 
+0000001952 00000 n 
+0000002024 00000 n 
+0000002175 00000 n 
+0000002328 00000 n 
+0000002480 00000 n 
+trailer
+<< /Size 13 /Root 1 0 R >>
+startxref
+2637
+%%EOF
