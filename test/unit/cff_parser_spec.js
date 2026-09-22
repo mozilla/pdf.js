@@ -31,9 +31,7 @@ import { Stream } from "../../src/core/stream.js";
 describe("CFFParser", function () {
   // Stub that returns `0` for any privateDict key.
   const privateDictStub = {
-    getByName(name) {
-      return 0;
-    },
+    getByName: name => 0,
   };
 
   let fontData, parser, cff;

@@ -59,15 +59,12 @@ describe("Scripting", function () {
       createSandbox(data) {
         promise.then(sbx => sbx.create(data));
       },
-      dispatchEventInSandbox(data) {
-        return promise.then(sbx => sbx.dispatchEvent(data));
-      },
+      dispatchEventInSandbox: data =>
+        promise.then(sbx => sbx.dispatchEvent(data)),
       nukeSandbox() {
         promise.then(sbx => sbx.nukeSandbox());
       },
-      eval(code, key) {
-        return promise.then(sbx => sbx.evalForTesting(code, key));
-      },
+      eval: (code, key) => promise.then(sbx => sbx.evalForTesting(code, key)),
     };
   });
 

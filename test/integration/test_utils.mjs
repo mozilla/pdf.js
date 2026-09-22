@@ -46,14 +46,10 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
       // a locale.
       await page.evaluateOnNewDocument(() => {
         Object.defineProperty(navigator, "language", {
-          get() {
-            return "en-US";
-          },
+          get: () => "en-US",
         });
         Object.defineProperty(navigator, "languages", {
-          get() {
-            return ["en-US", "en"];
-          },
+          get: () => ["en-US", "en"],
         });
       });
 
@@ -94,9 +90,7 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
               let app;
               let eventBus;
               Object.defineProperty(window, "PDFViewerApplication", {
-                get() {
-                  return app;
-                },
+                get: () => app,
                 set(newValue) {
                   app = newValue;
                   if (aSetup) {
@@ -104,9 +98,7 @@ function loadAndWait(filename, selector, zoom, setups, options, viewport) {
                     eval(`(${aSetup})`)(app);
                   }
                   Object.defineProperty(app, "eventBus", {
-                    get() {
-                      return eventBus;
-                    },
+                    get: () => eventBus,
                     set(newV) {
                       eventBus = newV;
                       if (evSetup) {

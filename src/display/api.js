@@ -1746,9 +1746,7 @@ class PDFPageProxy {
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
-        size(textContent) {
-          return textContent.items.length;
-        },
+        size: textContent => textContent.items.length,
       }
     );
   }
