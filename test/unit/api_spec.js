@@ -5693,6 +5693,38 @@ have written that much by now. So, here’s to squashing bugs.`);
       canvasFactory.destroy(canvasAndCtx);
     });
 
+    it("renders a page renumbered while its operator list was pending", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
+      const pdfDoc = await loadingTask.promise;
+      const [firstPage, secondPage] = await Promise.all([
+        pdfDoc.getPage(1),
+        pdfDoc.getPage(2),
+      ]);
+
+      const viewport = firstPage.getViewport({ scale: 1 });
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = firstPage.render({
+        canvas: canvasAndCtx.canvas,
+        viewport,
+      });
+      expect(renderTask).toBeInstanceOf(RenderTask);
+
+      // Move page 2 before page 1 during rendering (issue 21954).
+      pdfDoc.pagesMapper.movePages(new Set([2]), [2], 0);
+      firstPage.pageNumber = 2;
+      secondPage.pageNumber = 1;
+
+      await renderTask.promise;
+      expect(firstPage.pageNumber).toEqual(2);
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
     it("cleans up document resources after rendering of page", async function () {
       const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
       const pdfDoc = await loadingTask.promise;

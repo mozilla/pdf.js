@@ -131,14 +131,18 @@ class Page {
     };
   }
 
-  _createPartialEvaluator(handler, pageIndex = this.pageIndex) {
-    // The pageIndex is used to identify the page some objects (like images)
-    // belong to.
+  _createPartialEvaluator(
+    handler,
+    pageIndex = this.pageIndex,
+    pageProxyId = null
+  ) {
+    // Used to route page-local objects to the main-thread PDFPageProxy.
 
     return new PartialEvaluator({
       xref: this.xref,
       handler,
       pageIndex,
+      pageProxyId,
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
@@ -471,13 +475,18 @@ class Page {
     intent,
     cacheKey,
     pageIndex = this.pageIndex,
+    pageProxyId = null,
     annotationStorage = null,
     modifiedIds = null,
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
 
-    const partialEvaluator = this._createPartialEvaluator(handler, pageIndex);
+    const partialEvaluator = this._createPartialEvaluator(
+      handler,
+      pageIndex,
+      pageProxyId
+    );
 
     const newAnnotsByPage = !this.xfaFactory
       ? getNewAnnotationsMap(annotationStorage)
@@ -561,7 +570,7 @@ class Page {
           resources,
           this.nonBlendModesSet
         ),
-        pageIndex,
+        pageProxyId,
         cacheKey,
       });
 
