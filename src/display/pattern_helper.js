@@ -836,24 +836,52 @@ class TilingPattern {
       const ySize = dimy2.size;
       const tmpCanvas2 = owner.canvasFactory.create(xSize, ySize);
       const tmpCtx2 = tmpCanvas2.context;
-      const ii = redrawHorizontally ? Math.floor(width / xstep) : 0;
-      const jj = redrawVertically ? Math.floor(height / ystep) : 0;
+      // Source rectangles outside the image contribute no pixels.
+      const ii = redrawHorizontally
+        ? Math.min(Math.floor(width / xstep), Math.ceil(image.width / xSize))
+        : 0;
+      const jj = redrawVertically
+        ? Math.min(Math.floor(height / ystep), Math.ceil(image.height / ySize))
+        : 0;
 
-      // Draw the overlapping parts of the original tile on the new tile.
-      for (let i = 0; i <= ii; i++) {
-        for (let j = 0; j <= jj; j++) {
-          tmpCtx2.drawImage(
+      // Fold rows, then columns, to avoid drawing every offset pair.
+      // Descending indices draw the origin tile last.
+      let rowSource = image;
+      let bandCanvas = null;
+      if (redrawVertically) {
+        bandCanvas = owner.canvasFactory.create(image.width, ySize);
+        const bandCtx = bandCanvas.context;
+        for (let j = jj; j >= 0; j--) {
+          bandCtx.drawImage(
             image,
-            xSize * i,
+            0,
             ySize * j,
-            xSize,
+            image.width,
             ySize,
             0,
             0,
-            xSize,
+            image.width,
             ySize
           );
         }
+        rowSource = bandCanvas.canvas;
+      }
+
+      for (let i = ii; i >= 0; i--) {
+        tmpCtx2.drawImage(
+          rowSource,
+          xSize * i,
+          0,
+          xSize,
+          ySize,
+          0,
+          0,
+          xSize,
+          ySize
+        );
+      }
+      if (bandCanvas) {
+        owner.canvasFactory.destroy(bandCanvas);
       }
       owner.canvasFactory.destroy(tmpCanvas);
       return {
