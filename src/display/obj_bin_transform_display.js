@@ -377,8 +377,8 @@ class PatternInfo {
         "axial",
         bbox,
         stops,
-        Array.from(coords.slice(0, 2)),
-        Array.from(coords.slice(2, 4)),
+        [coords[0], coords[1]],
+        [coords[2], coords[3]],
         null,
         null,
       ];
