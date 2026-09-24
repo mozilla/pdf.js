@@ -65,16 +65,15 @@ function compileSystemFontInfo(info) {
     info
   );
 
-  let encodedStyleStyle,
-    encodedStyleWeight,
-    lengthEstimate = 1 + 4 + stringsLength;
+  let encodedStyleStrings,
+    styleStringsLength = 0;
   if (info.style) {
-    const { encoder } = InfoUtils;
-    encodedStyleStyle = encoder.encode(info.style.style);
-    encodedStyleWeight = encoder.encode(info.style.weight);
-    lengthEstimate +=
-      4 + encodedStyleStyle.length + 4 + encodedStyleWeight.length;
+    ({
+      encodedStrings: encodedStyleStrings,
+      stringsLength: styleStringsLength,
+    } = encodeStrings(["style", "weight"], info.style));
   }
+  const lengthEstimate = 1 + 4 + stringsLength + styleStringsLength;
 
   const buffer = new ArrayBuffer(lengthEstimate);
   const data = new Uint8Array(buffer);
@@ -86,13 +85,8 @@ function compileSystemFontInfo(info) {
   offset = writeStrings(encodedStrings, data, view, offset + 4);
   view.setUint32(offset - stringsLength - 4, stringsLength);
 
-  if (info.style) {
-    view.setUint32(offset, encodedStyleStyle.length);
-    data.set(encodedStyleStyle, offset + 4);
-    offset += 4 + encodedStyleStyle.length;
-    view.setUint32(offset, encodedStyleWeight.length);
-    data.set(encodedStyleWeight, offset + 4);
-    offset += 4 + encodedStyleWeight.length;
+  if (encodedStyleStrings) {
+    offset = writeStrings(encodedStyleStrings, data, view, offset);
   }
   assert(offset <= buffer.byteLength, "compileSystemFontInfo: Buffer overflow");
   return buffer.transferToFixedLength(offset);
