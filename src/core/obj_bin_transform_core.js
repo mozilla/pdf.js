@@ -22,46 +22,54 @@ import {
   SYSTEM_FONT_INFO,
 } from "../shared/obj_bin_transform_utils.js";
 
-function compileCssFontInfo(info) {
+function encodeStrings(strings, obj) {
   const { encoder } = InfoUtils;
-  const encodedStrings = {};
+  const encodedStrings = new Map();
   let stringsLength = 0;
-  for (const prop of CSS_FONT_INFO.strings) {
-    const encoded = encoder.encode(info[prop]);
-    encodedStrings[prop] = encoded;
-    stringsLength += 4 + encoded.length;
+  for (const prop of strings) {
+    const encoded = encoder.encode(obj[prop]),
+      len = encoded.length;
+    encodedStrings.set(encoded, len);
+    stringsLength += 4 + len;
   }
+  return { encodedStrings, stringsLength };
+}
+
+function writeStrings(encodedStrings, data, view, offset = 0) {
+  for (const [encoded, len] of encodedStrings) {
+    view.setUint32(offset, len);
+    data.set(encoded, offset + 4);
+    offset += 4 + len;
+  }
+  return offset;
+}
+
+function compileCssFontInfo(info) {
+  const { encodedStrings, stringsLength } = encodeStrings(
+    CSS_FONT_INFO.strings,
+    info
+  );
 
   const buffer = new ArrayBuffer(stringsLength);
   const data = new Uint8Array(buffer);
   const view = new DataView(buffer);
-  let offset = 0;
 
-  for (const prop of CSS_FONT_INFO.strings) {
-    const encoded = encodedStrings[prop];
-    const length = encoded.length;
-    view.setUint32(offset, length);
-    data.set(encoded, offset + 4);
-    offset += 4 + length;
-  }
+  const offset = writeStrings(encodedStrings, data, view);
   assert(offset === buffer.byteLength, "compileCssFontInfo: Buffer overflow");
   return buffer;
 }
 
 function compileSystemFontInfo(info) {
-  const { encoder } = InfoUtils;
-  const encodedStrings = {};
-  let stringsLength = 0;
-  for (const prop of SYSTEM_FONT_INFO.strings) {
-    const encoded = encoder.encode(info[prop]);
-    encodedStrings[prop] = encoded;
-    stringsLength += 4 + encoded.length;
-  }
-  stringsLength += 4;
+  const { encodedStrings, stringsLength } = encodeStrings(
+    SYSTEM_FONT_INFO.strings,
+    info
+  );
+
   let encodedStyleStyle,
     encodedStyleWeight,
-    lengthEstimate = 1 + stringsLength;
+    lengthEstimate = 1 + 4 + stringsLength;
   if (info.style) {
+    const { encoder } = InfoUtils;
     encodedStyleStyle = encoder.encode(info.style.style);
     encodedStyleWeight = encoder.encode(info.style.weight);
     lengthEstimate +=
@@ -75,16 +83,7 @@ function compileSystemFontInfo(info) {
 
   view.setUint8(offset++, info.guessFallback ? 1 : 0);
   view.setUint32(offset, 0);
-  offset += 4;
-  stringsLength = 0;
-  for (const prop of SYSTEM_FONT_INFO.strings) {
-    const encoded = encodedStrings[prop];
-    const length = encoded.length;
-    stringsLength += 4 + length;
-    view.setUint32(offset, length);
-    data.set(encoded, offset + 4);
-    offset += 4 + length;
-  }
+  offset = writeStrings(encodedStrings, data, view, offset + 4);
   view.setUint32(offset - stringsLength - 4, stringsLength);
 
   if (info.style) {
@@ -120,13 +119,10 @@ function compileFontInfo(font) {
     ? compileCssFontInfo(font.cssFontInfo)
     : null;
 
-  const { encoder } = InfoUtils;
-  const encodedStrings = {};
-  let stringsLength = 0;
-  for (const prop of FONT_INFO.strings) {
-    encodedStrings[prop] = encoder.encode(font[prop]);
-    stringsLength += 4 + encodedStrings[prop].length;
-  }
+  const { encodedStrings, stringsLength } = encodeStrings(
+    FONT_INFO.strings,
+    font
+  );
 
   const lengthEstimate =
     FONT_INFO.OFFSET_STRINGS +
@@ -207,14 +203,7 @@ function compileFontInfo(font) {
   );
 
   view.setUint32(FONT_INFO.OFFSET_STRINGS, 0);
-  offset += 4;
-  for (const prop of FONT_INFO.strings) {
-    const encoded = encodedStrings[prop];
-    const length = encoded.length;
-    view.setUint32(offset, length);
-    data.set(encoded, offset + 4);
-    offset += 4 + length;
-  }
+  offset = writeStrings(encodedStrings, data, view, offset + 4);
   view.setUint32(
     FONT_INFO.OFFSET_STRINGS,
     offset - FONT_INFO.OFFSET_STRINGS - 4
