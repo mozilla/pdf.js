@@ -176,7 +176,9 @@ class Util extends PDFObject {
         }
 
         let sign = "";
-        if (intPart < 0) {
+        // For negative numbers in (-1, 0) the integer part is -0, hence the
+        // sign must be taken from the argument itself.
+        if (intPart < 0 || (cConvChar === "f" && arg < 0)) {
           sign = "-";
           intPart = -intPart;
         } else if (cFlags & PLUS) {
