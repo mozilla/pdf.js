@@ -81,9 +81,8 @@ function compileSystemFontInfo(info) {
   let offset = 0;
 
   view.setUint8(offset++, info.guessFallback ? 1 : 0);
-  view.setUint32(offset, 0);
+  view.setUint32(offset, stringsLength);
   offset = writeStrings(encodedStrings, data, view, offset + 4);
-  view.setUint32(offset - stringsLength - 4, stringsLength);
 
   if (encodedStyleStrings) {
     offset = writeStrings(encodedStyleStrings, data, view, offset);
@@ -211,12 +210,8 @@ function compileFontInfo(font) {
     "compileFontInfo: DefaultVMetrics properties offset mismatch"
   );
 
-  view.setUint32(FONT_INFO.OFFSET_STRINGS, 0);
+  view.setUint32(offset, stringsLength);
   offset = writeStrings(encodedStrings, data, view, offset + 4);
-  view.setUint32(
-    FONT_INFO.OFFSET_STRINGS,
-    offset - FONT_INFO.OFFSET_STRINGS - 4
-  );
 
   writeBuffer(systemFontInfoBuffer, "systemFontInfo");
   writeBuffer(cssFontInfoBuffer, "cssFontInfo");
