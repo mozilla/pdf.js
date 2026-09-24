@@ -226,6 +226,15 @@ describe("Scripting", function () {
         value = await myeval(`util.printd("dddd ddd dd d", ${date})`);
         expect(value).toEqual("Sunday Sun 15 15");
       });
+
+      it("should preserve escaped characters in date formats", async () => {
+        const date = `new Date("Sun Apr 15 2007 03:14:15")`;
+        const format = String.raw`\m mm \d dd \\ \é`;
+        const value = await myeval(
+          `util.printd(${JSON.stringify(format)}, ${date})`
+        );
+        expect(value).toEqual("m 04 d 15 \\ é");
+      });
     });
 
     describe("scand", function () {
