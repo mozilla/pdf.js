@@ -187,7 +187,7 @@ describe("cmap", function () {
     expect(cmap).toBeInstanceOf(CMap);
     expect(cmap.useCMap).not.toBeNull();
     expect(cmap.builtInCMap).toBeFalse();
-    expect(cmap.length).toEqual(0x20a7);
+    expect(cmap.size).toEqual(0x20a7);
     expect(cmap.isIdentityCMap).toBeFalse();
   });
 
@@ -242,7 +242,7 @@ describe("cmap", function () {
     expect(cmap).toBeInstanceOf(CMap);
     expect(cmap.useCMap).toBeNull();
     expect(cmap.builtInCMap).toBeTrue();
-    expect(cmap.length).toEqual(0x20a7);
+    expect(cmap.size).toEqual(0x20a7);
     expect(cmap.isIdentityCMap).toBeFalse();
   });
 
@@ -254,7 +254,7 @@ describe("cmap", function () {
     });
     expect(cmap).toBeInstanceOf(IdentityCMap);
     expect(cmap.vertical).toBeFalse();
-    expect(cmap.length).toEqual(0x10000);
+    expect(cmap.size).toEqual(0x10000);
     expect(function () {
       return cmap.isIdentityCMap;
     }).toThrowError("should not access .isIdentityCMap");

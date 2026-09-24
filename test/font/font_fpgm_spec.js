@@ -25,7 +25,7 @@ describe("font_fpgm", function () {
           differences: [],
           defaultEncoding: [],
           cMap,
-          toUnicode: new ToUnicodeMap([]),
+          toUnicode: new ToUnicodeMap(new Map()),
           xHeight: 0,
           capHeight: 0,
           italicAngle: 0,

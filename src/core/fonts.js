@@ -107,7 +107,6 @@ const EXPORT_DATA_PROPERTIES = [
 ];
 
 const EXPORT_DATA_EXTRA_PROPERTIES = [
-  "cMap",
   "composite",
   "defaultEncoding",
   "differences",
@@ -117,7 +116,6 @@ const EXPORT_DATA_EXTRA_PROPERTIES = [
   "seacMap",
   "subtype",
   "toFontChar",
-  "toUnicode",
   "type",
   "vmetrics",
   "widths",
@@ -170,7 +168,7 @@ function adjustTrueTypeToUnicode(properties, isSymbolicFont, nameRecords) {
   }
   const encoding = WinAnsiEncoding;
 
-  const toUnicode = [],
+  const toUnicode = new Map(),
     glyphsUnicodeMap = getGlyphsUnicode();
   for (const charCode in encoding) {
     const glyphName = encoding[charCode];
@@ -181,11 +179,9 @@ function adjustTrueTypeToUnicode(properties, isSymbolicFont, nameRecords) {
     if (unicode === undefined) {
       continue;
     }
-    toUnicode[charCode] = String.fromCharCode(unicode);
+    toUnicode.set(+charCode, String.fromCharCode(unicode));
   }
-  if (toUnicode.length > 0) {
-    properties.toUnicode.amend(toUnicode);
-  }
+  properties.toUnicode.amend(toUnicode);
 }
 
 function adjustType1ToUnicode(properties, builtInEncoding) {
@@ -201,7 +197,7 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
   if (properties.toUnicode instanceof IdentityToUnicodeMap) {
     return;
   }
-  const toUnicode = [],
+  const toUnicode = new Map(),
     glyphsUnicodeMap = getGlyphsUnicode();
   for (const charCode in builtInEncoding) {
     if (properties.hasEncoding) {
@@ -215,12 +211,10 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
     const glyphName = builtInEncoding[charCode];
     const unicode = getUnicodeForGlyph(glyphName, glyphsUnicodeMap);
     if (unicode !== -1) {
-      toUnicode[charCode] = String.fromCharCode(unicode);
+      toUnicode.set(+charCode, String.fromCharCode(unicode));
     }
   }
-  if (toUnicode.length > 0) {
-    properties.toUnicode.amend(toUnicode);
-  }
+  properties.toUnicode.amend(toUnicode);
 }
 
 /**
@@ -234,16 +228,14 @@ function amendFallbackToUnicode(properties) {
   ) {
     return;
   }
-  const toUnicode = [];
-  for (const charCode in properties.fallbackToUnicode) {
+  const toUnicode = new Map();
+  for (const [charCode, entry] of properties.fallbackToUnicode) {
     if (properties.toUnicode.has(charCode)) {
       continue; // The font dictionary has a `ToUnicode` entry.
     }
-    toUnicode[charCode] = properties.fallbackToUnicode[charCode];
+    toUnicode.set(charCode, entry);
   }
-  if (toUnicode.length > 0) {
-    properties.toUnicode.amend(toUnicode);
-  }
+  properties.toUnicode.amend(toUnicode);
 }
 
 class Glyph {
@@ -1325,21 +1317,27 @@ class Font {
       // (fixes issue12418_reduced.pdf).
       if (cidToGidMap) {
         for (const [charCode, cid] of map) {
-          if (cidToGidMap[cid] !== undefined) {
-            map.set(charCode, cidToGidMap[cid]);
+          if (cidToGidMap.has(cid)) {
+            map.set(charCode, cidToGidMap.get(cid));
           }
         }
-        // When the /CIDToGIDMap is "incomplete", fallback to the included
-        // /ToUnicode-map regardless of its encoding (fixes issue11915.pdf).
+        // When the /CIDToGIDMap is "incomplete", fallback to an included
+        // identity /ToUnicode-map (fixes issue11915.pdf).
+        //
+        // The `_charToGlyph` method will fallback to an identity `fontCharCode`
+        // mapping, and this is a non-embedded font (i.e. the `isInFont` value
+        // won't affect glyph-rendering), hence it's more efficient to simply
+        // remove any entries not found in the /CIDToGIDMap rather than creating
+        // a large and *almost* identity `toFontChar` mapping here.
         if (
-          cidToGidMap.length !== this.toUnicode.length &&
+          cidToGidMap.size !== this.toUnicode.size &&
           properties.hasIncludedToUnicodeMap &&
           this.toUnicode instanceof IdentityToUnicodeMap
         ) {
           this.toUnicode.forEach((charCode, unicodeCharCode) => {
             const cid = map.get(charCode);
-            if (cidToGidMap[cid] === undefined) {
-              map.set(charCode, unicodeCharCode);
+            if (!cidToGidMap.has(cid)) {
+              map.delete(charCode);
             }
           });
         }
@@ -1351,11 +1349,7 @@ class Font {
         });
       }
       this.toFontChar = map;
-      const arr = [];
-      for (const [charCode, cid] of map) {
-        arr[charCode] = cid;
-      }
-      this.toUnicode = new ToUnicodeMap(arr);
+      this.toUnicode = new ToUnicodeMap(new Map(map));
     } else if (/Symbol/i.test(fontName)) {
       // The non-embedded SymbolMT font in issue 21523 uses Identity encoding
       // and an Identity CIDToGIDMap, hence its CIDs are glyph ids.
@@ -3036,10 +3030,10 @@ class Font {
     }
 
     if (properties.composite) {
-      const cidToGidMap = properties.cidToGidMap || [];
-      const isCidToGidMapEmpty = cidToGidMap.length === 0;
+      const { cidToGidMap, cMap } = properties;
+      const isCidToGidMapEmpty = !cidToGidMap?.size;
 
-      properties.cMap.forEach((charCode, cid) => {
+      cMap.forEach((charCode, cid) => {
         if (typeof cid === "string") {
           cid = convertCidString(charCode, cid, /* shouldThrow = */ true);
         }
@@ -3049,8 +3043,8 @@ class Font {
         let glyphId = -1;
         if (isCidToGidMapEmpty) {
           glyphId = cid;
-        } else if (cidToGidMap[cid] !== undefined) {
-          glyphId = cidToGidMap[cid];
+        } else if (cidToGidMap.has(cid)) {
+          glyphId = cidToGidMap.get(cid);
         }
 
         if (glyphId >= 0 && glyphId < numGlyphs && hasGlyph(glyphId)) {
