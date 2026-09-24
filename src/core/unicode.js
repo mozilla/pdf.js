@@ -245,7 +245,7 @@ function getUnicodeRangeFor(value, lastPosition = -1) {
   return -1;
 }
 
-const SpecialCharRegExp = /^(\s)|(\p{Mn})|(\p{Cf})$/u;
+const SpecialCharRegExp = /^(?:(\s+)|(\p{Mn}+)|(\p{Cf}+))$/u;
 const CategoryCache = new Map();
 
 function getCharUnicodeCategory(char) {
