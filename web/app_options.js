@@ -393,14 +393,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "enableMerge",
-    {
-      /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
-      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-    },
-  ],
-  [
     "enableNewAltTextWhenAddingImage",
     {
       /** @type {boolean} */

@@ -383,7 +383,6 @@ const PDFViewerApplication = {
         enableGuessAltText: x => x === "true",
         enableNewBadge: x => x === "true",
         enablePermissions: x => x === "true",
-        enableMerge: x => x === "true",
         enableSelectionRendering: x => x === "true",
         enableSplitMerge: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
@@ -481,7 +480,6 @@ const PDFViewerApplication = {
           foreground: AppOptions.get("pageColorsForeground"),
         }
       : null;
-    const enableMerge = AppOptions.get("enableMerge");
     const enableSplitMerge = AppOptions.get("enableSplitMerge");
 
     let altTextManager;
@@ -744,7 +742,6 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableSplitMerge,
-        enableMerge,
         enableNewBadge: AppOptions.get("enableNewBadge"),
         statusBar: viewsManager.viewsManagerStatusBar,
         undoBar: viewsManager.viewsManagerUndoBar,
@@ -911,7 +908,6 @@ const PDFViewerApplication = {
         elements: appConfig.viewsManager,
         eventBus,
         l10n,
-        enableMerge,
         enableSplitMerge,
         globalAbortSignal: abortSignal,
       });
