@@ -891,6 +891,8 @@ class PDFDocumentProxy {
    * @property {Uint8ClampedArray} color - The color in RGB format to use for
    *   display purposes.
    * @property {string | Array<any> | null} dest
+   * @property {string | undefined} attachmentDest - The destination within the
+   *   attachment.
    * @property {string | null} url
    * @property {string | undefined} unsafeUrl
    * @property {boolean | undefined} newWindow
