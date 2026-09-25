@@ -41,6 +41,9 @@ class PagesMapper {
   /** @type {number} */
   #pagesNumber = 0;
 
+  /** @type {number} */
+  #originalPagesNumber = 0;
+
   /**
    * Clipboard state for copy/paste operations.
    * @type {{pageNumbers: Uint32Array, pageIds: Uint32Array}|null}
@@ -58,7 +61,7 @@ class PagesMapper {
     if (this.#pagesNumber === n) {
       return;
     }
-    this.#pagesNumber = n;
+    this.#originalPagesNumber = this.#pagesNumber = n;
     this.#pageNumberToId = null;
     this.#prevPageNumbers = null;
   }
@@ -154,7 +157,11 @@ class PagesMapper {
     prevPageNumbers.set(pagesToMove, adjustedTarget);
     this.#prevPageNumbers = prevPageNumbers;
 
-    if (pageNumberToId.every((id, i) => id === i + 1)) {
+    // A remaining prefix of the original pages still represents a deletion.
+    if (
+      pagesNumber === this.#originalPagesNumber &&
+      pageNumberToId.every((id, i) => id === i + 1)
+    ) {
       this.#pageNumberToId = null;
     }
   }
