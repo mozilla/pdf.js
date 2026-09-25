@@ -522,6 +522,77 @@ describe("ResetForm action", () => {
     });
   });
 
+  describe("resetform_parent.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "resetform_parent.pdf",
+        getAnnotationSelector("13R")
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    async function fillAll(page) {
+      for (const id of ["7R", "9R", "12R"]) {
+        await page.type(getSelector(id), "hello");
+      }
+    }
+
+    async function getValues(page) {
+      const values = [];
+      for (const id of ["7R", "9R", "12R"]) {
+        values.push(await page.$eval(getSelector(id), el => el.value));
+      }
+      return values;
+    }
+
+    it("must reset the kids of a field referenced in Fields", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await fillAll(page);
+          await page.click(getAnnotationSelector("13R"));
+          await page.waitForFunction(`${getQuerySelector("7R")}.value === ""`);
+
+          expect(await getValues(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(["", "hello", "hello"]);
+        })
+      );
+    });
+
+    it("must not reset the kids of an excluded field", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await fillAll(page);
+          await page.click(getAnnotationSelector("14R"));
+          await page.waitForFunction(`${getQuerySelector("9R")}.value === ""`);
+
+          expect(await getValues(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(["hello", "", ""]);
+        })
+      );
+    });
+
+    it("must reset the descendants of a non-terminal field name", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await fillAll(page);
+          await page.click(getAnnotationSelector("15R"));
+          await page.waitForFunction(`${getQuerySelector("12R")}.value === ""`);
+
+          expect(await getValues(page))
+            .withContext(`In ${browserName}`)
+            .toEqual(["hello", "hello", ""]);
+        })
+      );
+    });
+  });
+
   describe("FreeText widget", () => {
     describe("issue14438.pdf", () => {
       let pages;
