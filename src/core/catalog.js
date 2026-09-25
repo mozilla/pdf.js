@@ -1522,7 +1522,10 @@ class Catalog {
           obj = await xref.fetchAsync(kidObj);
         } catch (ex) {
           addPageError(ex);
-          break;
+          // Only skip the broken kid, since otherwise all remaining pages
+          // would become inaccessible (fixes issue22011.pdf).
+          queueItem.posInKids++;
+          continue;
         }
       } else {
         // Prevent errors in corrupt PDF documents that violate the

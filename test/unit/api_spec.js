@@ -984,6 +984,27 @@ describe("api", function () {
       await Promise.all([loadingTask1.destroy(), loadingTask2.destroy()]);
     });
 
+    it("creates pdf doc from PDF file with bad /Page dictionary", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue22011.pdf"));
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(57);
+
+      await expectAsync(pdfDocument.getPage(40)).toBeRejectedWithError(
+        UnknownErrorException,
+        "Illegal character: 41"
+      );
+
+      const page = await pdfDocument.getPage(41);
+      expect(page).toBeInstanceOf(PDFPageProxy);
+
+      const { items } = await page.getTextContent();
+      expect(items[0].str).toEqual("Page 41 of 57");
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from PDF file with bad /Resources entry", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue15150.pdf"));
       expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
