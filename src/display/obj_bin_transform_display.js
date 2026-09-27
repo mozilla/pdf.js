@@ -69,13 +69,9 @@ class SystemFontInfo {
     this.#view = new DataView(buffer);
   }
 
-  get guessFallback() {
-    return this.#view.getUint8(0) !== 0;
-  }
-
   #readString(index) {
     assert(index < SYSTEM_FONT_INFO.strings.length, "Invalid string index");
-    return readString(this.#buffer, this.#view, index, /* offset = */ 5);
+    return readString(this.#buffer, this.#view, index, /* offset = */ 4);
   }
 
   get css() {
@@ -95,7 +91,7 @@ class SystemFontInfo {
   }
 
   get style() {
-    let offset = 1;
+    let offset = 0;
     offset += 4 + this.#view.getUint32(offset);
     const style = readString(this.#buffer, this.#view, /* index = */ 0, offset),
       weight = readString(this.#buffer, this.#view, /* index = */ 1, offset);
