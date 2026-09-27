@@ -228,28 +228,26 @@ class FontInfo {
     return this.#readString(2);
   }
 
-  #getDataOffsets() {
+  #getBufferOffset(index) {
     let offset = FONT_INFO.OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + cssFontInfoLength;
+    // We need to move past any string-data first, hence the `<=` condition.
+    for (let i = 0; i <= index; i++) {
+      offset += 4 + this.#view.getUint32(offset);
+    }
     const length = this.#view.getUint32(offset);
 
     return { offset, length };
   }
 
   get data() {
-    const { offset, length } = this.#getDataOffsets();
+    const { offset, length } = this.#getBufferOffset(2);
     return length === 0
       ? undefined
       : new Uint8Array(this.#buffer, offset + 4, length);
   }
 
   clearData() {
-    const { offset, length } = this.#getDataOffsets();
+    const { offset, length } = this.#getBufferOffset(2);
     if (length === 0) {
       return; // The data is either not present, or it was previously cleared.
     }
@@ -261,35 +259,21 @@ class FontInfo {
   }
 
   get cssFontInfo() {
-    let offset = FONT_INFO.OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    offset += 4 + systemFontInfoLength;
-    const cssFontInfoLength = this.#view.getUint32(offset);
-    if (cssFontInfoLength === 0) {
+    const { offset, length } = this.#getBufferOffset(1);
+    if (length === 0) {
       return null;
     }
-    const cssFontInfoData = new Uint8Array(cssFontInfoLength);
-    cssFontInfoData.set(
-      new Uint8Array(this.#buffer, offset + 4, cssFontInfoLength)
-    );
-    return new CssFontInfo(cssFontInfoData.buffer);
+    const data = new Uint8Array(this.#buffer, offset + 4, length).slice();
+    return new CssFontInfo(data.buffer);
   }
 
   get systemFontInfo() {
-    let offset = FONT_INFO.OFFSET_STRINGS;
-    const stringsLength = this.#view.getUint32(offset);
-    offset += 4 + stringsLength;
-    const systemFontInfoLength = this.#view.getUint32(offset);
-    if (systemFontInfoLength === 0) {
+    const { offset, length } = this.#getBufferOffset(0);
+    if (length === 0) {
       return null;
     }
-    const systemFontInfoData = new Uint8Array(systemFontInfoLength);
-    systemFontInfoData.set(
-      new Uint8Array(this.#buffer, offset + 4, systemFontInfoLength)
-    );
-    return new SystemFontInfo(systemFontInfoData.buffer);
+    const data = new Uint8Array(this.#buffer, offset + 4, length).slice();
+    return new SystemFontInfo(data.buffer);
   }
 }
 
