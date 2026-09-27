@@ -423,12 +423,13 @@ class FontFaceObject {
   }
 
   createNativeFontFace() {
-    if (!this.data || this.disableFontFace) {
+    const { data } = this; // Get `data` just once, since it's not shadowed.
+    if (!data || this.disableFontFace) {
       return null;
     }
     let nativeFontFace;
     if (!this.cssFontInfo) {
-      nativeFontFace = new FontFace(this.loadedName, this.data, {});
+      nativeFontFace = new FontFace(this.loadedName, data, {});
     } else {
       const css = {
         weight: this.cssFontInfo.fontWeight,
@@ -438,7 +439,7 @@ class FontFaceObject {
       }
       nativeFontFace = new FontFace(
         serializeFontFamily(this.cssFontInfo.fontFamily),
-        this.data,
+        data,
         css
       );
     }
@@ -452,11 +453,12 @@ class FontFaceObject {
       throw new Error("Not implemented: createFontFaceRule");
     }
 
-    if (!this.data || this.disableFontFace) {
+    const { data } = this; // Get `data` just once, since it's not shadowed.
+    if (!data || this.disableFontFace) {
       return null;
     }
     // Add the @font-face rule to the document.
-    const url = `url(data:${this.mimetype};base64,${this.data.toBase64()});`;
+    const url = `url(data:${this.mimetype};base64,${data.toBase64()});`;
     let rule;
     if (!this.cssFontInfo) {
       rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
