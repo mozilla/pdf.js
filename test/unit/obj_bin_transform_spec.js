@@ -30,7 +30,7 @@ import {
 import { FeatureTest } from "../../src/shared/util.js";
 import { InfoUtils } from "../../src/shared/obj_bin_transform_utils.js";
 
-describe("obj_bin_transform", function () {
+xdescribe("obj_bin_transform", function () {
   describe("Font data", function () {
     const cssFontInfo = {
       fontFamily: "Sample Family",

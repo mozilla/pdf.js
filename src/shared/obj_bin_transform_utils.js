@@ -15,6 +15,7 @@
 
 import { shadow } from "./util.js";
 
+
 class CSS_FONT_INFO {
   static strings = ["fontFamily", "fontWeight", "italicAngle"];
 }
