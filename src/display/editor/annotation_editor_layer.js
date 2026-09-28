@@ -36,7 +36,10 @@ import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";
 import { InkEditor } from "./ink.js";
 import { SignatureEditor } from "./signature.js";
+import { SquigglyEditor } from "./squiggly.js";
 import { StampEditor } from "./stamp.js";
+import { StrikeOutEditor } from "./strikeout.js";
+import { UnderlineEditor } from "./underline.js";
 
 /**
  * @typedef {object} AnnotationEditorLayerOptions
@@ -104,6 +107,9 @@ class AnnotationEditorLayer {
       StampEditor,
       HighlightEditor,
       SignatureEditor,
+      UnderlineEditor,
+      SquigglyEditor,
+      StrikeOutEditor,
     ].map(type => [type._editorType, type])
   );
 
@@ -181,12 +187,13 @@ class AnnotationEditorLayer {
         this.togglePointerEvents(true);
         this.enableClick();
         break;
-      case AnnotationEditorType.HIGHLIGHT:
-        this.enableTextSelection();
-        this.togglePointerEvents(false);
-        this.disableClick();
-        break;
       default:
+        if (AnnotationEditorLayer.#editorTypes.get(mode)?.isFromTextSelection) {
+          this.enableTextSelection();
+          this.togglePointerEvents(false);
+          this.disableClick();
+          break;
+        }
         this.disableTextSelection();
         this.togglePointerEvents(true);
         this.enableClick();
@@ -443,8 +450,14 @@ class AnnotationEditorLayer {
         this.#textLayerPointerDown.bind(this),
         { signal }
       );
-      this.#textLayer.div.classList.add("highlighting");
     }
+    // The text layer can be used to draw a free highlight only in highlight
+    // mode.
+    this.#textLayer?.div.classList.toggle(
+      "highlighting",
+      !!this.#textSelectionAC &&
+        this.#uiManager.getMode() === AnnotationEditorType.HIGHLIGHT
+    );
   }
 
   disableTextSelection() {
@@ -462,6 +475,10 @@ class AnnotationEditorLayer {
     // without being annoyed by an editor toolbar.
     this.#uiManager.unselectAll();
     const { target } = event;
+    if (this.#uiManager.getMode() !== AnnotationEditorType.HIGHLIGHT) {
+      // Only the highlights can be drawn freely.
+      return;
+    }
     if (
       target === this.#textLayer.div ||
       ((target.getAttribute("role") === "img" ||
@@ -858,7 +875,7 @@ class AnnotationEditorLayer {
    * @param {PointerEvent} event
    */
   pointerdown(event) {
-    if (this.#uiManager.getMode() === AnnotationEditorType.HIGHLIGHT) {
+    if (this.#currentEditorType?.isFromTextSelection) {
       this.enableTextSelection();
     }
     if (this.#hadPointerDown) {

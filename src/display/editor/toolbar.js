@@ -14,6 +14,7 @@
  */
 
 import { noContextMenu, stopEvent } from "../display_utils.js";
+import { AnnotationEditorType } from "../../shared/util.js";
 
 class EditorToolbar {
   #toolbar = null;
@@ -43,6 +44,9 @@ class EditorToolbar {
       ink: "pdfjs-editor-remove-ink-button",
       stamp: "pdfjs-editor-remove-stamp-button",
       signature: "pdfjs-editor-remove-signature-button",
+      underline: "pdfjs-editor-remove-underline-button",
+      squiggly: "pdfjs-editor-remove-squiggly-button",
+      strikeout: "pdfjs-editor-remove-strikeout-button",
     });
   }
 
@@ -316,6 +320,33 @@ class FloatingToolbar {
       }
     );
 
+    if (this.#uiManager.hasTextMarkupEditors()) {
+      for (const [className, l10nId, l10nLabel, mode] of [
+        [
+          "underlineButton",
+          "pdfjs-underline-floating-button",
+          "pdfjs-underline-floating-button-label",
+          AnnotationEditorType.UNDERLINE,
+        ],
+        [
+          "squigglyButton",
+          "pdfjs-squiggly-floating-button",
+          "pdfjs-squiggly-floating-button-label",
+          AnnotationEditorType.SQUIGGLY,
+        ],
+        [
+          "strikeoutButton",
+          "pdfjs-strikeout-floating-button",
+          "pdfjs-strikeout-floating-button-label",
+          AnnotationEditorType.STRIKEOUT,
+        ],
+      ]) {
+        this.#makeButton(className, l10nId, l10nLabel, () => {
+          this.#uiManager.markupSelection(mode, "floating_button");
+        });
+      }
+    }
+
     return editToolbar;
   }
 
@@ -348,7 +379,15 @@ class FloatingToolbar {
     const [x, y] = this.#getLastPoint(boxes, isLTR);
     const { style } = (this.#toolbar ||= this.#render());
     parent.append(this.#toolbar);
-    style.insetInlineEnd = `${100 * x}%`;
+
+    // The toolbar ends where the selection ends, but it mustn't overflow the
+    // text layer else some of its buttons would be hidden.
+    // Its width is measured without any inset which could shrink it.
+    style.insetInlineEnd = "0";
+    const maxX = parent.offsetWidth
+      ? Math.max(0, 1 - this.#toolbar.offsetWidth / parent.offsetWidth)
+      : x;
+    style.insetInlineEnd = `${100 * Math.min(x, maxX)}%`;
     style.top = `calc(${100 * y}% + var(--editor-toolbar-vert-offset))`;
   }
 

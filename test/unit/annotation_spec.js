@@ -6833,6 +6833,92 @@ describe("annotation", function () {
         Float32Array.from([10, 20, 20, 20, 10, 10, 20, 10])
       );
     });
+
+    it("should create a new Underline annotation", async function () {
+      const xref = (partialEvaluator.xref = new XRefMock());
+      const changes = new RefMap();
+      const task = new WorkerTask("test Underline creation");
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        xref,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.UNDERLINE,
+            rect: [10, 20, 30, 30],
+            rotation: 0,
+            opacity: 1,
+            color: [0, 0, 255],
+            quadPoints: [10, 30, 30, 30, 10, 20, 30, 20],
+          },
+        ],
+        null,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+
+      const base = data[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "1 0 obj\n" +
+          "<< /Type /Annot /Subtype /Underline /CreationDate (date) " +
+          "/Rect [10 20 30 30] /QuadPoints [10 30 30 30 10 20 30 20] /F 4 " +
+          "/Border [0 0 0] /Rotate 0 /C [0 0 1] /CA 1 /AP << /N 2 0 R>>>>\n" +
+          "endobj\n"
+      );
+
+      const appearance = data[1].data;
+      expect(appearance).toEqual(
+        "2 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [10 20 30 30] " +
+          "/Length 45>> stream\n" +
+          "[] 0 d 0.571 w\n" +
+          "0 0 1 RG\n" +
+          "10 21.3 m\n" +
+          "30 21.3 l\n" +
+          "S\n" +
+          "endstream\n" +
+          "endobj\n"
+      );
+    });
+
+    it("should render a new Underline annotation for printing", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test Underline printing");
+      const underlineAnnotation = (
+        await AnnotationFactory.printNewAnnotations(
+          annotationGlobalsMock,
+          partialEvaluator,
+          task,
+          [
+            {
+              annotationType: AnnotationEditorType.UNDERLINE,
+              rect: [10, 20, 30, 30],
+              rotation: 0,
+              opacity: 0.5,
+              color: [0, 255, 0],
+              quadPoints: [10, 30, 30, 30, 10, 20, 30, 20],
+            },
+          ]
+        )
+      )[0];
+
+      const { opList } = await underlineAnnotation.getOperatorList(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        null
+      );
+
+      expect(opList.fnArray).toEqual([
+        OPS.beginAnnotation,
+        OPS.setDash,
+        OPS.setLineWidth,
+        OPS.setStrokeRGBColor,
+        OPS.setGState,
+        OPS.constructPath,
+        OPS.endAnnotation,
+      ]);
+    });
   });
 
   describe("SquigglyAnnotation", function () {
@@ -6875,6 +6961,142 @@ describe("annotation", function () {
         Float32Array.from([10, 20, 20, 20, 10, 10, 20, 10])
       );
     });
+
+    it("should create a new Squiggly annotation", async function () {
+      const xref = (partialEvaluator.xref = new XRefMock());
+      const changes = new RefMap();
+      const task = new WorkerTask("test Squiggly creation");
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        xref,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.SQUIGGLY,
+            rect: [10, 20, 18, 32],
+            rotation: 0,
+            opacity: 1,
+            color: [255, 0, 0],
+            quadPoints: [10, 32, 18, 32, 10, 20, 18, 20],
+          },
+        ],
+        null,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+
+      // The squiggly line overflows the quadrilateral, hence the rectangle
+      // must contain both of them (else the QuadPoints would be ignored).
+      const base = data[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "1 0 obj\n" +
+          "<< /Type /Annot /Subtype /Squiggly /CreationDate (date) " +
+          "/Rect [10 16 18 32] /QuadPoints [10 32 18 32 10 20 18 20] /F 4 " +
+          "/Border [0 0 0] /Rotate 0 /C [1 0 0] /CA 1 /AP << /N 2 0 R>>>>\n" +
+          "endobj\n"
+      );
+
+      const appearance = data[1].data;
+      expect(appearance).toEqual(
+        "2 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [10 16 18 32] " +
+          "/Length 61>> stream\n" +
+          "[] 0 d 1 w\n" +
+          "1 0 0 RG\n" +
+          "10 22 m\n" +
+          "12 20 l\n" +
+          "14 22 l\n" +
+          "16 20 l\n" +
+          "18 22 l\n" +
+          "S\n" +
+          "endstream\n" +
+          "endobj\n"
+      );
+    });
+
+    it("should not draw the squiggly line beyond the quadrilateral", async function () {
+      const xref = (partialEvaluator.xref = new XRefMock());
+      const changes = new RefMap();
+      const task = new WorkerTask("test Squiggly end");
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        xref,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.SQUIGGLY,
+            rect: [10, 20, 19, 32],
+            rotation: 0,
+            opacity: 1,
+            color: [255, 0, 0],
+            quadPoints: [10, 32, 19, 32, 10, 20, 19, 20],
+          },
+        ],
+        null,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+
+      const base = data[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toContain("/Rect [10 16 19 32]");
+
+      // The last step is shortened to end with the quadrilateral.
+      const appearance = data[1].data;
+      expect(appearance).toEqual(
+        "2 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [10 16 19 32] " +
+          "/Length 69>> stream\n" +
+          "[] 0 d 1 w\n" +
+          "1 0 0 RG\n" +
+          "10 22 m\n" +
+          "12 20 l\n" +
+          "14 22 l\n" +
+          "16 20 l\n" +
+          "18 22 l\n" +
+          "19 20 l\n" +
+          "S\n" +
+          "endstream\n" +
+          "endobj\n"
+      );
+    });
+    it("should render a new Squiggly annotation for printing", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test Squiggly printing");
+      const annotation = (
+        await AnnotationFactory.printNewAnnotations(
+          annotationGlobalsMock,
+          partialEvaluator,
+          task,
+          [
+            {
+              annotationType: AnnotationEditorType.SQUIGGLY,
+              rect: [10, 20, 18, 32],
+              rotation: 0,
+              opacity: 1,
+              color: [0, 0, 255],
+              quadPoints: [10, 32, 18, 32, 10, 20, 18, 20],
+            },
+          ]
+        )
+      )[0];
+
+      const { opList } = await annotation.getOperatorList(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        null
+      );
+
+      expect(opList.fnArray).toEqual([
+        OPS.beginAnnotation,
+        OPS.setDash,
+        OPS.setLineWidth,
+        OPS.setStrokeRGBColor,
+        OPS.constructPath,
+        OPS.endAnnotation,
+      ]);
+      expect(Array.from(opList.argsArray[0][1])).toEqual([10, 16, 18, 32]);
+    });
   });
 
   describe("StrikeOutAnnotation", function () {
@@ -6916,6 +7138,93 @@ describe("annotation", function () {
       expect(data.quadPoints).toEqual(
         Float32Array.from([10, 20, 20, 20, 10, 10, 20, 10])
       );
+    });
+
+    it("should create a new StrikeOut annotation", async function () {
+      const xref = (partialEvaluator.xref = new XRefMock());
+      const changes = new RefMap();
+      const task = new WorkerTask("test StrikeOut creation");
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        xref,
+        task,
+        [
+          {
+            annotationType: AnnotationEditorType.STRIKEOUT,
+            rect: [10, 20, 30, 30],
+            rotation: 0,
+            opacity: 0.5,
+            color: [0, 0, 0],
+            quadPoints: [10, 30, 30, 30, 10, 20, 30, 20],
+          },
+        ],
+        null,
+        changes
+      );
+      const data = await writeChanges(changes, xref);
+
+      const base = data[0].data.replace(/\(D:\d+\)/, "(date)");
+      expect(base).toEqual(
+        "1 0 obj\n" +
+          "<< /Type /Annot /Subtype /StrikeOut /CreationDate (date) " +
+          "/Rect [10 20 30 30] /QuadPoints [10 30 30 30 10 20 30 20] /F 4 " +
+          "/Border [0 0 0] /Rotate 0 /C [0 0 0] /CA 0.5 /AP << /N 2 0 R>>>>\n" +
+          "endobj\n"
+      );
+
+      const appearance = data[1].data;
+      expect(appearance).toEqual(
+        "2 0 obj\n" +
+          "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [10 20 30 30] " +
+          "/Length 39 /Resources << /ExtGState << /R0 << /Type /ExtGState " +
+          "/CA 0.5>>>>>>>> stream\n" +
+          "[] 0 d 1 w\n" +
+          "0 G\n" +
+          "/R0 gs\n" +
+          "10 25 m\n" +
+          "30 25 l\n" +
+          "S\n" +
+          "endstream\n" +
+          "endobj\n"
+      );
+    });
+    it("should render a new StrikeOut annotation for printing", async function () {
+      partialEvaluator.xref = new XRefMock();
+      const task = new WorkerTask("test StrikeOut printing");
+      const annotation = (
+        await AnnotationFactory.printNewAnnotations(
+          annotationGlobalsMock,
+          partialEvaluator,
+          task,
+          [
+            {
+              annotationType: AnnotationEditorType.STRIKEOUT,
+              rect: [10, 20, 30, 30],
+              rotation: 0,
+              opacity: 1,
+              color: [0, 0, 255],
+              quadPoints: [10, 30, 30, 30, 10, 20, 30, 20],
+            },
+          ]
+        )
+      )[0];
+
+      const { opList } = await annotation.getOperatorList(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        null
+      );
+
+      expect(opList.fnArray).toEqual([
+        OPS.beginAnnotation,
+        OPS.setDash,
+        OPS.setLineWidth,
+        OPS.setStrokeRGBColor,
+        OPS.constructPath,
+        OPS.endAnnotation,
+      ]);
+      expect(Array.from(opList.argsArray[0][1])).toEqual([10, 20, 30, 30]);
     });
   });
 

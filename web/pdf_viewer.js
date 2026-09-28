@@ -249,6 +249,8 @@ class PDFViewer {
 
   #enableHighlightFloatingButton = false;
 
+  #enableTextMarkupEditors = false;
+
   #enablePermissions = false;
 
   #enableUpdatedAddImage = false;
@@ -357,6 +359,7 @@ class PDFViewer {
       options.annotationEditorHighlightColors || null;
     this.#enableHighlightFloatingButton =
       options.enableHighlightFloatingButton === true;
+    this.#enableTextMarkupEditors = options.enableTextMarkupEditors === true;
     this.#enableUpdatedAddImage = options.enableUpdatedAddImage === true;
     this.#enableNewAltTextWhenAddingImage =
       options.enableNewAltTextWhenAddingImage === true;
@@ -1030,6 +1033,7 @@ class PDFViewer {
               pageColors,
               this.#annotationEditorHighlightColors,
               this.#enableHighlightFloatingButton,
+              this.#enableTextMarkupEditors,
               this.#enableUpdatedAddImage,
               this.#enableNewAltTextWhenAddingImage,
               this.#mlManager,

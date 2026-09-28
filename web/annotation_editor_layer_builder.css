@@ -151,7 +151,12 @@
 .annotationEditorLayer.disabled {
   pointer-events: none;
 
-  &.highlightEditing
+  &:is(
+      .highlightEditing,
+      .underlineEditing,
+      .squigglyEditing,
+      .strikeoutEditing
+    )
     :is(
       .freeTextEditor,
       .inkEditor,
@@ -238,7 +243,7 @@
     .freeTextEditor,
     .inkEditor,
     .stampEditor,
-    .highlightEditor,
+    .textMarkupEditor,
     .signatureEditor
   ),
 .textLayer {
@@ -246,6 +251,9 @@
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
     --editor-toolbar-highlight-image: url(images/toolbarButton-editorHighlight.svg);
+    --editor-toolbar-underline-image: url(images/toolbarButton-editorUnderline.svg);
+    --editor-toolbar-squiggly-image: url(images/toolbarButton-editorSquiggly.svg);
+    --editor-toolbar-strikeout-image: url(images/toolbarButton-editorStrikeOut.svg);
     --editor-toolbar-fg-color: light-dark(#2e2e56, #fbfbfe);
     --editor-toolbar-border-color: var(--border-color-interactive, #8f8f9d);
     --editor-toolbar-hover-border-color: var(--editor-toolbar-border-color);
@@ -398,6 +406,18 @@
 
         &.highlightButton::before {
           mask-image: var(--editor-toolbar-highlight-image);
+        }
+
+        &.underlineButton::before {
+          mask-image: var(--editor-toolbar-underline-image);
+        }
+
+        &.squigglyButton::before {
+          mask-image: var(--editor-toolbar-squiggly-image);
+        }
+
+        &.strikeoutButton::before {
+          mask-image: var(--editor-toolbar-strikeout-image);
         }
 
         &.commentButton::before {
@@ -1208,30 +1228,30 @@
 
 .annotationEditorLayer {
   &[data-main-rotation="0"] {
-    .highlightEditor:not(.free) > .editToolbar {
+    .textMarkupEditor:not(.free) > .editToolbar {
       rotate: 0deg;
     }
   }
 
   &[data-main-rotation="90"] {
-    .highlightEditor:not(.free) > .editToolbar {
+    .textMarkupEditor:not(.free) > .editToolbar {
       rotate: 270deg;
     }
   }
 
   &[data-main-rotation="180"] {
-    .highlightEditor:not(.free) > .editToolbar {
+    .textMarkupEditor:not(.free) > .editToolbar {
       rotate: 180deg;
     }
   }
 
   &[data-main-rotation="270"] {
-    .highlightEditor:not(.free) > .editToolbar {
+    .textMarkupEditor:not(.free) > .editToolbar {
       rotate: 90deg;
     }
   }
 
-  .highlightEditor {
+  .textMarkupEditor {
     position: absolute;
     background: transparent;
     z-index: 1;

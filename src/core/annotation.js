@@ -440,6 +440,21 @@ class AnnotationFactory {
             InkAnnotation.createNewAnnotation(xref, annotation, changes)
           );
           break;
+        case AnnotationEditorType.UNDERLINE:
+          promises.push(
+            UnderlineAnnotation.createNewAnnotation(xref, annotation, changes)
+          );
+          break;
+        case AnnotationEditorType.SQUIGGLY:
+          promises.push(
+            SquigglyAnnotation.createNewAnnotation(xref, annotation, changes)
+          );
+          break;
+        case AnnotationEditorType.STRIKEOUT:
+          promises.push(
+            StrikeOutAnnotation.createNewAnnotation(xref, annotation, changes)
+          );
+          break;
         case AnnotationEditorType.STAMP:
           const image = isOffscreenCanvasSupported
             ? await imagePromises?.get(annotation.bitmapId)
@@ -541,6 +556,42 @@ class AnnotationFactory {
         case AnnotationEditorType.INK:
           promises.push(
             InkAnnotation.createNewPrintAnnotation(
+              annotationGlobals,
+              xref,
+              annotation,
+              {
+                evaluatorOptions: options,
+              }
+            )
+          );
+          break;
+        case AnnotationEditorType.UNDERLINE:
+          promises.push(
+            UnderlineAnnotation.createNewPrintAnnotation(
+              annotationGlobals,
+              xref,
+              annotation,
+              {
+                evaluatorOptions: options,
+              }
+            )
+          );
+          break;
+        case AnnotationEditorType.SQUIGGLY:
+          promises.push(
+            SquigglyAnnotation.createNewPrintAnnotation(
+              annotationGlobals,
+              xref,
+              annotation,
+              {
+                evaluatorOptions: options,
+              }
+            )
+          );
+          break;
+        case AnnotationEditorType.STRIKEOUT:
+          promises.push(
+            StrikeOutAnnotation.createNewPrintAnnotation(
               annotationGlobals,
               xref,
               annotation,
@@ -5212,7 +5263,13 @@ class HighlightAnnotation extends MarkupAnnotation {
   }
 }
 
-class UnderlineAnnotation extends MarkupAnnotation {
+/**
+ * Shared base for the text markup annotations drawn with a stroked line along
+ * each quadrilateral: `Underline`, `Squiggly` and `StrikeOut`.
+ * The same drawing is used to create the default appearance of the existing
+ * annotations and the appearance of the ones created with the editors.
+ */
+class TextMarkupAnnotation extends MarkupAnnotation {
   constructor(params) {
     super(params);
 
@@ -5225,20 +5282,12 @@ class UnderlineAnnotation extends MarkupAnnotation {
         const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
         const strokeAlpha = dict.get("CA");
 
-        // The values 0.571 and 1.3 below corresponds to what Acrobat is doing.
         this._setDefaultAppearance({
           xref,
-          extra: "[] 0 d 0.571 w",
+          extra: this.constructor._lineStyle,
           strokeColor,
           strokeAlpha,
-          pointsCallback: (buffer, points) => {
-            buffer.push(
-              `${points[4]} ${points[5] + 1.3} m`,
-              `${points[6]} ${points[7] + 1.3} l`,
-              "S"
-            );
-            return [points[0], points[7], points[2], points[3]];
-          },
+          pointsCallback: this.constructor._drawQuadrilateral,
         });
       }
     } else {
@@ -5248,91 +5297,199 @@ class UnderlineAnnotation extends MarkupAnnotation {
 
   get overlaysTextContent() {
     return true;
+  }
+
+  /**
+   * The name of the annotation subtype.
+   * @abstract
+   * @type {string}
+   */
+  // eslint-disable-next-line getter-return
+  static get _subtype() {
+    unreachable("Abstract getter `_subtype` must be implemented.");
+  }
+
+  /**
+   * The graphics state operators used to stroke the line.
+   * @abstract
+   * @type {string}
+   */
+  // eslint-disable-next-line getter-return
+  static get _lineStyle() {
+    unreachable("Abstract getter `_lineStyle` must be implemented.");
+  }
+
+  /**
+   * Draw the line for a quadrilateral.
+   * @abstract
+   * @param {Array<string>} _buffer - The buffer where to push the operators.
+   * @param {Float32Array} _points - The quadrilateral (top-left, top-right,
+   *   bottom-left and bottom-right corners).
+   * @returns {Array<number>} The bounding box of the drawing.
+   */
+  static _drawQuadrilateral(_buffer, _points) {
+    unreachable("Abstract method `_drawQuadrilateral` must be implemented.");
+  }
+
+  static #drawQuadPoints(drawQuadrilateral, quadPoints) {
+    const bbox = BBOX_INIT.slice();
+    const buffer = [];
+    for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
+      const quadrilateral = quadPoints.slice(i, i + 8);
+      const points = drawQuadrilateral(buffer, quadrilateral);
+      Util.rectBoundingBox(...points, bbox);
+      // The QuadPoints lying outside of the Rect must be ignored (see section
+      // 12.5.6.10 of the PDF specification), hence the bounding box must
+      // contain the quadrilaterals too.
+      for (let j = 0; j < 8; j += 2) {
+        Util.pointBoundingBox(quadrilateral[j], quadrilateral[j + 1], bbox);
+      }
+    }
+    return { buffer, bbox };
+  }
+
+  static createNewDict(annotation, xref, { apRef, ap }) {
+    const { color, date, oldAnnotation, opacity, rotation, user, quadPoints } =
+      annotation;
+    const markup = oldAnnotation || new Dict(xref);
+    markup.setIfNotExists("Type", Name.get("Annot"));
+    markup.setIfNotExists("Subtype", Name.get(this._subtype));
+    markup.set(
+      oldAnnotation ? "M" : "CreationDate",
+      `D:${getModificationDate(date)}`
+    );
+    if (quadPoints) {
+      // The line can overflow the quadrilaterals (e.g. the squiggly one), hence
+      // the rectangle must be the bounding box of both the quadrilaterals and
+      // the drawing, which is also the one of the appearance stream.
+      const { bbox } = TextMarkupAnnotation.#drawQuadPoints(
+        this._drawQuadrilateral,
+        quadPoints
+      );
+      markup.set("Rect", bbox);
+      markup.set("QuadPoints", quadPoints);
+    }
+    markup.setIfNotExists("F", 4);
+    markup.setIfNotExists("Border", [0, 0, 0]);
+    markup.setIfNumber("Rotate", rotation);
+    markup.setIfArray("C", getPdfColorArray(color));
+    markup.setIfNumber("CA", opacity);
+    markup.setIfDefined("T", stringToAsciiOrUTF16BE(user));
+
+    if (apRef || ap) {
+      const n = new Dict(xref);
+      markup.set("AP", n);
+      n.set("N", apRef || ap);
+    }
+
+    return markup;
+  }
+
+  static async createNewAppearanceStream(annotation, xref, params) {
+    const { color, opacity, quadPoints } = annotation;
+    if (!color || !quadPoints) {
+      return null;
+    }
+
+    const { buffer, bbox } = TextMarkupAnnotation.#drawQuadPoints(
+      this._drawQuadrilateral,
+      quadPoints
+    );
+    const appearanceBuffer = [
+      this._lineStyle,
+      getPdfColor(color, /* isFill */ false),
+    ];
+    if (opacity !== 1) {
+      appearanceBuffer.push("/R0 gs");
+    }
+    appearanceBuffer.push(...buffer);
+    const appearance = appearanceBuffer.join("\n");
+
+    const appearanceStreamDict = new Dict(xref);
+    appearanceStreamDict.set("FormType", 1);
+    appearanceStreamDict.setIfName("Subtype", "Form");
+    appearanceStreamDict.setIfName("Type", "XObject");
+    appearanceStreamDict.set("BBox", bbox);
+    appearanceStreamDict.set("Length", appearance.length);
+
+    if (opacity !== 1) {
+      const resources = new Dict(xref);
+      const extGState = new Dict(xref);
+      resources.set("ExtGState", extGState);
+      appearanceStreamDict.set("Resources", resources);
+      const r0 = new Dict(xref);
+      extGState.set("R0", r0);
+      r0.setIfName("Type", "ExtGState");
+      r0.set("CA", opacity);
+    }
+
+    return new StringStream(appearance, appearanceStreamDict);
   }
 }
 
-class SquigglyAnnotation extends MarkupAnnotation {
-  constructor(params) {
-    super(params);
-
-    const { dict, xref } = params;
-
-    const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
-    if (quadPoints) {
-      if (!this.appearance) {
-        // Default color is black
-        const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
-        const strokeAlpha = dict.get("CA");
-
-        this._setDefaultAppearance({
-          xref,
-          extra: "[] 0 d 1 w",
-          strokeColor,
-          strokeAlpha,
-          pointsCallback: (buffer, points) => {
-            const dy = (points[1] - points[5]) / 6;
-            let shift = dy;
-            let x = points[4];
-            const y = points[5];
-            const xEnd = points[6];
-            buffer.push(`${x} ${y + shift} m`);
-            do {
-              x += 2;
-              shift = shift === 0 ? dy : 0;
-              buffer.push(`${x} ${y + shift} l`);
-            } while (x < xEnd);
-            buffer.push("S");
-            return [points[4], y - 2 * dy, xEnd, y + 2 * dy];
-          },
-        });
-      }
-    } else {
-      this.data.popupRef = null;
-    }
+class UnderlineAnnotation extends TextMarkupAnnotation {
+  static get _subtype() {
+    return "Underline";
   }
 
-  get overlaysTextContent() {
-    return true;
+  static get _lineStyle() {
+    // The values 0.571 and 1.3 (see below) correspond to what Acrobat is doing.
+    return "[] 0 d 0.571 w";
+  }
+
+  static _drawQuadrilateral(buffer, points) {
+    buffer.push(
+      `${points[4]} ${points[5] + 1.3} m`,
+      `${points[6]} ${points[7] + 1.3} l`,
+      "S"
+    );
+    return [points[0], points[7], points[2], points[3]];
   }
 }
 
-class StrikeOutAnnotation extends MarkupAnnotation {
-  constructor(params) {
-    super(params);
-
-    const { dict, xref } = params;
-
-    const quadPoints = (this.data.quadPoints = getQuadPoints(dict, null));
-    if (quadPoints) {
-      if (!this.appearance) {
-        // Default color is black
-        const strokeColor = getPdfColorArray(this.color, [0, 0, 0]);
-        const strokeAlpha = dict.get("CA");
-
-        this._setDefaultAppearance({
-          xref,
-          extra: "[] 0 d 1 w",
-          strokeColor,
-          strokeAlpha,
-          pointsCallback: (buffer, points) => {
-            buffer.push(
-              `${(points[0] + points[4]) / 2} ` +
-                `${(points[1] + points[5]) / 2} m`,
-              `${(points[2] + points[6]) / 2} ` +
-                `${(points[3] + points[7]) / 2} l`,
-              "S"
-            );
-            return [points[0], points[7], points[2], points[3]];
-          },
-        });
-      }
-    } else {
-      this.data.popupRef = null;
-    }
+class SquigglyAnnotation extends TextMarkupAnnotation {
+  static get _subtype() {
+    return "Squiggly";
   }
 
-  get overlaysTextContent() {
-    return true;
+  static get _lineStyle() {
+    return "[] 0 d 1 w";
+  }
+
+  static _drawQuadrilateral(buffer, points) {
+    const dy = (points[1] - points[5]) / 6;
+    let shift = dy;
+    let x = points[4];
+    const y = points[5];
+    const xEnd = points[6];
+    buffer.push(`${x} ${y + shift} m`);
+    do {
+      x += 2;
+      shift = shift === 0 ? dy : 0;
+      // Don't draw beyond the end of the quadrilateral.
+      buffer.push(`${Math.min(x, xEnd)} ${y + shift} l`);
+    } while (x < xEnd);
+    buffer.push("S");
+    return [points[4], y - 2 * dy, xEnd, y + 2 * dy];
+  }
+}
+
+class StrikeOutAnnotation extends TextMarkupAnnotation {
+  static get _subtype() {
+    return "StrikeOut";
+  }
+
+  static get _lineStyle() {
+    return "[] 0 d 1 w";
+  }
+
+  static _drawQuadrilateral(buffer, points) {
+    buffer.push(
+      `${(points[0] + points[4]) / 2} ${(points[1] + points[5]) / 2} m`,
+      `${(points[2] + points[6]) / 2} ${(points[3] + points[7]) / 2} l`,
+      "S"
+    );
+    return [points[0], points[7], points[2], points[3]];
   }
 }
 

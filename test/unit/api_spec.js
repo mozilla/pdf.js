@@ -3258,6 +3258,51 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write new text markup annotations, save the pdf and check that they're read back", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const quadPoints = [10, 32, 19, 32, 10, 20, 19, 20];
+      const editors = [
+        [AnnotationEditorType.UNDERLINE, AnnotationType.UNDERLINE, "Underline"],
+        [AnnotationEditorType.SQUIGGLY, AnnotationType.SQUIGGLY, "Squiggly"],
+        [AnnotationEditorType.STRIKEOUT, AnnotationType.STRIKEOUT, "StrikeOut"],
+      ];
+      for (let i = 0; i < editors.length; i++) {
+        pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
+          annotationType: editors[i][0],
+          rect: [10, 20, 19, 32],
+          rotation: 0,
+          opacity: 1,
+          color: [255, 0, 0],
+          quadPoints,
+          pageIndex: 0,
+        });
+      }
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+
+      expect(annotations.length).toEqual(editors.length);
+      for (const [, annotationType, subtype] of editors) {
+        const annotation = annotations.find(a => a.subtype === subtype);
+        expect(annotation.annotationType).toEqual(annotationType);
+        expect(Array.from(annotation.quadPoints)).toEqual(quadPoints);
+        expect(Array.from(annotation.color)).toEqual([255, 0, 0]);
+        // The QuadPoints must be in the Rect, else they'd be ignored.
+        const [x1, y1, x2, y2] = annotation.rect;
+        expect(x1 <= 10 && y1 <= 20 && x2 >= 19 && y2 >= 32)
+          .withContext(`${subtype} rect: ${annotation.rect}`)
+          .toBeTrue();
+      }
+
+      await loadingTask.destroy();
+    });
+
     it("edit and write an existing annotation, save the pdf and check that the Annot array doesn't contain dup entries", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("issue14438.pdf"));
       let pdfDoc = await loadingTask.promise;

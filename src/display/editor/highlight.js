@@ -19,7 +19,6 @@ import {
   shadow,
   Util,
 } from "../../shared/util.js";
-import { DrawingEditor, DrawingOptions } from "./draw.js";
 import {
   FreeHighlightDrawer,
   FreeHighlightOutliner,
@@ -31,8 +30,9 @@ import {
 } from "../annotation_layer.js";
 import { AnnotationEditor } from "./editor.js";
 import { ColorPicker } from "./color_picker.js";
-import { KeyboardManager } from "./tools.js";
+import { DrawingOptions } from "./draw.js";
 import { stopEvent } from "../display_utils.js";
+import { TextMarkupEditor } from "./text_markup.js";
 
 class HighlightDrawingOptions extends DrawingOptions {
   constructor(properties = null) {
@@ -60,20 +60,8 @@ class HighlightDrawingOptions extends DrawingOptions {
  * Editor for text-selection and freehand highlights.
  * Their geometry comes from separate outline implementations.
  */
-class HighlightEditor extends DrawingEditor {
-  #anchorNode = null;
-
-  #anchorOffset = 0;
-
-  #focusNode = null;
-
-  #focusOffset = 0;
-
+class HighlightEditor extends TextMarkupEditor {
   #methodOfCreation = "";
-
-  #text = "";
-
-  static _DEFAULT_OPACITY = 1;
 
   static _DEFAULT_THICKNESS = 12;
 
@@ -83,33 +71,12 @@ class HighlightEditor extends DrawingEditor {
 
   static _editorType = AnnotationEditorType.HIGHLIGHT;
 
-  static get _keyboardManager() {
-    const proto = HighlightEditor.prototype;
-    return shadow(
-      this,
-      "_keyboardManager",
-      new KeyboardManager([
-        [["ArrowLeft"], proto._moveCaret, { args: [0] }],
-        [["ArrowRight"], proto._moveCaret, { args: [1] }],
-        [["ArrowUp"], proto._moveCaret, { args: [2] }],
-        [["ArrowDown"], proto._moveCaret, { args: [3] }],
-      ])
-    );
-  }
-
   constructor(params) {
     super({ ...params, name: "highlightEditor" });
-    this.#anchorNode = params.anchorNode || null;
-    this.#anchorOffset = params.anchorOffset || 0;
-    this.#focusNode = params.focusNode || null;
-    this.#focusOffset = params.focusOffset || 0;
     this.#methodOfCreation =
       params.methodOfCreation ||
       (this._drawOutlines?.isFree ? "main_toolbar" : "");
-    this.#text = params.text || "";
-    this._isDraggable = false;
     this.defaultL10nId = "pdfjs-editor-highlight-editor";
-    this.rotate();
   }
 
   /** @inheritdoc */
@@ -121,13 +88,6 @@ class HighlightEditor extends DrawingEditor {
       "fill-opacity": HighlightEditor._DEFAULT_OPACITY,
       thickness: HighlightEditor._DEFAULT_THICKNESS,
     });
-  }
-
-  /** @inheritdoc */
-  static getDefaultDrawingOptions(options) {
-    const clone = this._defaultDrawingOptions.clone();
-    clone.updateProperties(options);
-    return clone;
   }
 
   /** @inheritdoc */
@@ -143,74 +103,19 @@ class HighlightEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
-  static get isDrawer() {
-    // Free highlights start on the text layer.
-    return false;
-  }
-
-  /** @inheritdoc */
-  static get _hasClipPath() {
-    // Clip the interactive div to the highlight shape.
-    return true;
-  }
-
-  /** @inheritdoc */
-  static get _hasDrawClass() {
-    return false;
-  }
-
-  /** @inheritdoc */
-  _addOutlines(params) {
-    const { boxes, drawOutlines } = params;
-    if (!boxes && !drawOutlines) {
-      return;
-    }
-    this._drawingOptions ||=
-      params.drawingOptions || HighlightEditor.getDefaultDrawingOptions();
-    if (boxes) {
-      params = {
-        ...params,
-        drawOutlines: HighlightOutline.build(
-          boxes,
-          this._uiManager.direction === "ltr"
-        ),
-      };
-    }
-    super._addOutlines(params);
+  static _buildOutline(boxes, _pageDimensions, isLTR) {
+    // The text is filled, hence the outline is the one of the text boxes.
+    return HighlightOutline.build(boxes, isLTR);
   }
 
   get colorType() {
     return AnnotationEditorParamsType.HIGHLIGHT_COLOR;
   }
 
-  get color() {
-    return this._drawingOptions.fill;
-  }
-
-  get opacity() {
-    return this._drawingOptions["fill-opacity"];
-  }
-
-  /** @inheritdoc */
-  get _opacityName() {
-    // Preserve imported opacity, which the UI doesn't expose.
-    return "fill-opacity";
-  }
-
   /** @inheritdoc */
   get _drawRotation() {
     // Text uses page coordinates; freehand uses editor rotation.
     return this._drawOutlines?.isFree ? this.rotation : 0;
-  }
-
-  /** @inheritdoc */
-  get isResizable() {
-    return false;
-  }
-
-  /** @inheritdoc */
-  get _mustBeDisabledOnCommit() {
-    return false;
   }
 
   /** @inheritdoc */
@@ -240,25 +145,6 @@ class HighlightEditor extends DrawingEditor {
   static computeTelemetryFinalData(data) {
     // We want to know how many colors have been used.
     return { numberOfColors: data.get("color").size };
-  }
-
-  /** @inheritdoc */
-  translateInPage(x, y) {}
-
-  /** @inheritdoc */
-  get toolbarPosition() {
-    return this.#relativeToBox(this._drawOutlines.focusOutline.lastPoint);
-  }
-
-  /** @inheritdoc */
-  get commentButtonPosition() {
-    return this.#relativeToBox(this._drawOutlines.firstPoint);
-  }
-
-  #relativeToBox([pointX, pointY]) {
-    // The point and box use page coordinates.
-    const [x, y, width, height] = this._drawOutlines.box;
-    return [(pointX - x) / width, (pointY - y) / height];
   }
 
   /** @inheritdoc */
@@ -306,27 +192,8 @@ class HighlightEditor extends DrawingEditor {
       this._colorPicker = new ColorPicker({ editor: this });
       return [["colorPicker", this._colorPicker]];
     }
-    return super.toolbarButtons;
-  }
-
-  /** @inheritdoc */
-  fixAndSetPosition() {
-    return super.fixAndSetPosition(this._drawRotation);
-  }
-
-  /** @inheritdoc */
-  getRect(tx, ty) {
-    return super.getRect(tx, ty, this._drawRotation);
-  }
-
-  /** @inheritdoc */
-  onceAdded(focus) {
-    if (!this.annotationElementId) {
-      this.parent.addUndoableEditor(this);
-    }
-    if (focus) {
-      this.div.focus();
-    }
+    // Without any predefined colors, there's no color picker.
+    return null;
   }
 
   /** @inheritdoc */
@@ -344,58 +211,11 @@ class HighlightEditor extends DrawingEditor {
     }
 
     const div = super.render();
-    if (this.#text) {
-      div.setAttribute("aria-label", this.#text);
-      div.setAttribute("role", "mark");
-    }
     if (this._drawOutlines.isFree) {
       div.classList.add("free");
-    } else {
-      div.addEventListener("keydown", this.#keydown.bind(this), {
-        signal: this._uiManager._signal,
-      });
     }
-    this.enableEditing();
 
     return div;
-  }
-
-  #keydown(event) {
-    HighlightEditor._keyboardManager.exec(this, event);
-  }
-
-  _moveCaret(direction) {
-    this.parent.unselect(this);
-    switch (direction) {
-      case 0 /* left */:
-      case 2 /* up */:
-        this.#setCaret(/* start = */ true);
-        break;
-      case 1 /* right */:
-      case 3 /* down */:
-        this.#setCaret(/* start = */ false);
-        break;
-    }
-  }
-
-  #setCaret(start) {
-    if (!this.#anchorNode) {
-      return;
-    }
-    const selection = window.getSelection();
-    if (start) {
-      selection.setPosition(this.#anchorNode, this.#anchorOffset);
-    } else {
-      selection.setPosition(this.#focusNode, this.#focusOffset);
-    }
-  }
-
-  /** @inheritdoc */
-  unselect() {
-    super.unselect();
-    if (!this._drawOutlines.isFree) {
-      this.#setCaret(/* start = */ false);
-    }
   }
 
   /** @inheritdoc */
@@ -467,22 +287,20 @@ class HighlightEditor extends DrawingEditor {
     pageY,
     pageWidth,
     pageHeight,
-    _innerMargin,
+    innerMargin,
     data,
     uiManager
   ) {
-    const { quadPoints } = data;
-    if (quadPoints) {
-      const boxes = [];
-      for (let i = 0, ii = quadPoints.length; i < ii; i += 8) {
-        boxes.push({
-          x: (quadPoints[i] - pageX) / pageWidth,
-          y: 1 - (quadPoints[i + 1] - pageY) / pageHeight,
-          width: (quadPoints[i + 2] - quadPoints[i]) / pageWidth,
-          height: (quadPoints[i + 1] - quadPoints[i + 5]) / pageHeight,
-        });
-      }
-      return HighlightOutline.build(boxes, uiManager.direction === "ltr");
+    if (data.quadPoints) {
+      return super.deserializeDraw(
+        pageX,
+        pageY,
+        pageWidth,
+        pageHeight,
+        innerMargin,
+        data,
+        uiManager
+      );
     }
 
     const thickness = data.thickness || this._defaultDrawingOptions.thickness;
@@ -595,32 +413,18 @@ class HighlightEditor extends DrawingEditor {
 
   /** @inheritdoc */
   serialize(isForCopying = false) {
-    // It doesn't make sense to copy/paste a highlight annotation.
-    if (this.isEmpty() || isForCopying) {
-      return null;
-    }
-
-    if (this.deleted) {
-      return this.serializeDeleted();
-    }
-
     const serialized = super.serialize(isForCopying);
+    if (!serialized || this.deleted) {
+      return serialized;
+    }
+
     Object.assign(serialized, {
-      color: AnnotationEditor._colorManager.convert(
-        this._uiManager.getNonHCMColor(this.color)
-      ),
-      opacity: this.opacity,
       thickness: this._drawingOptions.thickness,
-      quadPoints: this._drawOutlines.serializeQuadPoints(
-        this.pageTranslation,
-        this.pageDimensions
-      ),
       outlines: this._drawOutlines.serialize(
         serialized.rect,
         this._drawRotation
       ),
     });
-    this.addComment(serialized);
 
     if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
       return null;

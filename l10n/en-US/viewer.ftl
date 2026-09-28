@@ -309,10 +309,37 @@ pdfjs-editor-stamp-button-label = Add or edit images
 pdfjs-editor-highlight-button =
     .title = Highlight
 pdfjs-editor-highlight-button-label = Highlight
+pdfjs-editor-underline-button =
+    .title = Underline
+pdfjs-editor-color-picker-underline-input =
+    .title = Change underline color
+pdfjs-editor-underline-button-label = Underline
+pdfjs-editor-squiggly-button =
+    .title = Squiggly underline
+pdfjs-editor-color-picker-squiggly-input =
+    .title = Change squiggly underline color
+pdfjs-editor-squiggly-button-label = Squiggly underline
+pdfjs-editor-strikeout-button =
+    .title = Strikethrough
+pdfjs-editor-color-picker-strikeout-input =
+    .title = Change strikethrough color
+pdfjs-editor-strikeout-button-label = Strikethrough
 pdfjs-highlight-floating-button1 =
     .title = Highlight
     .aria-label = Highlight
 pdfjs-highlight-floating-button-label = Highlight
+pdfjs-underline-floating-button =
+    .title = Underline
+    .aria-label = Underline
+pdfjs-underline-floating-button-label = Underline
+pdfjs-squiggly-floating-button =
+    .title = Squiggly underline
+    .aria-label = Squiggly underline
+pdfjs-squiggly-floating-button-label = Squiggly underline
+pdfjs-strikeout-floating-button =
+    .title = Strikethrough
+    .aria-label = Strikethrough
+pdfjs-strikeout-floating-button-label = Strikethrough
 pdfjs-comment-floating-button =
     .title = Comment
     .aria-label = Comment
@@ -333,6 +360,17 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = Drawing editor
+# “Underline” is a noun, the string is used on the editor for underlines.
+pdfjs-editor-underline-editor =
+    .aria-label = Underline editor
+# “Squiggly underline” is a noun, the string is used on the editor for squiggly
+# underlines.
+pdfjs-editor-squiggly-editor =
+    .aria-label = Squiggly underline editor
+# “Strikethrough” is a noun, the string is used on the editor for
+# strikethroughs.
+pdfjs-editor-strikeout-editor =
+    .aria-label = Strikethrough editor
 
 # Used when a signature editor is selected/hovered.
 # Variables:
@@ -355,6 +393,12 @@ pdfjs-editor-remove-highlight-button =
     .title = Remove highlight
 pdfjs-editor-remove-signature-button =
     .title = Remove signature
+pdfjs-editor-remove-underline-button =
+    .title = Remove underline
+pdfjs-editor-remove-squiggly-button =
+    .title = Remove squiggly underline
+pdfjs-editor-remove-strikeout-button =
+    .title = Remove strikethrough
 
 ##
 
@@ -362,6 +406,9 @@ pdfjs-editor-remove-signature-button =
 pdfjs-editor-free-text-color-input = Color
 pdfjs-editor-free-text-size-input = Size
 pdfjs-editor-ink-color-input = Color
+pdfjs-editor-underline-color-input = Color
+pdfjs-editor-squiggly-color-input = Color
+pdfjs-editor-strikeout-color-input = Color
 pdfjs-editor-ink-thickness-input = Thickness
 pdfjs-editor-ink-opacity-input = Opacity
 pdfjs-editor-stamp-add-image-button =
@@ -550,6 +597,9 @@ pdfjs-editor-freetext-added-alert = Text added
 pdfjs-editor-ink-added-alert = Drawing added
 pdfjs-editor-stamp-added-alert = Image added
 pdfjs-editor-signature-added-alert = Signature added
+pdfjs-editor-underline-added-alert = Underline added
+pdfjs-editor-squiggly-added-alert = Squiggly underline added
+pdfjs-editor-strikeout-added-alert = Strikethrough added
 
 ## "Annotations removed" bar
 
@@ -558,6 +608,9 @@ pdfjs-editor-undo-bar-message-freetext = Text removed
 pdfjs-editor-undo-bar-message-ink = Drawing removed
 pdfjs-editor-undo-bar-message-stamp = Image removed
 pdfjs-editor-undo-bar-message-signature = Signature removed
+pdfjs-editor-undo-bar-message-underline = Underline removed
+pdfjs-editor-undo-bar-message-squiggly = Squiggly underline removed
+pdfjs-editor-undo-bar-message-strikeout = Strikethrough removed
 pdfjs-editor-undo-bar-message-comment = Comment removed
 # Variables:
 #   $count (Number) - the number of removed annotations.
