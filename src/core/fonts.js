@@ -88,7 +88,6 @@ const EXPORT_DATA_PROPERTIES = [
   "cssFontInfo",
   "data",
   "defaultVMetrics",
-  "defaultWidth",
   "descent",
   "disableFontFace",
   "fallbackName",
@@ -109,6 +108,7 @@ const EXPORT_DATA_PROPERTIES = [
 const EXPORT_DATA_EXTRA_PROPERTIES = [
   "composite",
   "defaultEncoding",
+  "defaultWidth",
   "differences",
   "isMonospace",
   "isSerifFont",

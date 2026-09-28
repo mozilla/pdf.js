@@ -65,8 +65,7 @@ describe("obj_bin_transform", function () {
       remeasure: true,
       vertical: true,
       ascent: 1,
-      defaultWidth: 1,
-      descent: 1,
+      descent: -1,
       bbox: [1, 1, 1, 1],
       fontMatrix: [1, 1, 1, 1, 1, 1],
       defaultVMetrics: [1, 1, 1],
@@ -126,7 +125,7 @@ describe("obj_bin_transform", function () {
 
       describe("FontInfo", function () {
         it("must roundtrip correctly for FontInfo", function () {
-          let sizeEstimate = 92; // fixed offset until the strings
+          let sizeEstimate = 84; // fixed offset until the strings
           const { encoder } = InfoUtils;
           sizeEstimate += 4 + 4 * (4 + encoder.encode("string").length);
           sizeEstimate += 4 + 4; // cssFontInfo and systemFontInfo
@@ -145,8 +144,7 @@ describe("obj_bin_transform", function () {
           expect(deserialized.remeasure).toBeTrue();
           expect(deserialized.vertical).toBeTrue();
           expect(deserialized.ascent).toEqual(1);
-          expect(deserialized.defaultWidth).toEqual(1);
-          expect(deserialized.descent).toEqual(1);
+          expect(deserialized.descent).toEqual(-1);
           expect(deserialized.bbox).toEqual([1, 1, 1, 1]);
           expect(deserialized.fontMatrix).toEqual([1, 1, 1, 1, 1, 1]);
           expect(deserialized.defaultVMetrics).toEqual([1, 1, 1]);
