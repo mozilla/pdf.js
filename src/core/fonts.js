@@ -2261,7 +2261,8 @@ class Font {
         locaEntries,
         numGlyphs
       );
-      const missingGlyphs = new Set();
+      // Glyph IDs are in [0, numGlyphs), so use one byte per glyph.
+      const missingGlyphs = new Uint8Array(numGlyphs);
       let writeOffset = 0;
       itemEncode(locaData, 0, writeOffset);
       for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
@@ -2277,7 +2278,7 @@ class Font {
             );
         const newLength = glyphProfile.length;
         if (newLength === 0) {
-          missingGlyphs.add(i);
+          missingGlyphs[i] = 1;
         }
         if (glyphProfile.sizeOfInstructions > maxSizeOfInstructions) {
           maxSizeOfInstructions = glyphProfile.sizeOfInstructions;
@@ -2957,7 +2958,7 @@ class Font {
 
     sanitizeHead(tables.head, numGlyphs, isTrueType ? tables.loca.length : 0);
 
-    let missingGlyphs = new Set();
+    let missingGlyphs = null;
     if (isTrueType) {
       const glyphsInfo = sanitizeGlyphLocations(
         tables.loca,
@@ -3026,7 +3027,7 @@ class Font {
 
     // Helper function to try to skip mapping of empty glyphs.
     function hasGlyph(glyphId) {
-      return !missingGlyphs.has(glyphId);
+      return !missingGlyphs?.[glyphId];
     }
 
     if (properties.composite) {
