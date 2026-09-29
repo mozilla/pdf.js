@@ -808,25 +808,25 @@ class WorkerMessageHandler {
           if (structTreeRoot === null) {
             // No structTreeRoot exists, so we need to create one.
             promises.push(
-              Promise.all(newAnnotationPromises).then(async () => {
-                await StructTreeRoot.createStructureTree({
+              Promise.all(newAnnotationPromises).then(() =>
+                StructTreeRoot.createStructureTree({
                   newAnnotationsByPage,
                   xref,
                   catalogRef,
                   pdfManager,
                   changes,
-                });
-              })
+                })
+              )
             );
           } else if (structTreeRoot) {
             promises.push(
-              Promise.all(newAnnotationPromises).then(async () => {
-                await structTreeRoot.updateStructureTree({
+              Promise.all(newAnnotationPromises).then(() =>
+                structTreeRoot.updateStructureTree({
                   newAnnotationsByPage,
                   pdfManager,
                   changes,
-                });
-              })
+                })
+              )
             );
           }
         }
