@@ -99,7 +99,7 @@ describe("obj_bin_transform", function () {
       describe("SystemFontInfo", function () {
         it("must roundtrip correctly for SystemFontInfo", function () {
           const { encoder } = InfoUtils;
-          let sizeEstimate = 1 + 4;
+          let sizeEstimate = 4;
           for (const string of [
             "some string",
             "another string",
@@ -113,7 +113,6 @@ describe("obj_bin_transform", function () {
           const buffer = compileSystemFontInfo(systemFontInfo);
           expect(buffer.byteLength).toEqual(sizeEstimate);
           const deserialized = new SystemFontInfo(buffer);
-          expect(deserialized.guessFallback).toBeFalse();
           expect(deserialized.css).toEqual("some string");
           expect(deserialized.loadedName).toEqual("another string");
           expect(deserialized.baseFontName).toEqual("base name");

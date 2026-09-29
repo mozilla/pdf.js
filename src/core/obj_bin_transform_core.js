@@ -73,14 +73,13 @@ function compileSystemFontInfo(info) {
       stringsLength: styleStringsLength,
     } = encodeStrings(["style", "weight"], info.style));
   }
-  const lengthEstimate = 1 + 4 + stringsLength + styleStringsLength;
+  const lengthEstimate = 4 + stringsLength + styleStringsLength;
 
   const buffer = new ArrayBuffer(lengthEstimate);
   const data = new Uint8Array(buffer);
   const view = new DataView(buffer);
   let offset = 0;
 
-  view.setUint8(offset++, info.guessFallback ? 1 : 0);
   view.setUint32(offset, stringsLength);
   offset = writeStrings(encodedStrings, data, view, offset + 4);
 
