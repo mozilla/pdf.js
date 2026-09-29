@@ -169,12 +169,8 @@ class FontInfo {
     return this.#readNumber(0);
   }
 
-  get defaultWidth() {
-    return this.#readNumber(1);
-  }
-
   get descent() {
-    return this.#readNumber(2);
+    return this.#readNumber(1);
   }
 
   #readArray(offset, arrLen, lookupName, increment) {

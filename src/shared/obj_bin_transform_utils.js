@@ -37,7 +37,7 @@ class FONT_INFO {
     "vertical",
   ];
 
-  static numbers = ["ascent", "defaultWidth", "descent"];
+  static numbers = ["ascent", "descent"];
 
   static strings = ["fallbackName", "loadedName", "mimetype", "name"];
 
