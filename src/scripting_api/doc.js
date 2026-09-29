@@ -1236,7 +1236,7 @@ class Doc extends PDFObject {
     let mustCalculate = false;
     let fieldsToReset;
     if (aFields) {
-      fieldsToReset = [];
+      fieldsToReset = new Set();
       for (const fieldName of aFields) {
         if (!fieldName) {
           continue;
@@ -1250,12 +1250,23 @@ class Doc extends PDFObject {
         if (!field) {
           continue;
         }
-        fieldsToReset.push(field);
+        fieldsToReset.add(field);
         mustCalculate = true;
       }
     }
 
-    if (!fieldsToReset) {
+    if (fieldsToReset) {
+      // A non-terminal field stands for all its descendants, hence add the
+      // kids (the Set iterator also visits the newly added fields).
+      for (const { obj } of fieldsToReset) {
+        for (const id of obj._kidIds || []) {
+          const kid = obj._appObjects[id];
+          if (kid) {
+            fieldsToReset.add(kid);
+          }
+        }
+      }
+    } else {
       fieldsToReset = this._fields.values();
       mustCalculate = this._fields.size !== 0;
     }
