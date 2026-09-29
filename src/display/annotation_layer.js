@@ -1204,6 +1204,21 @@ class LinkAnnotationElement extends AnnotationElement {
             fieldIds.add(id);
           }
         }
+        // A non-terminal field stands for all its descendants, hence add
+        // the kids (the Set iterator also visits the newly added ids).
+        const kidIdsById = new Map();
+        for (const fields of this._fieldObjects.values()) {
+          for (const { id, kidIds } of fields) {
+            if (kidIds) {
+              kidIdsById.set(id, kidIds);
+            }
+          }
+        }
+        for (const id of fieldIds) {
+          for (const kidId of kidIdsById.get(id) || []) {
+            fieldIds.add(kidId);
+          }
+        }
         for (const fields of this._fieldObjects.values()) {
           for (const field of fields) {
             if (fieldIds.has(field.id) === include) {

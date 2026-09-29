@@ -1,0 +1,66 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm 5 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 300] /Annots [7 0 R 9 0 R 12 0 R 13 0 R 14 0 R 15 0 R] >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Fields [6 0 R 8 0 R 11 0 R 13 0 R 14 0 R 15 0 R] /DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 4 0 R >> >> >>
+endobj
+6 0 obj
+<< /FT /Tx /T (a) /V () /DV () /Kids [7 0 R] >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 6 0 R /P 3 0 R /Rect [20 250 280 270] /F 4 >>
+endobj
+8 0 obj
+<< /FT /Tx /T (b) /V () /DV () /Kids [9 0 R] >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /Parent 8 0 R /P 3 0 R /Rect [20 220 280 240] /F 4 >>
+endobj
+11 0 obj
+<< /T (g) /Kids [12 0 R] >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (c) /V () /DV () /Parent 11 0 R /P 3 0 R /Rect [20 190 280 210] /F 4 >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (resetA) /P 3 0 R /Rect [20 140 90 170] /F 4 /MK << /CA (Reset a) >> /A << /S /ResetForm /Fields [6 0 R] >> >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (resetAllButA) /P 3 0 R /Rect [110 140 180 170] /F 4 /MK << /CA (Reset all but a) >> /A << /S /ResetForm /Fields [6 0 R] /Flags 1 >> >>
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (resetG) /P 3 0 R /Rect [200 140 270 170] /F 4 /MK << /CA (Reset g) >> /A << /S /ResetForm /Fields [(g)] >> >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000009 00000 n 
+0000000074 00000 n 
+0000000131 00000 n 
+0000000252 00000 n 
+0000000322 00000 n 
+0000000449 00000 n 
+0000000512 00000 n 
+0000000614 00000 n 
+0000000677 00000 n 
+0000000000 65535 f 
+0000000779 00000 n 
+0000000823 00000 n 
+0000000955 00000 n 
+0000001137 00000 n 
+0000001344 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+1526
+%%EOF
