@@ -23,6 +23,7 @@ import {
   CFFTopDict,
 } from "../../src/core/cff_parser.js";
 import { DefaultFileReaderFactory, TEST_PDFS_PATH } from "./test_utils.js";
+import { FormatError } from "../../src/shared/util.js";
 import { PDFDocument } from "../../src/core/document.js";
 import { Ref } from "../../src/core/primitives.js";
 import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
@@ -650,6 +651,86 @@ describe("CFFParser", function () {
 
     expect(fdSelect.fdSelect).toEqual([9, 9, 0xa, 0xa]);
     expect(fdSelect.format).toEqual(3);
+  });
+
+  it("rejects fdselect format 3 ranges exceeding the glyph count", function () {
+    // prettier-ignore
+    const bytes = new Uint8Array([0x03, // format
+                                0x00, 0x03, // range count
+                                0x00, 0x00, // first gid
+                                0x00, // font dict 0 id
+                                0xff, 0xff, // next gid (too large)
+                                0x01, // font dict 1 id
+                                0x00, 0x00, // next gid (decreasing)
+                                0x02, // font dict 2 id
+                                0xff, 0xff // sentinel (exclusive end gid)
+                               ]);
+    parser.bytes = bytes.slice();
+
+    expect(() => parser.parseFDSelect(0, 4)).toThrowError(
+      FormatError,
+      "parseFDSelect: Invalid font data."
+    );
+  });
+
+  it("parses an index with invalid offsets", function () {
+    // prettier-ignore
+    const bytes = new Uint8Array([0x00, 0x04, // count
+                                0x01, // offsetSize
+                                0x01, // offset[0]
+                                0x03, // offset[1]
+                                0x01, // offset[2] (decreasing)
+                                0xc8, // offset[3] (out of bounds)
+                                0x02, // offset[4] (decreasing)
+                                0x0a, 0x0b, 0x0c, 0x0d]);
+    parser.bytes = bytes;
+    const { obj: index, endPos } = parser.parseIndex(0);
+
+    expect(index.count).toEqual(4);
+    expect(index.get(0)).toEqual(new Uint8Array([0x0a, 0x0b]));
+    expect(index.get(1)).toEqual(new Uint8Array([]));
+    expect(index.get(2)).toEqual(new Uint8Array([0x0c, 0x0d]));
+    expect(index.get(3)).toEqual(new Uint8Array([]));
+    expect(endPos).toEqual(bytes.length);
+  });
+
+  it("throws on an index with an invalid offset size", function () {
+    // prettier-ignore
+    parser.bytes = new Uint8Array([0x00, 0x01, // count
+                                   0x05, // offsetSize (invalid)
+                                   0x00, 0x00, 0x00, 0x00, 0x01, // offset[0]
+                                   0x00, 0x00, 0x00, 0x00, 0x02, // offset[1]
+                                   0x0a]);
+
+    expect(() => parser.parseIndex(0)).toThrowError(
+      FormatError,
+      "Invalid CFF INDEX offset size: 5"
+    );
+  });
+
+  it("ignores unreachable FDArray entries", function () {
+    cff.isCIDFont = true;
+    cff.topDict.setByName("ROS", [0, 0, 0]);
+    cff.topDict.setByName("FDSelect", 0);
+    cff.topDict.setByName("FDArray", 0);
+
+    cff.fdArray = [];
+    for (let i = 0; i < 300; i++) {
+      const fdDict = new CFFTopDict(cff.strings);
+      fdDict.setByName("Private", [0, 0]);
+      fdDict.privateDict = new CFFPrivateDict(cff.strings);
+      cff.fdArray.push(fdDict);
+    }
+    cff.fdSelect = new CFFFDSelect(0, Array(cff.charStrings.count).fill(0));
+    const fontDataWithLargeFDArray = new CFFCompiler(cff).compile();
+
+    const reparsedCff = new CFFParser(
+      new Stream(fontDataWithLargeFDArray),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+
+    expect(reparsedCff.fdArray.length).toEqual(256);
   });
 
   // TODO fdArray
