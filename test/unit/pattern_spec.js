@@ -34,6 +34,8 @@ describe("pattern", function () {
         dest[destOffset + 1] = src[srcOffset + 1];
         dest[destOffset + 2] = 0;
       },
+      numInputs = 2,
+      numOutputs = 3,
     } = {}) {
       const dict = new Dict();
       dict.set("ShadingType", 1);
@@ -49,7 +51,7 @@ describe("pattern", function () {
         dict.set("Background", background);
       }
       dict.set("Function", {
-        fn,
+        fn: Object.assign(fn, { numInputs, numOutputs }),
       });
 
       const pdfFunctionFactory = {
@@ -116,6 +118,7 @@ describe("pattern", function () {
           dest[destOffset + 2] = 0.5;
           dest.fill(0, destOffset + 3, destOffset + numComps);
         },
+        numOutputs: numComps,
       });
       const [, , , colors] = shading.getIR();
 
@@ -147,11 +150,67 @@ describe("pattern", function () {
           dest[destOffset] =
             src[srcOffset] === 1 || src[srcOffset + 1] === 1 ? 1 : 0;
         },
+        numOutputs: 1,
       });
       const [, , , colors] = shading.getIR();
 
       expect(colors.length).toEqual(144);
       expect(Array.from(colors)).toEqual(new Array(144).fill(0));
+    });
+
+    it("must ignore a function with the wrong dimensions", function () {
+      expect(createFunctionBasedShading({ numInputs: 1 }).getIR()).toEqual([
+        "Dummy",
+      ]);
+      expect(createFunctionBasedShading({ numOutputs: 1 }).getIR()).toEqual([
+        "Dummy",
+      ]);
+    });
+  });
+
+  describe("RadialAxialShading", function () {
+    function createAxialShading({ numInputs, numOutputs }) {
+      const dict = new Dict();
+      dict.set("ShadingType", 2);
+      dict.setIfName("ColorSpace", "DeviceRGB");
+      dict.set("Coords", [0, 0, 100, 0]);
+      dict.set("Extend", [true, true]);
+      dict.set("Function", {
+        fn: Object.assign(
+          (src, srcOffset, dest, destOffset) => {
+            dest.fill(src[srcOffset], destOffset, destOffset + numOutputs);
+          },
+          { numInputs, numOutputs }
+        ),
+      });
+
+      return Pattern.parseShading(
+        dict,
+        /* xref = */ { fetchIfRef: obj => obj },
+        /* res = */ null,
+        /* pdfFunctionFactory = */ { create: fnObj => fnObj.fn },
+        new GlobalColorSpaceCache(),
+        new LocalColorSpaceCache()
+      );
+    }
+
+    it("must accept a 1-in, n-out function", function () {
+      const ir = createAxialShading({ numInputs: 1, numOutputs: 3 }).getIR();
+
+      expect(ir[0]).toEqual("RadialAxial");
+      expect(ir[3]).toEqual([
+        [0, "#000000"],
+        [1, "#ffffff"],
+      ]);
+    });
+
+    it("must ignore a function with the wrong dimensions", function () {
+      expect(
+        createAxialShading({ numInputs: 18, numOutputs: 3 }).getIR()
+      ).toEqual(["Dummy"]);
+      expect(
+        createAxialShading({ numInputs: 1, numOutputs: 1 }).getIR()
+      ).toEqual(["Dummy"]);
     });
   });
 });

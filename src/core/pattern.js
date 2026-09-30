@@ -57,6 +57,24 @@ function getColorConversionBatchSize(count, numComps) {
   );
 }
 
+// Input count follows the shading type; output count matches the color space
+// (ISO 32000-1:2008, 8.7.4.5).
+function parseShadingFunction(
+  fnObj,
+  pdfFunctionFactory,
+  numInputs,
+  numOutputs
+) {
+  const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
+  if (fn.numInputs !== numInputs || fn.numOutputs !== numOutputs) {
+    throw new FormatError(
+      `Invalid shading function: expected ${numInputs}-in ${numOutputs}-out, ` +
+        `got ${fn.numInputs}-in ${fn.numOutputs}-out.`
+    );
+  }
+  return fn;
+}
+
 class Pattern {
   // eslint-disable-next-line no-unused-private-class-members
   static #hasGPU = false;
@@ -187,7 +205,7 @@ class RadialAxialShading extends BaseShading {
       : [false, false];
 
     const fnObj = dict.getRaw("Function");
-    const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
+    const fn = parseShadingFunction(fnObj, pdfFunctionFactory, 1, cs.numComps);
 
     // Use lcm(1,2,3,4,5,6,7,8,10) = 840 (including 9 increases this to 2520)
     // to catch evenly spaced stops. oeis.org/A003418
@@ -477,7 +495,7 @@ class FunctionBasedShading extends BaseShading {
     if (!fnObj) {
       throw new FormatError("FunctionBasedShading: missing /Function");
     }
-    const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
+    const fn = parseShadingFunction(fnObj, pdfFunctionFactory, 2, cs.numComps);
 
     // Domain [x0, x1, y0, y1]; defaults to [0, 1, 0, 1].
     const [x0, x1, y0, y1] = lookupRect(dict.getArray("Domain"), [0, 1, 0, 1]);
@@ -756,7 +774,7 @@ class MeshShading extends BaseShading {
 
     const fnObj = dict.getRaw("Function");
     const fn = fnObj
-      ? pdfFunctionFactory.create(fnObj, /* parseArray = */ true)
+      ? parseShadingFunction(fnObj, pdfFunctionFactory, 1, cs.numComps)
       : null;
 
     this.coords = [];
