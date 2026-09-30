@@ -328,5 +328,23 @@ describe("image_utils", function () {
       expect(dest[2]).toEqual(RED); // red
       expect(dest[3]).toEqual(0); // untouched
     });
+
+    it("handles srcPos offset for RGB_24BPP", function () {
+      // Four black pixels to skip, then one red pixel read from srcPos=12.
+      const src = new Uint8Array([
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 255, 0, 0,
+      ]);
+      const dest = new Uint32Array(1);
+      const result = convertToRGBA({
+        src,
+        dest,
+        srcPos: 12,
+        width: 1,
+        height: 1,
+        kind: ImageKind.RGB_24BPP,
+      });
+      expect(result.srcPos).toEqual(15);
+      expect(dest[0]).toEqual(RED);
+    });
   });
 });

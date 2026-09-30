@@ -102,7 +102,7 @@ function convertRGBToRGBA({
       dest[destPos + 3] = (s3 >>> 8) | alphaMask;
     }
 
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+    for (let j = srcPos + i * 4, jj = srcPos + len; j < jj; j += 3) {
       dest[destPos++] =
         src[j] | (src[j + 1] << 8) | (src[j + 2] << 16) | alphaMask;
     }
@@ -118,7 +118,7 @@ function convertRGBToRGBA({
       dest[destPos + 3] = (s3 << 8) | alphaMask;
     }
 
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+    for (let j = srcPos + i * 4, jj = srcPos + len; j < jj; j += 3) {
       dest[destPos++] =
         (src[j] << 24) | (src[j + 1] << 16) | (src[j + 2] << 8) | alphaMask;
     }
