@@ -567,7 +567,7 @@ class FontFaceObject {
   }
 
   get mimetype() {
-    return this.#fontData.mimetype;
+    return this.missingFile ? null : "font/opentype";
   }
 
   get name() {
