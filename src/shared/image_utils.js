@@ -84,8 +84,11 @@ function convertRGBToRGBA({
 }) {
   let i = 0;
   const len = width * height * 3;
-  const len32 = len >> 2;
-  const src32 = new Uint32Array(src.buffer, srcPos, len32);
+  const byteOffset = src.byteOffset + srcPos;
+  // Use 32-bit reads for aligned sources; otherwise convert pixel by pixel.
+  const len32 = byteOffset % 4 === 0 ? Math.floor(len / 4) : 0;
+  const src32 =
+    len32 > 0 ? new Uint32Array(src.buffer, byteOffset, len32) : null;
   const alphaMask = FeatureTest.isLittleEndian ? 0xff000000 : 0xff;
 
   if (FeatureTest.isLittleEndian) {
