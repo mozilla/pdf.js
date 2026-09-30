@@ -194,19 +194,8 @@ function compileFontInfo(font) {
     /* increment = */ 8
   );
   assert(
-    offset === FONT_INFO.OFFSET_DEFAULT_VMETRICS,
-    "compileFontInfo: FontMatrix properties offset mismatch"
-  );
-
-  writeArray(
-    /* arr = */ font.defaultVMetrics,
-    /* arrLen = */ 3,
-    /* writerName = */ "setInt16",
-    /* increment = */ 2
-  );
-  assert(
     offset === FONT_INFO.OFFSET_STRINGS,
-    "compileFontInfo: DefaultVMetrics properties offset mismatch"
+    "compileFontInfo: FontMatrix properties offset mismatch"
   );
 
   view.setUint32(offset, stringsLength);

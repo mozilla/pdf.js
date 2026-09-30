@@ -3004,10 +3004,7 @@ class PartialEvaluator {
         }
         let charSpacing = baseCharSpacing + (i + 1 === ii ? extraSpacing : 0);
 
-        let glyphWidth = glyph.width;
-        if (font.vertical) {
-          glyphWidth = glyph.vmetric ? glyph.vmetric[0] : -glyphWidth;
-        }
+        const glyphWidth = font.vertical ? glyph.vmetric[0] : glyph.width;
         let scaledDim = glyphWidth * scale;
 
         if (originalCharCode === 0x20) {

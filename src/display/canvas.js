@@ -2772,7 +2772,6 @@ class CanvasGraphics {
     const glyphsLength = glyphs.length;
     const vertical = font.vertical;
     const spacingDir = vertical ? 1 : -1;
-    const defaultVMetrics = font.defaultVMetrics;
     const widthAdvanceScale = fontSize * current.fontMatrix[0];
 
     const simpleFillText =
@@ -2896,12 +2895,11 @@ class CanvasGraphics {
       let scaledX, scaledY;
       let width = glyph.width;
       if (vertical) {
-        const vmetric = glyph.vmetric || defaultVMetrics;
-        const vx =
-          -(glyph.vmetric ? vmetric[1] : width * 0.5) * widthAdvanceScale;
+        const vmetric = glyph.vmetric;
+        const vx = -vmetric[1] * widthAdvanceScale;
         const vy = vmetric[2] * widthAdvanceScale;
 
-        width = vmetric ? -vmetric[0] : width;
+        width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
       } else {

@@ -87,7 +87,6 @@ const EXPORT_DATA_PROPERTIES = [
   // "charProcOperatorList" is handled separately, since it's not compiled.
   "cssFontInfo",
   "data",
-  "defaultVMetrics",
   "descent",
   "disableFontFace",
   "fallbackName",
@@ -108,6 +107,7 @@ const EXPORT_DATA_PROPERTIES = [
 const EXPORT_DATA_EXTRA_PROPERTIES = [
   "composite",
   "defaultEncoding",
+  "defaultVMetrics",
   "defaultWidth",
   "differences",
   "isMonospace",
