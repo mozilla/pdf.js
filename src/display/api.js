@@ -1065,11 +1065,18 @@ class PDFDocumentProxy {
    *  extracted pages sharing the same source page, or -1 if it isn't extracted.
    *  This routes editor annotations when the viewer contains multiple copies
    *  of a source page.
-   * @returns {Promise<Uint8Array>} A promise that is resolved with a
-   *   {Uint8Array} containing the full data of the saved document.
+   * @param {object} [options]
+   * @param {boolean | "non-forms"} [options.flatten] - Flatten extracted
+   *   annotations; see {@link SaveDocumentParameters}. The default value is
+   *   `false`.
+   * @param {"display" | "print"} [options.intent] - Visibility to use when
+   *   flattening; see {@link SaveDocumentParameters}. The default value is
+   *   `"print"`.
+   * @returns {Promise<Uint8Array|null>} The extracted PDF bytes, or `null`
+   *   if extraction fails.
    */
-  extractPages(pageInfos, copyLevels = null) {
-    return this._transport.extractPages(pageInfos, copyLevels);
+  extractPages(pageInfos, copyLevels = null, options = {}) {
+    return this._transport.extractPages(pageInfos, copyLevels, options);
   }
 
   /**
@@ -2914,9 +2921,15 @@ class WorkerTransport {
       });
   }
 
-  extractPages(pageInfos, copyLevels = null) {
+  extractPages(
+    pageInfos,
+    copyLevels = null,
+    { flatten = false, intent = "print" } = {}
+  ) {
     const params = {
       pageInfos,
+      flatten,
+      intent: this.#getFlattenIntent(intent),
     };
     let transfer;
     const ImageBitmapCtor = globalThis.ImageBitmap;

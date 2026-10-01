@@ -3581,234 +3581,374 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
-    it("saveDocument preserves form fields with non-form annotations flattened (saved and pending annotations)", async function () {
-      for (const saveFirst of [false, true]) {
-        let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
-        let pdfDoc = await loadingTask.promise;
-        const value = "Hello World";
+    it("saveDocument and extractPages preserve form fields with non-form annotations flattened (saved and pending annotations)", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        for (const saveFirst of [false, true]) {
+          let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+          let pdfDoc = await loadingTask.promise;
+          const value = "Hello World";
 
-        pdfDoc.annotationStorage.setValue("55R", { value });
-        pdfDoc.annotationStorage.setValue("56R", { noPrint: true });
-        pdfDoc.annotationStorage.setValue("30R", {
-          noView: true,
-          noPrint: true,
-        });
-        addSignatureEditor(pdfDoc.annotationStorage);
+          pdfDoc.annotationStorage.setValue("55R", { value });
+          pdfDoc.annotationStorage.setValue("56R", { noPrint: true });
+          pdfDoc.annotationStorage.setValue("30R", {
+            noView: true,
+            noPrint: true,
+          });
+          addSignatureEditor(pdfDoc.annotationStorage);
 
-        if (saveFirst) {
-          // Reload to flatten a saved annotation without storage edits.
-          const saved = await pdfDoc.saveDocument();
-          await loadingTask.destroy();
-          loadingTask = getDocument({ data: saved });
-          pdfDoc = await loadingTask.promise;
-        }
-
-        const options = { flatten: "non-forms" };
-        const data = await pdfDoc.saveDocument(options);
-        await loadingTask.destroy();
-
-        loadingTask = getDocument({ data });
-        pdfDoc = await loadingTask.promise;
-        const fields = await pdfDoc.getFieldObjects();
-        expect(fields.size).toEqual(10);
-        expect(fields.get("Text1")[0].value).toEqual(value);
-
-        for (let pageNumber = 1; pageNumber <= 2; pageNumber++) {
-          const page = await pdfDoc.getPage(pageNumber);
-          const annotations = await page.getAnnotations({ intent: "any" });
-          expect(annotations.length).toEqual(pageNumber === 1 ? 3 : 7);
-          expect(annotations.every(({ subtype }) => subtype === "Widget"))
-            .withContext(`Page ${pageNumber}`)
-            .toBeTrue();
-
-          if (pageNumber === 1) {
-            expect(
-              annotations.find(({ fieldName }) => fieldName === "Text1")
-                .fieldValue
-            ).toEqual(value);
-            expect(
-              annotations.find(({ fieldName }) => fieldName === "Text2")
-                .annotationFlags & AnnotationFlag.PRINT
-            ).toEqual(0);
-          } else {
-            expect(
-              annotations.find(({ fieldName }) => fieldName === "Text4")
-                .annotationFlags & AnnotationFlag.HIDDEN
-            ).toEqual(AnnotationFlag.HIDDEN);
+          if (saveFirst) {
+            // Reload to flatten a saved annotation without storage edits.
+            const saved = await pdfDoc.saveDocument();
+            await loadingTask.destroy();
+            loadingTask = getDocument({ data: saved });
+            pdfDoc = await loadingTask.promise;
           }
 
+          const options = { flatten: "non-forms" };
+          const data =
+            method === "saveDocument"
+              ? await pdfDoc.saveDocument(options)
+              : await pdfDoc.extractPages([{ document: null }], null, options);
+          await loadingTask.destroy();
+
+          loadingTask = getDocument({ data });
+          pdfDoc = await loadingTask.promise;
+          const fields = await pdfDoc.getFieldObjects();
+          expect(fields.size).toEqual(10);
+          expect(fields.get("Text1")[0].value).toEqual(value);
+
+          for (let pageNumber = 1; pageNumber <= 2; pageNumber++) {
+            const page = await pdfDoc.getPage(pageNumber);
+            const annotations = await page.getAnnotations({ intent: "any" });
+            expect(annotations.length).toEqual(pageNumber === 1 ? 3 : 7);
+            expect(annotations.every(({ subtype }) => subtype === "Widget"))
+              .withContext(`Page ${pageNumber}`)
+              .toBeTrue();
+
+            if (pageNumber === 1) {
+              expect(
+                annotations.find(({ fieldName }) => fieldName === "Text1")
+                  .fieldValue
+              ).toEqual(value);
+              expect(
+                annotations.find(({ fieldName }) => fieldName === "Text2")
+                  .annotationFlags & AnnotationFlag.PRINT
+              ).toEqual(0);
+            } else {
+              expect(
+                annotations.find(({ fieldName }) => fieldName === "Text4")
+                  .annotationFlags & AnnotationFlag.HIDDEN
+              ).toEqual(AnnotationFlag.HIDDEN);
+            }
+
+            const { fnArray } = await page.getOperatorList({
+              annotationMode: AnnotationMode.DISABLE,
+            });
+            // Only the signature is added to the page content.
+            expect(
+              fnArray.filter(fn => fn === OPS.paintFormXObjectBegin).length
+            ).toEqual(pageNumber === 1 ? 1 : 0);
+            const { items } = await page.getTextContent();
+            expect(items.map(({ str }) => str)).not.toContain(value);
+          }
+
+          await loadingTask.destroy();
+        }
+      }
+    });
+
+    it("saveDocument and extractPages flatten field visibility and appearances for the display and print intents", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        for (const intent of ["display", "print"]) {
+          const flags = [
+            AnnotationFlag.PRINT | AnnotationFlag.NOVIEW,
+            AnnotationFlag.PRINT | AnnotationFlag.HIDDEN,
+            AnnotationFlag.PRINT,
+            AnnotationFlag.PRINT,
+          ];
+          const data = assemblePdf([
+            "1 0 obj\n<< /Type /Catalog /Pages 3 0 R /AcroForm 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Fields [6 0 R 7 0 R 8 0 R 9 0 R] " +
+              "/DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 5 0 R >> >> >>\nendobj\n",
+            "3 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+            "4 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 300 300] " +
+              "/Annots [6 0 R 7 0 R 8 0 R 9 0 R] >>\nendobj\n",
+            "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+            ...flags.map(
+              (flag, i) =>
+                `${i + 6} 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx ` +
+                `/T (Field${i}) /V (Old) /F ${flag} /Rect [0 ${i * 40} 200 ${i * 40 + 30}] >>\nendobj\n`
+            ),
+          ]);
+          let loadingTask = getDocument({ data });
+          let pdfDoc = await loadingTask.promise;
+          const values = ["Both", "Screen", "Paper", "Hidden"];
+          for (let i = 0; i < values.length; i++) {
+            pdfDoc.annotationStorage.setValue(`${i + 6}R`, {
+              value: `Raw${i}`,
+              formattedValue: values[i],
+              noView: i >= 2,
+              noPrint: i % 2 === 1,
+            });
+          }
+          const options = { flatten: true, intent };
+          const saved =
+            method === "saveDocument"
+              ? await pdfDoc.saveDocument(options)
+              : await pdfDoc.extractPages([{ document: null }], null, options);
+          await loadingTask.destroy();
+
+          loadingTask = getDocument({ data: saved });
+          pdfDoc = await loadingTask.promise;
+          const page = await pdfDoc.getPage(1);
+          expect(await pdfDoc.getFieldObjects()).toBeNull();
+          expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+          const { items } = await page.getTextContent();
+          expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
+            "Both",
+            intent === "print" ? "Paper" : "Screen",
+          ]);
+          await loadingTask.destroy();
+        }
+      }
+    });
+
+    it("saveDocument and extractPages flatten non-form annotations for the display and print intents", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        for (const intent of ["display", "print"]) {
+          const flags = [
+            0,
+            AnnotationFlag.PRINT,
+            AnnotationFlag.PRINT | AnnotationFlag.NOVIEW,
+            AnnotationFlag.PRINT | AnnotationFlag.HIDDEN,
+          ];
+          const data = assemblePdf([
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+              "/Annots [5 0 R 6 0 R 7 0 R 8 0 R] >>\nendobj\n",
+            "4 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] " +
+              "/Length 15 >>\nstream\n0 0 10 10 re f\nendstream\nendobj\n",
+            ...flags.map(
+              (flag, i) =>
+                `${i + 5} 0 obj\n<< /Type /Annot /Subtype /Stamp /F ${flag} ` +
+                "/Rect [0 0 10 10] /AP << /N 4 0 R >> >>\nendobj\n"
+            ),
+          ]);
+          let loadingTask = getDocument({ data });
+          let pdfDoc = await loadingTask.promise;
+          const options = { flatten: "non-forms", intent };
+          const saved =
+            method === "saveDocument"
+              ? await pdfDoc.saveDocument(options)
+              : await pdfDoc.extractPages([{ document: null }], null, options);
+          await loadingTask.destroy();
+
+          loadingTask = getDocument({ data: saved });
+          pdfDoc = await loadingTask.promise;
+          const page = await pdfDoc.getPage(1);
+          const annotations = await page.getAnnotations({ intent: "any" });
+          expect(
+            annotations.map(({ annotationFlags }) => annotationFlags)
+          ).toEqual([flags[intent === "print" ? 0 : 2], flags[3]]);
           const { fnArray } = await page.getOperatorList({
             annotationMode: AnnotationMode.DISABLE,
           });
-          // Only the signature is added to the page content.
           expect(
             fnArray.filter(fn => fn === OPS.paintFormXObjectBegin).length
-          ).toEqual(pageNumber === 1 ? 1 : 0);
-          const { items } = await page.getTextContent();
-          expect(items.map(({ str }) => str)).not.toContain(value);
+          ).toEqual(2);
+          await loadingTask.destroy();
         }
-
-        await loadingTask.destroy();
       }
     });
 
-    it("saveDocument flattens field visibility and appearances for the display and print intents", async function () {
-      for (const intent of ["display", "print"]) {
-        const flags = [
-          AnnotationFlag.PRINT | AnnotationFlag.NOVIEW,
-          AnnotationFlag.PRINT | AnnotationFlag.HIDDEN,
-          AnnotationFlag.PRINT,
-          AnnotationFlag.PRINT,
-        ];
-        const data = assemblePdf([
+    it("extractPages flattens the fields as saveDocument does, with and without NeedAppearances", async function () {
+      for (const needAppearances of [false, true]) {
+        const appearance = text => {
+          const content = `/Tx BMC BT /Helv 12 Tf 2 10 Td (${text}) Tj ET EMC`;
+          return (
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 200 30] " +
+            "/Resources << /Font << /Helv 5 0 R >> >> " +
+            `/Length ${content.length} >>\nstream\n${content}\nendstream`
+          );
+        };
+        const field = (num, name, value, y, ap) =>
+          `${num} 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx ` +
+          `/T (${name}) /V (${value}) /F 4 /Rect [0 ${y} 200 ${y + 30}]` +
+          `${ap ? ` /AP << /N ${ap} 0 R >>` : ""} >>\nendobj\n`;
+        const originalData = assemblePdf([
           "1 0 obj\n<< /Type /Catalog /Pages 3 0 R /AcroForm 2 0 R >>\nendobj\n",
-          "2 0 obj\n<< /Fields [6 0 R 7 0 R 8 0 R 9 0 R] " +
-            "/DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 5 0 R >> >> >>\nendobj\n",
+          "2 0 obj\n<< /Fields [6 0 R 7 0 R 8 0 R] /DA (/Helv 12 Tf 0 g) " +
+            "/DR << /Font << /Helv 5 0 R >> >>" +
+            `${needAppearances ? " /NeedAppearances true" : ""} >>\nendobj\n`,
           "3 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
           "4 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 300 300] " +
-            "/Annots [6 0 R 7 0 R 8 0 R 9 0 R] >>\nendobj\n",
-          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
-          ...flags.map(
-            (flag, i) =>
-              `${i + 6} 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx ` +
-              `/T (Field${i}) /V (Old) /F ${flag} /Rect [0 ${i * 40} 200 ${i * 40 + 30}] >>\nendobj\n`
-          ),
+            "/Annots [6 0 R 7 0 R 8 0 R] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          // An unformatted appearance, a formatted one and no appearance.
+          field(6, "A", "1234", 0, 9),
+          field(7, "B", "1234.5", 40, 10),
+          field(8, "C", "Old", 80),
+          `9 0 obj\n${appearance("1234")}\nendobj\n`,
+          `10 0 obj\n${appearance("$1,234.50")}\nendobj\n`,
         ]);
-        let loadingTask = getDocument({ data });
-        let pdfDoc = await loadingTask.promise;
-        const values = ["Both", "Screen", "Paper", "Hidden"];
-        for (let i = 0; i < values.length; i++) {
-          pdfDoc.annotationStorage.setValue(`${i + 6}R`, {
-            value: `Raw${i}`,
-            formattedValue: values[i],
-            noView: i >= 2,
-            noPrint: i % 2 === 1,
+        const getTexts = async method => {
+          let loadingTask = getDocument({ data: originalData.slice() });
+          let pdfDoc = await loadingTask.promise;
+          // Only the formatted value differs from the saved one.
+          pdfDoc.annotationStorage.setValue("6R", {
+            value: "1234",
+            formattedValue: "$1,234.00",
           });
-        }
-        const options = { flatten: true, intent };
-        const saved = await pdfDoc.saveDocument(options);
-        await loadingTask.destroy();
+          // The field font can't encode this value.
+          pdfDoc.annotationStorage.setValue("8R", { value: "你好" });
 
-        loadingTask = getDocument({ data: saved });
-        pdfDoc = await loadingTask.promise;
-        const page = await pdfDoc.getPage(1);
-        expect(await pdfDoc.getFieldObjects()).toBeNull();
-        expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
-        const { items } = await page.getTextContent();
-        expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
-          "Both",
-          intent === "print" ? "Paper" : "Screen",
-        ]);
-        await loadingTask.destroy();
-      }
-    });
+          const options = { flatten: true };
+          const data =
+            method === "saveDocument"
+              ? await pdfDoc.saveDocument(options)
+              : await pdfDoc.extractPages([{ document: null }], null, options);
+          await loadingTask.destroy();
 
-    it("saveDocument flattens non-form annotations for the display and print intents", async function () {
-      for (const intent of ["display", "print"]) {
-        const flags = [
-          0,
-          AnnotationFlag.PRINT,
-          AnnotationFlag.PRINT | AnnotationFlag.NOVIEW,
-          AnnotationFlag.PRINT | AnnotationFlag.HIDDEN,
-        ];
-        const data = assemblePdf([
-          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
-            "/Annots [5 0 R 6 0 R 7 0 R 8 0 R] >>\nendobj\n",
-          "4 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] " +
-            "/Length 15 >>\nstream\n0 0 10 10 re f\nendstream\nendobj\n",
-          ...flags.map(
-            (flag, i) =>
-              `${i + 5} 0 obj\n<< /Type /Annot /Subtype /Stamp /F ${flag} ` +
-              "/Rect [0 0 10 10] /AP << /N 4 0 R >> >>\nendobj\n"
-          ),
-        ]);
-        let loadingTask = getDocument({ data });
-        let pdfDoc = await loadingTask.promise;
-        const options = { flatten: "non-forms", intent };
-        const saved = await pdfDoc.saveDocument(options);
-        await loadingTask.destroy();
+          loadingTask = getDocument({ data });
+          pdfDoc = await loadingTask.promise;
+          const page = await pdfDoc.getPage(1);
+          const annotations = await page.getAnnotations({ intent: "any" });
+          const { items } = await page.getTextContent();
+          await loadingTask.destroy();
+          return {
+            fieldValues: annotations.map(({ fieldValue }) => fieldValue),
+            texts: items.map(({ str }) => str).filter(Boolean),
+          };
+        };
 
-        loadingTask = getDocument({ data: saved });
-        pdfDoc = await loadingTask.promise;
-        const page = await pdfDoc.getPage(1);
-        const annotations = await page.getAnnotations({ intent: "any" });
-        expect(
-          annotations.map(({ annotationFlags }) => annotationFlags)
-        ).toEqual([flags[intent === "print" ? 0 : 2], flags[3]]);
-        const { fnArray } = await page.getOperatorList({
-          annotationMode: AnnotationMode.DISABLE,
+        const expected = await getTexts("saveDocument");
+        expect(expected).toEqual({
+          fieldValues: ["你好"],
+          texts: ["$1,234.00", needAppearances ? "1234.5" : "$1,234.50"],
         });
-        expect(
-          fnArray.filter(fn => fn === OPS.paintFormXObjectBegin).length
-        ).toEqual(2);
-        await loadingTask.destroy();
+        expect(await getTexts("extractPages")).toEqual(expected);
       }
     });
 
-    it("saveDocument flattens without sending fonts to the main thread", async function () {
-      const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
-      const pdfDoc = await loadingTask.promise;
-      pdfDoc.annotationStorage.setValue("55R", { value: "Hello World" });
-
-      const options = { flatten: true };
-      const data = await pdfDoc.saveDocument(options);
-      expect(data).not.toBeNull();
-
-      // Saving must not transfer field fonts to commonObjs.
-      const page = await pdfDoc.getPage(1);
-      expect([...page.commonObjs]).toEqual([]);
-
-      await loadingTask.destroy();
-    });
-
-    it("saveDocument flattens without writing the data of the removed annotations", async function () {
-      const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
-      const pdfDoc = await loadingTask.promise;
-      // A field hidden when printing, and a new annotation with a comment.
-      pdfDoc.annotationStorage.setValue("56R", {
-        value: "Secret",
-        noPrint: true,
-      });
-      addInkEditor(pdfDoc.annotationStorage, {
-        popup: { contents: "Private note", deleted: false },
-      });
-
-      const options = { flatten: true };
-      const data = await pdfDoc.saveDocument(options);
-      await loadingTask.destroy();
-
-      const savedString = bytesToString(data);
-      expect(savedString).not.toContain("Secret");
-      expect(savedString).not.toContain("Private note");
-    });
-
-    it("saveDocument flattens without removing a file attachment", async function () {
-      let loadingTask = getDocument(
-        buildGetDocumentParams("annotation-fileattachment.pdf")
-      );
+    it("write a value in a field of a pdf with a broken xref, extract the pages flattened and check that the value is drawn", async function () {
+      // Shift startxref into the xref table to force recovery.
+      const originalData = bytesToString(
+        assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 3 0 R /AcroForm 2 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Fields [5 0 R] /DA (/Helv 12 Tf 0 g) " +
+            "/DR << /Font << /Helv 6 0 R >> >> >>\nendobj\n",
+          "3 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+          "4 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 300 300] " +
+            "/Annots [5 0 R] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx /T (A) " +
+            "/V (Old) /F 4 /Rect [0 0 200 30] >>\nendobj\n",
+          "6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+        ])
+      ).replace(/startxref\n(\d+)/, (_, offset) => `startxref\n${+offset + 7}`);
+      let loadingTask = getDocument({ data: stringToBytes(originalData) });
       let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("5R", { value: "New" });
 
-      const options = { flatten: true };
-      const data = await pdfDoc.saveDocument(options);
+      const data = await pdfDoc.extractPages([{ document: null }], null, {
+        flatten: true,
+      });
       await loadingTask.destroy();
+      expect(data).not.toBeNull();
 
       loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
-      const annotations = await page.getAnnotations({ intent: "any" });
-      expect(
-        annotations.map(({ subtype, file }) => [subtype, file?.filename])
-      ).toEqual([["FileAttachment", "Test.txt"]]);
-
-      // Its appearance is drawn in the page content.
-      const { fnArray } = await page.getOperatorList({
-        annotationMode: AnnotationMode.DISABLE,
-      });
-      expect(fnArray).toContain(OPS.paintFormXObjectBegin);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+      const { items } = await page.getTextContent();
+      expect(items.map(({ str }) => str)).toEqual(["New"]);
 
       await loadingTask.destroy();
+    });
+
+    it("saveDocument and extractPages flatten without sending fonts to the main thread", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+        const pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("55R", { value: "Hello World" });
+
+        const options = { flatten: true };
+        const data =
+          method === "saveDocument"
+            ? await pdfDoc.saveDocument(options)
+            : await pdfDoc.extractPages([{ document: null }], null, options);
+        expect(data).not.toBeNull();
+
+        // Saving must not transfer field fonts to commonObjs.
+        const page = await pdfDoc.getPage(1);
+        expect([...page.commonObjs]).toEqual([]);
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("saveDocument and extractPages flatten without writing the data of the removed annotations", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+        const pdfDoc = await loadingTask.promise;
+        // A field hidden when printing, and a new annotation with a comment.
+        pdfDoc.annotationStorage.setValue("56R", {
+          value: "Secret",
+          noPrint: true,
+        });
+        addInkEditor(pdfDoc.annotationStorage, {
+          popup: { contents: "Private note", deleted: false },
+        });
+
+        const options = { flatten: true };
+        const data =
+          method === "saveDocument"
+            ? await pdfDoc.saveDocument(options)
+            : await pdfDoc.extractPages([{ document: null }], null, options);
+        await loadingTask.destroy();
+
+        const savedString = bytesToString(data);
+        expect(savedString).not.toContain("Secret");
+        expect(savedString).not.toContain("Private note");
+        if (method === "extractPages") {
+          // Extraction writes a single revision.
+          expect(savedString.match(/%%EOF/g).length).toEqual(1);
+        }
+      }
+    });
+
+    it("saveDocument and extractPages flatten without removing a file attachment", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("annotation-fileattachment.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+
+        const options = { flatten: true };
+        const data =
+          method === "saveDocument"
+            ? await pdfDoc.saveDocument(options)
+            : await pdfDoc.extractPages([{ document: null }], null, options);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        const annotations = await page.getAnnotations({ intent: "any" });
+        expect(
+          annotations.map(({ subtype, file }) => [subtype, file?.filename])
+        ).toEqual([["FileAttachment", "Test.txt"]]);
+
+        // Its appearance is drawn in the page content.
+        const { fnArray } = await page.getOperatorList({
+          annotationMode: AnnotationMode.DISABLE,
+        });
+        expect(fnArray).toContain(OPS.paintFormXObjectBegin);
+
+        await loadingTask.destroy();
+      }
     });
 
     it("save the pdf flattened and check that the shared appearances and optional contents have one resource", async function () {
@@ -4375,6 +4515,103 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a new signature, extract the pages flattened with the ones of another pdf and check that the annotations are drawn in the page content", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      addSignatureEditor(pdfDoc.annotationStorage);
+      const otherData = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "annotation-highlight-without-appearance.pdf",
+      });
+
+      const data = await pdfDoc.extractPages(
+        [{ document: null }, { document: otherData }],
+        null,
+        { flatten: true }
+      );
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      expect(pdfDoc.numPages).toEqual(3);
+      expect(await pdfDoc.getFieldObjects()).toBeNull();
+
+      // Page 1: 3 fields and a signature. Page 3: highlight plus nested Form.
+      const expectedFormsCount = [4, 8, 2];
+      for (let i = 1; i <= 3; i++) {
+        const page = await pdfDoc.getPage(i);
+        expect(await page.getAnnotations({ intent: "any" }))
+          .withContext(`Page ${i}`)
+          .toEqual([]);
+        const { fnArray } = await page.getOperatorList({
+          annotationMode: AnnotationMode.DISABLE,
+        });
+        expect(fnArray.filter(fn => fn === OPS.paintFormXObjectBegin).length)
+          .withContext(`Page ${i}`)
+          .toEqual(expectedFormsCount[i - 1]);
+      }
+
+      await loadingTask.destroy();
+    });
+
+    it("write a new signature in an encrypted pdf, extract the pages flattened and check that the signature is drawn in the page content", async function () {
+      const password = "asdfasdf";
+      let loadingTask = getDocument(
+        buildGetDocumentParams("pr6531_2.pdf", { password })
+      );
+      let pdfDoc = await loadingTask.promise;
+      addSignatureEditor(pdfDoc.annotationStorage);
+
+      const data = await pdfDoc.extractPages([{ document: null }], null, {
+        flatten: true,
+      });
+      await loadingTask.destroy();
+
+      expect(data).not.toBeNull();
+      expect(bytesToString(data)).toContain("/Encrypt");
+
+      loadingTask = getDocument({ data, password });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      const { fnArray } = await page.getOperatorList({
+        annotationMode: AnnotationMode.DISABLE,
+      });
+      expect(fnArray).toContain(OPS.paintFormXObjectBegin);
+      expect(fnArray).toContain(OPS.constructPath);
+
+      await loadingTask.destroy();
+    });
+
+    it("extract the pages flattened of an encrypted pdf after the excluded ones of another pdf and check that the password is the one of the encrypted pdf", async function () {
+      const password = "asdfasdf";
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const encryptedData = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "pr6531_2.pdf",
+      });
+
+      const data = await pdfDoc.extractPages(
+        [
+          { document: null, excludePages: [0] },
+          { document: encryptedData, password },
+        ],
+        null,
+        { flatten: true }
+      );
+      await loadingTask.destroy();
+
+      expect(data).not.toBeNull();
+      // Only the encrypted source contributes pages.
+      expect(bytesToString(data)).toContain("/Encrypt");
+
+      loadingTask = getDocument({ data, password });
+      pdfDoc = await loadingTask.promise;
+      expect(pdfDoc.numPages).toEqual(1);
+
+      await loadingTask.destroy();
+    });
+
     it("save the pdf flattened without any modification and check that the annotations are drawn in the page content", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("issue14438.pdf"));
       let pdfDoc = await loadingTask.promise;
@@ -4890,47 +5127,131 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
-    it("saveDocument uses edited annotation flags when flattening", async function () {
-      let loadingTask = getDocument({
-        data: buildAnnotatedPagePdf([
-          ["Missing flags", "/Subtype /FreeText"],
-          ["Screen only", "/Subtype /FreeText /F 0"],
-          ["Printable", "/Subtype /FreeText /F 4"],
-        ]),
-      });
+    it("extract the pages flattened after deleting an annotation and check that it's removed", async function () {
+      let loadingTask = getDocument(
+        buildGetDocumentParams("highlight_popup.pdf")
+      );
       let pdfDoc = await loadingTask.promise;
-      for (let i = 0; i < 3; i++) {
-        pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
-          annotationType: AnnotationEditorType.FREETEXT,
-          id: `${2 * i + 5}R`,
-          rect: [0, 20 * i, 100, 20 * i + 20],
-          rotation: 0,
-          fontSize: 10,
-          color: [0, 0, 0],
-          value: `Edited${i}`,
-          pageIndex: 0,
-        });
-      }
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+        deleted: true,
+        id: "24R",
+        pageIndex: 0,
+        popupRef: "25R",
+      });
 
-      // Saving adds the print flag when /F is absent, but preserves /F 0.
-      const options = { flatten: true };
-      const data = await pdfDoc.saveDocument(options);
+      const data = await pdfDoc.extractPages([{ document: null }], null, {
+        flatten: true,
+      });
       await loadingTask.destroy();
 
       loadingTask = getDocument({ data });
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
-      const annotations = await page.getAnnotations({ intent: "any" });
-      expect(annotations.map(({ annotationFlags }) => annotationFlags)).toEqual(
-        [0]
-      );
-      const { items } = await page.getTextContent();
-      expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
-        "Edited0",
-        "Edited2",
-      ]);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      const { fnArray } = await page.getOperatorList({
+        annotationMode: AnnotationMode.DISABLE,
+      });
+      expect(fnArray).not.toContain(OPS.paintFormXObjectBegin);
 
       await loadingTask.destroy();
+    });
+
+    it("extract the pages flattened after editing an annotation and check that it's replaced as when saving", async function () {
+      const getEditedData = async method => {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("issue14438.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.FREETEXT,
+          rect: [12, 34, 56, 78],
+          rotation: 0,
+          fontSize: 10,
+          color: [0, 0, 0],
+          value: "Hello PDF.js World!",
+          pageIndex: 0,
+          id: "10R",
+        });
+        const data =
+          method === "saveDocument"
+            ? await pdfDoc.saveDocument({ flatten: true })
+            : await pdfDoc.extractPages([{ document: null }], null, {
+                flatten: true,
+              });
+        await loadingTask.destroy();
+        return data;
+      };
+      const getPageData = async data => {
+        const loadingTask = getDocument({ data });
+        const pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        const annotations = await page.getAnnotations({ intent: "any" });
+        const { fnArray } = await page.getOperatorList({
+          annotationMode: AnnotationMode.DISABLE,
+        });
+        await loadingTask.destroy();
+        return {
+          annotations: annotations.map(({ subtype, textContent }) => ({
+            subtype,
+            textContent,
+          })),
+          formsCount: fnArray.filter(fn => fn === OPS.paintFormXObjectBegin)
+            .length,
+        };
+      };
+
+      expect(await getPageData(await getEditedData("extractPages"))).toEqual(
+        await getPageData(await getEditedData("saveDocument"))
+      );
+    });
+
+    it("saveDocument and extractPages use edited annotation flags when flattening", async function () {
+      for (const method of ["saveDocument", "extractPages"]) {
+        let loadingTask = getDocument({
+          data: buildAnnotatedPagePdf([
+            ["Missing flags", "/Subtype /FreeText"],
+            ["Screen only", "/Subtype /FreeText /F 0"],
+            ["Printable", "/Subtype /FreeText /F 4"],
+          ]),
+        });
+        let pdfDoc = await loadingTask.promise;
+        for (let i = 0; i < 3; i++) {
+          pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
+            annotationType: AnnotationEditorType.FREETEXT,
+            id: `${2 * i + 5}R`,
+            rect: [0, 20 * i, 100, 20 * i + 20],
+            rotation: 0,
+            fontSize: 10,
+            color: [0, 0, 0],
+            value: `Edited${i}`,
+            pageIndex: 0,
+          });
+        }
+
+        // Saving adds the print flag when /F is absent, but preserves /F 0.
+        const options = { flatten: true };
+        const data =
+          method === "saveDocument"
+            ? await pdfDoc.saveDocument(options)
+            : await pdfDoc.extractPages([{ document: null }], null, options);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        const annotations = await page.getAnnotations({ intent: "any" });
+        expect(
+          annotations.map(({ annotationFlags }) => annotationFlags)
+        ).toEqual([0]);
+        const { items } = await page.getTextContent();
+        expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
+          "Edited0",
+          "Edited2",
+        ]);
+
+        await loadingTask.destroy();
+      }
     });
 
     it("save the pdf flattened and check that a widget without field type is drawn with its appearance", async function () {
@@ -5093,8 +5414,12 @@ describe("api", function () {
       }
     });
 
-    it("saveDocument flattens a push button shown or hidden by a script", async function () {
-      for (const hidden of [false, true]) {
+    it("saveDocument and extractPages flatten a push button shown or hidden by a script", async function () {
+      for (const [method, hidden] of [
+        ["saveDocument", false],
+        ["saveDocument", true],
+        ["extractPages", true],
+      ]) {
         let loadingTask = getDocument({
           data: buildAnnotatedPagePdf([
             ["Print", "/Subtype /Widget /FT /Btn /Ff 65536 /T (Print) /F 4"],
@@ -5107,7 +5432,10 @@ describe("api", function () {
         });
 
         const options = { flatten: true };
-        const data = await pdfDoc.saveDocument(options);
+        const data =
+          method === "saveDocument"
+            ? await pdfDoc.saveDocument(options)
+            : await pdfDoc.extractPages([{ document: null }], null, options);
         await loadingTask.destroy();
 
         loadingTask = getDocument({ data });

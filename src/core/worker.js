@@ -584,7 +584,7 @@ class WorkerMessageHandler {
 
     handler.on(
       "ExtractPages",
-      async function ({ pageInfos, annotationStorage }) {
+      async function ({ pageInfos, annotationStorage, flatten, intent }) {
         if (!pageInfos) {
           warn("extractPages: nothing to extract.");
           return null;
@@ -662,13 +662,26 @@ class WorkerMessageHandler {
           task = new WorkerTask(`ExtractPages: ${pageInfos.length} page(s)`);
           startWorkerTask(task);
 
-          return await pdfEditor.extractPages(
+          const data = await pdfEditor.extractPages(
             pageInfos,
             annotationStorage,
             pdfManager.pdfDocument,
             handler,
             task
           );
+          if (!data || !flatten) {
+            return data;
+          }
+          // Remap pending form edits to the extracted annotations.
+          return await flattenData({
+            data,
+            password: pdfEditor.password,
+            annotationStorage:
+              pdfEditor.getCopiedAnnotationStorage(annotationStorage),
+            flatten,
+            intent,
+            task,
+          });
         } catch (reason) {
           warn(`extractPages: "${reason}".`);
           return null;
@@ -682,6 +695,61 @@ class WorkerMessageHandler {
         }
       }
     );
+
+    let savedDocumentId = 0;
+
+    // Flatten the PDF produced by extractPages.
+    async function flattenData({
+      data,
+      password,
+      annotationStorage,
+      flatten,
+      intent,
+      task,
+    }) {
+      const managers = [];
+      const load = async source => {
+        const manager = new LocalPdfManager({
+          source,
+          docId: `${docId}_saved_${savedDocumentId++}`,
+          handler,
+          password,
+          evaluatorOptions: { ...pdfManager.evaluatorOptions },
+        });
+        managers.push(manager);
+        await manager.requestLoadedStream();
+        await manager.initDocument(false);
+        return manager;
+      };
+      try {
+        let manager = await load(data);
+        const flattenedData = await saveDocument(manager, {
+          isPureXfa: false,
+          numPages: await manager.ensureDoc("numPages"),
+          annotationStorage,
+          supportsPrintToPDF: false,
+          filename: null,
+          flatten,
+          intent,
+        });
+        if (flattenedData === data) {
+          return data;
+        }
+        // Rebuild the PDF to discard the unflattened incremental revision.
+        manager = await load(flattenedData);
+        return await new PDFEditor().extractPages(
+          [{ document: manager.pdfDocument }],
+          null,
+          manager.pdfDocument,
+          handler,
+          task
+        );
+      } finally {
+        for (const manager of managers) {
+          manager.terminate(new AbortException("ExtractPages was finished."));
+        }
+      }
+    }
 
     // Returns the AcroForm dictionary to write, unless it's removed.
     async function flattenDocument({
