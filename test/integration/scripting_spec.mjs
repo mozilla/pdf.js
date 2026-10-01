@@ -216,7 +216,7 @@ describe("Interaction", () => {
             `${getQuerySelector("436R")}.value === "0.69314"`
           );
           await page.waitForFunction(
-            `${getQuerySelector("471R")}.value === "0,69"`
+            `${getQuerySelector("471R")}.value === "-0,69"`
           );
         })
       );
