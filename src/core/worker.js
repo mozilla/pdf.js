@@ -31,6 +31,7 @@ import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
+import { finalizeFlattening } from "./flattener.js";
 import { importPrintedAppearances } from "./editor/print_appearances.js";
 import { incrementalUpdate } from "./writer.js";
 import { PDFEditor } from "./editor/pdf_editor.js";
@@ -682,6 +683,38 @@ class WorkerMessageHandler {
       }
     );
 
+    async function flattenDocument({
+      manager,
+      numPages,
+      annotationStorage,
+      changes,
+      xref,
+      intent,
+    }) {
+      const promises = [];
+      for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+        promises.push(
+          runPageTask(manager, pageIndex, "Flatten", async page => {
+            try {
+              return await page.flattenAnnotations({
+                annotationStorage,
+                changes,
+                intent,
+              });
+            } catch (reason) {
+              // Continue saving if flattening fails.
+              warn(
+                `flattenDocument - ignoring page ${pageIndex}: "${reason}".`
+              );
+              return { removed: null };
+            }
+          })
+        );
+      }
+      const results = await Promise.all(promises);
+      finalizeFlattening({ results, changes, xref });
+    }
+
     // Import platform-rendered appearances before saving annotations.
     async function generateAppearances({ annotationStorage, changes, xref }) {
       const entries = [];
@@ -726,8 +759,19 @@ class WorkerMessageHandler {
 
     async function saveDocument(
       manager,
-      { isPureXfa, numPages, annotationStorage, supportsPrintToPDF, filename }
+      {
+        isPureXfa,
+        numPages,
+        annotationStorage,
+        supportsPrintToPDF,
+        filename,
+        flatten,
+        intent,
+      }
     ) {
+      if (isPureXfa) {
+        flatten = false;
+      }
       const globalPromises = [
         manager.requestLoadedStream(),
         manager.ensureCatalog("acroForm"),
@@ -837,6 +881,17 @@ class WorkerMessageHandler {
         }
       }
       const refs = await Promise.all(promises);
+
+      if (flatten) {
+        await flattenDocument({
+          manager,
+          numPages,
+          annotationStorage,
+          changes,
+          xref,
+          intent,
+        });
+      }
 
       let xfaData = null;
       if (isPureXfa) {
