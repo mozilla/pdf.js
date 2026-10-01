@@ -1507,7 +1507,7 @@ const PDFViewerApplication = {
     );
   },
 
-  async save() {
+  async save({ flatten = false, intent = "print" } = {}) {
     if (!this.downloadManager) {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
         this.eventBus.dispatch("downloadskipped", { source: this });
@@ -1521,11 +1521,20 @@ const PDFViewerApplication = {
     this._saveInProgress = true;
     // Keep the document that this save belongs to.
     const { pdfDocument } = this;
+    const isPrinting = flatten && intent === "print";
 
     try {
-      await this.pdfScriptingManager.dispatchWillSave();
+      if (isPrinting) {
+        if (!(await this._dispatchWillPrintForSaving(pdfDocument))) {
+          return;
+        }
+      } else {
+        await this.pdfScriptingManager.dispatchWillSave();
+      }
       const data = await pdfDocument.saveDocument({
         printToPDF: this.externalServices.printToPDF,
+        flatten,
+        intent,
       });
       this.downloadManager.download(
         data,
@@ -1542,7 +1551,9 @@ const PDFViewerApplication = {
     } finally {
       try {
         if (pdfDocument === this.pdfDocument) {
-          await this.pdfScriptingManager.dispatchDidSave();
+          await (isPrinting
+            ? this.pdfScriptingManager.dispatchDidPrint()
+            : this.pdfScriptingManager.dispatchDidSave());
         }
       } finally {
         this._saveInProgress = false;
@@ -1566,10 +1577,12 @@ const PDFViewerApplication = {
    * single one.
    * @returns {Promise<void>}
    */
-  downloadOrSave() {
-    this._downloadOrSavePromise ??= this._downloadOrSave().finally(() => {
-      this._downloadOrSavePromise = null;
-    });
+  downloadOrSave(options) {
+    this._downloadOrSavePromise ??= this._downloadOrSave(options).finally(
+      () => {
+        this._downloadOrSavePromise = null;
+      }
+    );
     return this._downloadOrSavePromise;
   },
 
@@ -1577,7 +1590,7 @@ const PDFViewerApplication = {
    * @private
    * @returns {Promise<void>}
    */
-  async _downloadOrSave() {
+  async _downloadOrSave({ flatten = false, intent = "print" } = {}) {
     if (!this.downloadManager) {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
         this.eventBus.dispatch("downloadskipped", { source: this });
@@ -1603,17 +1616,34 @@ const PDFViewerApplication = {
         });
         await this.onSavePages({
           data: this.pdfThumbnailViewer.getStructuralChanges(),
+          flatten,
+          intent,
         });
       } else {
-        await (this.pdfDocument?.annotationStorage.size > 0
-          ? this.save()
-          : this.download());
+        const { pdfDocument } = this;
+        // Flattening requires a save even without edits.
+        const mustSave =
+          pdfDocument && (flatten || pdfDocument.annotationStorage.size > 0);
+        await (mustSave ? this.save({ flatten, intent }) : this.download());
       }
       delete this._mergedDocumentNeedsSaving;
     } finally {
       this.setTitle();
       classList.remove("wait");
     }
+  },
+
+  /**
+   * Run WillPrint before flattening for print.
+   * @returns {Promise<boolean>} Whether this is still the active document.
+   */
+  async _dispatchWillPrintForSaving(pdfDocument) {
+    try {
+      await this.pdfScriptingManager.dispatchWillPrint();
+    } catch {
+      // Ignore script errors, as in beforePrint.
+    }
+    return pdfDocument === this.pdfDocument;
   },
 
   /**
@@ -2768,17 +2798,36 @@ const PDFViewerApplication = {
     this.pdfViewer.onPagesEdited(data);
   },
 
-  async onSavePages({ data: { pageInfos, copyLevels } }) {
+  async onSavePages({
+    data: { pageInfos, copyLevels },
+    flatten = false,
+    intent = "print",
+  }) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
       return;
     }
-    if (!this.downloadManager || !this.pdfDocument) {
+    const { pdfDocument } = this;
+    if (!this.downloadManager || !pdfDocument) {
       return;
     }
-    const modifiedPdfBytes = await this.pdfDocument.extractPages(
-      pageInfos,
-      copyLevels
-    );
+    const isPrinting = flatten && intent === "print";
+    let modifiedPdfBytes;
+    try {
+      if (
+        isPrinting &&
+        !(await this._dispatchWillPrintForSaving(pdfDocument))
+      ) {
+        return;
+      }
+      modifiedPdfBytes = await pdfDocument.extractPages(pageInfos, copyLevels, {
+        flatten,
+        intent,
+      });
+    } finally {
+      if (isPrinting && pdfDocument === this.pdfDocument) {
+        await this.pdfScriptingManager.dispatchDidPrint();
+      }
+    }
     if (!modifiedPdfBytes) {
       console.error(
         "Something wrong happened when saving the edited PDF.\nPlease file a bug."
