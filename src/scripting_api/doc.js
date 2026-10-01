@@ -223,7 +223,9 @@ class Doc {
         this.#userActivationData.disableSaving = false;
         break;
       case "WillPrint":
+        // Prevent WillPrint scripts from starting another print or save.
         this.#userActivationData.disablePrinting = true;
+        this.#userActivationData.disableSaving = true;
         try {
           this.#runActions(name);
         } catch (error) {
@@ -231,6 +233,7 @@ class Doc {
         }
         this.#send({ command: "WillPrintFinished" });
         this.#userActivationData.disablePrinting = false;
+        this.#userActivationData.disableSaving = false;
         break;
       case "WillSave":
         this.#userActivationData.disableSaving = true;

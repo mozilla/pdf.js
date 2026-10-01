@@ -1330,6 +1330,28 @@ describe("Scripting", function () {
       send_queue.delete("WillSaveFinished");
       send_queue.delete("error");
     });
+
+    it("should not save while running WillPrint actions", async () => {
+      const saveAs = `app.execMenuItem("SaveAs");`;
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: { actions: { WillPrint: [saveAs], DidPrint: [saveAs] } },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      // Open supplies the user activation required by SaveAs.
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "Open" });
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "WillPrint" });
+      expect(send_queue.has("WillPrintFinished")).toEqual(true);
+      expect(send_queue.has("SaveAs")).toEqual(false);
+      send_queue.delete("WillPrintFinished");
+
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "Open" });
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "DidPrint" });
+      expect(send_queue.has("SaveAs")).toEqual(true);
+      send_queue.delete("SaveAs");
+    });
   });
 
   describe("Util", function () {
