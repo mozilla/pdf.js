@@ -206,15 +206,6 @@ class FontInfo {
     );
   }
 
-  get defaultVMetrics() {
-    return this.#readArray(
-      /* offset = */ FONT_INFO.OFFSET_DEFAULT_VMETRICS,
-      /* arrLen = */ 3,
-      /* lookup = */ "getInt16",
-      /* increment = */ 2
-    );
-  }
-
   #readString(index) {
     assert(index < FONT_INFO.strings.length, "Invalid string index");
     return readString(

@@ -589,10 +589,6 @@ class FontFaceObject {
   get systemFontInfo() {
     return this.#fontData.systemFontInfo;
   }
-
-  get defaultVMetrics() {
-    return this.#fontData.defaultVMetrics;
-  }
 }
 
 export { FontFaceObject, FontLoader };
