@@ -576,7 +576,26 @@ class PDFFindController {
       return;
     }
     this._scrollMatches = false; // Ensure that scrolling only happens once.
-    element.scrollIntoView({ block: "start", inline: "center" });
+    const container = this._linkService.pdfViewer?.container;
+    if (!container) {
+      element.scrollIntoView({ block: "start", inline: "center" });
+      return;
+    }
+
+    // Limit scrolling to the viewer, without moving an embedding page. Client
+    // rectangles account for the transforms used by rotated text layers.
+    const { top, left, width } = element.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    const marginTop =
+      parseFloat(getComputedStyle(element).scrollMarginTop) || 0;
+    container.scrollBy({
+      top: top - containerRect.top - container.clientTop - marginTop,
+      left:
+        left -
+        containerRect.left -
+        container.clientLeft +
+        (width - container.clientWidth) / 2,
+    });
   }
 
   #reset() {
