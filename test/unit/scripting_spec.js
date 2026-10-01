@@ -197,6 +197,55 @@ describe("Scripting", function () {
       );
       expect(value).toEqual([4, 5, 6, 7]);
     });
+
+    it("should reset the descendants of a non-terminal field", async () => {
+      const refIds = [0, 1, 2, 3, 4].map(_ => getId());
+      const text = id => ({
+        id,
+        value: "",
+        defaultValue: "",
+        actions: {},
+        type: "text",
+      });
+      const data = {
+        objects: {
+          A: [{ id: refIds[0], type: "", kidIds: [refIds[1], refIds[2]] }],
+          "A.B": [text(refIds[1])],
+          "A.C": [{ id: refIds[2], type: "", kidIds: [refIds[3]] }],
+          "A.C.D": [text(refIds[3])],
+          E: [text(refIds[4])],
+        },
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        calculationOrder: [],
+        dispatchEventName: "_dispatchMe",
+      };
+      sandbox.createSandbox(data);
+
+      await myeval(
+        `(["A.B", "A.C.D", "E"].forEach(n => this.getField(n).value = "hello"), 0)`
+      );
+      for (const id of [refIds[1], refIds[3], refIds[4]]) {
+        send_queue.delete(id);
+      }
+
+      await myeval(`(this.resetForm(["A"]), 0)`);
+
+      for (const id of [refIds[1], refIds[3]]) {
+        expect(send_queue.get(id)).toEqual({
+          id,
+          siblings: null,
+          value: "",
+          formattedValue: null,
+          selRange: [0, 0],
+        });
+      }
+      expect(send_queue.has(refIds[4])).toBeFalse();
+
+      const values = await myeval(
+        `["A.B", "A.C.D", "E"].map(n => this.getField(n).value)`
+      );
+      expect(values).toEqual(["", "", "hello"]);
+    });
   });
 
   describe("Util", function () {
