@@ -221,7 +221,10 @@ class TextMarkupEditor extends DrawingEditor {
     return [(pointX - x) / width, (pointY - y) / height];
   }
 
-  /** @inheritdoc */
+  /**
+   * @inheritdoc
+   * @returns {Array<Array<string|object|null>>|null}
+   */
   get toolbarButtons() {
     this._colorPicker ||= new BasicColorPicker(this);
     return [["colorPicker", this._colorPicker]];
