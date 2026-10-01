@@ -43,8 +43,6 @@ import { OutputScale, setLayerDimensions } from "./display_utils.js";
  * @typedef {object} TextLayerUpdateParameters
  * @property {PageViewport} viewport - The target viewport to properly layout
  *   the text runs.
- * @property {Function} [onBefore] - Callback invoked before the textLayer is
- *   updated in the DOM.
  */
 
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
@@ -86,8 +84,6 @@ class TextLayer {
   #textContentSource = null;
 
   #textDivs = [];
-
-  #textDivProperties = new WeakMap();
 
   #transform = null;
 
@@ -218,30 +214,17 @@ class TextLayer {
    * @param {TextLayerUpdateParameters} options
    * @returns {undefined}
    */
-  update({ viewport, onBefore = null }) {
+  update({ viewport }) {
     const scale = viewport.scale * OutputScale.pixelRatio;
     const rotation = viewport.rotation;
 
     if (rotation !== this.#rotation) {
-      onBefore?.();
       this.#rotation = rotation;
       setLayerDimensions(this.#rootContainer, { rotation });
     }
-
     if (scale !== this.#scale) {
-      onBefore?.();
       this.#scale = scale;
       this.#pixelRatio = OutputScale.pixelRatio;
-      const params = {
-        div: null,
-        properties: null,
-        ctx: TextLayer.#getCtx(this.#lang),
-      };
-      for (const div of this.#textDivs) {
-        params.properties = this.#textDivProperties.get(div);
-        params.div = div;
-        this.#layout(params);
-      }
     }
   }
 
@@ -410,7 +393,6 @@ class TextLayer {
     if (shouldScaleText) {
       textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
     }
-    this.#textDivProperties.set(textDiv, textDivProperties);
 
     // Finally, layout and append the text to the DOM.
     this.#layoutTextParams.div = textDiv;
