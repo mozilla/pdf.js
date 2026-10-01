@@ -35,6 +35,9 @@ import { MathClamp } from "../shared/math_clamp.js";
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
 
+// CFF FDSelect uses Card8 indices, so only 256 font DICTs are addressable.
+const MAX_FD_ARRAY_COUNT = 256;
+
 function looksLikeUnsigned16BitNegative(coord) {
   return coord > 0x7fff && coord <= 0xffff;
 }
@@ -325,7 +328,12 @@ class CFFParser {
     let charset, encoding;
     if (cff.isCIDFont) {
       const fdArrayIndex = this.parseIndex(topDict.getByName("FDArray")).obj;
-      for (let i = 0, ii = fdArrayIndex.count; i < ii; ++i) {
+      let fdArrayCount = fdArrayIndex.count;
+      if (fdArrayCount > MAX_FD_ARRAY_COUNT) {
+        warn(`CFFParser.parse: too many FDArray entries (${fdArrayCount}).`);
+        fdArrayCount = MAX_FD_ARRAY_COUNT;
+      }
+      for (let i = 0; i < fdArrayCount; ++i) {
         const dictRaw = fdArrayIndex.get(i);
         const fontDict = this.createDict(
           CFFTopDict,
@@ -489,16 +497,22 @@ class CFFParser {
 
     if (count !== 0) {
       const offsetSize = bytes[pos++];
-      // add 1 for offset to determine size of last object
+      if (offsetSize < 1 || offsetSize > 4) {
+        throw new FormatError(`Invalid CFF INDEX offset size: ${offsetSize}`);
+      }
+      // Offsets are relative to the byte before the object data.
       const startPos = pos + (count + 1) * offsetSize - 1;
+      const bytesLength = bytes.length;
+      // Clamp offsets to prevent out-of-bounds or overlapping entries.
+      let prevOffset = startPos;
 
       for (i = 0, ii = count + 1; i < ii; ++i) {
         let offset = 0;
         for (let j = 0; j < offsetSize; ++j) {
-          offset <<= 8;
-          offset += bytes[pos++];
+          offset = (offset << 8) | bytes[pos++];
         }
-        offsets.push(startPos + offset);
+        prevOffset = MathClamp(startPos + offset, prevOffset, bytesLength);
+        offsets.push(prevOffset);
       }
       end = offsets[count];
     }
@@ -1086,6 +1100,10 @@ class CFFParser {
           }
           const fdIndex = bytes[pos++];
           const next = (bytes[pos] << 8) | bytes[pos + 1];
+          // Reject ranges that would expand FDSelect past the glyph count.
+          if (next - first > length - fdSelect.length) {
+            throw new FormatError("parseFDSelect: Invalid font data.");
+          }
           for (let j = first; j < next; ++j) {
             fdSelect.push(fdIndex);
           }
