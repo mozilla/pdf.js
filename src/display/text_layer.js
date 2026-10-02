@@ -499,6 +499,7 @@ class TextLayer {
       this.#canvasContexts.set(lang, ctx);
 
       // Also, initialize state for the `#ensureCtxFont` method.
+      // Resizing the canvas resets ctx.font but leaves this cache stale.
       this.#canvasCtxFonts.set(ctx, { size: 0, family: "" });
     }
     return ctx;
@@ -550,14 +551,12 @@ class TextLayer {
     }
     const ctx = this.#getCtx(lang);
 
-    ctx.canvas.width = ctx.canvas.height = DEFAULT_FONT_SIZE;
     this.#ensureCtxFont(ctx, DEFAULT_FONT_SIZE, fontFamily);
     const metrics = ctx.measureText("");
 
     const ascent = metrics.fontBoundingBoxAscent;
     const descent = Math.abs(metrics.fontBoundingBoxDescent);
 
-    ctx.canvas.width = ctx.canvas.height = 0;
     let ratio = 0.8; // DEFAULT_FONT_ASCENT
 
     if (ascent) {
@@ -584,4 +583,4 @@ class TextLayer {
   }
 }
 
-export { TextLayer };
+export { DEFAULT_FONT_SIZE, TextLayer };
