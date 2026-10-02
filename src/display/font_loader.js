@@ -572,10 +572,6 @@ class FontFaceObject {
     return this.missingFile ? null : "font/opentype";
   }
 
-  get name() {
-    return this.#fontData.name;
-  }
-
   get data() {
     return this.#fontData.data;
   }
