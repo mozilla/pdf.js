@@ -239,3 +239,89 @@ describe("custom ownerDocument", function () {
     expect(ownerDocument.adoptedStyleSheets.length).toBe(0);
   });
 });
+
+describe("tiling pattern rendering", function () {
+  // The old folding loops required (10 / 0.001 + 1)^2 = 100,020,001 draws.
+  it("does not hang on tiny XStep/YStep steps", async function () {
+    const loadingTask = getDocument(
+      buildGetDocumentParams("tiling-pattern-tiny-steps.pdf")
+    );
+    const doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1 });
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
+
+    await page.render({
+      canvas: canvasAndCtx.canvas,
+      viewport,
+    }).promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 255,
+    });
+
+    canvasFactory.destroy(canvasAndCtx);
+    await loadingTask.destroy();
+  });
+
+  // Only the tile's far 100x100 corner is painted.
+  it("does not hang and keeps far-corner content on a large BBox with tiny steps", async function () {
+    const loadingTask = getDocument(
+      buildGetDocumentParams("tiling-pattern-tiny-steps-large.pdf")
+    );
+    const doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1 });
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
+
+    await page.render({
+      canvas: canvasAndCtx.canvas,
+      viewport,
+    }).promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 255,
+    });
+
+    canvasFactory.destroy(canvasAndCtx);
+    await loadingTask.destroy();
+  });
+
+  // The red and blue squares coincide after folding, exposing draw order.
+  it("places the origin tile on top when tiles overlap", async function () {
+    const loadingTask = getDocument(
+      buildGetDocumentParams("tiling-pattern-fold-order.pdf")
+    );
+    const doc = await loadingTask.promise;
+    const page = await doc.getPage(1);
+
+    const viewport = page.getViewport({ scale: 1 });
+    const { canvasFactory } = doc;
+    const canvasAndCtx = canvasFactory.create(viewport.width, viewport.height);
+
+    await page.render({
+      canvas: canvasAndCtx.canvas,
+      viewport,
+    }).promise;
+
+    expect(getTopLeftPixel(canvasAndCtx.context)).toEqual({
+      r: 255,
+      g: 0,
+      b: 0,
+      a: 255,
+    });
+
+    canvasFactory.destroy(canvasAndCtx);
+    await loadingTask.destroy();
+  });
+});
