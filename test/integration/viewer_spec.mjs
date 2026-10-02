@@ -35,6 +35,63 @@ import path from "path";
 const __dirname = import.meta.dirname;
 
 describe("PDF viewer", () => {
+  describe("GoToE outline destinations", () => {
+    let pages, attachmentPages;
+
+    beforeEach(async () => {
+      attachmentPages = [];
+      pages = await loadAndWait(
+        "gotoe-outline-dest.pdf",
+        "#outlinesView .treeItem a",
+        "page-fit",
+        null,
+        { sidebarViewOnLoad: 2 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages([...attachmentPages, ...pages]);
+    });
+
+    async function checkAttachmentDestination(selector) {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const popupPromise = new Promise(resolve => {
+            page.once("popup", resolve);
+          });
+          await waitAndClick(page, selector);
+          const attachmentPage = await popupPromise;
+          attachmentPages.push([browserName, attachmentPage]);
+
+          const textLayer = ".page[data-page-number='2'] .textLayer";
+          await attachmentPage.waitForSelector(`${textLayer} .endOfContent`);
+          await attachmentPage.waitForFunction(
+            () => window.PDFViewerApplication.page === 2
+          );
+          const text = await attachmentPage.$eval(
+            textLayer,
+            el => el.textContent
+          );
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .toContain("Attachment page TWO");
+        })
+      );
+    }
+
+    it("opens an attachment at an explicit destination", async () => {
+      await checkAttachmentDestination(
+        "#outlinesView .treeItem:nth-child(1) a"
+      );
+    });
+
+    it("opens an attachment at a named destination", async () => {
+      await checkAttachmentDestination(
+        "#outlinesView .treeItem:nth-child(2) a"
+      );
+    });
+  });
+
   describe("EFOpen attachments", () => {
     let pages;
 

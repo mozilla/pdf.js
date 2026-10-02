@@ -2442,6 +2442,24 @@ describe("api", function () {
       expect(outlineItem.items[0].title).toEqual("Paragraph 1.1");
     });
 
+    it("gets outline attachment destinations", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("gotoe-outline-dest.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const outline = await pdfDoc.getOutline();
+
+      expect(outline.length).toEqual(2);
+      expect(outline.map(item => item.attachmentDest)).toEqual([
+        '[1,{"name":"Fit"}]',
+        "second-page",
+      ]);
+      expect(outline[0].attachment.filename).toEqual("chapter.pdf");
+      expect(outline[1].attachmentId).toEqual(outline[0].attachmentId);
+
+      await loadingTask.destroy();
+    });
+
     it("gets outline containing a URL", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue3214.pdf"));
       const pdfDoc = await loadingTask.promise;
@@ -2476,6 +2494,7 @@ describe("api", function () {
         action: null,
         attachmentId: undefined,
         attachment: undefined,
+        attachmentDest: undefined,
         dest: "section.1",
         url: null,
         unsafeUrl: undefined,
@@ -2504,6 +2523,7 @@ describe("api", function () {
         action: null,
         attachmentId: undefined,
         attachment: undefined,
+        attachmentDest: undefined,
         dest: "Händel -- Halle🎆lujah",
         url: null,
         unsafeUrl: undefined,
@@ -2532,6 +2552,7 @@ describe("api", function () {
         action: "PrevPage",
         attachmentId: undefined,
         attachment: undefined,
+        attachmentDest: undefined,
         dest: null,
         url: null,
         unsafeUrl: undefined,
@@ -2560,6 +2581,7 @@ describe("api", function () {
         action: null,
         attachmentId: undefined,
         attachment: undefined,
+        attachmentDest: undefined,
         dest: null,
         url: null,
         unsafeUrl: undefined,
@@ -2601,6 +2623,7 @@ describe("api", function () {
           action: null,
           attachmentId: undefined,
           attachment: undefined,
+          attachmentDest: undefined,
           dest: [{ num: 14, gen: 0 }, { name: "XYZ" }, 65, 705],
           url: null,
           unsafeUrl: undefined,
@@ -2617,6 +2640,7 @@ describe("api", function () {
           action: null,
           attachmentId: undefined,
           attachment: undefined,
+          attachmentDest: undefined,
           dest: [{ num: 13, gen: 0 }, { name: "XYZ" }, 60, 710],
           url: null,
           unsafeUrl: undefined,
@@ -2646,6 +2670,7 @@ describe("api", function () {
           action: null,
           attachmentId: undefined,
           attachment: undefined,
+          attachmentDest: undefined,
           dest: [{ num: 14, gen: 0 }, { name: "FitH" }],
           url: null,
           unsafeUrl: undefined,
@@ -2662,6 +2687,7 @@ describe("api", function () {
           action: null,
           attachmentId: undefined,
           attachment: undefined,
+          attachmentDest: undefined,
           dest: [{ num: 13, gen: 0 }, { name: "FitH" }],
           url: null,
           unsafeUrl: undefined,
@@ -2691,6 +2717,7 @@ describe("api", function () {
           action: null,
           attachmentId: undefined,
           attachment: undefined,
+          attachmentDest: undefined,
           dest: null,
           url: null,
           unsafeUrl: undefined,
@@ -2706,6 +2733,7 @@ describe("api", function () {
               action: null,
               attachmentId: undefined,
               attachment: undefined,
+              attachmentDest: undefined,
               dest: [{ num: 37, gen: 0 }, { name: "XYZ" }, null, null, null],
               url: null,
               unsafeUrl: undefined,
@@ -2722,6 +2750,7 @@ describe("api", function () {
               action: null,
               attachmentId: undefined,
               attachment: undefined,
+              attachmentDest: undefined,
               dest: [{ num: 36, gen: 0 }, { name: "XYZ" }, null, null, null],
               url: null,
               unsafeUrl: undefined,
