@@ -259,6 +259,8 @@ class ChunkedStream extends Stream {
 class ChunkedStreamManager {
   #aborted = false;
 
+  #abortReason = null;
+
   currRequestId = 0;
 
   _chunksNeededByRequest = new Map();
@@ -316,7 +318,7 @@ class ChunkedStreamManager {
    * contiguous ranges to load in as few requests as possible.
    */
   requestAllChunks(noFetch = false) {
-    if (!noFetch) {
+    if (!noFetch && !this.#aborted) {
       const missingChunks = this.stream.getMissingChunks();
       this._requestChunks(missingChunks);
     }
@@ -324,6 +326,12 @@ class ChunkedStreamManager {
   }
 
   _requestChunks(chunks) {
+    if (this.#aborted) {
+      // Fail right away, since nothing would ever settle a request that is
+      // created after `abort`, and callers such as `NetworkPdfManager.ensure`
+      // would otherwise keep retrying forever (see issue 22051).
+      return Promise.reject(this.#abortReason);
+    }
     const requestId = this.currRequestId++;
 
     const chunksNeeded = new Set();
@@ -496,7 +504,7 @@ class ChunkedStreamManager {
       } else {
         nextEmptyChunk = stream.nextEmptyChunk(endChunk);
       }
-      if (Number.isInteger(nextEmptyChunk)) {
+      if (Number.isInteger(nextEmptyChunk) && !this.#aborted) {
         this._requestChunks([nextEmptyChunk]);
       }
     }
@@ -527,6 +535,7 @@ class ChunkedStreamManager {
 
   abort(reason) {
     this.#aborted = true;
+    this.#abortReason = reason;
     this.pdfStream?.cancelAllRequests(reason);
 
     for (const capability of this._promisesByRequest.values()) {
