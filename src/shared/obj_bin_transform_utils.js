@@ -39,7 +39,7 @@ class FONT_INFO {
 
   static numbers = ["ascent", "descent"];
 
-  static strings = ["fallbackName", "loadedName", "mimetype", "name"];
+  static strings = ["fallbackName", "loadedName", "name"];
 
   static OFFSET_NUMBERS = Math.ceil((this.bools.length * 2) / 8);
 

@@ -224,12 +224,8 @@ class FontInfo {
     return this.#readString(1);
   }
 
-  get mimetype() {
-    return this.#readString(2);
-  }
-
   get name() {
-    return this.#readString(3);
+    return this.#readString(2);
   }
 
   #getDataOffsets() {

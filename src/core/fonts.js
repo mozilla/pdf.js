@@ -96,7 +96,6 @@ const EXPORT_DATA_PROPERTIES = [
   "isType3Font",
   "italic",
   "loadedName",
-  "mimetype",
   "missingFile",
   "name",
   "remeasure",
@@ -1050,7 +1049,6 @@ class Font {
   constructor(name, file, properties, evaluatorOptions) {
     this.name = name;
     this.psName = null;
-    this.mimetype = null;
     this.disableFontFace = evaluatorOptions.disableFontFace;
     this.fontExtraProperties = evaluatorOptions.fontExtraProperties;
 
@@ -1165,8 +1163,6 @@ class Font {
         /* falls through */
         case "Type1":
         case "CIDFontType0":
-          this.mimetype = "font/opentype";
-
           const cff =
             subtype === "Type1C" || subtype === "CIDFontType0C"
               ? new CFFFont(file, properties)
@@ -1181,8 +1177,6 @@ class Font {
         case "OpenType":
         case "TrueType":
         case "CIDFontType2":
-          this.mimetype = "font/opentype";
-
           // Repair the TrueType file. It is can be damaged in the point of
           // view of the sanitizer
           data = this.checkAndRepair(name, file, properties);
