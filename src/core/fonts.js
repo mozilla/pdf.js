@@ -3032,12 +3032,7 @@ class Font {
         if (cid > 0xffff) {
           throw new FormatError("Max size of CID is 65,535");
         }
-        let glyphId = -1;
-        if (isCidToGidMapEmpty) {
-          glyphId = cid;
-        } else if (cidToGidMap.has(cid)) {
-          glyphId = cidToGidMap.get(cid);
-        }
+        const glyphId = isCidToGidMapEmpty ? cid : (cidToGidMap.get(cid) ?? -1);
 
         if (glyphId >= 0 && glyphId < numGlyphs && hasGlyph(glyphId)) {
           charCodeToGlyphId.set(charCode, glyphId);
