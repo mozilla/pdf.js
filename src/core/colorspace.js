@@ -43,7 +43,7 @@ function resizeRgbImage(src, dest, w1, h1, w2, h2, alpha01) {
   const yRatio = h1 / h2;
   let newIndex = 0,
     oldIndex;
-  const xScaled = new Uint16Array(w2);
+  const xScaled = new Uint32Array(w2);
   const w1Scanline = w1 * COMPONENTS;
 
   for (let i = 0; i < w2; i++) {
@@ -65,7 +65,7 @@ function resizeRgbaImage(src, dest, w1, h1, w2, h2, alpha01) {
   const xRatio = w1 / w2;
   const yRatio = h1 / h2;
   let newIndex = 0;
-  const xScaled = new Uint16Array(w2);
+  const xScaled = new Uint32Array(w2);
 
   if (alpha01 === 1) {
     for (let i = 0; i < w2; i++) {
@@ -206,6 +206,23 @@ class ColorSpace {
   }
 
   /**
+   * Returns an RGB lookup table for all `bpc`-bit samples in a single-component
+   * color space.
+   * @param {number} bpc
+   * @returns {Uint8ClampedArray}
+   */
+  getColorMap(bpc) {
+    const count = 1 << bpc;
+    const allColors = bpc <= 8 ? new Uint8Array(count) : new Uint16Array(count);
+    for (let i = 0; i < count; i++) {
+      allColors[i] = i;
+    }
+    const colorMap = new Uint8ClampedArray(count * 3);
+    this.getRgbBuffer(allColors, 0, count, colorMap, 0, bpc, /* alpha01 = */ 0);
+    return colorMap;
+  }
+
+  /**
    * Refer to the static `ColorSpace.isDefaultDecode` method below.
    */
   isDefaultDecode(decode, bpc) {
@@ -256,23 +273,7 @@ class ColorSpace {
       // TODO it may be worth while to cache the color map. While running
       // testing I never hit a cache so I will leave that out for now (perhaps
       // we are reparsing colorspaces too much?).
-      const allColors =
-        bpc <= 8
-          ? new Uint8Array(numComponentColors)
-          : new Uint16Array(numComponentColors);
-      for (let i = 0; i < numComponentColors; i++) {
-        allColors[i] = i;
-      }
-      const colorMap = new Uint8ClampedArray(numComponentColors * 3);
-      this.getRgbBuffer(
-        allColors,
-        0,
-        numComponentColors,
-        colorMap,
-        0,
-        bpc,
-        /* alpha01 = */ 0
-      );
+      const colorMap = this.getColorMap(bpc);
 
       if (!needsResizing) {
         // Fill in the RGB values directly into |dest|.

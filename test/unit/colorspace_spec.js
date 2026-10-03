@@ -434,6 +434,29 @@ describe("colorspace", function () {
       expect(colorSpace.isPassthrough(8)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
+
+    it("should upscale images wider than 21845 pixels", function () {
+      const xref = new XRefMock();
+      const colorSpace = ColorSpaceUtils.parse({
+        cs: Name.get("DeviceRGB"),
+        xref,
+        resources: new Dict(),
+        pdfFunctionFactory: new PDFFunctionFactory({ xref }),
+        globalColorSpaceCache,
+        localColorSpaceCache: new LocalColorSpaceCache(),
+      });
+
+      // The last source pixel starts at byte offset 65997 (> 65535).
+      const width = 22000;
+      const testSrc = new Uint8Array(width * 3);
+      testSrc.set([10, 20, 30], (width - 1) * 3);
+      const testDest = new Uint8ClampedArray((width + 1) * 3);
+      colorSpace.fillRgb(testDest, width, 1, width + 1, 1, 1, 8, testSrc, 0);
+
+      expect(testDest.subarray(-6)).toEqual(
+        new Uint8ClampedArray([0, 0, 0, 10, 20, 30])
+      );
+    });
   });
 
   describe("DeviceCmykCS", function () {
@@ -825,6 +848,42 @@ describe("colorspace", function () {
       );
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(colorSpace.isDefaultDecode([0, 1], 1)).toBeTrue();
+      expect(testDest).toEqual(expectedDest);
+    });
+
+    it("should downscale images wider than 21845 pixels", function () {
+      // prettier-ignore
+      const lookup = new Stream(
+        new Uint8Array([
+          23, 155, 35,
+          147, 69, 93,
+          255, 109, 70
+        ])
+      );
+      const xref = new XRefMock();
+      const colorSpace = ColorSpaceUtils.parse({
+        cs: [Name.get("Indexed"), Name.get("DeviceRGB"), 2, lookup],
+        xref,
+        resources: new Dict(),
+        pdfFunctionFactory: new PDFFunctionFactory({ xref }),
+        globalColorSpaceCache,
+        localColorSpaceCache: new LocalColorSpaceCache(),
+      });
+
+      // RGB byte offsets: 0, 60000, 120000. Only the last exceeds 65535.
+      const width = 60000;
+      const testSrc = new Uint8Array(width);
+      testSrc.fill(1, 20000, 40000);
+      testSrc.fill(2, 40000);
+      const testDest = new Uint8ClampedArray(3 * 4);
+      // prettier-ignore
+      const expectedDest = new Uint8ClampedArray([
+        23, 155, 35, 0,
+        147, 69, 93, 0,
+        255, 109, 70, 0,
+      ]);
+      colorSpace.fillRgb(testDest, width, 1, 3, 1, 1, 8, testSrc, 1);
+
       expect(testDest).toEqual(expectedDest);
     });
   });
