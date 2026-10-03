@@ -110,12 +110,9 @@ class FontInfo {
 
   #view;
 
-  constructor({ buffer, extra }) {
+  constructor(buffer) {
     this.#buffer = buffer;
     this.#view = new DataView(buffer);
-    if (extra) {
-      Object.assign(this, extra);
-    }
   }
 
   #readBoolean(index) {
