@@ -163,18 +163,10 @@ class FontInfo {
     return shadow(this, "vertical", this.#readBoolean(9));
   }
 
-  #readNumber(index) {
-    assert(index < FONT_INFO.numbers.length, "Invalid number index");
-    return this.#view.getFloat64(FONT_INFO.OFFSET_NUMBERS + index * 8);
-  }
-
-  get ascent() {
-    return shadow(this, "ascent", this.#readNumber(0));
-  }
-
-  get descent() {
-    return shadow(this, "descent", this.#readNumber(1));
-  }
+  // #readNumber(index) {
+  //   assert(index < FONT_INFO.numbers.length, "Invalid number index");
+  //   return this.#view.getFloat64(FONT_INFO.OFFSET_NUMBERS + index * 8);
+  // }
 
   #readArray(offset, arrLen, lookupName, increment) {
     const len = this.#view.getUint8(offset++);

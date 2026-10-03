@@ -544,14 +544,6 @@ class FontFaceObject {
     return this.#fontData.vertical;
   }
 
-  get ascent() {
-    return this.#fontData.ascent;
-  }
-
-  get descent() {
-    return this.#fontData.descent;
-  }
-
   get bbox() {
     return this.#fontData.bbox;
   }
