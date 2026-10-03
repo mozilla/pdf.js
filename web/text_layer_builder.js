@@ -95,7 +95,6 @@ class TextLayerBuilder {
     if (this.#renderingDone && this.#textLayer) {
       this.#textLayer.update({
         viewport,
-        onBefore: this.hide.bind(this),
       });
       this.show();
       return;
