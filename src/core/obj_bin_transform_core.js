@@ -163,17 +163,8 @@ function compileFontInfo(font) {
     }
   }
   assert(
-    offset === FONT_INFO.OFFSET_NUMBERS,
-    "compileFontInfo: Boolean properties offset mismatch"
-  );
-
-  for (const prop of FONT_INFO.numbers) {
-    view.setFloat64(offset, font[prop]);
-    offset += 8;
-  }
-  assert(
     offset === FONT_INFO.OFFSET_BBOX,
-    "compileFontInfo: Number properties offset mismatch"
+    "compileFontInfo: Boolean properties offset mismatch"
   );
 
   writeArray(
