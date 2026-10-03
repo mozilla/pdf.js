@@ -49,6 +49,7 @@ async function runTests(results) {
       "stamp_editor_spec.mjs",
       "text_extractor_spec.mjs",
       "text_field_spec.mjs",
+      "text_markup_editor_spec.mjs",
       "text_layer_spec.mjs",
       "text_layer_images_spec.mjs",
       "thumbnail_view_spec.mjs",

@@ -663,16 +663,24 @@ class DrawLayer {
     return svg;
   }
 
-  #createClipPath(defs, pathId) {
+  #createClipPath(defs, pathId, hasOwnClipPath) {
     const clipPath = DrawLayer._svgFactory.createElement("clipPath");
     defs.append(clipPath);
     const clipPathId = `clip_${pathId}`;
     clipPath.setAttribute("id", clipPathId);
     clipPath.setAttribute("clipPathUnits", "objectBoundingBox");
-    const clipPathUse = DrawLayer._svgFactory.createElement("use");
-    clipPath.append(clipPathUse);
-    clipPathUse.setAttribute("href", `#${pathId}`);
-    clipPathUse.classList.add("clip");
+    if (hasOwnClipPath) {
+      // The clipping area is different from the drawn shape (e.g. an underline
+      // is clipped by the text it underlines).
+      const clipPathPath = DrawLayer._svgFactory.createElement("path");
+      clipPath.append(clipPathPath);
+      clipPathPath.classList.add("clip");
+    } else {
+      const clipPathUse = DrawLayer._svgFactory.createElement("use");
+      clipPath.append(clipPathUse);
+      clipPathUse.setAttribute("href", `#${pathId}`);
+      clipPathUse.classList.add("clip");
+    }
 
     return clipPathId;
   }
@@ -704,7 +712,9 @@ class DrawLayer {
     }
 
     // Create the clipping path for the editor div.
-    const clipPathId = hasClip ? this.#createClipPath(defs, pathId) : null;
+    const clipPathId = hasClip
+      ? this.#createClipPath(defs, pathId, !!properties.clipPath)
+      : null;
 
     const use = DrawLayer._svgFactory.createElement("use");
     root.append(use);
@@ -779,7 +789,7 @@ class DrawLayer {
     if (!properties) {
       return;
     }
-    const { root, bbox, rootClass, path } = properties;
+    const { root, bbox, rootClass, path, clipPath } = properties;
     const element =
       typeof elementOrId === "number"
         ? this.#mapping.get(elementOrId)
@@ -803,6 +813,12 @@ class DrawLayer {
       const defs = element.firstElementChild;
       const pathElement = defs.firstElementChild;
       this.#updateProperties(pathElement, path);
+    }
+    if (clipPath) {
+      const clipPathElement = element.querySelector("clipPath > path.clip");
+      if (clipPathElement) {
+        this.#updateProperties(clipPathElement, clipPath);
+      }
     }
   }
 

@@ -61,6 +61,18 @@ function getViewerConfiguration() {
       editorHighlightColorPicker: document.getElementById(
         "editorHighlightColorPicker"
       ),
+      editorUnderlineButton: document.getElementById("editorUnderlineButton"),
+      editorUnderlineParamsToolbar: document.getElementById(
+        "editorUnderlineParamsToolbar"
+      ),
+      editorSquigglyButton: document.getElementById("editorSquigglyButton"),
+      editorSquigglyParamsToolbar: document.getElementById(
+        "editorSquigglyParamsToolbar"
+      ),
+      editorStrikeOutButton: document.getElementById("editorStrikeOutButton"),
+      editorStrikeOutParamsToolbar: document.getElementById(
+        "editorStrikeOutParamsToolbar"
+      ),
       editorInkButton: document.getElementById("editorInkButton"),
       editorInkParamsToolbar: document.getElementById("editorInkParamsToolbar"),
       editorStampButton: document.getElementById("editorStampButton"),
@@ -333,6 +345,9 @@ function getViewerConfiguration() {
       ),
       editorFreeTextFontSize: document.getElementById("editorFreeTextFontSize"),
       editorFreeTextColor: document.getElementById("editorFreeTextColor"),
+      editorUnderlineColor: document.getElementById("editorUnderlineColor"),
+      editorSquigglyColor: document.getElementById("editorSquigglyColor"),
+      editorStrikeOutColor: document.getElementById("editorStrikeOutColor"),
       editorInkColor: document.getElementById("editorInkColor"),
       editorInkThickness: document.getElementById("editorInkThickness"),
       editorInkOpacity: document.getElementById("editorInkOpacity"),

@@ -768,6 +768,8 @@ class AnnotationEditorUIManager {
 
   #enableHighlightFloatingButton = false;
 
+  #enableTextMarkupEditors = false;
+
   #enableUpdatedAddImage = false;
 
   #enableNewAltTextWhenAddingImage = false;
@@ -986,6 +988,7 @@ class AnnotationEditorUIManager {
     pageColors,
     highlightColors,
     enableHighlightFloatingButton,
+    enableTextMarkupEditors,
     enableUpdatedAddImage,
     enableNewAltTextWhenAddingImage,
     mlManager,
@@ -1043,6 +1046,7 @@ class AnnotationEditorUIManager {
     this.#pageColors = pageColors;
     this.#highlightColors = highlightColors || null;
     this.#enableHighlightFloatingButton = enableHighlightFloatingButton;
+    this.#enableTextMarkupEditors = enableTextMarkupEditors === true;
     this.#enableUpdatedAddImage = enableUpdatedAddImage;
     this.#enableNewAltTextWhenAddingImage = enableNewAltTextWhenAddingImage;
     this.#mlManager = mlManager || null;
@@ -1219,6 +1223,10 @@ class AnnotationEditorUIManager {
 
   hasCommentManager() {
     return !!this.#commentManager;
+  }
+
+  hasTextMarkupEditors() {
+    return this.#enableTextMarkupEditors;
   }
 
   editComment(editor, posX, posY, options) {
@@ -1409,7 +1417,28 @@ class AnnotationEditorUIManager {
     return null;
   }
 
-  highlightSelection(methodOfCreation = "", comment = false) {
+  /**
+   * @returns {boolean} `true` if the editors of the current mode are created
+   *   from a text selection.
+   */
+  get #isTextSelectionMode() {
+    return !!this.#editorTypes?.find(
+      editorType => editorType._editorType === this.#mode
+    )?.isFromTextSelection;
+  }
+
+  /**
+   * Create an editor from the selected text.
+   * @param {string} [methodOfCreation]
+   * @param {boolean} [comment] - `true` to edit a comment on the new editor.
+   * @param {number} [mode] - The mode of the editor to create, it must be one
+   *   of the modes whose editors are created from a text selection.
+   */
+  highlightSelection(
+    methodOfCreation = "",
+    comment = false,
+    mode = AnnotationEditorType.HIGHLIGHT
+  ) {
     const selection = document.getSelection();
     if (!selection || selection.isCollapsed) {
       return;
@@ -1436,7 +1465,7 @@ class AnnotationEditorUIManager {
         focusOffset,
         text,
       });
-      if (isNoneMode) {
+      if (isNoneMode && mode === AnnotationEditorType.HIGHLIGHT) {
         this.showAllEditors("highlight", true, /* updateButton = */ true);
       }
       if (comment) {
@@ -1444,10 +1473,19 @@ class AnnotationEditorUIManager {
       }
     };
     if (isNoneMode) {
-      this.switchToMode(AnnotationEditorType.HIGHLIGHT, callback);
+      this.switchToMode(mode, callback);
       return;
     }
     callback();
+  }
+
+  /**
+   * Underline, squiggle or strike out the selected text.
+   * @param {number} mode - The mode of the text markup editor to use.
+   * @param {string} [methodOfCreation]
+   */
+  markupSelection(mode, methodOfCreation = "") {
+    this.highlightSelection(methodOfCreation, /* comment = */ false, mode);
   }
 
   commentSelection(methodOfCreation = "") {
@@ -1557,10 +1595,8 @@ class AnnotationEditorUIManager {
       hasSelectedText: true,
     });
 
-    if (
-      this.#mode !== AnnotationEditorType.HIGHLIGHT &&
-      this.#mode !== AnnotationEditorType.NONE
-    ) {
+    const isTextSelectionMode = this.#isTextSelectionMode;
+    if (!isTextSelectionMode && this.#mode !== AnnotationEditorType.NONE) {
       return;
     }
 
@@ -1570,10 +1606,9 @@ class AnnotationEditorUIManager {
 
     this.#highlightWhenShiftUp = this.isShiftKeyDown;
     if (!this.isShiftKeyDown) {
-      const activeLayer =
-        this.#mode === AnnotationEditorType.HIGHLIGHT
-          ? this.#getLayerForTextLayer(textLayer)
-          : null;
+      const activeLayer = isTextSelectionMode
+        ? this.#getLayerForTextLayer(textLayer)
+        : null;
       activeLayer?.toggleDrawing();
 
       if (this.#isPointerDown) {
@@ -1604,7 +1639,7 @@ class AnnotationEditorUIManager {
   }
 
   #onSelectEnd(methodOfCreation = "") {
-    if (this.#mode === AnnotationEditorType.HIGHLIGHT) {
+    if (this.#isTextSelectionMode) {
       this.highlightSelection(methodOfCreation);
     } else if (this.#enableHighlightFloatingButton) {
       this.#displayFloatingToolbar();
@@ -1954,7 +1989,7 @@ class AnnotationEditorUIManager {
   clonePage(pageIndex, newPageIndex) {
     for (const editor of this.getEditors(pageIndex)) {
       const serialized = editor.serialize(
-        editor.mode !== AnnotationEditorType.HIGHLIGHT
+        !editor.constructor.isFromTextSelection
       );
       if (!serialized) {
         continue;

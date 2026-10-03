@@ -27,6 +27,9 @@ import { internalOpt } from "./internal_evt.js";
  * @typedef {object} AnnotationEditorParamsOptions
  * @property {HTMLInputElement} editorFreeTextFontSize
  * @property {HTMLInputElement} editorFreeTextColor
+ * @property {HTMLInputElement} editorUnderlineColor
+ * @property {HTMLInputElement} editorSquigglyColor
+ * @property {HTMLInputElement} editorStrikeOutColor
  * @property {HTMLInputElement} editorInkColor
  * @property {HTMLInputElement} editorInkThickness
  * @property {HTMLInputElement} editorInkOpacity
@@ -52,6 +55,9 @@ class AnnotationEditorParams {
   #bindListeners({
     editorFreeTextFontSize,
     editorFreeTextColor,
+    editorUnderlineColor,
+    editorSquigglyColor,
+    editorStrikeOutColor,
     editorInkColor,
     editorInkThickness,
     editorInkOpacity,
@@ -74,6 +80,15 @@ class AnnotationEditorParams {
     });
     editorFreeTextColor.addEventListener("input", function () {
       dispatchEvent("FREETEXT_COLOR", this.value);
+    });
+    editorUnderlineColor.addEventListener("input", function () {
+      dispatchEvent("UNDERLINE_COLOR", this.value);
+    });
+    editorSquigglyColor.addEventListener("input", function () {
+      dispatchEvent("SQUIGGLY_COLOR", this.value);
+    });
+    editorStrikeOutColor.addEventListener("input", function () {
+      dispatchEvent("STRIKEOUT_COLOR", this.value);
     });
 
     // Handlers for INK_COLOR and INK_OPACITY sync-back, set up differently
@@ -166,6 +181,15 @@ class AnnotationEditorParams {
               break;
             case AnnotationEditorParamsType.FREETEXT_COLOR:
               editorFreeTextColor.value = value;
+              break;
+            case AnnotationEditorParamsType.UNDERLINE_COLOR:
+              editorUnderlineColor.value = value;
+              break;
+            case AnnotationEditorParamsType.SQUIGGLY_COLOR:
+              editorSquigglyColor.value = value;
+              break;
+            case AnnotationEditorParamsType.STRIKEOUT_COLOR:
+              editorStrikeOutColor.value = value;
               break;
             case AnnotationEditorParamsType.INK_COLOR:
               updateInkColor(value);

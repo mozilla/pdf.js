@@ -41,6 +41,9 @@ class EditorUndoBar {
     stamp: "pdfjs-editor-undo-bar-message-stamp",
     ink: "pdfjs-editor-undo-bar-message-ink",
     signature: "pdfjs-editor-undo-bar-message-signature",
+    underline: "pdfjs-editor-undo-bar-message-underline",
+    squiggly: "pdfjs-editor-undo-bar-message-squiggly",
+    strikeout: "pdfjs-editor-undo-bar-message-strikeout",
     comment: "pdfjs-editor-undo-bar-message-comment",
     _multiple: "pdfjs-editor-undo-bar-message-multiple",
   });
