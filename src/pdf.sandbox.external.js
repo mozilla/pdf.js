@@ -131,7 +131,6 @@ export class SandboxSupportBase {
         this.win.alert(cMsg);
       },
       confirm: cMsg =>
-        // eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
         typeof cMsg !== "string" ? false : this.win.confirm(cMsg),
       prompt: (cQuestion, cDefault) =>
         typeof cQuestion !== "string" || typeof cDefault !== "string"

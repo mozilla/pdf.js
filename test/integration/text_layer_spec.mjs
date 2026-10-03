@@ -1122,7 +1122,6 @@ describe("Text layer", () => {
             `.page[data-page-number = "1"] .endOfContent`,
             undefined,
             {
-              /* eslint-disable unicorn/prefer-logical-operator-over-ternary */
               prePageSetup: page =>
                 page.evaluateOnNewDocument(() => {
                   const { supports } = CSS;
@@ -1131,7 +1130,6 @@ describe("Text layer", () => {
                       ? false
                       : supports.call(CSS, property, value);
                 }),
-              /* eslint-enable unicorn/prefer-logical-operator-over-ternary */
             },
             (_page, browserName) => ({
               imagesRightClickMinSize: browserName === "firefox" ? 16 : -1,

@@ -671,7 +671,6 @@ class CheckboxField extends RadioButtonField {
   }
 
   isBoxChecked(nWidget) {
-    // eslint-disable-next-line unicorn/prefer-logical-operator-over-ternary
     return this._value === "Off" ? false : super.isBoxChecked(nWidget);
   }
 
