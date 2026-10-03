@@ -26,6 +26,7 @@
 import { BaseTreeViewer } from "./base_tree_viewer.js";
 import { internalOpt } from "./internal_evt.js";
 import { SidebarView } from "./ui_utils.js";
+import { stopEvent } from "pdfjs-lib";
 
 /**
  * @typedef {object} PDFOutlineViewerOptions
@@ -49,6 +50,7 @@ class PDFOutlineViewer extends BaseTreeViewer {
     super(options);
     this.linkService = options.linkService;
     this.downloadManager = options.downloadManager;
+    this.container.addEventListener("keydown", this.#onKeyDown.bind(this));
 
     const { eventBus } = this;
     eventBus.on(
@@ -101,6 +103,81 @@ class PDFOutlineViewer extends BaseTreeViewer {
 
     this._currentOutlineItemCapability?.resolve(/* enabled = */ false);
     this._currentOutlineItemCapability = null;
+  }
+
+  #onKeyDown(event) {
+    const { target, key } = event;
+    if (
+      event.defaultPrevented ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey ||
+      !(target instanceof HTMLAnchorElement) ||
+      !target.parentElement.classList.contains("treeItem")
+    ) {
+      return;
+    }
+
+    let nextLink;
+    switch (key) {
+      case "ArrowRight": {
+        const toggler = target.previousElementSibling;
+        if (toggler?.classList.contains("treeItemsHidden")) {
+          toggler.click();
+        } else {
+          nextLink = target.nextElementSibling?.querySelector("a");
+        }
+        break;
+      }
+      case "ArrowLeft": {
+        const toggler = target.previousElementSibling;
+        if (toggler && !toggler.classList.contains("treeItemsHidden")) {
+          toggler.click();
+        } else {
+          nextLink = target.parentElement.parentElement
+            .closest(".treeItem")
+            ?.querySelector(":scope > a");
+        }
+        break;
+      }
+      case "ArrowDown":
+      case "ArrowUp":
+      case "Home":
+      case "End": {
+        const walker = document.createTreeWalker(
+          this.container,
+          NodeFilter.SHOW_ELEMENT,
+          {
+            acceptNode(node) {
+              if (
+                node.classList.contains("treeItems") &&
+                node.parentElement.firstElementChild.classList.contains(
+                  "treeItemsHidden"
+                )
+              ) {
+                return NodeFilter.FILTER_REJECT;
+              }
+              return node.matches(".treeItem > a")
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_SKIP;
+            },
+          }
+        );
+        if (key === "Home" || key === "End") {
+          nextLink = key === "Home" ? walker.firstChild() : walker.lastChild();
+        } else {
+          walker.currentNode = target;
+          nextLink =
+            key === "ArrowDown" ? walker.nextNode() : walker.previousNode();
+        }
+        break;
+      }
+      default:
+        return;
+    }
+    nextLink?.focus();
+    stopEvent(event);
   }
 
   /**
