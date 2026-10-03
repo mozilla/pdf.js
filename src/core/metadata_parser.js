@@ -21,7 +21,10 @@ class MetadataParser {
     data = this._repair(data);
 
     // Convert the string to an XML document.
-    const parser = new SimpleXMLParser({ lowerCaseName: true });
+    const parser = new SimpleXMLParser({
+      lowerCaseName: true,
+      hasAttributes: true,
+    });
     const xmlDocument = parser.parseFromString(data);
 
     this._metadataMap = new Map();
@@ -99,6 +102,24 @@ class MetadataParser {
     );
   }
 
+  _parseLangAlt(entry) {
+    const alt = entry.children.find(node => node.nodeName === "rdf:alt");
+    const alternatives = alt ? this._getSequence(alt) : [];
+    // Language alternatives represent the same value in different languages.
+    // Prefer the default value, without changing the string-valued API.
+    const selected =
+      alternatives.find(node =>
+        node.attributes.some(
+          ({ name, value }) => name === "xml:lang" && value === "x-default"
+        )
+      ) || alternatives[0];
+
+    this._metadataMap.set(
+      entry.nodeName,
+      (selected || entry).textContent.trim()
+    );
+  }
+
   _parse(xmlDocument) {
     let rdf = xmlDocument.documentElement;
 
@@ -127,6 +148,10 @@ class MetadataParser {
           case "dc:creator":
           case "dc:subject":
             this._parseArray(entry);
+            continue;
+          case "dc:title":
+          case "dc:description":
+            this._parseLangAlt(entry);
             continue;
         }
         this._metadataMap.set(name, entry.textContent.trim());

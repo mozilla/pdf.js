@@ -37,6 +37,82 @@ describe("metadata", function () {
     expect([...metadata]).toEqual([["dc:title", "Foo bar baz"]]);
   });
 
+  it("should select the default language alternative (issue 20801)", function () {
+    for (const name of ["dc:title", "dc:description"]) {
+      for (const alternatives of [
+        '<rdf:li xml:lang="x-default">Hello World</rdf:li>' +
+          '<rdf:li xml:lang="en">Hello World</rdf:li>',
+        '<rdf:li xml:lang="fr">Bonjour le monde</rdf:li>' +
+          '<rdf:li xml:lang="x-default">Hello World</rdf:li>',
+      ]) {
+        const data =
+          "<rdf:RDF><rdf:Description>" +
+          `<${name}><rdf:Alt>${alternatives}</rdf:Alt></${name}>` +
+          "</rdf:Description></rdf:RDF>";
+        const metadata = createMetadata(data);
+
+        expect(metadata.get(name)).toEqual("Hello World");
+        expect(metadata.getRaw()).toEqual(data);
+      }
+    }
+  });
+
+  it("should use the first language alternative if there is no default", function () {
+    for (const name of ["dc:title", "dc:description"]) {
+      const data =
+        "<rdf:RDF><rdf:Description>" +
+        `<${name}><rdf:Alt>` +
+        '<rdf:li xml:lang="en">Hello World</rdf:li>' +
+        '<rdf:li xml:lang="fr">Bonjour le monde</rdf:li>' +
+        `</rdf:Alt></${name}>` +
+        "</rdf:Description></rdf:RDF>";
+
+      expect(createMetadata(data).get(name)).toEqual("Hello World");
+    }
+  });
+
+  it("should handle whitespace before the language alternatives", function () {
+    const data =
+      "<rdf:RDF><rdf:Description><dc:title>\n  <rdf:Alt>\n" +
+      '  <rdf:li xml:lang="en">English title</rdf:li>\n' +
+      '  <rdf:li xml:lang="x-default"> Default title </rdf:li>\n' +
+      "</rdf:Alt>\n</dc:title></rdf:Description></rdf:RDF>";
+
+    expect(createMetadata(data).get("dc:title")).toEqual("Default title");
+  });
+
+  it("should preserve empty and non-alternative metadata values", function () {
+    for (const name of ["dc:title", "dc:description"]) {
+      for (const [content, expected] of [
+        ["", ""],
+        [" Plain text ", "Plain text"],
+        ["<rdf:Alt/>", ""],
+        ["<rdf:Alt><rdf:li/></rdf:Alt>", ""],
+        [
+          '<rdf:Alt><rdf:li xml:lang="en">English</rdf:li>' +
+            '<rdf:li xml:lang="x-default"/></rdf:Alt>',
+          "",
+        ],
+        [
+          "<rdf:Bag><rdf:li>One</rdf:li><rdf:li>Two</rdf:li></rdf:Bag>",
+          "OneTwo",
+        ],
+        [
+          "<rdf:Seq><rdf:li>One</rdf:li><rdf:li>Two</rdf:li></rdf:Seq>",
+          "OneTwo",
+        ],
+      ]) {
+        const data =
+          "<rdf:RDF><rdf:Description>" +
+          `<${name}>${content}</${name}>` +
+          "</rdf:Description></rdf:RDF>";
+        const metadata = createMetadata(data);
+
+        expect(metadata.get(name)).toEqual(expected);
+      }
+    }
+  });
+
   it("should repair and handle invalid metadata", function () {
     const data =
       "<x:xmpmeta xmlns:x='adobe:ns:meta/'>" +
