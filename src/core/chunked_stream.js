@@ -82,8 +82,6 @@ class ChunkedStream extends Stream {
     const endChunk = Math.floor((end - 1) / chunkSize) + 1;
 
     for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
-      // Since a value can only occur *once* in a `Set`, there's no need to
-      // manually check `Set.prototype.has()` before adding the value here.
       this._loadedChunks.add(curChunk);
     }
   }
@@ -107,8 +105,6 @@ class ChunkedStream extends Stream {
         : Math.floor(position / this.chunkSize);
 
     for (let curChunk = beginChunk; curChunk < endChunk; ++curChunk) {
-      // Since a value can only occur *once* in a `Set`, there's no need to
-      // manually check `Set.prototype.has()` before adding the value here.
       this._loadedChunks.add(curChunk);
     }
   }
@@ -469,9 +465,7 @@ class ChunkedStreamManager {
 
       for (const requestId of requestIds) {
         const chunksNeeded = this.#chunksNeededByRequest.get(requestId);
-        if (chunksNeeded.has(curChunk)) {
-          chunksNeeded.delete(curChunk);
-        }
+        chunksNeeded.delete(curChunk);
 
         if (chunksNeeded.size > 0) {
           continue;
