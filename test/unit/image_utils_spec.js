@@ -346,5 +346,44 @@ describe("image_utils", function () {
       expect(result.srcPos).toEqual(15);
       expect(dest[0]).toEqual(RED);
     });
+
+    it("handles a source with a byteOffset for RGB_24BPP", function () {
+      // Skip four bytes outside the source view.
+      const buffer = new Uint8Array([
+        1, 2, 3, 4, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 0, 0,
+      ]).buffer;
+      const src = new Uint8Array(buffer, 4);
+      const dest = new Uint32Array(5);
+      const result = convertToRGBA({
+        src,
+        dest,
+        width: 5,
+        height: 1,
+        kind: ImageKind.RGB_24BPP,
+      });
+      expect(result.srcPos).toEqual(15);
+      expect(result.destPos).toEqual(5);
+      expect(dest).toEqual(new Uint32Array([WHITE, BLACK, WHITE, BLACK, RED]));
+    });
+
+    it("handles a source which isn't 4-byte aligned for RGB_24BPP", function () {
+      // byteOffset + srcPos = 1 + 2 = 3 is not 4-byte aligned.
+      const buffer = new Uint8Array([
+        1, 2, 3, 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 0, 0,
+      ]).buffer;
+      const src = new Uint8Array(buffer, 1);
+      const dest = new Uint32Array(5);
+      const result = convertToRGBA({
+        src,
+        dest,
+        srcPos: 2,
+        width: 5,
+        height: 1,
+        kind: ImageKind.RGB_24BPP,
+      });
+      expect(result.srcPos).toEqual(17);
+      expect(result.destPos).toEqual(5);
+      expect(dest).toEqual(new Uint32Array([WHITE, BLACK, WHITE, BLACK, RED]));
+    });
   });
 });
