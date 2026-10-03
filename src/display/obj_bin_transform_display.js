@@ -237,10 +237,6 @@ class FontInfo {
     return shadow(this, "loadedName", this.#readString(1));
   }
 
-  get name() {
-    return shadow(this, "name", this.#readString(2));
-  }
-
   #getBufferOffset(index) {
     let offset = FONT_INFO.OFFSET_STRINGS;
     // We need to move past any string-data first, hence the `<=` condition.
