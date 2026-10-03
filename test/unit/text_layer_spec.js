@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 
+import { DEFAULT_FONT_SIZE, TextLayer } from "../../src/display/text_layer.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
 import { isNodeJS } from "../../src/shared/util.js";
-import { TextLayer } from "../../src/display/text_layer.js";
+import { OutputScale } from "../../src/display/display_utils.js";
 
 describe("textLayer", function () {
   it("creates textLayer from ReadableStream", async function () {
@@ -248,6 +249,57 @@ describe("textLayer", function () {
 
     expect(transform1).toEqual(serialTransform1);
     expect(transform2).toEqual(serialTransform2);
+
+    await loadingTask.destroy();
+  });
+
+  it("measures the text with the correct font after computing the ascent", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+
+    // Proportional widths should produce the same horizontal scale.
+    const items = [10, 11].map(fontSize => ({
+      str: "Hello World",
+      dir: "ltr",
+      width: 5 * fontSize,
+      height: fontSize,
+      transform: [fontSize, 0, 0, fontSize, 50, 700],
+      fontName: "g_d0_f1",
+      hasEOL: false,
+    }));
+    const styles = {
+      g_d0_f1: {
+        ascent: 0.75,
+        descent: -0.25,
+        fontFamily: "sans-serif",
+        vertical: false,
+      },
+    };
+
+    // Force the ascent to be computed for this font.
+    TextLayer.cleanup();
+
+    // Use DPR 1 to avoid rounding the first measurement away from 30px.
+    spyOnProperty(OutputScale, "pixelRatio", "get").and.returnValue(1);
+    // Ensure that 30px is still the font size used to compute the ascent.
+    expect(DEFAULT_FONT_SIZE).toEqual(30);
+
+    const textLayer = new TextLayer({
+      textContentSource: { items, styles, lang: "en" },
+      container: document.createElement("div"),
+      // Measure the first run at the 30px size used to compute the ascent.
+      viewport: page.getViewport({ scale: 3 }),
+    });
+    await textLayer.render();
+
+    const [scaleX1, scaleX2] = textLayer.textDivs.map(({ style }) =>
+      parseFloat(style.getPropertyValue("--scale-x"))
+    );
+    expect(scaleX1 / scaleX2).toBeCloseTo(1, 1);
 
     await loadingTask.destroy();
   });
