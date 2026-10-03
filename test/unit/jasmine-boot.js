@@ -76,6 +76,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/fonts_spec.js",
       "pdfjs-test/unit/function_spec.js",
       "pdfjs-test/unit/image_resizer_spec.js",
+      "pdfjs-test/unit/image_spec.js",
       "pdfjs-test/unit/image_utils_spec.js",
       "pdfjs-test/unit/jpeg_stream_spec.js",
       "pdfjs-test/unit/message_handler_spec.js",

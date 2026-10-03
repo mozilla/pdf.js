@@ -73,6 +73,72 @@ import { Name } from "./primitives.js";
  *   Optional promise that resolves when the alpha values have been filled.
  */
 
+/**
+ * Adds an opaque row's RGB values to `sums` (four slots per full-size column).
+ */
+function sumOpaqueRow(sums, rgbRow, rgbX) {
+  for (let x = 0, k = 0, ii = rgbX.length; x < ii; x++, k += 4) {
+    const i = rgbX[x];
+    sums[k] += rgbRow[i];
+    sums[k + 1] += rgbRow[i + 1];
+    sums[k + 2] += rgbRow[i + 2];
+  }
+}
+
+/**
+ * Adds opacity-weighted RGB and opacity to `sums` (four slots per column).
+ */
+function sumTransparentRow(sums, rgbRow, rgbX, alpha, alphaOffset, alphaX) {
+  for (let x = 0, k = 0, ii = rgbX.length; x < ii; x++, k += 4) {
+    const opacity = alpha[alphaOffset + alphaX[x]];
+    if (opacity !== 0) {
+      const i = rgbX[x];
+      sums[k] += rgbRow[i] * opacity;
+      sums[k + 1] += rgbRow[i + 1] * opacity;
+      sums[k + 2] += rgbRow[i + 2] * opacity;
+      sums[k + 3] += opacity;
+    }
+  }
+}
+
+/**
+ * Like `sumTransparentRow`, but undoes /Matte preblending first.
+ */
+function sumPreblendedRow(
+  sums,
+  rgbRow,
+  rgbX,
+  alpha,
+  alphaOffset,
+  alphaX,
+  [matteR, matteG, matteB]
+) {
+  for (let x = 0, k = 0, ii = rgbX.length; x < ii; x++, k += 4) {
+    const opacity = alpha[alphaOffset + alphaX[x]];
+    if (opacity !== 0) {
+      const i = rgbX[x];
+      // Undo preblending and weight by opacity:
+      // ((color - matte) * 255 / opacity + matte) * opacity.
+      sums[k] += MathClamp(
+        (rgbRow[i] - matteR) * 255 + matteR * opacity,
+        0,
+        255 * opacity
+      );
+      sums[k + 1] += MathClamp(
+        (rgbRow[i + 1] - matteG) * 255 + matteG * opacity,
+        0,
+        255 * opacity
+      );
+      sums[k + 2] += MathClamp(
+        (rgbRow[i + 2] - matteB) * 255 + matteB * opacity,
+        0,
+        255 * opacity
+      );
+      sums[k + 3] += opacity;
+    }
+  }
+}
+
 class PDFImage {
   constructor({
     xref,
@@ -882,6 +948,19 @@ class PDFImage {
       }
     }
 
+    if (mustBeResized && !Array.isArray(this.mask)) {
+      // Avoid a full-size RGBA buffer and BMP conversion (see issue16263.pdf).
+      // Color-key masks use the existing path to mask source components.
+      const reducePower = ImageResizer.getReducePower(drawWidth, drawHeight);
+      const width = Math.max(1, drawWidth >> reducePower);
+      const height = Math.max(1, drawHeight >> reducePower);
+      if (!ImageResizer.needsToBeResized(width, height)) {
+        const rgba = new Uint8ClampedArray(width * height * 4);
+        await this._fillDownscaledRgba(rgba, width, height);
+        return this.createBitmap(ImageKind.RGBA_32BPP, width, height, rgba);
+      }
+    }
+
     const imgArray = await this.getImageBytes(originalHeight * rowBytes, {
       internal: true,
     });
@@ -1094,6 +1173,197 @@ class PDFImage {
       const length = outputWidth * rows;
       for (let i = 0; i < length; ++i) {
         buffer[i * stride + offset] = (scale * comps[i]) ^ mask;
+      }
+    }
+  }
+
+  #fillDownscaledColorMapImage(dest, comps, width, height, rows) {
+    // No mask: drawWidth/drawHeight equal the source dimensions.
+    const { width: srcWidth, height: srcHeight, bpc, colorSpace } = this;
+    const colorMap = colorSpace.getColorMap(bpc);
+
+    const xBounds = new Uint32Array(width + 1);
+    for (let x = 0; x <= width; x++) {
+      xBounds[x] = Math.floor((x * srcWidth) / width);
+    }
+    let destIndex = 0;
+    for (let row = 0; row < rows; row++) {
+      const y0 = Math.floor((row * srcHeight) / height);
+      const y1 = Math.floor(((row + 1) * srcHeight) / height);
+      for (let col = 0; col < width; col++, destIndex += 4) {
+        const x0 = xBounds[col],
+          x1 = xBounds[col + 1];
+        let r = 0,
+          g = 0,
+          b = 0;
+        for (let y = y0; y < y1; y++) {
+          const offset = y * srcWidth;
+          for (let x = offset + x0, end = offset + x1; x < end; x++) {
+            const i = comps[x] * 3;
+            r += colorMap[i];
+            g += colorMap[i + 1];
+            b += colorMap[i + 2];
+          }
+        }
+        const area = (y1 - y0) * (x1 - x0);
+        dest[destIndex] = r / area;
+        dest[destIndex + 1] = g / area;
+        dest[destIndex + 2] = b / area;
+        dest[destIndex + 3] = 255;
+      }
+    }
+  }
+
+  /**
+   * Downscales the `drawWidth` x `drawHeight` image without a full-size RGBA
+   * buffer. Averages blocks with boundaries rounded down, weighting colors
+   * by opacity after undoing /Matte preblending.
+   * @param {Uint8ClampedArray} dest - Destination RGBA buffer.
+   * @param {number} width - Destination width.
+   * @param {number} height - Destination height.
+   * @returns {Promise<undefined>}
+   */
+  async _fillDownscaledRgba(dest, width, height) {
+    const {
+      width: srcWidth,
+      height: srcHeight,
+      numComps,
+      bpc,
+      colorSpace,
+    } = this;
+    const fullWidth = this.drawWidth;
+    const fullHeight = this.drawHeight;
+
+    // Rows are byte-aligned.
+    const rowBytes = (srcWidth * numComps * bpc + 7) >> 3;
+    const imgArray = await this.getImageBytes(srcHeight * rowBytes, {
+      internal: true,
+    });
+    // Limit output rows if the decoded data is incomplete.
+    const rows = Math.min(
+      height,
+      (((imgArray.length / rowBytes) * height) / srcHeight) | 0
+    );
+    const comps = this.getComponents(imgArray);
+    if (this.needsDecode) {
+      this.decodeBuffer(comps);
+    }
+
+    if (!this.smask && !this.mask && numComps === 1 && bpc <= 8) {
+      // Direct color lookup avoids RGB chunks and column sums
+      // (see issue17190_1.pdf).
+      this.#fillDownscaledColorMapImage(dest, comps, width, height, rows);
+      return;
+    }
+
+    const alphaImage = this.smask || this.mask;
+    let alpha = null,
+      alphaWidth = 0,
+      alphaHeight = 0;
+    if (alphaImage) {
+      ({ width: alphaWidth, height: alphaHeight } = alphaImage);
+      alpha = new Uint8ClampedArray(alphaWidth * alphaHeight);
+      await alphaImage.fillGrayBuffer(alpha, { invertOutput: !this.smask });
+    }
+    const matte = this.smask?.matte;
+    const matteRgb = matte ? colorSpace.getRgb(matte, 0) : null;
+
+    // Map full-size columns to RGB byte offsets and alpha columns.
+    const rgbX = new Uint32Array(fullWidth);
+    const alphaX = new Uint32Array(alpha ? fullWidth : 0);
+    for (let x = 0; x < fullWidth; x++) {
+      rgbX[x] = Math.floor((x * srcWidth) / fullWidth) * 3;
+    }
+    for (let x = 0, ii = alphaX.length; x < ii; x++) {
+      alphaX[x] = Math.floor((x * alphaWidth) / fullWidth);
+    }
+    // Round source block boundaries down.
+    const xBounds = new Uint32Array(width + 1);
+    for (let i = 0; i <= width; i++) {
+      xBounds[i] = Math.floor((i * fullWidth) / width);
+    }
+
+    const rowComps = srcWidth * numComps;
+    // Batch rows to avoid rebuilding color maps for each row.
+    const chunkRows = Math.min(srcHeight, Math.ceil(2 ** 20 / srcWidth));
+    const rgbChunk = new Uint8ClampedArray(chunkRows * srcWidth * 3);
+    let chunkStart = 0,
+      chunkEnd = 0;
+    // Per-column RGB/alpha sums for the current destination row.
+    const sums = new Float64Array(fullWidth * 4);
+    let destIndex = 0;
+
+    for (let row = 0; row < rows; row++) {
+      const y0 = Math.floor((row * fullHeight) / height);
+      const y1 = Math.floor(((row + 1) * fullHeight) / height);
+      sums.fill(0);
+
+      for (let y = y0; y < y1; y++) {
+        const srcY = Math.floor((y * srcHeight) / fullHeight);
+        if (srcY >= chunkEnd) {
+          chunkStart = srcY;
+          chunkEnd = Math.min(srcY + chunkRows, srcHeight);
+          const n = chunkEnd - chunkStart;
+          colorSpace.fillRgb(
+            rgbChunk,
+            srcWidth,
+            n,
+            srcWidth,
+            n,
+            n,
+            bpc,
+            comps.subarray(chunkStart * rowComps, chunkEnd * rowComps),
+            /* alpha01 = */ 0
+          );
+        }
+        const rgbRow = rgbChunk.subarray((srcY - chunkStart) * srcWidth * 3);
+        if (!alpha) {
+          sumOpaqueRow(sums, rgbRow, rgbX);
+          continue;
+        }
+        const alphaOffset =
+          Math.floor((y * alphaHeight) / fullHeight) * alphaWidth;
+        if (matteRgb) {
+          sumPreblendedRow(
+            sums,
+            rgbRow,
+            rgbX,
+            alpha,
+            alphaOffset,
+            alphaX,
+            matteRgb
+          );
+        } else {
+          sumTransparentRow(sums, rgbRow, rgbX, alpha, alphaOffset, alphaX);
+        }
+      }
+
+      for (let i = 0; i < width; i++, destIndex += 4) {
+        const xStart = xBounds[i],
+          xEnd = xBounds[i + 1];
+        let r = 0,
+          g = 0,
+          b = 0,
+          a = 0;
+        for (let k = xStart * 4, kEnd = xEnd * 4; k < kEnd; k += 4) {
+          r += sums[k];
+          g += sums[k + 1];
+          b += sums[k + 2];
+          a += sums[k + 3];
+        }
+        const area = (y1 - y0) * (xEnd - xStart);
+        if (!alpha) {
+          // Opaque pixels have equal weights.
+          dest[destIndex] = r / area;
+          dest[destIndex + 1] = g / area;
+          dest[destIndex + 2] = b / area;
+          dest[destIndex + 3] = 255;
+        } else if (a > 0) {
+          dest[destIndex] = r / a;
+          dest[destIndex + 1] = g / a;
+          dest[destIndex + 2] = b / a;
+          dest[destIndex + 3] = a / area;
+        }
       }
     }
   }
