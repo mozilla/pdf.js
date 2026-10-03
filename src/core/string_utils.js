@@ -92,11 +92,10 @@ function stringToPDFString(str, keepEscapeSequence = false) {
         ));
         const buffer = stringToBytes(str);
         const decoded = decoder.decode(buffer);
-        if (keepEscapeSequence || !decoded.includes("\x1b")) {
-          return decoded;
-        }
-        // eslint-disable-next-line no-control-regex
-        return decoded.replaceAll(/\x1b[^\x1b]*(?:\x1b|$)/g, "");
+        return keepEscapeSequence || !decoded.includes("\x1b")
+          ? decoded
+          : // eslint-disable-next-line no-control-regex
+            decoded.replaceAll(/\x1b[^\x1b]*(?:\x1b|$)/g, "");
       } catch (ex) {
         warn(`stringToPDFString: "${ex}".`);
       }
