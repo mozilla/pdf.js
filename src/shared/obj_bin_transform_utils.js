@@ -37,13 +37,9 @@ class FONT_INFO {
     "vertical",
   ];
 
-  static numbers = [];
-
   static strings = ["fallbackName", "loadedName"];
 
-  static OFFSET_NUMBERS = Math.ceil((this.bools.length * 2) / 8);
-
-  static OFFSET_BBOX = this.OFFSET_NUMBERS + this.numbers.length * 8;
+  static OFFSET_BBOX = Math.ceil((this.bools.length * 2) / 8);
 
   static OFFSET_FONT_MATRIX = this.OFFSET_BBOX + 1 + 2 * 4;
 

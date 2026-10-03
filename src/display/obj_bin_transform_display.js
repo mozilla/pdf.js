@@ -163,11 +163,6 @@ class FontInfo {
     return shadow(this, "vertical", this.#readBoolean(9));
   }
 
-  // #readNumber(index) {
-  //   assert(index < FONT_INFO.numbers.length, "Invalid number index");
-  //   return this.#view.getFloat64(FONT_INFO.OFFSET_NUMBERS + index * 8);
-  // }
-
   #readArray(offset, arrLen, lookupName, increment) {
     const len = this.#view.getUint8(offset++);
     if (len === 0) {
