@@ -1812,6 +1812,113 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Outline keyboard navigation", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "nested_outline.pdf",
+        "#viewsManagerToggleButton"
+      );
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await showViewsManager(page);
+          await page.click("#viewsManagerSelectorButton");
+          await waitAndClick(page, "#outlinesViewMenu");
+          await page.waitForSelector("#outlinesView.withNesting");
+          await page.focus("#outlinesView > .treeItem > a");
+        })
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("navigates visible items without opening their destinations", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const [key, title] of [
+            ["ArrowUp", "1. Introduction"],
+            ["ArrowDown", "1.1 Background"],
+            ["ArrowDown", "1.2 Motivation"],
+            ["ArrowUp", "1.1 Background"],
+            ["End", "3.2 Future Work"],
+            ["ArrowDown", "3.2 Future Work"],
+            ["Home", "1. Introduction"],
+          ]) {
+            await page.keyboard.press(key);
+            expect(
+              await page.evaluate(() => document.activeElement.textContent)
+            )
+              .withContext(`${browserName}: ${key}`)
+              .toBe(title);
+            expect(await page.evaluate(() => window.PDFViewerApplication.page))
+              .withContext(`In ${browserName}`)
+              .toBe(1);
+          }
+
+          await page.keyboard.press("ArrowDown");
+          await page.keyboard.press("Enter");
+          await page.waitForFunction(
+            () => window.PDFViewerApplication.page === 2
+          );
+        })
+      );
+    });
+
+    it("expands, collapses and skips hidden descendants", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.press("ArrowLeft");
+          expect(
+            await page.$eval(
+              "#outlinesView > .treeItem > .treeItemToggler",
+              el => el.classList.contains("treeItemsHidden")
+            )
+          )
+            .withContext(`In ${browserName}`)
+            .toBeTrue();
+
+          for (const [key, title] of [
+            ["ArrowDown", "2. Main Content"],
+            ["ArrowUp", "1. Introduction"],
+            ["ArrowRight", "1. Introduction"],
+            ["ArrowRight", "1.1 Background"],
+            ["ArrowRight", "1.1 Background"],
+            ["ArrowLeft", "1. Introduction"],
+          ]) {
+            await page.keyboard.press(key);
+            expect(
+              await page.evaluate(() => document.activeElement.textContent)
+            )
+              .withContext(`${browserName}: ${key}`)
+              .toBe(title);
+          }
+
+          await page.focus("#outlinesView > .treeItem:last-child > a");
+          await page.keyboard.press("ArrowLeft");
+          await page.keyboard.press("Home");
+          await page.keyboard.press("End");
+          expect(await page.evaluate(() => document.activeElement.textContent))
+            .withContext(`In ${browserName}`)
+            .toBe("3. Conclusion");
+        })
+      );
+    });
+
+    it("preserves Tab navigation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.keyboard.press("Tab");
+          expect(await page.evaluate(() => document.activeElement.textContent))
+            .withContext(`In ${browserName}`)
+            .toBe("1.1 Background");
+        })
+      );
+    });
+  });
+
   describe("Outline tree shift-click toggle (PR 20740)", () => {
     let pages;
 
