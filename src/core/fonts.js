@@ -442,6 +442,8 @@ function convertCidString(charCode, cid, shouldThrow = false) {
   return cid;
 }
 
+let LIGATURE_TO_UNICODE; // Lazily initialized, see below.
+
 /**
  * Rebuilds the char code to glyph ID map by moving all char codes to the
  * private use area. This is done to avoid issues with various problematic
@@ -465,7 +467,6 @@ function adjustMapping(charCodeToGlyphId, hasGlyph, newGlyphZeroId, toUnicode) {
   const isInPrivateArea = code =>
     (PRIVATE_USE_AREAS[0][0] <= code && code <= PRIVATE_USE_AREAS[0][1]) ||
     (PRIVATE_USE_AREAS[1][0] <= code && code <= PRIVATE_USE_AREAS[1][1]);
-  let LIGATURE_TO_UNICODE = null;
 
   for (const [charCode, gid] of charCodeToGlyphId) {
     // For missing glyphs don't create the mappings so the glyph isn't drawn.
