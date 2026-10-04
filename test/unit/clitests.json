@@ -31,6 +31,7 @@
     "fonts_spec.js",
     "function_spec.js",
     "image_resizer_spec.js",
+    "image_spec.js",
     "image_utils_spec.js",
     "jpeg_stream_spec.js",
     "message_handler_spec.js",
