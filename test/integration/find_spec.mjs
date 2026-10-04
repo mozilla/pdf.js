@@ -50,7 +50,7 @@ describe("find bar", () => {
       await closePages(pages);
     });
 
-    it("must highlight text in the right position", async () => {
+    it("must highlight search results in the right positions", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await search(page, "a");
@@ -98,7 +98,7 @@ describe("find bar", () => {
     });
   });
 
-  describe("highlight all (XFA)", () => {
+  describe("search in the XFA layer", () => {
     let pages;
 
     beforeEach(async () => {
@@ -109,7 +109,7 @@ describe("find bar", () => {
       await closePages(pages);
     });
 
-    it("must search xfa correctly", async () => {
+    it("must find search results in the XFA layer", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await search(page, "preferences");
@@ -125,7 +125,7 @@ describe("find bar", () => {
     });
   });
 
-  describe("issue19207.pdf", () => {
+  describe("scroll search results into view (CSS scaling)", () => {
     let pages;
 
     beforeEach(async () => {
@@ -136,7 +136,7 @@ describe("find bar", () => {
       await closePages(pages);
     });
 
-    it("must scroll to the search result text", async () => {
+    it("must scroll search results into view if CSS scaling is applied", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await search(page, "40");
@@ -148,7 +148,7 @@ describe("find bar", () => {
     });
   });
 
-  describe("scrolls to the search result text for smaller viewports", () => {
+  describe("scroll search results into view (small viewport)", () => {
     let pages;
 
     beforeEach(async () => {
@@ -159,7 +159,7 @@ describe("find bar", () => {
       await closePages(pages);
     });
 
-    it("must scroll to the search result text", async () => {
+    it("must scroll search results into view if the viewport is small", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           // Set a smaller viewport to simulate a mobile device
@@ -174,7 +174,7 @@ describe("find bar", () => {
     });
   });
 
-  describe("Check that the search results are correctly visible in rotated PDFs (bug 2021392)", () => {
+  describe("scroll search results into view (rotated pages, bug 2021392)", () => {
     let pages;
 
     beforeEach(async () => {
@@ -189,7 +189,7 @@ describe("find bar", () => {
       await closePages(pages);
     });
 
-    it("must scroll each match into the viewport when navigating search results", async () => {
+    it("must scroll search results into view if the pages are rotated", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
           await search(page, "hello");
