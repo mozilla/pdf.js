@@ -16,6 +16,7 @@
 import {
   closePages,
   FSI,
+  kbFocusNext,
   loadAndWait,
   PDI,
   waitForTextToBe,
@@ -30,12 +31,14 @@ function fuzzyMatch(a, b, browserName, pixelFuzz = 3) {
     .toBeGreaterThan(b - pixelFuzz);
 }
 
-async function search(page, query) {
+async function search(page, query, notFound = false) {
   await page.click("#viewFindButton");
   await page.waitForSelector("#findInput", { visible: true });
   await page.type("#findInput", query);
-  await page.waitForSelector("#findInput[data-status='']");
-  await page.waitForSelector(".highlight");
+  await page.waitForSelector("#findInput:not([data-status='pending'])");
+  if (!notFound) {
+    await page.waitForSelector(".highlight");
+  }
 }
 
 describe("find bar", () => {
@@ -93,6 +96,99 @@ describe("find bar", () => {
           const glyphWidth = 15.98; // From the PDF.
           fuzzyMatch(firstA.x, pageBox.x + expectedFirstAX, browserName);
           fuzzyMatch(secondA.x, firstA.x + glyphWidth * 4, browserName);
+        })
+      );
+    });
+
+    it("must highlight search results using keyboard navigation", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await search(page, "a");
+
+          await kbFocusNext(page, ".toggleButton:has(#findHighlightAll)");
+          await page.keyboard.press("Enter");
+
+          const highlights = await page.$$(".textLayer .highlight");
+          expect(highlights.length).withContext(`In ${browserName}`).toEqual(2);
+        })
+      );
+    });
+  });
+
+  describe("search with no search results", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must handle no search results being found", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await search(page, "nonexistent", /* notFound = */ true);
+
+          await waitForTextToBe(page, "#findMsg", "Phrase not found");
+        })
+      );
+    });
+  });
+
+  describe("search with multiple search results", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must handle multiple search results being found", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await search(page, "a");
+
+          // Moving forward should update the find count, and message if
+          // wrapping occurs, correctly.
+          for (let i = 0; i < 3; i++) {
+            if (i > 0) {
+              await page.click("#findNextButton");
+              await page.waitForSelector("#findInput[data-status='']");
+            }
+
+            await waitForTextToBe(
+              page,
+              "#findResultsCount",
+              `${FSI}${(i % 2) + 1}${PDI} of ${FSI}2${PDI} matches`
+            );
+          }
+
+          await waitForTextToBe(
+            page,
+            "#findMsg",
+            "Reached end of document, continued from top"
+          );
+
+          // Moving backwards should also update the find count and message.
+          await page.click("#findPreviousButton");
+          await page.waitForSelector("#findInput[data-status='']");
+
+          await waitForTextToBe(
+            page,
+            "#findResultsCount",
+            `${FSI}2${PDI} of ${FSI}2${PDI} matches`
+          );
+
+          await waitForTextToBe(
+            page,
+            "#findMsg",
+            "Reached top of document, continued from bottom"
+          );
         })
       );
     });
@@ -213,6 +309,54 @@ describe("find bar", () => {
               .withContext(`In ${browserName}, match ${i + 1}`)
               .toBeTrue();
           }
+        })
+      );
+    });
+  });
+
+  describe("close the find bar", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("find_all.pdf", ".textLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must close the find bar using the toolbar button", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await search(page, "a");
+
+          let highlights = await page.$$(".textLayer .highlight");
+          expect(highlights.length).withContext(`In ${browserName}`).toEqual(1);
+
+          await page.click("#viewFindButton");
+          await page.waitForSelector("#findInput", { hidden: true });
+
+          // Closing the find bar should remove any highlights.
+          highlights = await page.$$(".textLayer .highlight");
+          expect(highlights.length).withContext(`In ${browserName}`).toEqual(0);
+        })
+      );
+    });
+
+    it("must close the find bar using the Escape key", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await search(page, "a");
+
+          let highlights = await page.$$(".textLayer .highlight");
+          expect(highlights.length).withContext(`In ${browserName}`).toEqual(1);
+
+          await page.keyboard.press("Escape");
+          await page.waitForSelector("#findInput", { hidden: true });
+
+          // Closing the find bar should remove any highlights.
+          highlights = await page.$$(".textLayer .highlight");
+          expect(highlights.length).withContext(`In ${browserName}`).toEqual(0);
         })
       );
     });
