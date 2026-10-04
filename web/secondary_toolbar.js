@@ -50,6 +50,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   select tool.
  * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
  *   hand tool.
+ * @property {HTMLButtonElement} cursorZoomToolButton - Button to enable the
+ *   zoom tool.
  * @property {HTMLButtonElement} imageAltTextSettingsButton - Button for opening
  *   the image alt-text settings dialog.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
@@ -96,6 +98,12 @@ class SecondaryToolbar {
         element: options.cursorHandToolButton,
         eventName: "switchcursortool",
         eventDetails: { tool: CursorTool.HAND },
+        close: true,
+      },
+      {
+        element: options.cursorZoomToolButton,
+        eventName: "switchcursortool",
+        eventDetails: { tool: CursorTool.ZOOM },
         close: true,
       },
       {
@@ -254,13 +262,19 @@ class SecondaryToolbar {
   }
 
   #cursorToolChanged({ tool, disabled }) {
-    const { cursorSelectToolButton, cursorHandToolButton } = this.#opts;
+    const {
+      cursorSelectToolButton,
+      cursorHandToolButton,
+      cursorZoomToolButton,
+    } = this.#opts;
 
     toggleCheckedBtn(cursorSelectToolButton, tool === CursorTool.SELECT);
     toggleCheckedBtn(cursorHandToolButton, tool === CursorTool.HAND);
+    toggleCheckedBtn(cursorZoomToolButton, tool === CursorTool.ZOOM);
 
     cursorSelectToolButton.disabled = disabled;
     cursorHandToolButton.disabled = disabled;
+    cursorZoomToolButton.disabled = disabled;
   }
 
   #scrollModeChanged({ mode }) {

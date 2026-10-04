@@ -753,6 +753,17 @@ See https://github.com/adobe-type-tools/cmap-resources
                         >
                           <span data-l10n-id="pdfjs-cursor-hand-tool-button-label"></span>
                         </button>
+                        <button
+                          id="cursorZoomTool"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          data-l10n-id="pdfjs-cursor-zoom-tool-button"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="pdfjs-cursor-zoom-tool-button-label"></span>
+                        </button>
                       </div>
 
                       <div class="horizontalToolbarSeparator"></div>
@@ -889,6 +900,7 @@ See https://github.com/adobe-type-tools/cmap-resources
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
         </div>
+        <button id="zoomRestoreButton" class="secondaryButton" type="button" data-l10n-id="pdfjs-marquee-zoom-restore-button" hidden></button>
       </div>
       <!-- mainContainer -->
 

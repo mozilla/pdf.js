@@ -19,6 +19,7 @@ import { AnnotationEditorType, shadow } from "pdfjs-lib";
 import { CursorTool, PresentationModeState } from "./ui_utils.js";
 import { GrabToPan } from "./grab_to_pan.js";
 import { internalOpt } from "./internal_evt.js";
+import { ZoomToRect } from "./zoom_to_rect.js";
 
 /**
  * @typedef {object} PDFCursorToolsOptions
@@ -90,7 +91,8 @@ class PDFCursorTools {
           this._handTool.deactivate();
           break;
         case CursorTool.ZOOM:
-        /* falls through */
+          this._zoomTool.deactivate();
+          break;
       }
     };
 
@@ -104,7 +106,9 @@ class PDFCursorTools {
         this._handTool.activate();
         break;
       case CursorTool.ZOOM:
-      /* falls through */
+        disableActiveTool();
+        this._zoomTool.activate();
+        break;
       default:
         console.error(`switchTool: "${tool}" is an unsupported value.`);
         return;
@@ -133,6 +137,19 @@ class PDFCursorTools {
           presentationModeState = PresentationModeState.NORMAL;
 
           enableActive();
+        }
+      },
+      internalOpt
+    );
+
+    eventBus.on(
+      "pagesdestroy",
+      () => {
+        if (this.#active === CursorTool.ZOOM) {
+          this.#switchTool(CursorTool.SELECT);
+        }
+        if (this.#prevActive === CursorTool.ZOOM) {
+          this.#prevActive = CursorTool.SELECT;
         }
       },
       internalOpt
@@ -194,6 +211,27 @@ class PDFCursorTools {
       "_handTool",
       new GrabToPan({
         element: this.container,
+      })
+    );
+  }
+
+  /**
+   * @private
+   */
+  get _zoomTool() {
+    return shadow(
+      this,
+      "_zoomTool",
+      new ZoomToRect({
+        element: this.container,
+        onCancel: () => this.switchTool(CursorTool.SELECT),
+        onZoom: rect => {
+          this.eventBus.dispatch("zoomtorect", {
+            rect,
+            source: this,
+          });
+          this.switchTool(CursorTool.SELECT);
+        },
       })
     );
   }

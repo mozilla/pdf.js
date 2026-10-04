@@ -1245,6 +1245,10 @@ dialog :link {
       mask-image: var(--secondaryToolbarButton-handTool-icon);
     }
 
+    #cursorZoomTool::before {
+      mask-image: var(--toolbarButton-zoomIn-icon);
+    }
+
     #scrollPage::before {
       mask-image: var(--secondaryToolbarButton-scrollPage-icon);
     }
@@ -1827,6 +1831,70 @@ dialog :link {
 
 @media all and (max-width: 560px) {
   #scaleSelectContainer {
+    display: none;
+  }
+}
+
+.zoomToRect {
+  &,
+  & * {
+    cursor: crosshair !important;
+  }
+}
+
+.zoomToRectSelection {
+  position: fixed;
+  z-index: 100;
+  box-sizing: border-box;
+  border: 2px dashed CanvasText;
+  background-color: rgb(0 100 255 / 0.15);
+  pointer-events: none;
+}
+
+#zoomRestoreButton {
+  --button-secondary-bg-color: var(--toolbar-bg-color);
+  --button-secondary-fg-color: var(--main-color);
+  --button-secondary-border-color: var(--toolbar-border-color);
+  --button-secondary-hover-bg-color: color-mix(
+    in srgb,
+    var(--main-color) 8%,
+    var(--toolbar-bg-color)
+  );
+  --button-secondary-hover-fg-color: var(--main-color);
+  --button-secondary-hover-border-color: var(--toolbar-border-color);
+  --button-secondary-active-bg-color: color-mix(
+    in srgb,
+    var(--main-color) 14%,
+    var(--toolbar-bg-color)
+  );
+  --button-secondary-active-fg-color: var(--main-color);
+  --button-secondary-active-border-color: var(--toolbar-border-color);
+
+  position: absolute;
+  inset-block-end: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border: 1px solid var(--button-secondary-border-color);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+  font-size: 12px;
+
+  @media screen and (forced-colors: active) {
+    --button-secondary-bg-color: ButtonFace;
+    --button-secondary-fg-color: ButtonText;
+    --button-secondary-border-color: ButtonText;
+    --button-secondary-hover-bg-color: Highlight;
+    --button-secondary-hover-fg-color: HighlightText;
+    --button-secondary-hover-border-color: Highlight;
+    --button-secondary-active-bg-color: Highlight;
+    --button-secondary-active-fg-color: HighlightText;
+    --button-secondary-active-border-color: Highlight;
+  }
+
+  &[hidden] {
     display: none;
   }
 }

@@ -101,6 +101,7 @@ import { SignaturePropertiesManager } from "web-digital_signature_properties_man
 import { Toolbar } from "web-toolbar";
 import { ViewHistory } from "./view_history.js";
 import { ViewsManager } from "web-views_manager";
+import { ZoomRestoreButton } from "./zoom_restore_button.js";
 
 const FORCE_PAGES_LOADED_TIMEOUT = 10000; // ms
 
@@ -148,6 +149,8 @@ const PDFViewerApplication = {
   pdfLayerViewer: null,
   /** @type {PDFCursorTools} */
   pdfCursorTools: null,
+  /** @type {ZoomRestoreButton|null} */
+  zoomRestoreButton: null,
   /** @type {PDFScriptingManager} */
   pdfScriptingManager: null,
   /** @type {ViewHistory} */
@@ -812,6 +815,14 @@ const PDFViewerApplication = {
         /* fileNameLookup = */ () => this._docFilename,
         /* titleLookup = */ () => this._docTitle
       );
+    }
+
+    if (appConfig.zoomRestoreButton) {
+      this.zoomRestoreButton = new ZoomRestoreButton({
+        button: appConfig.zoomRestoreButton,
+        pdfViewer: this.pdfViewer,
+        eventBus,
+      });
     }
 
     // NOTE: The cursor-tools are unlikely to be helpful/useful in GeckoView,
@@ -2375,6 +2386,45 @@ const PDFViewerApplication = {
     eventBus.on("lastpage", () => (this.page = this.pagesCount), opts);
     eventBus.on("nextpage", () => pdfViewer.nextPage(), opts);
     eventBus.on("previouspage", () => pdfViewer.previousPage(), opts);
+    eventBus.on(
+      "zoomtorect",
+      ({ rect }) => {
+        const { container } = pdfViewer;
+        const centerX = rect.x + rect.width / 2;
+        const centerY = rect.y + rect.height / 2;
+        const pageElement = document
+          .elementFromPoint(centerX, centerY)
+          ?.closest(".page");
+        const pageNumber = pageElement
+          ? Number(pageElement.dataset.pageNumber)
+          : pdfViewer.currentPageNumber;
+        const pageView = pdfViewer.getPageView(pageNumber - 1);
+        if (!pageView) {
+          return;
+        }
+        const bounds = pageView.div.getBoundingClientRect();
+        const [x, y] = pageView.getPagePoint(
+          centerX - bounds.left - pageView.div.clientLeft,
+          centerY - bounds.top - pageView.div.clientTop
+        );
+        this.zoomRestoreButton?.capture();
+        this.updateZoom(
+          null,
+          Math.min(
+            container.clientWidth / rect.width,
+            container.clientHeight / rect.height
+          )
+        );
+        pdfViewer.scrollPageIntoView({
+          pageNumber,
+          destArray: [null, { name: "XYZ" }, x, y, null],
+          allowNegativeOffset: true,
+          center: "both",
+        });
+        this.zoomRestoreButton?.show();
+      },
+      opts
+    );
     eventBus.on("zoomin", this.zoomIn.bind(this), opts);
     eventBus.on("zoomout", this.zoomOut.bind(this), opts);
     eventBus.on("zoomreset", this.zoomReset.bind(this), opts);

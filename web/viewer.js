@@ -34,6 +34,7 @@ function getViewerConfiguration() {
     principalContainer: document.getElementById("mainContainer"),
     mainContainer: document.getElementById("viewerContainer"),
     viewerContainer: document.getElementById("viewer"),
+    zoomRestoreButton: document.getElementById("zoomRestoreButton"),
     viewerAlert: document.getElementById("viewer-alert"),
     toolbar: {
       container: document.getElementById("toolbarContainer"),
@@ -108,6 +109,7 @@ function getViewerConfiguration() {
       pageRotateCcwButton: document.getElementById("pageRotateCcw"),
       cursorSelectToolButton: document.getElementById("cursorSelectTool"),
       cursorHandToolButton: document.getElementById("cursorHandTool"),
+      cursorZoomToolButton: document.getElementById("cursorZoomTool"),
       scrollPageButton: document.getElementById("scrollPage"),
       scrollVerticalButton: document.getElementById("scrollVertical"),
       scrollHorizontalButton: document.getElementById("scrollHorizontal"),

@@ -750,6 +750,7 @@ function waitForEditorFocusSettled(page) {
  * Wait for deferred editor updates before input or focus.
  */
 function settleEditorBeforeInput(page) {
+  let clicking = false;
   for (const [target, names] of [
     [page.keyboard, ["down", "up", "press", "type", "sendCharacter"]],
     [page.mouse, ["down", "click"]],
@@ -758,7 +759,20 @@ function settleEditorBeforeInput(page) {
     for (const name of names) {
       const method = target[name].bind(target);
       target[name] = async (...args) => {
+        // Puppeteer starts down/up concurrently inside click. Delaying only
+        // down would let up run before the button has been pressed.
+        if (target === page.mouse && name === "down" && clicking) {
+          return method(...args);
+        }
         await waitForEditorFocusSettled(page);
+        if (target === page.mouse && name === "click") {
+          clicking = true;
+          try {
+            return await method(...args);
+          } finally {
+            clicking = false;
+          }
+        }
         return method(...args);
       };
     }
