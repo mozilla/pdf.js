@@ -30,6 +30,14 @@ function fuzzyMatch(a, b, browserName, pixelFuzz = 3) {
     .toBeGreaterThan(b - pixelFuzz);
 }
 
+async function search(page, query) {
+  await page.click("#viewFindButton");
+  await page.waitForSelector("#findInput", { visible: true });
+  await page.type("#findInput", query);
+  await page.waitForSelector("#findInput[data-status='']");
+  await page.waitForSelector(".highlight");
+}
+
 describe("find bar", () => {
   describe("highlight all", () => {
     let pages;
@@ -45,12 +53,10 @@ describe("find bar", () => {
     it("must highlight text in the right position", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          await search(page, "a");
+
           // Highlight all occurrences of the letter A (case insensitive).
-          await page.click("#viewFindButton");
-          await page.waitForSelector("#findInput", { visible: true });
-          await page.type("#findInput", "a");
           await page.click("#findHighlightAll + label");
-          await page.waitForSelector(".textLayer .highlight");
 
           // The PDF file contains the text 'AB BA' in a monospace font on a
           // single line. Check if the two occurrences of A are highlighted.
@@ -106,11 +112,8 @@ describe("find bar", () => {
     it("must search xfa correctly", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#viewFindButton");
-          await page.waitForSelector("#findInput", { visible: true });
-          await page.type("#findInput", "preferences");
-          await page.waitForSelector("#findInput[data-status='']");
-          await page.waitForSelector(".xfaLayer .highlight");
+          await search(page, "preferences");
+
           await waitForTextToBe(
             page,
             "#findResultsCount",
@@ -136,13 +139,9 @@ describe("find bar", () => {
     it("must scroll to the search result text", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          // Search for "40"
-          await page.click("#viewFindButton");
-          await page.waitForSelector("#findInput", { visible: true });
-          await page.type("#findInput", "40");
+          await search(page, "40");
 
-          const highlight = await page.waitForSelector(".textLayer .highlight");
-
+          const highlight = await page.$(".textLayer .highlight");
           expect(await highlight.isIntersectingViewport()).toBeTrue();
         })
       );
@@ -165,12 +164,10 @@ describe("find bar", () => {
         pages.map(async ([browserName, page]) => {
           // Set a smaller viewport to simulate a mobile device
           await page.setViewport({ width: 350, height: 600 });
-          await page.click("#viewFindButton");
-          await page.waitForSelector("#findInput", { visible: true });
-          await page.type("#findInput", "productivity");
 
-          const highlight = await page.waitForSelector(".textLayer .highlight");
+          await search(page, "productivity");
 
+          const highlight = await page.$(".textLayer .highlight");
           expect(await highlight.isIntersectingViewport()).toBeTrue();
         })
       );
@@ -195,10 +192,7 @@ describe("find bar", () => {
     it("must scroll each match into the viewport when navigating search results", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          await page.click("#viewFindButton");
-          await page.waitForSelector("#findInput", { visible: true });
-          await page.type("#findInput", "hello");
-          await page.waitForSelector("#findInput[data-status='']");
+          await search(page, "hello");
 
           for (let i = 0; i < 5; i++) {
             if (i > 0) {
@@ -214,9 +208,7 @@ describe("find bar", () => {
             );
 
             // The selected highlight must be visible in the viewport.
-            const selected = await page.waitForSelector(
-              ".textLayer .highlight.selected"
-            );
+            const selected = await page.$(".textLayer .highlight.selected");
             expect(await selected.isIntersectingViewport())
               .withContext(`In ${browserName}, match ${i + 1}`)
               .toBeTrue();
