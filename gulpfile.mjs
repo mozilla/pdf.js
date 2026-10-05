@@ -3527,5 +3527,12 @@ gulp.task("externaltest", function (done) {
   safeSpawnSync("node", ["external/builder/test-fixtures_babel.mjs"], {
     stdio: "inherit",
   });
+
+  console.log("\n### Running welch_ttest_spec.js");
+  safeSpawnSync(
+    "node",
+    ["node_modules/jasmine/bin/jasmine", "test/stats/welch_ttest_spec.js"],
+    { stdio: "inherit" }
+  );
   done();
 });
