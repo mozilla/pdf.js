@@ -175,7 +175,7 @@ class FlateStream extends DecodeStream {
     this.stream = new Stream(
       compressed,
       2 /* = header size (see ctor) */,
-      compressed.length,
+      compressed.length - 2,
       this.stream.dict
     );
     this.reset();
@@ -412,41 +412,49 @@ class FlateStream extends DecodeStream {
     buffer = this.buffer;
     let limit = buffer ? buffer.length : 0;
     let pos = this.bufferLength;
-    while (true) {
-      let code1 = this.getCode(litCodeTable);
-      if (code1 < 256) {
-        if (pos + 1 >= limit) {
-          buffer = this.ensureBuffer(pos + 1);
+    try {
+      while (true) {
+        let code1 = this.getCode(litCodeTable);
+        if (code1 < 256) {
+          if (pos + 1 >= limit) {
+            buffer = this.ensureBuffer(pos + 1);
+            limit = buffer.length;
+          }
+          buffer[pos++] = code1;
+          continue;
+        }
+        if (code1 === 256) {
+          this.bufferLength = pos;
+          return;
+        }
+        code1 -= 257;
+        code1 = lengthDecode[code1];
+        let code2 = code1 >> 16;
+        if (code2 > 0) {
+          code2 = this.getBits(code2);
+        }
+        len = (code1 & 0xffff) + code2;
+        code1 = this.getCode(distCodeTable);
+        code1 = distDecode[code1];
+        code2 = code1 >> 16;
+        if (code2 > 0) {
+          code2 = this.getBits(code2);
+        }
+        const dist = (code1 & 0xffff) + code2;
+        if (pos + len >= limit) {
+          buffer = this.ensureBuffer(pos + len);
           limit = buffer.length;
         }
-        buffer[pos++] = code1;
-        continue;
+        for (let k = 0; k < len; ++k, ++pos) {
+          buffer[pos] = buffer[pos - dist];
+        }
       }
-      if (code1 === 256) {
-        this.bufferLength = pos;
-        return;
+    } catch (ex) {
+      if (!(ex instanceof FormatError)) {
+        throw ex;
       }
-      code1 -= 257;
-      code1 = lengthDecode[code1];
-      let code2 = code1 >> 16;
-      if (code2 > 0) {
-        code2 = this.getBits(code2);
-      }
-      len = (code1 & 0xffff) + code2;
-      code1 = this.getCode(distCodeTable);
-      code1 = distDecode[code1];
-      code2 = code1 >> 16;
-      if (code2 > 0) {
-        code2 = this.getBits(code2);
-      }
-      const dist = (code1 & 0xffff) + code2;
-      if (pos + len >= limit) {
-        buffer = this.ensureBuffer(pos + len);
-        limit = buffer.length;
-      }
-      for (let k = 0; k < len; ++k, ++pos) {
-        buffer[pos] = buffer[pos - dist];
-      }
+      this.bufferLength = pos;
+      this.#endsStreamOnError(ex.message);
     }
   }
 }
