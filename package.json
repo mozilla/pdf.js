@@ -54,7 +54,6 @@
     "svglint": "^4.2.1",
     "terser-webpack-plugin": "^5.6.1",
     "tsc-alias": "^1.9.7",
-    "ttest": "^4.0.0",
     "typescript": "^6.0.3",
     "vinyl": "^3.0.1",
     "webpack": "^5.111.1",
