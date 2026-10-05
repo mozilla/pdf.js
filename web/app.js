@@ -1840,20 +1840,38 @@ const PDFViewerApplication = {
       });
 
       if (this.pdfOutlineViewer) {
-        pdfDocument.getOutline().then(outline => {
-          if (pdfDocument !== this.pdfDocument) {
-            return; // The document was closed while the outline resolved.
+        pdfDocument.getOutline().then(
+          outline => {
+            if (pdfDocument !== this.pdfDocument) {
+              return; // The document was closed while the outline resolved.
+            }
+            this.pdfOutlineViewer.render({ outline, pdfDocument });
+          },
+          reason => {
+            if (pdfDocument !== this.pdfDocument) {
+              return; // The document was closed while the outline resolved.
+            }
+            console.error("getOutline", reason);
+            this.pdfOutlineViewer.render({ outline: null, pdfDocument });
           }
-          this.pdfOutlineViewer.render({ outline, pdfDocument });
-        });
+        );
       }
       if (this.pdfAttachmentViewer) {
-        pdfDocument.getAttachments().then(attachments => {
-          if (pdfDocument !== this.pdfDocument) {
-            return; // The document was closed while the attachments resolved.
+        pdfDocument.getAttachments().then(
+          attachments => {
+            if (pdfDocument !== this.pdfDocument) {
+              return; // The document was closed while the attachments resolved.
+            }
+            this.pdfAttachmentViewer.render({ attachments });
+          },
+          reason => {
+            if (pdfDocument !== this.pdfDocument) {
+              return; // The document was closed while the attachments resolved.
+            }
+            console.error("getAttachments", reason);
+            this.pdfAttachmentViewer.render({ attachments: null });
           }
-          this.pdfAttachmentViewer.render({ attachments });
-        });
+        );
       }
       if (this.pdfLayerViewer) {
         // Ensure that the layers accurately reflects the current state in the

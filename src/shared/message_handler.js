@@ -145,8 +145,8 @@ class MessageHandler {
         targetName = data.sourceName,
         comObj = this.#comObj;
 
-      Promise.try(action, data.data).then(
-        result => {
+      Promise.try(action, data.data)
+        .then(result => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -154,8 +154,8 @@ class MessageHandler {
             callbackId: data.callbackId,
             data: result,
           });
-        },
-        reason => {
+        })
+        .catch(reason => {
           comObj.postMessage({
             sourceName,
             targetName,
@@ -163,8 +163,7 @@ class MessageHandler {
             callbackId: data.callbackId,
             reason: wrapReason(reason),
           });
-        }
-      );
+        });
       return;
     }
     if (data.streamId) {
