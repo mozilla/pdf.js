@@ -46,7 +46,6 @@ import postcssDiscardComments from "postcss-discard-comments";
 import { preprocess } from "./external/builder/builder.mjs";
 import relative from "metalsmith-html-relative";
 import rename from "gulp-rename";
-import replace from "gulp-replace";
 import stream from "stream";
 import TerserPlugin from "terser-webpack-plugin";
 import Vinyl from "vinyl";
@@ -2201,7 +2200,11 @@ gulp.task(
         gulp.src("LICENSE", { encoding: false }).pipe(gulp.dest(CHROMIUM_DIR)),
         gulp
           .src("extensions/chromium/manifest.json", { encoding: false })
-          .pipe(replace(/\bPDFJSSCRIPT_VERSION\b/g, version))
+          .pipe(
+            transform("utf8", content =>
+              content.toString().replaceAll(/\bPDFJSSCRIPT_VERSION\b/g, version)
+            )
+          )
           .pipe(gulp.dest(CHROMIUM_DIR)),
         gulp
           .src(["extensions/chromium/**/*.{html,js,css,png}"], {
