@@ -3168,9 +3168,18 @@ class WorkerTransport {
   }
 
   getOptionalContentConfig(renderingIntent) {
-    return this.#cacheSimpleMethod("GetOptionalContentConfig").then(
-      data => new OptionalContentConfig(data, renderingIntent)
-    );
+    const name = "GetOptionalContentConfig";
+
+    // NOTE: We *only* cache the worker-response, and we purposely ignore
+    // errors since otherwise all rendering would be completely broken.
+    return this.#methodPromises
+      .getOrInsertComputed(name, () =>
+        this.messageHandler.sendWithPromise(name, null).catch(reason => {
+          warn(`${name}: "${reason}".`);
+          return null;
+        })
+      )
+      .then(data => new OptionalContentConfig(data, renderingIntent));
   }
 
   getPermissions() {
