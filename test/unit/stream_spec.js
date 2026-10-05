@@ -57,12 +57,47 @@ describe("stream", function () {
         [15, 12],
         [49, 2349],
         [55, 2600],
+        [input.length, 2600],
       ]) {
         const flate = new FlateStream(new Stream(input.subarray(0, length)));
         expect(flate.getString()).toEqual(expected.substring(0, decodedLength));
         expect(flate.eof).toBeTrue();
         expect(flate.getByte()).toEqual(-1);
       }
+    });
+
+    it("should preserve earlier blocks when a later block is truncated", function () {
+      const input = new Uint8Array([
+        120, 1, 74, 203, 44, 42, 46, 81, 72, 202, 201, 79, 206, 86, 0, 0, 0, 0,
+        255, 255, 43, 78, 77, 206, 207, 75, 25, 72, 14, 0, 174, 0, 52, 58,
+      ]);
+      const expected = "first block " + "second block ".repeat(10);
+
+      for (const [length, decodedLength] of [
+        [21, 12],
+        [27, 18],
+        [28, 18],
+        [29, expected.length],
+        [input.length, expected.length],
+      ]) {
+        const flate = new FlateStream(new Stream(input.subarray(0, length)));
+        expect(flate.getString()).toEqual(expected.substring(0, decodedLength));
+        expect(flate.eof).toBeTrue();
+        expect(flate.getByte()).toEqual(-1);
+      }
+    });
+
+    it("should preserve only decoded bytes after native decompression fails", async function () {
+      const flate = new FlateStream(
+        new Stream(new Uint8Array([120, 1, 75, 76, 74]))
+      );
+
+      expect(await flate.getImageData(100)).toEqual(new Uint8Array([97, 98]));
+      expect(flate.isAsync).toBeFalse();
+      expect(flate.eof).toBeTrue();
+      expect(flate.getByte()).toEqual(-1);
+      flate.reset();
+      expect(flate.getString()).toEqual("ab");
     });
 
     it("should propagate unexpected decoding errors", function () {

@@ -175,7 +175,7 @@ class FlateStream extends DecodeStream {
     this.stream = new Stream(
       compressed,
       2 /* = header size (see ctor) */,
-      compressed.length,
+      compressed.length - 2,
       this.stream.dict
     );
     this.reset();
