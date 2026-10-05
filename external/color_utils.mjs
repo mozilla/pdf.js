@@ -33,4 +33,4 @@ function colorize(format, text) {
     : text;
 }
 
-export { colorize };
+export { colorize, COLORS_ENABLED };
