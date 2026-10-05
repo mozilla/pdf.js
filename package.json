@@ -30,7 +30,6 @@
     "eslint-plugin-unicorn": "^77.0.0",
     "globals": "^17.13.0",
     "gulp": "^5.0.1",
-    "gulp-cli": "^3.1.0",
     "gulp-postcss": "^10.0.0",
     "gulp-rename": "^2.1.0",
     "gulp-zip": "^6.1.0",
