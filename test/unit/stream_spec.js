@@ -21,6 +21,59 @@ import { PredictorStream } from "../../src/core/predictor_stream.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("stream", function () {
+  describe("FlateStream", function () {
+    it("should preserve decoded bytes in a truncated dynamic Huffman block", function () {
+      const input = new Uint8Array([
+        120, 156, 237, 202, 177, 9, 128, 48, 16, 134, 209, 222, 41, 254, 82, 43,
+        19, 80, 180, 14, 92, 176, 136, 68, 142, 27, 65, 44, 220, 127, 0, 231,
+        16, 190, 87, 191, 18, 154, 107, 86, 222, 21, 143, 214, 164, 109, 73,
+        138, 91, 227, 97, 173, 117, 85, 239, 167, 220, 46, 239, 147, 226, 149,
+        197, 80, 248, 124, 62, 159, 207, 231, 243, 249,
+      ]);
+      const flate = new FlateStream(new Stream(input));
+      const expected =
+        "BT /F1 18 Tf 50 740 Td (HELLO FROM REPRO) Tj ET\n".repeat(49) +
+        "BT /F1 18 Tf 50 740";
+
+      expect(flate.getString()).toEqual(expected);
+      expect(flate.bufferLength).toEqual(expected.length);
+      expect(flate.eof).toBeTrue();
+      expect(flate.getByte()).toEqual(-1);
+      flate.reset();
+      expect(flate.getString()).toEqual(expected);
+    });
+
+    it("should preserve decoded bytes in truncated fixed Huffman blocks", function () {
+      const input = new Uint8Array([
+        120, 1, 75, 76, 74, 78, 73, 77, 75, 207, 200, 204, 202, 206, 201, 205,
+        203, 47, 40, 44, 42, 46, 41, 45, 43, 175, 168, 172, 74, 28, 149, 25,
+        149, 25, 149, 25, 149, 25, 149, 25, 149, 25, 149, 25, 149, 25, 149, 25,
+        193, 50, 0, 180, 12, 88, 89,
+      ]);
+      const expected = "abcdefghijklmnopqrstuvwxyz".repeat(100);
+      for (const [length, decodedLength] of [
+        [5, 2],
+        [10, 7],
+        [15, 12],
+        [49, 2349],
+        [55, 2600],
+      ]) {
+        const flate = new FlateStream(new Stream(input.subarray(0, length)));
+        expect(flate.getString()).toEqual(expected.substring(0, decodedLength));
+        expect(flate.eof).toBeTrue();
+        expect(flate.getByte()).toEqual(-1);
+      }
+    });
+
+    it("should propagate unexpected decoding errors", function () {
+      const flate = new FlateStream(new Stream(new Uint8Array([120, 1, 3])));
+      const error = new Error("Unexpected decoding failure");
+      spyOn(flate, "getCode").and.throwError(error);
+
+      expect(() => flate.getBytes()).toThrow(error);
+    });
+  });
+
   describe("PredictorStream", function () {
     it("should decode simple predictor data", function () {
       const dict = new Dict();

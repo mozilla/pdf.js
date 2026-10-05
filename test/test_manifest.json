@@ -14568,5 +14568,12 @@
     "md5": "8df066525f75c3c5769df3e55c1552fd",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue22044",
+    "file": "pdfs/issue22044.pdf",
+    "md5": "a9106f8b2e8dd2b5362fbe3c960a5363",
+    "rounds": 1,
+    "type": "eq"
   }
 ]

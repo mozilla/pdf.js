@@ -4427,6 +4427,23 @@ Paragraph 1.1 ...................................................... 3
 page 1 / 3`);
     });
 
+    it("gets content from a truncated FlateDecode stream (issue 22044)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue22044.pdf"));
+      try {
+        const pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(1);
+        const { items } = await pdfPage.getTextContent();
+
+        expect(items.length).toEqual(49);
+        expect(items.every(item => item.str === "HELLO FROM REPRO")).toBeTrue();
+
+        const operatorList = await pdfPage.getOperatorList();
+        expect(operatorList.fnArray).toContain(OPS.showText);
+      } finally {
+        await loadingTask.destroy();
+      }
+    });
+
     it("gets text content, with correct properties (issue 8276)", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("issue8276_reduced.pdf")
