@@ -1,6 +1,5 @@
 ---
 title: Home
-layout: layout.njk
 slug: home
 ---
 

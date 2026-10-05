@@ -1,6 +1,5 @@
 ---
 title: API
-layout: layout.njk
 slug: api
 ---
 
