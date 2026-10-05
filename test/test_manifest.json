@@ -1148,6 +1148,15 @@
     "type": "load"
   },
   {
+    "id": "issue7802",
+    "file": "pdfs/issue7802.pdf",
+    "md5": "521cf7c408de56b08c58d9e6bdd92791",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "talos": false
+  },
+  {
     "id": "issue7847_radial",
     "file": "pdfs/issue7847_radial.pdf",
     "md5": "59dc206ec5dd6e6f701943e4694e4147",
