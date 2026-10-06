@@ -27,7 +27,7 @@ import { ObjectHandler } from "./object_handler.js";
 import { OffscreenCanvasFactory } from "./offscreen_canvas_factory.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFObjects } from "./pdf_objects.js";
-import { WorkerFilterFactory } from "./filter_factory.js";
+import { WorkerFilterFactory } from "./worker_filter_factory.js";
 
 const PARTIAL_FRAME_TIME = 500; // ms
 
