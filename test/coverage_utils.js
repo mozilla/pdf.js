@@ -40,12 +40,12 @@ function mergeCoverageIntoGlobal(coverage) {
   }
 }
 
-async function fetchAndMergeWorkerCoverage(pdfWorker) {
-  if (!pdfWorker) {
+async function fetchAndMergeWorkerCoverage(worker) {
+  if (!worker?.messageHandler) {
     return;
   }
   try {
-    const coverage = await pdfWorker.messageHandler.sendWithPromise(
+    const coverage = await worker.messageHandler.sendWithPromise(
       "GetWorkerCoverage",
       null
     );

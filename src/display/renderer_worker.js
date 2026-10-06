@@ -263,6 +263,12 @@ class RendererMessageHandler {
       setVerbosityLevel(data.verbosity);
     });
 
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      handler.on("GetWorkerCoverage", function () {
+        return globalThis.__coverage__ ?? {};
+      });
+    }
+
     this.#setupObjectHandler(handler);
 
     handler.on("cleanupPage", ({ pageProxyId }) => {

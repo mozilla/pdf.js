@@ -2126,6 +2126,15 @@ class RendererWorker {
   constructor({ verbosity = getVerbosityLevel() } = {}) {
     this.verbosity = verbosity;
     this.#initialize();
+
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      // Expose the worker for coverage collection in tests.
+      Object.defineProperty(this, "_webWorker", {
+        get() {
+          return this.#webWorker;
+        },
+      });
+    }
   }
 
   /**
@@ -3973,6 +3982,7 @@ export {
   PDFDocumentProxy,
   PDFPageProxy,
   PDFWorker,
+  RendererWorker,
   RenderTask,
   version,
 };
