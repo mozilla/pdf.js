@@ -27,6 +27,7 @@ jobs:
       (github.event.workflow_run.conclusion == 'success' ||
        github.event.workflow_run.conclusion == 'failure')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment:
       name: sync_pdfs
       deployment: false
@@ -155,9 +156,11 @@ jobs:
             echo "No viewer was built"
             exit 0
           fi
-          jq -n --argjson pr "$PR" --arg sha "$HEAD_SHA" --arg date "$(date -u +%FT%TZ)" \
+          published_at="$(date -u +%FT%TZ)"
+          jq -n --argjson pr "$PR" --arg sha "$HEAD_SHA" --arg date "$published_at" \
             '{ pr: $pr, sha: $sha, date: $date }' > "$SITE/meta.json"
           echo "built=true" >> "$GITHUB_OUTPUT"
+          echo "date=$published_at" >> "$GITHUB_OUTPUT"
 
       - name: List the open pull requests
         if: steps.check.outputs.action == 'publish' || steps.check.outputs.action == 'remove'
@@ -202,6 +205,45 @@ jobs:
           APPROVAL: ${{ steps.check.outputs.approval }}
           CREATE: ${{ steps.check.outputs.action != 'remove' }}
           PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          DEPLOY: ${{ steps.publish.outcome == 'success' && steps.site.outputs.built == 'true' && 'pending' || '' }}
+          BUILD_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node .github/scripts/viewer-preview/comment.mjs > "$RUNNER_TEMP/comment.md"
+          if [ "$DEPLOY" != pending ]; then
+            cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          BODY="$RUNNER_TEMP/comment.md" bash .github/scripts/viewer-preview/update-comment.sh
+
+      - name: Wait for preview deployment
+        if: steps.publish.outcome == 'success' && steps.site.outputs.built == 'true'
+        id: live
+        timeout-minutes: 12
+        env:
+          PR: ${{ steps.check.outputs.pr }}
+          PUBLISHED_AT: ${{ steps.site.outputs.date }}
+        run: |
+          deadline=$((SECONDS + 600))
+          while [ "$SECONDS" -lt "$deadline" ]; do
+            if curl -sf --connect-timeout 5 --max-time 10 \
+              "${PREVIEW_URL}/${PR}/meta.json?t=$(date +%s%N)" |
+              jq -e --arg sha "$HEAD_SHA" --arg date "$PUBLISHED_AT" \
+                '.sha == $sha and .date == $date' >/dev/null 2>&1; then
+              echo "deploy=live" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::warning::Preview deployment was not confirmed within 10 minutes"
+          echo "deploy=timeout" >> "$GITHUB_OUTPUT"
+
+      - name: Link the viewers in the comment
+        if: always() && steps.publish.outcome == 'success' && steps.site.outputs.built == 'true'
+        env:
+          PR: ${{ steps.check.outputs.pr }}
+          ACTION: ${{ steps.check.outputs.action }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          DEPLOY: ${{ steps.live.outputs.deploy || 'timeout' }}
           BUILD_RUN_URL: ${{ github.event.workflow_run.html_url }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |

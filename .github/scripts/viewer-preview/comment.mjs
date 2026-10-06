@@ -22,6 +22,7 @@ const {
   ACTION,
   APPROVAL,
   PUBLISH_OUTCOME,
+  DEPLOY,
   RETENTION_DAYS,
   LABEL,
 } = process.env;
@@ -119,7 +120,10 @@ if (ACTION === "remove") {
       } else if (PUBLISH_OUTCOME !== "success") {
         preview = ":warning: not published";
       } else if (isPublished(name)) {
-        preview = `[viewer.html](${PREVIEW_URL}/${PR}/${name}/web/viewer.html)`;
+        preview =
+          DEPLOY === "pending"
+            ? ":hourglass: waiting"
+            : `[viewer.html](${PREVIEW_URL}/${PR}/${name}/web/viewer.html)`;
       }
     }
     body.push(
@@ -157,7 +161,15 @@ if (ACTION === "remove") {
     body.push(
       `:warning: Publication did not complete; see the [workflow run](${RUN_URL}).`
     );
+  } else if (DEPLOY === "pending") {
+    body.push(":hourglass: Waiting for preview deployment.");
   } else {
+    if (DEPLOY === "timeout") {
+      body.push(
+        ":warning: Deployment unconfirmed; preview links may be unavailable.",
+        ""
+      );
+    }
     body.push(
       `Previews are removed when the PR closes and may be pruned after ${RETENTION_DAYS} days without an update.`
     );
