@@ -24,7 +24,7 @@ import { FontLoader } from "./font_loader.js";
 import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
-import { OffscreenCanvasFactory } from "./canvas_factory.js";
+import { OffscreenCanvasFactory } from "./offscreen_canvas_factory.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFObjects } from "./pdf_objects.js";
 import { WorkerFilterFactory } from "./filter_factory.js";

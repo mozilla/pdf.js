@@ -64,7 +64,7 @@ import {
   NodeFilterFactory,
 } from "display-node_utils";
 import { DOMBinaryDataFactory } from "display-binary_data_factory";
-import { DOMCanvasFactory } from "./canvas_factory.js";
+import { DOMCanvasFactory } from "./dom_canvas_factory.js";
 import { DOMFilterFactory } from "./filter_factory.js";
 import { FontLoader } from "./font_loader.js";
 import { getNetworkStream } from "display-network_stream";
