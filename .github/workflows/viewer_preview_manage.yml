@@ -96,7 +96,7 @@ jobs:
       - name: Remove the viewers
         env:
           GH_TOKEN: ${{ steps.refs-token.outputs.token }}
-        run: bash .github/scripts/viewer-preview/publish-pages.sh
+        run: .github/scripts/viewer-preview/publish-pages.sh
 
       - name: Update the comment
         env:
@@ -105,4 +105,4 @@ jobs:
           CREATE: false
         run: |
           node .github/scripts/viewer-preview/comment.mjs > "$RUNNER_TEMP/comment.md"
-          BODY="$RUNNER_TEMP/comment.md" bash .github/scripts/viewer-preview/update-comment.sh
+          BODY="$RUNNER_TEMP/comment.md" .github/scripts/viewer-preview/update-comment.sh
