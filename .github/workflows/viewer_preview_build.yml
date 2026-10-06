@@ -1,0 +1,107 @@
+name: Build viewer preview
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - 'gulpfile.mjs'
+      - 'external/**'
+      - 'l10n/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'web/**'
+      - '.github/workflows/viewer_preview_build.yml'
+    branches:
+      - master
+concurrency:
+  group: viewer-preview-build-${{ github.event.pull_request.number }}${{ github.event.action == 'labeled' && github.event.label.name != 'viewer-preview' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    if: github.event.action != 'labeled' || github.event.label.name == 'viewer-preview'
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [lts/*]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        id: install
+        run: npm ci
+
+      - name: Build the viewers
+        id: build
+        run: |
+          set +e
+          OUT="$RUNNER_TEMP/viewer-preview"
+          mkdir -p "$OUT/logs"
+          failed=false
+          for target in generic generic-legacy; do
+            echo "::group::gulp $target"
+            npx gulp "$target" 2>&1 | tee "$OUT/logs/$target.log"
+            code="${PIPESTATUS[0]}"
+            echo "::endgroup::"
+            if [ "$code" -eq 0 ]; then
+              cp -r "build/$target" "$OUT/$target"
+              find "$OUT/$target" -name '*.map' -delete
+              echo success > "$OUT/logs/$target.status"
+            else
+              echo "::error title=gulp $target failed::See the log of the \"Build the viewers\" step"
+              echo failure > "$OUT/logs/$target.status"
+              failed=true
+            fi
+          done
+          echo "failed=$failed" >> "$GITHUB_OUTPUT"
+
+      - name: Describe the build
+        if: ${{ !cancelled() }}
+        env:
+          PR: ${{ github.event.pull_request.number }}
+          INSTALL: ${{ steps.install.outcome }}
+        run: |
+          OUT="$RUNNER_TEMP/viewer-preview"
+          mkdir -p "$OUT/logs"
+          status() {
+            cat "$OUT/logs/$1.status" 2>/dev/null || echo skipped
+          }
+          jq -n \
+            --argjson pr "$PR" \
+            --arg install "$INSTALL" \
+            --arg generic "$(status generic)" \
+            --arg legacy "$(status generic-legacy)" \
+            '{
+              pr: $pr,
+              install: $install,
+              targets: { generic: $generic, "generic-legacy": $legacy }
+            }' > "$OUT/meta.json"
+          cat "$OUT/meta.json"
+
+      - name: Upload the viewers
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: viewer-preview
+          path: ${{ runner.temp }}/viewer-preview
+          retention-days: 3
+          if-no-files-found: error
+
+      - name: Fail if a viewer could not be built
+        if: steps.build.outputs.failed == 'true'
+        run: exit 1

@@ -1,0 +1,108 @@
+name: Manage viewer preview
+# Users with write access can approve the PR head with `viewer-preview`.
+# Remove the label after processing so it can be reused.
+# This privileged workflow must not execute PR code.
+on:
+  pull_request_target: # zizmor: ignore[dangerous-triggers]
+    types: [labeled, closed]
+permissions:
+  contents: read
+
+env:
+  PREVIEW_REPO: mozilla/pdf.js.refs
+  LABEL: viewer-preview
+  APPROVAL_CONTEXT: viewer-preview/approval
+
+jobs:
+  approve:
+    if: >-
+      github.repository == 'mozilla/pdf.js' &&
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'viewer-preview'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      statuses: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      SHA: ${{ github.event.pull_request.head.sha }}
+      SENDER: ${{ github.event.sender.login }}
+
+    steps:
+      - name: Approve the current head
+        run: |
+          set -euo pipefail
+          permission="$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${SENDER}/permission" \
+            --jq .permission || echo none)"
+          case "$permission" in
+            admin|write)
+              gh api "repos/${GITHUB_REPOSITORY}/statuses/${SHA}" \
+                --method POST --silent \
+                -f state=success \
+                -f context="$APPROVAL_CONTEXT" \
+                -f description="Approved by @${SENDER}"
+              ;;
+            *)
+              echo "::error::${SENDER} has '${permission}' access; write access is required"
+              gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/comments" \
+                --method POST --silent \
+                -f body=":no_entry_sign: Only users with write access can publish the viewer preview."
+              exit 1
+              ;;
+          esac
+
+      - name: Remove the label
+        if: always()
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/issues/${PR}/labels/${LABEL}" \
+            --method DELETE --silent || true
+
+  remove:
+    if: >-
+      github.repository == 'mozilla/pdf.js' &&
+      github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    environment:
+      name: sync_pdfs
+      deployment: false
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: viewer-preview-publish-${{ github.event.pull_request.head.repo.full_name }}-${{ github.event.pull_request.head.ref }}
+      cancel-in-progress: false
+      queue: max
+    env:
+      PR: ${{ github.event.pull_request.number }}
+
+    steps:
+      - name: Checkout the scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github
+
+      - name: Generate app token for pdf.js.refs
+        id: refs-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mozilla
+          repositories: pdf.js.refs
+          permission-contents: write
+
+      - name: Remove the viewers
+        env:
+          GH_TOKEN: ${{ steps.refs-token.outputs.token }}
+        run: bash .github/scripts/viewer-preview/publish-pages.sh
+
+      - name: Update the comment
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTION: remove
+          CREATE: false
+        run: |
+          node .github/scripts/viewer-preview/comment.mjs > "$RUNNER_TEMP/comment.md"
+          BODY="$RUNNER_TEMP/comment.md" bash .github/scripts/viewer-preview/update-comment.sh

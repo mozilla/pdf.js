@@ -142,8 +142,11 @@ jobs:
           case "$ls_status" in
             0)
               # Reuse gh-pages, keeping any other files it holds.
-              git_refs clone --depth=1 --branch gh-pages "$repo_url" "$work"
+              git_refs clone -q --depth=1 --branch gh-pages --filter=blob:none --no-checkout \
+                "$repo_url" "$work"
               cd "$work"
+              git sparse-checkout set --no-cone '/per-test-index.json'
+              git_refs checkout -q gh-pages
               ;;
             2)
               # First run: start a fresh orphan branch without cloning history.
@@ -175,7 +178,7 @@ jobs:
             fi
             echo "gh-pages advanced during the run; re-syncing and retrying (attempt ${attempt})"
             git_refs fetch --depth=1 origin gh-pages
-            git reset --hard FETCH_HEAD
+            git_refs reset -q --hard FETCH_HEAD
             stage_index
             if git diff --cached --quiet; then
               echo "No changes after re-sync"
