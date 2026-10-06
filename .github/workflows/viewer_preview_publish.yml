@@ -1,0 +1,210 @@
+name: Publish viewer preview
+# PR artifacts are untrusted. Do not execute their contents.
+on:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows: [Build viewer preview]
+    types: [completed]
+permissions:
+  contents: read
+
+concurrency:
+  group: viewer-preview-publish-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}${{ github.event.workflow_run.conclusion != 'success' && github.event.workflow_run.conclusion != 'failure' && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: false
+  queue: max
+
+env:
+  PREVIEW_REPO: mozilla/pdf.js.refs
+  PREVIEW_URL: https://mozilla.github.io/pdf.js.refs/viewers
+  RETENTION_DAYS: 30
+  LABEL: viewer-preview
+  APPROVAL_CONTEXT: viewer-preview/approval
+
+jobs:
+  publish:
+    if: >-
+      github.repository == 'mozilla/pdf.js' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      (github.event.workflow_run.conclusion == 'success' ||
+       github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-latest
+    environment:
+      name: sync_pdfs
+      deployment: false
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      statuses: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+      ARTIFACT: ${{ github.workspace }}/../viewer-preview-artifact
+      SITE: ${{ github.workspace }}/../viewer-preview-site
+
+    steps:
+      - name: Checkout the scripts
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github
+
+      - name: Find the artifact
+        id: artifact
+        run: |
+          count="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --jq '[.artifacts[] | select(.name == "viewer-preview" and (.expired | not))] | length')"
+          if [ "$count" -eq 1 ]; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::No viewer-preview artifact in run ${RUN_ID}"
+          fi
+
+      - name: Download the artifact
+        if: steps.artifact.outputs.found == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: viewer-preview
+          path: ${{ env.ARTIFACT }}
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Check the pull request
+        if: steps.artifact.outputs.found == 'true'
+        id: check
+        run: |
+          set -euo pipefail
+          pr="$(jq -r '.pr' "$ARTIFACT/meta.json")"
+          if ! [[ "$pr" =~ ^[1-9][0-9]{0,6}$ ]]; then
+            echo "::error::Invalid PR number in the artifact"
+            exit 1
+          fi
+          IFS=$'\t' read -r state head_sha head_repo author < <(
+            gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
+              --jq '[.state, .head.sha, (.head.repo.full_name // "-"), .user.login] | @tsv'
+          )
+          if [ "$state" != open ]; then
+            echo "Removing: #${pr} is ${state}"
+            echo "pr=$pr" >> "$GITHUB_OUTPUT"
+            echo "action=remove" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$head_sha" != "$HEAD_SHA" ] || [ "$head_repo" != "$HEAD_REPO" ]; then
+            echo "::notice::#${pr} is now at ${head_repo}@${head_sha}: ignoring the build of ${HEAD_REPO}@${HEAD_SHA}"
+            exit 0
+          fi
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+          permission="$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${author}/permission" \
+            --jq .permission 2>/dev/null || echo none)"
+          case "$permission" in
+            admin|write)
+              echo "action=publish" >> "$GITHUB_OUTPUT"
+              echo "Publishing: ${author} has ${permission} access"
+              exit 0
+              ;;
+          esac
+          for _ in $(seq 60); do
+            pending="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
+              --jq "any(.labels[]; .name == \"${LABEL}\")")"
+            approver="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/statuses?per_page=100" \
+              --jq "[.[] | select(.context == \"${APPROVAL_CONTEXT}\" and .state == \"success\" and .creator.login == \"github-actions[bot]\")] | first | .description // empty")"
+            if [ -n "$approver" ] || [ "$pending" != true ]; then
+              break
+            fi
+            echo "Waiting for the \`${LABEL}\` label to be processed"
+            sleep 10
+          done
+          if [ -n "$approver" ]; then
+            echo "action=publish" >> "$GITHUB_OUTPUT"
+            echo "Publishing: ${approver}"
+          elif [ "$pending" = true ]; then
+            echo "action=report" >> "$GITHUB_OUTPUT"
+            echo "approval=timeout" >> "$GITHUB_OUTPUT"
+            echo "::warning::The \`${LABEL}\` label was not processed in time: ${HEAD_SHA} is not published"
+          else
+            echo "action=report" >> "$GITHUB_OUTPUT"
+            echo "Not publishing: ${author} has ${permission} access and ${HEAD_SHA} is not approved"
+          fi
+
+      - name: Prepare the viewers
+        if: steps.check.outputs.action == 'publish'
+        id: site
+        env:
+          PR: ${{ steps.check.outputs.pr }}
+        run: |
+          set -euo pipefail
+          if [ -n "$(find "$ARTIFACT" ! -type f ! -type d -print -quit)" ]; then
+            echo "::error::The artifact contains unexpected file types"
+            exit 1
+          fi
+          mkdir -p "$SITE"
+          for target in generic generic-legacy; do
+            status="$(jq -r --arg t "$target" '.targets[$t] // empty' "$ARTIFACT/meta.json")"
+            if [ "$status" = success ] && [ -f "$ARTIFACT/$target/web/viewer.html" ]; then
+              cp -r "$ARTIFACT/$target" "$SITE/$target"
+            fi
+          done
+          size="$(du -sm "$SITE" | cut -f1)"
+          if [ "$size" -gt 100 ]; then
+            echo "::error::The viewers weigh ${size} MB (at most 100 MB)"
+            exit 1
+          fi
+          if [ -z "$(ls -A "$SITE")" ]; then
+            echo "No viewer was built"
+            exit 0
+          fi
+          jq -n --argjson pr "$PR" --arg sha "$HEAD_SHA" --arg date "$(date -u +%FT%TZ)" \
+            '{ pr: $pr, sha: $sha, date: $date }' > "$SITE/meta.json"
+          echo "built=true" >> "$GITHUB_OUTPUT"
+
+      - name: List the open pull requests
+        if: steps.check.outputs.action == 'publish' || steps.check.outputs.action == 'remove'
+        id: open
+        run: |
+          echo "time=$(date +%s)" >> "$GITHUB_OUTPUT"
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls?state=open&per_page=100" \
+            --jq '.[].number' > "$RUNNER_TEMP/open-prs.txt" ||
+            { echo "::warning::Could not list the open PRs"; : > "$RUNNER_TEMP/open-prs.txt"; }
+
+      - name: Generate app token for pdf.js.refs
+        if: steps.check.outputs.action == 'publish' || steps.check.outputs.action == 'remove'
+        id: refs-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLIENT_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: mozilla
+          repositories: pdf.js.refs
+          permission-contents: write
+
+      - name: Publish the viewers
+        if: steps.check.outputs.action == 'publish' || steps.check.outputs.action == 'remove'
+        id: publish
+        env:
+          GH_TOKEN: ${{ steps.refs-token.outputs.token }}
+          PR: ${{ steps.check.outputs.pr }}
+          BUILT: ${{ steps.site.outputs.built }}
+          OPEN_PRS_TIME: ${{ steps.open.outputs.time }}
+        run: |
+          [ "$BUILT" = true ] || unset SITE
+          OPEN_PRS="$RUNNER_TEMP/open-prs.txt" \
+            bash .github/scripts/viewer-preview/publish-pages.sh
+
+      - name: Comment on the PR
+        if: >-
+          always() && steps.check.outputs.pr &&
+          (steps.check.outputs.action != 'remove' || steps.publish.outcome == 'success')
+        env:
+          PR: ${{ steps.check.outputs.pr }}
+          ACTION: ${{ steps.check.outputs.action }}
+          APPROVAL: ${{ steps.check.outputs.approval }}
+          CREATE: ${{ steps.check.outputs.action != 'remove' }}
+          PUBLISH_OUTCOME: ${{ steps.publish.outcome }}
+          BUILD_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          node .github/scripts/viewer-preview/comment.mjs > "$RUNNER_TEMP/comment.md"
+          cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
+          BODY="$RUNNER_TEMP/comment.md" bash .github/scripts/viewer-preview/update-comment.sh
