@@ -1,6 +1,5 @@
 ---
 title: Examples
-layout: layout.njk
 slug: examples
 ---
 

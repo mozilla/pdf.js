@@ -1,9 +1,9 @@
-<!doctype html>
+export default ({ contents, description, sitename, slug, title }) => `<!doctype html>
 <html lang="en">
 <head>
-  <title>{{ sitename }} - {{ title }}</title>
+  <title>${sitename} - ${title}</title>
   <meta charset="utf-8">
-  <meta name="description" content="{{ description }}">
+  <meta name="description" content="${description}">
   <meta name="viewport" content="device-width, initial-scale=1.0">
   <script src="/js/jquery-3.7.1.min.js"></script>
   <script src="/js/bootstrap.min.js"></script>
@@ -22,16 +22,16 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item {{ 'active' if slug == 'home' else '' }}">
+            <li class="nav-item ${slug === "home" ? "active" : ""}">
               <a class="nav-link" href="/">Home</a>
             </li>
-            <li class="nav-item {{ 'active' if slug == 'getting_started' else '' }}">
+            <li class="nav-item ${slug === "getting_started" ? "active" : ""}">
               <a class="nav-link" href="/getting_started">Getting started</a>
             </li>
-            <li class="nav-item {{ 'active' if slug == 'examples' else '' }}">
+            <li class="nav-item ${slug === "examples" ? "active" : ""}">
               <a class="nav-link" href="/examples">Examples</a>
             </li>
-            <li class="nav-item {{ 'active' if slug == 'api' else '' }}">
+            <li class="nav-item ${slug === "api" ? "active" : ""}">
               <a class="nav-link" href="/api">API</a>
             </li>
             <li class="nav-item">
@@ -43,7 +43,7 @@
     </nav>
   </header>
   <main class="container">
-    {{ contents | safe }}
+    ${contents}
   </main>
   <footer>
     <p>&copy; Mozilla and individual contributors</p>
@@ -54,3 +54,4 @@
   </footer>
 </body>
 </html>
+`;

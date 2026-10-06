@@ -1,6 +1,5 @@
 ---
 title: Getting Started
-layout: layout.njk
 slug: getting_started
 ---
 
