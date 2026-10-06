@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { DOMCanvasFactory } from "../../src/display/canvas_factory.js";
+import { DOMCanvasFactory } from "../../src/display/dom_canvas_factory.js";
 import { isNodeJS } from "../../src/shared/util.js";
 
 describe("canvas_factory", function () {

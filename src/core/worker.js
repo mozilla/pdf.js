@@ -110,8 +110,7 @@ class WorkerMessageHandler {
         : null;
     if (apiVersion !== workerVersion) {
       throw new Error(
-        `The API version "${apiVersion}" does not match ` +
-          `the Worker version "${workerVersion}".`
+        `The API version "${apiVersion}" does not match the Worker version "${workerVersion}".`
       );
     }
 

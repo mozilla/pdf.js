@@ -24,10 +24,10 @@ import { FontLoader } from "./font_loader.js";
 import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
-import { OffscreenCanvasFactory } from "./canvas_factory.js";
+import { OffscreenCanvasFactory } from "./offscreen_canvas_factory.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PDFObjects } from "./pdf_objects.js";
-import { WorkerFilterFactory } from "./filter_factory.js";
+import { WorkerFilterFactory } from "./worker_filter_factory.js";
 
 const PARTIAL_FRAME_TIME = 500; // ms
 
@@ -460,9 +460,13 @@ class RendererMessageHandler {
     const handler = new MessageHandler("renderer", "main", port);
     this.#setup(handler);
 
+    const workerVersion =
+      typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
+        ? PDFJSDev.eval("BUNDLE_VERSION")
+        : null;
     const testObj = new Uint8Array();
     // Ensure that we can use `postMessage` transfers.
-    handler.send("ready", testObj, [testObj.buffer]);
+    handler.send("ready", { testObj, workerVersion }, [testObj.buffer]);
   }
 }
 
