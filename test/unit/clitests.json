@@ -13,6 +13,7 @@
     "canvas_factory_spec.js",
     "catalog_spec.js",
     "cff_parser_spec.js",
+    "char_code_map_spec.js",
     "cmap_spec.js",
     "colorspace_spec.js",
     "core_utils_spec.js",

@@ -1,4 +1,5 @@
 import { ttx, verifyTtxOutput } from "./fontutils.js";
+import { CharCodeMap } from "../../src/core/char_code_map.js";
 import { CMapFactory } from "../../src/core/cmap.js";
 import { Font } from "../../src/core/fonts.js";
 import { Name } from "../../src/core/primitives.js";
@@ -33,7 +34,7 @@ describe("font_post", function () {
           differences: [],
           defaultEncoding: [],
           cMap,
-          toUnicode: new ToUnicodeMap(new Map()),
+          toUnicode: new ToUnicodeMap(new CharCodeMap()),
           xHeight: 0,
           capHeight: 0,
           italicAngle: 0,
@@ -55,7 +56,7 @@ describe("font_post", function () {
           type: "TrueType",
           differences: [],
           defaultEncoding: [],
-          toUnicode: new ToUnicodeMap(new Map()),
+          toUnicode: new ToUnicodeMap(new CharCodeMap()),
           xHeight: 0,
           capHeight: 0,
           italicAngle: 0,
@@ -77,7 +78,7 @@ describe("font_post", function () {
           type: "TrueType",
           differences: [],
           defaultEncoding: [],
-          toUnicode: new ToUnicodeMap(new Map()),
+          toUnicode: new ToUnicodeMap(new CharCodeMap()),
           xHeight: 0,
           capHeight: 0,
           italicAngle: 0,
