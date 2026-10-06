@@ -82,6 +82,20 @@
     }
   },
   {
+    "id": "tracemonkey-partial-main-thread",
+    "file": "pdfs/tracemonkey.pdf",
+    "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "disableWorkerRendering": true
+  },
+  {
     "id": "tracemonkey-partial-2",
     "file": "pdfs/tracemonkey.pdf",
     "md5": "9a192d8b1a7dc652a19835f6f08098bd",
@@ -1112,6 +1126,20 @@
     }
   },
   {
+    "id": "issue12798_page1_reduced-partial-main-thread",
+    "file": "pdfs/issue12798_page1_reduced.pdf",
+    "md5": "f4c3e91c181b510929ade67c1e34c5c5",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.5,
+      "minY": 0.25,
+      "maxY": 0.5
+    },
+    "disableWorkerRendering": true
+  },
+  {
     "id": "issue15557",
     "file": "pdfs/issue15557.pdf",
     "md5": "5f024a42acf27f3eadc4c7418e8f4e42",
@@ -1317,6 +1345,15 @@
     "rounds": 1,
     "link": false,
     "type": "eq"
+  },
+  {
+    "id": "issue5044-main-thread",
+    "file": "pdfs/issue5044.pdf",
+    "md5": "44788cd31dcb4a2495ded34a84c4a765",
+    "rounds": 1,
+    "link": false,
+    "type": "eq",
+    "disableWorkerRendering": true
   },
   {
     "id": "issue13107",
@@ -6856,6 +6893,15 @@
     "about": "Knockout group element with an active soft mask."
   },
   {
+    "id": "knockout_smask-main-thread",
+    "file": "pdfs/knockout_smask.pdf",
+    "md5": "d89fbb623f8e5f200a324607dd30449d",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Knockout group with an active soft mask.",
+    "disableWorkerRendering": true
+  },
+  {
     "id": "knockout_nested",
     "file": "pdfs/knockout_nested.pdf",
     "md5": "e3db1591b84f7654d53f553c60ec9fd1",
@@ -6886,6 +6932,15 @@
     "rounds": 1,
     "type": "eq",
     "about": "Isolated knockout group with two overlapping translucent fills; the overlap area must show only the second fill (no source-over mix)."
+  },
+  {
+    "id": "knockout_isolated_overlap-main-thread",
+    "file": "pdfs/knockout_isolated_overlap.pdf",
+    "md5": "b9c5dda6b8c7eb51a904766171290dc0",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Overlapping translucent fills in an isolated knockout group.",
+    "disableWorkerRendering": true
   },
   {
     "id": "knockout_blend_multiply",
@@ -7139,6 +7194,14 @@
     "md5": "86b1796da7dad09f93ce68a8ad495a24",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "issue7891_bc1-main-thread",
+    "file": "pdfs/issue7891_bc1.pdf",
+    "md5": "86b1796da7dad09f93ce68a8ad495a24",
+    "rounds": 1,
+    "type": "eq",
+    "disableWorkerRendering": true
   },
   {
     "id": "issue3062",
@@ -14363,6 +14426,14 @@
     "type": "eq"
   },
   {
+    "id": "smask_alpha_oob_transfer-main-thread",
+    "file": "pdfs/smask_alpha_oob_transfer.pdf",
+    "md5": "4c5fa755f6cc26283f1b21f9b5f59ada",
+    "rounds": 1,
+    "type": "eq",
+    "disableWorkerRendering": true
+  },
+  {
     "id": "smask_alpha_bc",
     "file": "pdfs/smask_alpha_bc.pdf",
     "md5": "493e7aeef054aab09f325f48703d5ba8",
@@ -14377,6 +14448,14 @@
     "type": "eq"
   },
   {
+    "id": "smask_luminosity_oob_transfer-main-thread",
+    "file": "pdfs/smask_luminosity_oob_transfer.pdf",
+    "md5": "267dc76f33cc0c0b6d36ff4605f60907",
+    "rounds": 1,
+    "type": "eq",
+    "disableWorkerRendering": true
+  },
+  {
     "id": "knockout_groups_test",
     "file": "pdfs/knockout_groups_test.pdf",
     "md5": "8e085d0dcea38e976f81cbfb50ece6cd",
@@ -14385,12 +14464,30 @@
     "about": "Knockout groups composite-modes survey."
   },
   {
+    "id": "knockout_groups_test-main-thread",
+    "file": "pdfs/knockout_groups_test.pdf",
+    "md5": "8e085d0dcea38e976f81cbfb50ece6cd",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Knockout and isolation in nested transparency groups.",
+    "disableWorkerRendering": true
+  },
+  {
     "id": "issue18032",
     "file": "pdfs/issue18032.pdf",
     "md5": "656234fde97953c4e3fc7698831590a9",
     "rounds": 1,
     "type": "eq",
     "about": "Non-isolated knockout group with a nested non-isolated subgroup over existing text."
+  },
+  {
+    "id": "issue18032-main-thread",
+    "file": "pdfs/issue18032.pdf",
+    "md5": "656234fde97953c4e3fc7698831590a9",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Non-isolated knockout group with non-isolated subgroups.",
+    "disableWorkerRendering": true
   },
   {
     "id": "Embedded_font.pdf",
@@ -14570,6 +14667,14 @@
     "md5": "3b88d507cdaa55cf3379efea51880288",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "transfer_maps-main-thread",
+    "file": "pdfs/transfer_maps.pdf",
+    "md5": "3b88d507cdaa55cf3379efea51880288",
+    "rounds": 1,
+    "type": "eq",
+    "disableWorkerRendering": true
   },
   {
     "id": "axial_shading_many_inputs",

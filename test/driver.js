@@ -955,6 +955,7 @@ class Driver {
       isOffscreenCanvasSupported:
         task.isOffscreenCanvasSupported === false ? false : undefined,
       disableFontFace: task.disableFontFace === true,
+      disableWorkerRendering: task.disableWorkerRendering === true,
       ...(this.#pdfWorker ? { worker: this.#pdfWorker } : {}),
     };
   }
@@ -1330,7 +1331,7 @@ class Driver {
                   const recordedBBoxes = page.recordedBBoxes;
 
                   const partialRenderContext = {
-                    canvasContext: ctx,
+                    canvas: this.canvas,
                     viewport,
                     optionalContentConfigPromise:
                       task.optionalContentConfigPromise,

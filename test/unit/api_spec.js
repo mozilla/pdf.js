@@ -5807,11 +5807,11 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
-    it("applies the transfer function of the graphics state", async function () {
-      // The page applies transfer functions to fills, strokes, images,
-      // shadings, patterns, and groups. Node.js exercises the fallback.
+    async function checkTransferFunction(disableWorkerRendering) {
+      // Browser main-thread rendering uses SVG transfer filters when supported.
+      // Node.js and renderer workers use the JavaScript fallback.
       const loadingTask = getDocument(
-        buildGetDocumentParams("transfer_maps.pdf")
+        buildGetDocumentParams("transfer_maps.pdf", { disableWorkerRendering })
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
@@ -5888,6 +5888,14 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       canvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
+    }
+
+    it("applies the transfer function of the graphics state", async function () {
+      await checkTransferFunction(/* disableWorkerRendering = */ false);
+    });
+
+    it("applies the transfer function of the graphics state on the main-thread", async function () {
+      await checkTransferFunction(/* disableWorkerRendering = */ true);
     });
 
     it("cleans up document resources during rendering of page", async function () {
