@@ -335,7 +335,6 @@ function getDocument(src = {}) {
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
         );
-
   const disableWorkerRendering =
     src.disableWorkerRendering === true ||
     !GlobalWorkerOptions.rendererSrc ||
@@ -2208,8 +2207,18 @@ class RendererWorker {
           terminateEarly("Worker was destroyed.");
           return;
         }
-        if (!(data instanceof Uint8Array)) {
+        if (!(data?.testObj instanceof Uint8Array)) {
           terminateEarly("TypedArray transfer test failed.");
+          return;
+        }
+        const apiVersion =
+          typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
+            ? PDFJSDev.eval("BUNDLE_VERSION")
+            : null;
+        if (apiVersion !== data.workerVersion) {
+          terminateEarly(
+            `The API version "${apiVersion}" does not match the Worker version "${data.workerVersion}".`
+          );
           return;
         }
         this.#messageHandler = messageHandler;

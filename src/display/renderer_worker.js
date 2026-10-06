@@ -460,9 +460,13 @@ class RendererMessageHandler {
     const handler = new MessageHandler("renderer", "main", port);
     this.#setup(handler);
 
+    const workerVersion =
+      typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
+        ? PDFJSDev.eval("BUNDLE_VERSION")
+        : null;
     const testObj = new Uint8Array();
     // Ensure that we can use `postMessage` transfers.
-    handler.send("ready", testObj, [testObj.buffer]);
+    handler.send("ready", { testObj, workerVersion }, [testObj.buffer]);
   }
 }
 
