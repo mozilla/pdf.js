@@ -1319,12 +1319,15 @@ const PDFViewerApplication = {
     }
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("COVERAGE")) {
-      // Collect coverage data from the worker before the document is closed.
-      //
-      // Note that `PDFViewerApplication.open` may be invoked multiple times
-      // during an integration-test (see e.g. the "Merge PDF" tests).
-      const handler = this.pdfDocument?._transport?.messageHandler;
-      if (handler) {
+      // Collect coverage on each close; tests may load multiple documents.
+      const transport = this.pdfDocument?._transport;
+      for (const handler of [
+        transport?.messageHandler,
+        transport?.rendererHandler,
+      ]) {
+        if (!handler) {
+          continue;
+        }
         try {
           const workerCoverage = await handler.sendWithPromise(
             "GetWorkerCoverage",

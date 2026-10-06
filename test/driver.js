@@ -990,11 +990,21 @@ class Driver {
     // Wipe out the link to the pdfdoc so it can be GC'ed.
     for (const task of [this.currentTask, ...this.taskQueue]) {
       if (task?.pdfDoc) {
-        destroyedPromises.push(task.pdfDoc.loadingTask.destroy());
+        destroyedPromises.push(
+          this.#destroyLoadingTask(task.pdfDoc.loadingTask)
+        );
         delete task.pdfDoc;
       }
     }
     return Promise.all(destroyedPromises);
+  }
+
+  async #destroyLoadingTask(loadingTask) {
+    if (window.__coverage__) {
+      // Collect coverage before destroy() terminates the renderer worker.
+      await fetchAndMergeWorkerCoverage(loadingTask._rendererWorker);
+    }
+    await loadingTask.destroy();
   }
 
   _exceptionToString(e) {

@@ -39,11 +39,11 @@
 
 "use strict";
 
+import { PDFWorker, RendererWorker } from "pdfjs/display/api.js";
 import { GlobalWorkerOptions } from "pdfjs/display/worker_options.js";
 import { isNodeJS } from "../../src/shared/util.js";
 import { mergeCoverageIntoGlobal } from "../coverage_utils.js";
 import { MessageHandler } from "pdfjs/shared/message_handler.js";
-import { PDFWorker } from "pdfjs/display/api.js";
 import { TestReporter } from "../reporter.js";
 
 async function initializePDFJS(callback) {
@@ -137,28 +137,17 @@ async function initializePDFJS(callback) {
   callback();
 }
 
-// Each unit-test typically spins up its own `PDFWorker`, which is destroyed
-// when the loading task is. Hook `destroy` so that we extract the worker-side
-// `__coverage__` before terminating, and merge it into the main thread's
-// `window.__coverage__`. Without this, anything tested through `getDocument`
-// → worker (most of `core/`) has its execution counts dropped on the floor.
+// Merge worker coverage into window.__coverage__ before termination.
 const pendingWorkerCoverage = new Set();
 
-function installWorkerCoverageHook() {
-  if (!window.__coverage__) {
-    return;
-  }
-  const originalDestroy = PDFWorker.prototype.destroy;
-  PDFWorker.prototype.destroy = function () {
+function installWorkerCoverageHook(WorkerClass, targetName) {
+  const originalDestroy = WorkerClass.prototype.destroy;
+  WorkerClass.prototype.destroy = function () {
     if (this.destroyed || !this._webWorker) {
-      // Already torn down, or wrapping a foreign port — defer to the original
-      // implementation, which leaves the underlying `Worker` alone.
       return originalDestroy.call(this);
     }
-    // Capture the underlying Worker, then run the original destroy with
-    // `terminate` neutralized so the public `destroyed`/`port` contract is
-    // preserved synchronously while the Worker stays alive long enough to
-    // hand back its `__coverage__`.
+    // Run destroy() synchronously while keeping the worker alive for the
+    // coverage request.
     const webWorker = this._webWorker;
     const realTerminate = webWorker.terminate.bind(webWorker);
     webWorker.terminate = () => {};
@@ -167,12 +156,12 @@ function installWorkerCoverageHook() {
     } finally {
       webWorker.terminate = realTerminate;
     }
-    const handler = new MessageHandler("main", "worker", webWorker);
+    const handler = new MessageHandler("main", targetName, webWorker);
     const promise = handler
       .sendWithPromise("GetWorkerCoverage", null)
       .then(mergeCoverageIntoGlobal)
       .catch(e => {
-        console.warn(`Failed to collect worker coverage: ${e}`);
+        console.warn(`Failed to collect ${targetName} coverage: ${e}`);
       })
       .finally(() => {
         handler.destroy();
@@ -204,9 +193,7 @@ async function flushPendingWorkerCoverage() {
   env.addReporter(htmlReporter);
 
   if (window.__coverage__) {
-    // Must run before `TestReporter`, whose `jasmineDone` triggers the
-    // browser teardown; the worker-side counters need to be merged into
-    // `window.__coverage__` before the page is closed.
+    // Merge worker coverage before TestReporter triggers browser teardown.
     env.addReporter({ jasmineDone: flushPendingWorkerCoverage });
   }
 
@@ -220,7 +207,10 @@ async function flushPendingWorkerCoverage() {
 
   function unitTestInit() {
     initializePDFJS(function () {
-      installWorkerCoverageHook();
+      if (window.__coverage__) {
+        installWorkerCoverageHook(PDFWorker, "worker");
+        installWorkerCoverageHook(RendererWorker, "renderer");
+      }
       env.execute();
     });
   }
