@@ -5,7 +5,6 @@ set -euo pipefail
 : "${PREVIEW_REPO:?}"
 : "${PR:?}"
 [[ "$PR" =~ ^[1-9][0-9]*$ ]] || { echo "::error::Invalid PR number: $PR"; exit 1; }
-command -v jq >/dev/null || { echo "::error::jq is required"; exit 1; }
 RETENTION_DAYS="${RETENTION_DAYS:-30}"
 OPEN_PRS_TIME="${OPEN_PRS_TIME:-0}"
 
@@ -53,7 +52,7 @@ prune() {
   done
 }
 
-for attempt in 1 2 3 4 5; do
+for attempt in {1..5}; do
   work="$(mktemp -d)"
   ls_status=0
   git_refs ls-remote --exit-code --heads "$repo_url" gh-pages >/dev/null || ls_status=$?
@@ -62,7 +61,7 @@ for attempt in 1 2 3 4 5; do
       git_refs clone -q --depth=1 --branch gh-pages --filter=blob:none --no-checkout \
         "$repo_url" "$work"
       cd "$work"
-      git sparse-checkout set --no-cone '/.nojekyll' '/viewers/*/meta.json'
+      git sparse-checkout set --no-cone '/viewers/*/meta.json'
       git_refs checkout -q gh-pages
       base="$(git rev-parse HEAD)"
       ;;
@@ -85,7 +84,6 @@ for attempt in 1 2 3 4 5; do
   if [ -n "$base" ]; then
     prune
   fi
-  touch .nojekyll
 
   git add -A --sparse
   tree="$(git write-tree)"

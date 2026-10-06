@@ -2888,7 +2888,13 @@ gulp.task("lint-chmod", function (done) {
   console.log("\n### Checking executable bit on tracked and untracked files");
 
   // Files allowed to keep the executable bit (shebang scripts).
-  const EXECUTABLE_FILES = new Set(["test/chromium/test-telemetry.js"]);
+  const EXECUTABLE_FILES = new Set([
+    ".github/scripts/viewer-preview/check-pr.sh",
+    ".github/scripts/viewer-preview/prepare-site.sh",
+    ".github/scripts/viewer-preview/publish-pages.sh",
+    ".github/scripts/viewer-preview/update-comment.sh",
+    "test/chromium/test-telemetry.js",
+  ]);
 
   // Cover untracked-but-not-ignored files too: a `gulp lint` run before
   // `git add` would otherwise miss any 0755 file the developer just created.

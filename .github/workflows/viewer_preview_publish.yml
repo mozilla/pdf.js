@@ -74,93 +74,14 @@ jobs:
       - name: Check the pull request
         if: steps.artifact.outputs.found == 'true'
         id: check
-        run: |
-          set -euo pipefail
-          pr="$(jq -r '.pr' "$ARTIFACT/meta.json")"
-          if ! [[ "$pr" =~ ^[1-9][0-9]{0,6}$ ]]; then
-            echo "::error::Invalid PR number in the artifact"
-            exit 1
-          fi
-          IFS=$'\t' read -r state head_sha head_repo author < <(
-            gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
-              --jq '[.state, .head.sha, (.head.repo.full_name // "-"), .user.login] | @tsv'
-          )
-          if [ "$state" != open ]; then
-            echo "Removing: #${pr} is ${state}"
-            echo "pr=$pr" >> "$GITHUB_OUTPUT"
-            echo "action=remove" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          if [ "$head_sha" != "$HEAD_SHA" ] || [ "$head_repo" != "$HEAD_REPO" ]; then
-            echo "::notice::#${pr} is now at ${head_repo}@${head_sha}: ignoring the build of ${HEAD_REPO}@${HEAD_SHA}"
-            exit 0
-          fi
-          echo "pr=$pr" >> "$GITHUB_OUTPUT"
-
-          permission="$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${author}/permission" \
-            --jq .permission 2>/dev/null || echo none)"
-          case "$permission" in
-            admin|write)
-              echo "action=publish" >> "$GITHUB_OUTPUT"
-              echo "Publishing: ${author} has ${permission} access"
-              exit 0
-              ;;
-          esac
-          for _ in $(seq 60); do
-            pending="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
-              --jq "any(.labels[]; .name == \"${LABEL}\")")"
-            approver="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${HEAD_SHA}/statuses?per_page=100" \
-              --jq "[.[] | select(.context == \"${APPROVAL_CONTEXT}\" and .state == \"success\" and .creator.login == \"github-actions[bot]\")] | first | .description // empty")"
-            if [ -n "$approver" ] || [ "$pending" != true ]; then
-              break
-            fi
-            echo "Waiting for the \`${LABEL}\` label to be processed"
-            sleep 10
-          done
-          if [ -n "$approver" ]; then
-            echo "action=publish" >> "$GITHUB_OUTPUT"
-            echo "Publishing: ${approver}"
-          elif [ "$pending" = true ]; then
-            echo "action=report" >> "$GITHUB_OUTPUT"
-            echo "approval=timeout" >> "$GITHUB_OUTPUT"
-            echo "::warning::The \`${LABEL}\` label was not processed in time: ${HEAD_SHA} is not published"
-          else
-            echo "action=report" >> "$GITHUB_OUTPUT"
-            echo "Not publishing: ${author} has ${permission} access and ${HEAD_SHA} is not approved"
-          fi
+        run: .github/scripts/viewer-preview/check-pr.sh
 
       - name: Prepare the viewers
         if: steps.check.outputs.action == 'publish'
         id: site
         env:
           PR: ${{ steps.check.outputs.pr }}
-        run: |
-          set -euo pipefail
-          if [ -n "$(find "$ARTIFACT" ! -type f ! -type d -print -quit)" ]; then
-            echo "::error::The artifact contains unexpected file types"
-            exit 1
-          fi
-          mkdir -p "$SITE"
-          for target in generic generic-legacy; do
-            status="$(jq -r --arg t "$target" '.targets[$t] // empty' "$ARTIFACT/meta.json")"
-            if [ "$status" = success ] && [ -f "$ARTIFACT/$target/web/viewer.html" ]; then
-              cp -r "$ARTIFACT/$target" "$SITE/$target"
-            fi
-          done
-          size="$(du -sm "$SITE" | cut -f1)"
-          if [ "$size" -gt 100 ]; then
-            echo "::error::The viewers weigh ${size} MB (at most 100 MB)"
-            exit 1
-          fi
-          if [ -z "$(ls -A "$SITE")" ]; then
-            echo "No viewer was built"
-            exit 0
-          fi
-          published_at="$(date -u +%FT%TZ)"
-          jq -n --argjson pr "$PR" --arg sha "$HEAD_SHA" --arg date "$published_at" \
-            '{ pr: $pr, sha: $sha, date: $date }' > "$SITE/meta.json"
-          echo "built=true" >> "$GITHUB_OUTPUT"
-          echo "date=$published_at" >> "$GITHUB_OUTPUT"
+        run: .github/scripts/viewer-preview/prepare-site.sh
 
       - name: List the open pull requests
         if: steps.check.outputs.action == 'publish' || steps.check.outputs.action == 'remove'
@@ -193,7 +114,7 @@ jobs:
         run: |
           [ "$BUILT" = true ] || unset SITE
           OPEN_PRS="$RUNNER_TEMP/open-prs.txt" \
-            bash .github/scripts/viewer-preview/publish-pages.sh
+            .github/scripts/viewer-preview/publish-pages.sh
 
       - name: Comment on the PR
         if: >-
@@ -213,7 +134,7 @@ jobs:
           if [ "$DEPLOY" != pending ]; then
             cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
           fi
-          BODY="$RUNNER_TEMP/comment.md" bash .github/scripts/viewer-preview/update-comment.sh
+          BODY="$RUNNER_TEMP/comment.md" .github/scripts/viewer-preview/update-comment.sh
 
       - name: Wait for preview deployment
         if: steps.publish.outcome == 'success' && steps.site.outputs.built == 'true'
@@ -223,8 +144,8 @@ jobs:
           PR: ${{ steps.check.outputs.pr }}
           PUBLISHED_AT: ${{ steps.site.outputs.date }}
         run: |
-          deadline=$((SECONDS + 600))
-          while [ "$SECONDS" -lt "$deadline" ]; do
+          deadline=$(($(date +%s) + 600))
+          while [ "$(date +%s)" -lt "$deadline" ]; do
             if curl -sf --connect-timeout 5 --max-time 10 \
               "${PREVIEW_URL}/${PR}/meta.json?t=$(date +%s%N)" |
               jq -e --arg sha "$HEAD_SHA" --arg date "$PUBLISHED_AT" \
@@ -249,4 +170,4 @@ jobs:
         run: |
           node .github/scripts/viewer-preview/comment.mjs > "$RUNNER_TEMP/comment.md"
           cat "$RUNNER_TEMP/comment.md" >> "$GITHUB_STEP_SUMMARY"
-          BODY="$RUNNER_TEMP/comment.md" bash .github/scripts/viewer-preview/update-comment.sh
+          BODY="$RUNNER_TEMP/comment.md" .github/scripts/viewer-preview/update-comment.sh
