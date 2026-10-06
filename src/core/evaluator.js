@@ -77,6 +77,7 @@ import {
 import { parseMarkedContentProps, textSinkWrapper } from "./evaluator_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
+import { CharCodeMap } from "./char_code_map.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { compilePatternInfo } from "./obj_bin_transform_core.js";
@@ -3833,13 +3834,13 @@ class PartialEvaluator {
   }
 
   /**
-   * @returns {Array}
+   * @returns {CharCodeMap}
    * @private
    */
   _simpleFontToUnicode(properties, forceGlyphs = false) {
     assert(!properties.composite, "Must be a simple font.");
 
-    const toUnicode = new Map();
+    const toUnicode = new CharCodeMap();
     const encoding = properties.defaultEncoding.slice();
     const baseEncodingName = properties.baseEncodingName;
     // Merge in the differences.
@@ -4006,7 +4007,7 @@ class PartialEvaluator {
         fetchBuiltInCMap: this._fetchBuiltInCMapBound,
         useCMap: null,
       });
-      const toUnicode = new Map(),
+      const toUnicode = new CharCodeMap(),
         buf = [];
       properties.cMap.forEach((charcode, cid) => {
         if (cid > 0xffff) {
@@ -4057,7 +4058,7 @@ class PartialEvaluator {
         if (cmap instanceof IdentityCMap) {
           return new IdentityToUnicodeMap(0, 0xffff);
         }
-        const map = new Map();
+        const map = new CharCodeMap();
         // Convert UTF-16BE
         cmap.forEach((charCode, token) => {
           // Some cmaps contain *only* CID characters (fixes issue9367.pdf).
@@ -4103,7 +4104,7 @@ class PartialEvaluator {
     // Extract the encoding from the CIDToGIDMap
 
     // Set encoding 0 to later verify the font has an encoding
-    const map = new Map();
+    const map = new CharCodeMap();
     for (let j = 0, jj = glyphsData.length; j < jj; j++) {
       const glyphID = (glyphsData[j++] << 8) | glyphsData[j];
       const code = j >> 1;

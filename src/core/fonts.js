@@ -60,6 +60,7 @@ import {
 import { GlyfTable, pruneCompositeGlyphCycles } from "./glyf.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { CFFFont } from "./cff_font.js";
+import { CharCodeMap } from "./char_code_map.js";
 import { compileFontInfo } from "./obj_bin_transform_core.js";
 import { DataBuilder } from "./data_builder.js";
 import { FontRendererFactory } from "./font_renderer.js";
@@ -167,7 +168,7 @@ function adjustTrueTypeToUnicode(properties, isSymbolicFont, nameRecords) {
   }
   const encoding = WinAnsiEncoding;
 
-  const toUnicode = new Map(),
+  const toUnicode = new CharCodeMap(),
     glyphsUnicodeMap = getGlyphsUnicode();
   for (const charCode in encoding) {
     const glyphName = encoding[charCode];
@@ -196,7 +197,7 @@ function adjustType1ToUnicode(properties, builtInEncoding) {
   if (properties.toUnicode instanceof IdentityToUnicodeMap) {
     return;
   }
-  const toUnicode = new Map(),
+  const toUnicode = new CharCodeMap(),
     glyphsUnicodeMap = getGlyphsUnicode();
   for (const charCode in builtInEncoding) {
     if (properties.hasEncoding) {
@@ -227,13 +228,13 @@ function amendFallbackToUnicode(properties) {
   ) {
     return;
   }
-  const toUnicode = new Map();
-  for (const [charCode, entry] of properties.fallbackToUnicode) {
+  const toUnicode = new CharCodeMap();
+  properties.fallbackToUnicode.forEach((charCode, entry) => {
     if (properties.toUnicode.has(charCode)) {
-      continue; // The font dictionary has a `ToUnicode` entry.
+      return; // Preserve existing mappings.
     }
     toUnicode.set(charCode, entry);
-  }
+  });
   properties.toUnicode.amend(toUnicode);
 }
 
@@ -1341,7 +1342,11 @@ class Font {
         });
       }
       this.toFontChar = map;
-      this.toUnicode = new ToUnicodeMap(new Map(map));
+      const toUnicode = new CharCodeMap();
+      for (const [charCode, fontCharCode] of map) {
+        toUnicode.set(charCode, fontCharCode);
+      }
+      this.toUnicode = new ToUnicodeMap(toUnicode);
     } else if (/Symbol/i.test(fontName)) {
       // The non-embedded SymbolMT font in issue 21523 uses Identity encoding
       // and an Identity CIDToGIDMap, hence its CIDs are glyph ids.

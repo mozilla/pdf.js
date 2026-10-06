@@ -17,6 +17,7 @@ import { Cmd, EOF, isCmd, Name } from "./primitives.js";
 import { FormatError, unreachable, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { BinaryCMapReader } from "./binary_cmap.js";
+import { CharCodeMap } from "./char_code_map.js";
 import { Lexer } from "./parser.js";
 import { MissingDataException } from "./core_utils.js";
 import { Stream } from "./stream.js";
@@ -205,7 +206,7 @@ class CMap {
   // - cid chars are 16-bit unsigned integers, stored as integers.
   // - bf chars are variable-length byte sequences, stored as strings, with
   //   one byte per character.
-  #map = new Map();
+  #map = new CharCodeMap();
 
   #mappedEntries = 0;
 
@@ -286,22 +287,15 @@ class CMap {
   }
 
   forEach(callback) {
-    for (const [charCode, entry] of this.#map) {
-      callback(charCode, entry);
-    }
+    this.#map.forEach(callback);
   }
 
   charCodeOf(value) {
-    for (const [charCode, entry] of this.#map) {
-      if (entry === value) {
-        return charCode;
-      }
-    }
-    return -1;
+    return this.#map.charCodeOf(value);
   }
 
   getMap() {
-    return new Map(this.#map);
+    return this.#map.clone();
   }
 
   readCharCode(str, offset, out) {

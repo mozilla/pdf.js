@@ -56,9 +56,9 @@ class CFFFont {
       let invCidToGidMap;
       if (cidToGidMap?.size) {
         invCidToGidMap = new Map();
-        for (const [i, gid] of cidToGidMap) {
+        cidToGidMap.forEach((i, gid) => {
           invCidToGidMap.set(gid, i);
-        }
+        });
       }
 
       const charCodeToGlyphId = new Map();

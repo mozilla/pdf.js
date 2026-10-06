@@ -14,6 +14,7 @@
  */
 
 import { ttx, verifyTtxOutput } from "./fontutils.js";
+import { CharCodeMap } from "../../src/core/char_code_map.js";
 import { Font } from "../../src/core/fonts.js";
 import { Stream } from "../../src/core/stream.js";
 import { ToUnicodeMap } from "../../src/core/to_unicode_map.js";
@@ -98,7 +99,7 @@ describe("font_glyf", function () {
       const font = new Font(
         "font",
         new Stream(buggy),
-        makeProperties(new ToUnicodeMap(new Map())),
+        makeProperties(new ToUnicodeMap(new CharCodeMap())),
         {}
       );
       const output = await ttx(font.data);
@@ -126,7 +127,7 @@ describe("font_glyf", function () {
       const font = new Font(
         "font",
         new Stream(buggy),
-        makeProperties(new ToUnicodeMap(new Map())),
+        makeProperties(new ToUnicodeMap(new CharCodeMap())),
         {}
       );
       const output = await ttx(font.data);

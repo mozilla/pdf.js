@@ -13,12 +13,19 @@
  * limitations under the License.
  */
 
-import { unreachable } from "../shared/util.js";
+import { assert, unreachable } from "../shared/util.js";
+import { CharCodeMap } from "./char_code_map.js";
 
 class ToUnicodeMap {
   #map;
 
+  /**
+   * @param {CharCodeMap} cmap
+   */
   constructor(cmap) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+      assert(cmap instanceof CharCodeMap, "Must be a CharCodeMap.");
+    }
     // The values of `this.#map` can be integers or strings, depending on how
     // `cmap` was created.
     this.#map = cmap;
@@ -29,9 +36,9 @@ class ToUnicodeMap {
   }
 
   forEach(callback) {
-    for (const [charCode, entry] of this.#map) {
+    this.#map.forEach((charCode, entry) => {
       callback(charCode, entry.codePointAt(0));
-    }
+    });
   }
 
   has(i) {
@@ -43,18 +50,16 @@ class ToUnicodeMap {
   }
 
   charCodeOf(value) {
-    for (const [charCode, entry] of this.#map) {
-      if (entry === value) {
-        return charCode;
-      }
-    }
-    return -1;
+    return this.#map.charCodeOf(value);
   }
 
+  /**
+   * @param {CharCodeMap} map
+   */
   amend(map) {
-    for (const [charCode, entry] of map) {
+    map.forEach((charCode, entry) => {
       this.#map.set(charCode, entry);
-    }
+    });
   }
 }
 
