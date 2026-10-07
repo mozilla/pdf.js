@@ -49,14 +49,11 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import {
-  PDFDateString,
-  renderRichText,
-  setLayerDimensions,
-} from "./display_utils.js";
+import { PDFDateString, setLayerDimensions } from "./display_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";
+import { renderRichText } from "./annotation_layer_utils.js";
 
 const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();

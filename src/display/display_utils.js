@@ -23,7 +23,6 @@ import {
 } from "../shared/util.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { PageViewport } from "./page_viewport.js";
-import { XfaLayer } from "./xfa_layer.js";
 
 class PixelsPerInch {
   static CSS = 96.0;
@@ -762,31 +761,6 @@ function findContrastColor(baseColor, fixedColor) {
   return cachedValue;
 }
 
-function renderRichText({ html, dir, className }, container) {
-  const fragment = document.createDocumentFragment();
-  if (typeof html === "string") {
-    const p = document.createElement("p");
-    p.dir = dir || "auto";
-    const lines = html.split(/\r\n?|\n/);
-    for (let i = 0, ii = lines.length; i < ii; ++i) {
-      const line = lines[i];
-      p.append(document.createTextNode(line));
-      if (i < ii - 1) {
-        p.append(document.createElement("br"));
-      }
-    }
-    fragment.append(p);
-  } else {
-    XfaLayer.render({
-      xfaHtml: html,
-      div: fragment,
-      intent: "richText",
-    });
-  }
-  fragment.firstElementChild.classList.add("richText", className);
-  container.append(fragment);
-}
-
 function makePathFromDrawOPS(data) {
   // Using a SVG string is slightly slower than using the following loop.
   const path = new Path2D();
@@ -849,7 +823,6 @@ export {
   PDFDateString,
   PixelsPerInch,
   RenderingCancelledException,
-  renderRichText,
   setLayerDimensions,
   StatTimer,
   stopEvent,
