@@ -56,6 +56,7 @@ import {
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
+import { isSameOrigin } from "../../src/display/api_utils.js";
 import { Metadata } from "../../src/display/metadata.js";
 import { PageViewport } from "../../src/display/page_viewport.js";
 
@@ -1218,21 +1219,21 @@ describe("api", function () {
     describe("isSameOrigin", function () {
       it("handles invalid base URLs", function () {
         // The base URL is not valid.
-        expect(PDFWorker._isSameOrigin("/foo", "/bar")).toBeFalse();
+        expect(isSameOrigin("/foo", "/bar")).toBeFalse();
 
         // The base URL has no origin.
-        expect(PDFWorker._isSameOrigin("blob:foo", "/bar")).toBeFalse();
+        expect(isSameOrigin("blob:foo", "/bar")).toBeFalse();
       });
 
       it("correctly checks if the origin of both URLs matches", function () {
         expect(
-          PDFWorker._isSameOrigin(
+          isSameOrigin(
             "https://www.mozilla.org/foo",
             "https://www.mozilla.org/bar"
           )
         ).toBeTrue();
         expect(
-          PDFWorker._isSameOrigin(
+          isSameOrigin(
             "https://www.mozilla.org/foo",
             "https://www.example.com/bar"
           )
@@ -5775,6 +5776,35 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(firstPage.pageNumber).toEqual(2);
 
       canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
+    it("creates the annotation canvases when rendering into an OffscreenCanvas", async function () {
+      if (isNodeJS) {
+        pending("OffscreenCanvas is not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("bug1844576.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const canvas = new OffscreenCanvas(viewport.width, viewport.height);
+      const annotationCanvasMap = new Map();
+
+      const renderTask = pdfPage.render({
+        canvas,
+        viewport,
+        annotationMode: AnnotationMode.ENABLE_FORMS,
+        annotationCanvasMap,
+      });
+      expect(renderTask.isWorkerRendering).toBeTrue();
+      await renderTask.promise;
+
+      expect([...annotationCanvasMap.keys()].sort()).toEqual(["12R", "9R"]);
+      for (const annotationCanvas of annotationCanvasMap.values()) {
+        expect(annotationCanvas).toBeInstanceOf(HTMLCanvasElement);
+      }
+
       await loadingTask.destroy();
     });
 

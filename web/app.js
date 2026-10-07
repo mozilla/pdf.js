@@ -1323,7 +1323,7 @@ const PDFViewerApplication = {
       const transport = this.pdfDocument?._transport;
       for (const handler of [
         transport?.messageHandler,
-        transport?.rendererHandler,
+        transport?.rendererWorker?.messageHandler,
       ]) {
         if (!handler) {
           continue;
