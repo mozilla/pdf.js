@@ -220,6 +220,13 @@ class AnnotationEditor {
     return false;
   }
 
+  /**
+   * @returns {boolean} `true` if the editors are created from a text selection.
+   */
+  static get isFromTextSelection() {
+    return false;
+  }
+
   static get _defaultLineColor() {
     return shadow(
       this,
@@ -252,6 +259,9 @@ class AnnotationEditor {
       ink: "pdfjs-editor-ink-added-alert",
       stamp: "pdfjs-editor-stamp-added-alert",
       signature: "pdfjs-editor-signature-added-alert",
+      underline: "pdfjs-editor-underline-added-alert",
+      squiggly: "pdfjs-editor-squiggly-added-alert",
+      strikeout: "pdfjs-editor-strikeout-added-alert",
     });
 
     AnnotationEditor._l10nResizer ??= Object.freeze({

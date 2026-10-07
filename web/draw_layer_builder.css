@@ -22,6 +22,7 @@
     }
 
     &.highlight,
+    &.textMarkup,
     &.highlightOutline {
       &[data-main-rotation="90"] {
         mask,
@@ -75,6 +76,13 @@
       &:not(.free) {
         fill-rule: evenodd;
       }
+    }
+
+    &.textMarkup {
+      position: absolute;
+      mix-blend-mode: normal;
+      /* The markup can slightly overflow the text boxes. */
+      overflow: visible;
     }
 
     &.highlightOutline {

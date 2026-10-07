@@ -386,6 +386,7 @@ const PDFViewerApplication = {
         enableMerge: x => x === "true",
         enableSelectionRendering: x => x === "true",
         enableSplitMerge: x => x === "true",
+        enableTextMarkupEditors: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
         highlightEditorColors: x => x,
         imagesRightClickMinSize: x => parseInt(x, 10),
@@ -704,6 +705,7 @@ const PDFViewerApplication = {
       enableHighlightFloatingButton: AppOptions.get(
         "enableHighlightFloatingButton"
       ),
+      enableTextMarkupEditors: AppOptions.get("enableTextMarkupEditors"),
       enableUpdatedAddImage: AppOptions.get("enableUpdatedAddImage"),
       enableNewAltTextWhenAddingImage: AppOptions.get(
         "enableNewAltTextWhenAddingImage"
@@ -778,6 +780,14 @@ const PDFViewerApplication = {
         const editorSignatureButton = appConfig.toolbar?.editorSignatureButton;
         if (editorSignatureButton && AppOptions.get("enableSignatureEditor")) {
           editorSignatureButton.parentElement.hidden = false;
+        }
+        if (AppOptions.get("enableTextMarkupEditors")) {
+          for (const button of ["Underline", "Squiggly", "StrikeOut"]) {
+            const editorButton = appConfig.toolbar?.[`editor${button}Button`];
+            if (editorButton) {
+              editorButton.parentElement.hidden = false;
+            }
+          }
         }
         const editorCommentButton = appConfig.toolbar?.editorCommentButton;
         if (editorCommentButton && AppOptions.get("enableComment")) {

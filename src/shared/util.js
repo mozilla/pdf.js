@@ -79,6 +79,9 @@ const AnnotationEditorType = {
   NONE: 0,
   FREETEXT: 3,
   HIGHLIGHT: 9,
+  UNDERLINE: 10,
+  SQUIGGLY: 11,
+  STRIKEOUT: 12,
   STAMP: 13,
   INK: 15,
   POPUP: 16,
@@ -101,6 +104,9 @@ const AnnotationEditorParamsType = {
   HIGHLIGHT_FREE: 33,
   HIGHLIGHT_SHOW_ALL: 34,
   DRAW_STEP: 41,
+  UNDERLINE_COLOR: 51,
+  SQUIGGLY_COLOR: 61,
+  STRIKEOUT_COLOR: 71,
 };
 
 // Permission flags from Table 22, Section 7.6.3.2 of the PDF specification.

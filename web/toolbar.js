@@ -105,6 +105,42 @@ class Toolbar {
         },
       },
       {
+        element: options.editorUnderlineButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorUnderlineButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.UNDERLINE;
+          },
+        },
+      },
+      {
+        element: options.editorSquigglyButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorSquigglyButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.SQUIGGLY;
+          },
+        },
+      },
+      {
+        element: options.editorStrikeOutButton,
+        eventName: "switchannotationeditormode",
+        eventDetails: {
+          get mode() {
+            const { classList } = options.editorStrikeOutButton;
+            return classList.contains("toggled")
+              ? AnnotationEditorType.NONE
+              : AnnotationEditorType.STRIKEOUT;
+          },
+        },
+      },
+      {
         element: options.editorInkButton,
         eventName: "switchannotationeditormode",
         eventDetails: {
@@ -204,6 +240,9 @@ class Toolbar {
     const {
       editorHighlightColorPicker,
       editorHighlightButton,
+      editorUnderlineButton,
+      editorSquigglyButton,
+      editorStrikeOutButton,
       pageNumber,
       scaleSelect,
     } = this.#opts;
@@ -285,6 +324,15 @@ class Toolbar {
           case AnnotationEditorType.HIGHLIGHT:
             editorHighlightButton.click();
             break;
+          case AnnotationEditorType.UNDERLINE:
+            editorUnderlineButton.click();
+            break;
+          case AnnotationEditorType.SQUIGGLY:
+            editorSquigglyButton.click();
+            break;
+          case AnnotationEditorType.STRIKEOUT:
+            editorStrikeOutButton.click();
+            break;
         }
       },
       internalOpt
@@ -324,6 +372,12 @@ class Toolbar {
       editorFreeTextParamsToolbar,
       editorHighlightButton,
       editorHighlightParamsToolbar,
+      editorUnderlineButton,
+      editorUnderlineParamsToolbar,
+      editorSquigglyButton,
+      editorSquigglyParamsToolbar,
+      editorStrikeOutButton,
+      editorStrikeOutParamsToolbar,
       editorInkButton,
       editorInkParamsToolbar,
       editorStampButton,
@@ -348,6 +402,21 @@ class Toolbar {
       editorHighlightParamsToolbar
     );
     toggleExpandedBtn(
+      editorUnderlineButton,
+      mode === AnnotationEditorType.UNDERLINE,
+      editorUnderlineParamsToolbar
+    );
+    toggleExpandedBtn(
+      editorSquigglyButton,
+      mode === AnnotationEditorType.SQUIGGLY,
+      editorSquigglyParamsToolbar
+    );
+    toggleExpandedBtn(
+      editorStrikeOutButton,
+      mode === AnnotationEditorType.STRIKEOUT,
+      editorStrikeOutParamsToolbar
+    );
+    toggleExpandedBtn(
       editorInkButton,
       mode === AnnotationEditorType.INK,
       editorInkParamsToolbar
@@ -366,6 +435,9 @@ class Toolbar {
     editorCommentButton.disabled =
       editorFreeTextButton.disabled =
       editorHighlightButton.disabled =
+      editorUnderlineButton.disabled =
+      editorSquigglyButton.disabled =
+      editorStrikeOutButton.disabled =
       editorInkButton.disabled =
       editorStampButton.disabled =
       editorSignatureButton.disabled =

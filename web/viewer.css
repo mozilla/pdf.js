@@ -85,6 +85,9 @@
   --toolbarButton-editorComment-icon: url(images/comment-editButton.svg);
   --toolbarButton-editorFreeText-icon: url(images/toolbarButton-editorFreeText.svg);
   --toolbarButton-editorHighlight-icon: url(images/toolbarButton-editorHighlight.svg);
+  --toolbarButton-editorUnderline-icon: url(images/toolbarButton-editorUnderline.svg);
+  --toolbarButton-editorSquiggly-icon: url(images/toolbarButton-editorSquiggly.svg);
+  --toolbarButton-editorStrikeOut-icon: url(images/toolbarButton-editorStrikeOut.svg);
   --toolbarButton-editorInk-icon: url(images/toolbarButton-editorInk.svg);
   --toolbarButton-editorStamp-icon: url(images/toolbarButton-editorStamp.svg);
   --toolbarButton-editorSignature-icon: url(images/toolbarButton-editorSignature.svg);
@@ -595,6 +598,18 @@ body {
 
 #editorHighlightButton::before {
   mask-image: var(--toolbarButton-editorHighlight-icon);
+}
+
+#editorUnderlineButton::before {
+  mask-image: var(--toolbarButton-editorUnderline-icon);
+}
+
+#editorSquigglyButton::before {
+  mask-image: var(--toolbarButton-editorSquiggly-icon);
+}
+
+#editorStrikeOutButton::before {
+  mask-image: var(--toolbarButton-editorStrikeOut-icon);
 }
 
 #editorInkButton::before {

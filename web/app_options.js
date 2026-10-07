@@ -496,6 +496,14 @@ const defaultOptions = new Map([
     },
   ],
   [
+    "enableTextMarkupEditors",
+    {
+      /** @type {boolean} */
+      value: typeof PDFJSDev === "undefined",
+      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+    },
+  ],
+  [
     "enableUpdatedAddImage",
     {
       // We'll probably want to make some experiments before enabling this
