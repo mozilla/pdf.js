@@ -410,6 +410,7 @@ function getDocument(src = {}) {
     styleElement,
     enableHWA,
     enableWebGPU,
+    rendererWorker: null, // Set below.
     loadingParams: {
       disableAutoFetch,
       enableXfa,
@@ -432,8 +433,8 @@ function getDocument(src = {}) {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
       }
-
       docParams.evaluatorOptions.hasGPU = hasGPU;
+      transportParams.rendererWorker = task._rendererWorker;
 
       const workerIdPromise = worker.messageHandler.sendWithPromise(
         "GetDocRequest",
@@ -480,10 +481,7 @@ function getDocument(src = {}) {
           messageHandler,
           task,
           networkStream,
-          {
-            ...transportParams,
-            rendererWorker: task._rendererWorker,
-          },
+          transportParams,
           transportFactory,
           pagesMapper
         );
@@ -2622,8 +2620,8 @@ class WorkerTransport {
       styleElement: params.styleElement,
     });
     this.enableHWA = params.enableHWA;
-    this.enableWebGPU = params.enableWebGPU === true;
-    this.rendererWorker = params.rendererWorker || null;
+    this.enableWebGPU = params.enableWebGPU;
+    this.rendererWorker = params.rendererWorker;
     this.loadingParams = params.loadingParams;
     this._params = params;
 
