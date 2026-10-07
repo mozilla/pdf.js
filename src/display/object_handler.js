@@ -29,7 +29,7 @@ class ObjectHandler {
     commonObjs,
     fontLoader,
     pageCache,
-    pdfBug = null,
+    pdfBug = false,
     shouldCreatePageObjs = false,
   }) {
     this.messageHandler = messageHandler;
@@ -52,7 +52,10 @@ class ObjectHandler {
 
         const fontData = new FontInfo(exportedData.buffer);
         const inspectFont =
-          this.pdfBug && globalThis.FontInspector?.enabled
+          (typeof PDFJSDev === "undefined" ||
+            !PDFJSDev.test("WORKER_THREAD")) &&
+          this.pdfBug &&
+          globalThis.FontInspector?.enabled
             ? (font, url) => globalThis.FontInspector.fontAdded(font, url)
             : null;
         const font = new FontFaceObject(
