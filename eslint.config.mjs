@@ -97,7 +97,14 @@ export default [
     },
 
     settings: {
-      "import-x/resolver-next": [import_.createNodeResolver()],
+      "import-x/resolver-next": [
+        import_.createNodeResolver({
+          alias: {
+            "pdfjs-lib": [import.meta.dirname + "/web/pdfjs.js"],
+            pdfjs: [import.meta.dirname + "/src"],
+          },
+        }),
+      ],
     },
 
     languageOptions: {
@@ -129,6 +136,7 @@ export default [
             {
               target: "./web",
               from: "./src",
+              except: ["./pdf.worker.js"],
             },
           ],
         },
@@ -138,20 +146,18 @@ export default [
         "error",
         {
           ignore: [
-            "display",
-            "pdfjs",
-            "pdfjs-lib",
-            "pdfjs-web",
-            "web",
-            "@csstools/postcss-light-dark-function",
-            "fluent-bundle",
-            "fluent-dom",
-            "postcss-dir-pseudo-class",
-            "postcss-nesting",
-            "postcss-values-parser",
-            "stylelint",
+            "^display-",
+            "^web-",
+            "^@csstools/postcss-light-dark-function$",
+            "^fluent-bundle$",
+            "^fluent-dom$",
+            "^pdfjs-dist(/|$)",
+            "^postcss-dir-pseudo-class$",
+            "^postcss-nesting$",
+            "^postcss-values-parser$",
+            "^stylelint$",
             // See https://github.com/firebase/firebase-admin-node/discussions/1359.
-            "eslint-plugin-perfectionist",
+            "^eslint-plugin-perfectionist$",
           ],
         },
       ],
@@ -505,9 +511,15 @@ export default [
     },
   },
   {
+    files: jsFiles("web/internal"),
+    rules: {
+      // The debugger imports `src/` internals directly.
+      "import/no-restricted-paths": "off",
+    },
+  },
+  {
     files: jsFiles("test/unit"),
     rules: {
-      "import/no-unresolved": ["error", { ignore: ["pdfjs/"] }],
       "no-console": ["error", { allow: ["warn", "error"] }],
     },
   },
