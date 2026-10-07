@@ -21,7 +21,7 @@ import {
 } from "./draw_ops_view.js";
 import { OPS, TextLayer } from "pdfjs-lib";
 import { CanvasContextDetailsView } from "./canvas_context_details_view.js";
-import { DOMCanvasFactory } from "pdfjs/display/canvas_factory.js";
+import { DOMCanvasFactory } from "pdfjs/display/dom_canvas_factory.js";
 import { FontView } from "./font_view.js";
 import { SplitView } from "./split_view.js";
 
