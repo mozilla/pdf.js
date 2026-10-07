@@ -15,7 +15,7 @@
 
 import { assert, ResponseException } from "../shared/util.js";
 import { getFilenameFromContentDispositionHeader } from "./content_disposition.js";
-import { isPdfFile } from "./display_utils.js";
+import { isPdfFile } from "./dom_utils.js";
 
 function createHeaders(isHttp, httpHeaders) {
   const headers = new Headers();

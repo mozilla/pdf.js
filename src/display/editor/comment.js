@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { noContextMenu, stopEvent } from "../display_utils.js";
+import { noContextMenu, stopEvent } from "../dom_utils.js";
 
 class Comment {
   #commentStandaloneButton = null;

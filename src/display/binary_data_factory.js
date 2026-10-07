@@ -14,7 +14,7 @@
  */
 
 import { stringToBytes, unreachable } from "../shared/util.js";
-import { fetchData } from "./display_utils.js";
+import { fetchData } from "./dom_utils.js";
 
 class BaseBinaryDataFactory {
   #errorStr = Object.freeze({

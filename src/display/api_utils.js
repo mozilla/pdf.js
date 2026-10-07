@@ -20,6 +20,12 @@ import {
   warn,
 } from "../shared/util.js";
 
+// Deprecated API function -- display regardless of the `verbosity` setting.
+function deprecated(details) {
+  // eslint-disable-next-line no-console
+  console.log("Deprecated API usage: " + details);
+}
+
 function getUrlProp(val) {
   if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
     return null; // The 'url' is unused with `PDFDataRangeTransport`.
@@ -189,7 +195,43 @@ class LoopbackPort {
   }
 }
 
+class StatTimer {
+  #started = new Map();
+
+  times = [];
+
+  time(name) {
+    if (this.#started.has(name)) {
+      warn(`Timer is already running for ${name}`);
+    }
+    this.#started.set(name, Date.now());
+  }
+
+  timeEnd(name) {
+    if (!this.#started.has(name)) {
+      warn(`Timer has not been started for ${name}`);
+    }
+    this.times.push({
+      name,
+      start: this.#started.get(name),
+      end: Date.now(),
+    });
+    // Remove timer from started so it can be called again.
+    this.#started.delete(name);
+  }
+
+  toString() {
+    // Find the longest name for padding purposes.
+    const longest = Math.max(...this.times.map(t => t.name.length));
+
+    return this.times
+      .map(t => `${t.name.padEnd(longest)} ${t.end - t.start}ms\n`)
+      .join("");
+  }
+}
+
 export {
+  deprecated,
   getDataProp,
   getFactoryUrlProp,
   getUrlProp,
@@ -199,4 +241,5 @@ export {
   isSameOrigin,
   isValidExplicitDest,
   LoopbackPort,
+  StatTimer,
 };

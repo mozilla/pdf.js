@@ -13,12 +13,7 @@
  * limitations under the License.
  */
 
-import {
-  computeLuminance,
-  getRGB,
-  getRGBA,
-  isDataScheme,
-} from "./display_utils.js";
+import { computeLuminance, getRGB, getRGBA } from "./display_utils.js";
 import {
   FeatureTest,
   SVG_NS,
@@ -27,6 +22,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { BaseFilterFactory } from "./filter_factory.js";
+import { isDataScheme } from "./dom_utils.js";
 
 /**
  * FilterFactory aims to create some SVG filters we can use when drawing an

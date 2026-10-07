@@ -41,23 +41,12 @@ import {
 } from "../../src/shared/util.js";
 import {
   applyOpacity,
-  CSSConstants,
-  fetchData,
   findContrastColor,
-  getFilenameFromUrl,
-  getPdfFilenameFromUrl,
   getRGB,
   getRGBA,
-  isDataScheme,
-  isPdfFile,
-  noContextMenu,
   OutputScale,
-  PDFDateString,
   PixelsPerInch,
   RenderingCancelledException,
-  renderRichText,
-  setLayerDimensions,
-  stopEvent,
   SupportedImageMimeTypes,
 } from "../../src/display/display_utils.js";
 import {
@@ -67,6 +56,19 @@ import {
   PDFWorker,
   version,
 } from "../../src/display/api.js";
+import {
+  CSSConstants,
+  fetchData,
+  getFilenameFromUrl,
+  getPdfFilenameFromUrl,
+  isDataScheme,
+  isPdfFile,
+  noContextMenu,
+  PDFDateString,
+  renderRichText,
+  setLayerDimensions,
+  stopEvent,
+} from "../../src/display/dom_utils.js";
 import { AnnotationEditorLayer } from "../../src/display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
 import { AnnotationLayer } from "../../src/display/annotation_layer.js";

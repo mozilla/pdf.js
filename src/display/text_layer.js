@@ -24,7 +24,8 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
-import { OutputScale, setLayerDimensions } from "./display_utils.js";
+import { OutputScale } from "./display_utils.js";
+import { setLayerDimensions } from "./dom_utils.js";
 
 /**
  * @typedef {object} TextLayerParameters

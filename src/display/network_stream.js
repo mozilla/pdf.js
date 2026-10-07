@@ -14,7 +14,7 @@
  */
 
 import { isNodeJS } from "../shared/util.js";
-import { isValidFetchUrl } from "./display_utils.js";
+import { isValidFetchUrl } from "./dom_utils.js";
 import { PDFFetchStream } from "./fetch_stream.js";
 import { PDFNetworkStream } from "./network.js";
 import { PDFNodeStream } from "./node_stream.js";

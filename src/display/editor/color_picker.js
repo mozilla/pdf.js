@@ -19,8 +19,9 @@ import {
   shadow,
   Util,
 } from "../../shared/util.js";
-import { getRGBA, noContextMenu } from "../display_utils.js";
+import { getRGBA } from "../display_utils.js";
 import { KeyboardManager } from "./tools.js";
+import { noContextMenu } from "../dom_utils.js";
 
 /**
  * ColorPicker class provides a color picker for the annotation editor.

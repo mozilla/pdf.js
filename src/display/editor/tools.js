@@ -29,13 +29,8 @@ import {
   Util,
   warn,
 } from "../../shared/util.js";
-import {
-  fetchData,
-  getColorValues,
-  getRGB,
-  PixelsPerInch,
-  stopEvent,
-} from "../display_utils.js";
+import { fetchData, getColorValues, stopEvent } from "../dom_utils.js";
+import { getRGB, PixelsPerInch } from "../display_utils.js";
 import { FloatingToolbar } from "./toolbar.js";
 import { internalOpt } from "../../shared/internal_evt.js";
 
