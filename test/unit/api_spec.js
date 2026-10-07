@@ -5759,6 +5759,47 @@ have written that much by now. So, here’s to squashing bugs.`);
       canvasFactory.destroy(canvasAndCtx);
     });
 
+    it("rejects when a Type3 glyph throws while recording", async function () {
+      if (isNodeJS) {
+        pending("@napi-rs/canvas accepts negative gradient radii.");
+      }
+      // The glyph's negative shading radius makes createRadialGradient throw.
+      const loadingTask = getDocument(
+        buildGetDocumentParams("type3_glyph_error.pdf", {
+          disableWorkerRendering: true,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      for (const recordOptions of [
+        { recordImages: true },
+        { recordOperations: true },
+      ]) {
+        for (let i = 0; i < 2; i++) {
+          const renderTask = pdfPage.render({
+            canvas: canvasAndCtx.canvas,
+            viewport,
+            ...recordOptions,
+          });
+          await expectAsync(renderTask.promise).toBeRejectedWith(
+            jasmine.objectContaining({ name: "IndexSizeError" })
+          );
+          // Cancelling runs the completion callback again.
+          expect(() => renderTask.cancel()).not.toThrow();
+        }
+      }
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
     it("renders a page renumbered while its operator list was pending", async function () {
       const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
       const pdfDoc = await loadingTask.promise;

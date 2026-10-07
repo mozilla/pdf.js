@@ -689,52 +689,54 @@ class TilingPattern {
       );
     }
 
-    owner.save();
-    if (useEOFill) {
-      owner.ctx.clip(path, "evenodd");
-    } else {
-      owner.ctx.clip(path);
-    }
-    // Position tile (n, m) in device space; the clip above is unaffected
-    // by setTransform.
-    owner.ctx.setTransform(...this.patternBaseMatrix);
-    owner.ctx.translate(n * this.xstep, m * this.ystep);
-    if (
-      this.needsIsolation ||
-      owner.ctx.globalAlpha !== 1 ||
-      owner.ctx.globalCompositeOperation !== "source-over" ||
-      owner.inSMaskMode
-    ) {
-      const bboxWidth = x1 - x0;
-      const bboxHeight = y1 - y0;
-      const [combinedScaleX, combinedScaleY] = this._getCombinedScales();
-      const dimx = this.getSizeAndScale(
-        bboxWidth,
-        this.ctx.canvas.width,
-        combinedScaleX
-      );
-      const dimy = this.getSizeAndScale(
-        bboxHeight,
-        this.ctx.canvas.height,
-        combinedScaleY
-      );
-      // Isolate blend modes from the main canvas.
-      const tmpCanvas = this._renderTileCanvas(owner, opIdx, dimx, dimy);
-      owner.ctx.drawImage(tmpCanvas.canvas, x0, y0, bboxWidth, bboxHeight);
-      owner.canvasFactory.destroy(tmpCanvas);
-    } else {
-      // No blend modes or transparency: render the tile directly onto owner.
-      this.setFillAndStrokeStyleToContext(owner, this.paintType, this.color);
-      this.clipBbox(owner, x0, y0, x1, y1);
-      owner.baseTransformStack.push(owner.baseTransform);
-      owner.baseTransform = getCurrentTransform(owner.ctx);
-      owner.executeOperatorList(this.operatorList);
-      owner.baseTransform = owner.baseTransformStack.pop();
-    }
+    try {
+      owner.save();
+      if (useEOFill) {
+        owner.ctx.clip(path, "evenodd");
+      } else {
+        owner.ctx.clip(path);
+      }
+      // Changing the transform leaves the clip in device space.
+      owner.ctx.setTransform(...this.patternBaseMatrix);
+      owner.ctx.translate(n * this.xstep, m * this.ystep);
+      if (
+        this.needsIsolation ||
+        owner.ctx.globalAlpha !== 1 ||
+        owner.ctx.globalCompositeOperation !== "source-over" ||
+        owner.inSMaskMode
+      ) {
+        const bboxWidth = x1 - x0;
+        const bboxHeight = y1 - y0;
+        const [combinedScaleX, combinedScaleY] = this._getCombinedScales();
+        const dimx = this.getSizeAndScale(
+          bboxWidth,
+          this.ctx.canvas.width,
+          combinedScaleX
+        );
+        const dimy = this.getSizeAndScale(
+          bboxHeight,
+          this.ctx.canvas.height,
+          combinedScaleY
+        );
+        // Composite the tile as a single image.
+        const tmpCanvas = this._renderTileCanvas(owner, opIdx, dimx, dimy);
+        owner.ctx.drawImage(tmpCanvas.canvas, x0, y0, bboxWidth, bboxHeight);
+        owner.canvasFactory.destroy(tmpCanvas);
+      } else {
+        // Render directly when isolation is unnecessary.
+        this.setFillAndStrokeStyleToContext(owner, this.paintType, this.color);
+        this.clipBbox(owner, x0, y0, x1, y1);
+        owner.baseTransformStack.push(owner.baseTransform);
+        owner.baseTransform = getCurrentTransform(owner.ctx);
+        owner.executeOperatorList(this.operatorList);
+        owner.baseTransform = owner.baseTransformStack.pop();
+      }
 
-    owner.restore();
-    if (dependencyTracker) {
-      owner.dependencyTracker = dependencyTracker;
+      owner.restore();
+    } finally {
+      if (dependencyTracker) {
+        owner.dependencyTracker = dependencyTracker;
+      }
     }
   }
 
