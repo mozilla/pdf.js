@@ -32,6 +32,8 @@ class RendererMessageHandler {
 
   static #commonObjs = new PDFObjects();
 
+  static #connection = null;
+
   static #enableHWA = false;
 
   static #enableWebGPU = false;
@@ -501,6 +503,43 @@ class RendererMessageHandler {
     const handler = new MessageHandler("renderer", "main", port);
     this.#setup(handler);
 
+    handler.on("Connect", ({ sourceName, targetName }) => {
+      // Reset even if no "Disconnect" was received.
+      this.#disconnect();
+      const connection = new MessageHandler(sourceName, targetName, port);
+      this.#connection = connection;
+      this.#setup(connection);
+      connection.on("Disconnect", () => {
+        this.#disconnect();
+      });
+      this.#sendReady(connection);
+    });
+
+    this.#sendReady(handler);
+  }
+
+  static #disconnect() {
+    for (const renderTaskId of this.#renderTaskStates.keys()) {
+      this.#cleanupRenderTask(renderTaskId);
+    }
+    for (const objs of this.#objsMap.values()) {
+      objs.clear();
+    }
+    this.#objsMap.clear();
+    this.#operatorLists.clear();
+    this.#commonObjs.clear();
+    this.#fontLoader.clear();
+    // Isolate pending font loads from the next connection.
+    this.#commonObjs = new PDFObjects();
+    this.#fontLoader = new FontLoader({ ownerDocument: globalThis });
+    // Recreate the factory with the next connection's enableHWA.
+    this.#canvasFactory = null;
+
+    this.#connection?.destroy();
+    this.#connection = null;
+  }
+
+  static #sendReady(handler) {
     const workerVersion =
       typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
         ? PDFJSDev.eval("BUNDLE_VERSION")
