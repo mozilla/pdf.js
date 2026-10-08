@@ -784,6 +784,7 @@ class PartialEvaluator {
     // of image processing can be done here.
     let objId = `img_${this.idFactory.createObjId()}`,
       cacheGlobally = false,
+      keepDecodedImage = false,
       globalCacheData = null;
 
     if (this.parsingType3Font) {
@@ -798,6 +799,9 @@ class PartialEvaluator {
         assert(!isInline, "Cannot cache an inline image globally.");
 
         objId = `${this.idFactory.getDocId()}_${objId}`;
+      } else if (this.pageProxyId !== null) {
+        this.globalImageCache.startDecodedImage(imageRef, this.pageProxyId);
+        keepDecodedImage = true;
       }
     }
 
@@ -825,10 +829,24 @@ class PartialEvaluator {
         return;
       }
 
-      // For large (at least 500x500) or more complex images that we'll cache
-      // globally, check if the image is still cached locally on the main-thread
-      // to avoid having to re-parse the image (since that can be slow).
-      if (w * h > 250000 || hasMask) {
+      const decodedImgData = this.globalImageCache.takeDecodedImage(imageRef);
+      if (decodedImgData) {
+        if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+          decodedImgData.reusedDecodedImage = true;
+        }
+        this.globalImageCache.setData(imageRef, globalCacheData);
+        this.globalImageCache.addByteSize(imageRef, decodedImgData.dataLen);
+
+        this._sendImgData(objId, decodedImgData, cacheGlobally);
+        return;
+      }
+
+      // Outside mozilla-central, try copying large or masked page images
+      // before decoding again.
+      if (
+        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+        (w * h > 250000 || hasMask)
+      ) {
         const localLength = await this.handler.sendWithPromise("commonobj", [
           objId,
           "CopyLocalImage",
@@ -864,6 +882,8 @@ class PartialEvaluator {
 
         if (cacheGlobally) {
           this.globalImageCache.addByteSize(imageRef, imgData.dataLen);
+        } else if (keepDecodedImage) {
+          this.globalImageCache.setDecodedImage(imageRef, imgData);
         }
         return this._sendImgData(objId, imgData, cacheGlobally);
       })

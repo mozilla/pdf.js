@@ -638,6 +638,14 @@ class FeatureTest {
     );
   }
 
+  static get isVideoFrameSupported() {
+    return shadow(
+      this,
+      "isVideoFrameSupported",
+      typeof VideoFrame !== "undefined"
+    );
+  }
+
   static get isFloat16ArraySupported() {
     return shadow(
       this,

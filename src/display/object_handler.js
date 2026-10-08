@@ -41,6 +41,34 @@ class ObjectHandler {
   }
 
   resolveCommonObject(id, type, exportedData) {
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      type === "CopyLocalImage"
+    ) {
+      const { imageRef } = exportedData;
+      assert(imageRef, "The imageRef must be defined.");
+
+      for (const pageOrObjs of this.pageCache.values()) {
+        const objs = pageOrObjs.objs || pageOrObjs;
+
+        for (const [, data] of objs) {
+          if (data?.ref !== imageRef) {
+            continue;
+          }
+          if (!data.dataLen) {
+            return null;
+          }
+          const copy = structuredClone(data);
+          if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
+            copy.reusedDecodedImage = true;
+          }
+          this.commonObjs.resolve(id, copy);
+          return data.dataLen;
+        }
+      }
+      return null;
+    }
+
     switch (type) {
       case "Font":
         if ("error" in exportedData) {
@@ -85,29 +113,6 @@ class ObjectHandler {
             }
             this.commonObjs.resolve(id, font);
           });
-        break;
-      case "CopyLocalImage":
-        const { imageRef } = exportedData;
-        assert(imageRef, "The imageRef must be defined.");
-
-        for (const pageOrObjs of this.pageCache.values()) {
-          const objs = pageOrObjs.objs || pageOrObjs;
-
-          for (const [, data] of objs) {
-            if (data?.ref !== imageRef) {
-              continue;
-            }
-            if (!data.dataLen) {
-              return null;
-            }
-            const copy = structuredClone(data);
-            if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
-              copy.CopyLocalImage = true;
-            }
-            this.commonObjs.resolve(id, copy);
-            return data.dataLen;
-          }
-        }
         break;
       case "FontPath":
         this.commonObjs.resolve(id, new FontPathInfo(exportedData));

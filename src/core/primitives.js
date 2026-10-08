@@ -421,6 +421,10 @@ class RefMap {
     this.#map.set(ref.toString(), this.get(aliasRef));
   }
 
+  remove(ref) {
+    this.#map.delete(ref.toString());
+  }
+
   getOrPutComputed(ref, callback) {
     const map = this.#map,
       refStr = ref.toString();
