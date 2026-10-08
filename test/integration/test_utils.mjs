@@ -1019,7 +1019,7 @@ async function kbFocusNext(page, selector = null) {
     }
   }
   if (selector) {
-    await page.waitForSelector(`${selector}:focus`, { visible: true });
+    await page.waitForSelector(`${selector}:focus-within`, { visible: true });
   }
 }
 
