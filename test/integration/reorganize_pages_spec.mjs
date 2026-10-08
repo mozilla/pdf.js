@@ -3212,7 +3212,7 @@ describe("Reorganize Pages View", () => {
         `.page[data-page-number = "1"] .endOfContent`,
         "1",
         null,
-        { enableSplitMerge: true, enableMerge: true }
+        { enableSplitMerge: true }
       );
     });
 
@@ -3575,7 +3575,7 @@ describe("Reorganize Pages View", () => {
         '.page[data-page-number = "1"] .endOfContent',
         "1",
         null,
-        { enableSplitMerge: true, enableMerge: true }
+        { enableSplitMerge: true }
       );
     });
 
@@ -3767,7 +3767,7 @@ describe("Reorganize Pages View", () => {
         '.page[data-page-number = "1"] .endOfContent',
         "1",
         null,
-        { enableSplitMerge: true, enableMerge: true }
+        { enableSplitMerge: true }
       );
     });
 
