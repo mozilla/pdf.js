@@ -1269,11 +1269,33 @@ class CanvasImagesTracker {
   }
 }
 
+function createCanvasTrackers(
+  canvas,
+  operationsCount,
+  {
+    recordOperations = false,
+    recordImages = false,
+    recordDebugMetadata = false,
+  }
+) {
+  const bboxTracker =
+    recordOperations || recordImages
+      ? new CanvasBBoxTracker(canvas, operationsCount)
+      : null;
+  return {
+    dependencyTracker: recordOperations
+      ? new CanvasDependencyTracker(bboxTracker, recordDebugMetadata)
+      : bboxTracker,
+    imagesTracker: recordImages ? new CanvasImagesTracker(canvas) : null,
+  };
+}
+
 export {
   BBoxReader,
   CanvasBBoxTracker,
   CanvasDependencyTracker,
   CanvasImagesTracker,
   CanvasNestedDependencyTracker,
+  createCanvasTrackers,
   Dependencies,
 };

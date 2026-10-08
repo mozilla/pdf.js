@@ -13,13 +13,9 @@
  * limitations under the License.
  */
 
-import {
-  CanvasBBoxTracker,
-  CanvasDependencyTracker,
-  CanvasImagesTracker,
-} from "./canvas_dependency_tracker.js";
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
 import { isNodeJS, setVerbosityLevel } from "../shared/util.js";
+import { createCanvasTrackers } from "./canvas_dependency_tracker.js";
 import { FontLoader } from "./font_loader.js";
 import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
@@ -32,8 +28,6 @@ import { WorkerFilterFactory } from "./worker_filter_factory.js";
 const PARTIAL_FRAME_TIME = 500; // ms
 
 class RendererMessageHandler {
-  static #cleanedPages = new Set();
-
   static #commonObjs = new PDFObjects();
 
   static #fontLoader = new FontLoader({
@@ -131,7 +125,6 @@ class RendererMessageHandler {
   }
 
   static #cleanupPage(pageProxyId) {
-    this.#cleanedPages.add(pageProxyId);
     this.#objsMap.get(pageProxyId)?.clear();
     this.#objsMap.delete(pageProxyId);
     for (const [renderTaskId, renderTaskState] of this.#renderTaskStates) {
@@ -234,14 +227,9 @@ class RendererMessageHandler {
         : objectHandler.resolveCommonObject(id, type, exportedData)
     );
 
+    // The main thread drops objects for cleaned pages. This channel preserves
+    // message order.
     handler.on("obj", ([id, pageProxyId, type, imageData]) => {
-      // The page may have been cleaned up before this message was processed;
-      // drop the data and release any `ImageBitmap` instead of resurrecting
-      // an empty object bag for a dead page.
-      if (this.#cleanedPages.has(pageProxyId)) {
-        imageData?.bitmap?.close();
-        return;
-      }
       objectHandler.resolveObject(id, pageProxyId, type, imageData);
     });
 
@@ -249,9 +237,6 @@ class RendererMessageHandler {
       const error = new Error(reason);
       if (pageProxyId === null) {
         this.#commonObjs.reject(id, error);
-        return;
-      }
-      if (this.#cleanedPages.has(pageProxyId)) {
         return;
       }
       this.#getPageObjs(pageProxyId).reject(id, error);
@@ -273,10 +258,6 @@ class RendererMessageHandler {
 
     handler.on("cleanupPage", ({ pageProxyId }) => {
       this.#cleanupPage(pageProxyId);
-    });
-
-    handler.on("restorePage", ({ pageProxyId }) => {
-      this.#cleanedPages.delete(pageProxyId);
     });
 
     // Mirrors the document-level cleanup the main thread performs in
@@ -351,21 +332,11 @@ class RendererMessageHandler {
         const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
         const filterFactory = new WorkerFilterFactory();
         const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
-        let bboxTracker = null;
-        let dependencyTracker = null;
-        let imagesTracker = null;
-        if (recordOperations || recordImages) {
-          bboxTracker = new CanvasBBoxTracker(canvas, 0);
-        }
-        if (recordOperations) {
-          dependencyTracker = new CanvasDependencyTracker(
-            bboxTracker,
-            /* recordDebugMetadata = */ false
-          );
-        }
-        if (recordImages) {
-          imagesTracker = new CanvasImagesTracker(canvas);
-        }
+        const { dependencyTracker, imagesTracker } = createCanvasTrackers(
+          canvas,
+          /* operationsCount = */ 0,
+          { recordOperations, recordImages }
+        );
 
         // `pageColors` requires DOM-based SVG filters, so pages that need it
         // never render in the worker.
@@ -378,7 +349,7 @@ class RendererMessageHandler {
           { optionalContentConfig },
           annotationCanvases,
           /* pageColors = */ null,
-          dependencyTracker ?? bboxTracker,
+          dependencyTracker,
           imagesTracker
         );
 

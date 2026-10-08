@@ -125,11 +125,14 @@ class ObjectHandler {
     return null;
   }
 
+  /**
+   * @returns {boolean} Whether the object was stored.
+   */
   resolveObject(id, pageProxyId, type, exportedData) {
     let pageOrObjs = this.pageCache.get(pageProxyId);
     if (!pageOrObjs) {
       if (!this.shouldCreatePageObjs) {
-        return;
+        return false;
       }
       pageOrObjs = new PDFObjects();
       this.pageCache.set(pageProxyId, pageOrObjs);
@@ -137,19 +140,19 @@ class ObjectHandler {
 
     const objs = pageOrObjs.objs || pageOrObjs;
     if (objs.has(id)) {
-      return;
+      return false;
     }
     // Don't store data *after* cleanup has successfully run, see bug 1854145.
     if (pageOrObjs._intentStates?.size === 0) {
       exportedData?.bitmap?.close(); // Release any `ImageBitmap` data.
-      return;
+      return false;
     }
 
     switch (type) {
       case "Image":
       case "Pattern":
         objs.resolve(id, exportedData);
-        break;
+        return true;
       default:
         throw new Error(`Got unknown object type ${type}`);
     }
