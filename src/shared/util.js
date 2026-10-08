@@ -1061,10 +1061,7 @@ function normalizeUnicode(str) {
 }
 
 function getUuid() {
-  if (
-    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-    typeof crypto.randomUUID === "function"
-  ) {
+  if (typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   const buf = new Uint8Array(32);
