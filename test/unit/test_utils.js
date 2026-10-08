@@ -22,7 +22,7 @@ import {
 import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
 import { DOMBinaryDataFactory } from "../../src/display/binary_data_factory.js";
-import { fetchData as fetchDataDOM } from "../../src/display/display_utils.js";
+import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 

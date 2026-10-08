@@ -53,7 +53,7 @@ import {
   PDFDateString,
   renderRichText,
   setLayerDimensions,
-} from "./display_utils.js";
+} from "./dom_utils.js";
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";

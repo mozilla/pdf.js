@@ -20,7 +20,7 @@
 
 import { AnnotationEditorParamsType, unreachable } from "../../shared/util.js";
 import { bindEvents, CurrentPointers } from "./tools.js";
-import { noContextMenu, stopEvent } from "../display_utils.js";
+import { noContextMenu, stopEvent } from "../dom_utils.js";
 import { AnnotationEditor } from "./editor.js";
 
 class DrawingOptions {

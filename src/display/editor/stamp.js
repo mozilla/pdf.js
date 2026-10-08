@@ -15,12 +15,12 @@
 
 import { AnnotationEditorType, AnnotationPrefix } from "../../shared/util.js";
 import {
-  ColorScheme,
   OutputScale,
   PixelsPerInch,
   SupportedImageMimeTypes,
 } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
+import { ColorScheme } from "../dom_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
 /**

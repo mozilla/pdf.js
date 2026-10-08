@@ -32,7 +32,7 @@ import {
 import { AnnotationEditor } from "./editor.js";
 import { ColorPicker } from "./color_picker.js";
 import { KeyboardManager } from "./tools.js";
-import { stopEvent } from "../display_utils.js";
+import { stopEvent } from "../dom_utils.js";
 
 class HighlightDrawingOptions extends DrawingOptions {
   constructor(properties = null) {

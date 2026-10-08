@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { OutputScale, stopEvent } from "./display_utils.js";
+import { OutputScale } from "./display_utils.js";
+import { stopEvent } from "./dom_utils.js";
 
 function preventDefault(evt) {
   evt.preventDefault();

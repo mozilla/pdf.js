@@ -1,0 +1,469 @@
+/* Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {
+  getFilenameFromUrl,
+  getPdfFilenameFromUrl,
+  isValidFetchUrl,
+  PDFDateString,
+  renderRichText,
+} from "../../src/display/dom_utils.js";
+import { isNodeJS } from "../../src/shared/util.js";
+
+describe("dom_utils", function () {
+  describe("getFilenameFromUrl", function () {
+    it("should get the filename from an absolute URL", function () {
+      const url = "https://server.org/filename.pdf";
+      expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
+    });
+
+    it("should get the filename from a relative URL", function () {
+      const url = "../../filename.pdf";
+      expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
+    });
+
+    it("should get the filename from a URL with an anchor", function () {
+      const url = "https://server.org/filename.pdf#foo";
+      expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
+    });
+
+    it("should get the filename from a URL with query parameters", function () {
+      const url = "https://server.org/filename.pdf?foo=bar";
+      expect(getFilenameFromUrl(url)).toEqual("filename.pdf");
+    });
+  });
+
+  describe("getPdfFilenameFromUrl", function () {
+    it("gets PDF filename", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.pdf")).toEqual("file1.pdf");
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/file2.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets fallback filename", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.txt")).toEqual("document.pdf");
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/file2.txt")
+      ).toEqual("document.pdf");
+    });
+
+    it("gets custom fallback filename", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.txt", "qwerty1.pdf")).toEqual(
+        "qwerty1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl(
+          "http://www.example.com/pdfs/file2.txt",
+          "qwerty2.pdf"
+        )
+      ).toEqual("qwerty2.pdf");
+
+      // An empty string should be a valid custom fallback filename.
+      expect(getPdfFilenameFromUrl("/pdfs/file3.txt", "")).toEqual("");
+    });
+
+    it("gets fallback filename when url is not a string", function () {
+      expect(getPdfFilenameFromUrl(null)).toEqual("document.pdf");
+
+      expect(getPdfFilenameFromUrl(null, "file.pdf")).toEqual("file.pdf");
+    });
+
+    it("gets PDF filename from URL containing leading/trailing whitespace", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("   /pdfs/file1.pdf   ")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("   http://www.example.com/pdfs/file2.pdf   ")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from query string", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html?name=file1.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/pdf.html?file2.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from hash string", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#name=file1.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/pdf.html#file2.pdf")
+      ).toEqual("file2.pdf");
+      // Only the last ".pdf" of the hash is used.
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#a.pdf/b.pdf")).toEqual(
+        "b.pdf"
+      );
+      // A ".pdf" which isn't preceded by a name is ignored.
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#=.pdf")).toEqual(
+        "document.pdf"
+      );
+      // An invalid last ".pdf" prevents an earlier valid one from being used.
+      expect(getPdfFilenameFromUrl("/pdfs/pdfs.html#a.pdf/=.pdf")).toEqual(
+        "document.pdf"
+      );
+    });
+
+    it("gets PDF filename from a long hash string efficiently", function () {
+      // Scanning the hash for a name is quadratic when it contains no ".pdf".
+      const url = `/pdfs/pdfs.html#${"a".repeat(200000)}`;
+
+      const startTime = performance.now();
+      const filename = getPdfFilenameFromUrl(url);
+      const duration = performance.now() - startTime;
+
+      expect(filename).toEqual("document.pdf");
+      expect(duration).toBeLessThan(1000);
+    });
+
+    it("gets correct PDF filename when multiple ones are present", function () {
+      // Relative URL
+      expect(getPdfFilenameFromUrl("/pdfs/file1.pdf?name=file.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // Absolute URL
+      expect(
+        getPdfFilenameFromUrl("http://www.example.com/pdfs/file2.pdf#file.pdf")
+      ).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from URI-encoded data", function () {
+      const encodedUrl = encodeURIComponent(
+        "http://www.example.com/pdfs/file1.pdf"
+      );
+      expect(getPdfFilenameFromUrl(encodedUrl)).toEqual("file1.pdf");
+
+      const encodedUrlWithQuery = encodeURIComponent(
+        "http://www.example.com/pdfs/file.txt?file2.pdf"
+      );
+      expect(getPdfFilenameFromUrl(encodedUrlWithQuery)).toEqual("file2.pdf");
+    });
+
+    it("gets PDF filename from data mistaken for URI-encoded", function () {
+      expect(getPdfFilenameFromUrl("/pdfs/%AA.pdf")).toEqual("%AA.pdf");
+
+      expect(getPdfFilenameFromUrl("/pdfs/%2F.pdf")).toEqual("%2F.pdf");
+
+      // A corrupt relative URL.
+      expect(getPdfFilenameFromUrl("//%%file.pdf")).toEqual("document.pdf");
+    });
+
+    it("gets PDF filename from (some) standard protocols", function () {
+      // HTTP
+      expect(getPdfFilenameFromUrl("http://www.example.com/file1.pdf")).toEqual(
+        "file1.pdf"
+      );
+      // HTTPS
+      expect(
+        getPdfFilenameFromUrl("https://www.example.com/file2.pdf")
+      ).toEqual("file2.pdf");
+      // File
+      expect(getPdfFilenameFromUrl("file:///path/to/files/file3.pdf")).toEqual(
+        "file3.pdf"
+      );
+      // FTP
+      expect(getPdfFilenameFromUrl("ftp://www.example.com/file4.pdf")).toEqual(
+        "file4.pdf"
+      );
+    });
+
+    it('gets PDF filename from query string appended to "blob:" URL', function () {
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const blobUrl = URL.createObjectURL(
+        new Blob([typedArray], { type: "application/pdf" })
+      );
+      // Sanity check to ensure that a "blob:" URL was returned.
+      expect(blobUrl.startsWith("blob:")).toBeTrue();
+
+      expect(getPdfFilenameFromUrl(blobUrl + "?file.pdf")).toEqual("file.pdf");
+    });
+
+    it('gets fallback filename from query string appended to "data:" URL', function () {
+      const typedArray = new Uint8Array([1, 2, 3, 4, 5]);
+      const dataUrl = `data:application/pdf;base64,${typedArray.toBase64()}`;
+
+      expect(getPdfFilenameFromUrl(dataUrl + "?file1.pdf")).toEqual(
+        "document.pdf"
+      );
+
+      // Should correctly detect a "data:" URL with leading whitespace.
+      expect(getPdfFilenameFromUrl("     " + dataUrl + "?file2.pdf")).toEqual(
+        "document.pdf"
+      );
+    });
+
+    it("gets PDF filename with a hash sign", function () {
+      expect(getPdfFilenameFromUrl("/foo.html?file=foo%23.pdf")).toEqual(
+        "foo#.pdf"
+      );
+
+      expect(getPdfFilenameFromUrl("/foo.html?file=%23.pdf")).toEqual("#.pdf");
+
+      expect(getPdfFilenameFromUrl("/foo.html?foo%23.pdf")).toEqual("foo#.pdf");
+
+      expect(getPdfFilenameFromUrl("/foo%23.pdf?a=b#c")).toEqual("foo#.pdf");
+
+      expect(getPdfFilenameFromUrl("foo.html#%23.pdf")).toEqual("#.pdf");
+    });
+  });
+
+  describe("isValidFetchUrl", function () {
+    it("handles invalid Fetch URLs", function () {
+      expect(isValidFetchUrl(null)).toBeFalse();
+      expect(isValidFetchUrl(100)).toBeFalse();
+      expect(isValidFetchUrl("foo")).toBeFalse();
+      expect(isValidFetchUrl("/foo", 100)).toBeFalse();
+    });
+
+    it("handles relative Fetch URLs", function () {
+      expect(isValidFetchUrl("/foo", "file://www.example.com")).toBeFalse();
+      expect(isValidFetchUrl("/foo", "http://www.example.com")).toBeTrue();
+    });
+
+    it("handles unsupported Fetch protocols", function () {
+      expect(isValidFetchUrl("file://www.example.com")).toBeFalse();
+      expect(isValidFetchUrl("ftp://www.example.com")).toBeFalse();
+    });
+
+    it("handles supported Fetch protocols", function () {
+      expect(isValidFetchUrl("http://www.example.com")).toBeTrue();
+      expect(isValidFetchUrl("https://www.example.com")).toBeTrue();
+    });
+  });
+
+  describe("PDFDateString", function () {
+    describe("toDateObject", function () {
+      it("converts PDF date strings to JavaScript `Date` objects", function () {
+        const expectations = {
+          undefined: null,
+          null: null,
+          42: null,
+          2019: null,
+          D2019: null,
+          "D:": null,
+          "D:201": null,
+          "D:2019": new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          "D:20190": new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          "D:201900": new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          "D:201913": new Date(Date.UTC(2019, 0, 1, 0, 0, 0)),
+          "D:201902": new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          "D:2019020": new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          "D:20190200": new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          "D:20190232": new Date(Date.UTC(2019, 1, 1, 0, 0, 0)),
+          "D:20190203": new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          // Invalid dates like the 31th of April are handled by JavaScript:
+          "D:20190431": new Date(Date.UTC(2019, 4, 1, 0, 0, 0)),
+          "D:201902030": new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          "D:2019020300": new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          "D:2019020324": new Date(Date.UTC(2019, 1, 3, 0, 0, 0)),
+          "D:2019020304": new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          "D:20190203040": new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          "D:201902030400": new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          "D:201902030460": new Date(Date.UTC(2019, 1, 3, 4, 0, 0)),
+          "D:201902030405": new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          "D:2019020304050": new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          "D:20190203040500": new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          "D:20190203040560": new Date(Date.UTC(2019, 1, 3, 4, 5, 0)),
+          "D:20190203040506": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506F": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506Z": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506-": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506+": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506+'": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506+0": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506+01": new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          "D:20190203040506+00'": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506+24'": new Date(Date.UTC(2019, 1, 3, 4, 5, 6)),
+          "D:20190203040506+01'": new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          "D:20190203040506+01'0": new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          "D:20190203040506+01'00": new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          "D:20190203040506+01'60": new Date(Date.UTC(2019, 1, 3, 3, 5, 6)),
+          "D:20190203040506+0102": new Date(Date.UTC(2019, 1, 3, 3, 3, 6)),
+          "D:20190203040506+01'02": new Date(Date.UTC(2019, 1, 3, 3, 3, 6)),
+          "D:20190203040506+01'02'": new Date(Date.UTC(2019, 1, 3, 3, 3, 6)),
+          // Offset hour and minute that result in a day change:
+          "D:20190203040506+05'07": new Date(Date.UTC(2019, 1, 2, 22, 58, 6)),
+        };
+
+        for (const [input, expectation] of Object.entries(expectations)) {
+          const result = PDFDateString.toDateObject(input);
+          if (result) {
+            expect(result.getTime()).toEqual(expectation.getTime());
+          } else {
+            expect(result).toEqual(expectation);
+          }
+        }
+        const now = new Date();
+        expect(PDFDateString.toDateObject(now)).toEqual(now);
+      });
+    });
+  });
+
+  describe("renderRichText", function () {
+    // Unlike other tests we cannot simply compare the HTML-strings since
+    // Chrome and Firefox produce different results. Instead we compare sets
+    // containing the individual parts of the HTML-strings.
+    const splitParts = s => new Set(s.split(/[<>/ ]+/).filter(Boolean));
+
+    it("should render plain text", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      renderRichText(
+        {
+          html: "Hello world!\nThis is a test.",
+          dir: "ltr",
+          className: "foo",
+        },
+        container
+      );
+      expect(splitParts(container.innerHTML)).toEqual(
+        splitParts(
+          '<p dir="ltr" class="richText foo">Hello world!<br>This is a test.</p>'
+        )
+      );
+    });
+
+    it("should render XFA rich text", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        attributes: { style: { color: "red" } },
+        children: [
+          {
+            name: "p",
+            attributes: { style: { fontSize: "20px" } },
+            children: [
+              {
+                name: "span",
+                attributes: { style: { fontWeight: "bold" } },
+                value: "Hello",
+              },
+              { name: "#text", value: " world!" },
+            ],
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+      expect(splitParts(container.innerHTML)).toEqual(
+        splitParts(
+          '<div style="color: red;" class="richText foo">' +
+            '<p style="font-size: 20px;">' +
+            '<span style="font-weight: bold;">Hello</span> world!</p></div>'
+        )
+      );
+    });
+
+    it("should only keep the supported rich text elements", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        children: [
+          { name: "p", value: "kept" },
+          {
+            name: "section",
+            children: [{ name: "span", value: "removed" }],
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+
+      expect(container.querySelector("p")).not.toBeNull();
+      expect(container.querySelector("section")).toBeNull();
+      expect(container.querySelector("span")).toBeNull();
+      expect(container.textContent).toEqual("kept");
+    });
+
+    it("should only keep the supported rich text attributes", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        children: [
+          {
+            name: "p",
+            attributes: { class: ["bar"], dir: "rtl", title: "unsupported" },
+            value: "text",
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+      const p = container.querySelector("p");
+
+      expect(p.getAttribute("class")).toEqual("bar");
+      expect(p.getAttribute("dir")).toEqual("rtl");
+      expect(p.hasAttribute("title")).toEqual(false);
+    });
+
+    it("should only apply the supported rich text style properties", function () {
+      if (isNodeJS) {
+        pending("DOM is not supported in Node.js.");
+      }
+      const container = document.createElement("div");
+      const xfaHtml = {
+        name: "div",
+        children: [
+          {
+            name: "span",
+            attributes: { style: { color: "green", width: "100px" } },
+            value: "text",
+          },
+        ],
+      };
+      renderRichText(
+        { html: xfaHtml, dir: "ltr", className: "foo" },
+        container
+      );
+      const span = container.querySelector("span");
+
+      expect(span.style.color).toEqual("green");
+      expect(span.style.width).toEqual("");
+    });
+  });
+});

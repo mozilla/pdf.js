@@ -14,7 +14,7 @@
  */
 
 import { bidi } from "../../src/core/bidi.js";
-import { fetchData } from "../../src/display/display_utils.js";
+import { fetchData } from "../../src/display/dom_utils.js";
 import { isNodeJS } from "../../src/shared/util.js";
 
 const BIDI_TEST_DATA_PATH = isNodeJS ? "./test/bidi/" : "../bidi/";

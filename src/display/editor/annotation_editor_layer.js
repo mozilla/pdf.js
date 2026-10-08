@@ -30,7 +30,7 @@ import {
   AnnotationEditorType,
   FeatureTest,
 } from "../../shared/util.js";
-import { setLayerDimensions, stopEvent } from "../display_utils.js";
+import { setLayerDimensions, stopEvent } from "../dom_utils.js";
 import { AnnotationEditor } from "./editor.js";
 import { FreeTextEditor } from "./freetext.js";
 import { HighlightEditor } from "./highlight.js";

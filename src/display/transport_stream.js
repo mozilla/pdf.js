@@ -19,7 +19,7 @@ import {
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
 import { assert } from "../shared/util.js";
-import { isPdfFile } from "./display_utils.js";
+import { isPdfFile } from "./dom_utils.js";
 
 function getArrayBuffer(val) {
   // Prevent any possible issues by only transferring a Uint8Array that

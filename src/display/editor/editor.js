@@ -23,7 +23,7 @@ import {
   KeyboardManager,
 } from "./tools.js";
 import { FeatureTest, shadow, unreachable } from "../../shared/util.js";
-import { noContextMenu, stopEvent } from "../display_utils.js";
+import { noContextMenu, stopEvent } from "../dom_utils.js";
 import { AltText } from "./alt_text.js";
 import { Comment } from "./comment.js";
 import { EditorToolbar } from "./toolbar.js";

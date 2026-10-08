@@ -40,11 +40,6 @@ import {
   TestPdfsServer,
 } from "./test_utils.js";
 import {
-  fetchData as fetchDataDOM,
-  RenderingCancelledException,
-  StatTimer,
-} from "../../src/display/display_utils.js";
-import {
   getDocument,
   PDFDataRangeTransport,
   PDFDocumentLoadingTask,
@@ -53,12 +48,14 @@ import {
   PDFWorker,
   RenderTask,
 } from "../../src/display/api.js";
+import { isSameOrigin, StatTimer } from "../../src/display/api_utils.js";
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
+import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
-import { isSameOrigin } from "../../src/display/api_utils.js";
 import { Metadata } from "../../src/display/metadata.js";
 import { PageViewport } from "../../src/display/page_viewport.js";
+import { RenderingCancelledException } from "../../src/display/display_utils.js";
 
 const WORKER_SRC = "../../build/generic/build/pdf.worker.mjs";
 

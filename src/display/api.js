@@ -43,13 +43,9 @@ import {
   getWorkerSrc,
   isRefProxy,
   LoopbackPort,
-} from "./api_utils.js";
-import {
-  isDataScheme,
-  isValidFetchUrl,
-  RenderingCancelledException,
   StatTimer,
-} from "./display_utils.js";
+} from "./api_utils.js";
+import { isDataScheme, isValidFetchUrl } from "./dom_utils.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import {
   NodeBinaryDataFactory,
@@ -74,6 +70,7 @@ import { PageViewport } from "./page_viewport.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
 import { PDFObjects } from "./pdf_objects.js";
 import { RendererWorker } from "./renderer_worker_proxy.js";
+import { RenderingCancelledException } from "./display_utils.js";
 import { TextLayer } from "./text_layer.js";
 import { XfaText } from "./xfa_text.js";
 
