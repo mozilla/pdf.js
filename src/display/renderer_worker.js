@@ -28,7 +28,11 @@ import { WorkerFilterFactory } from "./worker_filter_factory.js";
 const PARTIAL_FRAME_TIME = 500; // ms
 
 class RendererMessageHandler {
+  static #canvasFactory;
+
   static #commonObjs = new PDFObjects();
+
+  static #filterFactory;
 
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis,
@@ -329,8 +333,10 @@ class RendererMessageHandler {
           alpha: false,
           willReadFrequently: !enableHWA,
         });
-        const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
-        const filterFactory = new WorkerFilterFactory();
+        const canvasFactory = (this.#canvasFactory ??=
+          new OffscreenCanvasFactory({ enableHWA }));
+        const filterFactory = (this.#filterFactory ??=
+          new WorkerFilterFactory());
         const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
         const { dependencyTracker, imagesTracker } = createCanvasTrackers(
           canvas,
