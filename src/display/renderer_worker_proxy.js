@@ -41,6 +41,8 @@ class WorkerRenderTask {
 
   #canvasFactory;
 
+  #filteredLength = 0;
+
   #id;
 
   #initParams;
@@ -49,11 +51,11 @@ class WorkerRenderTask {
 
   #onFrame;
 
+  #operatorListState;
+
   #rendererWorker;
 
   #renderTasks;
-
-  #sentLength = 0;
 
   imageCoordinates = null;
 
@@ -65,6 +67,7 @@ class WorkerRenderTask {
     canvas,
     canvasFactory,
     annotationCanvasMap,
+    operatorListState,
     initParams,
     onFrame,
     onError,
@@ -74,6 +77,7 @@ class WorkerRenderTask {
     this.#canvas = canvas;
     this.#canvasFactory = canvasFactory;
     this.#annotationCanvasMap = annotationCanvasMap;
+    this.#operatorListState = operatorListState;
     this.#initParams = initParams;
     this.#id = initParams.renderTaskId;
     this.#onFrame = onFrame;
@@ -118,35 +122,40 @@ class WorkerRenderTask {
       throw new Error("Renderer worker was destroyed during rendering.");
     }
     const { lastChunk } = operatorList;
-    const start = this.#sentLength,
-      end = operatorList.argsArray.length;
-    let fnArray = null,
-      argsArray = null,
-      operationsFilterMask = null;
+    const end = operatorList.argsArray.length;
+    const operatorListState = this.#operatorListState;
 
-    if (start < end) {
-      fnArray = operatorList.fnArray.slice(start, end);
-      argsArray = operatorList.argsArray.slice(start, end);
+    // Send only operators not yet sent for this list.
+    if (operatorListState.sentLength < end) {
+      const start = operatorListState.sentLength;
+      handler.send("AppendOperatorList", {
+        pageProxyId: this.#initParams.pageProxyId,
+        operatorListId: operatorListState.id,
+        fnArray: operatorList.fnArray.slice(start, end),
+        argsArray: operatorList.argsArray.slice(start, end),
+      });
+      operatorListState.sentLength = end;
+    }
 
-      if (operationsFilter) {
-        // Send filter results because functions cannot be cloned.
-        operationsFilterMask = new Uint8Array(end - start);
-        for (let i = start; i < end; i++) {
-          operationsFilterMask[i - start] = operationsFilter(i, operatorList)
-            ? 1
-            : 0;
-        }
+    let operationsFilterMask = null;
+    if (operationsFilter && this.#filteredLength < end) {
+      // Send filter results because functions cannot be cloned.
+      const start = this.#filteredLength;
+      operationsFilterMask = new Uint8Array(end - start);
+      for (let i = start; i < end; i++) {
+        operationsFilterMask[i - start] = operationsFilter(i, operatorList)
+          ? 1
+          : 0;
       }
+      this.#filteredLength = end;
     }
     const response = await handler.sendWithPromise("ExecuteOperatorList", {
       renderTaskId: this.#id,
-      fnArray,
-      argsArray,
       operatorListIdx,
+      operatorListLength: end,
       operationsFilterMask,
       lastChunk,
     });
-    this.#sentLength = end;
 
     if (response.aborted && !this.#cancelled) {
       throw new Error("Render task was aborted in the renderer worker.");
@@ -236,6 +245,10 @@ class RendererWorker {
   #enableWebGPU;
 
   #messageHandler = null;
+
+  #operatorListId = 0;
+
+  #operatorLists = new WeakMap();
 
   #renderTaskId = 0;
 
@@ -416,6 +429,7 @@ class RendererWorker {
    */
   createRenderTask({
     pageProxyId,
+    operatorList,
     params,
     pageColors,
     canvasFactory,
@@ -436,14 +450,21 @@ class RendererWorker {
     ) {
       return null;
     }
+    const operatorListState = this.#operatorLists.getOrInsertComputed(
+      operatorList,
+      () => ({ id: this.#operatorListId++, sentLength: 0 })
+    );
+
     return new WorkerRenderTask({
       rendererWorker: this,
       renderTasks: this.#renderTasks,
       canvas,
       canvasFactory,
       annotationCanvasMap,
+      operatorListState,
       initParams: {
         pageProxyId,
+        operatorListId: operatorListState.id,
         renderTaskId: this.#renderTaskId++,
         hasAnnotationCanvasMap: !!annotationCanvasMap,
         recordOperations: params.recordOperations,
