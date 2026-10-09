@@ -1,0 +1,49 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 200]
+   /Annots [4 0 R 5 0 R] >>
+endobj
+
+4 0 obj
+<< /Type /Annot
+   /Subtype /Text
+   /Rect [50 100 70 120]
+   /T (Author Name)
+   /Subj (Bug Fix)
+   /Contents (This annotation has a subject field.)
+   /C [1 1 0]
+   /Open true
+   /Popup 5 0 R
+>>
+endobj
+
+5 0 obj
+<< /Type /Annot
+   /Subtype /Popup
+   /Rect [80 80 280 160]
+   /Parent 4 0 R
+   /Open true
+>>
+endobj
+
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000059 00000 n 
+0000000117 00000 n 
+0000000214 00000 n 
+0000000427 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+537
+%%EOF
