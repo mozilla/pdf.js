@@ -257,6 +257,10 @@ class RendererMessageHandler {
 
       this.#enableHWA = data.enableHWA;
       this.#enableWebGPU = data.enableWebGPU;
+
+      if (this.#enableWebGPU) {
+        initGPU(); // Start early, so it overlaps with page loading.
+      }
     });
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
