@@ -279,6 +279,7 @@ class RendererMessageHandler {
       if (!keepLoadedFonts) {
         this.#fontLoader.clear();
       }
+      this.#filterFactory?.destroy(/* keepHCM = */ true);
     });
 
     handler.on("CleanupRenderTask", ({ renderTaskId }) => {
