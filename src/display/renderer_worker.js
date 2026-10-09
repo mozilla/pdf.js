@@ -28,7 +28,15 @@ import { WorkerFilterFactory } from "./worker_filter_factory.js";
 const PARTIAL_FRAME_TIME = 500; // ms
 
 class RendererMessageHandler {
+  static #canvasFactory;
+
   static #commonObjs = new PDFObjects();
+
+  static #enableHWA = false;
+
+  static #enableWebGPU = false;
+
+  static #filterFactory;
 
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis,
@@ -246,6 +254,13 @@ class RendererMessageHandler {
   static #setup(handler) {
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
+
+      this.#enableHWA = data.enableHWA;
+      this.#enableWebGPU = data.enableWebGPU;
+
+      if (this.#enableWebGPU) {
+        initGPU(); // Start early, so it overlaps with page loading.
+      }
     });
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -268,6 +283,7 @@ class RendererMessageHandler {
       if (!keepLoadedFonts) {
         this.#fontLoader.clear();
       }
+      this.#filterFactory?.destroy(/* keepHCM = */ true);
     });
 
     handler.on("CleanupRenderTask", ({ renderTaskId }) => {
@@ -280,8 +296,6 @@ class RendererMessageHandler {
         height,
         pageProxyId,
         renderTaskId,
-        enableHWA = false,
-        enableWebGPU = false,
         hasAnnotationCanvasMap = false,
         transform,
         viewport,
@@ -314,7 +328,7 @@ class RendererMessageHandler {
       this.#renderTaskStates.set(renderTaskId, renderTaskState);
 
       try {
-        if (enableWebGPU) {
+        if (this.#enableWebGPU) {
           await initGPU();
           if (renderTaskState.aborted) {
             return;
@@ -327,10 +341,12 @@ class RendererMessageHandler {
 
         const ctx = canvas.getContext("2d", {
           alpha: false,
-          willReadFrequently: !enableHWA,
+          willReadFrequently: !this.#enableHWA,
         });
-        const canvasFactory = new OffscreenCanvasFactory({ enableHWA });
-        const filterFactory = new WorkerFilterFactory();
+        const canvasFactory = (this.#canvasFactory ??=
+          new OffscreenCanvasFactory({ enableHWA: this.#enableHWA }));
+        const filterFactory = (this.#filterFactory ??=
+          new WorkerFilterFactory());
         const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
         const { dependencyTracker, imagesTracker } = createCanvasTrackers(
           canvas,
