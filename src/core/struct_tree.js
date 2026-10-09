@@ -58,6 +58,8 @@ class StructTreeRoot {
 
   structParentIds = null;
 
+  #elementsByPage = null;
+
   constructor(xref, rootDict, rootRef) {
     this.xref = xref;
     this.dict = rootDict;
@@ -99,6 +101,60 @@ class StructTreeRoot {
     return this.kidRefToPosition
       ? (this.kidRefToPosition.get(kidRef) ?? NaN)
       : -1;
+  }
+
+  getElementsForPage(pageRef) {
+    if (!this.#elementsByPage) {
+      const elementsByPage = new RefMap();
+      const visited = new Set();
+      const walk = (dict, level) => {
+        if (!(dict instanceof Dict) || visited.has(dict)) {
+          return;
+        }
+        if (level > MAX_DEPTH) {
+          warn("StructTree MAX_DEPTH reached.");
+          return;
+        }
+        visited.add(dict);
+
+        const elementPageRef = dict.getRaw("Pg");
+        const kids = dict.get("K");
+        for (let kid of Array.isArray(kids) ? kids : [kids]) {
+          kid = this.xref.fetchIfRef(kid);
+          let contentPageRef = elementPageRef;
+          if (kid instanceof Dict) {
+            const type = kid.get("Type");
+            if (!isName(type, "MCR") && !isName(type, "OBJR")) {
+              walk(kid, level + 1);
+              continue;
+            }
+            const kidPageRef = kid.getRaw("Pg");
+            if (kidPageRef instanceof Ref) {
+              contentPageRef = kidPageRef;
+            }
+          } else if (!Number.isInteger(kid)) {
+            continue;
+          }
+          if (!(contentPageRef instanceof Ref)) {
+            continue;
+          }
+          const elements = elementsByPage.getOrPutComputed(
+            contentPageRef,
+            makeArr
+          );
+          if (elements.at(-1) !== dict) {
+            elements.push(dict);
+          }
+        }
+      };
+
+      const kids = this.dict.get("K");
+      for (const kid of Array.isArray(kids) ? kids : [kids]) {
+        walk(this.xref.fetchIfRef(kid), 0);
+      }
+      this.#elementsByPage = elementsByPage;
+    }
+    return this.#elementsByPage.get(pageRef);
   }
 
   #addIdToPage(pageRef, id, type, objId) {
@@ -905,6 +961,7 @@ class StructTreePage {
 
     const { parentTree } = this.root;
     if (!parentTree) {
+      this.#parseWithoutParentTree(pageRef);
       return;
     }
     const id = this.pageDict.get("StructParents");
@@ -1019,6 +1076,40 @@ class StructTreePage {
       this.nodes[index] = element;
     }
     return true;
+  }
+
+  #parseWithoutParentTree(pageRef) {
+    const elements = this.root.getElementsForPage(pageRef);
+    if (!elements) {
+      return;
+    }
+
+    const annotationRefs = new RefSet();
+    const annots = this.pageDict.get("Annots");
+    if (Array.isArray(annots)) {
+      for (const ref of annots) {
+        if (ref instanceof Ref) {
+          annotationRefs.put(ref);
+        }
+      }
+    }
+
+    const map = new Map();
+    for (const dict of elements) {
+      const elem = this.addNode(dict, map);
+      if (!elem) {
+        continue;
+      }
+      for (const kid of elem.kids) {
+        if (
+          kid.type === StructElementType.OBJECT &&
+          kid.refObjId &&
+          annotationRefs.has(kid.refObjId)
+        ) {
+          kid.type = StructElementType.ANNOTATION;
+        }
+      }
+    }
   }
 
   /**
