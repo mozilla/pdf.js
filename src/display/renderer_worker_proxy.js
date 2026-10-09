@@ -18,6 +18,7 @@ import { BBoxReader } from "./canvas_dependency_tracker.js";
 import { getWorkerSrc } from "./api_utils.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { MessageHandler } from "../shared/message_handler.js";
+import { OutputScale } from "./display_utils.js";
 import { setAnnotationCanvasName } from "./canvas.js";
 
 function closeFrame({ bitmap, annotationBitmaps }) {
@@ -452,6 +453,8 @@ class RendererWorker {
         transform: params.transform,
         viewport: params.viewport,
         background,
+        // Workers have no devicePixelRatio.
+        pixelRatio: OutputScale.pixelRatio,
       },
       onFrame,
       onError,

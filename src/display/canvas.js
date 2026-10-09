@@ -536,7 +536,7 @@ class TransferMapsFallback {
   }
 }
 
-function getImageSmoothingEnabled(transform, interpolate) {
+function getImageSmoothingEnabled(transform, interpolate, pixelRatio) {
   // In section 8.9.5.3 of the PDF spec, it's mentioned that the interpolate
   // flag should be used when the image is upscaled.
   // In Firefox, smoothing is always used when downscaling images (bug 1360415).
@@ -548,9 +548,7 @@ function getImageSmoothingEnabled(transform, interpolate) {
   Util.singularValueDecompose2dScale(transform, XY);
   // Round to a 32bit float so that `<=` check below will pass for numbers that
   // are very close, but not exactly the same 64bit floats.
-  const actualScale = Math.fround(
-    OutputScale.pixelRatio * PixelsPerInch.PDF_TO_CSS_UNITS
-  );
+  const actualScale = Math.fround(pixelRatio * PixelsPerInch.PDF_TO_CSS_UNITS);
   // `XY` is a Float32Array.
   return XY[0] <= actualScale && XY[1] <= actualScale;
 }
@@ -612,7 +610,11 @@ class CanvasGraphics {
     objs,
     canvasFactory,
     filterFactory,
-    { optionalContentConfig, markedContentStack = null },
+    {
+      optionalContentConfig,
+      markedContentStack = null,
+      pixelRatio = OutputScale.pixelRatio,
+    },
     annotationCanvasMap,
     pageColors,
     dependencyTracker,
@@ -659,6 +661,7 @@ class CanvasGraphics {
     this.contentVisible = true;
     this.markedContentStack = markedContentStack || [];
     this.optionalContentConfig = optionalContentConfig;
+    this.pixelRatio = pixelRatio;
     this.cachedPatterns = new Map();
     this.annotationCanvasMap = annotationCanvasMap;
     this.viewportScale = 1;
@@ -1120,7 +1123,8 @@ class CanvasGraphics {
 
     fillCtx.imageSmoothingEnabled = getImageSmoothingEnabled(
       getCurrentTransform(fillCtx),
-      img.interpolate
+      img.interpolate,
+      this.pixelRatio
     );
 
     drawImageAtIntegerCoords(
@@ -3126,6 +3130,7 @@ class CanvasGraphics {
             {
               optionalContentConfig: this.optionalContentConfig,
               markedContentStack: this.markedContentStack,
+              pixelRatio: this.pixelRatio,
             },
             undefined,
             undefined,
@@ -4160,7 +4165,8 @@ class CanvasGraphics {
     );
     ctx.imageSmoothingEnabled = getImageSmoothingEnabled(
       getCurrentTransform(ctx),
-      imgData.interpolate
+      imgData.interpolate,
+      this.pixelRatio
     );
 
     if (this.dependencyTracker) {
