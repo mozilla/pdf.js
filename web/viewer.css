@@ -1617,9 +1617,8 @@ dialog :link {
     background-color: var(--toolbar-icon-hover-bg-color);
   }
 
-  /* Mirror moz-select. Keep the inner select opaque because SelectParent uses
-     its computed background for the option popup; paint hover as a gradient so
-     background-color stays stable. */
+  /* Keep the select's background-color opaque and stable for Firefox's option
+     popup; paint hover with a gradient. */
   /*#if MOZCENTRAL*/
   @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
     overflow: hidden;
@@ -1665,6 +1664,11 @@ dialog :link {
 
       &:focus-visible {
         outline: none;
+      }
+
+      html[data-toolbar-density="compact"] & {
+        min-height: var(--button-min-height-small);
+        padding-block: var(--button-padding-block-small);
       }
     }
 
