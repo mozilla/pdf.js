@@ -1671,6 +1671,121 @@ describe("Reorganize Pages View", () => {
         })
       );
     });
+
+    it("should update the deselect button and the label together (bug 2080269)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          await waitForTextToBe(
+            page,
+            "#viewsManagerStatusActionLabel",
+            "Select pages"
+          );
+
+          // Record the label on button class changes.
+          await page.evaluate(() => {
+            const button = document.getElementById(
+              "viewsManagerStatusActionDeselectButton"
+            );
+            const label = document.getElementById(
+              "viewsManagerStatusActionLabel"
+            );
+            window.statusStates = [];
+            new MutationObserver(() => {
+              window.statusStates.push([
+                !button.classList.contains("hidden"),
+                label.textContent.trim(),
+              ]);
+            }).observe(button, {
+              attributes: true,
+              attributeFilter: ["class"],
+            });
+          });
+
+          const checkboxSelector = `.thumbnail:has(${getThumbnailSelector(1)}) input`;
+          const deselectButtonSelector =
+            "#viewsManagerStatusActionDeselectButton";
+          await waitAndClick(page, checkboxSelector);
+          await page.waitForSelector(`${deselectButtonSelector}:not(.hidden)`);
+          await waitAndClick(page, checkboxSelector);
+          await page.waitForSelector(`${deselectButtonSelector}.hidden`);
+
+          const states = await page.evaluate(() => window.statusStates);
+          expect(states)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              [true, `${FSI}1${PDI} selected`],
+              [false, "Select pages"],
+            ]);
+        })
+      );
+    });
+
+    it("should keep the latest label when translations finish out of order (bug 2080269)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+          const labelSelector = "#viewsManagerStatusActionLabel";
+          await waitForTextToBe(page, labelSelector, "Select pages");
+
+          // Delay "N selected" while checking and unchecking a thumbnail.
+          await page.evaluate(
+            selector => {
+              const { l10n } = document;
+              const formatMessages = l10n.formatMessages.bind(l10n);
+              window.delayedTranslations = [];
+              l10n.formatMessages = keys => {
+                const promise = formatMessages(keys);
+                if (
+                  !keys.some(
+                    ({ id }) =>
+                      id === "pdfjs-views-manager-pages-status-action-label"
+                  )
+                ) {
+                  return promise;
+                }
+                const delayed = promise.then(
+                  messages =>
+                    new Promise(resolve => {
+                      setTimeout(() => resolve(messages), 100);
+                    })
+                );
+                window.delayedTranslations.push(delayed);
+                return delayed;
+              };
+              const checkbox = document.querySelector(selector);
+              checkbox.click();
+              checkbox.click();
+            },
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          const delayedCount = await page.evaluate(async () => {
+            await Promise.all(window.delayedTranslations);
+            return window.delayedTranslations.length;
+          });
+          expect(delayedCount)
+            .withContext(`In ${browserName}: delayed translations`)
+            .toBeGreaterThan(0);
+
+          const [text, deselectHidden] = await page.$eval(
+            labelSelector,
+            (label, buttonSelector) => [
+              label.textContent.trim(),
+              document
+                .querySelector(buttonSelector)
+                .classList.contains("hidden"),
+            ],
+            "#viewsManagerStatusActionDeselectButton"
+          );
+          expect(text)
+            .withContext(`In ${browserName}: label`)
+            .toEqual("Select pages");
+          expect(deselectHidden)
+            .withContext(`In ${browserName}: deselect button hidden`)
+            .toBeTrue();
+        })
+      );
+    });
   });
 
   describe("Undo label reflects number of cut/deleted pages (bug 2010832)", () => {
@@ -2756,16 +2871,10 @@ describe("Reorganize Pages View", () => {
           );
           await awaitPromise(handlePagesEdited);
 
-          // After the drop the selection must be cleared: the deselect button
-          // must be hidden and the label must show the "no selection" state.
-          // Without the fix, the "2 selected" counter persists.
-          const deselectHidden = await page.$eval(
-            "#viewsManagerStatusActionDeselectButton",
-            el => el.classList.contains("hidden")
+          // Dropping clears the selection and restores the status label.
+          await page.waitForSelector(
+            "#viewsManagerStatusActionDeselectButton.hidden"
           );
-          expect(deselectHidden)
-            .withContext(`In ${browserName}: deselect button hidden`)
-            .toBeTrue();
 
           const labelId = await page.$eval(
             "#viewsManagerStatusActionLabel",

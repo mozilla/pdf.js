@@ -739,6 +739,7 @@ const PDFViewerApplication = {
         eventBus,
         renderingQueue,
         linkService,
+        l10n,
         maxCanvasPixels,
         maxCanvasDim,
         pageColors,
