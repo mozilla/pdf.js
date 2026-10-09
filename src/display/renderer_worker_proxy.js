@@ -307,6 +307,8 @@ class RendererWorker {
     this.#capability.resolve();
     this.#messageHandler.send("configure", {
       verbosity: this.verbosity,
+      enableHWA: this.#enableHWA,
+      enableWebGPU: this.#enableWebGPU,
     });
   }
 
@@ -455,8 +457,6 @@ class RendererWorker {
       initParams: {
         pageProxyId,
         renderTaskId: this.#renderTaskId++,
-        enableHWA: this.#enableHWA,
-        enableWebGPU: this.#enableWebGPU,
         hasAnnotationCanvasMap: !!annotationCanvasMap,
         recordOperations: params.recordOperations,
         recordImages: params.recordImages,

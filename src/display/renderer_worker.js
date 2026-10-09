@@ -32,6 +32,10 @@ class RendererMessageHandler {
 
   static #commonObjs = new PDFObjects();
 
+  static #enableHWA = false;
+
+  static #enableWebGPU = false;
+
   static #filterFactory;
 
   static #fontLoader = new FontLoader({
@@ -250,6 +254,9 @@ class RendererMessageHandler {
   static #setup(handler) {
     handler.on("configure", data => {
       setVerbosityLevel(data.verbosity);
+
+      this.#enableHWA = data.enableHWA;
+      this.#enableWebGPU = data.enableWebGPU;
     });
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
@@ -284,8 +291,6 @@ class RendererMessageHandler {
         height,
         pageProxyId,
         renderTaskId,
-        enableHWA = false,
-        enableWebGPU = false,
         hasAnnotationCanvasMap = false,
         transform,
         viewport,
@@ -318,7 +323,7 @@ class RendererMessageHandler {
       this.#renderTaskStates.set(renderTaskId, renderTaskState);
 
       try {
-        if (enableWebGPU) {
+        if (this.#enableWebGPU) {
           await initGPU();
           if (renderTaskState.aborted) {
             return;
@@ -331,10 +336,10 @@ class RendererMessageHandler {
 
         const ctx = canvas.getContext("2d", {
           alpha: false,
-          willReadFrequently: !enableHWA,
+          willReadFrequently: !this.#enableHWA,
         });
         const canvasFactory = (this.#canvasFactory ??=
-          new OffscreenCanvasFactory({ enableHWA }));
+          new OffscreenCanvasFactory({ enableHWA: this.#enableHWA }));
         const filterFactory = (this.#filterFactory ??=
           new WorkerFilterFactory());
         const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
