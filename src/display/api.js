@@ -3334,6 +3334,7 @@ class InternalRenderTask {
     this.#rendererTask =
       rendererWorker?.createRenderTask({
         pageProxyId,
+        operatorList,
         params,
         pageColors,
         canvasFactory,
