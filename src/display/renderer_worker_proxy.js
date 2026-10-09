@@ -403,18 +403,6 @@ class RendererWorker {
     this.#sendObj("obj", [id, pageProxyId, type, data], id, pageProxyId);
   }
 
-  /**
-   * Copy a cached worker image, or send the main-thread copy.
-   */
-  async copyLocalImage(id, data, image) {
-    const dataLen = await this.#messageHandler
-      ?.sendWithPromise("commonobj", [id, "CopyLocalImage", data])
-      .catch(() => null);
-    if (!dataLen) {
-      this.sendCommonObj(id, "Image", image);
-    }
-  }
-
   cleanup(keepLoadedFonts) {
     this.#messageHandler?.send("Cleanup", { keepLoadedFonts });
   }

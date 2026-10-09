@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { assert, makeSet, unreachable, warn } from "../shared/util.js";
+import {
+  assert,
+  FeatureTest,
+  makeSet,
+  unreachable,
+  warn,
+} from "../shared/util.js";
 import { RefMap, RefSet } from "./primitives.js";
 
 class BaseLocalCache {
@@ -195,6 +201,9 @@ class GlobalImageCache {
 
   #decodeFailedSet = new RefSet();
 
+  // Page images kept as VideoFrames for global reuse.
+  #decodedImages = new RefMap();
+
   constructor() {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
@@ -240,6 +249,67 @@ class GlobalImageCache {
 
   hasDecodeFailed(ref) {
     return this.#decodeFailedSet.has(ref);
+  }
+
+  /**
+   * Track the page before decoding so cleanup can discard the entry.
+   */
+  startDecodedImage(ref, pageProxyId) {
+    if (!FeatureTest.isVideoFrameSupported) {
+      return;
+    }
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      !FeatureTest.platform.isFirefox
+    ) {
+      return;
+    }
+    this.#decodedImages.get(ref)?.imgData?.bitmap.close();
+    this.#decodedImages.put(ref, { pageProxyId, imgData: null });
+  }
+
+  setDecodedImage(ref, imgData) {
+    const entry = this.#decodedImages.get(ref);
+    if (!entry || entry.imgData) {
+      return;
+    }
+    const { bitmap } = imgData;
+    try {
+      if (bitmap instanceof ImageBitmap) {
+        entry.imgData = {
+          ...imgData,
+          bitmap: new VideoFrame(bitmap, { timestamp: 0 }),
+        };
+      } else if (bitmap instanceof VideoFrame) {
+        entry.imgData = { ...imgData, bitmap: bitmap.clone() };
+      }
+    } catch (reason) {
+      warn(`GlobalImageCache.setDecodedImage - "${reason}".`);
+    }
+    if (!entry.imgData) {
+      this.#decodedImages.remove(ref);
+    }
+  }
+
+  /**
+   * @returns {object | null} The cached image, owned by the caller, or null.
+   */
+  takeDecodedImage(ref) {
+    const imgData = this.#decodedImages.get(ref)?.imgData;
+    if (!imgData) {
+      return null;
+    }
+    this.#decodedImages.remove(ref);
+    return imgData;
+  }
+
+  cleanupPage(pageProxyId) {
+    for (const [ref, entry] of this.#decodedImages.items()) {
+      if (entry.pageProxyId === pageProxyId) {
+        entry.imgData?.bitmap.close();
+        this.#decodedImages.remove(ref);
+      }
+    }
   }
 
   /**
@@ -296,6 +366,11 @@ class GlobalImageCache {
       this._refCache.clear();
     }
     this._imageCache.clear();
+
+    for (const { imgData } of this.#decodedImages.values()) {
+      imgData?.bitmap.close();
+    }
+    this.#decodedImages.clear();
   }
 }
 

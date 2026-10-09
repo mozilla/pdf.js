@@ -600,6 +600,14 @@ describe("primitives", function () {
       expect(cache.get(ref2)).toBe(obj1);
     });
 
+    it("should remove a value", function () {
+      cache.put(ref1, obj1);
+      cache.put(ref2, obj2);
+      cache.remove(ref1);
+      expect(cache.has(ref1)).toBeFalse();
+      expect(cache.get(ref2)).toBe(obj2);
+    });
+
     it("should report the size of the cache", function () {
       cache.put(ref1, obj1);
       expect(cache.size).toEqual(1);

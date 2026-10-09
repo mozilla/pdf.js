@@ -1834,7 +1834,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
-    this._transport.rendererWorker?.cleanupPage(this._id);
+    this._transport.cleanupPage(this._id);
     this.#pendingCleanup = false;
 
     return Promise.all(waitOn);
@@ -1871,7 +1871,7 @@ class PDFPageProxy {
     }
     this._intentStates.clear();
     this.objs.clear();
-    this._transport.rendererWorker?.cleanupPage(this._id);
+    this._transport.cleanupPage(this._id);
     this.#pendingCleanup = false;
     return true;
   }
@@ -2776,21 +2776,29 @@ class WorkerTransport {
       }
       const { rendererWorker } = this;
 
-      if (type !== "CopyLocalImage") {
-        rendererWorker?.sendCommonObj(id, type, exportedData);
+      if (
+        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+        type === "CopyLocalImage"
+      ) {
+        if (this.commonObjs.has(id)) {
+          return null;
+        }
+        const dataLen = objectHandler.resolveCommonObject(
+          id,
+          type,
+          exportedData
+        );
+        if (dataLen) {
+          rendererWorker?.sendCommonObj(id, "Image", this.commonObjs.get(id));
+        }
+        return dataLen;
       }
-      if (this.commonObjs.has(id)) {
-        return null;
-      }
-      const dataLen = objectHandler.resolveCommonObject(id, type, exportedData);
+      rendererWorker?.sendCommonObj(id, type, exportedData);
 
-      if (dataLen && rendererWorker) {
-        // Populate the renderer's cache when reusing decoded image data.
-        return rendererWorker
-          .copyLocalImage(id, exportedData, this.commonObjs.get(id))
-          .then(() => dataLen);
+      if (!this.commonObjs.has(id)) {
+        objectHandler.resolveCommonObject(id, type, exportedData);
       }
-      return dataLen;
+      return null;
     });
 
     messageHandler.on("obj", ([id, pageProxyId, type, imageData]) => {
@@ -3155,6 +3163,14 @@ class WorkerTransport {
     this.#methodPromises.clear();
     this.filterFactory.destroy(/* keepHCM = */ true);
     TextLayer.cleanup();
+  }
+
+  cleanupPage(pageProxyId) {
+    if (!this.destroyed) {
+      // Release cached frames in the parsing worker.
+      this.messageHandler.send("CleanupPage", { pageProxyId });
+    }
+    this.rendererWorker?.cleanupPage(pageProxyId);
   }
 
   cachedPageNumber(ref) {

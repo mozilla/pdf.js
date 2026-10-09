@@ -5977,7 +5977,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       );
       const pdfDoc = await loadingTask.promise;
       const { canvasFactory } = pdfDoc;
-      let checkedCopyLocalImage = false,
+      let checkedReusedDecodedImage = false,
         firstImgData = null;
 
       for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -6041,25 +6041,24 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(currentImgData.data).toEqual(firstImgData.data);
 
           if (i === NUM_PAGES_THRESHOLD) {
-            // Given the small image size, and its lack of SMask/Mask data,
-            // the image should *not* be copied in the main-thread.
-            checkedCopyLocalImage = currentImgData.CopyLocalImage;
+            // This small, unmasked pixel buffer bypasses both reuse paths.
+            checkedReusedDecodedImage = currentImgData.reusedDecodedImage;
           }
         }
       }
-      expect(checkedCopyLocalImage).toBeUndefined();
+      expect(checkedReusedDecodedImage).toBeUndefined();
 
       firstImgData = null;
       await loadingTask.destroy();
     });
 
-    it("caches image resources at the document/page level, with main-thread copying of complex images (issue 11518)", async function () {
+    it("caches image resources at the document/page level, with re-use of decoded complex images (issue 11518)", async function () {
       const { NUM_PAGES_THRESHOLD } = GlobalImageCache;
 
       const loadingTask = getDocument(buildGetDocumentParams("issue11518.pdf"));
       const pdfDoc = await loadingTask.promise;
       const { canvasFactory } = pdfDoc;
-      let checkedCopyLocalImage = false;
+      let checkedReusedDecodedImage = false;
 
       for (let i = 1; i <= pdfDoc.numPages; i++) {
         const pdfPage = await pdfDoc.getPage(i);
@@ -6092,15 +6091,186 @@ have written that much by now. So, here’s to squashing bugs.`);
           expect(objs.has(objId)).toBeFalse();
           expect(commonObjs.has(objId)).toBeTrue();
 
-          // Ensure that the image was copied in the main-thread (into
-          // commonObjs), rather than being re-parsed in the worker-thread.
           const imgData = commonObjs.get(objId);
-          checkedCopyLocalImage = imgData.CopyLocalImage;
+          checkedReusedDecodedImage = imgData.reusedDecodedImage;
+          if (!isNodeJS) {
+            expect(imgData.bitmap).toBeInstanceOf(
+              FeatureTest.platform.isFirefox ? VideoFrame : ImageBitmap
+            );
+          }
         } else {
           break;
         }
       }
-      expect(checkedCopyLocalImage).toBeTrue();
+      expect(checkedReusedDecodedImage).toBeTrue();
+
+      await loadingTask.destroy();
+    });
+
+    it("re-uses decoded images during main-thread rendering (issue 11518)", async function () {
+      if (isNodeJS) {
+        pending("Node.js doesn't decode images into bitmaps.");
+      }
+      // Test disabled worker rendering and the canvasContext fallback.
+      for (const useCanvasContext of [false, true]) {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("issue11518.pdf", {
+            disableWorkerRendering: !useCanvasContext,
+          })
+        );
+        const pdfDoc = await loadingTask.promise;
+        const { canvasFactory } = pdfDoc;
+        let imgData;
+
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const viewport = pdfPage.getViewport({ scale: 1 });
+          const canvasAndCtx = canvasFactory.create(
+            viewport.width,
+            viewport.height
+          );
+          const renderTask = pdfPage.render(
+            useCanvasContext
+              ? { canvasContext: canvasAndCtx.context, viewport }
+              : { canvas: canvasAndCtx.canvas, viewport }
+          );
+          expect(renderTask.isWorkerRendering).toBeFalse();
+          await renderTask.promise;
+          canvasFactory.destroy(canvasAndCtx);
+
+          const opList = renderTask.getOperatorList();
+          const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+          const [objId] = opList.argsArray[imgIndex];
+          imgData = pdfPage.commonObjs.has(objId)
+            ? pdfPage.commonObjs.get(objId)
+            : null;
+        }
+        expect(imgData.reusedDecodedImage)
+          .withContext(`useCanvasContext: ${useCanvasContext}`)
+          .toBeTrue();
+        expect(imgData.bitmap)
+          .withContext(`useCanvasContext: ${useCanvasContext}`)
+          .toBeInstanceOf(
+            FeatureTest.platform.isFirefox ? VideoFrame : ImageBitmap
+          );
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("keeps a paused page's images usable after another page re-uses them", async function () {
+      if (isNodeJS) {
+        pending("This test checks browser bitmap ownership.");
+      }
+      const contents =
+        "q 10 0 0 10 0 0 cm /Im0 Do Q\nq 10 0 0 10 10 0 cm /Im0 Do Q\n";
+      const data = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n",
+        ...[3, 4].map(
+          num =>
+            `${num} 0 obj\n<< /Type /Page /Parent 2 0 R ` +
+            "/MediaBox [0 0 20 10] /Resources << /XObject << /Im0 5 0 R >> >> " +
+            "/Contents 6 0 R >>\nendobj\n"
+        ),
+        "5 0 obj\n<< /Type /XObject /Subtype /Image /Width 1 /Height 1 " +
+          "/ColorSpace /DeviceRGB /BitsPerComponent 8 /SMask 7 0 R " +
+          "/Filter /ASCIIHexDecode /Length 7 >>\nstream\nFF0000>\nendstream\nendobj\n",
+        `6 0 obj\n<< /Length ${contents.length} >>\nstream\n${contents}endstream\nendobj\n`,
+        "7 0 obj\n<< /Type /XObject /Subtype /Image /Width 1 /Height 1 " +
+          "/ColorSpace /DeviceGray /BitsPerComponent 8 " +
+          "/Filter /ASCIIHexDecode /Length 3 >>\nstream\nFF>\nendstream\nendobj\n",
+      ]);
+      const loadingTask = getDocument({ data, disableWorkerRendering: true });
+      const pdfDoc = await loadingTask.promise;
+      const { canvasFactory } = pdfDoc;
+      const firstCanvas = canvasFactory.create(20, 10);
+      const secondCanvas = canvasFactory.create(20, 10);
+      try {
+        const firstPage = await pdfDoc.getPage(1);
+        const firstRenderParams = {
+          canvas: firstCanvas.canvas,
+          viewport: firstPage.getViewport({ scale: 1 }),
+        };
+        // Decode the image and cache the operator list, so that the next
+        // rendering pauses before painting anything.
+        await firstPage.render(firstRenderParams).promise;
+
+        // Pause before repainting both occurrences of the decoded image.
+        const paused = Promise.withResolvers();
+        const firstTask = firstPage.render(firstRenderParams);
+        firstTask.onContinue = cont => {
+          paused.resolve(cont);
+        };
+        const resume = await Promise.race([
+          paused.promise,
+          firstTask.promise.then(() => {
+            throw new Error("The first page completed without pausing.");
+          }),
+        ]);
+
+        const secondPage = await pdfDoc.getPage(2);
+        const secondTask = secondPage.render({
+          canvas: secondCanvas.canvas,
+          viewport: secondPage.getViewport({ scale: 1 }),
+        });
+        await secondTask.promise;
+        const { fnArray, argsArray } = secondTask.getOperatorList();
+        const [objId] = argsArray[fnArray.indexOf(OPS.paintImageXObject)];
+        expect(secondPage.commonObjs.get(objId).reusedDecodedImage).toBeTrue();
+
+        firstTask.onContinue = null;
+        resume();
+        await firstTask.promise;
+        for (const canvas of [firstCanvas, secondCanvas]) {
+          for (const x of [5, 15]) {
+            expect(canvas.context.getImageData(x, 5, 1, 1).data).toEqual(
+              new Uint8ClampedArray([255, 0, 0, 255])
+            );
+          }
+        }
+      } finally {
+        await loadingTask.destroy();
+        canvasFactory.destroy(firstCanvas);
+        canvasFactory.destroy(secondCanvas);
+      }
+    });
+
+    it("doesn't re-use the decoded images of a cleaned-up page (issue 11518)", async function () {
+      if (isNodeJS) {
+        pending("Node.js doesn't decode images into bitmaps.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("issue11518.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const { canvasFactory } = pdfDoc;
+
+      const renderPage = async pdfPage => {
+        const viewport = pdfPage.getViewport({ scale: 1 });
+        const canvasAndCtx = canvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvas: canvasAndCtx.canvas,
+          viewport,
+        });
+        await renderTask.promise;
+        canvasFactory.destroy(canvasAndCtx);
+
+        const opList = renderTask.getOperatorList();
+        const imgIndex = opList.fnArray.indexOf(OPS.paintImageXObject);
+        return opList.argsArray[imgIndex][0];
+      };
+
+      const firstPage = await pdfDoc.getPage(1);
+      await renderPage(firstPage);
+      expect(firstPage.cleanup()).toBeTrue();
+
+      const secondPage = await pdfDoc.getPage(2);
+      const objId = await renderPage(secondPage);
+      const imgData = secondPage.commonObjs.get(objId);
+      expect(imgData.bitmap).toBeInstanceOf(ImageBitmap);
+      expect(imgData.reusedDecodedImage).toBeUndefined();
 
       await loadingTask.destroy();
     });

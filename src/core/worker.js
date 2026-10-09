@@ -1048,6 +1048,12 @@ class WorkerMessageHandler {
       return pdfManager.cleanup(/* manuallyTriggered = */ true);
     });
 
+    handler.on("CleanupPage", async function ({ pageProxyId }) {
+      const globalImageCache =
+        await pdfManager.ensureCatalog("globalImageCache");
+      globalImageCache.cleanupPage(pageProxyId);
+    });
+
     handler.on("Terminate", async function () {
       terminated = true;
 

@@ -19,6 +19,8 @@ import {
   grayToRGBA,
 } from "../../src/shared/image_utils.js";
 import { FeatureTest, ImageKind } from "../../src/shared/util.js";
+import { GlobalImageCache } from "../../src/core/image_utils.js";
+import { Ref } from "../../src/core/primitives.js";
 
 describe("image_utils", function () {
   // Precompute endian-dependent constants once for all tests.
@@ -384,6 +386,92 @@ describe("image_utils", function () {
       expect(result.srcPos).toEqual(17);
       expect(result.destPos).toEqual(5);
       expect(dest).toEqual(new Uint32Array([WHITE, BLACK, WHITE, BLACK, RED]));
+    });
+  });
+
+  describe("GlobalImageCache decoded images", function () {
+    const ref = Ref.get(10, 0);
+    let frame;
+
+    beforeEach(function () {
+      if (
+        !FeatureTest.isVideoFrameSupported ||
+        !FeatureTest.platform.isFirefox
+      ) {
+        pending("Decoded images are only kept in Firefox.");
+      }
+      frame = new VideoFrame(new Uint8Array(4 * 4 * 4), {
+        format: "RGBA",
+        codedWidth: 4,
+        codedHeight: 4,
+        timestamp: 0,
+      });
+    });
+
+    afterEach(function () {
+      frame?.close();
+      frame = null;
+    });
+
+    it("keeps a decoded image until it's taken", function () {
+      const cache = new GlobalImageCache();
+      cache.startDecodedImage(ref, /* pageProxyId = */ 1);
+      cache.setDecodedImage(ref, { bitmap: frame, width: 4, height: 4 });
+
+      const imgData = cache.takeDecodedImage(ref);
+      expect(imgData.width).toEqual(4);
+      expect(imgData.bitmap).toBeInstanceOf(VideoFrame);
+      expect(imgData.bitmap).not.toBe(frame);
+      imgData.bitmap.close();
+
+      expect(cache.takeDecodedImage(ref)).toBeNull();
+    });
+
+    it("keeps a decoded ImageBitmap as a VideoFrame", async function () {
+      const bitmap = await createImageBitmap(new ImageData(4, 4));
+      const cache = new GlobalImageCache();
+      cache.startDecodedImage(ref, /* pageProxyId = */ 1);
+      cache.setDecodedImage(ref, { bitmap });
+      // The cache must survive closing the original bitmap.
+      bitmap.close();
+
+      const imgData = cache.takeDecodedImage(ref);
+      expect(imgData.bitmap).toBeInstanceOf(VideoFrame);
+      expect(imgData.bitmap.displayWidth).toEqual(4);
+      imgData.bitmap.close();
+    });
+
+    it("releases the decoded images when their page is cleaned-up", function () {
+      const cache = new GlobalImageCache();
+      cache.startDecodedImage(ref, /* pageProxyId = */ 1);
+      cache.setDecodedImage(ref, { bitmap: frame });
+
+      cache.cleanupPage(/* pageProxyId = */ 2);
+      cache.takeDecodedImage(ref).bitmap.close();
+
+      cache.startDecodedImage(ref, /* pageProxyId = */ 1);
+      cache.setDecodedImage(ref, { bitmap: frame });
+      cache.cleanupPage(/* pageProxyId = */ 1);
+      expect(cache.takeDecodedImage(ref)).toBeNull();
+      // The original frame remains open.
+      expect(frame.codedWidth).toEqual(4);
+    });
+
+    it("doesn't keep an image decoded after its page was cleaned-up", function () {
+      const cache = new GlobalImageCache();
+      cache.startDecodedImage(ref, /* pageProxyId = */ 1);
+      cache.cleanupPage(/* pageProxyId = */ 1);
+      cache.setDecodedImage(ref, { bitmap: frame });
+
+      expect(cache.takeDecodedImage(ref)).toBeNull();
+    });
+
+    it("doesn't keep images without a bitmap", function () {
+      const cache = new GlobalImageCache();
+      cache.startDecodedImage(ref, /* pageProxyId = */ 1);
+      cache.setDecodedImage(ref, { data: new Uint8Array(4) });
+
+      expect(cache.takeDecodedImage(ref)).toBeNull();
     });
   });
 });
