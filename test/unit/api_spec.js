@@ -6596,6 +6596,87 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       await loadingTask.destroy();
     });
+
+    it("re-uses the operator list in the renderer worker", async function () {
+      if (isNodeJS) {
+        pending("Worker rendering is not supported in Node.js.");
+      }
+      const BLACK = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff,
+        WHITE = 0xffffffff;
+
+      const loadingTask = getDocument(buildGetDocumentParams("clippath.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const { canvasFactory } = pdfDoc;
+
+      const { messageHandler } = pdfDoc._transport.rendererWorker;
+      spyOn(messageHandler, "send").and.callThrough();
+      const countSentOperators = () =>
+        messageHandler.send.calls
+          .allArgs()
+          .filter(([action]) => action === "AppendOperatorList")
+          .reduce((count, [, { fnArray }]) => count + fnArray.length, 0);
+
+      const render = async operationsFilter => {
+        const canvasAndCtx = canvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvas: canvasAndCtx.canvas,
+          viewport,
+          operationsFilter,
+        });
+        expect(renderTask.isWorkerRendering).toBeTrue();
+        await renderTask.promise;
+
+        const numPixels = { black: 0, white: 0, other: 0 };
+        for (const p of new Uint32Array(
+          canvasAndCtx.context.getImageData(
+            0,
+            0,
+            viewport.width,
+            viewport.height
+          ).data.buffer
+        )) {
+          if (p === BLACK) {
+            numPixels.black++;
+          } else if (p === WHITE) {
+            numPixels.white++;
+          } else {
+            numPixels.other++;
+          }
+        }
+        canvasFactory.destroy(canvasAndCtx);
+        return { numPixels, operatorList: renderTask.getOperatorList() };
+      };
+      const NORMAL = { black: 7200, white: 12800, other: 0 },
+        FILTERED = { black: 0, white: 20000, other: 0 };
+      const skipPaths = (i, operatorList) =>
+        operatorList.fnArray[i] !== OPS.constructPath;
+
+      const first = await render();
+      expect(first.numPixels).toEqual(NORMAL);
+      const { length } = first.operatorList.fnArray;
+      expect(countSentOperators()).toEqual(length);
+
+      // Concurrent filtered and unfiltered renders reuse the cached operators.
+      const [filtered, normal] = await Promise.all([
+        render(skipPaths),
+        render(),
+      ]);
+      expect(filtered.numPixels).toEqual(FILTERED);
+      expect(normal.numPixels).toEqual(NORMAL);
+      expect(countSentOperators()).toEqual(length);
+
+      // Page cleanup clears the worker's operator cache.
+      expect(pdfPage.cleanup()).toBeTrue();
+      expect((await render()).numPixels).toEqual(NORMAL);
+      expect(countSentOperators()).toEqual(2 * length);
+
+      await loadingTask.destroy();
+    });
   });
 
   describe("Multiple `getDocument` instances", function () {
