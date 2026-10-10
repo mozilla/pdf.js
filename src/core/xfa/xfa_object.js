@@ -560,9 +560,6 @@ class XFAObject {
       this[$content] = proto[$content];
     }
 
-    const newAncestors = new Set(ancestors);
-    newAncestors.add(proto);
-
     for (const unsetAttrName of this[_getUnsetAttributes](
       proto[_setAttributes]
     )) {
