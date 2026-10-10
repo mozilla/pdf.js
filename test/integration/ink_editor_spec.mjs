@@ -1094,6 +1094,80 @@ describe("Ink Editor", () => {
       );
     });
   });
+
+  describe("Undo must not remove strokes that were drawn immediately before a 2-3 point stroke", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that undo only removes the last stroke", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const pathSelector = '.canvasWrapper svg.draw path[d]:not([d=""])';
+
+          // Draw three short strokes in the same editor.
+          for (let i = 0; i < 3; i++) {
+            const x = rect.x + 20 + i * 70;
+            const y = rect.y + 100;
+
+            await drawLine(page, x, y, x + 10, y + 10);
+          }
+
+          // Make sure all three strokes are present.
+          await page.waitForFunction(
+            selector => {
+              const path = document.querySelector(selector)?.getAttribute("d");
+              return path?.match(/M/g)?.length === 3;
+            },
+            {},
+            pathSelector
+          );
+
+          const pathBeforeUndo = await page.$eval(
+            pathSelector,
+            path => path.getAttribute("d")
+          );
+
+          // Precondition: expecting three strokes, with the second stroke being a line (L), before testing undo.
+          expect(pathBeforeUndo)
+            .withContext(`In ${browserName}`)
+            .toMatch(/^ ?M [\d.]+ [\d.]+ L [\d.]+ [\d.]+ M [\d.]+ [\d.]+ L [\d.]+ [\d.]+ M /);
+
+          // Undo the last stroke without committing the drawing session.
+          await kbUndo(page);
+
+          // Wait until the SVG path has been updated.
+          await page.waitForFunction(
+            (selector, previousPath) =>
+              document.querySelector(selector)?.getAttribute("d") !==
+              previousPath,
+            {},
+            pathSelector,
+            pathBeforeUndo
+          );
+
+          const path = await page.$eval(
+            pathSelector,
+            element => element.getAttribute("d")
+          );
+
+          // The first two strokes must still be present.
+          expect(path.match(/M/g)?.length ?? 0)
+            .withContext(`In ${browserName}`)
+            .toEqual(2);
+        })
+      );
+    });
+  });
 });
 
 describe("The drawn line must reach the pointer", () => {
