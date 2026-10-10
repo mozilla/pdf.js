@@ -5925,6 +5925,88 @@ have written that much by now. So, here’s to squashing bugs.`);
       await checkTransferFunction(/* disableWorkerRendering = */ true);
     });
 
+    async function checkImageSmoothingPixelRatio(disableWorkerRendering) {
+      // At scale 2, this checkerboard is smoothed at DPR 2 but not DPR 1.
+      const image = "00FF00FFFF00FF0000FF00FFFF00FF00>";
+      const contents = "q 4 0 0 4 0 0 cm /Im0 Do Q";
+      const data = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 4 4] " +
+          "/Resources << /XObject << /Im0 4 0 R >> >> " +
+          "/Contents 5 0 R >>\nendobj\n",
+        "4 0 obj\n<< /Type /XObject /Subtype /Image /Width 4 /Height 4 " +
+          "/ColorSpace /DeviceGray /BitsPerComponent 8 " +
+          `/Filter /ASCIIHexDecode /Length ${image.length} >>\n` +
+          `stream\n${image}\nendstream\nendobj\n`,
+        `5 0 obj\n<< /Length ${contents.length} >>\n` +
+          `stream\n${contents}\nendstream\nendobj\n`,
+      ]);
+      const loadingTask = getDocument({ data, disableWorkerRendering });
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 2 });
+      const { canvasFactory } = pdfDoc;
+      const descriptor = Object.getOwnPropertyDescriptor(
+        globalThis,
+        "devicePixelRatio"
+      );
+
+      try {
+        for (const pixelRatio of [1, 2]) {
+          Object.defineProperty(globalThis, "devicePixelRatio", {
+            value: pixelRatio,
+            configurable: true,
+          });
+          const canvasAndCtx = canvasFactory.create(
+            viewport.width,
+            viewport.height
+          );
+          const renderTask = pdfPage.render({
+            canvas: canvasAndCtx.canvas,
+            viewport,
+          });
+          await renderTask.promise;
+          expect(renderTask.isWorkerRendering).toEqual(
+            !disableWorkerRendering && !isNodeJS
+          );
+
+          const { data: pixels } = canvasAndCtx.context.getImageData(
+            0,
+            0,
+            viewport.width,
+            viewport.height
+          );
+          let smoothed = false;
+          for (let i = 0, ii = pixels.length; i < ii; i += 4) {
+            if (pixels[i] !== 0 && pixels[i] !== 255) {
+              smoothed = true;
+              break;
+            }
+          }
+          expect(smoothed)
+            .withContext(`devicePixelRatio = ${pixelRatio}`)
+            .toEqual(pixelRatio === 2);
+          canvasFactory.destroy(canvasAndCtx);
+        }
+      } finally {
+        if (descriptor) {
+          Object.defineProperty(globalThis, "devicePixelRatio", descriptor);
+        } else {
+          delete globalThis.devicePixelRatio;
+        }
+        await loadingTask.destroy();
+      }
+    }
+
+    it("uses the device pixel ratio for image smoothing", async function () {
+      await checkImageSmoothingPixelRatio(/* disableWorkerRendering = */ false);
+    });
+
+    it("uses the device pixel ratio for image smoothing on the main-thread", async function () {
+      await checkImageSmoothingPixelRatio(/* disableWorkerRendering = */ true);
+    });
+
     it("cleans up document resources during rendering of page", async function () {
       const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
