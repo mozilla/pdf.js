@@ -44,8 +44,10 @@
   --button-border-radius: initial;
   --button-font-weight: initial;
   --button-min-height: initial;
+  --button-min-height-small: initial;
   --button-opacity-disabled: initial;
   --button-padding-block: initial;
+  --button-padding-block-small: initial;
   --button-padding-inline: initial;
   --button-text-color: initial;
   --button-text-color-hover: initial;
