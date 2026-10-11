@@ -870,6 +870,10 @@ class StampEditor extends AnnotationEditor {
       if (changes.isSameAltText) {
         delete serialized.accessibilityData;
       } else {
+        // Ensure accessibilityData exists before setting structParent
+        if (!serialized.accessibilityData) {
+          serialized.accessibilityData = {};
+        }
         serialized.accessibilityData.structParent =
           this._initialData.structParent ?? -1;
       }
