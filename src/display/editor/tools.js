@@ -1915,6 +1915,20 @@ class AnnotationEditorUIManager {
     }
   }
 
+  #getAllEditors() {
+    const allEditors = Array.from(this.#allEditors.values());
+    for (const [id, editor] of this.#annotationStorage || []) {
+      if (
+        id.startsWith(AnnotationEditorPrefix) &&
+        !this.#allEditors.has(id) &&
+        Number.isInteger(editor?.pageIndex)
+      ) {
+        allEditors.push(editor);
+      }
+    }
+    return allEditors;
+  }
+
   startUpdatePages() {
     this.#savedAllLayers = new Map(this.#allLayers);
     this.#allLayers.clear();
@@ -1925,19 +1939,8 @@ class AnnotationEditorUIManager {
         .getOrInsertComputed(editor.pageIndex, makeArr)
         .push(editor);
     };
-    for (const editor of this.#allEditors.values()) {
+    for (const editor of this.#getAllEditors()) {
       saveEditor(editor);
-    }
-    // Clones are initially kept serialized until their editor layer is
-    // rendered, hence they're not present in #allEditors yet.
-    for (const [id, editor] of this.#annotationStorage) {
-      if (
-        id.startsWith(AnnotationEditorPrefix) &&
-        !this.#allEditors.has(id) &&
-        Number.isInteger(editor?.pageIndex)
-      ) {
-        saveEditor(editor);
-      }
     }
   }
 
@@ -2695,15 +2698,7 @@ class AnnotationEditorUIManager {
     for (const editor of this.#selectedEditors) {
       editor.commit();
     }
-    const allEditors = Array.from(this.#allEditors.values());
-    if (this.#annotationStorage) {
-      for (const [id, editor] of this.#annotationStorage) {
-        if (id.startsWith("AnnotationEditor") && !this.#allEditors.has(id) && Number.isInteger(editor?.pageIndex)) {
-          allEditors.push(editor);
-        }
-      }
-    }
-    this.#selectEditors(allEditors);
+    this.#selectEditors(this.#getAllEditors());
   }
 
   /**
