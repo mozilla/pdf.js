@@ -21,6 +21,8 @@ import {
   FSI,
   getEditorSelector,
   getRect,
+  kbRedo,
+  kbUndo,
   loadAndWait,
   paste,
   PDI,
@@ -765,6 +767,86 @@ describe("Signature Editor", () => {
           );
           await page.click("#addSignatureErrorCloseButton");
           await page.waitForSelector("#addSignatureError", { visible: false });
+        })
+      );
+    });
+  });
+
+  describe("Issue 22130", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", null, {
+        eventBusSetup: eventBus => {
+          window.editorStates = {};
+          eventBus.on("editingstateschanged", ({ details }) => {
+            Object.assign(window.editorStates, details);
+          });
+        },
+      });
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that cancelling the dialog doesn't add anything to the undo stack", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getStates = () =>
+            page.evaluate(() => {
+              const { hasSomethingToUndo, hasSomethingToRedo } =
+                window.editorStates;
+              return { hasSomethingToUndo, hasSomethingToRedo };
+            });
+
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.click("#addSignatureCancelButton");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: false,
+          });
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            getEditorSelector(0)
+          );
+
+          expect(await getStates())
+            .withContext(`In ${browserName}`)
+            .toEqual({ hasSomethingToUndo: false, hasSomethingToRedo: false });
+
+          await page.click("#editorSignatureAddSignature");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.type("#addSignatureTypeInput", "PDF.js");
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click(addButtonSelector);
+
+          const editorSelector = getEditorSelector(1);
+          await page.waitForSelector(editorSelector, { visible: true });
+
+          expect(await getStates())
+            .withContext(`In ${browserName}`)
+            .toEqual({ hasSomethingToUndo: true, hasSomethingToRedo: false });
+
+          await kbUndo(page);
+          await page.waitForSelector(editorSelector, { hidden: true });
+
+          expect(await getStates())
+            .withContext(`In ${browserName}`)
+            .toEqual({ hasSomethingToUndo: false, hasSomethingToRedo: true });
+
+          await kbRedo(page);
+          await page.waitForSelector(editorSelector, { visible: true });
+
+          expect(await getStates())
+            .withContext(`In ${browserName}`)
+            .toEqual({ hasSomethingToUndo: true, hasSomethingToRedo: false });
         })
       );
     });

@@ -68,6 +68,8 @@ class SignatureEditor extends DrawingEditor {
 
   #signatureUUID = null;
 
+  #isWaitingForSignature = false;
+
   static _type = "signature";
 
   static _editorType = AnnotationEditorType.SIGNATURE;
@@ -131,6 +133,13 @@ class SignatureEditor extends DrawingEditor {
   /** @inheritdoc */
   get isResizable() {
     return true;
+  }
+
+  /** @inheritdoc */
+  onceAdded(focus) {
+    // Defer to addSignature so cancelling the dialog adds no undo command.
+    this.#isWaitingForSignature = this._drawId === null;
+    super.onceAdded(focus);
   }
 
   /** @inheritdoc */
@@ -308,6 +317,11 @@ class SignatureEditor extends DrawingEditor {
     });
 
     this.div.hidden = false;
+
+    if (this.#isWaitingForSignature) {
+      this.#isWaitingForSignature = false;
+      this.parent.addUndoableEditor(this);
+    }
   }
 
   getFromImage(bitmap) {
