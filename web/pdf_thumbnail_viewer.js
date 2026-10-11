@@ -16,6 +16,7 @@
 /** @typedef {import("../src/display/api").PDFDocumentProxy} PDFDocumentProxy */
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 /** @typedef {import("./event_utils").EventBus} EventBus */
+/** @typedef {import("./l10n.js").L10n} L10n */
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 /** @typedef {import("./pdf_link_service.js").PDFLinkService} PDFLinkService */
@@ -54,6 +55,7 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  * @property {EventBus} eventBus - The application event bus.
  * @property {PDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
+ * @property {L10n} l10n - The localization service.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
  *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
  *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
@@ -177,6 +179,10 @@ class PDFThumbnailViewer {
 
   #newBadge = null;
 
+  #l10n = null;
+
+  #toggleBarId = 0;
+
   /**
    * @param {PDFThumbnailViewerOptions} options
    */
@@ -185,6 +191,7 @@ class PDFThumbnailViewer {
     eventBus,
     linkService,
     renderingQueue,
+    l10n,
     maxCanvasPixels,
     maxCanvasDim,
     pageColors,
@@ -203,6 +210,7 @@ class PDFThumbnailViewer {
     this.eventBus = eventBus;
     this.linkService = linkService;
     this.renderingQueue = renderingQueue;
+    this.#l10n = l10n;
     this.maxCanvasPixels = maxCanvasPixels;
     this.maxCanvasDim = maxCanvasDim;
     this.pageColors = pageColors || null;
@@ -1001,9 +1009,7 @@ class PDFThumbnailViewer {
   }
 
   #toggleBar(type, message, args) {
-    this.#statusBar.classList.toggle("hidden", type !== "status");
-    this.#waitingBar.container.classList.toggle("hidden", type !== "waiting");
-    this.#undoBar.classList.toggle("hidden", type !== "undo");
+    const id = ++this.#toggleBarId;
     this.#hasUndoBarVisible = type === "undo";
 
     switch (type) {
@@ -1016,18 +1022,39 @@ class PDFThumbnailViewer {
           this.#undoLabel.setAttribute("data-l10n-args", JSON.stringify(args));
         }
         break;
-      case "status":
-        if (args) {
-          this.#statusLabel.setAttribute(
-            "data-l10n-args",
-            JSON.stringify(args)
-          );
-        } else {
-          this.#statusLabel.removeAttribute("data-l10n-args");
-        }
-        this.#newBadge?.classList.toggle("hidden", !!args);
-        this.#deselectButton.classList.toggle("hidden", !args);
-        break;
+      case "status": {
+        const label = this.#statusLabel;
+        message ||= label.getAttribute("data-l10n-id");
+        // Format first, then update the label and controls together.
+        this.#l10n.get(message, args).then(text => {
+          if (id !== this.#toggleBarId) {
+            return;
+          }
+          // Avoid retranslating the updated label.
+          this.#l10n.pause();
+          label.setAttribute("data-l10n-id", message);
+          if (args) {
+            label.setAttribute("data-l10n-args", JSON.stringify(args));
+          } else {
+            label.removeAttribute("data-l10n-args");
+          }
+          label.textContent = text;
+          this.#l10n.resume();
+          this.#showBar(type, !!args);
+        });
+        return;
+      }
+    }
+    this.#showBar(type);
+  }
+
+  #showBar(type, hasSelection = false) {
+    this.#statusBar.classList.toggle("hidden", type !== "status");
+    this.#waitingBar.container.classList.toggle("hidden", type !== "waiting");
+    this.#undoBar.classList.toggle("hidden", type !== "undo");
+    if (type === "status") {
+      this.#newBadge?.classList.toggle("hidden", hasSelection);
+      this.#deselectButton.classList.toggle("hidden", !hasSelection);
     }
   }
 
@@ -1191,13 +1218,13 @@ class PDFThumbnailViewer {
     }
     const count = this.#selectedPages?.size || 0;
     if (type === "select") {
-      this.#statusLabel.setAttribute(
-        "data-l10n-id",
+      this.#toggleBar(
+        "status",
         count
           ? "pdfjs-views-manager-pages-status-action-label"
-          : "pdfjs-views-manager-pages-status-none-action-label"
+          : "pdfjs-views-manager-pages-status-none-action-label",
+        count ? { count } : null
       );
-      this.#toggleBar("status", "", count ? { count } : null);
       return;
     }
 
