@@ -139,7 +139,6 @@ class Doc extends PDFObject {
         this._runActions(actionName);
       }
     }
-    this._runActions("OpenAction");
     this._disableSaving = false;
   }
 
