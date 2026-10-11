@@ -570,7 +570,8 @@ class RadioButtonField extends Field {
       this.exportValues.push(radioData.exportValues);
       this._radioIds.push(radioData.id);
       this._radioActions.push(createMap(radioData.actions));
-      if (this._value === radioData.exportValues) {
+      // _value is still null here.
+      if (data.value === radioData.exportValues) {
         this._id = radioData.id;
       }
     }
