@@ -336,6 +336,28 @@ describe("Scripting", function () {
       );
       expect(values).toEqual(["", "", "hello"]);
     });
+
+    it("should run OpenAction once, after formatting", async () => {
+      const push = name => `(globalThis.run ??= []).push("${name}");`;
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: { actions: { OpenAction: [push("OpenAction")] } },
+        objects: {
+          field: [
+            {
+              id: getId(),
+              value: "",
+              actions: { Format: [push("Format")] },
+              type: "text",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "Open" });
+      expect(await myeval(`globalThis.run`)).toEqual(["Format", "OpenAction"]);
+    });
   });
 
   describe("Util", function () {
