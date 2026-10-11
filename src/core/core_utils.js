@@ -684,10 +684,14 @@ function getNewAnnotationsMap(annotationStorage) {
     return null;
   }
   const newAnnotationsByPage = new Map();
-  // The concept of page in a XFA is very different, so
-  // editing is just not implemented.
+  // Include all annotations from storage (form fields, edits, etc.)
   for (const [key, value] of annotationStorage) {
-    if (!key.startsWith(AnnotationEditorPrefix)) {
+    // Skip if it's not a valid annotation object
+    if (value === null || value === undefined) {
+      continue;
+    }
+    // Skip if it's not a valid annotation object (has pageIndex as number)
+    if (!(value instanceof Object) || typeof value.pageIndex !== "number") {
       continue;
     }
     newAnnotationsByPage
