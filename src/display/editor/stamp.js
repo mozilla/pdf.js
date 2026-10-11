@@ -870,8 +870,17 @@ class StampEditor extends AnnotationEditor {
       if (changes.isSameAltText) {
         delete serialized.accessibilityData;
       } else {
-        serialized.accessibilityData.structParent =
-          this._initialData.structParent ?? -1;
+        const structParent = this._initialData.structParent ?? -1;
+        if (serialized.accessibilityData) {
+          serialized.accessibilityData.structParent = structParent;
+        } else if (structParent >= 0) {
+          // Clear the existing tag's alt text.
+          serialized.accessibilityData = {
+            type: "Figure",
+            alt: "",
+            structParent,
+          };
+        }
       }
       serialized.id = this.annotationElementId;
       delete serialized.bitmapId;

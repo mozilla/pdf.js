@@ -3883,6 +3883,112 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write an updated stamp annotation without alt text in a tagged pdf, save and check the structure tree", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("stamps.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_4", {
+        annotationType: AnnotationEditorType.STAMP,
+        pageIndex: 0,
+        rect: [335.1, 394.83, 487.17, 521.47],
+        rotation: 0,
+        isSvg: false,
+        structTreeParentId: null,
+        accessibilityData: {
+          type: "Figure",
+          alt: "",
+          structParent: 0,
+        },
+        id: "58R",
+      });
+
+      const data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const tree = await page.getStructTree();
+
+      expect(tree.children).toEqual([
+        {
+          role: "Figure",
+          children: [
+            {
+              type: "annotation",
+              id: "pdfjs_internal_id_58R",
+            },
+          ],
+        },
+      ]);
+
+      await loadingTask.destroy();
+    });
+
+    it("write an updated stamp annotation without alt text in a tagged pdf, with an ActualText, save and check the structure tree", async function () {
+      const stampData = {
+        annotationType: AnnotationEditorType.STAMP,
+        pageIndex: 0,
+        rect: [335.1, 394.83, 487.17, 521.47],
+        rotation: 0,
+        isSvg: false,
+        structTreeParentId: null,
+        id: "58R",
+      };
+      let loadingTask = getDocument(buildGetDocumentParams("stamps.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_4", {
+        ...stampData,
+        accessibilityData: {
+          type: "Figure",
+          alt: "",
+          actualText: "An elephant with a red hat",
+          structParent: 0,
+        },
+      });
+
+      let data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      let page = await pdfDoc.getPage(1);
+      let tree = await page.getStructTree();
+
+      // ActualText supplies the label when Alt is missing.
+      expect(tree.children[0].alt).toEqual("An elephant with a red hat");
+
+      pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_4", {
+        ...stampData,
+        accessibilityData: {
+          type: "Figure",
+          alt: "",
+          structParent: 0,
+        },
+      });
+
+      data = await pdfDoc.saveDocument();
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      page = await pdfDoc.getPage(1);
+      tree = await page.getStructTree();
+
+      expect(tree.children).toEqual([
+        {
+          role: "Figure",
+          children: [
+            {
+              type: "annotation",
+              id: "pdfjs_internal_id_58R",
+            },
+          ],
+        },
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("read content from multiline textfield containing an empty line", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue17492.pdf"));
       const pdfDoc = await loadingTask.promise;
