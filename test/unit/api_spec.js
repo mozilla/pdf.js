@@ -5579,14 +5579,18 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       await pdfPage.getOperatorList();
-      const stats = pdfPage.stats;
 
+      const { stats } = pdfPage;
       expect(stats).toBeInstanceOf(StatTimer);
       expect(stats.times.length).toEqual(1);
 
       const [statEntry] = stats.times;
+
       expect(statEntry.name).toEqual("Page Request");
-      expect(statEntry.end - statEntry.start).toBeGreaterThanOrEqual(0);
+      const duration = statEntry.end - statEntry.start;
+      expect(duration).toBeGreaterThanOrEqual(0);
+
+      expect(stats.toString()).toEqual(`Page Request ${duration}ms\n`);
 
       await loadingTask.destroy();
     });
@@ -5619,14 +5623,25 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(stats.times.length).toEqual(3);
 
       const [statEntryOne, statEntryTwo, statEntryThree] = stats.times;
+
       expect(statEntryOne.name).toEqual("Page Request");
-      expect(statEntryOne.end - statEntryOne.start).toBeGreaterThanOrEqual(0);
+      const durationOne = statEntryOne.end - statEntryOne.start;
+      expect(durationOne).toBeGreaterThanOrEqual(0);
 
       expect(statEntryTwo.name).toEqual("Rendering");
-      expect(statEntryTwo.end - statEntryTwo.start).toBeGreaterThan(0);
+      const durationTwo = statEntryTwo.end - statEntryTwo.start;
+      expect(durationTwo).toBeGreaterThan(0);
 
       expect(statEntryThree.name).toEqual("Overall");
-      expect(statEntryThree.end - statEntryThree.start).toBeGreaterThan(0);
+      const durationThree = statEntryThree.end - statEntryThree.start;
+      expect(durationThree).toBeGreaterThan(0);
+
+      const expectedString = [
+        `Page Request ${durationOne}ms\n`,
+        `Rendering    ${durationTwo}ms\n`,
+        `Overall      ${durationThree}ms\n`,
+      ].join("");
+      expect(stats.toString()).toEqual(expectedString);
 
       canvasFactory.destroy(canvasAndCtx);
       await loadingTask.destroy();
