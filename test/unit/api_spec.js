@@ -8938,6 +8938,53 @@ small scripts as well as for`);
         expect(Array.from(attachments.keys()).sort()).toEqual(["名", "名_1"]);
         await loadingTask.destroy();
       });
+
+      it("keeps the deleted trailing pages out after restoring the page order (issue 21971)", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("three_pages_with_number.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const { pagesMapper } = pdfDoc;
+
+        // Delete page 3, then swap the remaining pages twice to restore [1, 2].
+        pagesMapper.deletePages([3]);
+        pagesMapper.cleanSavedData();
+        pagesMapper.movePages(new Set([2]), [2], 0);
+        pagesMapper.movePages(new Set([2]), [2], 0);
+        expect(pagesMapper.getMapping()).toEqual(new Uint32Array([1, 2]));
+        expect(pagesMapper.hasBeenAltered()).toBeTrue();
+
+        const { pageInfos, copyLevels } = pagesMapper.getPageMappingForSaving();
+        const data = await pdfDoc.extractPages(pageInfos, copyLevels);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(2);
+
+        for (let i = 1; i <= 2; i++) {
+          const pdfPage = await pdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).withContext(`Page ${i}`).toEqual(`${i}`);
+        }
+
+        await loadingTask.destroy();
+      });
+
+      it("drops the mapping when moving pages back to the original order", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("three_pages_with_number.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const { pagesMapper } = pdfDoc;
+
+        pagesMapper.movePages(new Set([3]), [3], 0);
+        expect(pagesMapper.hasBeenAltered()).toBeTrue();
+        pagesMapper.movePages(new Set([1]), [1], 3);
+        expect(pagesMapper.hasBeenAltered()).toBeFalse();
+
+        await loadingTask.destroy();
+      });
     });
 
     describe("AcroForm", function () {
