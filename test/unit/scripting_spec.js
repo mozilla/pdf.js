@@ -123,6 +123,36 @@ describe("Scripting", function () {
       });
     });
 
+    it("should check the radio button matching the field value", async () => {
+      const refIds = [getId(), getId()];
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          radio: [
+            {
+              id: refIds[0],
+              value: "Second",
+              exportValues: "First",
+              actions: {},
+              type: "radiobutton",
+            },
+            {
+              id: refIds[1],
+              exportValues: "Second",
+              actions: {},
+              type: "radiobutton",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(
+        `[0, 1].map(i => getField("radio").isBoxChecked(i))`
+      );
+      expect(value).toEqual([false, true]);
+    });
+
     it("should let scripts declare variables named like internal ones", async () => {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
