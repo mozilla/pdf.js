@@ -40,7 +40,7 @@ const SANDBOX_BUNDLE_SRC = new URL(
   window.location
 );
 
-const WASM_URL = "../../node_modules/pdfjs-dist/build/wasm/";
+const WASM_URL = "../../node_modules/pdfjs-dist/wasm/";
 
 const container = document.getElementById("viewerContainer");
 
