@@ -340,10 +340,6 @@ class RendererMessageHandler {
           data.optionalContentConfig
         );
 
-        const ctx = canvas.getContext("2d", {
-          alpha: false,
-          willReadFrequently: !this.#enableHWA,
-        });
         const canvasFactory = (this.#canvasFactory ??=
           new OffscreenCanvasFactory({ enableHWA: this.#enableHWA }));
         const filterFactory = (this.#filterFactory ??=
@@ -358,7 +354,7 @@ class RendererMessageHandler {
         // `pageColors` requires DOM-based SVG filters, so pages that need it
         // never render in the worker.
         const gfx = new CanvasGraphics(
-          ctx,
+          /* ctx = */ canvasFactory.getNoAlphaContext(canvas),
           this.#commonObjs,
           objs,
           canvasFactory,

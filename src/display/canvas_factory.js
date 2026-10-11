@@ -64,6 +64,13 @@ class BaseCanvasFactory {
     canvasAndContext.context = null;
   }
 
+  getNoAlphaContext(canvas) {
+    return canvas.getContext("2d", {
+      alpha: false,
+      willReadFrequently: !this.#enableHWA,
+    });
+  }
+
   /**
    * @ignore
    */
