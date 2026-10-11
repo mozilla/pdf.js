@@ -602,7 +602,8 @@ class Util extends PDFObject {
         : pattern;
     });
 
-    return [new RegExp(`^${re}$`, "g"), actions];
+    // A global regex would retain lastIndex after a successful match.
+    return [new RegExp(`^${re}$`), actions];
   }
 
   _scand(cFormat, cDate, strict = false) {

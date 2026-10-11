@@ -336,6 +336,13 @@ describe("Scripting", function () {
         expect(new Date(value)).toEqual(new Date("07/15/2007 12:00:00"));
       });
 
+      it("should parse several dates with the same format", async () => {
+        const value = await myeval(
+          `["3:30 pm", "4:45 pm", "9:15 pm"].map(d => util.scand("h:MM tt", d).getHours())`
+        );
+        expect(value).toEqual([15, 16, 21]);
+      });
+
       it("should handle a format with repeated specifiers", async () => {
         const cFormat = "Hm".repeat(40);
         const cDate = `${"1".repeat(84)}x`;
