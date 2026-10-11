@@ -2695,7 +2695,15 @@ class AnnotationEditorUIManager {
     for (const editor of this.#selectedEditors) {
       editor.commit();
     }
-    this.#selectEditors(this.#allEditors.values());
+    const allEditors = Array.from(this.#allEditors.values());
+    if (this.#annotationStorage) {
+      for (const [id, editor] of this.#annotationStorage) {
+        if (id.startsWith("AnnotationEditor") && !this.#allEditors.has(id) && Number.isInteger(editor?.pageIndex)) {
+          allEditors.push(editor);
+        }
+      }
+    }
+    this.#selectEditors(allEditors);
   }
 
   /**
