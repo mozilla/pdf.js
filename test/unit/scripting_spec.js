@@ -151,6 +151,37 @@ describe("Scripting", function () {
       );
       expect(value).toEqual(123);
     });
+
+    it("should select the items of a choice field by index", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          list: [
+            {
+              id: refId,
+              value: "A",
+              items: Array.from("abcdefghijk", c => ({
+                displayValue: c,
+                exportValue: c.toUpperCase(),
+              })),
+              actions: {},
+              type: "listbox",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      await myeval(`(getField("list").currentValueIndices = 1, 0)`);
+      expect(send_queue.get(refId).indices).toEqual([1]);
+      expect(await myeval(`getField("list").value`)).toEqual("B");
+
+      await myeval(`(getField("list").multipleSelection = true, 0)`);
+      await myeval(`(getField("list").currentValueIndices = [10, 2], 0)`);
+      expect(send_queue.get(refId).indices).toEqual([2, 10]);
+      expect(await myeval(`getField("list").value`)).toEqual(["C", "K"]);
+    });
   });
 
   describe("Doc", function () {
