@@ -595,9 +595,7 @@ function createScriptingBundle(defines, extraOptions = undefined) {
     defines,
     {
       filename: "pdf.scripting.mjs",
-      library: {
-        type: "module",
-      },
+      iife: true,
     },
     extraOptions
   );

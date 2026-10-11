@@ -122,6 +122,35 @@ describe("Scripting", function () {
         formattedValue: null,
       });
     });
+
+    it("should let scripts declare variables named like internal ones", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+      const names = [
+        "AForm",
+        "App",
+        "Border",
+        "Color",
+        "Console",
+        "Doc",
+        "Field",
+        "Util",
+        "initSandbox",
+      ];
+
+      const types = await myeval(
+        `[${names.map(name => `typeof ${name}`).join(", ")}]`
+      );
+      expect(types).toEqual(names.map(() => "undefined"));
+
+      const value = await myeval(
+        `globalThis.eval("${names.map(name => `var ${name} = 1;`).join(" ")} 123")`
+      );
+      expect(value).toEqual(123);
+    });
   });
 
   describe("Doc", function () {
