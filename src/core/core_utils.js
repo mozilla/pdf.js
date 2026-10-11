@@ -684,14 +684,14 @@ function getNewAnnotationsMap(annotationStorage) {
     return null;
   }
   const newAnnotationsByPage = new Map();
-  // Include all annotations from storage (form fields, edits, etc.)
+  // Annotation storage also contains form values and changes to existing
+  // annotations, but only serialized annotation editors belong in this map.
   for (const [key, value] of annotationStorage) {
-    // Skip if it's not a valid annotation object
-    if (value === null || value === undefined) {
-      continue;
-    }
-    // Skip if it's not a valid annotation object (has pageIndex as number)
-    if (!(value instanceof Object) || typeof value.pageIndex !== "number") {
+    if (
+      !key.startsWith(AnnotationEditorPrefix) ||
+      !Number.isInteger(value?.pageIndex) ||
+      value.annotationType === undefined
+    ) {
       continue;
     }
     newAnnotationsByPage
