@@ -27,6 +27,8 @@ import {
   closePages,
   closeSinglePage,
   firstPageOnTop,
+  getRect,
+  getSelector,
   getSpanRectFromText,
   kbSelectAll,
   loadAndWait,
@@ -966,6 +968,47 @@ describe("Text layer", () => {
                   return true;
                 },
               });
+            })
+          );
+        });
+      });
+
+      describe("when clicking a form field after clicking on the text", () => {
+        let pages;
+
+        beforeEach(async () => {
+          pages = await loadAndWait(
+            "annotation-text-widget.pdf",
+            `.page[data-page-number = "1"] .endOfContent`
+          );
+        });
+
+        afterEach(async () => {
+          await closePages(pages);
+        });
+
+        it("focuses the field with a single click", async () => {
+          await Promise.all(
+            pages.map(async ([, page]) => {
+              const fieldSelector = getSelector("61R");
+              const [textPosition, fieldPosition] = await Promise.all([
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "Single line, unlimited length"
+                ).then(middlePosition),
+                getRect(page, fieldSelector).then(middlePosition),
+              ]);
+
+              // With no delay, selectionchange can arrive after pointerup.
+              await waitForEvent({
+                page,
+                eventName: "selectionchange",
+                action: () => page.mouse.click(textPosition.x, textPosition.y),
+              });
+
+              await page.mouse.click(fieldPosition.x, fieldPosition.y);
+              await page.waitForSelector(`${fieldSelector}:focus`);
             })
           );
         });

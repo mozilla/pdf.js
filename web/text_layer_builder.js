@@ -282,6 +282,13 @@ class TextLayerBuilder {
         const activeTextLayers = new Set();
         for (let i = 0; i < selection.rangeCount; i++) {
           const range = selection.getRangeAt(i);
+          if (range.collapsed && !isPointerDown) {
+            // A click's selectionchange can arrive after pointerup and restore
+            // the selecting class. Ignore its collapsed range.
+            // Keep non-collapsed ranges: Firefox selection caret drags can
+            // change them without dispatching pointerdown.
+            continue;
+          }
           for (const textLayerDiv of this.#textLayers.keys()) {
             if (
               !activeTextLayers.has(textLayerDiv) &&
