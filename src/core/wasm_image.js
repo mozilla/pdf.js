@@ -17,7 +17,7 @@ import { unreachable, warn } from "../shared/util.js";
 import { fetchBinaryData } from "./core_utils.js";
 
 class WasmImage {
-  static #handler = null;
+  static #getHandler = null;
 
   static #instances = new Set();
 
@@ -35,13 +35,13 @@ class WasmImage {
 
   _noWasmFilename = null;
 
-  static setOptions({ handler, useWasm, useWorkerFetch, wasmUrl }) {
+  static setOptions({ getHandler, useWasm, useWorkerFetch, wasmUrl }) {
     WasmImage.#useWasm = useWasm;
     WasmImage.#useWorkerFetch = useWorkerFetch;
     WasmImage.#wasmUrl = wasmUrl;
 
     if (!useWorkerFetch) {
-      WasmImage.#handler = handler;
+      WasmImage.#getHandler = getHandler;
     }
   }
 
@@ -95,7 +95,7 @@ class WasmImage {
           if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
             throw new Error("Only worker-thread fetching supported.");
           }
-          this.#buffer = await WasmImage.#handler.sendWithPromise(
+          this.#buffer = await WasmImage.#getHandler().sendWithPromise(
             "FetchBinaryData",
             { kind: "wasmUrl", filename: this._filename }
           );
