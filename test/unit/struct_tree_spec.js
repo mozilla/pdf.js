@@ -368,4 +368,75 @@ describe("struct tree", function () {
 
     await loadingTask.destroy();
   });
+
+  it("parses structure without a ParentTree", async function () {
+    const loadingTask = getDocument(
+      buildGetDocumentParams("structure_no_parent_tree.pdf")
+    );
+    const pdfDoc = await loadingTask.promise;
+
+    const tree1 = await (await pdfDoc.getPage(1)).getStructTree();
+    expect(tree1).toEqual({
+      role: "Root",
+      children: [
+        {
+          role: "Document",
+          children: [
+            {
+              role: "P",
+              children: [{ type: "content", id: "p3R_mc0" }],
+            },
+            {
+              role: "Table",
+              children: [
+                {
+                  role: "TR",
+                  children: [
+                    {
+                      role: "TD",
+                      children: [{ type: "content", id: "p3R_mc1" }],
+                    },
+                    { role: "TD", children: [] },
+                  ],
+                },
+              ],
+            },
+            {
+              role: "P",
+              children: [{ type: "content", id: "p3R_mc2" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    const tree2 = await (await pdfDoc.getPage(2)).getStructTree();
+    expect(tree2).toEqual({
+      role: "Root",
+      children: [
+        {
+          role: "Document",
+          children: [
+            {
+              role: "P",
+              children: [{ type: "content", id: "p4R_mc2" }],
+            },
+            {
+              role: "H1",
+              children: [{ type: "content", id: "p4R_mc0" }],
+            },
+            {
+              role: "Link",
+              children: [
+                { type: "annotation", id: "pdfjs_internal_id_20R" },
+                { type: "content", id: "p4R_mc1" },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    await loadingTask.destroy();
+  });
 });
