@@ -6692,6 +6692,90 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       await loadingTask.destroy();
     });
+
+    it("should Wasm-decode images if multiple PDFs are parsed in parallel in one worker (issue 22131)", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const BLACK = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff,
+        WHITE = 0xffffffff;
+
+      async function renderPage(pdfDoc, noOtherPixels = false) {
+        const pdfPage = await pdfDoc.getPage(1);
+        const viewport = pdfPage.getViewport({ scale: 1 });
+
+        const { canvasFactory } = pdfDoc;
+
+        const canvasAndCtx = canvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({
+          canvas: canvasAndCtx.canvas,
+          viewport,
+        });
+        expect(renderTask).toBeInstanceOf(RenderTask);
+
+        await renderTask.promise;
+
+        const numPixels = { black: 0, white: 0, other: 0 };
+        for (const p of new Uint32Array(
+          canvasAndCtx.context.getImageData(
+            0,
+            0,
+            viewport.width,
+            viewport.height
+          ).data.buffer
+        )) {
+          if (p === BLACK) {
+            numPixels.black++;
+          } else if (p === WHITE) {
+            numPixels.white++;
+          } else {
+            numPixels.other++;
+          }
+        }
+        expect(numPixels.black).toBeGreaterThan(1000);
+        expect(numPixels.white).toBeGreaterThan(5000);
+        if (noOtherPixels) {
+          expect(numPixels.other).toEqual(0);
+        } else {
+          expect(numPixels.other).toBeGreaterThan(1000);
+        }
+
+        canvasFactory.destroy(canvasAndCtx);
+      }
+
+      // We need to re-use a single worker for both documents,
+      // and set `useWorkerFetch = false`, to trigger the bug.
+      const worker = isNodeJS ? null : new PDFWorker();
+
+      // PDF document with a JPEG 2000 image, triggering Wasm-decoding.
+      const loadingTask1 = getDocument(
+        buildGetDocumentParams("issue19326.pdf", {
+          useWorkerFetch: false,
+          worker,
+        })
+      );
+      const pdfDoc1 = await loadingTask1.promise;
+      await pdfDoc1.getDownloadInfo();
+
+      // PDF document without any images, but with path-rendering.
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("clippath.pdf", {
+          useWorkerFetch: false,
+          worker,
+        })
+      );
+      const pdfDoc2 = await loadingTask2.promise;
+      await pdfDoc2.getDownloadInfo();
+
+      await renderPage(pdfDoc2, /* noOtherPixels = */ true);
+      await loadingTask2.destroy();
+
+      await renderPage(pdfDoc1, /* noOtherPixels = */ false);
+      await loadingTask1.destroy();
+    });
   });
 
   describe("Multiple `getDocument` instances", function () {
