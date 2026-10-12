@@ -176,7 +176,7 @@
       --toolbarbutton-background-color-active
     );
     --dropdown-btn-bg-color: var(--button-background-color);
-    --dropdown-btn-border: 1px solid var(--button-border-color);
+    --dropdown-btn-border: 1px solid var(--border-color-interactive);
     --separator-color: var(--border-color-deemphasized);
     --field-color: var(--text-color);
     --field-bg-color: var(--background-color-box);
@@ -1622,7 +1622,6 @@ dialog :link {
   /*#if MOZCENTRAL*/
   @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
     overflow: hidden;
-    border: var(--button-border);
     border-radius: var(--button-border-radius);
     background-color: var(--button-background-color);
     color: var(--button-text-color);
