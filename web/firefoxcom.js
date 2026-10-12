@@ -103,12 +103,19 @@ class FirefoxCom {
 }
 
 class DownloadManager extends BaseDownloadManager {
-  _triggerDownload(blobUrl, originalUrl, filename, isAttachment = false) {
+  _triggerDownload(
+    blobUrl,
+    originalUrl,
+    filename,
+    isAttachment = false,
+    isModified = false
+  ) {
     FirefoxCom.request("download", {
       blobUrl,
       originalUrl,
       filename,
       isAttachment,
+      isModified,
     });
   }
 
