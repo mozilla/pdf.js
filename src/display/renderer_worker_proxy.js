@@ -184,7 +184,7 @@ class WorkerRenderTask {
 
   drawFrame(frame) {
     try {
-      const ctx = this.#canvas.getContext("2d", { alpha: false });
+      const ctx = this.#canvasFactory.getNoAlphaContext(this.#canvas);
       ctx.drawImage(frame.bitmap, 0, 0);
 
       if (frame.annotationBitmaps) {
