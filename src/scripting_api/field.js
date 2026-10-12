@@ -702,7 +702,12 @@ class CheckboxField extends RadioButtonField {
   }
 
   set value(value) {
-    if (!value || value === "Off") {
+    // After initialization, non-export values uncheck the field.
+    if (
+      !value ||
+      value === "Off" ||
+      (this._hasBeenInitialized && !this.exportValues.includes(value))
+    ) {
       this._value = "Off";
     } else {
       super.value = value;

@@ -339,6 +339,37 @@ describe("Scripting", function () {
       ]);
     });
 
+    it("should uncheck a checkbox set to a non-export value", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          checkbox: [
+            {
+              id: refId,
+              value: "Yes",
+              exportValues: "Yes",
+              actions: {},
+              type: "checkbox",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const checkbox = getField("checkbox");
+        checkbox.value = "0";
+        return [checkbox.value, checkbox.isBoxChecked(0)];
+      })()`);
+      expect(value).toEqual(["Off", false]);
+      expect(send_queue.get(refId)).toEqual({
+        id: refId,
+        siblings: [],
+        value: "Off",
+      });
+    });
+
     it("should report checkbox defaults independently of current values", async () => {
       const checkbox = (value, defaultValue) => [
         {
