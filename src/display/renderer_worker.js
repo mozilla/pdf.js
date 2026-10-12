@@ -49,6 +49,10 @@ class RendererMessageHandler {
 
   static #renderTaskStates = new Map();
 
+  static #yieldChannel = null;
+
+  static #yieldResolvers = [];
+
   static {
     // Worker thread (and not Node.js)?
     if (
@@ -224,13 +228,25 @@ class RendererMessageHandler {
       if (renderTaskState.aborted) {
         break;
       }
-      // The continuation may have resolved synchronously. Yield to the event
-      // loop so cancellation messages can be processed before the next slice.
-      await new Promise(resolveYield => {
-        setTimeout(resolveYield, 0);
-      });
+      // The continuation may resolve synchronously; yield so cancellation
+      // messages can be processed between slices.
+      await this.#yield();
     }
     return renderTaskState.operatorListIdx;
+  }
+
+  // Use messages to avoid the 4 ms minimum delay on nested timers.
+  static #yield() {
+    if (!this.#yieldChannel) {
+      this.#yieldChannel = new MessageChannel();
+      this.#yieldChannel.port1.onmessage = () => {
+        this.#yieldResolvers.shift()();
+      };
+    }
+    const { promise, resolve } = Promise.withResolvers();
+    this.#yieldResolvers.push(resolve);
+    this.#yieldChannel.port2.postMessage(null);
+    return promise;
   }
 
   static #setupObjectHandler(handler) {
