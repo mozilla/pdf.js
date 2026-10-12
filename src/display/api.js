@@ -2761,7 +2761,7 @@ class WorkerTransport {
     });
 
     // TODO: Connect the core and renderer workers directly.
-    this.rendererWorker?.messageHandler.on("FontFallback", data =>
+    this.rendererWorker?.messageHandler?.on("FontFallback", data =>
       this.destroyed
         ? null
         : messageHandler.sendWithPromise("FontFallback", data)

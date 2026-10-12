@@ -6033,6 +6033,68 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("falls back to the main thread when the renderer worker fails", async function () {
+      if (isNodeJS) {
+        pending("Worker rendering is not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const { canvasFactory } = pdfDoc;
+      const { rendererWorker } = pdfDoc._transport;
+      const render = () =>
+        pdfPage.render({
+          canvas: canvasFactory.create(viewport.width, viewport.height).canvas,
+          viewport,
+        });
+
+      const inFlightTask = render();
+      expect(inFlightTask.isWorkerRendering).toBeTrue();
+
+      // Unknown actions throw before sending a reply.
+      await expectAsync(
+        rendererWorker.sendWithPromise("UnknownAction", null)
+      ).toBeRejectedWithError("Renderer worker was destroyed.");
+      expect(rendererWorker.messageHandler).toBeNull();
+
+      // Rendering may fail if worker graphics were already initialized.
+      await inFlightTask.promise.catch(() => {});
+
+      const renderTask = render();
+      expect(renderTask.isWorkerRendering).toBeFalse();
+      await renderTask.promise;
+
+      await loadingTask.destroy();
+    });
+
+    it("loads the document when the renderer worker fails during loading", async function () {
+      if (isNodeJS) {
+        pending("Worker rendering is not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
+      const rendererWorker = loadingTask._rendererWorker;
+      await rendererWorker.promise;
+      // Fail after the handshake, before transport creation.
+      rendererWorker._webWorker.dispatchEvent(
+        new ErrorEvent("error", { message: "Test failure." })
+      );
+      expect(rendererWorker.messageHandler).toBeNull();
+
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const renderTask = pdfPage.render({
+        canvas: pdfDoc.canvasFactory.create(viewport.width, viewport.height)
+          .canvas,
+        viewport,
+      });
+      expect(renderTask.isWorkerRendering).toBeFalse();
+      await renderTask.promise;
+
+      await loadingTask.destroy();
+    });
+
     it("cleans up document resources after rendering of page", async function () {
       const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
       const pdfDoc = await loadingTask.promise;

@@ -89,12 +89,11 @@ class WorkerRenderTask {
    * @returns {Promise<boolean>} False to use main-thread rendering.
    */
   async initialize(transparency, optionalContentConfig) {
-    const handler = this.#rendererWorker.messageHandler;
-    if (!handler) {
+    if (!this.#rendererWorker.messageHandler) {
       return false;
     }
     try {
-      await handler.sendWithPromise("InitializeGraphics", {
+      await this.#rendererWorker.sendWithPromise("InitializeGraphics", {
         ...this.#initParams,
         width: this.#canvas.width,
         height: this.#canvas.height,
@@ -102,10 +101,12 @@ class WorkerRenderTask {
         optionalContentConfig: optionalContentConfig.serializable,
       });
     } catch (ex) {
-      warn(
-        `Failed to initialize graphics in renderer worker: ${ex.message}. ` +
-          "Falling back to main-thread rendering."
-      );
+      if (!this.#cancelled) {
+        warn(
+          `Failed to initialize graphics in renderer worker: ${ex.message}. ` +
+            "Falling back to main-thread rendering."
+        );
+      }
       return false;
     }
     if (!this.#cancelled) {
@@ -150,13 +151,20 @@ class WorkerRenderTask {
       }
       this.#filteredLength = end;
     }
-    const response = await handler.sendWithPromise("ExecuteOperatorList", {
-      renderTaskId: this.#id,
-      operatorListIdx,
-      operatorListLength: end,
-      operationsFilterMask,
-      lastChunk,
-    });
+    const response = await this.#rendererWorker
+      .sendWithPromise("ExecuteOperatorList", {
+        renderTaskId: this.#id,
+        operatorListIdx,
+        operatorListLength: end,
+        operationsFilterMask,
+        lastChunk,
+      })
+      .catch(reason => {
+        if (!this.#cancelled) {
+          throw reason;
+        }
+        return { operatorListIdx, aborted: true };
+      });
 
     if (response.aborted && !this.#cancelled) {
       throw new Error("Render task was aborted in the renderer worker.");
@@ -253,11 +261,15 @@ class RendererWorker {
 
   #operatorLists = new WeakMap();
 
+  #pendingRequests = new Set();
+
   #renderTaskId = 0;
 
   #renderTasks = new Map();
 
   #webWorker = null;
+
+  #workerAC = null;
 
   destroyed = false;
 
@@ -347,18 +359,31 @@ class RendererWorker {
       };
 
       const ac = new AbortController();
+      const onError = (event, reason) => {
+        if (!this.#webWorker) {
+          terminateEarly(reason);
+          return;
+        }
+        // An error may leave pending requests without replies.
+        event.preventDefault();
+        warn(
+          `Renderer worker failed: "${reason}". ` +
+            "Falling back to main-thread rendering."
+        );
+        this.destroy();
+      };
       worker.addEventListener(
         "error",
-        event => {
-          if (!this.#webWorker) {
-            terminateEarly(event.error || event.message);
-          }
-        },
+        event => onError(event, event.error?.message ?? event.message),
+        { signal: ac.signal }
+      );
+      worker.addEventListener(
+        "messageerror",
+        event => onError(event, "Cannot deserialize a message."),
         { signal: ac.signal }
       );
 
       messageHandler.on("ready", data => {
-        ac.abort();
         if (this.destroyed) {
           terminateEarly("Worker was destroyed.");
           return;
@@ -379,6 +404,7 @@ class RendererWorker {
         }
         this.#messageHandler = messageHandler;
         this.#webWorker = worker;
+        this.#workerAC = ac;
 
         this.#resolve();
       });
@@ -390,11 +416,36 @@ class RendererWorker {
   destroy() {
     this.destroyed = true;
 
+    this.#workerAC?.abort();
+    this.#workerAC = null;
+
     this.#webWorker?.terminate();
     this.#webWorker = null;
 
     this.#messageHandler?.destroy();
     this.#messageHandler = null;
+
+    for (const reject of this.#pendingRequests) {
+      reject(new Error("Renderer worker was destroyed."));
+    }
+    this.#pendingRequests.clear();
+  }
+
+  /**
+   * Send a request that rejects on worker destruction.
+   * @returns {Promise<any>}
+   */
+  sendWithPromise(action, data) {
+    const handler = this.#messageHandler;
+    if (!handler) {
+      return Promise.reject(new Error("Renderer worker was destroyed."));
+    }
+    const { promise, resolve, reject } = Promise.withResolvers();
+    this.#pendingRequests.add(reject);
+    handler.sendWithPromise(action, data).then(resolve, reject);
+    return promise.finally(() => {
+      this.#pendingRequests.delete(reject);
+    });
   }
 
   #sendObj(action, data, id, pageProxyId) {
