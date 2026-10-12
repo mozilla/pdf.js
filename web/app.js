@@ -178,6 +178,7 @@ const PDFViewerApplication = {
   baseUrl: "",
   mlManager: null,
   _downloadUrl: "",
+  _isMergedDocument: false,
   _eventBusAC: null,
   _windowAC: null,
   _globalAbortController: new AbortController(),
@@ -1358,6 +1359,7 @@ const PDFViewerApplication = {
     this.url = "";
     this.baseUrl = "";
     this._downloadUrl = "";
+    this._isMergedDocument = false;
     this.documentInfo = null;
     this.metadata = null;
     this._contentDispositionFilename = null;
@@ -1483,7 +1485,12 @@ const PDFViewerApplication = {
     } catch {
       // When the PDF document isn't ready, simply download using the URL.
     }
-    this.downloadManager.download(data, this._downloadUrl, this._docFilename);
+    this.downloadManager.download(
+      data,
+      this._downloadUrl,
+      this._docFilename,
+      /* isModified = */ this._isMergedDocument
+    );
   },
 
   async save() {
@@ -1504,7 +1511,12 @@ const PDFViewerApplication = {
       const data = await this.pdfDocument.saveDocument(
         this.externalServices.printToPDF
       );
-      this.downloadManager.download(data, this._downloadUrl, this._docFilename);
+      this.downloadManager.download(
+        data,
+        this._downloadUrl,
+        this._docFilename,
+        /* isModified = */ true
+      );
     } catch (reason) {
       // When the PDF document isn't ready, fallback to a "regular" download.
       console.error(`Error when saving the document:`, reason);
@@ -2686,7 +2698,8 @@ const PDFViewerApplication = {
     this.downloadManager.download(
       modifiedPdfBytes,
       this._downloadUrl,
-      this._docFilename
+      this._docFilename,
+      /* isModified = */ true
     );
   },
 
@@ -2706,10 +2719,14 @@ const PDFViewerApplication = {
     }
     this._mergedDocumentNeedsSaving = true;
 
-    this.open({
+    // Keep the original download URL when reopening the merged PDF.
+    const downloadUrl = this._downloadUrl;
+    await this.open({
       data: modifiedPdfBytes,
       filename: this._docFilename,
     });
+    this._downloadUrl = downloadUrl;
+    this._isMergedDocument = true;
   },
 
   _accumulateTicks(ticks, prop) {

@@ -3460,6 +3460,50 @@ describe("Reorganize Pages View", () => {
       );
     });
 
+    it("must save a merged PDF as a modified copy of the original one (bug 2076546)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForThumbnailVisible(page, 1);
+
+          const originalUrl = await page.evaluate(
+            () => window.PDFViewerApplication._downloadUrl
+          );
+
+          const handleMerged = await createPromise(page, resolve => {
+            window.PDFViewerApplication.eventBus.on(
+              "thumbnailsloaded",
+              resolve,
+              { once: true }
+            );
+          });
+
+          const picker = await page.$("#viewsManagerAddFilePicker");
+          await picker.uploadFile(
+            path.join(__dirname, "../pdfs/three_pages_with_number.pdf")
+          );
+          await awaitPromise(handleMerged);
+
+          const downloads = await page.evaluate(async () => {
+            const app = window.PDFViewerApplication;
+            const calls = [];
+            app.downloadManager.download = (data, url, filename, isModified) =>
+              calls.push({ url, isModified });
+            // Saving must not clear the merged-document flag.
+            await app.downloadOrSave();
+            await app.downloadOrSave();
+            return calls;
+          });
+          expect(originalUrl).withContext(`In ${browserName}`).not.toEqual("");
+          expect(downloads)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              { url: originalUrl, isModified: true },
+              { url: originalUrl, isModified: true },
+            ]);
+        })
+      );
+    });
+
     it("should show only merged pages as selected when a page was pre-selected (bug 2034111)", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {

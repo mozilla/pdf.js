@@ -27,7 +27,13 @@ class BaseDownloadManager {
     }
   }
 
-  _triggerDownload(blobUrl, originalUrl, filename, isAttachment = false) {
+  _triggerDownload(
+    blobUrl,
+    originalUrl,
+    filename,
+    isAttachment = false,
+    isModified = false
+  ) {
     throw new Error("Not implemented: _triggerDownload");
   }
 
@@ -89,13 +95,20 @@ class BaseDownloadManager {
    * @param {Uint8Array} data
    * @param {string} url
    * @param {string} filename
+   * @param {boolean} [isModified] - Whether to report the PDF as modified.
    */
-  download(data, url, filename) {
+  download(data, url, filename, isModified = false) {
     const blobUrl = data
       ? URL.createObjectURL(new Blob([data], { type: "application/pdf" }))
       : null;
 
-    this._triggerDownload(blobUrl, /* originalUrl = */ url, filename);
+    this._triggerDownload(
+      blobUrl,
+      /* originalUrl = */ url,
+      filename,
+      /* isAttachment = */ false,
+      isModified
+    );
   }
 }
 
