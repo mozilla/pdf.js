@@ -185,6 +185,40 @@ describe("Scripting", function () {
       expect(value).toEqual([false, false]);
     });
 
+    it("should report checkbox defaults independently of current values", async () => {
+      const checkbox = (value, defaultValue) => [
+        {
+          id: getId(),
+          value,
+          defaultValue,
+          exportValues: "Yes",
+          actions: {},
+          type: "checkbox",
+        },
+      ];
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: { off: checkbox("Yes", "Off"), on: checkbox("Off", "Yes") },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const off = getField("off");
+        const on = getField("on");
+        const before = [off.isDefaultChecked(0), on.isDefaultChecked(0)];
+        off.value = "Off";
+        on.value = "Yes";
+        return [
+          ...before,
+          off.isDefaultChecked(0),
+          off.isDefaultChecked(0.5),
+          on.isDefaultChecked(0),
+          on.isDefaultChecked(1),
+        ];
+      })()`);
+      expect(value).toEqual([false, true, false, false, true, false]);
+    });
+
     it("should let scripts declare variables named like internal ones", async () => {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },

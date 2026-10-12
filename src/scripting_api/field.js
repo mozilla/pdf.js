@@ -674,12 +674,6 @@ class CheckboxField extends RadioButtonField {
     return state ? super._getExportValue(state) : "Off";
   }
 
-  isDefaultChecked(nWidget) {
-    return this.defaultValue === "Off"
-      ? this._value === "Off"
-      : super.isDefaultChecked(nWidget);
-  }
-
   checkThisBox(nWidget, bCheckIt = true) {
     if (nWidget < 0 || nWidget >= this._radioIds.length) {
       return;
