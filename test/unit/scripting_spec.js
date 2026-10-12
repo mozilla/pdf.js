@@ -123,6 +123,31 @@ describe("Scripting", function () {
       });
     });
 
+    it("should keep using the original global evaluator", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {
+                replaceEval: [`globalThis.eval = () => { throw null; };`],
+                updateField: [`event.source.value = "updated";`],
+              },
+              type: "text",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      await sandbox.dispatchEventInSandbox({ id: refId, name: "replaceEval" });
+      await sandbox.dispatchEventInSandbox({ id: refId, name: "updateField" });
+      expect(send_queue.get(refId)).toEqual({ id: refId, value: "updated" });
+    });
+
     it("should check the radio button matching the field value", async () => {
       const refIds = [getId(), getId()];
       sandbox.createSandbox({
