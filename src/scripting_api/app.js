@@ -109,19 +109,20 @@ class App extends PDFObject {
     const timeout = Object.create(null);
     const id = { callbackId, interval };
     this._timeoutIds.set(timeout, id);
-    this._timeoutIdsRegistry.register(timeout, id);
+    // Allow explicit cancellation to unregister the finalizer.
+    this._timeoutIdsRegistry.register(timeout, id, timeout);
     return timeout;
   }
 
   _unregisterTimeout(timeout) {
-    this._timeoutIdsRegistry.unregister(timeout);
-
+    // Ignore unknown handles; unregister can throw for invalid tokens.
     const data = this._timeoutIds.get(timeout);
     if (!data) {
       return;
     }
 
     this._timeoutIds.delete(timeout);
+    this._timeoutIdsRegistry.unregister(timeout);
     this._cleanTimeout(data);
   }
 
