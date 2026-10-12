@@ -372,5 +372,40 @@ describe("message_handler", function () {
       expect(result.value).toBeUndefined();
       expect(result.done).toBeTrue();
     });
+
+    it("should error with a non-object reason", async function () {
+      const port = new LoopbackPort();
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", (data, sink) => {
+        sink.ready.then(() => {
+          sink.error("out of memory");
+        });
+      });
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+      const readable = messageHandler1.sendWithStream("fakeHandler");
+
+      const reader = readable.getReader();
+      await expectAsync(reader.read()).toBeRejectedWith(
+        new UnknownErrorException("out of memory", "out of memory")
+      );
+    });
+  });
+
+  describe("sendWithPromise", function () {
+    it("should reject with a non-object reason", async function () {
+      const port = new LoopbackPort();
+      const messageHandler2 = new MessageHandler("worker", "main", port);
+      messageHandler2.on("fakeHandler", () => {
+        // eslint-disable-next-line no-throw-literal
+        throw "out of memory";
+      });
+      const messageHandler1 = new MessageHandler("main", "worker", port);
+
+      await expectAsync(
+        messageHandler1.sendWithPromise("fakeHandler")
+      ).toBeRejectedWith(
+        new UnknownErrorException("out of memory", "out of memory")
+      );
+    });
   });
 });
