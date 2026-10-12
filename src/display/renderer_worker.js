@@ -188,7 +188,7 @@ class RendererMessageHandler {
       }
     }
     operatorList.lastChunk = lastChunk;
-    renderTaskState.gfx.dependencyTracker?.growOperationsCount(
+    renderTaskState.dependencyTracker?.growOperationsCount(
       operatorList.fnArray.length
     );
   }
@@ -344,6 +344,8 @@ class RendererMessageHandler {
         lastFrameTime: Date.now(),
         gfx: null,
         sharedOperatorList,
+        dependencyTracker: null,
+        imagesTracker: null,
         operatorList: {
           fnArray: [],
           argsArray: [],
@@ -404,6 +406,8 @@ class RendererMessageHandler {
         });
 
         renderTaskState.gfx = gfx;
+        renderTaskState.dependencyTracker = dependencyTracker;
+        renderTaskState.imagesTracker = imagesTracker;
       } catch (ex) {
         this.#cleanupRenderTask(renderTaskId);
         throw ex;
@@ -444,10 +448,9 @@ class RendererMessageHandler {
         renderTaskState.operatorList.lastChunk &&
         currentOperatorListIdx === renderTaskState.operatorList.argsArray.length
       ) {
-        const reader = renderTaskState.gfx.dependencyTracker?.take();
-        recordedBBoxesBuffer = reader?.buffer;
-        const images = renderTaskState.gfx.imagesTracker?.take();
-        imageCoordinates = images || null;
+        recordedBBoxesBuffer =
+          renderTaskState.dependencyTracker?.take().buffer ?? null;
+        imageCoordinates = renderTaskState.imagesTracker?.take() ?? null;
         const aborted = renderTaskState.aborted;
 
         // `endDrawing` applies the final filter, so snapshot after it. The
