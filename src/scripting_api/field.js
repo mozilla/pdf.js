@@ -624,10 +624,12 @@ class RadioButtonField extends Field {
   }
 
   isBoxChecked(nWidget) {
+    // A current widget ID does not imply that it is checked.
     return (
       nWidget >= 0 &&
       nWidget < this._radioIds.length &&
-      this._id === this._radioIds[nWidget]
+      this._id === this._radioIds[nWidget] &&
+      this._value === this.exportValues[nWidget]
     );
   }
 
@@ -670,10 +672,6 @@ class CheckboxField extends RadioButtonField {
 
   _getExportValue(state) {
     return state ? super._getExportValue(state) : "Off";
-  }
-
-  isBoxChecked(nWidget) {
-    return this._value === "Off" ? false : super.isBoxChecked(nWidget);
   }
 
   isDefaultChecked(nWidget) {

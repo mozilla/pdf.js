@@ -153,6 +153,38 @@ describe("Scripting", function () {
       expect(value).toEqual([false, true]);
     });
 
+    it("should report unchecked radio buttons and checkboxes", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          radio: [
+            {
+              id: getId(),
+              value: "Off",
+              exportValues: "First",
+              actions: {},
+              type: "radiobutton",
+            },
+            {
+              id: getId(),
+              exportValues: "Second",
+              actions: {},
+              type: "radiobutton",
+            },
+          ],
+          checkbox: [
+            { id: getId(), exportValues: "Yes", actions: {}, type: "checkbox" },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(
+        `["radio", "checkbox"].map(name => getField(name).isBoxChecked(0))`
+      );
+      expect(value).toEqual([false, false]);
+    });
+
     it("should let scripts declare variables named like internal ones", async () => {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
