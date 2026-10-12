@@ -239,6 +239,106 @@ describe("Scripting", function () {
       }
     });
 
+    it("should run each radio widget's PageOpen and PageClose action chains", async () => {
+      // Each event uses its own globals.
+      const radio = (exportValues, page, chain) => ({
+        id: getId(),
+        value: "A",
+        exportValues,
+        page,
+        actions: { PageOpen: chain("Open"), PageClose: chain("Close") },
+        type: "radiobutton",
+      });
+      const increment = e => [
+        `globalThis.m${e} = (globalThis.m${e} || 0) + 1;`,
+      ];
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          radio: [
+            // Chains with the same first script.
+            radio("A", 0, e => [
+              `globalThis.n${e} = 0;`,
+              `globalThis.n${e} += 1;`,
+            ]),
+            radio("B", 0, e => [
+              `globalThis.n${e} = 0;`,
+              `globalThis.n${e} += 2;`,
+            ]),
+            // Identical chains.
+            radio("C", 1, increment),
+            radio("D", 1, increment),
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      for (const name of ["PageOpen", "PageClose"]) {
+        for (const pageNumber of [1, 2]) {
+          await sandbox.dispatchEventInSandbox({
+            id: "page",
+            name,
+            pageNumber,
+            actions: {},
+          });
+        }
+      }
+      expect(
+        await myeval(`[
+          globalThis.nOpen,
+          globalThis.mOpen,
+          globalThis.nClose,
+          globalThis.mClose,
+        ]`)
+      ).toEqual([2, 2, 2, 2]);
+    });
+
+    it("should run widget PageOpen and PageClose actions even when they match the field's", async () => {
+      const increment = e => `globalThis.n${e} = (globalThis.n${e} || 0) + 1;`;
+      const actions = {
+        PageOpen: [increment("Open")],
+        PageClose: [increment("Close")],
+      };
+      const refIds = [0, 1, 2].map(_ => getId());
+      const radio = (id, exportValues) => ({
+        id,
+        value: "A",
+        exportValues,
+        page: 0,
+        actions,
+        type: "radiobutton",
+      });
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          radio: [
+            // Parent field with the same action chains.
+            {
+              id: refIds[0],
+              type: "",
+              kidIds: refIds.slice(1),
+              actions,
+            },
+            radio(refIds[1], "A"),
+            radio(refIds[2], "B"),
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      for (const name of ["PageOpen", "PageClose"]) {
+        await sandbox.dispatchEventInSandbox({
+          id: "page",
+          name,
+          pageNumber: 1,
+          actions: {},
+        });
+      }
+      expect(await myeval(`[globalThis.nOpen, globalThis.nClose]`)).toEqual([
+        2, 2,
+      ]);
+    });
+
     it("should report checkbox defaults independently of current values", async () => {
       const checkbox = (value, defaultValue) => [
         {

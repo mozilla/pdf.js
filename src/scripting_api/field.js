@@ -532,6 +532,21 @@ class Field extends PDFObject {
     return false;
   }
 
+  /**
+   * @returns {Array<[number, string, Array<string>]>} Page index, event name,
+   *   and scripts for each PageOpen/PageClose chain.
+   */
+  _getPageActions() {
+    const pageActions = [];
+    for (const eventName of ["PageOpen", "PageClose"]) {
+      const scripts = this._actions.get(eventName);
+      if (scripts) {
+        pageActions.push([this._page, eventName, scripts]);
+      }
+    }
+    return pageActions;
+  }
+
   _reset() {
     this.value = this.defaultValue;
   }
@@ -569,12 +584,13 @@ class RadioButtonField extends Field {
     this.exportValues = [this.exportValues];
     this._radioIds = [this._id];
     this._radioActions = [this._actions];
+    this._radioPages = [this._page];
 
     for (const radioData of otherButtons) {
       this.exportValues.push(radioData.exportValues);
       this._radioIds.push(radioData.id);
       this._radioActions.push(createMap(radioData.actions));
-      // _value is still null here.
+      this._radioPages.push(radioData.page || 0);
       if (data.value === radioData.exportValues) {
         this._id = radioData.id;
       }
@@ -648,6 +664,20 @@ class RadioButtonField extends Field {
       `${index}` === `${nWidget}`
       ? index
       : -1;
+  }
+
+  _getPageActions() {
+    // Run each widget's chain, including inherited actions.
+    const pageActions = [];
+    for (let i = 0, ii = this._radioIds.length; i < ii; i++) {
+      for (const eventName of ["PageOpen", "PageClose"]) {
+        const scripts = this._radioActions[i].get(eventName);
+        if (scripts) {
+          pageActions.push([this._radioPages[i], eventName, scripts]);
+        }
+      }
+    }
+    return pageActions;
   }
 
   _getExportValue(state) {
