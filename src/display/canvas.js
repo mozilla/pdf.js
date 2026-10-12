@@ -563,6 +563,9 @@ class CanvasGraphics {
   // creating a new DOMMatrix object each time we need it.
   static #SCALE_MATRIX = null;
 
+  // Keep uncloneable Path2D caches off operator lists sent to the renderer.
+  static #pathCaches = new WeakMap();
+
   // Knockout group support fields.
   #knockoutGroupLevel = 0;
 
@@ -740,11 +743,11 @@ class CanvasGraphics {
   ) {
     const argsArray = operatorList.argsArray;
     const fnArray = operatorList.fnArray;
-    // Cache materialized Path2D objects on the operator list itself rather
-    // than by mutating `argsArray[i][0]`, so that the arguments stay
-    // structured-cloneable.
+    // Reuse the renderer worker's cache across render tasks.
     const prevPathCache = this._pathCache;
-    this._pathCache = operatorList.pathCache ||= new Map();
+    this._pathCache =
+      operatorList.pathCache ??
+      CanvasGraphics.#pathCaches.getOrInsertComputed(operatorList, makeMap);
     try {
       let i = executionStartIdx || 0;
       const argsArrayLen = argsArray.length;

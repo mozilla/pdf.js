@@ -5820,6 +5820,44 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("renders a tiling pattern in the worker after a main-thread render", async function () {
+      if (isNodeJS) {
+        pending("Worker rendering is not supported in Node.js.");
+      }
+      const loadingTask = getDocument(
+        buildGetDocumentParams("tiling-pattern-large-steps.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 0.25 });
+      const { canvasFactory } = pdfDoc;
+
+      for (const useCanvasContext of [true, false]) {
+        const canvasAndCtx = canvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render(
+          useCanvasContext
+            ? { canvasContext: canvasAndCtx.context, viewport }
+            : { canvas: canvasAndCtx.canvas, viewport }
+        );
+        expect(renderTask.isWorkerRendering).toEqual(!useCanvasContext);
+        await renderTask.promise;
+
+        const { data } = canvasAndCtx.context.getImageData(
+          viewport.width / 2,
+          viewport.height / 2,
+          1,
+          1
+        );
+        expect(Array.from(data)).toEqual([255, 0, 0, 255]);
+        canvasFactory.destroy(canvasAndCtx);
+      }
+
+      await loadingTask.destroy();
+    });
+
     it("cleans up document resources after rendering of page", async function () {
       const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
       const pdfDoc = await loadingTask.promise;
