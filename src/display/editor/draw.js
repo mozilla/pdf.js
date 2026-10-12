@@ -500,6 +500,8 @@ class DrawingEditor extends AnnotationEditor {
       if (focus && this.isOnScreen) {
         this.div.focus();
       }
+    } else if (focus) {
+      this.div.scrollIntoView({ block: "nearest" });
     }
   }
 
