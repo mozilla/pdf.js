@@ -14,6 +14,7 @@
  */
 
 import {
+  AbortException,
   AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
@@ -7450,6 +7451,100 @@ have written that much by now. So, here’s to squashing bugs.`);
       }
 
       await loadingTask.destroy();
+    });
+
+    it("should destroy document during a hanging range request (issue 22051)", async function () {
+      const initialDataLength = 80000; // Larger than `rangeChunkSize`, since otherwise it's pretty pointless.
+      const subArrays = [];
+      let fetches = 0;
+
+      const data = await dataPromise;
+      const dataLength = data.length;
+      const initialData = new Uint8Array(data.subarray(0, initialDataLength));
+      subArrays.push(initialData);
+
+      const transport = new PDFDataRangeTransport(
+        dataLength,
+        initialData,
+        /* progressiveDone = */ undefined,
+        /* contentDispositionFilename = */ "aaa.pdf"
+      );
+      transport.requestDataRange = async (begin, end) => {
+        fetches++;
+        if (fetches > 3) {
+          await loadingTask.destroy();
+          return;
+        }
+        waitSome(() => {
+          const chunk = new Uint8Array(data.subarray(begin, end));
+          subArrays.push(chunk);
+
+          transport.onDataRange(begin, chunk);
+        });
+      };
+
+      const loadingTask = getDocument({
+        range: transport,
+        rangeChunkSize: 65536,
+      });
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(14);
+
+      await expectAsync(pdfDocument.getPage(10)).toBeRejectedWithError(
+        AbortException,
+        "Worker was terminated."
+      );
+
+      expect(fetches).toEqual(4);
+    });
+
+    it("should destroy document during a pending range request, with auto-fetching enabled", async function () {
+      const initialDataLength = 80000; // Larger than `rangeChunkSize`, since otherwise it's pretty pointless.
+      const subArrays = [];
+      let fetches = 0;
+      const abortCapability = Promise.withResolvers();
+      let loaded = false;
+
+      const data = await dataPromise;
+      const dataLength = data.length;
+      const initialData = new Uint8Array(data.subarray(0, initialDataLength));
+      subArrays.push(initialData);
+
+      const transport = new PDFDataRangeTransport(
+        dataLength,
+        initialData,
+        /* progressiveDone = */ undefined,
+        /* contentDispositionFilename = */ "aaa.pdf"
+      );
+      transport.requestDataRange = async (begin, end) => {
+        fetches++;
+        if (loaded) {
+          abortCapability.resolve();
+          return;
+        }
+        waitSome(() => {
+          const chunk = new Uint8Array(data.subarray(begin, end));
+          subArrays.push(chunk);
+
+          transport.onDataRange(begin, chunk);
+        });
+      };
+
+      const loadingTask = getDocument({
+        range: transport,
+        rangeChunkSize: 65536,
+        disableStream: true,
+      });
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(14);
+
+      loaded = true;
+      await abortCapability.promise;
+      await loadingTask.destroy();
+
+      expect(fetches).toEqual(6);
     });
   });
 

@@ -1059,10 +1059,16 @@ class WorkerMessageHandler {
 
       const waitOn = [];
       if (pdfManager) {
-        pdfManager.terminate(new AbortException("Worker was terminated."));
+        // While `terminate` itself isn't asynchronous we need to allow some
+        // time for any pending `ChunkedStreamManager` request-Promises to be
+        // rejected *before* tearing down the document, since otherwise various
+        // API-methods may remain pending indefinitely. (Without this,
+        // the unit-test for issue 22051 hangs with Workers enabled.)
+        await pdfManager.terminate(
+          new AbortException("Worker was terminated.")
+        );
 
-        const cleanupPromise = pdfManager.cleanup();
-        waitOn.push(cleanupPromise);
+        waitOn.push(pdfManager.cleanup());
 
         pdfManager = null;
       } else {

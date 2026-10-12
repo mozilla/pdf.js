@@ -253,7 +253,7 @@ class ChunkedStream extends Stream {
 }
 
 class ChunkedStreamManager {
-  #aborted = false;
+  #abortReason = null;
 
   #requestId = 0;
 
@@ -281,7 +281,7 @@ class ChunkedStreamManager {
     while (true) {
       const { value, done } = await rangeReader.read();
 
-      if (this.#aborted) {
+      if (this.#abortReason) {
         chunks = null;
         return; // Ignoring any data after abort.
       }
@@ -312,14 +312,18 @@ class ChunkedStreamManager {
    * contiguous ranges to load in as few requests as possible.
    */
   requestAllChunks(noFetch = false) {
-    if (!noFetch) {
+    if (!noFetch && !this.#abortReason) {
       const missingChunks = this.stream.getMissingChunks();
-      this._requestChunks(missingChunks);
+      this.#requestChunks(missingChunks);
     }
     return this.#loadedStreamCapability.promise;
   }
 
-  _requestChunks(chunks) {
+  #requestChunks(chunks) {
+    if (this.#abortReason) {
+      return Promise.reject(this.#abortReason);
+    }
+
     const chunksNeeded = new Set();
     for (const chunk of chunks) {
       if (!this.stream.hasChunk(chunk)) {
@@ -360,12 +364,10 @@ class ChunkedStreamManager {
       }
     }
 
-    return capability.promise.catch(reason => {
-      if (this.#aborted) {
-        return; // Ignoring any pending requests after abort.
-      }
-      throw reason;
-    });
+    // Prevent "uncaught exception: Object"-messages in the console.
+    capability.promise.catch(() => {});
+
+    return capability.promise;
   }
 
   getStream() {
@@ -385,7 +387,7 @@ class ChunkedStreamManager {
     for (let chunk = beginChunk; chunk < endChunk; ++chunk) {
       chunks.push(chunk);
     }
-    return this._requestChunks(chunks);
+    return this.#requestChunks(chunks);
   }
 
   requestRanges(ranges = []) {
@@ -401,7 +403,7 @@ class ChunkedStreamManager {
     }
 
     chunksToRequest.sort((a, b) => a - b);
-    return this._requestChunks(chunksToRequest);
+    return this.#requestChunks(chunksToRequest);
   }
 
   /**
@@ -476,7 +478,11 @@ class ChunkedStreamManager {
 
     // If there are no pending requests, automatically fetch the next
     // unfetched chunk of the PDF file.
-    if (!this.disableAutoFetch && this._requestsByChunk.size === 0) {
+    if (
+      !this.disableAutoFetch &&
+      !this._requestsByChunk.size &&
+      !this.#abortReason
+    ) {
       let nextEmptyChunk;
       if (stream.numChunksLoaded === 1) {
         // This is a special optimization so that after fetching the first
@@ -490,7 +496,7 @@ class ChunkedStreamManager {
         nextEmptyChunk = stream.nextEmptyChunk(endChunk);
       }
       if (Number.isInteger(nextEmptyChunk)) {
-        this._requestChunks([nextEmptyChunk]);
+        this.#requestChunks([nextEmptyChunk]);
       }
     }
 
@@ -519,7 +525,8 @@ class ChunkedStreamManager {
   }
 
   abort(reason) {
-    this.#aborted = true;
+    assert(reason instanceof Error, "abort must have a valid reason");
+    this.#abortReason = reason;
     this.pdfStream?.cancelAllRequests(reason);
 
     for (const capability of this._promisesByRequest.values()) {
