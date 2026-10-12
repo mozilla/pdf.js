@@ -6101,6 +6101,34 @@ have written that much by now. So, here’s to squashing bugs.`);
       await checkImageSmoothingPixelRatio(/* disableWorkerRendering = */ true);
     });
 
+    it("creates the canvas context with the same options on both paths", async function () {
+      if (isNodeJS) {
+        pending("Worker rendering is not supported in Node.js.");
+      }
+      for (const disableWorkerRendering of [false, true]) {
+        const loadingTask = getDocument(
+          buildGetDocumentParams(basicApiFileName, { disableWorkerRendering })
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(1);
+        const viewport = pdfPage.getViewport({ scale: 0.5 });
+
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const renderTask = pdfPage.render({ canvas, viewport });
+        expect(renderTask.isWorkerRendering).toEqual(!disableWorkerRendering);
+        await renderTask.promise;
+
+        // Reuse the context created during rendering.
+        const attributes = canvas.getContext("2d").getContextAttributes();
+        expect(attributes.alpha).toBeFalse();
+        expect(attributes.willReadFrequently).toBeTrue();
+
+        await loadingTask.destroy();
+      }
+    });
+
     it("cleans up document resources during rendering of page", async function () {
       const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
