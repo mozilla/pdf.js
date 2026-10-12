@@ -185,6 +185,60 @@ describe("Scripting", function () {
       expect(value).toEqual([false, false]);
     });
 
+    it("should ignore invalid widget indices", async () => {
+      const refIds = [getId(), getId(), getId()];
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          radio: [
+            {
+              id: refIds[0],
+              value: "First",
+              exportValues: "First",
+              actions: {},
+              type: "radiobutton",
+            },
+            {
+              id: refIds[1],
+              exportValues: "Second",
+              actions: {},
+              type: "radiobutton",
+            },
+          ],
+          checkbox: [
+            {
+              id: refIds[2],
+              value: "Yes",
+              exportValues: "Yes",
+              actions: {},
+              type: "checkbox",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const radio = getField("radio");
+        const checkbox = getField("checkbox");
+        for (const index of [0.5, NaN, "abc", "01", -1, 2, undefined]) {
+          radio.checkThisBox(index);
+          checkbox.checkThisBox(index, false);
+        }
+        return [
+          radio.value,
+          checkbox.value,
+          radio.isBoxChecked(0.5),
+          radio.isDefaultChecked(0.5),
+          radio.isBoxChecked("0"),
+        ];
+      })()`);
+      expect(value).toEqual(["First", "Yes", false, false, true]);
+      for (const id of refIds) {
+        expect(send_queue.has(id)).toBeFalse();
+      }
+    });
+
     it("should report checkbox defaults independently of current values", async () => {
       const checkbox = (value, defaultValue) => [
         {

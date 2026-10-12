@@ -614,31 +614,40 @@ class RadioButtonField extends Field {
   }
 
   checkThisBox(nWidget, bCheckIt = true) {
-    if (nWidget < 0 || nWidget >= this._radioIds.length || !bCheckIt) {
+    const index = this._getWidgetIndex(nWidget);
+    if (index === -1 || !bCheckIt) {
       return;
     }
 
-    this._id = this._radioIds[nWidget];
-    this._value = this.exportValues[nWidget];
+    this._id = this._radioIds[index];
+    this._value = this.exportValues[index];
     this._send({ id: this._id, value: this._value });
   }
 
   isBoxChecked(nWidget) {
+    const index = this._getWidgetIndex(nWidget);
     // A current widget ID does not imply that it is checked.
     return (
-      nWidget >= 0 &&
-      nWidget < this._radioIds.length &&
-      this._id === this._radioIds[nWidget] &&
-      this._value === this.exportValues[nWidget]
+      index !== -1 &&
+      this._id === this._radioIds[index] &&
+      this._value === this.exportValues[index]
     );
   }
 
   isDefaultChecked(nWidget) {
-    return (
-      nWidget >= 0 &&
-      nWidget < this.exportValues.length &&
-      this.defaultValue === this.exportValues[nWidget]
-    );
+    const index = this._getWidgetIndex(nWidget);
+    return index !== -1 && this.defaultValue === this.exportValues[index];
+  }
+
+  _getWidgetIndex(nWidget) {
+    // Accept integer indices and their canonical string forms.
+    const index = Number(nWidget);
+    return Number.isInteger(index) &&
+      index >= 0 &&
+      index < this._radioIds.length &&
+      `${index}` === `${nWidget}`
+      ? index
+      : -1;
   }
 
   _getExportValue(state) {
@@ -675,11 +684,12 @@ class CheckboxField extends RadioButtonField {
   }
 
   checkThisBox(nWidget, bCheckIt = true) {
-    if (nWidget < 0 || nWidget >= this._radioIds.length) {
+    const index = this._getWidgetIndex(nWidget);
+    if (index === -1) {
       return;
     }
-    this._id = this._radioIds[nWidget];
-    this._value = bCheckIt ? this.exportValues[nWidget] : "Off";
+    this._id = this._radioIds[index];
+    this._value = bCheckIt ? this.exportValues[index] : "Off";
     this._send({ id: this._id, value: this._value });
   }
 }
