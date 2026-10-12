@@ -491,6 +491,36 @@ describe("annotation", function () {
 
       expect(annotation.color).toEqual(new Uint8ClampedArray([0, 0, 0]));
     });
+
+    it("should not use its own canvas when it has a non-finite dimension", async function () {
+      const annotationRef = Ref.get(819, 0);
+      const annotationDict = new Dict();
+      annotationDict.set("Type", Name.get("Annot"));
+      annotationDict.set("Subtype", Name.get("Square"));
+      annotationDict.set("F", AnnotationFlag.NOROTATE);
+      annotationDict.set("Rect", [0, 0, Infinity, 20]);
+
+      const xref = new XRefMock([{ ref: annotationRef, data: annotationDict }]);
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        annotationRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.hasOwnCanvas).toBeTrue();
+
+      const { opList, separateCanvas } = await annotation.getOperatorList(
+        partialEvaluator,
+        new WorkerTask("test display"),
+        RenderingIntentFlag.DISPLAY,
+        new Map()
+      );
+      expect(opList.length).toEqual(0);
+      expect(separateCanvas).toBeFalse();
+      expect(annotation.data.hasOwnCanvas).toBeFalse();
+    });
   });
 
   describe("AnnotationBorderStyle", function () {
@@ -2351,6 +2381,43 @@ describe("annotation", function () {
       expect(opList.length).toEqual(0);
       expect(separateCanvas).toBeFalse();
       expect(annotation.data.hasOwnCanvas).toBeFalse();
+    });
+
+    it("should not use its own canvas when the field has a non-finite dimension", async function () {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.READONLY);
+
+      for (const width of [Infinity, NaN]) {
+        textWidgetDict.set("Rect", [0, 0, width, 75]);
+
+        const textWidgetRef = Ref.get(271, 0);
+        const xref = new XRefMock([
+          { ref: textWidgetRef, data: textWidgetDict },
+          helvRefObj,
+        ]);
+        const task = new WorkerTask("test display");
+        partialEvaluator.xref = xref;
+
+        const annotation = await AnnotationFactory.create(
+          xref,
+          textWidgetRef,
+          annotationGlobalsMock,
+          idFactoryMock
+        );
+        expect(annotation.data.hasOwnCanvas).toBeTrue();
+
+        const annotationStorage = new Map();
+        annotationStorage.set(annotation.data.id, { value: "A" });
+
+        const { opList, separateCanvas } = await annotation.getOperatorList(
+          partialEvaluator,
+          task,
+          RenderingIntentFlag.DISPLAY,
+          annotationStorage
+        );
+        expect(opList.length).toEqual(0);
+        expect(separateCanvas).toBeFalse();
+        expect(annotation.data.hasOwnCanvas).toBeFalse();
+      }
     });
 
     it("should render comb for printing", async function () {

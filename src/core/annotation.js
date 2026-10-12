@@ -1266,8 +1266,8 @@ class Annotation {
       (!this._ownCanvasRequiresForms ||
         intent & RenderingIntentFlag.ANNOTATIONS_FORMS)
     );
-    if (isUsingOwnCanvas && (this.width === 0 || this.height === 0)) {
-      // Empty annotation, don't draw anything.
+    if (isUsingOwnCanvas && !this._hasCanvasSize) {
+      // Skip empty or invalid annotations.
       this.data.hasOwnCanvas = false;
       return this._getOperatorListNoAppearance();
     }
@@ -1550,6 +1550,12 @@ class Annotation {
 
   get height() {
     return this.data.rect[3] - this.data.rect[1];
+  }
+
+  // Rect coordinates can overflow to Infinity.
+  get _hasCanvasSize() {
+    const { width, height } = this;
+    return width > 0 && height > 0 && Number.isFinite(width + height);
   }
 }
 
@@ -2155,8 +2161,8 @@ class WidgetAnnotation extends Annotation {
     const isUsingOwnCanvas = !!(
       this.data.hasOwnCanvas && intent & RenderingIntentFlag.DISPLAY
     );
-    if (isUsingOwnCanvas && (this.width === 0 || this.height === 0)) {
-      // Don't request a separate zero-sized canvas (see bug 2069428).
+    if (isUsingOwnCanvas && !this._hasCanvasSize) {
+      // Skip invalid canvas sizes (see bug 2069428).
       this.data.hasOwnCanvas = false;
       return this._getOperatorListNoAppearance();
     }

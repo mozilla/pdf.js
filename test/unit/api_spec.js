@@ -5899,6 +5899,34 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("renders into a zero-width canvas", async function () {
+      if (isNodeJS) {
+        pending("Worker rendering is not supported in Node.js.");
+      }
+      const loadingTask = getDocument(buildGetDocumentParams("bug1844576.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const canvas = document.createElement("canvas");
+      canvas.width = 0;
+      canvas.height = viewport.height;
+      const annotationCanvasMap = new Map();
+
+      const renderTask = pdfPage.render({
+        canvas,
+        viewport,
+        annotationMode: AnnotationMode.ENABLE_FORMS,
+        annotationCanvasMap,
+      });
+      expect(renderTask.isWorkerRendering).toBeTrue();
+      await renderTask.promise;
+
+      expect([...annotationCanvasMap.keys()].sort()).toEqual(["12R", "9R"]);
+
+      await loadingTask.destroy();
+    });
+
     it("cleans up document resources after rendering of page", async function () {
       const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
       const pdfDoc = await loadingTask.promise;

@@ -14,7 +14,7 @@
  */
 
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
-import { isNodeJS, makeMap, setVerbosityLevel } from "../shared/util.js";
+import { isNodeJS, makeMap, setVerbosityLevel, warn } from "../shared/util.js";
 import { createCanvasTrackers } from "./canvas_dependency_tracker.js";
 import { FontLoader } from "./font_loader.js";
 import { initGPU } from "./webgpu.js";
@@ -104,8 +104,13 @@ class RendererMessageHandler {
 
   static async #sendFrame(handler, renderTaskState, isFinal) {
     const { canvas, renderTaskId } = renderTaskState;
-    let bitmap;
-    if (isFinal) {
+    let bitmap = null;
+    if (canvas.width === 0 || canvas.height === 0) {
+      // transferToImageBitmap() fails for zero-sized canvases.
+      if (!isFinal) {
+        return;
+      }
+    } else if (isFinal) {
       bitmap = canvas.transferToImageBitmap();
     } else {
       // We need to use createImageBitmap for interim frames because
@@ -122,7 +127,7 @@ class RendererMessageHandler {
         bitmap = await createImageBitmap(canvas);
       }
     }
-    const transfers = [bitmap];
+    const transfers = bitmap ? [bitmap] : [];
     const annotationBitmaps = isFinal
       ? this.#collectAnnotationBitmaps(renderTaskState, transfers)
       : null;
@@ -144,7 +149,12 @@ class RendererMessageHandler {
     ) {
       return;
     }
-    await this.#sendFrame(handler, renderTaskState, /* isFinal = */ false);
+    try {
+      await this.#sendFrame(handler, renderTaskState, /* isFinal = */ false);
+    } catch (ex) {
+      // An interim frame failure must not abort rendering.
+      warn(`Failed to send an interim frame: ${ex.message}`);
+    }
     renderTaskState.lastFrameTime = Date.now();
     renderTaskState.lastFrameIdx = renderTaskState.operatorListIdx;
   }

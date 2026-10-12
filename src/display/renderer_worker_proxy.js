@@ -22,7 +22,7 @@ import { OutputScale } from "./display_utils.js";
 import { setAnnotationCanvasName } from "./canvas.js";
 
 function closeFrame({ bitmap, annotationBitmaps }) {
-  bitmap.close();
+  bitmap?.close();
   if (annotationBitmaps) {
     for (const [, , annotationBitmap] of annotationBitmaps) {
       annotationBitmap.close();
@@ -184,8 +184,10 @@ class WorkerRenderTask {
 
   drawFrame(frame) {
     try {
-      const ctx = this.#canvasFactory.getNoAlphaContext(this.#canvas);
-      ctx.drawImage(frame.bitmap, 0, 0);
+      if (frame.bitmap) {
+        const ctx = this.#canvasFactory.getNoAlphaContext(this.#canvas);
+        ctx.drawImage(frame.bitmap, 0, 0);
+      }
 
       if (frame.annotationBitmaps) {
         this.#drawAnnotationCanvases(frame.annotationBitmaps);
