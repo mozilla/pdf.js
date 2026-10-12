@@ -197,9 +197,9 @@ class Doc extends PDFObject {
       try {
         this._globalEval(action);
       } catch (error) {
-        const serializedError = serializeError(error);
-        serializedError.value = `Error when executing "${name}" for document\n${serializedError.value}`;
-        this._send(serializedError);
+        this._send(
+          serializeError(error, `Error when executing "${name}" for document\n`)
+        );
       }
     }
   }
