@@ -131,6 +131,24 @@ class PDFScriptingManager {
     this.#eventAC = new AbortController();
     const evtOpts = { signal: this.#eventAC.signal, ...internalOpt };
 
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("COMPONENTS")) &&
+      this.#externalServices.addScriptingWindowListener
+    ) {
+      // The default viewer already handles adding/removing of DOM events,
+      // hence limit this to only the viewer components.
+      window.addEventListener(
+        "updatefromsandbox",
+        event => {
+          eventBus.dispatch("updatefromsandbox", {
+            source: window,
+            detail: event.detail,
+          });
+        },
+        { signal: this.#eventAC.signal }
+      );
+    }
+
     eventBus.on(
       "updatefromsandbox",
       event => {
