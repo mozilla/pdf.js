@@ -1504,6 +1504,39 @@ describe("Stamp Editor", () => {
         })
       );
     });
+
+    it("must remove an existing alt-text when the image is marked as decorative", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const modeChangedHandle = await waitForAnnotationModeChanged(page);
+          await page.click(getAnnotationSelector("58R"), { count: 2 });
+          await awaitPromise(modeChangedHandle);
+          const editorSelector = getEditorSelector(4);
+          await waitForSelectedEditor(page, editorSelector);
+
+          await page.click(`${editorSelector} button.altText`);
+          await page.waitForSelector("#altTextDialog", { visible: true });
+
+          await page.waitForFunction(
+            sel => document.querySelector(sel).value !== "",
+            {},
+            "#altTextDialog textarea"
+          );
+
+          await page.click("#altTextDialog #decorativeButton");
+          await page.click("#altTextDialog #altTextSave");
+
+          await waitForSerialized(page, 1);
+          const serialized = await getSerialized(page);
+          expect(serialized[0].id)
+            .withContext(`In ${browserName}`)
+            .toEqual("58R");
+          expect(serialized[0].accessibilityData)
+            .withContext(`In ${browserName}`)
+            .toEqual({ type: "Figure", alt: "", structParent: 0 });
+        })
+      );
+    });
   });
 
   describe("Stamp (delete existing and undo)", () => {

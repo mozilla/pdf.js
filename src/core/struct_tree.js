@@ -450,6 +450,13 @@ class StructTreeRoot {
             // We update the existing tag.
             const tagDict = xref.fetch(objRef).clone();
             StructTreeRoot.#writeProperties(tagDict, accessibilityData);
+            if (!accessibilityData.alt) {
+              tagDict.delete("Alt");
+              if (!accessibilityData.actualText) {
+                // PDF.js uses ActualText when Alt is missing.
+                tagDict.delete("ActualText");
+              }
+            }
             changes.put(objRef, {
               data: tagDict,
             });
