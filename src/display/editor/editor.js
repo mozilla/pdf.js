@@ -646,6 +646,41 @@ class AnnotationEditor {
     x *= pageWidth;
     y *= pageHeight;
 
+    let tx = 0;
+    let ty = 0;
+    const toolbar =
+      this._uiManager._keepToolbarInPage && this._editToolbar?.div;
+    if (toolbar?.offsetParent) {
+      // Offset metrics ignore transforms; include the toolbar before rotating.
+      const scale = this.parentScale;
+      const toolbarLeft = toolbar.offsetLeft + this.div.clientLeft;
+      const toolbarTop = toolbar.offsetTop + this.div.clientTop;
+      const left = Math.min(0, toolbarLeft) / scale;
+      const top = Math.min(0, toolbarTop) / scale;
+      const widthWithToolbar =
+        width -
+        left +
+        Math.max(0, toolbarLeft + toolbar.offsetWidth - this.div.offsetWidth) /
+          scale;
+      const heightWithToolbar =
+        height -
+        top +
+        Math.max(0, toolbarTop + toolbar.offsetHeight - this.div.offsetHeight) /
+          scale;
+      // Keep the editor in the page if the toolbar cannot fit.
+      if (widthWithToolbar <= (rotation % 180 ? pageHeight : pageWidth)) {
+        width = widthWithToolbar;
+        tx = left;
+      }
+      if (heightWithToolbar <= (rotation % 180 ? pageWidth : pageHeight)) {
+        height = heightWithToolbar;
+        ty = top;
+      }
+      [tx, ty] = AnnotationEditor.#rotatePoint(tx, ty, rotation);
+      x += tx;
+      y += ty;
+    }
+
     if (this._mustFixPosition) {
       switch (rotation) {
         case 0:
@@ -667,8 +702,8 @@ class AnnotationEditor {
       }
     }
 
-    this.x = x /= pageWidth;
-    this.y = y /= pageHeight;
+    this.x = x = (x - tx) / pageWidth;
+    this.y = y = (y - ty) / pageHeight;
 
     const [bx, by] = this.getBaseTranslation();
     x += bx;
@@ -2172,16 +2207,23 @@ class AnnotationEditor {
     if (!this._editToolbar) {
       this.addEditToolbar().then(() => {
         if (this.div?.classList.contains("selectedEditor")) {
-          // The editor can have been unselected while we were waiting for the
-          // edit toolbar to be created, hence we want to be sure that this
-          // editor is still selected.
-          this._editToolbar?.show();
+          // Selection may have changed while the toolbar was being created.
+          this.#showEditToolbar();
         }
       });
       return;
     }
-    this._editToolbar?.show();
+    this.#showEditToolbar();
     this.#altText?.toggleAltTextBadge(false);
+  }
+
+  #showEditToolbar() {
+    this._editToolbar?.show();
+    if (this._uiManager._keepToolbarInPage) {
+      // Include the newly visible toolbar in the bounds.
+      this.fixAndSetPosition();
+      this._onTranslated();
+    }
   }
 
   focus() {
