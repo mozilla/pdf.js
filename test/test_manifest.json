@@ -14682,5 +14682,21 @@
     "md5": "8df066525f75c3c5769df3e55c1552fd",
     "rounds": 1,
     "type": "eq"
+  },
+  {
+    "id": "jpx_numcomps",
+    "file": "pdfs/jpx_numcomps.pdf",
+    "md5": "a4752b9782fa721e34fb2027ee32de13",
+    "rounds": 1,
+    "type": "eq",
+    "about": "JPX images whose number of components doesn't match the ColorSpace one, or isn't 1, 3 or 4."
+  },
+  {
+    "id": "jpx_subsampling",
+    "file": "pdfs/jpx_subsampling.pdf",
+    "md5": "c3c538b1b8bc9cdacb84a352a1c61586",
+    "rounds": 1,
+    "type": "eq",
+    "about": "JPX images with subsampled components and a ColorSpace."
   }
 ]

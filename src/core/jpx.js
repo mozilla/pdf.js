@@ -36,12 +36,14 @@ class JpxImage extends WasmImage {
   async decode(
     bytes,
     {
-      numComponents = 4,
+      numComponents,
       isIndexedColormap = false,
       smaskInData = false,
       reducePower = 0,
     } = {}
   ) {
+    const padComponents = numComponents !== undefined;
+    numComponents ??= 4;
     const module = await this._getModule(OpenJPEG);
 
     if (!module) {
@@ -59,7 +61,8 @@ class JpxImage extends WasmImage {
         numComponents > 0 ? numComponents : 0,
         !!isIndexedColormap,
         !!smaskInData,
-        reducePower
+        reducePower,
+        padComponents
       );
       if (ret) {
         const { errorMessages } = module;
