@@ -1036,7 +1036,11 @@ class PDFViewer {
               this.#enableNewAltTextWhenAddingImage,
               this.#mlManager,
               this.#editorUndoBar,
-              this.#supportsPinchToZoom
+              this.#supportsPinchToZoom,
+              // GeckoView's toolbar sticks out of the editor.
+              typeof PDFJSDev === "undefined"
+                ? window.isGECKOVIEW
+                : PDFJSDev.test("GECKOVIEW")
             );
             eventBus.dispatch("annotationeditoruimanager", {
               source: this,

@@ -1,0 +1,119 @@
+/* Copyright 2026 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@import url(annotation_editor_layer_common.css);
+
+:root {
+  --outline-width: 1px;
+  --outline-color: #67666a;
+  --outline-around-width: 0px;
+  --outline-around-color: transparent;
+  --hover-outline-color: var(--outline-color);
+  --hover-outline-around-color: transparent;
+  --resizer-bg-color: var(--outline-color);
+  --resizer-size: 12px;
+  --resizer-border-radius: 0;
+
+  @media screen and (forced-colors: active) {
+    --outline-color: CanvasText;
+  }
+}
+
+.annotationEditorLayer .signatureEditor > .editToolbar {
+  --editor-toolbar-button-size: 48px;
+  --editor-toolbar-icon-size: 24px;
+  --editor-toolbar-fg-color: rgb(24 14 48 / 0.7);
+  --editor-toolbar-active-bg-color: rgb(24 14 48 / 0.1);
+  --editor-toolbar-icon-inset: calc(
+    (var(--editor-toolbar-button-size) - var(--editor-toolbar-icon-size)) / 2
+  );
+
+  @media screen and (forced-colors: active) {
+    --editor-toolbar-fg-color: ButtonText;
+    --editor-toolbar-active-bg-color: SelectedItem;
+  }
+
+  /* Anchor the touch target at the top-end resizer. Constrain the icon box,
+     whose size must be available before its button is added. */
+  position: absolute;
+  inset-inline-start: calc(
+    100% - var(--resizer-size) - var(--resizer-shift) +
+      var(--editor-toolbar-icon-inset)
+  );
+  inset-block-end: calc(
+    100% - var(--resizer-size) - var(--resizer-shift) +
+      var(--editor-toolbar-icon-inset)
+  );
+  width: var(--editor-toolbar-icon-size);
+  height: var(--editor-toolbar-icon-size);
+  display: flex;
+  cursor: default;
+  pointer-events: auto;
+  user-select: none;
+
+  &.hidden {
+    display: none;
+  }
+
+  .buttons {
+    display: flex;
+  }
+
+  .deleteButton {
+    position: relative;
+    z-index: 0;
+    width: var(--editor-toolbar-icon-size);
+    height: var(--editor-toolbar-icon-size);
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: none;
+    }
+
+    &::before {
+      content: "";
+      display: block;
+      width: 100%;
+      height: 100%;
+      mask: url(images/gv-editor-toolbar-close.svg) center /
+        var(--editor-toolbar-icon-size) no-repeat;
+      background-color: var(--editor-toolbar-fg-color);
+    }
+
+    /* 48px touch target with a 40px active background. */
+    &::after {
+      content: "";
+      position: absolute;
+      inset: calc(0px - var(--editor-toolbar-icon-inset));
+      z-index: -1;
+      box-sizing: border-box;
+      padding: 4px;
+      border-radius: 50%;
+      background: transparent content-box;
+    }
+
+    &:active::after {
+      background-color: var(--editor-toolbar-active-bg-color);
+    }
+
+    &:focus-visible::after {
+      outline: var(--focus-ring-outline);
+      outline-offset: -2px;
+    }
+  }
+}
