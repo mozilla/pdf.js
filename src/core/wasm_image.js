@@ -70,62 +70,61 @@ class WasmImage {
     }
   }
 
-  async #getJsModule(fallbackCallback) {
-    let instance = null;
-    try {
-      const mod = await (typeof PDFJSDev === "undefined"
-        ? // eslint-disable-next-line no-unsanitized/method
-          import(`../${WasmImage.#wasmUrl}${this._noWasmFilename}`)
-        : __raw_import__(`${WasmImage.#wasmUrl}${this._noWasmFilename}`));
-      instance = mod.default();
-    } catch (ex) {
-      warn(`#getJsModule: ${ex}`);
-    }
-    fallbackCallback(instance);
+  async #getJsInstance(imports) {
+    const { default: instantiate } = await (typeof PDFJSDev === "undefined"
+      ? // eslint-disable-next-line no-unsanitized/method
+        import(`../${WasmImage.#wasmUrl}${this._noWasmFilename}`)
+      : __raw_import__(`${WasmImage.#wasmUrl}${this._noWasmFilename}`));
+    return { exports: instantiate(imports) };
   }
 
-  async #instantiateWasm(fallbackCallback, imports, successCallback) {
-    try {
-      if (!this.#buffer) {
-        if (WasmImage.#useWorkerFetch) {
-          this.#buffer = await fetchBinaryData(
-            `${WasmImage.#wasmUrl}${this._filename}`
-          );
-        } else {
-          if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-            throw new Error("Only worker-thread fetching supported.");
-          }
-          this.#buffer = await WasmImage.#getHandler().sendWithPromise(
-            "FetchBinaryData",
-            { kind: "wasmUrl", filename: this._filename }
-          );
+  async #getWasmInstance(imports) {
+    if (!this.#buffer) {
+      if (WasmImage.#useWorkerFetch) {
+        this.#buffer = await fetchBinaryData(
+          `${WasmImage.#wasmUrl}${this._filename}`
+        );
+      } else {
+        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+          throw new Error("Only worker-thread fetching supported.");
         }
+        this.#buffer = await WasmImage.#getHandler().sendWithPromise(
+          "FetchBinaryData",
+          { kind: "wasmUrl", filename: this._filename }
+        );
       }
-      const results = await WebAssembly.instantiate(this.#buffer, imports);
-      return successCallback(results.instance);
-    } catch (ex) {
-      warn(`#instantiateWasm: ${ex}`);
-
-      this.#getJsModule(fallbackCallback);
-      return null;
     }
+    const results = await WebAssembly.instantiate(this.#buffer, imports);
+    return results.instance;
+  }
+
+  async #instantiateWasm(failureCallback, imports, successCallback) {
+    if (WasmImage.#useWasm) {
+      try {
+        return successCallback(await this.#getWasmInstance(imports));
+      } catch (ex) {
+        warn(`#getWasmInstance: ${ex}`);
+      }
+    }
+    try {
+      return successCallback(await this.#getJsInstance(imports));
+    } catch (ex) {
+      warn(`#getJsInstance: ${ex}`);
+    }
+    failureCallback(null);
+    return null;
   }
 
   _getModule(ImageDecoder) {
     if (!this.#modulePromise) {
       const { promise, resolve } = Promise.withResolvers();
-      const promises = [promise];
-      if (!WasmImage.#useWasm) {
-        this.#getJsModule(resolve);
-      } else {
-        promises.push(
-          ImageDecoder({
-            warn,
-            instantiateWasm: this.#instantiateWasm.bind(this, resolve),
-          })
-        );
-      }
-      this.#modulePromise = Promise.race(promises);
+      this.#modulePromise = Promise.race([
+        promise,
+        ImageDecoder({
+          warn,
+          instantiateWasm: this.#instantiateWasm.bind(this, resolve),
+        }),
+      ]);
     }
     return this.#modulePromise;
   }
