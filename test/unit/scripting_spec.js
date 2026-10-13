@@ -540,6 +540,103 @@ describe("Scripting", function () {
       });
     });
 
+    it("should report null and run the next action", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [
+            {
+              id: refId,
+              value: "",
+              actions: {
+                custom: ["throw null;", "globalThis.nextAction = true;"],
+              },
+              type: "text",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      await sandbox.dispatchEventInSandbox({ id: refId, name: "custom" });
+      expect(send_queue.get("error")).toEqual({
+        command: "error",
+        value: `Error when executing "custom" for field "${refId}"\nnull`,
+      });
+      send_queue.delete("error");
+      expect(await myeval(`globalThis.nextAction`)).toEqual(true);
+    });
+
+    it("should report errors when string conversion or stack access throws", async () => {
+      const refId = getId();
+      const cases = {
+        throwingToString: ["({ toString() { throw 1; } })", "Unknown error"],
+        nullPrototype: ["Object.create(null)", "Unknown error"],
+        throwingStack: ["({ get stack() { throw 2; } })", "[object Object]"],
+      };
+      const actions = Object.create(null);
+      for (const [name, [thrown]] of Object.entries(cases)) {
+        actions[name] = [`throw ${thrown};`];
+      }
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+
+      for (const [name, [, expected]] of Object.entries(cases)) {
+        send_queue.delete("error");
+        await sandbox.dispatchEventInSandbox({ id: refId, name });
+        expect(send_queue.get("error"))
+          .withContext(name)
+          .toEqual({
+            command: "error",
+            value: `Error when executing "${name}" for field "${refId}"\n${expected}`,
+          });
+      }
+      send_queue.delete("error");
+    });
+
+    it("should report errors from fields without widgets", async () => {
+      const refIds = [getId(), getId()];
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: { actions: { OpenAction: ["globalThis.openAction = true;"] } },
+        objects: {
+          A: [
+            {
+              id: refIds[0],
+              type: "",
+              kidIds: [refIds[1]],
+              actions: { Format: [`throw new Error("Broken");`] },
+            },
+          ],
+          "A.B": [
+            {
+              id: refIds[1],
+              value: "",
+              actions: { Format: ["globalThis.kidFormat = true;"] },
+              type: "text",
+            },
+          ],
+        },
+        calculationOrder: [],
+      });
+
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "Open" });
+      expect(send_queue.get("error").value.split("\n").slice(0, 2)).toEqual([
+        `Error when executing "Format" for field "${refIds[0]}"`,
+        "Error: Broken",
+      ]);
+      send_queue.delete("error");
+      expect(
+        await myeval(`[globalThis.kidFormat, globalThis.openAction]`)
+      ).toEqual([true, true]);
+    });
+
     it("should trigger an event added with setAction", async () => {
       const refId = getId();
       const data = {

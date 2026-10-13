@@ -21,9 +21,20 @@ const FORMS_VERSION = 21.00720099;
 const USERACTIVATION_CALLBACKID = 0;
 const USERACTIVATION_MAXTIME_VALIDITY = 5000;
 
-function serializeError(error) {
-  const value = `${error.toString()}\n${error.stack}`;
-  return { command: "error", value };
+function serializeError(error, prefix = "") {
+  // Scripts can throw non-Error values.
+  let message;
+  try {
+    message = String(error);
+  } catch {
+    message = "Unknown error";
+  }
+  let stack;
+  try {
+    stack = error?.stack;
+  } catch {}
+  const value = typeof stack === "string" ? `${message}\n${stack}` : message;
+  return { command: "error", value: `${prefix}${value}` };
 }
 
 // Helpers for simple `Map.prototype.getOrInsertComputed()` invocations,

@@ -545,12 +545,16 @@ class Field extends PDFObject {
     const actions = this._actions.get(eventName);
     for (const action of actions) {
       try {
-        // Action evaluation must happen in the global scope
+        // Evaluate actions in the global scope.
         this._globalEval(action);
       } catch (error) {
-        const serializedError = serializeError(error);
-        serializedError.value = `Error when executing "${eventName}" for field "${this._id}"\n${serializedError.value}`;
-        this._send(serializedError);
+        // Fields without widgets have no send callback.
+        this._document.obj._send(
+          serializeError(
+            error,
+            `Error when executing "${eventName}" for field "${this._id}"\n`
+          )
+        );
       }
     }
 
