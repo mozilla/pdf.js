@@ -730,6 +730,14 @@ class PDFPageView extends BasePDFPageView {
   }
 
   toggleEditingMode(isEditing) {
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      // Keep existing annotations painted while adding signatures.
+      return;
+    }
     // The page can be invisible, consequently there's no annotation layer and
     // we can't know if there are editable annotations.
     // So to avoid any issue when the page is rendered the #isEditing flag must

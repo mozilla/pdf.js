@@ -17,14 +17,18 @@ import {
   awaitPromise,
   closePages,
   dragAndDrop,
+  getAnnotationSelector,
   getEditors,
   getEditorSelector,
   getRect,
   getSerialized,
+  isCanvasMonochrome,
   waitForAnnotationEditorLayer,
   waitForNoElement,
+  waitForPageRendered,
   waitForSelectedEditor,
 } from "./test_utils.mjs";
+import { AnnotationEditorType } from "../../src/shared/util.js";
 
 function loadAndWait(filename, selector) {
   return Promise.all(
@@ -398,6 +402,80 @@ describe("GeckoView viewer", () => {
         pages.map(([browserName, page]) =>
           checkToolbarInPage(browserName, page, "rtl")
         )
+      );
+    });
+  });
+
+  describe("Existing annotations", () => {
+    const annotationSelector = `.annotationLayer ${getAnnotationSelector("26R")}`;
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("freetexts.pdf", annotationSelector);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not make them editable", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const checkNotEditable = async () => {
+            expect(await getEditors(page, "freeText"))
+              .withContext(`In ${browserName}`)
+              .toEqual([]);
+            const hiddenAnnotations = await page.$$eval(
+              ".annotationLayer .freeTextAnnotation",
+              els => els.filter(el => el.hidden).length
+            );
+            expect(hiddenAnnotations)
+              .withContext(`In ${browserName}`)
+              .toEqual(0);
+            // Free-text annotations must stay painted in signature mode.
+            const rect = await getRect(page, annotationSelector);
+            expect(await isCanvasMonochrome(page, 1, rect, 0xffffffff))
+              .withContext(`In ${browserName}`)
+              .toBeFalse();
+          };
+
+          await checkNotEditable();
+
+          // Double-clicking must not switch to the free text editor.
+          await page.click(annotationSelector, { count: 2 });
+          // Editing an existing annotation only starts after a redraw.
+          let handle = await waitForPageRendered(page, 1);
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.increaseScale({
+              scaleFactor: 2,
+            });
+          });
+          await awaitPromise(handle);
+          const mode = await page.evaluate(
+            () => window.PDFViewerApplication.pdfViewer.annotationEditorMode
+          );
+          expect(mode)
+            .withContext(`In ${browserName}`)
+            .toEqual(AnnotationEditorType.NONE);
+          await checkNotEditable();
+
+          await addSignature(page, "Hello");
+          await page.waitForSelector(getEditorSelector(0), { visible: true });
+
+          // Check visibility after a redraw.
+          handle = await waitForPageRendered(page, 1);
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer.decreaseScale({
+              scaleFactor: 2,
+            });
+          });
+          await awaitPromise(handle);
+          await checkNotEditable();
+
+          await addSignature(page, "World");
+          await page.waitForSelector(getEditorSelector(1), { visible: true });
+          await checkNotEditable();
+        })
       );
     });
   });
