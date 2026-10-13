@@ -555,12 +555,8 @@ class PsWasmCompiler {
   }
 
   _compileModNode(first, second) {
-    // a mod 0 → 0, matching pdfium. Const b=0: a is computed but discarded.
+    // a mod 0 → 0, matching pdfium.
     if (first.type === PS_NODE.const && first.value === 0) {
-      if (!this._compileNode(second)) {
-        return false;
-      }
-      this._code.push(OP.drop);
       this._emitF64Const(0);
       return true;
     }
