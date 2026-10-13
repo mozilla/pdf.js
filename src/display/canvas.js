@@ -2248,7 +2248,18 @@ class CanvasGraphics {
     // For stroke we want to temporarily change the global alpha to the
     // stroking alpha.
     ctx.globalAlpha = this.current.strokeAlpha;
-    if (this.contentVisible) {
+    // Clipped bounding box of this path, in device space. Computed once here
+    // and reused below, so that path rendering can be skipped when the path
+    // lies entirely outside the current clip box. Without this guard a
+    // stroke is submitted to the canvas even when it cannot produce any
+    // visible pixels, which is what makes tiling (issue 6419) expensive: the
+    // operator list is replayed for every tile, and all off-tile strokes are
+    // pure overhead.
+    const intersect = this.current.getClippedPathBoundingBox(
+      PathType.STROKE,
+      getCurrentTransform(this.ctx)
+    );
+    if (this.contentVisible && intersect !== null) {
       if (typeof strokeColor === "object" && strokeColor?.getPattern) {
         const baseTransform = strokeColor.isModifyingCurrentTransform()
           ? ctx.getTransform()
@@ -2279,14 +2290,7 @@ class CanvasGraphics {
     this.dependencyTracker?.recordDependencies(opIdx, Dependencies.stroke);
 
     if (consumePath) {
-      this.consumePath(
-        opIdx,
-        path,
-        this.current.getClippedPathBoundingBox(
-          PathType.STROKE,
-          getCurrentTransform(this.ctx)
-        )
-      );
+      this.consumePath(opIdx, path, intersect);
     }
 
     // Restore the global alpha to the fill alpha
