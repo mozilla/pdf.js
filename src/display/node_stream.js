@@ -123,6 +123,10 @@ class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
     } catch (error) {
       this._readCapability.reject(error);
     }
+
+    // Prevent "uncaught exception: Object"-messages in the console,
+    // if the document is destroyed before the `read` method is invoked.
+    this._readCapability.promise.catch(() => {});
   }
 
   async read() {
