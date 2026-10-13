@@ -344,6 +344,11 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(1, 9); // 7 mod 3 = 1
     });
 
+    it("mod by constant zero returns 0", async function () {
+      const r = compileAndRun("{ 0 mod }", [0, 10], [0, 10], [7]);
+      expect(r).toBe(0);
+    });
+
     it("compiles integer xor (bitwise)", async function () {
       // { 5 xor } with an integer-typed arg — exercises the non-boolean path in
       // _compileBitwiseOperandI32 and the xor case in _compileBitwiseNode.
