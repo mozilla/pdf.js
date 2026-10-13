@@ -16,6 +16,7 @@
 import { DateFormats, TimeFormats } from "../shared/scripting_utils.js";
 import { GlobalConstants } from "./constants.js";
 import { MathClamp } from "../shared/math_clamp.js";
+import { mergeChange } from "./event.js";
 
 class AForm {
   constructor(document, app, util, color) {
@@ -41,7 +42,7 @@ class AForm {
   _parseDate(cFormat, cDate) {
     let date = null;
     try {
-      date = this._util._scand(cFormat, cDate, /* strict = */ false);
+      date = this._util.scand(cFormat, cDate);
     } catch {}
     if (date) {
       return date;
@@ -52,9 +53,7 @@ class AForm {
   }
 
   AFMergeChange(event = globalThis.event) {
-    return event.willCommit
-      ? event.value.toString()
-      : this._app._eventDispatcher.mergeChange(event);
+    return event.willCommit ? event.value.toString() : mergeChange(event);
   }
 
   AFParseDateEx(cString, cOrder) {
