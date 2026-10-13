@@ -160,9 +160,9 @@ class PDFImage {
     if (filter instanceof Name) {
       filterName = filter.name;
     } else if (Array.isArray(filter)) {
-      const filterZero = xref.fetchIfRef(filter[0]);
-      if (filterZero instanceof Name) {
-        filterName = filterZero.name;
+      const lastFilter = xref.fetchIfRef(filter.at(-1));
+      if (lastFilter instanceof Name) {
+        filterName = lastFilter.name;
       }
     }
     switch (filterName) {
@@ -315,9 +315,8 @@ class PDFImage {
       this.numComps = this.colorSpace.numComps;
 
       if (this.jpxDecoderOptions) {
-        this.jpxDecoderOptions.numComponents = hasColorSpace
-          ? this.numComps
-          : 0;
+        this.jpxDecoderOptions.numComponents =
+          this.colorSpace.name === "DeviceRGBA" ? 0 : this.numComps;
         // If the jpx image has a color space then it mustn't be used in order
         // to be able to use the color space that comes from the pdf.
         this.jpxDecoderOptions.isIndexedColormap =
