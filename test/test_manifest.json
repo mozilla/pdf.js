@@ -14698,5 +14698,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "JPX images with subsampled components and a ColorSpace."
+  },
+  {
+    "id": "issue22044",
+    "file": "pdfs/issue22044.pdf",
+    "md5": "a9106f8b2e8dd2b5362fbe3c960a5363",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Truncated FlateDecode content stream."
   }
 ]

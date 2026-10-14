@@ -121,9 +121,9 @@ class DecodeStream extends BaseStream {
 
   async asyncGetBytesFromDecompressionStream(name) {
     this.stream.reset();
-    const bytes = this.stream.isAsync
-      ? await this.stream.asyncGetBytes()
-      : this.stream.getBytes();
+    const bytes =
+      (this.stream.isAsync && (await this.stream.asyncGetBytes())) ||
+      this.stream.getBytes();
 
     try {
       const { readable, writable } = new DecompressionStream(name);
@@ -225,9 +225,12 @@ class StreamsSequenceStream extends DecodeStream {
       throw reason;
     }
     const bufferLength = this.bufferLength;
-    const newLength = bufferLength + chunk.length;
+    // Add a line feed after each stream, so that a token or a comment cannot
+    // continue into the next one.
+    const newLength = bufferLength + chunk.length + 1;
     const buffer = this.ensureBuffer(newLength);
     buffer.set(chunk, bufferLength);
+    buffer[newLength - 1] = 0x0a;
     this.bufferLength = newLength;
   }
 
