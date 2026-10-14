@@ -1,0 +1,57 @@
+name: CodSpeed benchmarks
+on:
+  push:
+    paths:
+      - "external/builder/**"
+      - "package-lock.json"
+      - "src/**"
+      - "test/benchmarks/**"
+      - ".github/workflows/codspeed.yml"
+    branches:
+      - master
+  pull_request:
+    paths:
+      - "external/builder/**"
+      - "package-lock.json"
+      - "src/**"
+      - "test/benchmarks/**"
+      - ".github/workflows/codspeed.yml"
+    branches:
+      - master
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  benchmarks:
+    name: Run benchmarks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Required for OIDC authentication with CodSpeed
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [lts/*]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@821a40cd6c80e3cfe387caf55668287addd808da # v5.5.0
+        with:
+          mode: simulation
+          run: npx vitest bench --run --config test/benchmarks/vitest.config.mjs

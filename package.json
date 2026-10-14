@@ -4,6 +4,7 @@
   "devDependencies": {
     "@babel/core": "^8.0.6",
     "@babel/preset-env": "^8.0.6",
+    "@codspeed/vitest-plugin": "^6.0.1",
     "@eslint/json": "^2.1.0",
     "@fluent/bundle": "^0.19.1",
     "@fluent/dom": "^0.10.2",
@@ -51,6 +52,7 @@
     "tsc-alias": "^1.9.7",
     "typescript": "^6.0.3",
     "vinyl": "^3.0.1",
+    "vitest": "^4.1.11",
     "webpack": "^5.111.1"
   },
   "repository": {
