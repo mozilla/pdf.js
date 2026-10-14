@@ -793,6 +793,7 @@ function createWasmBundle({ includeQuickJS = true } = {}) {
         [
           "external/quickjs/quickjs-eval.js",
           "external/quickjs/quickjs-eval.wasm",
+          "external/quickjs/LICENSE_*",
         ],
         {
           base: "external/quickjs",
