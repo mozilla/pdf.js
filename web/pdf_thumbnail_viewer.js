@@ -69,8 +69,6 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  *   events.
  * @property {boolean} [enableNewBadge] - Enables the "new" badge for the split
  *   and merge features.
- * @property {boolean} [enableMerge] - Enables the merge feature.
- *   The default value is `false`.
  * @property {boolean} [enableSplitMerge] - Enables split and merge features.
  *   The default value is `false`.
  * @property {object} [statusBar] - The status bar elements to manage the status
@@ -90,8 +88,6 @@ const SPACE_FOR_DRAG_MARKER_WHEN_NO_NEXT_ELEMENT = 15;
  */
 class PDFThumbnailViewer {
   static #draggingScaleFactor = 0;
-
-  #enableMerge = false;
 
   #enableSplitMerge = false;
 
@@ -196,7 +192,6 @@ class PDFThumbnailViewer {
     maxCanvasDim,
     pageColors,
     abortSignal,
-    enableMerge,
     enableSplitMerge,
     enableNewBadge,
     statusBar,
@@ -215,7 +210,6 @@ class PDFThumbnailViewer {
     this.maxCanvasDim = maxCanvasDim;
     this.pageColors = pageColors || null;
     this.#abortSignal = abortSignal;
-    this.#enableMerge = enableMerge || false;
     this.#enableSplitMerge = enableSplitMerge || false;
     this.#statusLabel = statusBar?.viewsManagerStatusActionLabel || null;
     this.#deselectButton =
@@ -331,7 +325,7 @@ class PDFThumbnailViewer {
       });
       this.#deselectButton.classList.toggle("hidden", true);
 
-      if (this.#enableMerge && addFileComponent) {
+      if (addFileComponent) {
         const { picker, button } = addFileComponent;
         picker.addEventListener("change", () => {
           const files = Array.from(picker.files ?? []);
@@ -1676,7 +1670,7 @@ class PDFThumbnailViewer {
   }
 
   #addExternalFileDropListeners() {
-    if (!this.#enableMerge) {
+    if (!this.#enableSplitMerge) {
       return;
     }
     const container = this.container;
