@@ -7231,9 +7231,6 @@ have written that much by now. So, here’s to squashing bugs.`);
     });
 
     it("should Wasm-decode images if multiple PDFs are parsed in parallel in one worker (issue 22131)", async function () {
-      if (isNodeJS) {
-        pending("Worker is not supported in Node.js.");
-      }
       const BLACK = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff,
         WHITE = 0xffffffff;
 
