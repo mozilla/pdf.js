@@ -13,14 +13,90 @@
  * limitations under the License.
  */
 
+import { isNodeJS, stringToBytes } from "../../src/shared/util.js";
+import { Stream, StringStream } from "../../src/core/stream.js";
 import { createImage } from "../../src/core/editor/pdf_images.js";
 import { Dict } from "../../src/core/primitives.js";
 import { FlateStream } from "../../src/core/flate_stream.js";
-import { isNodeJS } from "../../src/shared/util.js";
 import { PredictorStream } from "../../src/core/predictor_stream.js";
-import { Stream } from "../../src/core/stream.js";
+import { StreamsSequenceStream } from "../../src/core/decode_stream.js";
 
 describe("stream", function () {
+  describe("FlateStream", function () {
+    // Stored, fixed Huffman, and dynamic Huffman blocks.
+    const input = new Uint8Array([
+      120, 156, 0, 17, 0, 238, 255, 113, 32, 49, 32, 48, 32, 48, 32, 49, 32, 48,
+      32, 48, 32, 99, 109, 10, 114, 10, 81, 208, 119, 51, 84, 48, 52, 82, 8, 73,
+      83, 48, 52, 0, 161, 144, 20, 5, 141, 180, 204, 138, 212, 20, 77, 133, 144,
+      44, 5, 215, 16, 46, 39, 34, 212, 0, 0, 0, 0, 255, 255, 93, 204, 49, 10,
+      128, 48, 12, 5, 208, 221, 83, 252, 81, 39, 147, 182, 36, 117, 45, 232, 46,
+      228, 8, 42, 40, 226, 253, 71, 171, 34, 133, 238, 143, 151, 12, 253, 196,
+      136, 176, 13, 76, 80, 34, 216, 130, 246, 220, 175, 21, 212, 193, 14, 140,
+      214, 164, 15, 13, 47, 82, 72, 212, 130, 184, 66, 57, 201, 202, 5, 136,
+      134, 162, 92, 173, 248, 81, 158, 33, 194, 69, 249, 95, 205, 205, 13, 90,
+      211, 56, 58,
+    ]);
+    const expected =
+      "q 1 0 0 1 0 0 cm\n" +
+      "BT /F1 12 Tf 10 10 Td (fixed) Tj ET\n".repeat(2) +
+      "BT /F1 8 Tf 10 700 Td (line 0) Tj ET\n" +
+      "BT /F1 9 Tf 17 687 Td (line 1) Tj ET\n" +
+      "BT /F1 10 Tf 24 674 Td (line 2) Tj ET\n" +
+      "BT /F1 11 Tf 31 661 Td (line 3) Tj ET\n" +
+      "Q\n";
+
+    it("should decode a truncated stream up to the cut", function () {
+      for (const [length, decodedLength] of [
+        [13, 6],
+        [45, 40],
+        [80, 89],
+        [140, 193],
+        [input.length, expected.length],
+      ]) {
+        const flate = new FlateStream(new Stream(input.subarray(0, length)));
+        expect(flate.getString()).toEqual(expected.substring(0, decodedLength));
+      }
+    });
+
+    it("should decode a truncated stream after native decompression fails", async function () {
+      const flate = new FlateStream(new Stream(input.subarray(0, 110)));
+      const decoded = stringToBytes(expected.substring(0, 107));
+      expect(await flate.getImageData(1000)).toEqual(decoded);
+      flate.reset();
+      expect(await flate.getImageData(1000)).toEqual(decoded);
+    });
+
+    it("should decode a truncated stream in a filter chain", async function () {
+      // Two stored blocks, no Adler-32 checksum.
+      const block = (data, final) => [
+        final ? 1 : 0,
+        data.length,
+        0,
+        ~data.length & 0xff,
+        0xff,
+        ...data,
+      ];
+      const stored = new Uint8Array([
+        120,
+        1,
+        ...block(input.subarray(0, 55), false),
+        ...block(input.subarray(55, 110), true),
+      ]);
+      const flate = new FlateStream(new FlateStream(new Stream(stored)));
+      expect(await flate.asyncGetBytes()).toBeNull();
+      expect(flate.getString()).toEqual(expected.substring(0, 107));
+    });
+  });
+
+  describe("StreamsSequenceStream", function () {
+    it("should separate the streams with a new line", function () {
+      const stream = new StreamsSequenceStream(
+        ["(Hello) T", "BT % comment", "ET"].map(s => new StringStream(s))
+      );
+      expect(stream.getString()).toEqual("(Hello) T\nBT % comment\nET\n");
+    });
+  });
+
   describe("PredictorStream", function () {
     it("should decode simple predictor data", function () {
       const dict = new Dict();
