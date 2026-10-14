@@ -3951,6 +3951,94 @@ describe("annotation", function () {
       );
     });
 
+    it("should save checkboxes sharing a field", async function () {
+      const createWidgetDict = (onState, parentRef) => {
+        const normalAppearanceDict = new Dict();
+        normalAppearanceDict.set(onState, Ref.get(314, 0));
+        normalAppearanceDict.set("Off", Ref.get(271, 0));
+        const appearanceStatesDict = new Dict();
+        appearanceStatesDict.set("N", normalAppearanceDict);
+
+        const dict = new Dict();
+        dict.set("Type", Name.get("Annot"));
+        dict.set("Subtype", Name.get("Widget"));
+        dict.set("AP", appearanceStatesDict);
+        dict.set("Parent", parentRef);
+        return dict;
+      };
+
+      const yesRef = Ref.get(123, 0);
+      const noRef = Ref.get(124, 0);
+      const parentRef = Ref.get(456, 0);
+
+      const parentDict = new Dict();
+      parentDict.set("FT", Name.get("Btn"));
+      parentDict.set("T", "Answer");
+      parentDict.set("V", Name.get("Yes"));
+      parentDict.set("Kids", [yesRef, noRef]);
+
+      const yesDict = createWidgetDict("Yes", parentRef);
+      const noDict = createWidgetDict("No", parentRef);
+      const xref = new XRefMock([
+        { ref: yesRef, data: yesDict },
+        { ref: noRef, data: noDict },
+        { ref: parentRef, data: parentDict },
+      ]);
+      parentDict.xref = xref;
+      yesDict.xref = xref;
+      noDict.xref = xref;
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save");
+
+      const [yes, no] = await Promise.all(
+        [yesRef, noRef].map(ref =>
+          AnnotationFactory.create(
+            xref,
+            ref,
+            annotationGlobalsMock,
+            idFactoryMock
+          )
+        )
+      );
+      expect(yes.data.exportValue).toEqual("Yes");
+      expect(no.data.exportValue).toEqual("No");
+
+      const annotationStorage = new Map();
+      annotationStorage.set(yes.data.id, { value: false });
+      annotationStorage.set(no.data.id, { value: true });
+
+      for (const order of [
+        [yes, no],
+        [no, yes],
+      ]) {
+        const changes = new RefMap();
+        for (const annotation of order) {
+          await annotation.save(
+            partialEvaluator,
+            task,
+            annotationStorage,
+            changes
+          );
+        }
+        const data = await writeChanges(changes, xref);
+        const parentData = data.find(({ ref }) => ref.num === 456);
+        expect(parentData.data).toEqual(
+          "456 0 obj\n" +
+            "<< /FT /Btn /T (Answer) /V /No /Kids [123 0 R 124 0 R]>>\n" +
+            "endobj\n"
+        );
+      }
+
+      // Unticking every widget must still clear the field value.
+      annotationStorage.set(no.data.id, { value: false });
+      const changes = new RefMap();
+      await yes.save(partialEvaluator, task, annotationStorage, changes);
+      await no.save(partialEvaluator, task, annotationStorage, changes);
+      const data = await writeChanges(changes, xref);
+      const parentData = data.find(({ ref }) => ref.num === 456);
+      expect(parentData.data).toContain("/V /Off");
+    });
+
     it("should save radio buttons without a field value", async function () {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
