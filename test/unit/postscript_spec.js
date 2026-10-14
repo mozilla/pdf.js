@@ -373,6 +373,28 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(2, 9); // trunc(0.5 + 1.7) = trunc(2.2) = 2
     });
 
+    it("converts NaN and out-of-range values to integers without trapping", function () {
+      expect(compileAndRun("{ sqrt cvi }", [-4, 4], [-10, 10], [-4])).toBe(0);
+      const range = [-1e12, 1e12];
+      expect(compileAndRun("{ 1e10 mul cvi }", [-4, 4], range, [1])).toBe(
+        1410065408
+      );
+      expect(compileAndRun("{ 1e10 mul cvi }", [-4, 4], range, [-1])).toBe(
+        -1410065408
+      );
+      expect(
+        compileAndRun("{ 1e300 mul 1e300 mul cvi }", [-4, 4], range, [1])
+      ).toBe(0);
+      expect(compileAndRun("{ pop 1e10 cvi }", [-4, 4], range, [1])).toBe(
+        1410065408
+      );
+      for (const op of ["1 bitshift", "not", "3 and", "0 xor"]) {
+        expect(
+          compileAndRun(`{ 1e10 mul ${op} }`, [-4, 4], range, [-1])
+        ).not.toBeNull();
+      }
+    });
+
     it("compiles cvr (identity on reals)", async function () {
       const r = compileAndRun("{ cvr }", [0, 1], [0, 1], [0.7]);
       expect(r).toBeCloseTo(0.7, 9);

@@ -467,7 +467,7 @@ function _evalUnaryConst(op, v) {
       return Number.isFinite(r) ? r : undefined;
     }
     case TOKEN.cvi:
-      return Math.trunc(v);
+      return Math.trunc(v) | 0;
     case TOKEN.cvr:
       return v;
     case TOKEN.not:
