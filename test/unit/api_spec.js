@@ -54,6 +54,7 @@ import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
+import { MessageHandler } from "../../src/shared/message_handler.js";
 import { Metadata } from "../../src/display/metadata.js";
 import { PageViewport } from "../../src/display/page_viewport.js";
 import { RenderingCancelledException } from "../../src/display/display_utils.js";
@@ -1115,6 +1116,236 @@ describe("api", function () {
       expect(pdfDocument?.numPages).toEqual(1);
 
       await loadingTask.destroy();
+    });
+
+    describe("Renderer worker startup", function () {
+      let gateId = 0;
+
+      const importScript = src =>
+        `await import("${new URL(src, window.location).href}");`;
+
+      // Run `body` only after `open()`.
+      function getDocumentWithGatedRenderer(body, filename = basicApiFileName) {
+        const name = `pdfjs-renderer-gate-${gateId++}`;
+        const channel = new BroadcastChannel(name);
+        const waiting = new Promise(resolve => {
+          channel.onmessage = resolve;
+        });
+        const src = URL.createObjectURL(
+          new Blob(
+            [
+              `const channel = new BroadcastChannel("${name}");
+              const opened = new Promise(resolve => {
+                channel.onmessage = resolve;
+              });
+              channel.postMessage("waiting");
+              await opened;
+              channel.close();
+              ${body}`,
+            ],
+            { type: "text/javascript" }
+          )
+        );
+        const { rendererSrc } = GlobalWorkerOptions;
+        GlobalWorkerOptions.rendererSrc = src;
+        try {
+          const loadingTask = getDocument(buildGetDocumentParams(filename));
+          return {
+            loadingTask,
+            waiting,
+            open() {
+              channel.postMessage("open");
+            },
+            async destroy() {
+              await loadingTask.destroy();
+              channel.close();
+              URL.revokeObjectURL(src);
+            },
+          };
+        } finally {
+          GlobalWorkerOptions.rendererSrc = rendererSrc;
+        }
+      }
+
+      async function startRendering(loadingTask, { loadFonts = true } = {}) {
+        const pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(1);
+        const viewport = pdfPage.getViewport({ scale: 0.5 });
+        const { canvasFactory } = pdfDoc;
+
+        if (loadFonts) {
+          // Load and clear font data before renderer startup.
+          const { context } = canvasFactory.create(
+            viewport.width,
+            viewport.height
+          );
+          await pdfPage.render({ canvasContext: context, viewport }).promise;
+        }
+        const { canvas, context } = canvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        const renderTask = pdfPage.render({ canvas, viewport });
+        return { pdfDoc, pdfPage, viewport, canvas, context, renderTask };
+      }
+
+      function getPixels(context) {
+        const { width, height } = context.canvas;
+        return new Uint32Array(
+          context.getImageData(0, 0, width, height).data.buffer
+        );
+      }
+
+      // Compare pixels with a renderer ready before rendering.
+      async function countDiffsWithReadyRenderer(context, filename) {
+        const loadingTask = getDocument(buildGetDocumentParams(filename));
+        await loadingTask._rendererWorker.promise;
+        const expected = await startRendering(loadingTask, {
+          loadFonts: false,
+        });
+        await expected.renderTask.promise;
+        expect(expected.renderTask.isWorkerRendering).toBeTrue();
+
+        const expectedPixels = getPixels(expected.context);
+        const numDiffs = getPixels(context).filter(
+          (pixel, i) => pixel !== expectedPixels[i]
+        ).length;
+        await loadingTask.destroy();
+        return numDiffs;
+      }
+
+      function hasText(context) {
+        const { data } = context.getImageData(
+          0,
+          0,
+          context.canvas.width,
+          context.canvas.height
+        );
+        for (let i = 0, ii = data.length; i < ii; i += 4) {
+          if (data[i] < 0x80 && data[i + 3] === 0xff) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      it("loads the document before the renderer worker is ready", async function () {
+        if (isNodeJS) {
+          pending("Worker rendering is not supported in Node.js.");
+        }
+        const gate = getDocumentWithGatedRenderer(
+          importScript(GlobalWorkerOptions.rendererSrc)
+        );
+        await gate.waiting;
+
+        const { pdfDoc, renderTask, context } = await startRendering(
+          gate.loadingTask
+        );
+        const { rendererWorker } = pdfDoc._transport;
+        expect(rendererWorker.messageHandler).toBeNull();
+        expect(renderTask.isWorkerRendering).toBeTrue();
+
+        gate.open();
+        await renderTask.promise;
+
+        expect(rendererWorker.messageHandler).not.toBeNull();
+        expect(renderTask.isWorkerRendering).toBeTrue();
+        expect(
+          await countDiffsWithReadyRenderer(context, basicApiFileName)
+        ).toEqual(0);
+
+        await gate.destroy();
+      });
+
+      it("cancels and cleans up before the renderer worker is ready", async function () {
+        if (isNodeJS) {
+          pending("Worker rendering is not supported in Node.js.");
+        }
+        const filename = "cmykjpeg.pdf";
+        const gate = getDocumentWithGatedRenderer(
+          importScript(GlobalWorkerOptions.rendererSrc),
+          filename
+        );
+        await gate.waiting;
+
+        const {
+          pdfPage,
+          viewport,
+          canvas,
+          context,
+          renderTask: cancelledTask,
+        } = await startRendering(gate.loadingTask);
+        // Yield before canceling the pending render.
+        await new Promise(resolve => {
+          setTimeout(resolve, 0);
+        });
+        cancelledTask.cancel();
+        await expectAsync(cancelledTask.promise).toBeRejectedWithError(
+          RenderingCancelledException
+        );
+
+        // Queue cleanup before requesting the image again.
+        expect(pdfPage.cleanup()).toBeTrue();
+        await pdfPage.getOperatorList();
+
+        spyOn(MessageHandler.prototype, "sendWithPromise").and.callThrough();
+        const renderTask = pdfPage.render({ canvas, viewport });
+        gate.open();
+        await renderTask.promise;
+
+        expect(renderTask.isWorkerRendering).toBeTrue();
+        const initializeCalls = MessageHandler.prototype.sendWithPromise.calls
+          .allArgs()
+          .filter(([action]) => action === "InitializeGraphics");
+        expect(initializeCalls.length).toEqual(1);
+        expect(await countDiffsWithReadyRenderer(context, filename)).toEqual(0);
+
+        await gate.destroy();
+      });
+
+      it("renders on the main thread if the renderer worker fails after loading", async function () {
+        if (isNodeJS) {
+          pending("Worker rendering is not supported in Node.js.");
+        }
+        // Fail the renderer handshake with the core worker.
+        const gate = getDocumentWithGatedRenderer(
+          importScript(GlobalWorkerOptions.workerSrc)
+        );
+        await gate.waiting;
+
+        const { pdfDoc, renderTask, context } = await startRendering(
+          gate.loadingTask
+        );
+        const { rendererWorker } = pdfDoc._transport;
+
+        gate.open();
+        await expectAsync(rendererWorker.promise).toBeRejected();
+        await renderTask.promise;
+
+        expect(rendererWorker.destroyed).toBeTrue();
+        expect(renderTask.isWorkerRendering).toBeFalse();
+        expect(hasText(context)).toBeTrue();
+
+        await gate.destroy();
+      });
+
+      it("destroys the document before the renderer worker is ready", async function () {
+        if (isNodeJS) {
+          pending("Worker rendering is not supported in Node.js.");
+        }
+        const gate = getDocumentWithGatedRenderer("");
+        await gate.waiting;
+
+        const { pdfDoc, renderTask } = await startRendering(gate.loadingTask);
+        const { rendererWorker } = pdfDoc._transport;
+
+        await gate.destroy();
+
+        await expectAsync(rendererWorker.promise).toBeRejectedWithError(
+          /Worker was destroyed/
+        );
+        await expectAsync(renderTask.promise).toBeRejected();
+      });
     });
   });
 
@@ -6929,7 +7160,9 @@ have written that much by now. So, here’s to squashing bugs.`);
       const viewport = pdfPage.getViewport({ scale: 1 });
       const { canvasFactory } = pdfDoc;
 
-      const { messageHandler } = pdfDoc._transport.rendererWorker;
+      const { rendererWorker } = pdfDoc._transport;
+      await rendererWorker.promise;
+      const { messageHandler } = rendererWorker;
       spyOn(messageHandler, "send").and.callThrough();
       const countSentOperators = () =>
         messageHandler.send.calls

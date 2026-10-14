@@ -360,11 +360,19 @@ function getDocument(src = {}) {
     task._worker = worker;
   }
   if (!disableWorkerRendering) {
-    task._rendererWorker = new RendererWorker({
+    const rendererWorker = new RendererWorker({
       verbosity,
       enableHWA,
       enableWebGPU,
     });
+    // Document loading does not wait for renderer startup.
+    rendererWorker.promise.catch(reason => {
+      if (!rendererWorker.destroyed) {
+        warn(`Renderer worker disabled: ${reason.message}`);
+        rendererWorker.destroy();
+      }
+    });
+    task._rendererWorker = rendererWorker;
   }
 
   const docParams = {
@@ -402,26 +410,19 @@ function getDocument(src = {}) {
     ownerDocument,
     pdfBug,
     styleElement,
-    rendererWorker: null, // Set below.
+    rendererWorker: task._rendererWorker,
     loadingParams: {
       disableAutoFetch,
       enableXfa,
     },
   };
 
-  const rendererWorkerPromise = task._rendererWorker?.promise.catch(reason => {
-    warn(`Renderer worker disabled: ${reason.message}`);
-    task._rendererWorker.destroy();
-    task._rendererWorker = null;
-  });
-
-  Promise.all([worker.promise, gpuPromise, rendererWorkerPromise])
+  Promise.all([worker.promise, gpuPromise])
     .then(function ([, hasGPU]) {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
       }
       docParams.evaluatorOptions.hasGPU = hasGPU;
-      transportParams.rendererWorker = task._rendererWorker;
 
       const workerIdPromise = worker.messageHandler.sendWithPromise(
         "GetDocRequest",
@@ -2761,10 +2762,15 @@ class WorkerTransport {
     });
 
     // TODO: Connect the core and renderer workers directly.
-    this.rendererWorker?.messageHandler?.on("FontFallback", data =>
-      this.destroyed
-        ? null
-        : messageHandler.sendWithPromise("FontFallback", data)
+    this.rendererWorker?.promise.then(
+      () => {
+        this.rendererWorker?.messageHandler?.on("FontFallback", data =>
+          this.destroyed
+            ? null
+            : messageHandler.sendWithPromise("FontFallback", data)
+        );
+      },
+      () => {} // Rendering handles startup failure.
     );
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
