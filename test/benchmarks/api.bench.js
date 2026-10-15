@@ -16,11 +16,6 @@
 import { bench, describe } from "vitest";
 import { buildGetDocumentParams, readTestPdf } from "./bench_utils.js";
 import { getDocument } from "../../src/display/api.js";
-import { WorkerMessageHandler } from "../../src/core/worker.js";
-
-// Run the worker code on the main thread (a "fake" worker), such that all of
-// the parsing work is measured by the benchmark harness.
-globalThis.pdfjsWorker = { WorkerMessageHandler };
 
 const PDFS = {
   "alphatrans.pdf": readTestPdf("alphatrans.pdf"),

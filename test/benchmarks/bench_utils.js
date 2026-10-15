@@ -16,9 +16,14 @@
 import { setVerbosityLevel, VerbosityLevel } from "../../src/shared/util.js";
 import { BaseBinaryDataFactory } from "../../src/display/binary_data_factory.js";
 import fs from "fs";
+import { WorkerMessageHandler } from "../../src/core/worker.js";
 
 // Avoid flooding the benchmark output with `info`/`warn` messages.
 setVerbosityLevel(VerbosityLevel.ERRORS);
+
+// Run the worker code on the main thread (a "fake" worker), such that all of
+// the parsing work is measured by the benchmark harness.
+globalThis.pdfjsWorker = { WorkerMessageHandler };
 
 // In Node.js, `DecompressionStream` is implemented natively and runs on the
 // libuv thread-pool, which cannot be measured consistently by the benchmark
