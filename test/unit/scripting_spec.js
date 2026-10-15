@@ -1262,6 +1262,54 @@ describe("Scripting", function () {
       expect(send_queue.has("alert")).toBeFalse();
       send_queue.delete(refId);
     });
+
+    it("should ignore an invalid timeout", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const timeout = app.setTimeOut("0", 100000);
+        app.clearTimeOut(timeout);
+        app.clearTimeOut(timeout);
+        app.clearTimeOut(undefined);
+        app.clearInterval(42);
+        app.clearInterval({});
+        return "ok";
+      })()`);
+      expect(value).toEqual("ok");
+    });
+
+    it("should cancel a cleared timeout", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      await myeval(`(() => {
+        globalThis.run = [];
+        app.clearTimeOut(app.setTimeOut("run.push('timeout');", 0));
+        app.clearInterval(app.setInterval("run.push('interval');", 0));
+        // Keep the handle alive to prevent cancellation by GC.
+        globalThis.kept = app.setTimeOut("run.push('kept');", 0);
+        return 0;
+      })()`);
+      // Earlier timers would run before the retained timeout.
+      let run;
+      for (let i = 0; i < 100; i++) {
+        run = await myeval(`globalThis.run`);
+        if (run.length > 0) {
+          break;
+        }
+        await new Promise(resolve => {
+          setTimeout(resolve, 10);
+        });
+      }
+      expect(run).toEqual(["kept"]);
+    });
   });
 
   describe("AForm", function () {
