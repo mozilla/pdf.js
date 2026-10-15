@@ -62,6 +62,12 @@ const OP = {
   f64_max: 0xa5,
   f64_convert_i32_s: 0xb7,
   f64_store: 0x39,
+  prefix_fc: 0xfc,
+};
+
+// 0xfc-prefixed opcodes.
+const FC_OP = {
+  i32_trunc_sat_f64_u: 0x03,
 };
 
 // https://webassembly.github.io/spec/core/binary/types.html#binary-comptype
@@ -322,6 +328,20 @@ class PsWasmCompiler {
     this._emitULEB128(idx);
   }
 
+  // JS `x | 0`: wrap to 32 bits; non-finite values become 0.
+  _emitToInt32() {
+    const code = this._code;
+    const local = this._allocLocal();
+    code.push(OP.f64_trunc);
+    this._emitLocalTee(local);
+    this._emitLocalGet(local);
+    this._emitF64Const(2 ** -32);
+    code.push(OP.f64_mul, OP.f64_floor);
+    this._emitF64Const(2 ** 32);
+    code.push(OP.f64_mul, OP.f64_sub, OP.prefix_fc, FC_OP.i32_trunc_sat_f64_u);
+    this._releaseLocal(local);
+  }
+
   // Tree node compilation
 
   /**
@@ -426,13 +446,8 @@ class PsWasmCompiler {
         if (!this._compileNode(node.operand)) {
           return false;
         }
-        code.push(
-          OP.i32_trunc_f64_s,
-          OP.i32_const,
-          0x7f,
-          OP.i32_xor,
-          OP.f64_convert_i32_s
-        );
+        this._emitToInt32();
+        code.push(OP.i32_const, 0x7f, OP.i32_xor, OP.f64_convert_i32_s);
         return true;
       }
       // Unknown type — cannot safely choose boolean or bitwise NOT.
@@ -468,8 +483,8 @@ class PsWasmCompiler {
         code.push(OP.f64_trunc);
         break;
       case TOKEN.cvi:
-        // Truncate toward zero, keep as f64.
-        code.push(OP.i32_trunc_f64_s, OP.f64_convert_i32_s);
+        this._emitToInt32();
+        code.push(OP.f64_convert_i32_s);
         break;
       case TOKEN.cvr:
         // No-op: already f64.
@@ -539,7 +554,7 @@ class PsWasmCompiler {
     }
 
     const code = this._code;
-    code.push(OP.i32_trunc_f64_s);
+    this._emitToInt32();
     const shift = first.value;
     if (shift > 0) {
       code.push(OP.i32_const);
@@ -662,7 +677,7 @@ class PsWasmCompiler {
     if (!this._compileNode(node)) {
       return false;
     }
-    this._code.push(OP.i32_trunc_f64_s);
+    this._emitToInt32();
     return true;
   }
 
