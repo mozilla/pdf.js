@@ -344,29 +344,37 @@ class Page {
         }
         continue;
       }
-      if (annotation.popup?.deleted) {
-        const popupRef = Ref.fromString(annotation.popupRef);
-        if (popupRef) {
+      const { popup } = annotation;
+      const popupRef = popup && Ref.fromString(annotation.popupRef);
+      if (popupRef) {
+        if (popup.deleted) {
           deletedAnnotations.put(popupRef);
+        } else {
+          // Reuse the popup reference and dictionary.
+          existingAnnotations?.put(popupRef);
+          popup.ref = popupRef;
+          promises.push(this.#fetchOldAnnotation(popup, popupRef));
         }
       }
       existingAnnotations?.put(ref);
       annotation.ref = ref;
-      promises.push(
-        this.xref.fetchAsync(ref).then(
-          obj => {
-            if (obj instanceof Dict) {
-              annotation.oldAnnotation = obj.clone();
-            }
-          },
-          () => {
-            warn(`Cannot fetch \`oldAnnotation\` for: ${ref}.`);
-          }
-        )
-      );
+      promises.push(this.#fetchOldAnnotation(annotation, ref));
       delete annotation.id;
     }
     await Promise.all(promises);
+  }
+
+  #fetchOldAnnotation(annotation, ref) {
+    return this.xref.fetchAsync(ref).then(
+      obj => {
+        if (obj instanceof Dict) {
+          annotation.oldAnnotation = obj.clone();
+        }
+      },
+      () => {
+        warn(`Cannot fetch \`oldAnnotation\` for: ${ref}.`);
+      }
+    );
   }
 
   async saveNewAnnotations(handler, task, annotations, imagePromises, changes) {

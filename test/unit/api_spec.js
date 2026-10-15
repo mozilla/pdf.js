@@ -4069,6 +4069,84 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("reuses an existing highlight popup across saves", async function () {
+      let data = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "highlight_popup.pdf",
+      });
+      for (let i = 1; i <= 2; i++) {
+        const loadingTask = getDocument({ data });
+        const pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.HIGHLIGHT,
+          id: "24R",
+          pageIndex: 0,
+          popup: { deleted: false, contents: `Hello ${i}` },
+          popupRef: "25R",
+        });
+        data = await pdfDoc.saveDocument();
+        await loadingTask.destroy();
+      }
+
+      const loadingTask = getDocument({ data });
+      const pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+
+      expect(annotations.length).toEqual(2);
+      const [highlight, popup] = annotations;
+      expect(highlight.id).toEqual("24R");
+      expect(highlight.popupRef).toEqual("25R");
+      expect(highlight.contentsObj.str).toEqual("Hello 2");
+      expect(popup.id).toEqual("25R");
+      expect(popup.annotationType).toEqual(AnnotationType.POPUP);
+      expect(popup.rect.some(x => x !== 0)).toEqual(true);
+      await loadingTask.destroy();
+    });
+
+    it("reuses a newly added popup across saves", async function () {
+      let data = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "issue22124.pdf",
+      });
+      const rect = [613, 622, 793, 722];
+      let popupRef = "";
+      for (let i = 1; i <= 2; i++) {
+        const loadingTask = getDocument({ data });
+        const pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.HIGHLIGHT,
+          id: "6R",
+          pageIndex: 0,
+          popup: { deleted: false, contents: `Hello ${i}`, rect },
+          popupRef,
+        });
+        data = await pdfDoc.saveDocument();
+        await loadingTask.destroy();
+
+        if (i === 1) {
+          const task = getDocument({ data: data.slice() });
+          const page = await (await task.promise).getPage(1);
+          ({ popupRef } = (await page.getAnnotations())[0]);
+          await task.destroy();
+          expect(popupRef).not.toBeNull();
+        }
+      }
+
+      const loadingTask = getDocument({ data });
+      const pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations();
+
+      expect(annotations.length).toEqual(2);
+      const [highlight, popup] = annotations;
+      expect(highlight.id).toEqual("6R");
+      expect(highlight.popupRef).toEqual(popupRef);
+      expect(highlight.contentsObj.str).toEqual("Hello 2");
+      expect(popup.id).toEqual(popupRef);
+      expect(popup.annotationType).toEqual(AnnotationType.POPUP);
+      expect(popup.rect).toEqual(rect);
+      await loadingTask.destroy();
+    });
+
     it("write an updated stamp annotation in a tagged pdf, save and check the structure tree", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("stamps.pdf"));
       let pdfDoc = await loadingTask.promise;
