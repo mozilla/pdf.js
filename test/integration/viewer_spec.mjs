@@ -503,6 +503,67 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Page background under the canvas (bug 2070624)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must only paint the page background when there's no main canvas", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getBackgroundColor = pageNumber =>
+            page.evaluate(
+              n =>
+                getComputedStyle(
+                  document.querySelector(`.page[data-page-number="${n}"]`)
+                ).backgroundColor,
+              pageNumber
+            );
+
+          expect(await getBackgroundColor(1))
+            .withContext(`In ${browserName}, rendered page`)
+            .toEqual("rgba(0, 0, 0, 0)");
+          expect(await getBackgroundColor(14))
+            .withContext(`In ${browserName}, not rendered page`)
+            .toEqual("rgb(255, 255, 255)");
+
+          const handle = await waitForPageRendered(page, 1);
+          await page.evaluate(() => window.PDFViewerApplication.zoomIn());
+          await awaitPromise(handle);
+
+          expect(await getBackgroundColor(1))
+            .withContext(`In ${browserName}, re-rendered page`)
+            .toEqual("rgba(0, 0, 0, 0)");
+
+          const redrawHandle = await waitForPageRendered(page, 1);
+          const backgroundAfterReset = await page.evaluate(() => {
+            const { pdfViewer } = window.PDFViewerApplication;
+            const pageView = pdfViewer.getPageView(0);
+            pageView.reset();
+            // Capture the placeholder before scheduling a redraw.
+            const { backgroundColor } = getComputedStyle(pageView.div);
+            pdfViewer.update();
+            return backgroundColor;
+          });
+          await awaitPromise(redrawHandle);
+
+          expect(backgroundAfterReset)
+            .withContext(`In ${browserName}, reset page`)
+            .toEqual("rgb(255, 255, 255)");
+          expect(await getBackgroundColor(1))
+            .withContext(`In ${browserName}, redrawn page`)
+            .toEqual("rgba(0, 0, 0, 0)");
+        })
+      );
+    });
+  });
+
   describe("Detail view on zoom", () => {
     const BASE_MAX_CANVAS_PIXELS = 1e6;
 
@@ -761,6 +822,33 @@ describe("PDF viewer", () => {
                     bottomRight: "#ff0000", // bright red
                   })
                 );
+            });
+          });
+
+          it("must paint the page background when only the detail view is left (bug 2070624)", async () => {
+            await forEachPage(async (browserName, page) => {
+              await page.waitForSelector(
+                ".page[data-page-number='1'] canvas:nth-child(2)"
+              );
+
+              const { canvasCount, backgroundColor } = await page.evaluate(
+                () => {
+                  const pageView =
+                    window.PDFViewerApplication.pdfViewer.getPageView(0);
+                  // Remove only the main canvas.
+                  pageView._resetCanvas();
+                  return {
+                    canvasCount: pageView.div.querySelectorAll("canvas").length,
+                    backgroundColor: getComputedStyle(pageView.div)
+                      .backgroundColor,
+                  };
+                }
+              );
+
+              expect(canvasCount).withContext(`In ${browserName}`).toBe(1);
+              expect(backgroundColor)
+                .withContext(`In ${browserName}`)
+                .toEqual("rgb(255, 255, 255)");
             });
           });
         });
