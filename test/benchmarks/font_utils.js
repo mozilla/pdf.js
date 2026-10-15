@@ -17,6 +17,7 @@ import {
   captureCalls,
   captureMethodCalls,
   processPdf,
+  readStream,
 } from "./capture_utils.js";
 import { BaseStream } from "../../src/core/base_stream.js";
 import { CFFParser } from "../../src/core/cff_parser.js";
@@ -30,12 +31,6 @@ import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { PDFImage } from "../../src/core/image.js";
 import { Stream } from "../../src/core/stream.js";
 import { ToUnicodeMap } from "../../src/core/to_unicode_map.js";
-
-function readStream(stream) {
-  const bytes = new Uint8Array(stream.getBytes());
-  stream.reset();
-  return bytes;
-}
 
 function cloneToUnicode(toUnicode) {
   if (!(toUnicode instanceof ToUnicodeMap)) {

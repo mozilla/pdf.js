@@ -15,6 +15,18 @@
 
 import { buildGetDocumentParams, readTestPdf } from "./bench_utils.js";
 import { getDocument } from "../../src/display/api.js";
+import { PartialEvaluator } from "../../src/core/evaluator.js";
+
+/**
+ * Copy unread bytes and reset the stream.
+ * @param {BaseStream} stream
+ * @returns {Uint8Array}
+ */
+function readStream(stream) {
+  const bytes = new Uint8Array(stream.getBytes());
+  stream.reset();
+  return bytes;
+}
 
 /**
  * Capture the calls of several methods during `run`.
@@ -102,4 +114,25 @@ async function processPdf(filename, { pages, operatorList = false } = {}) {
   }
 }
 
-export { captureCalls, captureMethodCalls, processPdf };
+/**
+ * @param {string} filename
+ * @param {object} [options] - See `processPdf`.
+ * @returns {Promise<Array<Uint8Array>>} Content stream bytes.
+ */
+function captureContentStreams(filename, options) {
+  return captureCalls(
+    PartialEvaluator.prototype,
+    "getTextContent",
+    () => processPdf(filename, options),
+    (evaluator, [{ stream }]) => readStream(stream),
+    { before: true }
+  );
+}
+
+export {
+  captureCalls,
+  captureContentStreams,
+  captureMethodCalls,
+  processPdf,
+  readStream,
+};
