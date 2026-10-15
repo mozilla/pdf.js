@@ -452,10 +452,6 @@ class Util extends PDFObject {
     );
   }
 
-  scand(cFormat, cDate) {
-    return this._scand(cFormat, cDate);
-  }
-
   #createScandData(cFormat) {
     const months = this.#months,
       days = this.#days;
@@ -606,7 +602,7 @@ class Util extends PDFObject {
     return [new RegExp(`^${re}$`), actions];
   }
 
-  _scand(cFormat, cDate, strict = false) {
+  scand(cFormat, cDate) {
     if (typeof cDate !== "string") {
       return new Date(cDate);
     }
@@ -628,7 +624,7 @@ class Util extends PDFObject {
 
     const matches = regex.exec(cDate);
     if (!matches || matches.length !== actions.length + 1) {
-      return strict ? null : this.#tryToGuessDate(cFormat, cDate);
+      return this.#tryToGuessDate(cFormat, cDate);
     }
 
     const data = {

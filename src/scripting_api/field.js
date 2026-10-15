@@ -15,7 +15,7 @@
 
 import { createMap, FieldType, getFieldType } from "./common.js";
 import { makeArr, serializeError } from "./app_utils.js";
-import { Color } from "./color.js";
+import { isValidColor } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
 
 class Field extends PDFObject {
@@ -132,7 +132,7 @@ class Field extends PDFObject {
   }
 
   set fillColor(color) {
-    if (Color._isValidColor(color)) {
+    if (isValidColor(color)) {
       this._fillColor = color;
     }
   }
@@ -172,7 +172,7 @@ class Field extends PDFObject {
   }
 
   set strokeColor(color) {
-    if (Color._isValidColor(color)) {
+    if (isValidColor(color)) {
       this._strokeColor = color;
     }
   }
@@ -214,7 +214,7 @@ class Field extends PDFObject {
   }
 
   set textColor(color) {
-    if (Color._isValidColor(color)) {
+    if (isValidColor(color)) {
       this._textColor = color;
     }
   }

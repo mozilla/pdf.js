@@ -16,6 +16,36 @@
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { PDFObject } from "./pdf_object.js";
 
+function isValidSpace(cColorSpace) {
+  return (
+    typeof cColorSpace === "string" &&
+    (cColorSpace === "T" ||
+      cColorSpace === "G" ||
+      cColorSpace === "RGB" ||
+      cColorSpace === "CMYK")
+  );
+}
+
+function isValidColor(colorArray) {
+  if (!Array.isArray(colorArray) || colorArray.length === 0) {
+    return false;
+  }
+  const space = colorArray[0];
+  if (!isValidSpace(space)) {
+    return false;
+  }
+
+  const expectedLength = { T: 1, G: 2, RGB: 4, CMYK: 5 }[space];
+  return (
+    colorArray.length === expectedLength &&
+    colorArray.slice(1).every(c => typeof c === "number" && c >= 0 && c <= 1)
+  );
+}
+
+function getCorrectColor(colorArray) {
+  return isValidColor(colorArray) ? colorArray : ["G", 0];
+}
+
 class Color extends PDFObject {
   transparent = ["T"];
 
@@ -45,61 +75,8 @@ class Color extends PDFObject {
     super({});
   }
 
-  static _isValidSpace(cColorSpace) {
-    return (
-      typeof cColorSpace === "string" &&
-      (cColorSpace === "T" ||
-        cColorSpace === "G" ||
-        cColorSpace === "RGB" ||
-        cColorSpace === "CMYK")
-    );
-  }
-
-  static _isValidColor(colorArray) {
-    if (!Array.isArray(colorArray) || colorArray.length === 0) {
-      return false;
-    }
-    const space = colorArray[0];
-    if (!Color._isValidSpace(space)) {
-      return false;
-    }
-
-    switch (space) {
-      case "T":
-        if (colorArray.length !== 1) {
-          return false;
-        }
-        break;
-      case "G":
-        if (colorArray.length !== 2) {
-          return false;
-        }
-        break;
-      case "RGB":
-        if (colorArray.length !== 4) {
-          return false;
-        }
-        break;
-      case "CMYK":
-        if (colorArray.length !== 5) {
-          return false;
-        }
-        break;
-      default:
-        return false;
-    }
-
-    return colorArray
-      .slice(1)
-      .every(c => typeof c === "number" && c >= 0 && c <= 1);
-  }
-
-  static _getCorrectColor(colorArray) {
-    return Color._isValidColor(colorArray) ? colorArray : ["G", 0];
-  }
-
   convert(colorArray, cColorSpace) {
-    if (!Color._isValidSpace(cColorSpace)) {
+    if (!isValidSpace(cColorSpace)) {
       return this.black;
     }
 
@@ -107,7 +84,7 @@ class Color extends PDFObject {
       return ["T"];
     }
 
-    colorArray = Color._getCorrectColor(colorArray);
+    colorArray = getCorrectColor(colorArray);
     if (colorArray[0] === cColorSpace) {
       return colorArray;
     }
@@ -122,8 +99,8 @@ class Color extends PDFObject {
   }
 
   equal(colorArray1, colorArray2) {
-    colorArray1 = Color._getCorrectColor(colorArray1);
-    colorArray2 = Color._getCorrectColor(colorArray2);
+    colorArray1 = getCorrectColor(colorArray1);
+    colorArray2 = getCorrectColor(colorArray2);
 
     if (colorArray1[0] === "T" || colorArray2[0] === "T") {
       return colorArray1[0] === "T" && colorArray2[0] === "T";
@@ -137,4 +114,4 @@ class Color extends PDFObject {
   }
 }
 
-export { Color };
+export { Color, isValidColor };

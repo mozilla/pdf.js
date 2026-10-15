@@ -20,9 +20,9 @@ import {
   VIEWER_VARIATION,
   VIEWER_VERSION,
 } from "./app_utils.js";
-import { Color } from "./color.js";
 import { EventDispatcher } from "./event.js";
 import { FullScreen } from "./fullscreen.js";
+import { isValidColor } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
 import { Thermometer } from "./thermometer.js";
 
@@ -337,7 +337,7 @@ class App extends PDFObject {
   }
 
   set runtimeHighlightColor(val) {
-    if (Color._isValidColor(val)) {
+    if (isValidColor(val)) {
       this._runtimeHighlightColor = val;
       /* TODO */
     }
