@@ -532,6 +532,21 @@ class Field extends PDFObject {
     return false;
   }
 
+  /**
+   * @returns {Array<[number, string, Array<string>]>} Page index, event name,
+   *   and scripts for each PageOpen/PageClose chain.
+   */
+  _getPageActions() {
+    const pageActions = [];
+    for (const eventName of ["PageOpen", "PageClose"]) {
+      const scripts = this._actions.get(eventName);
+      if (scripts) {
+        pageActions.push([this._page, eventName, scripts]);
+      }
+    }
+    return pageActions;
+  }
+
   _reset() {
     this.value = this.defaultValue;
   }
@@ -569,12 +584,13 @@ class RadioButtonField extends Field {
     this.exportValues = [this.exportValues];
     this._radioIds = [this._id];
     this._radioActions = [this._actions];
+    this._radioPages = [this._page];
 
     for (const radioData of otherButtons) {
       this.exportValues.push(radioData.exportValues);
       this._radioIds.push(radioData.id);
       this._radioActions.push(createMap(radioData.actions));
-      // _value is still null here.
+      this._radioPages.push(radioData.page || 0);
       if (data.value === radioData.exportValues) {
         this._id = radioData.id;
       }
@@ -614,29 +630,54 @@ class RadioButtonField extends Field {
   }
 
   checkThisBox(nWidget, bCheckIt = true) {
-    if (nWidget < 0 || nWidget >= this._radioIds.length || !bCheckIt) {
+    const index = this._getWidgetIndex(nWidget);
+    if (index === -1 || !bCheckIt) {
       return;
     }
 
-    this._id = this._radioIds[nWidget];
-    this._value = this.exportValues[nWidget];
+    this._id = this._radioIds[index];
+    this._value = this.exportValues[index];
     this._send({ id: this._id, value: this._value });
   }
 
   isBoxChecked(nWidget) {
+    const index = this._getWidgetIndex(nWidget);
+    // A current widget ID does not imply that it is checked.
     return (
-      nWidget >= 0 &&
-      nWidget < this._radioIds.length &&
-      this._id === this._radioIds[nWidget]
+      index !== -1 &&
+      this._id === this._radioIds[index] &&
+      this._value === this.exportValues[index]
     );
   }
 
   isDefaultChecked(nWidget) {
-    return (
-      nWidget >= 0 &&
-      nWidget < this.exportValues.length &&
-      this.defaultValue === this.exportValues[nWidget]
-    );
+    const index = this._getWidgetIndex(nWidget);
+    return index !== -1 && this.defaultValue === this.exportValues[index];
+  }
+
+  _getWidgetIndex(nWidget) {
+    // Accept integer indices and their canonical string forms.
+    const index = Number(nWidget);
+    return Number.isInteger(index) &&
+      index >= 0 &&
+      index < this._radioIds.length &&
+      `${index}` === `${nWidget}`
+      ? index
+      : -1;
+  }
+
+  _getPageActions() {
+    // Run each widget's chain, including inherited actions.
+    const pageActions = [];
+    for (let i = 0, ii = this._radioIds.length; i < ii; i++) {
+      for (const eventName of ["PageOpen", "PageClose"]) {
+        const scripts = this._radioActions[i].get(eventName);
+        if (scripts) {
+          pageActions.push([this._radioPages[i], eventName, scripts]);
+        }
+      }
+    }
+    return pageActions;
   }
 
   _getExportValue(state) {
@@ -661,7 +702,12 @@ class CheckboxField extends RadioButtonField {
   }
 
   set value(value) {
-    if (!value || value === "Off") {
+    // After initialization, non-export values uncheck the field.
+    if (
+      !value ||
+      value === "Off" ||
+      (this._hasBeenInitialized && !this.exportValues.includes(value))
+    ) {
       this._value = "Off";
     } else {
       super.value = value;
@@ -672,22 +718,13 @@ class CheckboxField extends RadioButtonField {
     return state ? super._getExportValue(state) : "Off";
   }
 
-  isBoxChecked(nWidget) {
-    return this._value === "Off" ? false : super.isBoxChecked(nWidget);
-  }
-
-  isDefaultChecked(nWidget) {
-    return this.defaultValue === "Off"
-      ? this._value === "Off"
-      : super.isDefaultChecked(nWidget);
-  }
-
   checkThisBox(nWidget, bCheckIt = true) {
-    if (nWidget < 0 || nWidget >= this._radioIds.length) {
+    const index = this._getWidgetIndex(nWidget);
+    if (index === -1) {
       return;
     }
-    this._id = this._radioIds[nWidget];
-    this._value = bCheckIt ? this.exportValues[nWidget] : "Off";
+    this._id = this._radioIds[index];
+    this._value = bCheckIt ? this.exportValues[index] : "Off";
     this._send({ id: this._id, value: this._value });
   }
 }

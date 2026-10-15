@@ -209,21 +209,13 @@ class Doc extends PDFObject {
     this._fieldNames.push(name);
     this._numFields++;
 
-    // Fields on a page can have PageOpen/PageClose actions.
-    const po = field.obj._actions.get("PageOpen");
-    const pc = field.obj._actions.get("PageClose");
-    if (po || pc) {
+    // Register field and widget page actions.
+    for (const [page, eventName, scripts] of field.obj._getPageActions()) {
       this.#otherPageActions ??= new Map();
-      const actions = this.#otherPageActions.getOrInsertComputed(
-        field.obj._page + 1,
-        makeMap
-      );
-      if (po) {
-        actions.getOrInsertComputed("PageOpen", makeArr).push(...po);
-      }
-      if (pc) {
-        actions.getOrInsertComputed("PageClose", makeArr).push(...pc);
-      }
+      this.#otherPageActions
+        .getOrInsertComputed(page + 1, makeMap)
+        .getOrInsertComputed(eventName, makeArr)
+        .push(...scripts);
     }
   }
 
