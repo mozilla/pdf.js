@@ -176,6 +176,19 @@ types can be told apart:
 | `integration_tests.yml` | `integrationtest` | `integrationtest` |
 | `coverage_browser_tests.yml` | `botbrowsertest` | `browsertest` |
 
+## Benchmarks
+
+Run the benchmarks in `test/benchmarks/` locally:
+
+    $ npx gulp benchmark
+
+To compare with `master`:
+
+    $ git checkout master
+    $ npx gulp benchmark --output-json build/bench-master.json
+    $ git checkout my-branch
+    $ npx gulp benchmark --compare build/bench-master.json
+
 ## Using PDF.js in a web application
 
 To use PDF.js in a web application you can choose to use a pre-built version of the library
