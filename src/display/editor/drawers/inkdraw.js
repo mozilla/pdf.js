@@ -39,6 +39,8 @@ class InkDrawOutliner {
 
   #lastIndex = 0;
 
+  #pathLineStartIndex = 0;
+
   #outlines = new InkDrawOutline();
 
   #parentWidth;
@@ -203,6 +205,7 @@ class InkDrawOutliner {
     this.#lines.push({ line, points: this.#points });
     this.#last.set(line, 0);
     this.#lastIndex = 0;
+    this.#pathLineStartIndex = this.#lastSVGPath.length;
     this.toSVGPath();
 
     return null;
@@ -220,6 +223,7 @@ class InkDrawOutliner {
     this.#line = element.line;
     this.#points = element.points;
     this.#lastIndex = 0;
+    this.#pathLineStartIndex = this.#lastSVGPath.length;
     return {
       path: {
         d: this.toSVGPath(),
@@ -238,6 +242,7 @@ class InkDrawOutliner {
       this.#line = line;
       this.#points = points;
       this.#lastIndex = 0;
+      this.#pathLineStartIndex = this.#lastSVGPath.length;
       this.toSVGPath();
     }
 
@@ -279,9 +284,9 @@ class InkDrawOutliner {
     }
 
     if (this.#points.length <= 6) {
-      // We've 2 or 3 points.
-      const i = this.#lastSVGPath.lastIndexOf("M");
-      this.#lastSVGPath = `${this.#lastSVGPath.slice(0, i)} M ${firstX} ${firstY}`;
+      // We have 2 or 3 points. Truncate the current line's partial path (keeping
+      // the previous lines) and restart it from its first point.
+      this.#lastSVGPath = `${this.#lastSVGPath.slice(0, this.#pathLineStartIndex)} M ${firstX} ${firstY}`;
       this.#lastIndex = 6;
     }
 
