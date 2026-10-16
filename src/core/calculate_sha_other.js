@@ -69,15 +69,9 @@ class Word64 {
     this.high = highAdd | 0;
   }
 
-  copyTo(bytes, offset) {
-    bytes[offset] = (this.high >>> 24) & 0xff;
-    bytes[offset + 1] = (this.high >> 16) & 0xff;
-    bytes[offset + 2] = (this.high >> 8) & 0xff;
-    bytes[offset + 3] = this.high & 0xff;
-    bytes[offset + 4] = (this.low >>> 24) & 0xff;
-    bytes[offset + 5] = (this.low >> 16) & 0xff;
-    bytes[offset + 6] = (this.low >> 8) & 0xff;
-    bytes[offset + 7] = this.low & 0xff;
+  copyTo(view, offset) {
+    view.setUint32(offset, this.high);
+    view.setUint32(offset + 4, this.low);
   }
 
   assign(word) {
@@ -264,7 +258,8 @@ function calculateSHA512(data, offset, length, mode384 = false) {
 
   // pre-processing
   const paddedLength = Math.ceil((length + 17) / 128) * 128;
-  const padded = new Uint8Array(paddedLength);
+  const padded = new Uint8Array(paddedLength),
+    view = new DataView(padded.buffer);
   let i, j;
   for (i = 0; i < length; ++i) {
     padded[i] = data[offset++];
@@ -275,11 +270,11 @@ function calculateSHA512(data, offset, length, mode384 = false) {
     i = n;
   }
   i += 11;
-  padded[i++] = (length >>> 29) & 0xff;
-  padded[i++] = (length >> 21) & 0xff;
-  padded[i++] = (length >> 13) & 0xff;
-  padded[i++] = (length >> 5) & 0xff;
-  padded[i++] = (length << 3) & 0xff;
+  padded[i++] = length >>> 29;
+  padded[i++] = length >> 21;
+  padded[i++] = length >> 13;
+  padded[i++] = length >> 5;
+  padded[i++] = length << 3;
 
   const w = new Array(80);
   for (i = 0; i < 80; i++) {
@@ -303,18 +298,9 @@ function calculateSHA512(data, offset, length, mode384 = false) {
 
   // for each 1024 bit block
   for (i = 0; i < paddedLength;) {
-    for (j = 0; j < 16; ++j) {
-      w[j].high =
-        (padded[i] << 24) |
-        (padded[i + 1] << 16) |
-        (padded[i + 2] << 8) |
-        padded[i + 3];
-      w[j].low =
-        (padded[i + 4] << 24) |
-        (padded[i + 5] << 16) |
-        (padded[i + 6] << 8) |
-        padded[i + 7];
-      i += 8;
+    for (j = 0; j < 16; ++j, i += 8) {
+      w[j].high = view.getInt32(i);
+      w[j].low = view.getInt32(i + 4);
     }
     for (j = 16; j < 80; ++j) {
       tmp3 = w[j];
@@ -372,22 +358,24 @@ function calculateSHA512(data, offset, length, mode384 = false) {
   let result;
   if (!mode384) {
     result = new Uint8Array(64);
-    h0.copyTo(result, 0);
-    h1.copyTo(result, 8);
-    h2.copyTo(result, 16);
-    h3.copyTo(result, 24);
-    h4.copyTo(result, 32);
-    h5.copyTo(result, 40);
-    h6.copyTo(result, 48);
-    h7.copyTo(result, 56);
+    const dv = new DataView(result.buffer);
+    h0.copyTo(dv, 0);
+    h1.copyTo(dv, 8);
+    h2.copyTo(dv, 16);
+    h3.copyTo(dv, 24);
+    h4.copyTo(dv, 32);
+    h5.copyTo(dv, 40);
+    h6.copyTo(dv, 48);
+    h7.copyTo(dv, 56);
   } else {
     result = new Uint8Array(48);
-    h0.copyTo(result, 0);
-    h1.copyTo(result, 8);
-    h2.copyTo(result, 16);
-    h3.copyTo(result, 24);
-    h4.copyTo(result, 32);
-    h5.copyTo(result, 40);
+    const dv = new DataView(result.buffer);
+    h0.copyTo(dv, 0);
+    h1.copyTo(dv, 8);
+    h2.copyTo(dv, 16);
+    h3.copyTo(dv, 24);
+    h4.copyTo(dv, 32);
+    h5.copyTo(dv, 40);
   }
   return result;
 }
