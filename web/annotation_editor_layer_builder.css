@@ -241,7 +241,7 @@
     .highlightEditor,
     .signatureEditor
   ),
-.textLayer {
+.page {
   .editToolbar {
     --editor-toolbar-delete-image: url(images/editor-toolbar-delete.svg);
     --editor-toolbar-bg-color: light-dark(#f0f0f4, #2b2a33);
@@ -329,6 +329,8 @@
     position: absolute;
     inset-inline-end: 0;
     inset-block-start: calc(100% + var(--editor-toolbar-vert-offset));
+    z-index: 2;
+    isolation: isolate;
 
     border-radius: 6px;
     background-color: var(--editor-toolbar-bg-color);
