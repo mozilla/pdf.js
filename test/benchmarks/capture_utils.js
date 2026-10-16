@@ -96,11 +96,16 @@ async function captureCalls(target, name, run, snapshot, { before } = {}) {
  * @param {object} [options]
  * @param {Array<number>} [options.pages] - Page numbers; defaults to all pages.
  * @param {boolean} [options.operatorList]
+ * @param {string} [options.password]
  */
-async function processPdf(filename, { pages, operatorList = false } = {}) {
-  const loadingTask = getDocument(
-    buildGetDocumentParams(readTestPdf(filename))
-  );
+async function processPdf(
+  filename,
+  { pages, operatorList = false, password } = {}
+) {
+  const loadingTask = getDocument({
+    ...buildGetDocumentParams(readTestPdf(filename)),
+    password,
+  });
   try {
     const pdfDocument = await loadingTask.promise;
     pages ??= Array.from({ length: pdfDocument.numPages }, (_, i) => i + 1);
