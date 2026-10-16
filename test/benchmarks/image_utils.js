@@ -268,9 +268,31 @@ async function captureJpegImages(filename, options) {
   return images;
 }
 
+/**
+ * @param {string} filename
+ * @param {typeof WasmImage} ImageClass - `JpxImage` or `JBig2CCITTFaxImage`.
+ * @param {object} [options] - See `processPdf`.
+ * @returns {Promise<Array<Array>>} `decode` arguments with copied byte arrays.
+ */
+async function captureWasmImages(filename, ImageClass, options) {
+  const images = await captureCalls(
+    ImageClass.prototype,
+    "decode",
+    () => processPdf(filename, { ...options, operatorList: true }),
+    (image, args) =>
+      args.map(arg => (arg instanceof Uint8Array ? arg.slice() : arg)),
+    { before: true }
+  );
+  if (images.length === 0) {
+    throw new Error(`No ${ImageClass.name} image in "${filename}".`);
+  }
+  return images;
+}
+
 export {
   captureImageMasks,
   captureImages,
   captureJpegImages,
+  captureWasmImages,
   createSyntheticImage,
 };
