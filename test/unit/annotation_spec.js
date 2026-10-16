@@ -2096,6 +2096,40 @@ describe("annotation", function () {
       );
     });
 
+    it("should not wrap a multiline text which fits with half the padding (bug 2065923)", async function () {
+      textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
+      textWidgetDict.set("DA", "/Helv 9 Tf");
+      textWidgetDict.set("Rect", [0, 0, 48, 12.25]);
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { value: "23.08.2026" });
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        annotationStorage
+      );
+      expect(appearance).toEqual(
+        "/Tx BMC q BT /Helv 9 Tf 1 0 0 1 0 12.25 Tm " +
+          "1 -8.59 Td (23.08.2026) Tj ET Q EMC"
+      );
+    });
+
     it("should render multiline text in Japanese for printing", async function () {
       textWidgetDict.set("Ff", AnnotationFieldFlag.MULTILINE);
       textWidgetDict.get("DR").get("Font").set("Goth", gothRefObj.ref);
