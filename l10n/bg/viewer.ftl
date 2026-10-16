@@ -270,7 +270,7 @@ pdfjs-editor-ink-button =
     .title = Рисуване
 pdfjs-editor-ink-button-label = Рисуване
 pdfjs-editor-stamp-button =
-    .title = Добавяне или променяне на изображения
+    .title = Добавяне или редактиране на изображения
 pdfjs-editor-stamp-button-label = Добавяне или променяне на изображения
 
 ## Remove button for the various kind of editor.
@@ -378,7 +378,30 @@ pdfjs-editor-add-signature-image-upload-error-description = Проверете �
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
 pdfjs-toggle-views-manager-button1-label = Управление на страници
+pdfjs-views-manager-pages-title = Страници
+pdfjs-views-manager-pages-option-label = Страници
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } избрана
+       *[other] { $count } избрани
+    }
 pdfjs-views-manager-pages-status-action-button-label = Управление
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 страница е копирана
+       *[other] { $count } страници са копирани
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 страница е изтрита
+       *[other] { $count } страници са изтрити
+    }
 pdfjs-toggle-views-manager-button1 =
     .title = Управление на страници
 
