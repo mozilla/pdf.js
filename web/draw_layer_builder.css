@@ -49,6 +49,19 @@
       position: absolute;
       mix-blend-mode: normal;
 
+      /* The SVG is purely visual: the editor div, in the annotation editor
+       * layer, is what handles the interactions. Since the SVG is stacked with
+       * the editors, it would otherwise be hit-tested before the layer and
+       * swallow the pointer events used to draw. */
+      pointer-events: none;
+
+      /* Raised along with the `.selectedEditor` div it belongs to. Scoped to
+       * `.draw` because highlight outlines use `.selected` for their own
+       * styling. */
+      &.selected {
+        z-index: 100000 !important;
+      }
+
       &[data-draw-rotation="90"] {
         transform: rotate(90deg);
       }
