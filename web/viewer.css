@@ -1077,9 +1077,10 @@ dialog :link {
 
   .menuContainer {
     height: auto;
+    /* The viewer height excludes the notification bar. */
     max-height: calc(
-      var(--viewer-container-height) - var(--toolbar-height) -
-        var(--doorhanger-height)
+      var(--viewer-container-height) + var(--pfn-bar-height, 0px) -
+        var(--toolbar-height) - var(--doorhanger-height)
     );
     display: flex;
     flex-direction: column;
@@ -1199,7 +1200,9 @@ dialog :link {
   z-index: 30000;
   cursor: default;
   min-height: 26px;
-  max-height: calc(var(--viewer-container-height) - 40px);
+  max-height: calc(
+    var(--viewer-container-height) + var(--pfn-bar-height, 0px) - 40px
+  );
 
   #secondaryToolbarButtonContainer {
     /*#if GENERIC*/
@@ -1283,6 +1286,25 @@ dialog :link {
     #documentProperties::before {
       mask-image: var(--secondaryToolbarButton-documentProperties-icon);
     }
+
+    /* Let grouped rows shrink without clipping wrapped labels. */
+    /*#if MOZCENTRAL*/
+    @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+      > [role="radiogroup"] {
+        display: contents;
+      }
+
+      .toolbarButton.labeled {
+        flex: 0 1 var(--menuitem-height);
+        min-height: min-content;
+
+        > span {
+          min-height: var(--size-item-medium);
+          align-content: center;
+        }
+      }
+    }
+    /*#endif*/
   }
 }
 
@@ -1816,7 +1838,7 @@ dialog :link {
     display: none !important;
   }
   #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
-    display: inline-block !important;
+    display: contents !important;
   }
 }
 
