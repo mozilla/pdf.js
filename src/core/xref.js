@@ -392,7 +392,8 @@ class XRef {
           if (offsetByte === -1) {
             throw new FormatError("Invalid XRef byteWidths 'offset'.");
           }
-          offset = (offset << 8) | offsetByte;
+          // Not using bitwise operations, since offsets can exceed 2^31 bytes.
+          offset = offset * 256 + offsetByte;
         }
         for (let j = 0; j < generationFieldWidth; ++j) {
           const generationByte = stream.getByte();

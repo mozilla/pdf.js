@@ -88,6 +88,27 @@ describe("document", function () {
 
       expect(() => xref.readXRef()).toThrowError(XRefParseException);
     });
+
+    it("parses xref stream offsets that don't fit in 32 bits", function () {
+      const stream = new StringStream(
+        "%PDF-1.5\n" +
+          "3 0 obj\n" +
+          "<</Type/XRef/W[1 5 2]/Index[0 3]/Size 4" +
+          "/Root 1 0 R/Length 24>>\n" +
+          "stream\n" +
+          "\x00\x00\x00\x00\x00\x00\xff\xff" + // free
+          "\x01\x00\x80\x00\x00\x00\x00\x00" + // 2^31
+          "\x01\x01\x00\x00\x00\x0a\x00\x00" + // 2^32 + 10
+          "\nendstream\nendobj\n" +
+          "startxref\n9\n%%EOF\n"
+      );
+      const xref = new XRef(stream, {});
+      xref.setStartXRef(9);
+      xref.readXRef();
+
+      expect(xref.getEntry(1).offset).toEqual(2 ** 31);
+      expect(xref.getEntry(2).offset).toEqual(2 ** 32 + 10);
+    });
   });
 
   describe("PDFDocument", function () {
