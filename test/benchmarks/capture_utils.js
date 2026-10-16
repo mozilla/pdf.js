@@ -93,21 +93,24 @@ async function captureCalls(target, name, run, snapshot, { before } = {}) {
 /**
  * Read a test PDF's text or operator lists.
  * @param {string} filename
- * @param {object} [options]
+ * @param {object} [options] - Remaining options go to `getDocument`.
  * @param {Array<number>} [options.pages] - Page numbers; defaults to all pages.
  * @param {boolean} [options.operatorList]
- * @param {string} [options.password]
+ * @param {boolean} [options.metadata] - Read metadata before processing pages.
  */
 async function processPdf(
   filename,
-  { pages, operatorList = false, password } = {}
+  { pages, operatorList = false, metadata = false, ...params } = {}
 ) {
   const loadingTask = getDocument({
     ...buildGetDocumentParams(readTestPdf(filename)),
-    password,
+    ...params,
   });
   try {
     const pdfDocument = await loadingTask.promise;
+    if (metadata) {
+      await pdfDocument.getMetadata();
+    }
     pages ??= Array.from({ length: pdfDocument.numPages }, (_, i) => i + 1);
 
     for (const pageNumber of pages) {
