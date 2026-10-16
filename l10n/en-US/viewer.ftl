@@ -12,8 +12,9 @@ pdfjs-next-button =
 pdfjs-next-button-label = Next
 
 # .title: Tooltip for the pageNumber input.
-pdfjs-page-input =
+pdfjs-page-number-input =
     .title = Page
+    .aria-label = Page number
 
 # Variables:
 #   $pagesCount (Number) - the total number of pages in the document
@@ -31,8 +32,9 @@ pdfjs-zoom-out-button-label = Zoom Out
 pdfjs-zoom-in-button =
     .title = Zoom In
 pdfjs-zoom-in-button-label = Zoom In
-pdfjs-zoom-select =
+pdfjs-zoom-level-select =
     .title = Zoom
+    .aria-label = Zoom level
 pdfjs-presentation-mode-button =
     .title = Switch to Presentation Mode
 pdfjs-presentation-mode-button-label = Presentation Mode
