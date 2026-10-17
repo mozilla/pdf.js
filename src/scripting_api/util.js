@@ -14,9 +14,7 @@
  */
 /* eslint-disable radix */
 
-import { PDFObject } from "./pdf_object.js";
-
-class Util extends PDFObject {
+class Util {
   #createDateActionsBound = this.#createDateActions.bind(this);
 
   #createScandDataBound = this.#createScandData.bind(this);
@@ -53,13 +51,6 @@ class Util extends PDFObject {
   MILLISECONDS_IN_DAY = 86400000;
 
   MILLISECONDS_IN_WEEK = 604800000;
-
-  constructor(data) {
-    super(data);
-
-    // used with crackURL
-    this._externalCall = data.externalCall;
-  }
 
   printf(...args) {
     if (args.length === 0) {

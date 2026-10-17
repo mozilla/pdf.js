@@ -14,6 +14,7 @@
  */
 
 import {
+  exposeObject,
   FORMS_VERSION,
   USERACTIVATION_CALLBACKID,
   VIEWER_TYPE,
@@ -32,17 +33,19 @@ class App extends PDFObject {
 
     this._constants = null;
     this._focusRect = true;
-    this._fs = null;
+    this._fs = exposeObject(new FullScreen(), /* bindMethods = */ true);
     this._language = App._getLanguage(data.language);
     this._openInPlace = false;
     this._platform = App._getPlatform(data.platform);
     this._runtimeHighlight = false;
     this._runtimeHighlightColor = ["T"];
-    this._thermometer = null;
+    this._thermometer = exposeObject(
+      new Thermometer(),
+      /* bindMethods = */ true
+    );
     this._toolbar = false;
 
     this._document = data._document;
-    this._proxyHandler = data.proxyHandler;
     this._objects = Object.create(null);
     this._eventDispatcher = new EventDispatcher(
       this._document,
@@ -240,10 +243,7 @@ class App extends PDFObject {
   }
 
   get fs() {
-    return (this._fs ??= new Proxy(
-      new FullScreen({ send: this._send }),
-      this._proxyHandler
-    ));
+    return this._fs;
   }
 
   set fs(_) {
@@ -344,10 +344,7 @@ class App extends PDFObject {
   }
 
   get thermometer() {
-    return (this._thermometer ??= new Proxy(
-      new Thermometer({ send: this._send }),
-      this._proxyHandler
-    ));
+    return this._thermometer;
   }
 
   set thermometer(_) {

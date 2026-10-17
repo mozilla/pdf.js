@@ -612,6 +612,96 @@ describe("Scripting", function () {
       expect(value).toEqual([6, "$7"]);
     });
 
+    it("should let the scripting objects inherit from Object.prototype", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        Object.prototype.itself = function () { return this; };
+        const objects = [
+          app.fs,
+          app.thermometer,
+          color,
+          console,
+          util,
+          getPrintParams(),
+        ];
+        return objects.map(
+          o =>
+            o instanceof Object &&
+            o.itself() === o &&
+            o.constructor === Object &&
+            Object.getPrototypeOf(Object.getPrototypeOf(o)) === Object.prototype
+        );
+      })()`);
+      expect(value).toEqual(Array(6).fill(true));
+    });
+
+    it("should show the API functions as native ones", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const { toString } = Function.prototype;
+        const nativeSource = toString.call(Math.max);
+        return {
+          source: [
+            Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app.fs), "cursor")
+              .get,
+            toString,
+          ].map(
+            fn => toString.call(fn) === nativeSource.replace("max", fn.name)
+          ),
+          toStringHasPrototype: Object.hasOwn(toString, "prototype"),
+        };
+      })()`);
+      expect(value).toEqual({
+        source: [true, true],
+        toStringHasPrototype: false,
+      });
+    });
+
+    it("should keep the implementation names out of the global scope", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`[
+        "addPublicFunctions",
+        "AForm",
+        "App",
+        "callExternalFunction",
+        "Color",
+        "ColorConverters",
+        "Console",
+        "DOC_EXTERNAL",
+        "Doc",
+        "EventDispatcher",
+        "exposeObject",
+        "Field",
+        "FullScreen",
+        "InfoProxyHandler",
+        "initSandbox",
+        "isValidColor",
+        "MathClamp",
+        "mergeChange",
+        "pdfjsScripting",
+        "PrintParams",
+        "serializeError",
+        "Thermometer",
+        "Util",
+      ].filter(name => globalThis.eval("typeof " + name) !== "undefined")`);
+      expect(value).toEqual([]);
+    });
+
     it("should call detached app, color, console and util methods", async () => {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },

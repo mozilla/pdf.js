@@ -28,6 +28,11 @@ import {
   ZoomType,
 } from "./constants.js";
 import { CheckboxField, Field, RadioButtonField } from "./field.js";
+import {
+  exposeObject,
+  serializeError,
+  useNativeToStringForPublicFunctions,
+} from "./app_utils.js";
 import { AForm } from "./aform.js";
 import { App } from "./app.js";
 import { Color } from "./color.js";
@@ -35,7 +40,6 @@ import { Console } from "./console.js";
 import { createMap } from "./common.js";
 import { Doc } from "./doc.js";
 import { ProxyHandler } from "./proxy.js";
-import { serializeError } from "./app_utils.js";
 import { Util } from "./util.js";
 
 function initSandbox(params) {
@@ -65,11 +69,10 @@ function initSandbox(params) {
     externalCall,
     _document,
     calculationOrder: data.calculationOrder,
-    proxyHandler,
     ...data.appInfo,
   });
 
-  const util = new Util({ externalCall });
+  const util = new Util();
   const appObjects = app._objects;
 
   for (const [name, objs] of createMap(data.objects)) {
@@ -126,14 +129,17 @@ function initSandbox(params) {
     }
   }
 
-  const color = new Color();
+  const color = exposeObject(new Color(), /* bindMethods = */ true);
 
   globalThis.event = null;
   globalThis.global = Object.create(null);
   globalThis.app = new Proxy(app, proxyHandler);
-  globalThis.color = new Proxy(color, proxyHandler);
-  globalThis.console = new Proxy(new Console({ send }), proxyHandler);
-  globalThis.util = new Proxy(util, proxyHandler);
+  globalThis.color = color;
+  globalThis.console = exposeObject(
+    new Console({ send }),
+    /* bindMethods = */ true
+  );
+  globalThis.util = exposeObject(util, /* bindMethods = */ true);
   globalThis.border = Border;
   globalThis.cursor = Cursor;
   globalThis.display = Display;
@@ -152,10 +158,10 @@ function initSandbox(params) {
     Viewer_Value_Asked: true,
   };
 
-  // AF... functions
+  // Global form helpers.
   const aform = new AForm(doc, app, util, color);
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
-    if (name !== "constructor" && !name.startsWith("_")) {
+    if (name !== "constructor") {
       globalThis[name] = aform[name].bind(aform);
     }
   }
@@ -199,6 +205,8 @@ function initSandbox(params) {
     }
   }
   Object.defineProperties(globalThis, properties);
+
+  useNativeToStringForPublicFunctions();
 
   const functions = {
     dispatchEvent: app._dispatchEvent.bind(app),
