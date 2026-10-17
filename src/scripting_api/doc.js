@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { makeArr, makeMap, serializeError } from "./app_utils.js";
+import { exposeObject, makeArr, makeMap, serializeError } from "./app_utils.js";
 import { createMap } from "./common.js";
 import { PDFObject } from "./pdf_object.js";
 import { PrintParams } from "./print_params.js";
@@ -55,7 +55,6 @@ class Doc extends PDFObject {
     this._spellDictionaryOrder = [];
     this._spellLanguageOrder = [];
 
-    this._printParams = null;
     this._fields = new Map();
     this._fieldNames = [];
     this._event = null;
@@ -103,6 +102,10 @@ class Doc extends PDFObject {
     this._userActivation = false;
     this._disablePrinting = false;
     this._disableSaving = false;
+    this._printParams = exposeObject(
+      new PrintParams({ lastPage: this._numPages - 1 }),
+      /* bindMethods = */ true
+    );
   }
 
   _initActions() {
@@ -1058,9 +1061,7 @@ class Doc extends PDFObject {
   }
 
   getPrintParams() {
-    return (this._printParams ||= new PrintParams({
-      lastPage: this._numPages - 1,
-    }));
+    return this._printParams;
   }
 
   getSound() {
