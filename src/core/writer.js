@@ -57,14 +57,43 @@ async function writeStream(stream, buffer, transform) {
   let bytes = stream.getBytes();
   const { dict } = stream;
 
-  const [filter, params] = await Promise.all([
+  let [filter, params] = await Promise.all([
     dict.getAsync("Filter"),
     dict.getAsync("DecodeParms"),
   ]);
+  const filters = Array.isArray(filter)
+    ? await Promise.all(filter.map(f => dict.xref.fetchIfRefAsync(f)))
+    : [filter];
 
-  const filterZero = Array.isArray(filter)
-    ? await dict.xref.fetchIfRefAsync(filter[0])
-    : filter;
+  // /Crypt overrides the stream defaults (ISO 32000-1, 7.6.5).
+  let cryptFilterName = null;
+  const cryptFilterIndex = filters.findIndex(f => isName(f, "Crypt"));
+  if (cryptFilterIndex !== -1) {
+    if (transform) {
+      const cryptParams = Array.isArray(params)
+        ? await dict.xref.fetchIfRefAsync(params[cryptFilterIndex])
+        : params;
+      const name = cryptParams instanceof Dict ? cryptParams.get("Name") : null;
+      cryptFilterName = name instanceof Name ? name : Name.get("Identity");
+    } else {
+      // Drop /Crypt: getOriginalStream() returns decrypted bytes.
+      filters.splice(cryptFilterIndex, 1);
+      if (filters.length === 0) {
+        filter = params = undefined;
+        dict.delete("Filter");
+        dict.delete("DecodeParms");
+      } else {
+        filter = filter.toSpliced(cryptFilterIndex, 1);
+        dict.set("Filter", filter);
+        if (Array.isArray(params)) {
+          params = params.toSpliced(cryptFilterIndex, 1);
+          dict.set("DecodeParms", params);
+        }
+      }
+    }
+  }
+
+  const filterZero = filters[0];
   const isFilterZeroFlateDecode = isName(filterZero, "FlateDecode");
 
   // These filters already compress the data, so we shouldn't try to compress it
@@ -86,6 +115,8 @@ async function writeStream(stream, buffer, transform) {
 
   if (
     !isFilterZeroCompressedObject &&
+    // /Crypt must come first (ISO 32000-1, 7.4.10).
+    !cryptFilterName &&
     bytes.length >= MIN_LENGTH_FOR_COMPRESSING
   ) {
     try {
@@ -129,7 +160,7 @@ async function writeStream(stream, buffer, transform) {
 
   let string = bytesToString(bytes);
   if (transform) {
-    string = transform.encryptString(string);
+    string = transform.encryptStream(string, dict, cryptFilterName);
   }
 
   dict.set("Length", string.length);

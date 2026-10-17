@@ -8121,6 +8121,71 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("extracts pages from a document using several crypt filters", async function () {
+        // Streams use /StdCF (AESV2), strings /RC4CF (V2) and embedded files
+        // /Identity. Some streams have an explicit /Crypt filter.
+        const loadingTask = getDocument(
+          buildGetDocumentParams("crypt_filters.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const extractedData = await pdfDoc.extractPages([{ document: null }]);
+        const mergedData = await pdfDoc.extractPages([
+          { document: null },
+          {
+            document: assemblePdf([
+              "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+              "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+              "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+                "/MediaBox [0 0 100 100] >>\nendobj\n",
+            ]),
+          },
+        ]);
+        await loadingTask.destroy();
+
+        // The encryption is only kept when there is a single source document.
+        for (const [context, data, isEncrypted] of [
+          ["extract", extractedData, true],
+          ["merge", mergedData, false],
+        ]) {
+          expect(countMarker(data, "/Encrypt"))
+            .withContext(context)
+            .toEqual(isEncrypted ? 1 : 0);
+          // The explicit /Crypt filters are removed with the encryption.
+          expect(
+            countMarker(data, "/Filter /Crypt") + countMarker(data, "[/Crypt")
+          )
+            .withContext(context)
+            .toEqual(isEncrypted ? 5 : 0);
+
+          const newLoadingTask = getDocument({ data });
+          const newPdfDoc = await newLoadingTask.promise;
+          const page = await newPdfDoc.getPage(1);
+          const { items } = await page.getTextContent();
+          expect(items.map(({ str }) => str).filter(Boolean))
+            .withContext(context)
+            .toEqual([
+              "Content stream: /StmF /StdCF, AESV2",
+              "Form XObject: /Crypt /RC4CF, V2",
+              "Form XObject: /Crypt then /FlateDecode, /Identity",
+              "Form XObject: /Crypt, default /Identity",
+              "Images: /StmF /StdCF and /Crypt /RC4CF",
+            ]);
+          const fieldObjects = await newPdfDoc.getFieldObjects();
+          expect(fieldObjects.get("field")[0].value)
+            .withContext(context)
+            .toEqual("Field value: /StrF /RC4CF, V2");
+          for (const [id, content] of [
+            ["a.txt", "Embedded file: /EFF /Identity"],
+            ["b.txt", "Embedded file: /Crypt /StdCF"],
+          ]) {
+            expect(bytesToString(await newPdfDoc.getAttachmentContent(id)))
+              .withContext(`${context}: ${id}`)
+              .toEqual(content);
+          }
+          await newLoadingTask.destroy();
+        }
+      });
+
       it("clones shared indirect objects reached concurrently only once", async function () {
         const pdfData = assemblePdf([
           "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
