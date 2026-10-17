@@ -17,6 +17,7 @@ import {
   USERACTIVATION_CALLBACKID,
   USERACTIVATION_MAXTIME_VALIDITY,
 } from "./app_utils.js";
+import { DocInternals } from "./doc.js";
 
 const { values } = Object;
 
@@ -126,7 +127,7 @@ class EventDispatcher {
           // Treat opening the document as user activation.
           this.#userActivation();
           // Initialize document scripts before formatters use them (#15818).
-          this.#doc._initActions();
+          DocInternals.initActions(this.#doc);
           // Run format callbacks before OpenAction, without applying
           // event.value to the fields.
           this.#formatAll();
@@ -136,10 +137,11 @@ class EventDispatcher {
         ) {
           this.#userActivation();
         }
-        this.#doc._dispatchDocEvent(event.name);
+        DocInternals.dispatchDocEvent(this.#doc, event.name);
       } else if (id === "page") {
         this.#userActivation();
-        this.#doc._dispatchPageEvent(
+        DocInternals.dispatchPageEvent(
+          this.#doc,
           event.name,
           baseEvent.actions,
           baseEvent.pageNumber

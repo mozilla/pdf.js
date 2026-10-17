@@ -742,6 +742,7 @@ describe("Scripting", function () {
         "createEvent",
         "DOC_EXTERNAL",
         "Doc",
+        "DocInternals",
         "EventDispatcher",
         "exposeObject",
         "Field",
@@ -1032,6 +1033,20 @@ describe("Scripting", function () {
         )`
       );
       expect(value).toEqual([true, true, true, true]);
+    });
+
+    it("should only give the document info to doc.info", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: { Title: "Hello" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(
+        `[info.TITLE, typeof info.constructor, typeof info.__proto__]`
+      );
+      expect(value).toEqual(["Hello", "undefined", "undefined"]);
     });
 
     it("should get field using a path", async () => {

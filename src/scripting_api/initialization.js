@@ -29,6 +29,7 @@ import {
   ZoomType,
 } from "./constants.js";
 import { CheckboxField, Field, RadioButtonField } from "./field.js";
+import { Doc, DocInternals } from "./doc.js";
 import {
   exposeObject,
   serializeError,
@@ -38,7 +39,6 @@ import { AForm } from "./aform.js";
 import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { createMap } from "./common.js";
-import { Doc } from "./doc.js";
 import { EventDispatcher } from "./event.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
@@ -69,6 +69,7 @@ function initSandbox(params) {
     ...data.docInfo,
     send,
     globalEval,
+    appObjects,
     userActivationData,
     calculateNow: () => eventDispatcher.calculateNow(),
   });
@@ -88,6 +89,8 @@ function initSandbox(params) {
     userActivationData,
   });
   const util = new Util();
+  const getTerminalChildren = fieldName =>
+    DocInternals.getTerminalChildren(doc, fieldName);
 
   for (const [name, objs] of createMap(data.objects)) {
     const annotations = [];
@@ -108,10 +111,11 @@ function initSandbox(params) {
     }
 
     obj.globalEval = globalEval;
-    obj.doc = doc;
+    obj.sendError = send;
     obj.fieldPath = name;
     obj.appObjects = appObjects;
     obj.util = util;
+    obj.getTerminalChildren = getTerminalChildren;
 
     const otherFields = annotations.slice(1);
 
@@ -134,7 +138,7 @@ function initSandbox(params) {
 
     const wrapped = new Proxy(field, proxyHandler);
     const _object = { obj: field, wrapped };
-    doc._addField(name, _object);
+    DocInternals.addField(doc, name, _object);
     for (const object of objs) {
       appObjects[object.id] = _object;
     }
@@ -203,7 +207,7 @@ function initSandbox(params) {
   // The doc properties must live in the global scope too
   const properties = Object.create(null);
   for (const name of Object.getOwnPropertyNames(Doc.prototype)) {
-    if (name === "constructor" || name.startsWith("_")) {
+    if (name === "constructor") {
       continue;
     }
     const descriptor = Object.getOwnPropertyDescriptor(Doc.prototype, name);

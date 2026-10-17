@@ -72,7 +72,9 @@ class Field extends PDFObject {
     this._charLimit = data.charLimit;
     this._children = null;
     this._currentValueIndices = data.currentValueIndices || 0;
-    this._document = data.doc;
+    this._getTerminalChildren = data.getTerminalChildren;
+    // Fields without widgets have no send callback.
+    this._sendError = data.sendError;
     this._fieldPath = data.fieldPath;
     this._fillColor = data.fillColor || ["T"];
     this._isChoice = Array.isArray(data.items);
@@ -431,9 +433,7 @@ class Field extends PDFObject {
       return array;
     }
 
-    return (this._children ??= this._document._getTerminalChildren(
-      this._fieldPath
-    ));
+    return (this._children ??= this._getTerminalChildren(this._fieldPath));
   }
 
   getLock() {
@@ -563,8 +563,7 @@ class Field extends PDFObject {
         // Evaluate actions in the global scope.
         this._globalEval(action);
       } catch (error) {
-        // Fields without widgets have no send callback.
-        this._document._send(
+        this._sendError(
           serializeError(
             error,
             `Error when executing "${eventName}" for field "${this._id}"\n`
