@@ -13,10 +13,25 @@
  * limitations under the License.
  */
 
+import { addPublicFunctions, makeArr, serializeError } from "./app_utils.js";
 import { createMap, FieldType, getFieldType } from "./common.js";
-import { makeArr, serializeError } from "./app_utils.js";
 import { isValidColor } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
+
+// Shared accessors for the instance properties of non-terminal fields.
+let containerDescriptors = null;
+
+// Properties stored in _viewProps and sent to the view by _update.
+const VIEW_PROPERTIES = [
+  "display",
+  "editable",
+  "hidden",
+  "multipleSelection",
+  "print",
+  "readonly",
+  "required",
+  "userName",
+];
 
 class Field extends PDFObject {
   constructor(data, otherWidgets = []) {
@@ -32,29 +47,21 @@ class Field extends PDFObject {
     this.calcOrderIndex = data.calcOrderIndex;
     this.comb = data.comb;
     this.commitOnSelChange = data.commitOnSelChange;
-    this.currentValueIndices = data.currentValueIndices;
     this.defaultStyle = data.defaultStyle;
     this.defaultValue = data.defaultValue;
     this.doNotScroll = data.doNotScroll;
     this.doNotSpellCheck = data.doNotSpellCheck;
     this.delay = data.delay;
-    this.display = data.display;
     this.doc = globalThis;
-    this.editable = data.editable;
     this.exportValues = data.exportValues;
     this.fileSelect = data.fileSelect;
-    this.hidden = data.hidden;
     this.highlight = data.highlight;
     this.lineWidth = data.lineWidth;
     this.multiline = data.multiline;
-    this.multipleSelection = !!data.multipleSelection;
     this.name = data.name;
     this.password = data.password;
-    this.print = data.print;
     this.radiosInUnison = data.radiosInUnison;
-    this.readonly = data.readonly;
     this.rect = data.rect;
-    this.required = data.required;
     this.richText = data.richText;
     this.richValue = data.richValue;
     this.style = data.style;
@@ -62,7 +69,6 @@ class Field extends PDFObject {
     this.textFont = data.textFont;
     this.textSize = data.textSize;
     this.type = data.type;
-    this.userName = data.userName;
 
     // Private
     this._actions = createMap(data.actions);
@@ -94,6 +100,12 @@ class Field extends PDFObject {
 
     this._globalEval = data.globalEval;
     this._appObjects = data.appObjects;
+    // Fields without widgets still report action errors.
+    this._send = data.send || (() => {});
+    this._viewProps = Object.fromEntries(
+      VIEW_PROPERTIES.map(name => [name, data[name]])
+    );
+    this._viewProps.multipleSelection = !!data.multipleSelection;
 
     this._isCheckbox = false;
     this._radioIds = null;
@@ -121,8 +133,52 @@ class Field extends PDFObject {
       if (otherWidgets.length > 0) {
         this._otherWidgetIds = otherWidgets.map(widget => widget.id);
       }
-      // The value is set depending on the field type.
-      this.value = data.value || "";
+      this._setValue(data.value || "");
+    }
+
+    if (this._kidIds) {
+      // Forward assignments to these instance properties to descendants.
+      const names = Object.keys(this).filter(name => !name.startsWith("_"));
+      this._containerProps = Object.fromEntries(
+        names.map(name => [name, this[name]])
+      );
+      containerDescriptors ??= Field._getContainerDescriptors(names);
+      Object.defineProperties(this, containerDescriptors);
+    }
+  }
+
+  static _getContainerDescriptors(names) {
+    const descriptors = Object.create(null);
+    for (const name of names) {
+      const descriptor = {
+        get() {
+          return this._containerProps[name];
+        },
+        set(value) {
+          this._containerProps[name] = value;
+          this._setOnKids(name, value);
+        },
+        enumerable: true,
+        configurable: true,
+      };
+      addPublicFunctions(descriptor.get, descriptor.set);
+      descriptors[name] = descriptor;
+    }
+    return descriptors;
+  }
+
+  static {
+    for (const name of VIEW_PROPERTIES) {
+      Object.defineProperty(Field.prototype, name, {
+        get() {
+          return this._viewProps[name];
+        },
+        set(value) {
+          this._viewProps[name] = value;
+          this._update(name, value);
+        },
+        configurable: true,
+      });
     }
   }
 
@@ -132,11 +188,37 @@ class Field extends PDFObject {
     );
   }
 
+  _setOnKids(name, value) {
+    // Forward built-in property assignments; child setters handle recursion.
+    if (this._kidIds) {
+      for (const id of this._kidIds) {
+        const kid = this._appObjects[id];
+        if (kid) {
+          kid.obj[name] = value;
+        }
+      }
+    }
+  }
+
+  // Update the view of the current widget and of its siblings.
+  _sendToView(data) {
+    const siblings = this._siblings;
+    this._send(
+      siblings ? { id: this._id, siblings, ...data } : { id: this._id, ...data }
+    );
+  }
+
+  _update(name, value, sentValue = value) {
+    this._setOnKids(name, value);
+    this._sendToView({ [name]: sentValue });
+  }
+
   get currentValueIndices() {
     return !this._isChoice ? 0 : this._currentValueIndices;
   }
 
   set currentValueIndices(indices) {
+    this._setOnKids("currentValueIndices", indices);
     if (!this._isChoice) {
       return;
     }
@@ -151,7 +233,7 @@ class Field extends PDFObject {
 
     indices.sort((a, b) => a - b);
 
-    if (this.multipleSelection) {
+    if (this._viewProps.multipleSelection) {
       this._currentValueIndices = indices;
       this._value = indices.map(i => this._items[i].exportValue);
     } else if (indices.length > 0) {
@@ -169,6 +251,7 @@ class Field extends PDFObject {
   set fillColor(color) {
     if (isValidColor(color)) {
       this._fillColor = color;
+      this._update("fillColor", color);
     }
   }
 
@@ -189,6 +272,7 @@ class Field extends PDFObject {
       throw new Error("Invalid argument value");
     }
     this._charLimit = Math.max(0, Math.floor(limit));
+    this._update("charLimit", this._charLimit);
   }
 
   get numItems() {
@@ -209,6 +293,7 @@ class Field extends PDFObject {
   set strokeColor(color) {
     if (isValidColor(color)) {
       this._strokeColor = color;
+      this._update("strokeColor", color);
     }
   }
 
@@ -242,6 +327,7 @@ class Field extends PDFObject {
       angle += 360;
     }
     this._rotation = angle;
+    this._update("rotation", angle);
   }
 
   get textColor() {
@@ -251,6 +337,7 @@ class Field extends PDFObject {
   set textColor(color) {
     if (isValidColor(color)) {
       this._textColor = color;
+      this._update("textColor", color);
     }
   }
 
@@ -267,13 +354,19 @@ class Field extends PDFObject {
   }
 
   set value(value) {
+    if (this._setValue(value)) {
+      this._update("value", value, this._originalValue ?? this._value);
+    }
+  }
+
+  // Return false for unsupported radio-button values.
+  _setValue(value) {
     if (this._radioIds) {
-      this._setRadioValue(value);
-      return;
+      return this._setRadioValue(value);
     }
     if (this._isChoice) {
       this._setChoiceValue(value);
-      return;
+      return true;
     }
 
     if (this._hasDateOrTime && value) {
@@ -282,24 +375,25 @@ class Field extends PDFObject {
         this._originalValue = date.valueOf();
         value = this._util.printd(this._datetimeFormat, date);
         this._value = !isNaN(value) ? parseFloat(value) : value;
-        return;
+        return true;
       }
     }
 
     if (
       value === "" ||
       typeof value !== "string" ||
-      // When the field type is date or time, the value must be a string.
+      // Preserve strings for date and time fields instead of parsing numbers.
       this._fieldType >= FieldType.date
     ) {
       this._originalValue = undefined;
       this._value = value;
-      return;
+      return true;
     }
 
     this._originalValue = value;
     const _value = value.trim().replace(",", ".");
     this._value = !isNaN(_value) ? parseFloat(_value) : value;
+    return true;
   }
 
   get _initialValue() {
@@ -340,23 +434,27 @@ class Field extends PDFObject {
       (!value || value === "Off" || !this.exportValues.includes(value))
     ) {
       this._value = "Off";
-      return;
+      return true;
     }
     if (value === null || value === undefined) {
       this._value = "";
-      return;
+      return true;
     }
     const i = this.exportValues.indexOf(value);
     if (i !== -1) {
       this._check(i, value);
-    } else if (value === "Off" && this._radioIds.length === 2) {
+      return true;
+    }
+    if (value === "Off" && this._radioIds.length === 2) {
       const nextI = (1 + this._checkedIndex) % 2;
       this._check(nextI, this.exportValues[nextI]);
+      return true;
     }
+    return false;
   }
 
   _setChoiceValue(value) {
-    if (this.multipleSelection) {
+    if (this._viewProps.multipleSelection) {
       if (!Array.isArray(value)) {
         value = [value];
       }
@@ -653,10 +751,6 @@ class Field extends PDFObject {
       }
     }
     return pageActions;
-  }
-
-  _reset() {
-    this.value = this.defaultValue;
   }
 
   _runActions(event) {

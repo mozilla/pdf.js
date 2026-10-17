@@ -123,6 +123,7 @@ function useNativeToStringForPublicFunctions() {
 }
 
 export {
+  addPublicFunctions,
   exposeObject,
   FORMS_VERSION,
   makeArr,

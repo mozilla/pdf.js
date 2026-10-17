@@ -14,11 +14,6 @@
  */
 
 class ProxyHandler {
-  // Don't dispatch an event for those properties.
-  //  - delay: allow to delay field redraw until delay is set to false.
-  //    Likely it's useless to implement that stuff.
-  nosend = new Set(["delay"]);
-
   get(obj, prop) {
     // script may add some properties to the object
     if (prop in obj._expandos) {
@@ -37,31 +32,9 @@ class ProxyHandler {
   }
 
   set(obj, prop, value) {
-    // If the field is a container for other fields then dispatch the kids.
-    obj._kidIds?.forEach(id => {
-      obj._appObjects[id].wrapped[prop] = value;
-    });
-
     if (typeof prop === "string" && !prop.startsWith("_") && prop in obj) {
-      const old = obj[prop];
+      // The setters update the view and the descendant fields.
       obj[prop] = value;
-      if (
-        !this.nosend.has(prop) &&
-        obj._send &&
-        obj._id !== null &&
-        typeof old !== "function"
-      ) {
-        const data = { id: obj._id };
-        data[prop] = prop === "value" ? obj._getValue() : obj[prop];
-
-        // send the updated value to the other side
-        if (!obj._siblings) {
-          obj._send(data);
-        } else {
-          data.siblings = obj._siblings;
-          obj._send(data);
-        }
-      }
     } else {
       obj._expandos[prop] = value;
     }
