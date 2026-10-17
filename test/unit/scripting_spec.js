@@ -596,6 +596,52 @@ describe("Scripting", function () {
       });
     });
 
+    it("should expose an event with Object.prototype methods", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Focus",
+        value: "",
+      });
+
+      const value = await myeval(`({
+        constructorIsObject: event.constructor === Object,
+        hasValue: event.hasOwnProperty("value"),
+        isObject: event instanceof Object,
+        methodsAreEnumerable:
+          event.propertyIsEnumerable("hasOwnProperty") ||
+          event.propertyIsEnumerable("toString") ||
+          event.propertyIsEnumerable("valueOf"),
+        objectToString: Object.prototype.toString.call(event),
+        prototypeIsObjectPrototype:
+          Object.getPrototypeOf(Object.getPrototypeOf(event)) ===
+          Object.prototype,
+        sourceIsNative: Function.prototype.toString
+          .call(event.toString)
+          .includes("[native code]"),
+        toString: event.toString(),
+        valueOfReturnsSelf: event.valueOf() === event,
+      })`);
+      expect(value).toEqual({
+        constructorIsObject: true,
+        hasValue: true,
+        isObject: true,
+        methodsAreEnumerable: false,
+        objectToString: "[object Event]",
+        prototypeIsObjectPrototype: true,
+        sourceIsNative: true,
+        toString: "[object Event]",
+        valueOfReturnsSelf: true,
+      });
+    });
+
     it("should support custom valueOf and Number prototype methods", async () => {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
@@ -613,10 +659,18 @@ describe("Scripting", function () {
     });
 
     it("should let the scripting objects inherit from Object.prototype", async () => {
+      const refId = getId();
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
-        objects: {},
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
         calculationOrder: [],
+      });
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Focus",
+        value: "",
       });
 
       const value = await myeval(`(() => {
@@ -628,6 +682,7 @@ describe("Scripting", function () {
           console,
           util,
           getPrintParams(),
+          event,
         ];
         return objects.map(
           o =>
@@ -637,7 +692,7 @@ describe("Scripting", function () {
             Object.getPrototypeOf(Object.getPrototypeOf(o)) === Object.prototype
         );
       })()`);
-      expect(value).toEqual(Array(6).fill(true));
+      expect(value).toEqual(Array(7).fill(true));
     });
 
     it("should show the API functions as native ones", async () => {
@@ -682,6 +737,7 @@ describe("Scripting", function () {
         "Color",
         "ColorConverters",
         "Console",
+        "createEvent",
         "DOC_EXTERNAL",
         "Doc",
         "EventDispatcher",
