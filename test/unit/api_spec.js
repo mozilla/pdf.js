@@ -59,6 +59,7 @@ import { Metadata } from "../../src/display/metadata.js";
 import { PageViewport } from "../../src/display/page_viewport.js";
 import { RenderingCancelledException } from "../../src/display/display_utils.js";
 
+const RENDERER_SRC = "../../build/generic/build/pdf.renderer.mjs";
 const WORKER_SRC = "../../build/generic/build/pdf.worker.mjs";
 
 describe("api", function () {
@@ -1472,15 +1473,31 @@ describe("api", function () {
   });
 
   describe("GlobalWorkerOptions", function () {
-    let savedGlobalWorkerPort;
+    let savedGlobalWorkerPort, savedGlobalRendererPorts;
 
     beforeAll(function () {
       savedGlobalWorkerPort = GlobalWorkerOptions.workerPort;
+      savedGlobalRendererPorts = GlobalWorkerOptions.rendererPorts;
     });
 
     afterAll(function () {
       GlobalWorkerOptions.workerPort = savedGlobalWorkerPort;
+      GlobalWorkerOptions.rendererPorts = savedGlobalRendererPorts;
     });
+
+    async function renderFirstPage(pdfDoc) {
+      const page = await pdfDoc.getPage(1);
+      const viewport = page.getViewport({ scale: 0.5 });
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = page.render({ canvas: canvasAndCtx.canvas, viewport });
+      await renderTask.promise;
+      canvasFactory.destroy(canvasAndCtx);
+      return renderTask.isWorkerRendering;
+    }
 
     it("use global `workerPort` with multiple, sequential, documents", async function () {
       if (isNodeJS) {
@@ -1554,6 +1571,139 @@ describe("api", function () {
         await destroyPromise;
       }
     );
+
+    it("use global `rendererPorts` with multiple, sequential, documents", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const rendererPort = new Worker(new URL(RENDERER_SRC, window.location), {
+        type: "module",
+      });
+      GlobalWorkerOptions.rendererPorts = [rendererPort];
+
+      for (const params of [
+        basicApiGetDocumentParams,
+        tracemonkeyGetDocumentParams,
+      ]) {
+        const loadingTask = getDocument(params);
+        const pdfDoc = await loadingTask.promise;
+        expect(loadingTask._rendererWorker.port).toBe(rendererPort);
+        expect(await renderFirstPage(pdfDoc)).toBeTrue();
+        await loadingTask.destroy();
+      }
+
+      GlobalWorkerOptions.rendererPorts = [];
+      rendererPort.terminate();
+    });
+
+    it("use global `rendererPorts` with multiple, parallel, documents", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const rendererPorts = [0, 1].map(
+        () =>
+          new Worker(new URL(RENDERER_SRC, window.location), { type: "module" })
+      );
+      GlobalWorkerOptions.rendererPorts = rendererPorts;
+
+      const loadingTasks = [
+        basicApiGetDocumentParams,
+        tracemonkeyGetDocumentParams,
+        basicApiGetDocumentParams,
+      ].map(params => getDocument(params));
+      expect(loadingTasks[0]._rendererWorker.port).toBe(rendererPorts[0]);
+      expect(loadingTasks[1]._rendererWorker.port).toBe(rendererPorts[1]);
+      // Both supplied workers are busy.
+      expect(loadingTasks[2]._rendererWorker.port).toBeNull();
+
+      const pdfDocs = await Promise.all(loadingTasks.map(task => task.promise));
+      const workerRendering = await Promise.all(pdfDocs.map(renderFirstPage));
+      expect(workerRendering).toEqual([true, true, true]);
+
+      await Promise.all(loadingTasks.map(task => task.destroy()));
+      GlobalWorkerOptions.rendererPorts = [];
+      for (const rendererPort of rendererPorts) {
+        rendererPort.terminate();
+      }
+    });
+
+    it("avoid using a global `rendererPorts` worker which failed to load", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const brokenSrc = URL.createObjectURL(
+        new Blob(["throw new Error('Broken renderer');"], {
+          type: "text/javascript",
+        })
+      );
+      const brokenPort = new Worker(brokenSrc, { type: "module" });
+      // Suppress the expected startup error.
+      brokenPort.addEventListener("error", evt => evt.preventDefault());
+      GlobalWorkerOptions.rendererPorts = [brokenPort];
+
+      const loadingTask1 = getDocument(basicApiGetDocumentParams);
+      const pdfDoc1 = await loadingTask1.promise;
+      const rendererWorker1 = loadingTask1._rendererWorker;
+      await expectAsync(rendererWorker1.promise).toBeRejectedWithError(
+        /Broken renderer/
+      );
+      expect(rendererWorker1.destroyed).toBeTrue();
+      expect(await renderFirstPage(pdfDoc1)).toBeFalse();
+      await loadingTask1.destroy();
+
+      const loadingTask2 = getDocument(basicApiGetDocumentParams);
+      const pdfDoc2 = await loadingTask2.promise;
+      expect(loadingTask2._rendererWorker.port).toBeNull();
+      expect(await renderFirstPage(pdfDoc2)).toBeTrue();
+      await loadingTask2.destroy();
+
+      GlobalWorkerOptions.rendererPorts = [];
+      brokenPort.terminate();
+      URL.revokeObjectURL(brokenSrc);
+    });
+
+    it("stop waiting for a global `rendererPorts` worker which failed before being used", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const brokenSrc = URL.createObjectURL(
+        new Blob(["throw new Error('Broken renderer');"], {
+          type: "text/javascript",
+        })
+      );
+      const brokenPort = new Worker(brokenSrc, { type: "module" });
+      await new Promise(resolve => {
+        brokenPort.addEventListener("error", evt => {
+          evt.preventDefault();
+          resolve();
+        });
+      });
+      GlobalWorkerOptions.rendererPorts = [brokenPort];
+
+      jasmine.clock().install();
+      const loadingTask1 = getDocument(basicApiGetDocumentParams);
+      // Expire the connection timeout.
+      jasmine.clock().tick(60000);
+      jasmine.clock().uninstall();
+
+      const pdfDoc1 = await loadingTask1.promise;
+      const rendererWorker1 = loadingTask1._rendererWorker;
+      await expectAsync(rendererWorker1.promise).toBeRejectedWithError(
+        /Connection timed out/
+      );
+      expect(rendererWorker1.destroyed).toBeTrue();
+      expect(await renderFirstPage(pdfDoc1)).toBeFalse();
+      await loadingTask1.destroy();
+
+      const loadingTask2 = getDocument(basicApiGetDocumentParams);
+      await loadingTask2.promise;
+      expect(loadingTask2._rendererWorker.port).toBeNull();
+      await loadingTask2.destroy();
+
+      GlobalWorkerOptions.rendererPorts = [];
+      brokenPort.terminate();
+      URL.revokeObjectURL(brokenSrc);
+    });
   });
 
   describe("PDFDocument", function () {

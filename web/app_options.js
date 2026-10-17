@@ -656,6 +656,18 @@ const defaultOptions = new Map([
       kind: OptionKind.VIEWER,
     },
   ],
+  ...(typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+    ? [
+        [
+          "rendererWorkerCount",
+          {
+            /** @type {number} */
+            value: 1,
+            kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+          },
+        ],
+      ]
+    : []),
   ...(typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
     ? [
         [
@@ -921,6 +933,17 @@ const defaultOptions = new Map([
   // End OptionKind.API
 
   // Begin OptionKind.WORKER
+  [
+    "rendererPorts",
+    {
+      /** @type {Array<Worker>} */
+      value:
+        typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+          ? globalThis.pdfjsPreloadedRendererWorkers || []
+          : [],
+      kind: OptionKind.WORKER,
+    },
+  ],
   [
     "rendererSrc",
     {

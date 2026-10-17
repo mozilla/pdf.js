@@ -210,11 +210,10 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {object} [pagesMapper] - The pages mapper that will be used to map
  *   page ids and page numbers. It's used when the page order is changed or some
  *   pages are removed, cloned, etc.
- * @property {boolean} [disableWorkerRendering] - Disables rendering of pages in
- *   a worker-thread. Note that worker rendering also requires
- *   `GlobalWorkerOptions.rendererSrc` to be set; when it's unset, or the
- *   renderer worker fails to start, rendering falls back to the main-thread.
- *   The default value is `false`.
+ * @property {boolean} [disableWorkerRendering] - Disables worker rendering.
+ *   Worker rendering requires `GlobalWorkerOptions.rendererSrc` or a nonempty
+ *   `GlobalWorkerOptions.rendererPorts` array. If unavailable or initialization
+ *   fails, pages render on the main thread. The default is `false`.
  */
 
 /**
@@ -360,10 +359,11 @@ function getDocument(src = {}) {
     task._worker = worker;
   }
   if (!disableWorkerRendering) {
-    const rendererWorker = new RendererWorker({
+    const rendererWorker = RendererWorker.create({
       verbosity,
       enableHWA,
       enableWebGPU,
+      ports: GlobalWorkerOptions.rendererPorts,
     });
     // Document loading does not wait for renderer startup.
     rendererWorker.promise.catch(reason => {
@@ -602,14 +602,15 @@ class PDFDocumentLoadingTask {
         delete this._worker._pendingDestroy;
       }
       throw ex;
+    } finally {
+      // Release supplied workers even if transport destruction fails.
+      this._rendererWorker?.destroy();
+      this._rendererWorker = null;
     }
     this._transport = null;
 
     this._worker?.destroy();
     this._worker = null;
-
-    this._rendererWorker?.destroy();
-    this._rendererWorker = null;
   }
 
   /**
