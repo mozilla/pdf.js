@@ -522,23 +522,28 @@ class PSStackBasedInterpreter {
   // Safe: JS is single-threaded.
   static #stack = new Float64Array(100);
 
+  // Boolean flags for `not`, `eq`, and `ne`.
+  static #isBool = new Uint8Array(100);
+
   static #sp = 0;
 
-  static #push(v) {
+  static #push(v, isBool = 0) {
     if (this.#sp < this.#stack.length) {
+      this.#isBool[this.#sp] = isBool;
       this.#stack[this.#sp++] = v;
     }
   }
 
   static #execOp(op) {
     const stack = this.#stack;
+    const isBool = this.#isBool;
     switch (op) {
       case TOKEN.true:
-        this.#push(1);
-        break;
+        this.#push(1, 1);
+        return;
       case TOKEN.false:
-        this.#push(0);
-        break;
+        this.#push(0, 1);
+        return;
       case TOKEN.abs:
         stack[this.#sp - 1] = Math.abs(stack[this.#sp - 1]);
         break;
@@ -583,8 +588,8 @@ class PSStackBasedInterpreter {
         break; // values are already f64
       case TOKEN.not: {
         const v = stack[this.#sp - 1];
-        stack[this.#sp - 1] = v === 0 || v === 1 ? 1 - v : ~(v | 0);
-        break;
+        stack[this.#sp - 1] = isBool[this.#sp - 1] ? 1 - v : ~(v | 0);
+        return;
       }
       case TOKEN.add: {
         const b = stack[--this.#sp];
@@ -630,48 +635,64 @@ class PSStackBasedInterpreter {
       }
       case TOKEN.eq: {
         const b = stack[--this.#sp];
-        stack[this.#sp - 1] = stack[this.#sp - 1] === b ? 1 : 0;
-        break;
+        // A boolean is never equal to a number.
+        stack[this.#sp - 1] =
+          stack[this.#sp - 1] === b && isBool[this.#sp - 1] === isBool[this.#sp]
+            ? 1
+            : 0;
+        isBool[this.#sp - 1] = 1;
+        return;
       }
       case TOKEN.ne: {
         const b = stack[--this.#sp];
-        stack[this.#sp - 1] = stack[this.#sp - 1] !== b ? 1 : 0;
-        break;
+        stack[this.#sp - 1] =
+          stack[this.#sp - 1] !== b || isBool[this.#sp - 1] !== isBool[this.#sp]
+            ? 1
+            : 0;
+        isBool[this.#sp - 1] = 1;
+        return;
       }
       case TOKEN.gt: {
         const b = stack[--this.#sp];
         stack[this.#sp - 1] = stack[this.#sp - 1] > b ? 1 : 0;
-        break;
+        isBool[this.#sp - 1] = 1;
+        return;
       }
       case TOKEN.ge: {
         const b = stack[--this.#sp];
         stack[this.#sp - 1] = stack[this.#sp - 1] >= b ? 1 : 0;
-        break;
+        isBool[this.#sp - 1] = 1;
+        return;
       }
       case TOKEN.lt: {
         const b = stack[--this.#sp];
         stack[this.#sp - 1] = stack[this.#sp - 1] < b ? 1 : 0;
-        break;
+        isBool[this.#sp - 1] = 1;
+        return;
       }
       case TOKEN.le: {
         const b = stack[--this.#sp];
         stack[this.#sp - 1] = stack[this.#sp - 1] <= b ? 1 : 0;
-        break;
+        isBool[this.#sp - 1] = 1;
+        return;
       }
       case TOKEN.and: {
         const b = stack[--this.#sp] | 0;
         stack[this.#sp - 1] = (stack[this.#sp - 1] | 0) & b;
-        break;
+        isBool[this.#sp - 1] &= isBool[this.#sp];
+        return;
       }
       case TOKEN.or: {
         const b = stack[--this.#sp] | 0;
         stack[this.#sp - 1] = stack[this.#sp - 1] | 0 | b;
-        break;
+        isBool[this.#sp - 1] &= isBool[this.#sp];
+        return;
       }
       case TOKEN.xor: {
         const b = stack[--this.#sp] | 0;
         stack[this.#sp - 1] = (stack[this.#sp - 1] | 0) ^ b;
-        break;
+        isBool[this.#sp - 1] &= isBool[this.#sp];
+        return;
       }
       case TOKEN.bitshift: {
         const amt = stack[--this.#sp] | 0;
@@ -690,30 +711,32 @@ class PSStackBasedInterpreter {
         break;
       }
       case TOKEN.dup:
-        this.#push(stack[this.#sp - 1]);
-        break;
+        this.#push(stack[this.#sp - 1], isBool[this.#sp - 1]);
+        return;
       case TOKEN.exch: {
         const a = stack[--this.#sp];
+        const aIsBool = isBool[this.#sp];
         const b = stack[--this.#sp];
-        this.#push(a);
-        this.#push(b);
-        break;
+        const bIsBool = isBool[this.#sp];
+        this.#push(a, aIsBool);
+        this.#push(b, bIsBool);
+        return;
       }
       case TOKEN.pop:
         this.#sp--;
-        break;
+        return;
       case TOKEN.copy: {
         const n = Math.trunc(stack[--this.#sp]);
         const base = this.#sp - n;
         for (let k = 0; k < n; k++) {
-          this.#push(stack[base + k]);
+          this.#push(stack[base + k], isBool[base + k]);
         }
-        break;
+        return;
       }
       case TOKEN.index: {
         const i = Math.trunc(stack[--this.#sp]);
-        this.#push(stack[this.#sp - 1 - i]);
-        break;
+        this.#push(stack[this.#sp - 1 - i], isBool[this.#sp - 1 - i]);
+        return;
       }
       case TOKEN.roll: {
         // Rotate top n elements by j positions toward the top.
@@ -724,14 +747,18 @@ class PSStackBasedInterpreter {
           if (mod !== 0) {
             const base = this.#sp - n;
             const sub = stack.slice(base, this.#sp);
+            const subIsBool = isBool.slice(base, this.#sp);
             for (let k = 0; k < n; k++) {
               stack[base + k] = sub[(k - mod + n) % n];
+              isBool[base + k] = subIsBool[(k - mod + n) % n];
             }
           }
         }
-        break;
+        return;
       }
     }
+    // Clear the flag for numeric results.
+    isBool[this.#sp - 1] = 0;
   }
 
   static #execBlock(instructions) {

@@ -16,8 +16,7 @@
 import { FormatError, warn } from "../../shared/util.js";
 import { Lexer, TOKEN } from "./lexer.js";
 
-// Value types for tree nodes — used to select the correct code-generation
-// path for type-sensitive operators (currently `not`).
+// Value types used by `not`, `eq`, and `ne`.
 const PS_VALUE_TYPE = {
   numeric: 0, // known to be a number (f64 in Wasm)
   boolean: 1, // known to be a boolean (0.0 = false, 1.0 = true in f64)
@@ -1020,6 +1019,19 @@ class PSStackToTree {
         case TOKEN.gt:
         case TOKEN.lt:
           return new PsConstNode(false);
+      }
+    }
+
+    // A boolean is never equal to a number.
+    if (op === TOKEN.eq || op === TOKEN.ne) {
+      if (
+        first.valueType === PS_VALUE_TYPE.unknown ||
+        second.valueType === PS_VALUE_TYPE.unknown
+      ) {
+        // Compare types in the interpreter.
+        this._failed = true;
+      } else if (first.valueType !== second.valueType) {
+        return new PsConstNode(op === TOKEN.ne);
       }
     }
 
