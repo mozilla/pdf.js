@@ -61,18 +61,23 @@ function mergeChange(event) {
 }
 
 class EventDispatcher {
-  constructor(document, calculationOrder, objects, externalCall) {
-    this._document = document;
+  constructor(
+    doc,
+    calculationOrder,
+    objects,
+    externalCall,
+    userActivationData
+  ) {
+    this._doc = doc;
     this._calculationOrder = calculationOrder;
     this._objects = objects;
     this._externalCall = externalCall;
-
-    this._document.obj._eventDispatcher = this;
+    this._userActivationData = userActivationData;
     this._isCalculating = false;
   }
 
   userActivation() {
-    this._document.obj._userActivation = true;
+    this._userActivationData.userActivation = true;
     this._externalCall("setTimeout", [
       USERACTIVATION_CALLBACKID,
       USERACTIVATION_MAXTIME_VALIDITY,
@@ -94,7 +99,7 @@ class EventDispatcher {
       let event;
       if (id === "doc" || id === "page") {
         event = globalThis.event = new Event(baseEvent);
-        event.source = event.target = this._document.wrapped;
+        event.source = event.target = globalThis;
         event.name = baseEvent.name;
       }
       if (id === "doc") {
@@ -106,7 +111,7 @@ class EventDispatcher {
           // Initialize named actions before calling formatAll to avoid any
           // errors in the case where a formatter is using one of those named
           // actions (see #15818).
-          this._document.obj._initActions();
+          this._doc._initActions();
           // Before running the Open event, we run the format callbacks but
           // without changing the value of the fields.
           // Acrobat does the same thing.
@@ -117,10 +122,10 @@ class EventDispatcher {
         ) {
           this.userActivation();
         }
-        this._document.obj._dispatchDocEvent(event.name);
+        this._doc._dispatchDocEvent(event.name);
       } else if (id === "page") {
         this.userActivation();
-        this._document.obj._dispatchPageEvent(
+        this._doc._dispatchPageEvent(
           event.name,
           baseEvent.actions,
           baseEvent.pageNumber
@@ -292,13 +297,13 @@ class EventDispatcher {
     // This function can be called by a JS script (doc.calculateNow()).
     // If !this._calculationOrder then there is nothing to calculate.
     // _isCalculating is here to prevent infinite recursion with calculateNow.
-    // If !this._document.obj.calculate then the script doesn't want to have
+    // If !this._doc.calculate then the script doesn't want to have
     // a calculate.
 
     if (
       !this._calculationOrder ||
       this._isCalculating ||
-      !this._document.obj.calculate
+      !this._doc.calculate
     ) {
       return;
     }
@@ -319,7 +324,7 @@ class EventDispatcher {
     // is triggered (in this case we cannot be currently calculating).
     // So there are no need to check for _isCalculating because it has
     // been already done in calculateNow.
-    if (!this._calculationOrder || !this._document.obj.calculate) {
+    if (!this._calculationOrder || !this._doc.calculate) {
       return;
     }
 
@@ -328,7 +333,7 @@ class EventDispatcher {
         continue;
       }
 
-      if (!this._document.obj.calculate) {
+      if (!this._doc.calculate) {
         // An action could have changed calculate value.
         break;
       }
