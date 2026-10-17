@@ -21,7 +21,6 @@ import {
   VIEWER_VARIATION,
   VIEWER_VERSION,
 } from "./app_utils.js";
-import { EventDispatcher } from "./event.js";
 import { FullScreen } from "./fullscreen.js";
 import { isValidColor } from "./color.js";
 import { PDFObject } from "./pdf_object.js";
@@ -45,14 +44,8 @@ class App extends PDFObject {
     );
     this._toolbar = false;
 
-    this._document = data._document;
-    this._objects = Object.create(null);
-    this._eventDispatcher = new EventDispatcher(
-      this._document,
-      data.calculationOrder,
-      this._objects,
-      data.externalCall
-    );
+    this._doc = data.doc;
+    this._userActivationData = data.userActivationData;
 
     this._timeoutIds = new WeakMap();
     // About setTimeOut/setInterval return values (specs):
@@ -70,12 +63,6 @@ class App extends PDFObject {
     this._externalCall = data.externalCall;
   }
 
-  // This function is called thanks to the proxy
-  // when we call app['random_string'] to dispatch the event.
-  _dispatchEvent(pdfEvent) {
-    this._eventDispatcher.dispatch(pdfEvent);
-  }
-
   _registerTimeoutCallback(cExpr) {
     const id = this._timeoutCallbackId++;
     this._timeoutCallbackIds.set(id, cExpr);
@@ -87,10 +74,9 @@ class App extends PDFObject {
   }
 
   _evalCallback({ callbackId, interval }) {
-    const documentObj = this._document.obj;
     if (callbackId === USERACTIVATION_CALLBACKID) {
       // Special callback id for userActivation stuff.
-      documentObj._userActivation = false;
+      this._userActivationData.userActivation = false;
       return;
     }
     const expr = this._timeoutCallbackIds.get(callbackId);
@@ -99,12 +85,12 @@ class App extends PDFObject {
     }
 
     if (expr) {
-      const saveUserActivation = documentObj._userActivation;
+      const saveUserActivation = this._userActivationData.userActivation;
       // A setTimeout/setInterval callback is executed so it can't be a user
       // choice.
-      documentObj._userActivation = false;
+      this._userActivationData.userActivation = false;
       this._globalEval(expr);
-      documentObj._userActivation = saveUserActivation;
+      this._userActivationData.userActivation = saveUserActivation;
     }
   }
 
@@ -186,7 +172,7 @@ class App extends PDFObject {
   }
 
   get activeDocs() {
-    return [this._document.wrapped];
+    return [globalThis];
   }
 
   set activeDocs(_) {
@@ -194,11 +180,11 @@ class App extends PDFObject {
   }
 
   get calculate() {
-    return this._document.obj.calculate;
+    return this._doc.calculate;
   }
 
   set calculate(calculate) {
-    this._document.obj.calculate = calculate;
+    this._doc.calculate = calculate;
   }
 
   get constants() {
@@ -422,10 +408,10 @@ class App extends PDFObject {
     oDoc = null,
     oCheckbox = null
   ) {
-    if (!this._document.obj._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return 0;
     }
-    this._document.obj._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (cMsg && typeof cMsg === "object") {
       nType = cMsg.nType;
@@ -476,14 +462,14 @@ class App extends PDFObject {
   }
 
   execMenuItem(item) {
-    if (!this._document.obj._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return;
     }
-    this._document.obj._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     switch (item) {
       case "SaveAs":
-        if (this._document.obj._disableSaving) {
+        if (this._userActivationData.disableSaving) {
           return;
         }
         this._send({ command: item });
@@ -500,7 +486,7 @@ class App extends PDFObject {
         this._send({ command: "zoom", value: "page-fit" });
         break;
       case "Print":
-        if (this._document.obj._disablePrinting) {
+        if (this._userActivationData.disablePrinting) {
           return;
         }
         this._send({ command: "print" });
@@ -589,10 +575,10 @@ class App extends PDFObject {
   }
 
   response(cQuestion, cTitle = "", cDefault = "", bPassword = "", cLabel = "") {
-    if (!this._document.obj._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return null;
     }
-    this._document.obj._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (cQuestion && typeof cQuestion === "object") {
       cDefault = cQuestion.cDefault;

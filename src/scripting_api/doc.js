@@ -39,10 +39,6 @@ class Doc extends PDFObject {
   constructor(data) {
     super(data);
 
-    // In a script doc === this.
-    // So adding a property to the doc means adding it to this
-    this._expandos = globalThis;
-
     this._baseURL = data.baseURL || "";
     this._calculate = true;
     this._delay = false;
@@ -99,9 +95,8 @@ class Doc extends PDFObject {
     this._zoom = data.zoom || 100;
     this._actions = createMap(data.actions);
     this._globalEval = data.globalEval;
-    this._userActivation = false;
-    this._disablePrinting = false;
-    this._disableSaving = false;
+    this._userActivationData = data.userActivationData;
+    this._calculateNow = data.calculateNow;
     this._printParams = exposeObject(
       new PrintParams({ lastPage: this._numPages - 1 }),
       /* bindMethods = */ true
@@ -136,36 +131,36 @@ class Doc extends PDFObject {
     // A pdf can contain an action /FooBar which will trigger a save
     // even if there are no WillSave/DidSave (which are themselves triggered
     // after a save).
-    this._disableSaving = true;
+    this._userActivationData.disableSaving = true;
     for (const actionName of this._actions.keys()) {
       if (!dontRun.has(actionName)) {
         this._runActions(actionName);
       }
     }
-    this._disableSaving = false;
+    this._userActivationData.disableSaving = false;
   }
 
   _dispatchDocEvent(name) {
     switch (name) {
       case "Open":
-        this._disableSaving = true;
+        this._userActivationData.disableSaving = true;
         this._runActions("OpenAction");
-        this._disableSaving = false;
+        this._userActivationData.disableSaving = false;
         break;
       case "WillPrint":
-        this._disablePrinting = true;
+        this._userActivationData.disablePrinting = true;
         try {
           this._runActions(name);
         } catch (error) {
           this._send(serializeError(error));
         }
         this._send({ command: "WillPrintFinished" });
-        this._disablePrinting = false;
+        this._userActivationData.disablePrinting = false;
         break;
       case "WillSave":
-        this._disableSaving = true;
+        this._userActivationData.disableSaving = true;
         this._runActions(name);
-        this._disableSaving = false;
+        this._userActivationData.disableSaving = false;
         break;
       default:
         this._runActions(name);
@@ -433,10 +428,10 @@ class Doc extends PDFObject {
   }
 
   set layout(value) {
-    if (!this._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (typeof value !== "string") {
       return;
@@ -557,10 +552,10 @@ class Doc extends PDFObject {
   }
 
   set pageNum(value) {
-    if (!this._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (typeof value !== "number" || value < 0 || value >= this._numPages) {
       return;
@@ -710,10 +705,10 @@ class Doc extends PDFObject {
   }
 
   set zoomType(type) {
-    if (!this._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (typeof type !== "string") {
       return;
@@ -749,10 +744,10 @@ class Doc extends PDFObject {
   }
 
   set zoom(value) {
-    if (!this._userActivation) {
+    if (!this._userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (typeof value !== "number" || value < 8.33 || value > 6400) {
       return;
@@ -810,7 +805,7 @@ class Doc extends PDFObject {
   }
 
   calculateNow() {
-    this._eventDispatcher.calculateNow();
+    this._calculateNow();
   }
 
   closeDoc() {
@@ -1143,10 +1138,13 @@ class Doc extends PDFObject {
     bAnnotations = true,
     printParams = null
   ) {
-    if (this._disablePrinting || !this._userActivation) {
+    if (
+      this._userActivationData.disablePrinting ||
+      !this._userActivationData.userActivation
+    ) {
       return;
     }
-    this._userActivation = false;
+    this._userActivationData.userActivation = false;
 
     if (bUI && typeof bUI === "object") {
       nStart = bUI.nStart;

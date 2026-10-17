@@ -39,15 +39,14 @@ import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { createMap } from "./common.js";
 import { Doc } from "./doc.js";
+import { EventDispatcher } from "./event.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
 
 function initSandbox(params) {
   delete globalThis.pdfjsScripting;
 
-  // externalCall is a function to call a function defined
-  // outside the sandbox.
-  // (see src/pdf.sandbox.external.js).
+  // Host callbacks are defined in src/pdf.sandbox.external.js.
   const externalCall = globalThis.callExternalFunction;
   delete globalThis.callExternalFunction;
 
@@ -57,23 +56,38 @@ function initSandbox(params) {
   const send = data => externalCall("send", [data]);
   const proxyHandler = new ProxyHandler();
   const { data } = params;
+  // Map widget and container IDs to fields.
+  const appObjects = Object.create(null);
+  const userActivationData = {
+    userActivation: false,
+    disablePrinting: false,
+    disableSaving: false,
+  };
+
+  let eventDispatcher = null;
   const doc = new Doc({
+    ...data.docInfo,
     send,
     globalEval,
-    ...data.docInfo,
+    userActivationData,
+    calculateNow: () => eventDispatcher.calculateNow(),
   });
-  const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
+  eventDispatcher = new EventDispatcher(
+    doc,
+    data.calculationOrder,
+    appObjects,
+    externalCall,
+    userActivationData
+  );
   const app = new App({
+    ...data.appInfo,
     send,
     globalEval,
     externalCall,
-    _document,
-    calculationOrder: data.calculationOrder,
-    ...data.appInfo,
+    doc,
+    userActivationData,
   });
-
   const util = new Util();
-  const appObjects = app._objects;
 
   for (const [name, objs] of createMap(data.objects)) {
     const annotations = [];
@@ -94,7 +108,7 @@ function initSandbox(params) {
     }
 
     obj.globalEval = globalEval;
-    obj.doc = _document;
+    obj.doc = doc;
     obj.fieldPath = name;
     obj.appObjects = appObjects;
     obj.util = util;
@@ -209,7 +223,7 @@ function initSandbox(params) {
   useNativeToStringForPublicFunctions();
 
   const functions = {
-    dispatchEvent: app._dispatchEvent.bind(app),
+    dispatchEvent: event => eventDispatcher.dispatch(event),
     timeoutCb: app._evalCallback.bind(app),
   };
 

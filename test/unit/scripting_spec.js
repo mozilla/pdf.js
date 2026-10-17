@@ -913,6 +913,30 @@ describe("Scripting", function () {
       expect(value).toEqual(123456);
     });
 
+    it("should give the global object as the doc to the scripts", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: {
+          actions: {
+            WillClose: ["globalThis.eventDocs = [event.source, event.target];"],
+          },
+        },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "WillClose" });
+
+      const value = await myeval(
+        `[...eventDocs, getField("field").doc, app.activeDocs[0]].map(
+          doc => doc === this
+        )`
+      );
+      expect(value).toEqual([true, true, true, true]);
+    });
+
     it("should get field using a path", async () => {
       const base = value => ({
         id: getId(),

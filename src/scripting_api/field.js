@@ -39,7 +39,7 @@ class Field extends PDFObject {
     this.doNotSpellCheck = data.doNotSpellCheck;
     this.delay = data.delay;
     this.display = data.display;
-    this.doc = data.doc.wrapped;
+    this.doc = globalThis;
     this.editable = data.editable;
     this.exportValues = data.exportValues;
     this.fileSelect = data.fileSelect;
@@ -431,7 +431,7 @@ class Field extends PDFObject {
       return array;
     }
 
-    return (this._children ??= this._document.obj._getTerminalChildren(
+    return (this._children ??= this._document._getTerminalChildren(
       this._fieldPath
     ));
   }
@@ -564,7 +564,7 @@ class Field extends PDFObject {
         this._globalEval(action);
       } catch (error) {
         // Fields without widgets have no send callback.
-        this._document.obj._send(
+        this._document._send(
           serializeError(
             error,
             `Error when executing "${eventName}" for field "${this._id}"\n`
