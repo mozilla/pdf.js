@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { App, AppInternals } from "./app.js";
 import {
   Border,
   Cursor,
@@ -34,7 +35,6 @@ import {
   useNativeToStringForPublicFunctions,
 } from "./app_utils.js";
 import { AForm } from "./aform.js";
-import { App } from "./app.js";
 import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { createMap } from "./common.js";
@@ -147,7 +147,7 @@ function initSandbox(params) {
 
   globalThis.event = null;
   globalThis.global = Object.create(null);
-  globalThis.app = new Proxy(app, proxyHandler);
+  globalThis.app = exposeObject(app, /* bindMethods = */ true);
   globalThis.color = color;
   globalThis.console = exposeObject(
     new Console({ send }),
@@ -224,7 +224,7 @@ function initSandbox(params) {
 
   const functions = {
     dispatchEvent: event => eventDispatcher.dispatch(event),
-    timeoutCb: app._evalCallback.bind(app),
+    timeoutCb: timeout => AppInternals.evalCallback(app, timeout),
   };
 
   return (name, args) => {

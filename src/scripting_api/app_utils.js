@@ -128,6 +128,7 @@ export {
   makeArr,
   makeMap,
   serializeError,
+  uncurryThis,
   useNativeToStringForPublicFunctions,
   USERACTIVATION_CALLBACKID,
   USERACTIVATION_MAXTIME_VALIDITY,

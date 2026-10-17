@@ -676,6 +676,7 @@ describe("Scripting", function () {
       const value = await myeval(`(() => {
         Object.prototype.itself = function () { return this; };
         const objects = [
+          app,
           app.fs,
           app.thermometer,
           color,
@@ -692,7 +693,7 @@ describe("Scripting", function () {
             Object.getPrototypeOf(Object.getPrototypeOf(o)) === Object.prototype
         );
       })()`);
-      expect(value).toEqual(Array(7).fill(true));
+      expect(value).toEqual(Array(8).fill(true));
     });
 
     it("should show the API functions as native ones", async () => {
@@ -707,7 +708,7 @@ describe("Scripting", function () {
         const nativeSource = toString.call(Math.max);
         return {
           source: [
-            Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app.fs), "cursor")
+            Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app), "language")
               .get,
             toString,
           ].map(
@@ -733,6 +734,7 @@ describe("Scripting", function () {
         "addPublicFunctions",
         "AForm",
         "App",
+        "AppInternals",
         "callExternalFunction",
         "Color",
         "ColorConverters",
@@ -756,6 +758,49 @@ describe("Scripting", function () {
         "Util",
       ].filter(name => globalThis.eval("typeof " + name) !== "undefined")`);
       expect(value).toEqual([]);
+    });
+
+    it("should keep the timers working when a script redefines the collection methods", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      // The redefined methods are kept until the sandbox is recreated.
+      const value = await myeval(`(() => {
+        const prototypes = [
+          [Map.prototype, ["delete", "get", "set"]],
+          [WeakMap.prototype, ["delete", "get", "set"]],
+          [FinalizationRegistry.prototype, ["register", "unregister"]],
+        ];
+        for (const [proto, names] of prototypes) {
+          for (const name of names) {
+            proto[name] = () => {
+              throw new Error("Redefined");
+            };
+          }
+        }
+        try {
+          app.clearTimeOut(app.setTimeOut("0", 100000));
+          app.clearInterval(app.setInterval("0", 100000));
+          // Keep the handle alive to prevent cancellation by GC.
+          globalThis.kept = app.setTimeOut("globalThis.fired = true;", 0);
+          return true;
+        } catch {
+          return false;
+        }
+      })()`);
+      expect(value).toBeTrue();
+
+      let fired;
+      for (let i = 0; i < 100 && !fired; i++) {
+        await new Promise(resolve => {
+          setTimeout(resolve, 10);
+        });
+        fired = await myeval(`globalThis.fired`);
+      }
+      expect(fired).toBeTrue();
     });
 
     it("should call detached app, color, console and util methods", async () => {
