@@ -21,6 +21,7 @@ import {
 } from "../../src/core/writer.js";
 import { bytesToString } from "../../src/shared/util.js";
 import { StringStream } from "../../src/core/stream.js";
+import { XRefMock } from "./test_utils.js";
 
 describe("Writer", function () {
   beforeAll(function () {
@@ -194,6 +195,71 @@ describe("Writer", function () {
       const expected = "<< /#feA#23 /hello /B /#23hello /C /he#fello#ff>>";
 
       expect(buffer.join("")).toEqual(expected);
+    });
+
+    it("should encrypt a stream with its Crypt filter", async function () {
+      const string = "a".repeat(300);
+      const encryptStream = jasmine
+        .createSpy("encryptStream")
+        .and.callFake(s => s.toUpperCase());
+      const transform = { encryptString: s => s, encryptStream };
+
+      for (const cryptFilterName of [null, "StdCF"]) {
+        const context = cryptFilterName ?? "default";
+        const stream = new StringStream(string, new Dict());
+        stream.dict.set("Filter", Name.get("Crypt"));
+        let expectedParams = "";
+        if (cryptFilterName) {
+          const params = new Dict();
+          params.set("Name", Name.get(cryptFilterName));
+          stream.dict.set("DecodeParms", params);
+          expectedParams = ` /DecodeParms << /Name /${cryptFilterName}>>`;
+        }
+
+        const buffer = [];
+        await writeValue(stream, buffer, transform);
+
+        // /Crypt must stay first, even for long streams.
+        expect(buffer.join(""))
+          .withContext(context)
+          .toEqual(
+            `<< /Filter /Crypt${expectedParams} /Length 300>> stream\n` +
+              `${string.toUpperCase()}\nendstream`
+          );
+        // /Name defaults to /Identity (ISO 32000-1, Table 14).
+        expect(encryptStream.calls.mostRecent().args[2])
+          .withContext(context)
+          .toEqual(Name.get(cryptFilterName ?? "Identity"));
+      }
+    });
+
+    it("should remove a Crypt filter when the stream isn't encrypted", async function () {
+      const string = "616263>";
+      const cryptParams = new Dict();
+      cryptParams.set("Name", Name.get("Identity"));
+
+      for (const [context, filter, params, expectedFilter] of [
+        ["single filter", Name.get("Crypt"), cryptParams, ""],
+        [
+          "array of filters",
+          [Name.get("Crypt"), Name.get("ASCIIHexDecode")],
+          [cryptParams, null],
+          " /Filter [/ASCIIHexDecode] /DecodeParms [null]",
+        ],
+      ]) {
+        const stream = new StringStream(string, new Dict(new XRefMock()));
+        stream.dict.set("Filter", filter);
+        stream.dict.set("DecodeParms", params);
+
+        const buffer = [];
+        await writeValue(stream, buffer, null);
+
+        expect(buffer.join(""))
+          .withContext(context)
+          .toEqual(
+            `<<${expectedFilter} /Length 7>> stream\n${string}\nendstream`
+          );
+      }
     });
   });
 
