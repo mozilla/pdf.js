@@ -196,6 +196,15 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
         "PostScript function: a procedure block must be followed by 'if' or '{…} ifelse'."
       );
     });
+
+    it("throws when procedures are nested too deeply", function () {
+      const nested = n => `{ ${"true { ".repeat(n)}${"} if ".repeat(n)}}`;
+      expect(() => parsePostScriptFunction(nested(1000))).not.toThrow();
+      expect(() => parsePostScriptFunction(nested(1001))).toThrowError(
+        FormatError,
+        "PostScript function: procedures are nested too deeply."
+      );
+    });
   });
 
   // Wasm compiler.
@@ -1412,6 +1421,48 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       // would take exponential work without a limit.
       const square = "dup mul ".repeat(40);
       expect(toTree(`{ dup ${square} exch ${square} sub }`, 1)).toBeNull();
+    });
+
+    it("gives up on too deep expressions", function () {
+      // Reject deep outputs and operands before recursive tree traversal.
+      const chain = "sin ".repeat(12000);
+      const src = `{ ${chain} }`;
+      expect(toTree(src, 1)).toBeNull();
+      expect(buildPostScriptWasmFunction(src, [0, 1], [-1, 1])).toBeNull();
+
+      const cmpSrc = `{ dup ${chain} exch ${chain} sub }`;
+      expect(toTree(cmpSrc, 1)).toBeNull();
+      expect(buildPostScriptWasmFunction(cmpSrc, [0, 1], [-1, 1])).toBeNull();
+
+      const fn = buildPostScriptJsFunction(cmpSrc, [0, 1], [-1, 1]);
+      const dest = new Float64Array(1);
+      fn(new Float64Array([0.5]), 0, dest, 0);
+      expect(dest[0]).toEqual(0);
+    });
+
+    it("handles combined procedure, fork and expression depths", function () {
+      const dest = new Float64Array(1);
+
+      // Approach all three depth limits in the same evaluation.
+      const chain = "sin ".repeat(499);
+      const src =
+        `{ ${"true { ".repeat(999)}${"dup { dup } if pop ".repeat(999)}` +
+        `dup dup ${chain} exch ${chain} sub pop ${"} if ".repeat(999)}}`;
+      expect(toTree(src, 1)).toBeNull();
+      const fn = buildPostScriptJsFunction(src, [0, 1], [0, 1]);
+      fn(new Float64Array([0.5]), 0, dest, 0);
+      expect(dest[0]).toEqual(0.5);
+
+      // Nested `ifelse` blocks exceed the expression depth limit.
+      const ifElseSrc =
+        `{ ${"dup 0.5 lt { 1 } { ".repeat(1000)}0` +
+        `${" } ifelse".repeat(1000)} exch pop }`;
+      expect(toTree(ifElseSrc, 1)).toBeNull();
+      const ifElseFn = buildPostScriptJsFunction(ifElseSrc, [0, 1], [0, 1]);
+      ifElseFn(new Float64Array([0.3]), 0, dest, 0);
+      expect(dest[0]).toEqual(1);
+      ifElseFn(new Float64Array([0.7]), 0, dest, 0);
+      expect(dest[0]).toEqual(0);
     });
 
     it("keeps the results of not, eq and ne when exceeding the work limit", function () {

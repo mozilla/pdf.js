@@ -127,6 +127,7 @@ class PsArgNode extends PsNode {
     super(PS_NODE.arg);
     this.index = index;
     this.valueType = PS_VALUE_TYPE.numeric;
+    this.depth = 0;
   }
 }
 
@@ -143,6 +144,7 @@ class PsConstNode extends PsNode {
       typeof value === "boolean"
         ? PS_VALUE_TYPE.boolean
         : PS_VALUE_TYPE.numeric;
+    this.depth = 0;
   }
 }
 
@@ -160,6 +162,7 @@ class PsUnaryNode extends PsNode {
     this.op = op;
     this.operand = operand;
     this.valueType = valueType;
+    this.depth = operand.depth + 1;
   }
 }
 
@@ -186,6 +189,7 @@ class PsBinaryNode extends PsNode {
     this.first = first;
     this.second = second;
     this.valueType = valueType;
+    this.depth = Math.max(first.depth, second.depth) + 1;
   }
 }
 
@@ -209,13 +213,18 @@ class PsTernaryNode extends PsNode {
     this.then = then;
     this.otherwise = otherwise;
     this.valueType = valueType;
+    this.depth = Math.max(cond.depth, then.depth, otherwise.depth) + 1;
   }
 }
+
+// Limit procedure nesting in the recursive parser, converter and interpreter.
+const MAX_NESTING_DEPTH = 1000;
 
 class Parser {
   constructor(lexer) {
     this.lexer = lexer;
     this._token = null;
+    this._depth = 0;
   }
 
   static _isRegularOperator(id) {
@@ -275,6 +284,11 @@ class Parser {
 
         case TOKEN.lbrace: {
           // Start of a sub-procedure: must be followed by 'if' or '{ } ifelse'.
+          if (++this._depth > MAX_NESTING_DEPTH) {
+            throw new FormatError(
+              "PostScript function: procedures are nested too deeply."
+            );
+          }
           this._advance();
           const thenBlock = this._parseBlock();
           this._expect(TOKEN.rbrace);
@@ -293,6 +307,7 @@ class Parser {
               "PostScript function: a procedure block must be followed by 'if' or '{…} ifelse'."
             );
           }
+          this._depth--;
           break;
         }
 
@@ -450,6 +465,10 @@ const MAX_WORK = 100_000;
 
 // Limit recursion from stack-growing `if` forks.
 const MAX_FORK_DEPTH = 1000;
+
+// Limit expression depth for recursive comparison, sharing analysis and
+// code generation.
+const MAX_TREE_DEPTH = 500;
 
 // Determine the PS_VALUE_TYPE of a unary operation's result.
 // `not` propagates its operand's type (boolean not → boolean, integer not →
@@ -961,6 +980,18 @@ class PSStackToTree {
   }
 
   /**
+   * Fail conversion if node.depth exceeds MAX_TREE_DEPTH.
+   * @param {PsNode} node
+   * @returns {PsNode}
+   */
+  _checkDepth(node) {
+    if (node.depth > MAX_TREE_DEPTH) {
+      this._failed = true;
+    }
+    return node;
+  }
+
+  /**
    * Compare expression structure. Reference equality handles `dup` in O(1).
    * Distinct DAGs built by `dup mul` chains can require exponential work.
    * Comparisons of non-identical nodes of the same type count as work.
@@ -1222,11 +1253,13 @@ class PSStackToTree {
       }
     }
 
-    return new PsBinaryNode(
-      op,
-      first,
-      second,
-      _binaryValueType(op, first.valueType, second.valueType)
+    return this._checkDepth(
+      new PsBinaryNode(
+        op,
+        first,
+        second,
+        _binaryValueType(op, first.valueType, second.valueType)
+      )
     );
   }
 
@@ -1289,7 +1322,9 @@ class PSStackToTree {
       }
     }
 
-    return new PsUnaryNode(op, operand, _unaryValueType(op, operand.valueType));
+    return this._checkDepth(
+      new PsUnaryNode(op, operand, _unaryValueType(op, operand.valueType))
+    );
   }
 
   /**
@@ -1355,13 +1390,15 @@ class PSStackToTree {
       }
     }
 
-    return new PsTernaryNode(
-      cond,
-      then,
-      otherwise,
-      then.valueType === otherwise.valueType
-        ? then.valueType
-        : PS_VALUE_TYPE.unknown
+    return this._checkDepth(
+      new PsTernaryNode(
+        cond,
+        then,
+        otherwise,
+        then.valueType === otherwise.valueType
+          ? then.valueType
+          : PS_VALUE_TYPE.unknown
+      )
     );
   }
 }
