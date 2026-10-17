@@ -381,9 +381,10 @@ class FlateStream extends DecodeStream {
           continue;
         }
 
-        let repeatLength = this.getBits(bitsLength) + bitsOffset;
-        while (repeatLength-- > 0) {
-          codeLengths[i++] = what;
+        const repeatLen = this.getBits(bitsLength) + bitsOffset;
+        if (repeatLen > 0) {
+          codeLengths.fill(what, i, i + repeatLen);
+          i += repeatLen;
         }
       }
 
