@@ -28,7 +28,6 @@ import {
   Trans,
   ZoomType,
 } from "./constants.js";
-import { CheckboxField, Field, RadioButtonField } from "./field.js";
 import { Doc, DocInternals } from "./doc.js";
 import {
   exposeObject,
@@ -40,6 +39,7 @@ import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { createMap } from "./common.js";
 import { EventDispatcher } from "./event.js";
+import { Field } from "./field.js";
 import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
 
@@ -117,25 +117,7 @@ function initSandbox(params) {
     obj.util = util;
     obj.getTerminalChildren = getTerminalChildren;
 
-    const otherFields = annotations.slice(1);
-
-    let field;
-    switch (obj.type) {
-      case "radiobutton": {
-        field = new RadioButtonField(otherFields, obj);
-        break;
-      }
-      case "checkbox": {
-        field = new CheckboxField(otherFields, obj);
-        break;
-      }
-      default:
-        if (otherFields.length > 0) {
-          obj.siblings = otherFields.map(x => x.id);
-        }
-        field = new Field(obj);
-    }
-
+    const field = new Field(obj, annotations.slice(1));
     const wrapped = new Proxy(field, proxyHandler);
     const _object = { obj: field, wrapped };
     DocInternals.addField(doc, name, _object);
