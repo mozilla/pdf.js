@@ -28,6 +28,9 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./base_download_manager.js").BaseDownloadManager} BaseDownloadManager */
 /** @typedef {import("./l10n.js").L10n} L10n */
+/** @typedef {import("./alt_text_manager.js").AltTextManager} AltTextManager */
+/** @typedef {import("./comment_manager.js").CommentManager} CommentManager */
+/** @typedef {import("./signature_manager.js").SignatureManager} SignatureManager */
 
 import {
   AnnotationEditorType,
@@ -99,6 +102,12 @@ function isValidAnnotationEditorMode(mode) {
  *   component.
  * @property {PDFScriptingManager} [scriptingManager] - The scripting manager
  *   component.
+ * @property {HTMLElement} [viewerAlert] - The viewer alert element.
+ * @property {AltTextManager} [altTextManager] - The alt text manager.
+ * @property {CommentManager} [commentManager] - The comment manager.
+ * @property {SignatureManager} [signatureManager] - The signature manager.
+ * @property {boolean} [enableHighlightFloatingButton] - Enables the floating
+ *   button for highlighting selected text.
  * @property {PDFRenderingQueue} [renderingQueue] - The rendering queue object.
  * @property {boolean} [removePageBorders] - Removes the border shadow around
  *   the pages. The default value is `false`.

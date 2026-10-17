@@ -1,5 +1,5 @@
 import { getDocument } from "pdfjs-dist";
-import { EventBus } from "pdfjs-dist/web/pdf_viewer.mjs";
+import { EventBus, PDFViewer } from "pdfjs-dist/web/pdf_viewer.mjs";
 
 class MainTest {
   eventBus: EventBus;
@@ -21,3 +21,14 @@ const mt = new MainTest("../pdfs/basicapi.pdf");
 mt.loadPdf().then(() => {
   console.log("loaded");
 });
+
+const viewerOptions: ConstructorParameters<typeof PDFViewer>[0] = {
+  container: document.createElement("div"),
+  eventBus: new EventBus(),
+  viewerAlert: document.createElement("div"),
+  altTextManager: undefined,
+  commentManager: undefined,
+  signatureManager: undefined,
+  enableHighlightFloatingButton: true,
+};
+new PDFViewer(viewerOptions);
