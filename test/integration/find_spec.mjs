@@ -31,6 +31,74 @@ function fuzzyMatch(a, b, browserName, pixelFuzz = 3) {
 }
 
 describe("find bar", () => {
+  describe("embedded viewer", () => {
+    let pages;
+
+    beforeEach(async () => {
+      const origin = new URL(global.integrationBaseUrl).origin;
+      pages = await Promise.all(
+        global.integrationSessions.map(async session => {
+          const page = await session.browser.newPage();
+          await page.setViewport({ width: 1000, height: 800 });
+          await page.goto(`${origin}/test/integration/iframe_viewer.html`);
+          const iframe = await page.$("iframe");
+          const frame = await iframe.contentFrame();
+          await Promise.all([
+            frame.waitForNavigation(),
+            iframe.evaluate((element, url) => {
+              element.src = url;
+            }, `${global.integrationBaseUrl}?file=/test/pdfs/tracemonkey.pdf#zoom=100`),
+          ]);
+          await frame.waitForSelector(".textLayer");
+          return [session.name, page, frame];
+        })
+      );
+    });
+
+    afterEach(async () => {
+      await Promise.all(pages.map(([, page]) => page.close()));
+    });
+
+    it("must keep the parent page stationary when navigating search results", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page, frame]) => {
+          await page.evaluate(() => window.scrollTo(0, 600));
+          for (let i = 0; i < 3; i++) {
+            await frame.evaluate(() => {
+              window.PDFViewerApplication.eventBus.dispatch("find", {
+                source: null,
+                type: "again",
+                query: "trace",
+                caseSensitive: false,
+                entireWord: false,
+                highlightAll: false,
+                findPrevious: false,
+              });
+            });
+            await frame.waitForFunction(
+              index => {
+                const { findController } = window.PDFViewerApplication;
+                return (
+                  findController.selected.matchIdx === index &&
+                  !findController._scrollMatches
+                );
+              },
+              {},
+              i
+            );
+            const selected = await frame.waitForSelector(".highlight.selected");
+            expect(await selected.isIntersectingViewport())
+              .withContext(`In ${browserName}, match ${i + 1}`)
+              .toBeTrue();
+            expect(await page.evaluate(() => window.scrollY))
+              .withContext(`In ${browserName}, match ${i + 1}`)
+              .toEqual(600);
+          }
+        })
+      );
+    });
+  });
+
   describe("highlight all", () => {
     let pages;
 
