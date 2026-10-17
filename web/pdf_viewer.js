@@ -25,6 +25,10 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_scripting_manager").PDFScriptingManager} PDFScriptingManager */
 /** @typedef {import("./pdf_link_service.js").PDFLinkService} PDFLinkService */
+/** @typedef {import("./alt_text_manager.js").AltTextManager} AltTextManager */
+/** @typedef {import("./comment_manager.js").CommentManager} CommentManager */
+// eslint-disable-next-line max-len
+/** @typedef {import("./signature_manager.js").SignatureManager} SignatureManager */
 // eslint-disable-next-line max-len
 /** @typedef {import("./base_download_manager.js").BaseDownloadManager} BaseDownloadManager */
 /** @typedef {import("./l10n.js").L10n} L10n */
@@ -92,6 +96,12 @@ function isValidAnnotationEditorMode(mode) {
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
+ * @property {HTMLElement} [viewerAlert] - Viewer alert element.
+ * @property {AltTextManager} [altTextManager] - Manages image alt text editing.
+ * @property {CommentManager} [commentManager] - Manages PDF comments.
+ * @property {SignatureManager} [signatureManager] - Manages PDF signatures.
+ * @property {boolean} [enableHighlightFloatingButton] - Enables the floating
+ *   text highlight button. The default value is `false`.
  * @property {PDFLinkService} [linkService] - The navigation/linking service.
  * @property {BaseDownloadManager} [downloadManager] - The download manager
  *   component.
