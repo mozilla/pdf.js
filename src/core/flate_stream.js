@@ -269,8 +269,9 @@ class FlateStream extends DecodeStream {
           }
 
           // fill the table entries
+          const entry = (len << 16) | val;
           for (i = code2; i < size; i += skip) {
-            codes[i] = (len << 16) | val;
+            codes[i] = entry;
           }
           ++code;
         }
