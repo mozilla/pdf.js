@@ -1388,6 +1388,48 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out).toBeNull();
     });
 
+    it("limits work from successive stack-growing ifs", function () {
+      // Each guard forks the remaining evaluation, doubling the paths.
+      const src = `{ ${"dup { dup } if ".repeat(40)}}`;
+      expect(toTree(src, 1)).toBeNull();
+      expect(buildPostScriptWasmFunction(src, [0, 1], [0, 1])).toBeNull();
+
+      const fn = buildPostScriptJsFunction(src, [0, 1], [0, 1]);
+      const dest = new Float64Array(1);
+      fn(new Float64Array([0.5]), 0, dest, 0);
+      expect(dest[0]).toEqual(0.5);
+    });
+
+    it("gives up on deeply nested stack-growing ifs", function () {
+      // `pop` restores the stack depth on the true path, allowing deep forks
+      // without exceeding the stack size limit.
+      const src = `{ ${"dup { dup } if pop ".repeat(50000)}}`;
+      expect(toTree(src, 1)).toBeNull();
+    });
+
+    it("gives up comparing large structurally equal expressions", function () {
+      // Each chain shares its operands; comparing the two distinct DAGs
+      // would take exponential work without a limit.
+      const square = "dup mul ".repeat(40);
+      expect(toTree(`{ dup ${square} exch ${square} sub }`, 1)).toBeNull();
+    });
+
+    it("keeps the results of not, eq and ne when exceeding the work limit", function () {
+      const square = "dup mul ".repeat(17);
+      const fn = tail => {
+        const src = `{ dup dup ${square} exch ${square} sub pop ${tail} }`;
+        expect(toTree(src, 1)).toBeNull();
+        const jsFn = buildPostScriptJsFunction(src, [0, 1], [-1, 1]);
+        const dest = new Float64Array(1);
+        jsFn(new Float64Array([0.5]), 0, dest, 0);
+        return dest[0];
+      };
+      expect(fn("pop 0 not")).toEqual(-1);
+      expect(fn("pop 0 false eq")).toEqual(0);
+      expect(fn("pop 0 false ne")).toEqual(1);
+      expect(fn("0.5 gt 0 eq")).toEqual(0);
+    });
+
     // Optimisations
 
     // Constant folding

@@ -335,43 +335,6 @@ function parsePostScriptFunction(source) {
 // Stack-to-tree transformation
 
 /**
- * Structural equality for tree nodes.
- * Returns true when `a` and `b` represent the same sub-expression.
- * Reference equality (`a === b`) is checked first, so shared nodes
- * produced by `dup` are handled in O(1).
- */
-function _nodesEqual(a, b) {
-  if (a === b) {
-    return true;
-  }
-  if (a.type !== b.type) {
-    return false;
-  }
-  switch (a.type) {
-    case PS_NODE.arg:
-      return a.index === b.index;
-    case PS_NODE.const:
-      return a.value === b.value;
-    case PS_NODE.unary:
-      return a.op === b.op && _nodesEqual(a.operand, b.operand);
-    case PS_NODE.binary:
-      return (
-        a.op === b.op &&
-        _nodesEqual(a.first, b.first) &&
-        _nodesEqual(a.second, b.second)
-      );
-    case PS_NODE.ternary:
-      return (
-        _nodesEqual(a.cond, b.cond) &&
-        _nodesEqual(a.then, b.then) &&
-        _nodesEqual(a.otherwise, b.otherwise)
-      );
-    default:
-      return false;
-  }
-}
-
-/**
  * Evaluate a binary PostScript operator on two compile-time-known values.
  * `a` is the second operand (was below top); `b` is the first (was on top).
  * Returns `undefined` when the operation cannot be safely folded.
@@ -479,6 +442,14 @@ function _evalUnaryConst(op, v) {
 // Maximum number of nodes allowed on the virtual stack at any point during
 // the stack-to-tree conversion.  Programs that exceed this are rejected.
 const MAX_STACK_SIZE = 100;
+
+// Limit instructions and structural comparisons. Stack-growing `if` forks
+// and comparisons of distinct DAGs can require exponential work.
+// The JS builder interprets programs that exceed this limit.
+const MAX_WORK = 100_000;
+
+// Limit recursion from stack-growing `if` forks.
+const MAX_FORK_DEPTH = 1000;
 
 // Determine the PS_VALUE_TYPE of a unary operation's result.
 // `not` propagates its operand's type (boolean not → boolean, integer not →
@@ -612,6 +583,8 @@ class PSStackToTree {
       PSStackToTree.#init();
     }
     this._failed = false;
+    this._work = 0;
+    this._forkDepth = 0;
     if (numInputs > MAX_STACK_SIZE) {
       return null;
     }
@@ -686,7 +659,7 @@ class PSStackToTree {
    */
   _evalBlockFrom(instructions, startIdx, stack) {
     for (let idx = startIdx; idx < instructions.length; idx++) {
-      if (this._failed) {
+      if (this._failed || !this._checkWorkLimit()) {
         break;
       }
       const instr = instructions[idx];
@@ -738,6 +711,11 @@ class PSStackToTree {
             // Non-constant condition: evaluate the *rest* of this block on
             // both the true-branch stack and the false-branch stack, then
             // merge the two results into PsTernaryNodes.
+            if (this._forkDepth >= MAX_FORK_DEPTH) {
+              this._failed = true;
+              break;
+            }
+            this._forkDepth++;
             const trueStack = stack.slice();
             this._evalBlockFrom(instructions, idx + 1, trueStack);
             if (this._failed) {
@@ -748,6 +726,7 @@ class PSStackToTree {
             if (this._failed) {
               break;
             }
+            this._forkDepth--;
             if (trueStack.length !== falseStack.length) {
               // The two paths produced different stack depths.  For
               // well-formed PostScript functions this happens when the
@@ -970,6 +949,54 @@ class PSStackToTree {
   }
 
   /**
+   * Count one unit of work and fail conversion if MAX_WORK is exceeded.
+   * @returns {boolean} false if the work limit is exceeded.
+   */
+  _checkWorkLimit() {
+    if (++this._work > MAX_WORK) {
+      this._failed = true;
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Compare expression structure. Reference equality handles `dup` in O(1).
+   * Distinct DAGs built by `dup mul` chains can require exponential work.
+   * Comparisons of non-identical nodes of the same type count as work.
+   */
+  _nodesEqual(a, b) {
+    if (a === b) {
+      return true;
+    }
+    if (a.type !== b.type || !this._checkWorkLimit()) {
+      return false;
+    }
+    switch (a.type) {
+      case PS_NODE.arg:
+        return a.index === b.index;
+      case PS_NODE.const:
+        return a.value === b.value;
+      case PS_NODE.unary:
+        return a.op === b.op && this._nodesEqual(a.operand, b.operand);
+      case PS_NODE.binary:
+        return (
+          a.op === b.op &&
+          this._nodesEqual(a.first, b.first) &&
+          this._nodesEqual(a.second, b.second)
+        );
+      case PS_NODE.ternary:
+        return (
+          this._nodesEqual(a.cond, b.cond) &&
+          this._nodesEqual(a.then, b.then) &&
+          this._nodesEqual(a.otherwise, b.otherwise)
+        );
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Create a binary tree node, applying optimizations eagerly:
    *
    * 1. Constant folding — both operands are PsConstNode → fold to PsConstNode.
@@ -992,7 +1019,7 @@ class PSStackToTree {
     }
 
     // 2. Reflexive simplifications: both operands are the same expression.
-    if (_nodesEqual(first, second)) {
+    if (this._nodesEqual(first, second)) {
       switch (op) {
         case TOKEN.sub:
           return new PsConstNode(0); // x − x → 0
@@ -1281,7 +1308,7 @@ class PSStackToTree {
       return cond.value ? then : otherwise;
     }
     // 2. Both branches are the same expression
-    if (_nodesEqual(then, otherwise)) {
+    if (this._nodesEqual(then, otherwise)) {
       return then;
     }
     // 3. Boolean branch constants
@@ -1311,18 +1338,18 @@ class PSStackToTree {
       const { op: cop, first: cf, second: cs } = cond;
       if (cop === TOKEN.gt || cop === TOKEN.ge) {
         // cond: cs > cf
-        if (_nodesEqual(then, cf) && _nodesEqual(otherwise, cs)) {
+        if (this._nodesEqual(then, cf) && this._nodesEqual(otherwise, cs)) {
           return this._makeBinary(TOKEN.min, cf, cs); // cs>cf ? cf:cs → min
         }
-        if (_nodesEqual(then, cs) && _nodesEqual(otherwise, cf)) {
+        if (this._nodesEqual(then, cs) && this._nodesEqual(otherwise, cf)) {
           return this._makeBinary(TOKEN.max, cf, cs); // cs>cf ? cs:cf → max
         }
       } else if (cop === TOKEN.lt || cop === TOKEN.le) {
         // cond: cs < cf
-        if (_nodesEqual(then, cf) && _nodesEqual(otherwise, cs)) {
+        if (this._nodesEqual(then, cf) && this._nodesEqual(otherwise, cs)) {
           return this._makeBinary(TOKEN.max, cf, cs); // cs<cf ? cf:cs → max
         }
-        if (_nodesEqual(then, cs) && _nodesEqual(otherwise, cf)) {
+        if (this._nodesEqual(then, cs) && this._nodesEqual(otherwise, cf)) {
           return this._makeBinary(TOKEN.min, cf, cs); // cs<cf ? cs:cf → min
         }
       }
