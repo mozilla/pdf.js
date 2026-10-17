@@ -14706,5 +14706,28 @@
     "rounds": 1,
     "type": "eq",
     "about": "Truncated FlateDecode content stream."
+  },
+  {
+    "id": "bug2065923",
+    "file": "pdfs/bug2065923.pdf",
+    "md5": "116be0d524701532861a05df4212ffb6",
+    "rounds": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "5R": {
+        "value": "23.08.2026"
+      },
+      "6R": {
+        "value": "23.08.2026"
+      },
+      "7R": {
+        "value": "23.08.2026"
+      },
+      "8R": {
+        "value": "1.1.2026"
+      }
+    },
+    "about": "One-line-high multiline text fields whose value only fits with 1pt horizontal paddings."
   }
 ]

@@ -2564,7 +2564,8 @@ class WidgetAnnotation extends Annotation {
         totalWidth - 2 * defaultHPadding,
         value,
         font,
-        lineCount
+        lineCount,
+        totalWidth - defaultHPadding
       );
 
       this.data.defaultAppearanceData = savedDefaultAppearance;
@@ -2580,7 +2581,8 @@ class WidgetAnnotation extends Annotation {
         totalWidth - 2 * defaultHPadding,
         value,
         font,
-        lineCount
+        lineCount,
+        totalWidth - defaultHPadding
       );
     }
 
@@ -2707,7 +2709,7 @@ class WidgetAnnotation extends Annotation {
     return Math.sumPrecise(font.charsToGlyphs(text).map(g => g.width)) / 1000;
   }
 
-  _computeFontSize(height, width, text, font, lineCount) {
+  _computeFontSize(height, width, text, font, lineCount, maxWidth) {
     let { fontSize } = this.data.defaultAppearanceData;
     const lineHeight = (fontSize || 12) * LINE_FACTOR;
     let numberOfLines = Math.round(height / lineHeight);
@@ -2747,7 +2749,14 @@ class WidgetAnnotation extends Annotation {
           // Return true when the text doesn't fit the given height.
           let totalHeight = 0;
           for (const cache of cachedLines) {
-            const chunks = this._splitLine(null, font, fsize, width, cache);
+            const chunks = this._splitLine(
+              null,
+              font,
+              fsize,
+              width,
+              maxWidth,
+              cache
+            );
             totalHeight += chunks.length * fsize;
             if (totalHeight > height) {
               return true;
@@ -3083,7 +3092,18 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     const prevInfo = { shift: 0 };
     for (let i = 0, ii = lines.length; i < ii; i++) {
       const line = lines[i];
-      const chunks = this._splitLine(line, font, fontSize, totalWidth);
+      const chunks = this._splitLine(
+        line,
+        font,
+        fontSize,
+        totalWidth,
+        width - hPadding
+      );
+      const padding =
+        chunks.length === 1 &&
+        this._getTextWidth(line, font) * fontSize > totalWidth
+          ? hPadding / 2
+          : hPadding;
       for (let j = 0, jj = chunks.length; j < jj; j++) {
         const chunk = chunks[j];
         const vShift =
@@ -3096,7 +3116,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
             width,
             alignment,
             prevInfo,
-            hPadding,
+            padding,
             vShift
           )
         );
@@ -3115,7 +3135,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     );
   }
 
-  _splitLine(line, font, fontSize, width, cache = {}) {
+  _splitLine(line, font, fontSize, width, maxWidth, cache = {}) {
     line = cache.line || line;
 
     const glyphs = cache.glyphs || font.charsToGlyphs(line);
@@ -3125,8 +3145,13 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       return [line];
     }
 
-    const positions = cache.positions || font.getCharPositions(line);
     const scale = fontSize / 1000;
+    if (Math.sumPrecise(glyphs.map(g => g.width)) * scale <= maxWidth) {
+      // Allow half the horizontal padding.
+      return [line];
+    }
+
+    const positions = cache.positions || font.getCharPositions(line);
     const chunks = [];
 
     let lastSpacePosInStringStart = -1,
