@@ -433,8 +433,16 @@ class FlateStream extends DecodeStream {
           buffer = this.ensureBuffer(pos + len);
           limit = buffer.length;
         }
-        for (let k = 0; k < len; ++k, ++pos) {
-          buffer[pos] = buffer[pos - dist];
+        if (len < dist) {
+          // When the old and new data doesn't overlap we can use `copyWithin`,
+          // since that's faster than a manual loop.
+          const startPos = pos - dist;
+          buffer.copyWithin(pos, startPos, startPos + len);
+          pos += len;
+        } else {
+          for (let k = 0; k < len; ++k, ++pos) {
+            buffer[pos] = buffer[pos - dist];
+          }
         }
       }
     } catch (ex) {
