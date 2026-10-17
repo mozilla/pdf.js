@@ -117,7 +117,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeTrue();
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        siblings: null,
         value: expected,
         formattedValue: null,
       });
@@ -902,6 +901,35 @@ describe("Scripting", function () {
       expect(value).toEqual([12, "hello", "b", 7, 12, true]);
     });
 
+    it("should keep custom properties on the field they are set on", async () => {
+      const refIds = [0, 1, 2, 3].map(_ => getId());
+      const text = id => ({ id, value: "", actions: {}, type: "text" });
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          A: [{ id: refIds[0], type: "", kidIds: [refIds[1], refIds[2]] }],
+          "A.B": [text(refIds[1])],
+          "A.C": [{ id: refIds[2], type: "", kidIds: [refIds[3]] }],
+          "A.C.D": [text(refIds[3])],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        getField("A.B").shared = "kid";
+        getField("A").custom = 42;
+        getField("A").shared = "parent";
+        return [
+          getField("A").custom,
+          typeof getField("A.B").custom,
+          typeof getField("A.C").custom,
+          typeof getField("A.C.D").custom,
+          getField("A.B").shared,
+        ];
+      })()`);
+      expect(value).toEqual([42, "undefined", "undefined", "undefined", "kid"]);
+    });
+
     it("should handle ResetForm without sending field updates", async () => {
       const refIds = [0, 1, 2].map(_ => getId());
       sandbox.createSandbox({
@@ -982,6 +1010,37 @@ describe("Scripting", function () {
       expect(send_queue.get(refId)).toEqual({
         id: refId,
         multipleSelection: true,
+      });
+    });
+
+    it("should set the colors of a field through their aliases", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const field = getField("field");
+        field.bgColor = color.red;
+        field.fgColor = color.blue;
+        field.borderColor = color.green;
+        field.bgColor = ["bad"];
+        return [field.fillColor, field.textColor, field.strokeColor];
+      })()`);
+      expect(value).toEqual([
+        ["RGB", 1, 0, 0],
+        ["RGB", 0, 0, 1],
+        ["RGB", 0, 1, 0],
+      ]);
+      expect(send_queue.get(refId)).toEqual({
+        id: refId,
+        fillColor: ["RGB", 1, 0, 0],
+        textColor: ["RGB", 0, 0, 1],
+        strokeColor: ["RGB", 0, 1, 0],
       });
     });
   });
@@ -1133,7 +1192,6 @@ describe("Scripting", function () {
       for (const id of [refIds[1], refIds[3]]) {
         expect(send_queue.get(id)).toEqual({
           id,
-          siblings: null,
           value: "",
           formattedValue: null,
           selRange: [0, 0],
@@ -1578,7 +1636,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeTrue();
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        siblings: null,
         value: "hell",
         selRange: [4, 4],
       });
@@ -1616,7 +1673,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeTrue();
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        siblings: null,
         value: "hella",
         selRange: [5, 5],
       });
@@ -1690,7 +1746,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId1)).toBeTrue();
       expect(send_queue.get(refId1)).toEqual({
         id: refId1,
-        siblings: null,
         value: "world",
         formattedValue: null,
       });
@@ -2160,7 +2215,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "123456.789",
           formattedValue: null,
         });
@@ -2339,7 +2393,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "12.06.2023",
           formattedValue: "12.06.2023",
         });
@@ -2354,7 +2407,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "12.06.202",
           formattedValue: "12.06.0202",
         });
@@ -2370,7 +2422,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "02.06.2023",
           formattedValue: "02.06.2023",
         });
@@ -2386,7 +2437,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "2.6.2023",
           formattedValue: "02.06.2023",
         });
@@ -2425,7 +2475,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "321",
           formattedValue: null,
         });
@@ -2536,7 +2585,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 1,
           formattedValue: null,
         });
@@ -2550,7 +2598,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -2564,7 +2611,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 6,
           formattedValue: null,
         });
@@ -2572,7 +2618,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[4])).toBeTrue();
         expect(send_queue.get(refIds[4])).toEqual({
           id: refIds[4],
-          siblings: null,
           value: 6,
           formattedValue: null,
         });
@@ -2642,7 +2687,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[5])).toBeTrue();
         expect(send_queue.get(refIds[5])).toEqual({
           id: refIds[5],
-          siblings: null,
           value: 123,
           formattedValue: null,
         });
@@ -2656,7 +2700,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[5])).toBeTrue();
         expect(send_queue.get(refIds[5])).toEqual({
           id: refIds[5],
-          siblings: null,
           value: 579,
           formattedValue: null,
         });
@@ -2730,7 +2773,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 1,
           formattedValue: null,
         });
@@ -2744,7 +2786,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 2,
           formattedValue: null,
         });
@@ -2758,7 +2799,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -2766,7 +2806,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[4])).toBeTrue();
         expect(send_queue.get(refIds[4])).toEqual({
           id: refIds[4],
-          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -2842,7 +2881,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "3F?",
           selRange: [3, 3],
         });
@@ -2871,7 +2909,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "3F?0",
           formattedValue: null,
         });
@@ -2932,7 +2969,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -2993,7 +3029,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -3054,7 +3089,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -3115,7 +3149,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -3176,7 +3209,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -3237,7 +3269,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });

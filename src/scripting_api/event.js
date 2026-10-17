@@ -149,8 +149,11 @@ class EventDispatcher {
       } else if (id === "app" && baseEvent.name === "ResetForm") {
         this.#userActivation();
         for (const fieldId of baseEvent.ids) {
-          const obj = this.#objects[fieldId];
-          obj?.obj._reset();
+          const field = this.#objects[fieldId];
+          if (field) {
+            // The view has already been reset.
+            field.obj._setValue(field.obj.defaultValue);
+          }
         }
       }
       return;
@@ -210,16 +213,13 @@ class EventDispatcher {
         this.#runValidation(source, event);
       } else {
         if (source.obj._isChoice) {
-          source.obj.value = savedChange.changeEx;
-          source.obj._send({
-            id: source.obj._id,
-            siblings: source.obj._siblings,
-            value: source.obj.value,
-          });
+          source.obj._setValue(savedChange.changeEx);
+          source.obj._sendToView({ value: source.obj.value });
           return;
         }
 
-        const value = (source.obj.value = mergeChange(event));
+        const value = mergeChange(event);
+        source.obj._setValue(value);
         let selStart, selEnd;
         if (
           event.selStart !== savedChange.selStart ||
@@ -231,26 +231,17 @@ class EventDispatcher {
         } else {
           selEnd = selStart = savedChange.selStart + event.change.length;
         }
-        source.obj._send({
-          id: source.obj._id,
-          siblings: source.obj._siblings,
-          value,
-          selRange: [selStart, selEnd],
-        });
+        source.obj._sendToView({ value, selRange: [selStart, selEnd] });
       }
     } else if (!event.willCommit) {
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      source.obj._sendToView({
         value: savedChange.value,
         selRange: [savedChange.selStart, savedChange.selEnd],
       });
     } else {
       // Entry is not valid (rc == false) and it's a commit
       // so just clear the field.
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      source.obj._sendToView({
         value: "",
         formattedValue: null,
         selRange: [0, 0],
@@ -270,7 +261,7 @@ class EventDispatcher {
   #runValidation(source, event) {
     const didValidateRun = this.#runActions(source, source, event, "Validate");
     if (event.rc) {
-      source.obj.value = event.value;
+      source.obj._setValue(event.value);
 
       this.#runCalculate(source, event);
 
@@ -279,18 +270,11 @@ class EventDispatcher {
         ? event.value?.toString?.()
         : null;
 
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
-        value: savedValue,
-        formattedValue,
-      });
+      source.obj._sendToView({ value: savedValue, formattedValue });
       event.value = savedValue;
     } else if (didValidateRun) {
       // The value is not valid.
-      source.obj._send({
-        id: source.obj._id,
-        siblings: source.obj._siblings,
+      source.obj._sendToView({
         value: "",
         formattedValue: null,
         selRange: [0, 0],
@@ -355,7 +339,7 @@ class EventDispatcher {
 
       if (event.value !== null) {
         // A new value has been calculated so set it.
-        target.obj.value = event.value;
+        target.obj._setValue(event.value);
       } else {
         event.value = target.obj._getValue();
       }
@@ -377,12 +361,7 @@ class EventDispatcher {
         ? event.value?.toString?.()
         : null;
 
-      target.obj._send({
-        id: target.obj._id,
-        siblings: target.obj._siblings,
-        value: savedValue,
-        formattedValue,
-      });
+      target.obj._sendToView({ value: savedValue, formattedValue });
     }
   }
 }

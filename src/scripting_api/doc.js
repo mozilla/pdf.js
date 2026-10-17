@@ -185,9 +185,7 @@ class Doc {
       // Send date/time values converted during field initialization.
       const initialValue = obj._initialValue;
       if (initialValue) {
-        this.#send({
-          id: obj._id,
-          siblings: obj._siblings,
+        obj._sendToView({
           value: initialValue,
           formattedValue: obj.value.toString(),
         });
@@ -1336,10 +1334,8 @@ class Doc {
     }
 
     for (const field of fieldsToReset) {
-      field.obj.value = field.obj.defaultValue;
-      this.#send({
-        id: field.obj._id,
-        siblings: field.obj._siblings,
+      field.obj._setValue(field.obj.defaultValue);
+      field.obj._sendToView({
         value: field.obj.defaultValue,
         formattedValue: null,
         selRange: [0, 0],
