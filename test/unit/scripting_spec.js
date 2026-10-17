@@ -681,6 +681,7 @@ describe("Scripting", function () {
           color,
           console,
           util,
+          getField("field"),
           getPrintParams(),
           event,
         ];
@@ -692,13 +693,16 @@ describe("Scripting", function () {
             Object.getPrototypeOf(Object.getPrototypeOf(o)) === Object.prototype
         );
       })()`);
-      expect(value).toEqual(Array(8).fill(true));
+      expect(value).toEqual(Array(9).fill(true));
     });
 
     it("should show the API functions as native ones", async () => {
+      const refId = getId();
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
-        objects: {},
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
         calculationOrder: [],
       });
 
@@ -707,6 +711,7 @@ describe("Scripting", function () {
         const nativeSource = toString.call(Math.max);
         return {
           source: [
+            getField("field").setFocus,
             Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app), "language")
               .get,
             toString,
@@ -717,7 +722,7 @@ describe("Scripting", function () {
         };
       })()`);
       expect(value).toEqual({
-        source: [true, true],
+        source: [true, true, true],
         toStringHasPrototype: false,
       });
     });
@@ -745,6 +750,7 @@ describe("Scripting", function () {
         "EventDispatcher",
         "exposeObject",
         "Field",
+        "FieldInternals",
         "FullScreen",
         "InfoProxyHandler",
         "initSandbox",
@@ -827,6 +833,31 @@ describe("Scripting", function () {
         command: "println",
         value: "PDF.js Console:: Hello",
       });
+    });
+
+    it("should throw when calling setFocus without its field as `this`", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+
+      // Unlike the app, color, console and util methods, the field methods are
+      // shared by all the fields, hence not bound to any of them.
+      const value = await myeval(`(() => {
+        const { setFocus } = getField("field");
+        try {
+          setFocus();
+        } catch (error) {
+          return error instanceof TypeError;
+        }
+        return false;
+      })()`);
+      expect(value).toBeTrue();
+      expect(send_queue.has(refId)).toBeFalse();
     });
 
     it("should send display and value updates for descendant fields", async () => {
@@ -932,6 +963,33 @@ describe("Scripting", function () {
         ];
       })()`);
       expect(value).toEqual([42, "undefined", "undefined", "undefined", "kid"]);
+    });
+
+    it("should ignore assignment to field methods in non-strict scripts", async () => {
+      const refIds = [0, 1, 2].map(_ => getId());
+      const text = id => ({ id, value: "", actions: {}, type: "text" });
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          A: [{ id: refIds[0], type: "", kidIds: [refIds[1]] }],
+          "A.B": [text(refIds[1])],
+          C: [text(refIds[2])],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const f = () => "overridden";
+        getField("A").setFocus = f;
+        getField("C").setFocus = f;
+        return [
+          getField("A").setFocus === f,
+          getField("A.B").setFocus === f,
+          getField("C").setFocus === f,
+          Object.hasOwn(getField("C"), "setFocus"),
+        ];
+      })()`);
+      expect(value).toEqual([false, false, false, false]);
     });
 
     it("should handle ResetForm without sending field updates", async () => {

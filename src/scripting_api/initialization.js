@@ -40,7 +40,6 @@ import { Console } from "./console.js";
 import { createMap } from "./common.js";
 import { EventDispatcher } from "./event.js";
 import { Field } from "./field.js";
-import { ProxyHandler } from "./proxy.js";
 import { Util } from "./util.js";
 
 function initSandbox(params) {
@@ -54,7 +53,6 @@ function initSandbox(params) {
   // eslint-disable-next-line no-eval
   const globalEval = globalThis.eval.bind(globalThis);
   const send = data => externalCall("send", [data]);
-  const proxyHandler = new ProxyHandler();
   const { data } = params;
   // Map widget and container IDs to fields.
   const appObjects = Object.create(null);
@@ -117,15 +115,13 @@ function initSandbox(params) {
     obj.util = util;
     obj.getTerminalChildren = getTerminalChildren;
 
-    const field = new Field(obj, annotations.slice(1));
-    const wrapped = new Proxy(field, proxyHandler);
-    const _object = { obj: field, wrapped };
-    DocInternals.addField(doc, name, _object);
+    const field = exposeObject(new Field(obj, annotations.slice(1)));
+    DocInternals.addField(doc, name, field);
     for (const object of objs) {
-      appObjects[object.id] = _object;
+      appObjects[object.id] = field;
     }
     if (container) {
-      appObjects[container.id] = _object;
+      appObjects[container.id] = field;
     }
   }
 

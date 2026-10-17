@@ -18,6 +18,7 @@ import {
   USERACTIVATION_MAXTIME_VALIDITY,
 } from "./app_utils.js";
 import { DocInternals } from "./doc.js";
+import { FieldInternals } from "./field.js";
 
 const { values } = Object;
 
@@ -153,7 +154,7 @@ class EventDispatcher {
           const field = this.#objects[fieldId];
           if (field) {
             // The view has already been reset.
-            field.obj._setValue(field.obj.defaultValue);
+            FieldInternals.setValue(field, field.defaultValue);
           }
         }
       }
@@ -166,14 +167,7 @@ class EventDispatcher {
     let savedChange;
 
     this.#userActivation();
-
-    if (source.obj._isButton()) {
-      source.obj._id = id;
-      event.value = source.obj._getExportValue(event.value);
-      if (name === "Action") {
-        source.obj._value = event.value;
-      }
-    }
+    FieldInternals.prepareEvent(source, id, event);
 
     switch (name) {
       case "Keystroke":
@@ -213,14 +207,16 @@ class EventDispatcher {
       if (event.willCommit) {
         this.#runValidation(source, event);
       } else {
-        if (source.obj._isChoice) {
-          source.obj._setValue(savedChange.changeEx);
-          source.obj._sendToView({ value: source.obj.value });
+        if (FieldInternals.getIsChoice(source)) {
+          FieldInternals.setValue(source, savedChange.changeEx);
+          FieldInternals.send(source, {
+            value: FieldInternals.getValue(source),
+          });
           return;
         }
 
         const value = mergeChange(event);
-        source.obj._setValue(value);
+        FieldInternals.setValue(source, value);
         let selStart, selEnd;
         if (
           event.selStart !== savedChange.selStart ||
@@ -232,17 +228,17 @@ class EventDispatcher {
         } else {
           selEnd = selStart = savedChange.selStart + event.change.length;
         }
-        source.obj._sendToView({ value, selRange: [selStart, selEnd] });
+        FieldInternals.send(source, { value, selRange: [selStart, selEnd] });
       }
     } else if (!event.willCommit) {
-      source.obj._sendToView({
+      FieldInternals.send(source, {
         value: savedChange.value,
         selRange: [savedChange.selStart, savedChange.selEnd],
       });
     } else {
       // Entry is not valid (rc == false) and it's a commit
       // so just clear the field.
-      source.obj._sendToView({
+      FieldInternals.send(source, {
         value: "",
         formattedValue: null,
         selRange: [0, 0],
@@ -254,7 +250,7 @@ class EventDispatcher {
     // Run format actions if any for all the fields.
     const event = (globalThis.event = createEvent({}));
     for (const source of values(this.#objects)) {
-      event.value = source.obj._getValue();
+      event.value = FieldInternals.getComputedValue(source);
       this.#runActions(source, source, event, "Format");
     }
   }
@@ -262,20 +258,21 @@ class EventDispatcher {
   #runValidation(source, event) {
     const didValidateRun = this.#runActions(source, source, event, "Validate");
     if (event.rc) {
-      source.obj._setValue(event.value);
+      FieldInternals.setValue(source, event.value);
 
       this.#runCalculate(source, event);
 
-      const savedValue = (event.value = source.obj._getValue());
+      const savedValue = (event.value =
+        FieldInternals.getComputedValue(source));
       const formattedValue = this.#runActions(source, source, event, "Format")
         ? event.value?.toString?.()
         : null;
 
-      source.obj._sendToView({ value: savedValue, formattedValue });
+      FieldInternals.send(source, { value: savedValue, formattedValue });
       event.value = savedValue;
     } else if (didValidateRun) {
       // The value is not valid.
-      source.obj._sendToView({
+      FieldInternals.send(source, {
         value: "",
         formattedValue: null,
         selRange: [0, 0],
@@ -285,13 +282,13 @@ class EventDispatcher {
   }
 
   #runActions(source, target, event, eventName) {
-    event.source = source.wrapped;
-    event.target = target.wrapped;
+    event.source = source;
+    event.target = target;
     event.name = eventName;
-    event.targetName = target.obj.name;
+    event.targetName = target.name;
     event.rc = true;
 
-    return target.obj._runActions(event);
+    return FieldInternals.runActions(target, event);
   }
 
   calculateNow() {
@@ -331,7 +328,7 @@ class EventDispatcher {
 
       event.value = null;
       const target = this.#objects[targetId];
-      let savedValue = target.obj._getValue();
+      let savedValue = FieldInternals.getComputedValue(target);
       this.#runActions(source, target, event, "Calculate");
 
       if (!event.rc) {
@@ -340,29 +337,29 @@ class EventDispatcher {
 
       if (event.value !== null) {
         // A new value has been calculated so set it.
-        target.obj._setValue(event.value);
+        FieldInternals.setValue(target, event.value);
       } else {
-        event.value = target.obj._getValue();
+        event.value = FieldInternals.getComputedValue(target);
       }
 
       this.#runActions(target, target, event, "Validate");
       if (!event.rc) {
-        if (target.obj._getValue() !== savedValue) {
-          target.wrapped.value = savedValue;
+        if (FieldInternals.getComputedValue(target) !== savedValue) {
+          target.value = savedValue;
         }
         continue;
       }
 
       if (event.value === null) {
-        event.value = target.obj._getValue();
+        event.value = FieldInternals.getComputedValue(target);
       }
 
-      savedValue = target.obj._getValue();
+      savedValue = FieldInternals.getComputedValue(target);
       const formattedValue = this.#runActions(target, target, event, "Format")
         ? event.value?.toString?.()
         : null;
 
-      target.obj._sendToView({ value: savedValue, formattedValue });
+      FieldInternals.send(target, { value: savedValue, formattedValue });
     }
   }
 }

@@ -15,6 +15,7 @@
 
 import { exposeObject, makeArr, makeMap, serializeError } from "./app_utils.js";
 import { createMap } from "./common.js";
+import { FieldInternals } from "./field.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
 
@@ -181,13 +182,13 @@ class Doc {
   }
 
   #initActions() {
-    for (const { obj } of this.#fields.values()) {
+    for (const field of this.#fields.values()) {
       // Send date/time values converted during field initialization.
-      const initialValue = obj._initialValue;
+      const initialValue = FieldInternals.getInitialValue(field);
       if (initialValue) {
-        obj._sendToView({
+        FieldInternals.send(field, {
           value: initialValue,
-          formattedValue: obj.value.toString(),
+          formattedValue: FieldInternals.getValue(field).toString(),
         });
       }
     }
@@ -287,7 +288,9 @@ class Doc {
     this.#fieldNames.push(name);
 
     // Register field and widget page actions.
-    for (const [page, eventName, scripts] of field.obj._getPageActions()) {
+    for (const [page, eventName, scripts] of FieldInternals.getPageActions(
+      field
+    )) {
       this.#otherPageActions ??= new Map();
       this.#otherPageActions
         .getOrInsertComputed(page + 1, makeMap)
@@ -991,7 +994,7 @@ class Doc {
     /* Not implemented */
   }
 
-  #getField(cName) {
+  getField(cName) {
     if (cName && typeof cName === "object") {
       cName = cName.cName;
     }
@@ -1030,11 +1033,6 @@ class Doc {
     return null;
   }
 
-  getField(cName) {
-    const field = this.#getField(cName);
-    return !field ? null : field.wrapped;
-  }
-
   #getChildren(fieldName) {
     // Children of foo.bar are foo.bar.oof, foo.bar.rab
     // but not foo.bar.oof.FOO.
@@ -1060,10 +1058,10 @@ class Doc {
       if (name.startsWith(fieldName)) {
         const finalPart = name.slice(len);
         if (
-          field.obj._hasValue &&
+          FieldInternals.getHasValue(field) &&
           (finalPart === "" || finalPart.startsWith("."))
         ) {
-          children.push(field.wrapped);
+          children.push(field);
         }
       }
     }
@@ -1315,7 +1313,7 @@ class Doc {
           fieldsToReset = null;
           break;
         }
-        const field = this.#getField(fieldName);
+        const field = this.getField(fieldName);
         if (!field) {
           continue;
         }
@@ -1326,8 +1324,8 @@ class Doc {
 
     if (fieldsToReset) {
       // Include descendants: Set iteration also visits newly added fields.
-      for (const { obj } of fieldsToReset) {
-        for (const id of obj._kidIds || []) {
+      for (const field of fieldsToReset) {
+        for (const id of FieldInternals.getKidIds(field) || []) {
           const kid = this.#appObjects[id];
           if (kid) {
             fieldsToReset.add(kid);
@@ -1340,9 +1338,9 @@ class Doc {
     }
 
     for (const field of fieldsToReset) {
-      field.obj._setValue(field.obj.defaultValue);
-      field.obj._sendToView({
-        value: field.obj.defaultValue,
+      FieldInternals.setValue(field, field.defaultValue);
+      FieldInternals.send(field, {
+        value: field.defaultValue,
         formattedValue: null,
         selRange: [0, 0],
       });
