@@ -23,7 +23,7 @@ import { FormatError, info } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Stream } from "./stream.js";
 
-const codeLenCodeMap = new Int32Array([
+const codeLenCodeMap = new Uint8Array([
   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
 ]);
 
