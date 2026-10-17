@@ -676,6 +676,7 @@ describe("Scripting", function () {
       const value = await myeval(`(() => {
         Object.prototype.itself = function () { return this; };
         const objects = [
+          app,
           app.fs,
           app.thermometer,
           color,
@@ -692,7 +693,7 @@ describe("Scripting", function () {
             Object.getPrototypeOf(Object.getPrototypeOf(o)) === Object.prototype
         );
       })()`);
-      expect(value).toEqual(Array(7).fill(true));
+      expect(value).toEqual(Array(8).fill(true));
     });
 
     it("should show the API functions as native ones", async () => {
@@ -707,7 +708,7 @@ describe("Scripting", function () {
         const nativeSource = toString.call(Math.max);
         return {
           source: [
-            Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app.fs), "cursor")
+            Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app), "language")
               .get,
             toString,
           ].map(
@@ -733,6 +734,7 @@ describe("Scripting", function () {
         "addPublicFunctions",
         "AForm",
         "App",
+        "AppInternals",
         "callExternalFunction",
         "Color",
         "ColorConverters",
@@ -756,6 +758,45 @@ describe("Scripting", function () {
         "Util",
       ].filter(name => globalThis.eval("typeof " + name) !== "undefined")`);
       expect(value).toEqual([]);
+    });
+
+    it("should keep the timers working when a script redefines the WeakMap methods", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const prototypes = [
+          [WeakMap.prototype, ["delete", "get", "set"]],
+          [FinalizationRegistry.prototype, ["register", "unregister"]],
+        ];
+        const saved = prototypes.map(([proto, names]) =>
+          names.map(name => proto[name])
+        );
+        for (const [proto, names] of prototypes) {
+          for (const name of names) {
+            proto[name] = () => {
+              throw new Error("Redefined");
+            };
+          }
+        }
+        try {
+          app.clearTimeOut(app.setTimeOut("0", 100000));
+          app.clearInterval(app.setInterval("0", 100000));
+          return true;
+        } catch {
+          return false;
+        } finally {
+          prototypes.forEach(([proto, names], i) => {
+            names.forEach((name, j) => {
+              proto[name] = saved[i][j];
+            });
+          });
+        }
+      })()`);
+      expect(value).toBeTrue();
     });
 
     it("should call detached app, color, console and util methods", async () => {
