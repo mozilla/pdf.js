@@ -245,7 +245,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug1708040.pdf", ".textLayer");
+      pages = await loadAndWait("bug1708040.pdf", ".structTree");
     });
 
     afterEach(async () => {
@@ -306,7 +306,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug1937438_af_from_latex.pdf", ".textLayer");
+      pages = await loadAndWait("bug1937438_af_from_latex.pdf", ".structTree");
     });
 
     afterEach(async () => {
@@ -341,7 +341,10 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug1997343.pdf", ".textLayer");
+      pages = await loadAndWait(
+        "bug1997343.pdf",
+        ".page[data-page-number='1'] .structTree"
+      );
     });
 
     afterEach(async () => {
@@ -369,7 +372,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug1937438_mml_from_latex.pdf", ".textLayer");
+      pages = await loadAndWait("bug1937438_mml_from_latex.pdf", ".structTree");
     });
 
     afterEach(async () => {
@@ -431,7 +434,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug2004951.pdf", ".textLayer");
+      pages = await loadAndWait("bug2004951.pdf", ".structTree");
     });
 
     afterEach(async () => {
@@ -455,7 +458,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug2009627.pdf", ".textLayer");
+      pages = await loadAndWait("bug2009627.pdf", ".structTree");
     });
 
     afterEach(async () => {
@@ -486,7 +489,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug2025674.pdf", ".textLayer");
+      pages = await loadAndWait("bug2025674.pdf", ".structTree");
     });
 
     afterEach(async () => {
@@ -541,7 +544,7 @@ describe("accessibility", () => {
     let pages;
 
     beforeEach(async () => {
-      pages = await loadAndWait("bug2014080.pdf", ".textLayer");
+      pages = await loadAndWait("bug2014080.pdf", ".structTree");
     });
 
     afterEach(async () => {
