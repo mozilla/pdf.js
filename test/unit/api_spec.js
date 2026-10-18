@@ -10274,6 +10274,107 @@ small scripts as well as for`);
 
         await loadingTask.destroy();
       });
+
+      it("removes a deleted annotation and its popup when extracting pages", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("highlight_popup.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          deleted: true,
+          id: "24R",
+          pageIndex: 0,
+          popupRef: "25R",
+        });
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(1);
+        expect(await pdfPage.getAnnotations({ intent: "any" })).toEqual([]);
+
+        await loadingTask.destroy();
+      });
+
+      it("applies annotation edits when extracting pages, as when saving", async function () {
+        const getAnnotations = async method => {
+          let loadingTask = getDocument(
+            buildGetDocumentParams("issue14438.pdf")
+          );
+          let pdfDoc = await loadingTask.promise;
+          pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+            annotationType: AnnotationEditorType.FREETEXT,
+            rect: [12, 34, 56, 78],
+            rotation: 0,
+            fontSize: 10,
+            color: [0, 0, 0],
+            value: "Hello PDF.js World!",
+            pageIndex: 0,
+            id: "10R",
+          });
+          const data =
+            method === "saveDocument"
+              ? await pdfDoc.saveDocument()
+              : await pdfDoc.extractPages([{ document: null }]);
+          await loadingTask.destroy();
+
+          loadingTask = getDocument({ data });
+          pdfDoc = await loadingTask.promise;
+          const pdfPage = await pdfDoc.getPage(1);
+          const annotations = await pdfPage.getAnnotations({ intent: "any" });
+          await loadingTask.destroy();
+          return annotations.map(({ subtype, textContent }) => ({
+            subtype,
+            textContent,
+          }));
+        };
+
+        const annotations = await getAnnotations("extractPages");
+        expect(
+          annotations.filter(({ textContent }) => textContent?.length)
+        ).toEqual([
+          { subtype: "FreeText", textContent: ["Hello PDF.js World!"] },
+        ]);
+        expect(annotations).toEqual(await getAnnotations("saveDocument"));
+      });
+
+      it("reuses an edited annotation's popup when extracting pages", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("highlight_popup.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const originalPage = await pdfDoc.getPage(1);
+        const originalPopup = (await originalPage.getAnnotations()).find(
+          ({ annotationType }) => annotationType === AnnotationType.POPUP
+        );
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.HIGHLIGHT,
+          id: "24R",
+          pageIndex: 0,
+          popup: { deleted: false, contents: "Hello" },
+          popupRef: "25R",
+        });
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(1);
+        const annotations = await pdfPage.getAnnotations();
+
+        expect(annotations.length).toEqual(2);
+        const [highlight, popup] = annotations;
+        expect(highlight.annotationType).toEqual(AnnotationType.HIGHLIGHT);
+        expect(highlight.contentsObj.str).toEqual("Hello");
+        expect(highlight.popupRef).toEqual(popup.id);
+        expect(popup.annotationType).toEqual(AnnotationType.POPUP);
+        expect(popup.rect).toEqual(originalPopup.rect);
+
+        await loadingTask.destroy();
+      });
     });
 
     describe("AcroForm", function () {
