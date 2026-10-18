@@ -1107,9 +1107,13 @@ class Lexer {
               strBuf.push("\f");
               break;
             case 0x5c: // '\'
+              strBuf.push("\\");
+              break;
             case 0x28: // '('
+              strBuf.push("(");
+              break;
             case 0x29: // ')'
-              strBuf.push(String.fromCharCode(ch));
+              strBuf.push(")");
               break;
             case 0x30: // '0'
             case 0x31: // '1'
