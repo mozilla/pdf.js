@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import {
   captureOperatorLists,
   capturePaths,
   createOperatorList,
   createPathState,
 } from "./evaluator_utils.js";
+import { benchmark } from "./bench_utils.js";
+import { describe } from "vitest";
 
 const OPERATOR_LISTS = [
   { kind: "text", filename: "issue12963.pdf", options: { pages: [1] } },
@@ -43,7 +44,7 @@ for (const entry of PATHS) {
 
 describe("evaluator", () => {
   for (const { kind, filename, operatorLists } of OPERATOR_LISTS) {
-    bench(`OperatorList.addOp: ${kind} (${filename})`, () =>
+    benchmark(`OperatorList.addOp: ${kind} (${filename})`, () =>
       operatorLists.map(input => {
         const { fnArray, argsArray } = input.args();
         const operatorList = createOperatorList();
@@ -57,7 +58,7 @@ describe("evaluator", () => {
   }
 
   for (const { kind, filename, evaluator, paths } of PATHS) {
-    bench(`PartialEvaluator.buildPath: ${kind} (${filename})`, () => {
+    benchmark(`PartialEvaluator.buildPath: ${kind} (${filename})`, () => {
       let length = 0;
       for (const path of paths) {
         const state = createPathState();

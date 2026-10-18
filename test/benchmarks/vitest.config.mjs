@@ -102,6 +102,9 @@ export default defineConfig({
     // background tier-up from Liftoff.
     // Compile JavaScript with Sparkplug on first call to avoid delayed batches.
     execArgv: ["--no-liftoff", "--always-sparkplug"],
+    // Some benchmarks take several minutes under CodSpeed's simulation, which
+    // exceeds the one minute timeout (and minimum) used for benchmarks.
+    testTimeout: 10 * 60 * 1000,
     benchmark: {
       include: ["test/benchmarks/**/*.bench.js"],
     },

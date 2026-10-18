@@ -15,6 +15,7 @@
 
 import { setVerbosityLevel, VerbosityLevel } from "../../src/shared/util.js";
 import fs from "fs";
+import { test } from "vitest";
 import { WorkerMessageHandler } from "../../src/core/worker.js";
 
 // Avoid flooding the benchmark output with `info`/`warn` messages.
@@ -101,4 +102,11 @@ function buildGetDocumentParams(data) {
   };
 }
 
-export { buildGetDocumentParams, readFile, readTestPdf };
+function benchmark(name, fn) {
+  // Wrapper function to reduce boilerplate for the individual benchmarks.
+  test(name, async ({ bench }) => {
+    await bench(name, fn).run();
+  });
+}
+
+export { benchmark, buildGetDocumentParams, readFile, readTestPdf };
