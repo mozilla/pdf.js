@@ -562,6 +562,44 @@ describe("PDF viewer", () => {
         })
       );
     });
+
+    it("must paint the page background when a worker rendering is paused before any frame (issue 22229)", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(() => {
+            const { pdfViewer } = window.PDFViewerApplication;
+            const { renderingQueue } = pdfViewer;
+            // Pause at the first onContinue callback.
+            renderingQueue.isHighestPriority = () => false;
+            renderingQueue.renderHighestPriority = () => {};
+            const pageView = pdfViewer.getPageView(0);
+            pageView.reset();
+            pageView.draw().catch(() => {});
+          });
+          await page.waitForFunction(
+            () =>
+              window.PDFViewerApplication.pdfViewer.getPageView(0)
+                .renderingState === 2 /* RenderingStates.PAUSED */
+          );
+
+          const { isWorkerRendering, backgroundColor } = await page.evaluate(
+            () => {
+              const pageView =
+                window.PDFViewerApplication.pdfViewer.getPageView(0);
+              return {
+                isWorkerRendering: pageView.renderTask.isWorkerRendering,
+                backgroundColor: getComputedStyle(pageView.div).backgroundColor,
+              };
+            }
+          );
+
+          expect(isWorkerRendering).withContext(`In ${browserName}`).toBeTrue();
+          expect(backgroundColor)
+            .withContext(`In ${browserName}`)
+            .toEqual("rgb(255, 255, 255)");
+        })
+      );
+    });
   });
 
   describe("Detail view on zoom", () => {

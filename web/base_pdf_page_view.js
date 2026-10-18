@@ -85,9 +85,11 @@ class BasePDFPageView extends RenderableView {
     switch (state) {
       case RenderingStates.PAUSED:
         this.div.classList.remove("loading");
-        // Display the canvas as it has been drawn.
         this.#startTime = 0;
-        this.#showCanvas?.(false);
+        // Let onFrame show the worker canvas after drawing a frame.
+        if (!this.renderTask?.isWorkerRendering) {
+          this.#showCanvas?.(false);
+        }
         break;
       case RenderingStates.RUNNING:
         this.div.classList.add("loadingIcon");
