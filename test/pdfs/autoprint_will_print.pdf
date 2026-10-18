@@ -1,0 +1,38 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /OpenAction 6 0 R /AA << /WP 7 0 R >> /AcroForm << /Fields [4 0 R] /DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 5 0 R >> >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Annots [4 0 R] >>
+endobj
+4 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (Text1) /F 4 /P 3 0 R /Rect [20 140 180 170] /DA (/Helv 12 Tf 0 g) >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+6 0 obj
+<< /S /JavaScript /JS (this.print\(true\);) >>
+endobj
+7 0 obj
+<< /S /JavaScript /JS (this.getField\("Text1"\).value = "WillPrint";) >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000015 00000 n 
+0000000190 00000 n 
+0000000247 00000 n 
+0000000334 00000 n 
+0000000463 00000 n 
+0000000560 00000 n 
+0000000622 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+710
+%%EOF

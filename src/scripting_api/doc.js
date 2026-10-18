@@ -161,7 +161,13 @@ class Doc extends PDFObject {
         break;
       case "WillSave":
         this._disableSaving = true;
-        this._runActions(name);
+        try {
+          this._runActions(name);
+        } catch (error) {
+          this._send(serializeError(error));
+        }
+        // Let the viewer save the updated field values.
+        this._send({ command: "WillSaveFinished" });
         this._disableSaving = false;
         break;
       default:
