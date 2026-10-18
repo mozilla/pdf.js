@@ -736,6 +736,14 @@ class Util {
     return `#${this.hexNums[r]}${this.hexNums[g]}${this.hexNums[b]}`;
   }
 
+  static get identity0to256Map() {
+    return shadow(
+      this,
+      "identity0to256Map",
+      Uint8Array.from({ length: 256 }, (_, i) => i)
+    );
+  }
+
   // Concatenates two transformation matrices together and returns the result.
   static transform(m1, m2) {
     return [

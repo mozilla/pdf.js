@@ -490,20 +490,12 @@ class TransferMapsFallback {
   constructor(maps) {
     // One map applies to R, G, and B; `null` maps are identities.
     const [mapR, mapG = mapR, mapB = mapR] = maps;
-    const { identityMap } = TransferMapsFallback;
+    const identityMap = Util.identity0to256Map.slice();
     this.#maps = [
       mapR || identityMap,
       mapG || identityMap,
       mapB || identityMap,
     ];
-  }
-
-  static get identityMap() {
-    return shadow(
-      this,
-      "identityMap",
-      Uint8Array.from({ length: 256 }, (_, i) => i)
-    );
   }
 
   /**

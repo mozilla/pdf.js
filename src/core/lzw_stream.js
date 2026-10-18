@@ -14,6 +14,7 @@
  */
 
 import { DecodeStream } from "./decode_stream.js";
+import { Util } from "../shared/util.js";
 
 class LZWStream extends DecodeStream {
   constructor(str, maybeLength, earlyChange) {
@@ -35,9 +36,7 @@ class LZWStream extends DecodeStream {
       currentSequence: new Uint8Array(maxLzwDictionarySize),
       currentSequenceLength: 0,
     };
-    for (let i = 0; i < 256; ++i) {
-      lzwState.dictionaryValues[i] = i;
-    }
+    lzwState.dictionaryValues.set(Util.identity0to256Map, 0);
     this.lzwState = lzwState;
   }
 
