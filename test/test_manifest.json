@@ -14741,5 +14741,14 @@
       "1": 1
     },
     "about": "Streams and strings encrypted with different (and explicit) crypt filters."
+  },
+  {
+    "id": "bug2082236",
+    "file": "pdfs/bug2082236.pdf",
+    "md5": "6a77cec5ee978367d813ca08d6e7197f",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true,
+    "about": "NoRotate FreeText annotation on a page with /Rotate 270."
   }
 ]
