@@ -7542,6 +7542,85 @@ have written that much by now. So, here’s to squashing bugs.`);
       await renderPage(pdfDoc1, /* noOtherPixels = */ false);
       await loadingTask1.destroy();
     });
+
+    it("should Wasm-decode images after extracting pages from PDF data, if multiple PDFs are parsed in one worker (PR 22186)", async function () {
+      if (isNodeJS) {
+        // Fake workers can reuse Wasm bytes cached by earlier tests.
+        pending("Worker is not supported in Node.js.");
+      }
+      // Share a worker and fetch Wasm through document message handlers.
+      const worker = new PDFWorker();
+
+      // This PDF contains a JPEG 2000 image.
+      const loadingTask1 = getDocument(
+        buildGetDocumentParams("issue19326.pdf", {
+          useWorkerFetch: false,
+          worker,
+        })
+      );
+      const pdfDoc1 = await loadingTask1.promise;
+
+      const loadingTask2 = getDocument(
+        buildGetDocumentParams("clippath.pdf", {
+          useWorkerFetch: false,
+          worker,
+        })
+      );
+      const pdfDoc2 = await loadingTask2.promise;
+
+      // Temporary extraction managers share their parent document's handler.
+      // Terminating them must preserve the parent's handler.
+      const pdfData = await DefaultFileReaderFactory.fetch({
+        path: TEST_PDFS_PATH + "doc_1_3_pages.pdf",
+      });
+      for (const pdfDoc of [pdfDoc1, pdfDoc2]) {
+        const data = await pdfDoc.extractPages([{ document: pdfData }]);
+        expect(data.length).toBeGreaterThan(0);
+      }
+      await loadingTask2.destroy();
+
+      // Check the Wasm request reaches pdfDoc1; JS fallback can hide failures.
+      const fetchSpy = spyOn(
+        pdfDoc1._transport.binaryDataFactory,
+        "fetch"
+      ).and.callThrough();
+
+      const pdfPage = await pdfDoc1.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+      const { canvasFactory } = pdfDoc1;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      const renderTask = pdfPage.render({
+        canvas: canvasAndCtx.canvas,
+        viewport,
+      });
+      await renderTask.promise;
+
+      expect(fetchSpy).toHaveBeenCalledWith({
+        kind: "wasmUrl",
+        filename: "openjpeg.wasm",
+      });
+
+      // The decoded image contributes pixels other than black and white.
+      const BLACK = FeatureTest.isLittleEndian ? 0xff000000 : 0x000000ff,
+        WHITE = 0xffffffff;
+      let numOtherPixels = 0;
+      for (const p of new Uint32Array(
+        canvasAndCtx.context.getImageData(0, 0, viewport.width, viewport.height)
+          .data.buffer
+      )) {
+        if (p !== BLACK && p !== WHITE) {
+          numOtherPixels++;
+        }
+      }
+      expect(numOtherPixels).toBeGreaterThan(1000);
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask1.destroy();
+      worker.destroy();
+    });
   });
 
   describe("Multiple `getDocument` instances", function () {
