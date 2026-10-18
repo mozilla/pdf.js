@@ -19,6 +19,7 @@ import {
   createPromise,
   getAnnotationSelector,
   loadAndWait,
+  waitAndClick,
   waitForTimeout,
 } from "./test_utils.mjs";
 
@@ -177,8 +178,8 @@ describe("PDFPresentationMode", () => {
         pages.map(async ([browserName, page]) => {
           await enterPresentationMode(page);
 
-          // Go to the last page.
-          await page.click("#pdfjs_internal_id_12R");
+          // The "page-fit" update can temporarily hide the annotation layer.
+          await waitAndClick(page, "#pdfjs_internal_id_12R");
           await page.waitForFunction(
             `window.PDFViewerApplication.pdfViewer.currentPageNumber === 3`
           );
