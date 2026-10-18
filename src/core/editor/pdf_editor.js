@@ -36,7 +36,7 @@ import {
   RefMap,
   RefSet,
 } from "../primitives.js";
-import { incrementalUpdate, writeValue } from "../writer.js";
+import { incrementalUpdate, writeObject, writeValue } from "../writer.js";
 import { isArrayEqual, makeArr, stringToBytes } from "../../shared/util.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
@@ -3045,16 +3045,25 @@ class PDFEditor {
 
   /**
    * Create the changes required to write the new PDF document.
+   * @param {CipherTransformFactory|null} encrypt
+   * @param {Ref|null} encryptRef
    * @returns {Promise<[RefMap, Ref]>}
    */
-  async #createChanges() {
+  async #createChanges(encrypt, encryptRef) {
     const changes = new RefMap();
     changes.put(Ref.get(0, 0xffff), { data: null });
     for (let i = 1, ii = this.xref.length; i < ii; i++) {
+      const ref = Ref.get(i, 0);
+      const obj = this.xref[i];
       if (this.objStreamRefs?.has(i)) {
-        await this.#createObjectStream(Ref.get(i, 0), this.xref[i], changes);
+        await this.#createObjectStream(ref, obj, changes);
+      } else if (typeof obj === "string") {
+        // writeChanges expects strings to be serialized PDF objects.
+        const buffer = [];
+        await writeObject(ref, obj, buffer, { encrypt, encryptRef });
+        changes.put(ref, { data: buffer.join("") });
       } else {
-        changes.put(Ref.get(i, 0), { data: this.xref[i] });
+        changes.put(ref, { data: obj });
       }
     }
 
@@ -3101,7 +3110,10 @@ class PDFEditor {
     await this.#makeRoot();
     const infoMap = this.#makeInfo();
     const [encryptRef, encrypt, fileIds] = await this.#makeEncrypt();
-    const [changes, xrefTableRef] = await this.#createChanges();
+    const [changes, xrefTableRef] = await this.#createChanges(
+      encrypt,
+      encryptRef
+    );
 
     // Create the PDF header in order to help sniffers.
     // PDF version must be in the range 1.0 to 1.7 inclusive.

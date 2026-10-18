@@ -50,7 +50,9 @@ import {
   RenderTask,
 } from "../../src/display/api.js";
 import { isSameOrigin, StatTimer } from "../../src/display/api_utils.js";
+import { Lexer, Parser } from "../../src/core/parser.js";
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
+import { CipherTransformFactory } from "../../src/core/crypto.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
@@ -58,6 +60,7 @@ import { MessageHandler } from "../../src/shared/message_handler.js";
 import { Metadata } from "../../src/display/metadata.js";
 import { PageViewport } from "../../src/display/page_viewport.js";
 import { RenderingCancelledException } from "../../src/display/display_utils.js";
+import { StringStream } from "../../src/core/stream.js";
 
 const RENDERER_SRC = "../../build/generic/build/pdf.renderer.mjs";
 const WORKER_SRC = "../../build/generic/build/pdf.worker.mjs";
@@ -105,7 +108,7 @@ describe("api", function () {
     return count;
   }
 
-  function assemblePdf(objects) {
+  function assemblePdf(objects, trailerEntries = "") {
     let pdf = "%PDF-1.7\n";
     const offsets = [];
     for (const obj of objects) {
@@ -119,7 +122,7 @@ describe("api", function () {
       pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
     }
     pdf +=
-      `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\n` +
+      `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R ${trailerEntries}>>\n` +
       `startxref\n${xrefOffset}\n%%EOF\n`;
     return stringToBytes(pdf);
   }
@@ -8358,6 +8361,80 @@ small scripts as well as for`);
         expect(newPdfDoc.numPages).toEqual(1);
         await newPdfDoc.getPage(1);
         await newLoadingTask.destroy();
+      });
+
+      it("serializes indirect strings outside of object streams", async function () {
+        const alt = "Hello (world)\\ with a newline\n";
+        const password = "123456";
+        // R=3 parameters from crypto_spec.js (dict1, fileId1).
+        const fileId = "\xf6\xc6\xaf\x17\xf3rR\x8dRM\x9a\x80\xd1\xef\xdf\x18";
+        const fileIdHex = stringToBytes(fileId).toHex();
+        const encryptDict =
+          "<< /Filter /Standard /V 2 /Length 128 /R 3 /P -1028 " +
+          "/O <80c30496916f20736c3ae61b135491f20d5612e3ff5ebbe9564fd86b9aca7c5d> " +
+          "/U <6a0c8d3e591900bc6a647d91bdaa001800000000000000000000000000000000> >>";
+
+        for (const encrypted of [false, true]) {
+          const ctx = encrypted ? "encrypted" : "unencrypted";
+          let value = alt;
+          let trailerEntries = "";
+          if (encrypted) {
+            const parser = new Parser({
+              lexer: new Lexer(new StringStream(encryptDict)),
+            });
+            const encrypt = new CipherTransformFactory(
+              parser.getObj(),
+              fileId,
+              password
+            );
+            value = encrypt.createCipherTransform(6, 0).encryptString(alt);
+            trailerEntries = `/Encrypt 8 0 R /ID [<${fileIdHex}> <${fileIdHex}>] `;
+          }
+          const objects = [
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+              "/StructTreeRoot 4 0 R >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /StructParents 0 " +
+              "/MediaBox [0 0 100 100] >>\nendobj\n",
+            "4 0 obj\n<< /Type /StructTreeRoot /K [5 0 R] " +
+              "/ParentTree 7 0 R /ParentTreeNextKey 1 >>\nendobj\n",
+            // This /Alt string is copied after page object streams are built.
+            "5 0 obj\n<< /Type /StructElem /S /Figure /P 4 0 R /Pg 3 0 R " +
+              "/Alt 6 0 R /K 0 >>\nendobj\n",
+            `6 0 obj\n<${stringToBytes(value).toHex()}>\nendobj\n`,
+            "7 0 obj\n<< /Nums [0 [5 0 R]] >>\nendobj\n",
+          ];
+          if (encrypted) {
+            objects.push(`8 0 obj\n${encryptDict}\nendobj\n`);
+          }
+          const loadingTask = getDocument({
+            data: assemblePdf(objects, trailerEntries),
+            password,
+          });
+          const pdfDoc = await loadingTask.promise;
+          const page = await pdfDoc.getPage(1);
+          expect((await page.getStructTree()).children[0].alt)
+            .withContext(ctx)
+            .toEqual(alt);
+          const data = await pdfDoc.extractPages([{ document: null }]);
+          expect(countMarker(data, "/Encrypt"))
+            .withContext(ctx)
+            .toEqual(encrypted ? 1 : 0);
+          expect(countMarker(data, "Hello"))
+            .withContext(ctx)
+            .toEqual(encrypted ? 0 : 1);
+          await loadingTask.destroy();
+
+          const newLoadingTask = getDocument({ data, password });
+          const newPdfDoc = await newLoadingTask.promise;
+          expect(newPdfDoc.numPages).withContext(ctx).toEqual(1);
+          const newPage = await newPdfDoc.getPage(1);
+          const tree = await newPage.getStructTree();
+          expect(tree.children.length).withContext(ctx).toEqual(1);
+          expect(tree.children[0].role).withContext(ctx).toEqual("Figure");
+          expect(tree.children[0].alt).withContext(ctx).toEqual(alt);
+          await newLoadingTask.destroy();
+        }
       });
 
       it("should merge two PDFs with page included ranges", async function () {
