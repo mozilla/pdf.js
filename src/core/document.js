@@ -1310,14 +1310,23 @@ class PDFDocument {
     return data;
   }
 
+  /**
+   * Whether the document flags indicate XFA-only content, independent of
+   * `enableXfa`.
+   */
+  get hasOnlyXfa() {
+    return shadow(
+      this,
+      "hasOnlyXfa",
+      this.catalog.needsRendering &&
+        this.formInfo.hasXfa &&
+        !this.formInfo.hasAcroForm
+    );
+  }
+
   get xfaFactory() {
     let data;
-    if (
-      this.pdfManager.enableXfa &&
-      this.catalog.needsRendering &&
-      this.formInfo.hasXfa &&
-      !this.formInfo.hasAcroForm
-    ) {
+    if (this.pdfManager.enableXfa && this.hasOnlyXfa) {
       data = this.xfaData;
     }
     return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);

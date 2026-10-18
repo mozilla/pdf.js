@@ -8558,6 +8558,70 @@ small scripts as well as for`);
         await newLoadingTask.destroy();
         await loadingTask.destroy();
       });
+
+      it("should skip invalid documents when merging PDFs", async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("doc_1_3_pages.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfData2 = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "doc_2_3_pages.pdf",
+        });
+
+        const data = await pdfDoc.extractPages([
+          { document: null },
+          { document: stringToBytes("This is not a PDF file.") },
+          { document: pdfData2 },
+        ]);
+        const newLoadingTask = getDocument({ data });
+        const newPdfDoc = await newLoadingTask.promise;
+        expect(newPdfDoc.numPages).toEqual(6);
+
+        for (let i = 1; i <= 6; i++) {
+          const pdfPage = await newPdfDoc.getPage(i);
+          const { items: textItems } = await pdfPage.getTextContent();
+          expect(mergeText(textItems)).toEqual(
+            `Document ${Math.ceil(i / 3)}:Page ${((i - 1) % 3) + 1}`
+          );
+        }
+
+        await newLoadingTask.destroy();
+        await loadingTask.destroy();
+      });
+
+      it("should skip pure XFA documents when merging PDFs", async function () {
+        const xfaData = await DefaultFileReaderFactory.fetch({
+          path: TEST_PDFS_PATH + "xfa_issue14315.pdf",
+        });
+
+        for (const enableXfa of [false, true]) {
+          const loadingTask = getDocument(
+            buildGetDocumentParams("doc_1_3_pages.pdf", { enableXfa })
+          );
+          const pdfDoc = await loadingTask.promise;
+
+          const data = await pdfDoc.extractPages([
+            { document: null },
+            { document: xfaData },
+          ]);
+          const newLoadingTask = getDocument({ data });
+          const newPdfDoc = await newLoadingTask.promise;
+          expect(newPdfDoc.numPages)
+            .withContext(`enableXfa: ${enableXfa}`)
+            .toEqual(3);
+
+          for (let i = 1; i <= 3; i++) {
+            const pdfPage = await newPdfDoc.getPage(i);
+            const { items: textItems } = await pdfPage.getTextContent();
+            expect(mergeText(textItems))
+              .withContext(`enableXfa: ${enableXfa}, page ${i}`)
+              .toEqual(`Document 1:Page ${i}`);
+          }
+
+          await newLoadingTask.destroy();
+          await loadingTask.destroy();
+        }
+      });
     });
 
     describe("Page labels", function () {
