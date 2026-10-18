@@ -261,6 +261,22 @@ describe("Writer", function () {
           );
       }
     });
+
+    it("should not compress a metadata stream", async function () {
+      // Above the compression threshold.
+      const string = "a".repeat(300);
+      const stream = new StringStream(string, new Dict());
+      stream.dict.setIfName("Type", "Metadata");
+      stream.dict.setIfName("Subtype", "XML");
+
+      const buffer = [];
+      await writeValue(stream, buffer, null);
+
+      expect(buffer.join("")).toEqual(
+        "<< /Type /Metadata /Subtype /XML /Length 300>> stream\n" +
+          `${string}\nendstream`
+      );
+    });
   });
 
   describe("XFA", function () {

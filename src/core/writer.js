@@ -14,7 +14,7 @@
  */
 
 import { bytesToString, info, warn } from "../shared/util.js";
-import { Dict, isName, Name, Ref } from "./primitives.js";
+import { Dict, isDict, isName, Name, Ref } from "./primitives.js";
 import {
   escapePDFName,
   escapeString,
@@ -117,6 +117,8 @@ async function writeStream(stream, buffer, transform) {
     !isFilterZeroCompressedObject &&
     // /Crypt must come first (ISO 32000-1, 7.4.10).
     !cryptFilterName &&
+    // Preserve plaintext metadata (ISO 32000-1, 14.3.2, note 2).
+    !isDict(dict, "Metadata") &&
     bytes.length >= MIN_LENGTH_FOR_COMPRESSING
   ) {
     try {
