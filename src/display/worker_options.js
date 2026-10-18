@@ -16,9 +16,34 @@
 class GlobalWorkerOptions {
   static #port = null;
 
+  static #rendererPorts = [];
+
   static #rendererSrc = "";
 
   static #src = "";
+
+  /**
+   * @type {Array<Worker>}
+   */
+  static get rendererPorts() {
+    return this.#rendererPorts;
+  }
+
+  /**
+   * @param {Array<Worker>} val - Caller-owned workers, one document per worker.
+   *   Uses `rendererSrc` when no supplied worker is available.
+   */
+  static set rendererPorts(val) {
+    if (
+      !Array.isArray(val) ||
+      !val.every(
+        port => typeof Worker !== "undefined" && port instanceof Worker
+      )
+    ) {
+      throw new Error("Invalid `rendererPorts` type.");
+    }
+    this.#rendererPorts = val;
+  }
 
   /**
    * @type {string}
@@ -32,8 +57,8 @@ class GlobalWorkerOptions {
    *   filename of the renderer worker file.
    *
    *   NOTE: The `rendererSrc` option must be set in order to render pages in a
-   *         worker thread; when it's unset, rendering falls back to the
-   *         main-thread.
+   *         worker thread, unless `rendererPorts` contains an unused worker;
+   *         otherwise, rendering falls back to the main-thread.
    */
   static set rendererSrc(val) {
     if (typeof val !== "string") {

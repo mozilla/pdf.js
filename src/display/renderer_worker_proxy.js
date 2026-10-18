@@ -21,6 +21,8 @@ import { MessageHandler } from "../shared/message_handler.js";
 import { OutputScale } from "./display_utils.js";
 import { setAnnotationCanvasName } from "./canvas.js";
 
+const PORT_CONNECTION_TIMEOUT = 5000; // ms
+
 function closeFrame({ bitmap, annotationBitmaps }) {
   bitmap?.close();
   if (annotationBitmaps) {
@@ -244,6 +246,7 @@ class WorkerRenderTask {
 
 /**
  * @typedef {object} RendererWorkerParameters
+ * @property {Worker} [port] - Caller-owned worker; never terminated here.
  * @property {number} [verbosity] - Logging level from {@link VerbosityLevel}.
  * @property {boolean} [enableHWA] - Allow hardware acceleration.
  * @property {boolean} [enableWebGPU] - Initialize WebGPU.
@@ -271,6 +274,8 @@ class RendererWorker {
 
   #pendingRequests = new Set();
 
+  #port = null;
+
   #renderTaskId = 0;
 
   #renderTasks = new Map();
@@ -281,9 +286,14 @@ class RendererWorker {
 
   #workerAC = null;
 
+  static #connectionId = 0;
+
+  static #usedPorts = new WeakSet();
+
   destroyed = false;
 
   constructor({
+    port = null,
     verbosity = getVerbosityLevel(),
     enableHWA = false,
     enableWebGPU = false,
@@ -291,7 +301,12 @@ class RendererWorker {
     this.verbosity = verbosity;
     this.#enableHWA = enableHWA;
     this.#enableWebGPU = enableWebGPU;
-    this.#initialize();
+
+    if (port) {
+      this.#initializeFromPort(port);
+    } else {
+      this.#initialize();
+    }
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // Expose the worker for test coverage.
@@ -304,12 +319,13 @@ class RendererWorker {
   }
 
   /**
-   * Whether rendererSrc is set and browser prerequisites are available.
+   * Whether worker rendering is configured and browser prerequisites are met.
    * @type {boolean}
    */
   static get isAvailable() {
     return (
-      !!GlobalWorkerOptions.rendererSrc &&
+      (!!GlobalWorkerOptions.rendererSrc ||
+        GlobalWorkerOptions.rendererPorts.length > 0) &&
       typeof Worker !== "undefined" &&
       FeatureTest.isOffscreenCanvasSupported &&
       !!globalThis.document?.fonts
@@ -330,6 +346,14 @@ class RendererWorker {
    */
   get messageHandler() {
     return this.#messageHandler;
+  }
+
+  /**
+   * The supplied renderer worker, or `null`.
+   * @type {Worker | null}
+   */
+  get port() {
+    return this.#port;
   }
 
   #resolve() {
@@ -361,80 +385,131 @@ class RendererWorker {
     this.#capability.reject(reason);
   }
 
+  #initializeFromPort(port) {
+    RendererWorker.#usedPorts.add(port);
+    this.#port = port;
+
+    // Ignore late messages from earlier connections.
+    const id = RendererWorker.#connectionId++;
+    const sourceName = `main${id}`;
+    const targetName = `renderer${id}`;
+    const handler = new MessageHandler("main", "renderer", port);
+    handler.send("Connect", { sourceName: targetName, targetName: sourceName });
+    handler.destroy();
+
+    this.#waitForReady(
+      port,
+      new MessageHandler(sourceName, targetName, port),
+      /* isPort = */ true
+    );
+  }
+
   #initialize() {
     try {
-      const worker = new Worker(getWorkerSrc(GlobalWorkerOptions.rendererSrc), {
-        type: "module",
-      });
-      const messageHandler = new MessageHandler("main", "renderer", worker);
-      const terminateEarly = reason => {
-        this.#terminateEarly = null;
-        ac.abort();
-        messageHandler.destroy();
-        worker.terminate();
-
-        this.#reject(
-          new Error(
-            `Renderer worker failed to initialize: "${reason?.message ?? reason}".`
-          )
-        );
-      };
-      this.#terminateEarly = terminateEarly;
-
-      const ac = new AbortController();
-      const onError = (event, reason) => {
-        if (!this.#webWorker) {
-          terminateEarly(reason);
-          return;
-        }
-        // An error may leave pending requests without replies.
-        event.preventDefault();
-        warn(
-          `Renderer worker failed: "${reason}". ` +
-            "Falling back to main-thread rendering."
-        );
-        this.destroy();
-      };
-      worker.addEventListener(
-        "error",
-        event => onError(event, event.error?.message ?? event.message),
-        { signal: ac.signal }
+      const { rendererSrc } = GlobalWorkerOptions;
+      if (!rendererSrc) {
+        throw new Error('No "GlobalWorkerOptions.rendererSrc" specified.');
+      }
+      const worker = new Worker(getWorkerSrc(rendererSrc), { type: "module" });
+      this.#waitForReady(
+        worker,
+        new MessageHandler("main", "renderer", worker),
+        /* isPort = */ false
       );
-      worker.addEventListener(
-        "messageerror",
-        event => onError(event, "Cannot deserialize a message."),
-        { signal: ac.signal }
-      );
-
-      messageHandler.on("ready", data => {
-        if (!(data?.testObj instanceof Uint8Array)) {
-          terminateEarly("TypedArray transfer test failed.");
-          return;
-        }
-        const apiVersion =
-          typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
-            ? PDFJSDev.eval("BUNDLE_VERSION")
-            : null;
-        if (apiVersion !== data.workerVersion) {
-          terminateEarly(
-            `The API version "${apiVersion}" does not match the Worker version "${data.workerVersion}".`
-          );
-          return;
-        }
-        this.#terminateEarly = null;
-        this.#messageHandler = messageHandler;
-        this.#webWorker = worker;
-        this.#workerAC = ac;
-
-        this.#resolve();
-      });
     } catch (reason) {
       this.#reject(reason);
     }
   }
 
+  #waitForReady(worker, messageHandler, isPort) {
+    let timeoutId = null;
+    const terminateEarly = reason => {
+      this.#terminateEarly = null;
+      clearTimeout(timeoutId);
+      ac.abort();
+      messageHandler.destroy();
+      if (isPort) {
+        // Leave failed ports marked as used.
+        this.#port = null;
+      } else {
+        worker.terminate();
+      }
+
+      this.#reject(
+        new Error(
+          `Renderer worker failed to initialize: "${reason?.message ?? reason}".`
+        )
+      );
+    };
+    this.#terminateEarly = terminateEarly;
+
+    const ac = new AbortController();
+    const onError = (event, reason) => {
+      if (!this.#messageHandler) {
+        terminateEarly(reason);
+        return;
+      }
+      // An error may leave pending requests without replies.
+      event.preventDefault();
+      warn(
+        `Renderer worker failed: "${reason}". ` +
+          "Falling back to main-thread rendering."
+      );
+      this.destroy();
+    };
+    worker.addEventListener(
+      "error",
+      event => onError(event, event.error?.message ?? event.message),
+      { signal: ac.signal }
+    );
+    worker.addEventListener(
+      "messageerror",
+      event => onError(event, "Cannot deserialize a message."),
+      { signal: ac.signal }
+    );
+    if (isPort) {
+      // Handle workers whose startup error was already emitted.
+      timeoutId = setTimeout(
+        () => terminateEarly("Connection timed out."),
+        PORT_CONNECTION_TIMEOUT
+      );
+    }
+
+    messageHandler.on("ready", data => {
+      if (!(data?.testObj instanceof Uint8Array)) {
+        terminateEarly("TypedArray transfer test failed.");
+        return;
+      }
+      const apiVersion =
+        typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING")
+          ? PDFJSDev.eval("BUNDLE_VERSION")
+          : null;
+      if (apiVersion !== data.workerVersion) {
+        terminateEarly(
+          `The API version "${apiVersion}" does not match the Worker version "${data.workerVersion}".`
+        );
+        return;
+      }
+      this.#terminateEarly = null;
+      clearTimeout(timeoutId);
+      this.#messageHandler = messageHandler;
+      if (!isPort) {
+        this.#webWorker = worker;
+      }
+      this.#workerAC = ac;
+
+      this.#resolve();
+    });
+  }
+
   destroy() {
     this.destroyed = true;
+
+    if (this.#port) {
+      this.#messageHandler?.send("Disconnect", null);
+      RendererWorker.#usedPorts.delete(this.#port);
+      this.#port = null;
+    }
     this.#terminateEarly?.("Worker was destroyed.");
 
     this.#workerAC?.abort();
@@ -450,6 +525,26 @@ class RendererWorker {
       reject(new Error("Renderer worker was destroyed."));
     }
     this.#pendingRequests.clear();
+  }
+
+  /**
+   * @param {object} params
+   * @param {Array<Worker>} [params.ports] - Supplied workers; selects the first
+   *   unused one.
+   * @param {number} [params.verbosity] - Logging level.
+   * @param {boolean} [params.enableHWA] - Allow hardware acceleration.
+   * @param {boolean} [params.enableWebGPU] - Initialize WebGPU.
+   * @returns {RendererWorker}
+   */
+  static create({ ports = [], ...params } = {}) {
+    const port = ports.find(p => !this.#usedPorts.has(p)) ?? null;
+    if (!port && ports.length > 0) {
+      warn(
+        "RendererWorker.create - no unused `rendererPorts` available, " +
+          "falling back to `rendererSrc`."
+      );
+    }
+    return new RendererWorker({ ...params, port });
   }
 
   /**
