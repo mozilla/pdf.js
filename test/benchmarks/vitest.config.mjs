@@ -98,6 +98,9 @@ export default defineConfig({
   },
   test: {
     include: [],
+    // Compile WebAssembly with TurboFan only to avoid timing variation from
+    // background tier-up from Liftoff.
+    execArgv: ["--no-liftoff"],
     benchmark: {
       include: ["test/benchmarks/**/*.bench.js"],
     },
