@@ -8437,6 +8437,43 @@ small scripts as well as for`);
         }
       });
 
+      it("drops the conformance declarations from the document info", async function () {
+        const loadingTask = getDocument({
+          data: assemblePdf(
+            [
+              "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+              "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+              "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+                "/MediaBox [0 0 100 100] >>\nendobj\n",
+              "4 0 obj\n<< /Title (Test) /GTS_PDFXVersion (PDF/X-4) " +
+                "/GTS_PDFXConformance (PDF/X-1a:2001) " +
+                "/ISO_PDFEVersion (PDF/E-1) /Custom (Value) >>\nendobj\n",
+            ],
+            "/Info 4 0 R "
+          ),
+        });
+        const pdfDoc = await loadingTask.promise;
+        const { info } = await pdfDoc.getMetadata();
+        expect(info.Custom).toEqual(
+          new Map([
+            ["GTS_PDFXVersion", "PDF/X-4"],
+            ["GTS_PDFXConformance", "PDF/X-1a:2001"],
+            ["ISO_PDFEVersion", "PDF/E-1"],
+            ["Custom", "Value"],
+          ])
+        );
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        const newLoadingTask = getDocument({ data });
+        const newPdfDoc = await newLoadingTask.promise;
+        const { info: newInfo } = await newPdfDoc.getMetadata();
+        expect(newInfo.Title).toEqual("Test");
+        expect(newInfo.Custom).toEqual(new Map([["Custom", "Value"]]));
+        await newLoadingTask.destroy();
+      });
+
       it("should merge two PDFs with page included ranges", async function () {
         const loadingTask = getDocument(
           buildGetDocumentParams("tracemonkey.pdf")
