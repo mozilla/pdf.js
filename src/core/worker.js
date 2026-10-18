@@ -584,7 +584,8 @@ class WorkerMessageHandler {
         if (!Array.isArray(pageInfos)) {
           pageInfos = [pageInfos];
         }
-        let newDocumentId = 0;
+        let managers = null,
+          newDocumentId = 0;
         for (const pageInfo of pageInfos) {
           if (pageInfo.image) {
             continue;
@@ -599,6 +600,8 @@ class WorkerMessageHandler {
               password: pageInfo.password ?? null,
               evaluatorOptions: Object.assign({}, pdfManager.evaluatorOptions),
             });
+            (managers ??= []).push(manager);
+
             let recoveryMode = false;
             let isValid = true;
             while (true) {
@@ -666,6 +669,9 @@ class WorkerMessageHandler {
           if (task) {
             finishWorkerTask(task);
           }
+          managers?.forEach(manager =>
+            manager.terminate(new AbortException("ExtractPages was finished."))
+          );
         }
       }
     );
