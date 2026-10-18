@@ -967,6 +967,23 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeFalse();
       expect(await myeval(`getField("date").value`)).toEqual("2024");
     });
+
+    it("should tell when the WillSave actions have run", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: {
+          actions: { WillSave: [`throw new Error("WillSave error");`] },
+        },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      // An action error must not suppress the completion reply.
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "WillSave" });
+      expect(send_queue.has("WillSaveFinished")).toEqual(true);
+      send_queue.delete("WillSaveFinished");
+      send_queue.delete("error");
+    });
   });
 
   describe("Util", function () {

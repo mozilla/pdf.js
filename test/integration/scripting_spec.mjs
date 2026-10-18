@@ -457,6 +457,31 @@ describe("Interaction", () => {
         })
       );
     });
+
+    it("must finish the WillPrint actions of overlapping requests", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          const count = await page.evaluate(async () => {
+            const { pdfScriptingManager } = window.PDFViewerApplication;
+            // Send two requests, then two more before the sandbox replies.
+            const promises = [
+              pdfScriptingManager.dispatchWillPrint(),
+              pdfScriptingManager.dispatchWillPrint(),
+            ];
+            await Promise.resolve();
+            promises.push(
+              pdfScriptingManager.dispatchWillPrint(),
+              pdfScriptingManager.dispatchWillPrint()
+            );
+            await Promise.all(promises);
+            return promises.length;
+          });
+          expect(count).withContext(`In ${browserName}`).toEqual(4);
+        })
+      );
+    });
   });
 
   describe("in doc_actions.pdf for saving", () => {
@@ -501,6 +526,92 @@ describe("Interaction", () => {
 
           text = await page.$eval(getSelector("50R"), el => el.value);
           expect(text).withContext(`In ${browserName}`).toEqual("DidSave");
+        })
+      );
+    });
+
+    it("must save the changes made by the WillSave actions", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          await clearInput(page, getSelector("47R"));
+          await page.evaluate(_ => {
+            window.document.activeElement.blur();
+          });
+          await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
+
+          const value = await page.evaluate(async () => {
+            const app = window.PDFViewerApplication;
+            const { downloadManager } = app;
+            const { download } = downloadManager;
+            let savedData = null;
+            downloadManager.download = data => {
+              savedData = data;
+            };
+            try {
+              await app.downloadOrSave();
+            } finally {
+              downloadManager.download = download;
+            }
+
+            const loadingTask = window.pdfjsLib.getDocument({
+              data: savedData,
+            });
+            try {
+              const pdf = await loadingTask.promise;
+              const pdfPage = await pdf.getPage(1);
+              const annotations = await pdfPage.getAnnotations();
+              return annotations.find(({ id }) => id === "47R")?.fieldValue;
+            } finally {
+              await loadingTask.destroy();
+            }
+          });
+          expect(value).withContext(`In ${browserName}`).toEqual("WillSave");
+        })
+      );
+    });
+
+    it("must recover when dispatching WillSave fails", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          await clearInput(page, getSelector("47R"));
+          await page.evaluate(_ => {
+            window.document.activeElement.blur();
+          });
+          await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
+
+          const state = await page.evaluate(async () => {
+            const app = window.PDFViewerApplication;
+            const { downloadManager, pdfScriptingManager } = app;
+            const { download } = downloadManager;
+            const downloads = [];
+            downloadManager.download = (data, url, filename, isModified) => {
+              downloads.push(isModified);
+            };
+            pdfScriptingManager.dispatchWillSave = () =>
+              Promise.reject(new Error("WillSave can't run."));
+            try {
+              await app.downloadOrSave();
+            } finally {
+              downloadManager.download = download;
+              delete pdfScriptingManager.dispatchWillSave;
+            }
+            return {
+              downloads,
+              isSaving: app._saveInProgress,
+              isWaiting: app.appConfig.appContainer.classList.contains("wait"),
+            };
+          });
+          expect(state)
+            .withContext(`In ${browserName}`)
+            .toEqual({
+              downloads: [false],
+              isSaving: false,
+              isWaiting: false,
+            });
         })
       );
     });
@@ -1764,6 +1875,69 @@ describe("Interaction", () => {
               window.PDFViewerApplication._testPrintResolver.promise,
             ])
           );
+        })
+      );
+    });
+  });
+
+  describe("in autoprint_will_print.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "autoprint_will_print.pdf",
+        "",
+        null /* zoom = */,
+        {
+          earlySetup: () => {
+            // Suppress the print dialog.
+            window.print = () => {};
+          },
+          appSetup: app => {
+            app._testPrintResolver = Promise.withResolvers();
+
+            // Run OpenAction before #ready, without GenericScripting's timer.
+            const { externalServices } = app;
+            const createScripting =
+              externalServices.createScripting.bind(externalServices);
+            externalServices.createScripting = () => {
+              const scripting = createScripting();
+              scripting.dispatchEventInSandbox = async event => {
+                const sandbox = await scripting._ready;
+                sandbox.dispatchEvent(event);
+              };
+              return scripting;
+            };
+          },
+          eventBusSetup: eventBus => {
+            eventBus.on(
+              "afterprint",
+              () => {
+                window.PDFViewerApplication._testPrintResolver.resolve();
+              },
+              { once: true }
+            );
+          },
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must run the WillPrint actions when the OpenAction prints", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await awaitPromise(
+            await page.evaluateHandle(() => [
+              window.PDFViewerApplication._testPrintResolver.promise,
+            ])
+          );
+
+          await page.waitForSelector(getSelector("4R"));
+          const value = await page.$eval(getSelector("4R"), el => el.value);
+          expect(value).withContext(`In ${browserName}`).toEqual("WillPrint");
         })
       );
     });

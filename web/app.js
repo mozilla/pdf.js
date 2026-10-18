@@ -1505,10 +1505,12 @@ const PDFViewerApplication = {
       return;
     }
     this._saveInProgress = true;
-    await this.pdfScriptingManager.dispatchWillSave();
+    // Keep the document that this save belongs to.
+    const { pdfDocument } = this;
 
     try {
-      const data = await this.pdfDocument.saveDocument(
+      await this.pdfScriptingManager.dispatchWillSave();
+      const data = await pdfDocument.saveDocument(
         this.externalServices.printToPDF
       );
       this.downloadManager.download(
@@ -1518,12 +1520,19 @@ const PDFViewerApplication = {
         /* isModified = */ true
       );
     } catch (reason) {
-      // When the PDF document isn't ready, fallback to a "regular" download.
+      // Fall back to downloading the source PDF.
       console.error(`Error when saving the document:`, reason);
-      await this.download();
+      if (pdfDocument === this.pdfDocument) {
+        await this.download();
+      }
     } finally {
-      await this.pdfScriptingManager.dispatchDidSave();
-      this._saveInProgress = false;
+      try {
+        if (pdfDocument === this.pdfDocument) {
+          await this.pdfScriptingManager.dispatchDidSave();
+        }
+      } finally {
+        this._saveInProgress = false;
+      }
     }
 
     const editorStats = this.pdfDocument?.annotationStorage.editorStats;
@@ -1556,22 +1565,25 @@ const PDFViewerApplication = {
     const { classList } = this.appConfig.appContainer;
     classList.add("wait");
 
-    if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
-      this.externalServices.reportTelemetry({
-        type: "pageOrganization",
-        data: { action: "save" },
-      });
-      await this.onSavePages({
-        data: this.pdfThumbnailViewer.getStructuralChanges(),
-      });
-    } else {
-      await (this.pdfDocument?.annotationStorage.size > 0
-        ? this.save()
-        : this.download());
+    try {
+      if (this.pdfThumbnailViewer?.hasStructuralChanges()) {
+        this.externalServices.reportTelemetry({
+          type: "pageOrganization",
+          data: { action: "save" },
+        });
+        await this.onSavePages({
+          data: this.pdfThumbnailViewer.getStructuralChanges(),
+        });
+      } else {
+        await (this.pdfDocument?.annotationStorage.size > 0
+          ? this.save()
+          : this.download());
+      }
+      delete this._mergedDocumentNeedsSaving;
+    } finally {
+      this.setTitle();
+      classList.remove("wait");
     }
-    delete this._mergedDocumentNeedsSaving;
-    this.setTitle();
-    classList.remove("wait");
   },
 
   /**
