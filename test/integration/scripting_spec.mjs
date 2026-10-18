@@ -504,6 +504,50 @@ describe("Interaction", () => {
         })
       );
     });
+
+    it("must recover when dispatching WillSave fails", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          await clearInput(page, getSelector("47R"));
+          await page.evaluate(_ => {
+            window.document.activeElement.blur();
+          });
+          await page.waitForFunction(`${getQuerySelector("47R")}.value === ""`);
+
+          const state = await page.evaluate(async () => {
+            const app = window.PDFViewerApplication;
+            const { downloadManager, pdfScriptingManager } = app;
+            const { download } = downloadManager;
+            const downloads = [];
+            downloadManager.download = (data, url, filename, isModified) => {
+              downloads.push(isModified);
+            };
+            pdfScriptingManager.dispatchWillSave = () =>
+              Promise.reject(new Error("WillSave can't run."));
+            try {
+              await app.downloadOrSave();
+            } finally {
+              downloadManager.download = download;
+              delete pdfScriptingManager.dispatchWillSave;
+            }
+            return {
+              downloads,
+              isSaving: app._saveInProgress,
+              isWaiting: app.appConfig.appContainer.classList.contains("wait"),
+            };
+          });
+          expect(state)
+            .withContext(`In ${browserName}`)
+            .toEqual({
+              downloads: [false],
+              isSaving: false,
+              isWaiting: false,
+            });
+        })
+      );
+    });
   });
 
   describe("in doc_actions.pdf for page actions", () => {
