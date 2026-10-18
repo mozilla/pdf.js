@@ -50,6 +50,12 @@ import { StringStream } from "../stream.js";
 const MAX_LEAVES_PER_PAGES_NODE = 16;
 const MAX_IN_NAME_TREE_NODE = 64;
 
+const INFO_CONFORMANCE_KEYS = [
+  "GTS_PDFXVersion",
+  "GTS_PDFXConformance",
+  "ISO_PDFEVersion",
+];
+
 class PageData {
   constructor(page, documentData) {
     this.page = page;
@@ -2992,6 +2998,10 @@ class PDFEditor {
         if (typeof value === "string") {
           infoMap.set(key, stringToPDFString(value));
         }
+      }
+      // Remove these claims because extraction does not verify conformance.
+      for (const key of INFO_CONFORMANCE_KEYS) {
+        infoMap.delete(key);
       }
     }
     infoMap.delete("ModDate");
