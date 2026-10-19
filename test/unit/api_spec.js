@@ -1631,6 +1631,32 @@ describe("api", function () {
       }
     });
 
+    it("use global `rendererPorts` and acknowledge the disconnection", async function () {
+      if (isNodeJS) {
+        pending("Worker is not supported in Node.js.");
+      }
+      const rendererPort = new Worker(new URL(RENDERER_SRC, window.location), {
+        type: "module",
+      });
+      GlobalWorkerOptions.rendererPorts = [rendererPort];
+
+      const loadingTask = getDocument(basicApiGetDocumentParams);
+      const pdfDoc = await loadingTask.promise;
+      expect(await renderFirstPage(pdfDoc)).toBeTrue();
+
+      const { promise, resolve } = Promise.withResolvers();
+      rendererPort.addEventListener("message", ({ data }) => {
+        if (data?.action === "Disconnected") {
+          resolve();
+        }
+      });
+      await loadingTask.destroy();
+      await promise;
+
+      GlobalWorkerOptions.rendererPorts = [];
+      rendererPort.terminate();
+    });
+
     it("avoid using a global `rendererPorts` worker which failed to load", async function () {
       if (isNodeJS) {
         pending("Worker is not supported in Node.js.");

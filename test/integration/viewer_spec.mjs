@@ -1334,6 +1334,56 @@ describe("PDF viewer", () => {
         });
       });
     });
+
+    describe("when the detail view rendering is cancelled", () => {
+      const forEachPage = setupPages("300%", 1, -1);
+
+      it("must release the cancelled canvas", async () => {
+        await forEachPage(async (browserName, page) => {
+          await page.waitForFunction(
+            () =>
+              window.PDFViewerApplication.pdfViewer.getPageView(0)?.detailView
+                ?.renderingState === /* RenderingStates.FINISHED = */ 3
+          );
+
+          const handle = await createPromise(page, resolve => {
+            const removedCanvases = [];
+            const { remove } = Element.prototype;
+            Element.prototype.remove = function () {
+              if (this instanceof HTMLCanvasElement) {
+                removedCanvases.push(this);
+              }
+              remove.call(this);
+            };
+            const controller = new AbortController();
+            window.PDFViewerApplication.eventBus.on(
+              "pagerender",
+              ({ source }) => {
+                if (source.pageView?.detailView !== source) {
+                  return;
+                }
+                controller.abort();
+                source.reset({ keepCanvas: true });
+                Element.prototype.remove = remove;
+                resolve(removedCanvases.map(c => [c.width, c.height]));
+              },
+              { signal: controller.signal }
+            );
+            const container = document.getElementById("viewerContainer");
+            container.scrollTop += 1600;
+            container.scrollLeft += 1100;
+          });
+          const sizes = await awaitPromise(handle);
+
+          expect(sizes.length)
+            .withContext(`In ${browserName}`)
+            .toBeGreaterThan(0);
+          expect(sizes)
+            .withContext(`In ${browserName}`)
+            .toEqual(sizes.map(() => [0, 0]));
+        });
+      });
+    });
   });
 
   describe("SecondaryToolbar", () => {

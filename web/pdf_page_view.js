@@ -1197,7 +1197,10 @@ class PDFPageView extends BasePDFPageView {
     const resultPromise = this._drawCanvas(
       this._getRenderingContext(canvas, transform, recordBBoxes, recordImages),
       () => {
-        prevCanvas?.remove();
+        if (prevCanvas) {
+          prevCanvas.remove();
+          prevCanvas.width = prevCanvas.height = 0;
+        }
         this._resetCanvas();
       },
       renderTask => {
