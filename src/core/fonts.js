@@ -66,6 +66,7 @@ import { DataBuilder } from "./data_builder.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { getFontBasicMetrics } from "./metrics.js";
 import { getLookupTableFactory } from "./core_utils.js";
+import { MathClamp } from "../shared/math_clamp.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
 import { Stream } from "./stream.js";
 import { Type1Font } from "./type1_font.js";
@@ -1595,7 +1596,7 @@ class Font {
      * Read the appropriate subtable from the cmap according to 9.6.6.4 from
      * PDF spec
      */
-    function readCmapTable(cmap, file, isSymbolicFont, hasEncoding) {
+    function readCmapTable(cmap, file, isSymbolicFont, hasEncoding, numGlyphs) {
       if (!cmap) {
         warn("No cmap table available.");
         return {
@@ -1854,17 +1855,37 @@ class Font {
           });
         }
       } else if (format === 12) {
-        file.skip(2 + 4 + 4); // reserved + length + language
+        file.skip(2); // reserved
+        const length = file.getInt32() >>> 0;
+        file.skip(4); // language
 
-        const nGroups = file.getInt32() >>> 0;
-        for (j = 0; j < nGroups; j++) {
+        // The header is 16 bytes; each group is 12 bytes. Bound the count by
+        // both the declared length and the remaining stream bytes.
+        const nGroups = MathClamp(
+          file.getInt32() >>> 0,
+          0,
+          Math.min(((length - 16) / 12) | 0, ((file.end - file.pos) / 12) | 0)
+        );
+        // Stop after exceeding Unicode's 0x110000 code points, allowing the
+        // last group to finish. This bounds expansion of overlapping groups.
+        for (j = 0; j < nGroups && mappings.length <= 0x110000; j++) {
           const startCharCode = file.getInt32() >>> 0;
           const endCharCode = file.getInt32() >>> 0;
           let glyphCode = file.getInt32() >>> 0;
 
+          // Restrict glyph IDs to [0, numGlyphs) and char codes to Unicode.
+          const lastCharCode =
+            glyphCode < numGlyphs
+              ? Math.min(
+                  endCharCode,
+                  startCharCode + (numGlyphs - glyphCode - 1),
+                  0x10ffff
+                )
+              : startCharCode - 1;
+
           for (
             let charCode = startCharCode;
-            charCode <= endCharCode;
+            charCode <= lastCharCode;
             charCode++
           ) {
             mappings.push({
@@ -3051,7 +3072,8 @@ class Font {
         tables.cmap,
         font,
         this.isSymbolicFont,
-        properties.hasEncoding
+        properties.hasEncoding,
+        numGlyphs
       );
       const cmapPlatformId = cmapTable.platformId;
       const cmapEncodingId = cmapTable.encodingId;
