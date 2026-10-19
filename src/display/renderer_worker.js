@@ -125,8 +125,13 @@ class RendererMessageHandler {
         ctx.drawImage(canvas, 0, 0);
         ctx.drawImage(transparentCanvas, 0, 0);
         bitmap = composite.transferToImageBitmap();
+        composite.width = composite.height = 0;
       } else {
         bitmap = await createImageBitmap(canvas);
+        if (renderTaskState.aborted) {
+          bitmap.close();
+          return;
+        }
       }
     }
     const transfers = bitmap ? [bitmap] : [];
@@ -172,7 +177,7 @@ class RendererMessageHandler {
     }
   }
 
-  static #cleanupRenderTask(renderTaskId) {
+  static #cleanupRenderTask(renderTaskId, keepCanvas = false) {
     const renderTaskState = this.#renderTaskStates.get(renderTaskId);
     if (!renderTaskState) {
       return;
@@ -181,7 +186,24 @@ class RendererMessageHandler {
     renderTaskState.continueResolve?.();
 
     renderTaskState.gfx?.endDrawing();
+    if (!keepCanvas) {
+      this.#releaseCanvases(renderTaskState);
+    }
     this.#renderTaskStates.delete(renderTaskId);
+  }
+
+  static #releaseCanvases({ canvas, gfx }) {
+    canvas.width = canvas.height = 0;
+    const map = gfx?.annotationCanvasMap;
+    if (!map) {
+      return;
+    }
+    for (const value of map.values()) {
+      for (const annotationCanvas of Array.isArray(value) ? value : [value]) {
+        annotationCanvas.width = annotationCanvas.height = 0;
+      }
+    }
+    map.clear();
   }
 
   // Limit this task to its requested length; another task may have sent more.
@@ -481,12 +503,18 @@ class RendererMessageHandler {
         imageCoordinates = renderTaskState.imagesTracker?.take() ?? null;
         const aborted = renderTaskState.aborted;
 
-        // `endDrawing` applies the final filter, so snapshot after it. The
-        // frame is sent before this reply, so the main thread has drawn the
-        // canvas by the time the render task reports completion.
-        this.#cleanupRenderTask(renderTaskId);
+        // Finish drawing, but keep canvases for the final frame.
+        this.#cleanupRenderTask(renderTaskId, /* keepCanvas = */ !aborted);
         if (!aborted) {
-          await this.#sendFrame(handler, renderTaskState, /* isFinal = */ true);
+          try {
+            await this.#sendFrame(
+              handler,
+              renderTaskState,
+              /* isFinal = */ true
+            );
+          } finally {
+            this.#releaseCanvases(renderTaskState);
+          }
         }
       } else {
         await this.#maybeSendInterimFrame(handler, renderTaskState);
@@ -540,6 +568,7 @@ class RendererMessageHandler {
     this.#filterFactory?.destroy();
     this.#filterFactory = null;
 
+    this.#connection.send("Disconnected", null);
     this.#connection.destroy();
     this.#connection = null;
   }

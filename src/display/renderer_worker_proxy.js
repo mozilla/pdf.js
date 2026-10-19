@@ -276,6 +276,8 @@ class RendererWorker {
 
   #port = null;
 
+  #portNames = null;
+
   #renderTaskId = 0;
 
   #renderTasks = new Map();
@@ -393,6 +395,7 @@ class RendererWorker {
     const id = RendererWorker.#connectionId++;
     const sourceName = `main${id}`;
     const targetName = `renderer${id}`;
+    this.#portNames = { sourceName, targetName };
     const handler = new MessageHandler("main", "renderer", port);
     handler.send("Connect", { sourceName: targetName, targetName: sourceName });
     handler.destroy();
@@ -506,7 +509,10 @@ class RendererWorker {
     this.destroyed = true;
 
     if (this.#port) {
-      this.#messageHandler?.send("Disconnect", null);
+      if (this.#messageHandler) {
+        this.#closeStrayFrames(this.#port);
+        this.#messageHandler.send("Disconnect", null);
+      }
       RendererWorker.#usedPorts.delete(this.#port);
       this.#port = null;
     }
@@ -525,6 +531,27 @@ class RendererWorker {
       reject(new Error("Renderer worker was destroyed."));
     }
     this.#pendingRequests.clear();
+  }
+
+  #closeStrayFrames(port) {
+    const { sourceName, targetName } = this.#portNames;
+    const ac = new AbortController();
+    const timeoutId = setTimeout(() => ac.abort(), PORT_CONNECTION_TIMEOUT);
+    port.addEventListener(
+      "message",
+      ({ data }) => {
+        if (data?.targetName !== sourceName || data.sourceName !== targetName) {
+          return;
+        }
+        if (data.action === "RenderFrame") {
+          closeFrame(data.data);
+        } else if (data.action === "Disconnected") {
+          clearTimeout(timeoutId);
+          ac.abort();
+        }
+      },
+      { signal: ac.signal }
+    );
   }
 
   /**
