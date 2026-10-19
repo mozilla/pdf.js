@@ -100,7 +100,8 @@ export default defineConfig({
     include: [],
     // Compile WebAssembly with TurboFan only to avoid timing variation from
     // background tier-up from Liftoff.
-    execArgv: ["--no-liftoff"],
+    // Compile JavaScript with Sparkplug on first call to avoid delayed batches.
+    execArgv: ["--no-liftoff", "--always-sparkplug"],
     benchmark: {
       include: ["test/benchmarks/**/*.bench.js"],
     },
