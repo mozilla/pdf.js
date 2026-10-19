@@ -1483,4 +1483,4 @@ class Linearization {
   }
 }
 
-export { Lexer, Linearization, Parser };
+export { Lexer, Linearization, Parser, toHexDigit };
