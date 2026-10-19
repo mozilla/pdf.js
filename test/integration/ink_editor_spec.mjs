@@ -1863,3 +1863,54 @@ describe("Removal during a pinch-resize", () => {
     );
   });
 });
+
+describe("Ink Editor rotated with a page-fit zoom", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "tracemonkey.pdf",
+      ".annotationEditorLayer",
+      "page-fit"
+    );
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must keep the drawing on the editor after rotating the pages", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+        const x = rect.x + 100;
+        const y = rect.y + 100;
+        await drawLine(page, x, y, x + 100, y + 50);
+        await commit(page);
+
+        const rotateAndCheck = async (delta, rotation) => {
+          // Rotating changes the scale (because of page-fit), and the drawing
+          // must be positioned with the new rotation.
+          await page.evaluate(d => {
+            window.PDFViewerApplication.rotatePages(d);
+          }, delta);
+          await page.waitForSelector(
+            `.annotationEditorLayer[data-main-rotation='${rotation}']`
+          );
+          const editorRect = await getRect(page, ".inkEditor");
+          const drawRect = await getRect(page, ".canvasWrapper svg.draw");
+          for (const key of ["x", "y", "width", "height"]) {
+            expect(Math.abs(editorRect[key] - drawRect[key]))
+              .withContext(`In ${browserName}, ${key} at ${rotation}°`)
+              .toBeLessThan(2);
+          }
+        };
+
+        await rotateAndCheck(90, 90);
+        await rotateAndCheck(-90, 0);
+      })
+    );
+  });
+});

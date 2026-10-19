@@ -733,7 +733,12 @@ class AnnotationEditor {
   }
 
   get parentRotation() {
-    return (this._uiManager.viewParameters.rotation + this.pageRotation) % 360;
+    // When the zoom depends on the page size (e.g. page-fit), rotating the
+    // pages changes the scale before the UI manager is told about the new
+    // rotation, so prefer the parent viewport, which is already up to date.
+    return this.parent
+      ? this.parent.viewport.rotation
+      : (this._uiManager.viewParameters.rotation + this.pageRotation) % 360;
   }
 
   get parentDimensions() {
