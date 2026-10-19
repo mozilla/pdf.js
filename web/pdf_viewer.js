@@ -96,12 +96,6 @@ function isValidAnnotationEditorMode(mode) {
  * @property {HTMLDivElement} container - The container for the viewer element.
  * @property {HTMLDivElement} [viewer] - The viewer element.
  * @property {EventBus} eventBus - The application event bus.
- * @property {HTMLElement} [viewerAlert] - Viewer alert element.
- * @property {AltTextManager} [altTextManager] - Manages image alt text editing.
- * @property {CommentManager} [commentManager] - Manages PDF comments.
- * @property {SignatureManager} [signatureManager] - Manages PDF signatures.
- * @property {boolean} [enableHighlightFloatingButton] - Enables the floating
- *   text highlight button. The default value is `false`.
  * @property {PDFLinkService} [linkService] - The navigation/linking service.
  * @property {BaseDownloadManager} [downloadManager] - The download manager
  *   component.
@@ -165,6 +159,12 @@ function isValidAnnotationEditorMode(mode) {
  *   text that look like URLs. The default value is `true`.
  * @property {number} [minDurationToUpdateCanvas] - Minimum duration to wait
  *   before updating the canvas. The default value is `500`.
+ * @property {HTMLElement} [viewerAlert] - Viewer alert element.
+ * @property {AltTextManager} [altTextManager] - Manages image alt text editing.
+ * @property {CommentManager} [commentManager] - Manages PDF comments.
+ * @property {SignatureManager} [signatureManager] - Manages PDF signatures.
+ * @property {boolean} [enableHighlightFloatingButton] - Enables the floating
+ *   text highlight button. The default value is `false`.
  */
 
 class PDFPageViewBuffer {
