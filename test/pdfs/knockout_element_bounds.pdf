@@ -1,0 +1,82 @@
+%PDF-1.7
+% PDF.js test fixture
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 240 200] /Resources << /XObject << /G 4 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /XObject /Subtype /Form /FormType 1 /BBox [30 30 210 170] /Resources << /ExtGState << /A1 5 0 R /A2 7 0 R >> >> /Group << /Type /Group /S /Transparency /CS /DeviceRGB /I false /K true >> /Length 300 >>
+stream
+q
+1 0 0 rg
+40 40 100 80 re
+f
+/A1 gs
+0 0.6 0 rg
+130 80 m
+130 102 112 120 90 120 c
+68 120 50 102 50 80 c
+50 58 68 40 90 40 c
+112 40 130 58 130 80 c
+f
+/A2 gs
+0 0 1 rg
+150 100 100 100 re
+f
+Q
+q
+60 120 90 30 re
+W n
+0.5 0 0.5 rg
+20 100 200 80 re
+f
+Q
+q
+/A2 gs
+1 0.5 0 rg
+100 50 90 70 re
+120 65 50 40 re
+f*
+Q
+endstream
+endobj
+5 0 obj
+<< /Type /ExtGState /ca 0.5 >>
+endobj
+6 0 obj
+<< /Length 76 >>
+stream
+q
+0.9 0.8 0.2 rg
+0 0 120 200 re
+f
+0.2 0.6 0.9 rg
+120 0 120 200 re
+f
+/G Do
+Q
+endstream
+endobj
+7 0 obj
+<< /Type /ExtGState /ca 0.7 >>
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000031 00000 n 
+0000000080 00000 n 
+0000000137 00000 n 
+0000000265 00000 n 
+0000000808 00000 n 
+0000000854 00000 n 
+0000000979 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1025
+%%EOF
