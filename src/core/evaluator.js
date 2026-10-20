@@ -253,6 +253,7 @@ class PartialEvaluator {
     this.type3FontRefs = null;
 
     this._regionalImageCache = new RegionalImageCache();
+    this._decodedStreamCache = new Map();
     this._fetchBuiltInCMapBound = this.fetchBuiltInCMap.bind(this);
   }
 
@@ -266,6 +267,25 @@ class PartialEvaluator {
       "_pdfFunctionFactory",
       new PDFFunctionFactory({ xref: this.xref })
     );
+  }
+
+  /**
+   * Form XObjects are fetched anew for every `Do` operator, hence cache the
+   * decoded data by reference to avoid decompressing it more than once.
+   */
+  async _getDecodedStream(stream) {
+    const objId = stream.dict?.objId;
+    let bytes = objId && this._decodedStreamCache.get(objId);
+    if (!bytes) {
+      bytes = await stream.asyncGetBytes();
+      if (!bytes) {
+        return stream;
+      }
+      if (objId) {
+        this._decodedStreamCache.set(objId, bytes);
+      }
+    }
+    return new Stream(bytes, 0, bytes.length, stream.dict);
   }
 
   get parsingType3Font() {
@@ -1697,10 +1717,7 @@ class PartialEvaluator {
     prevRefs = null,
   }) {
     if (stream.isAsync) {
-      const bytes = await stream.asyncGetBytes();
-      if (bytes) {
-        stream = new Stream(bytes, 0, bytes.length, stream.dict);
-      }
+      stream = await this._getDecodedStream(stream);
     }
 
     const objId = stream.dict?.objId;
@@ -2432,10 +2449,7 @@ class PartialEvaluator {
     intersector = null,
   }) {
     if (stream.isAsync) {
-      const bytes = await stream.asyncGetBytes();
-      if (bytes) {
-        stream = new Stream(bytes, 0, bytes.length, stream.dict);
-      }
+      stream = await this._getDecodedStream(stream);
     }
     sink ??= textSinkWrapper(null);
 
