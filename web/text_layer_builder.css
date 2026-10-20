@@ -153,6 +153,10 @@
   &.selecting .endOfContent {
     top: 0;
   }
+
+  &.beforeSelection .endOfContent {
+    user-select: text;
+  }
 }
 
 .textLayerImages {
