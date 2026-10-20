@@ -16,6 +16,7 @@
 import { getEncoding } from "./encodings.js";
 import { isWhiteSpace } from "./core_utils.js";
 import { Stream } from "./stream.js";
+import { toHexDigit } from "./parser.js";
 import { warn } from "../shared/util.js";
 
 // Hinting is currently disabled due to unknown problems on windows
@@ -402,22 +403,21 @@ function decryptAscii(data, key, discardNumber) {
   const count = data.length,
     maybeLength = count >>> 1;
   const decrypted = new Uint8Array(maybeLength);
+  let digit1 = -1;
   let i, j;
   for (i = 0, j = 0; i < count; i++) {
-    const digit1 = data[i];
-    if (!isHexDigit(digit1)) {
+    const digit = toHexDigit(data[i]);
+    if (digit < 0) {
       continue;
     }
-    i++;
-    let digit2;
-    while (i < count && !isHexDigit((digit2 = data[i]))) {
-      i++;
+    if (digit1 < 0) {
+      digit1 = digit;
+      continue;
     }
-    if (i < count) {
-      const value = parseInt(String.fromCharCode(digit1, digit2), 16);
-      decrypted[j++] = value ^ (r >> 8);
-      r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
-    }
+    const value = (digit1 << 4) | digit;
+    digit1 = -1;
+    decrypted[j++] = value ^ (r >> 8);
+    r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
   }
   return decrypted.slice(discardNumber, j);
 }
@@ -895,15 +895,15 @@ class Type1Parser {
       let digit1 = -1,
         j = 0;
       for (let i = 0, ii = binary.length; i < ii && j < startDataLength; i++) {
-        const digit = binary[i];
-        if (!isHexDigit(digit)) {
+        const digit = toHexDigit(binary[i]);
+        if (digit < 0) {
           continue;
         }
         if (digit1 < 0) {
           digit1 = digit;
           continue;
         }
-        decoded[j++] = parseInt(String.fromCharCode(digit1, digit), 16);
+        decoded[j++] = (digit1 << 4) | digit;
         digit1 = -1;
       }
       if (j !== startDataLength) {
