@@ -3079,7 +3079,7 @@ class CanvasGraphics {
           this.save();
           // Reset inherited alpha for colored (d0) glyphs (issue 21430).
           if (operatorList.fnArray[0] === OPS.setCharWidth) {
-            current.fillAlpha = current.strokeAlpha = 1;
+            this.current.fillAlpha = this.current.strokeAlpha = 1;
             ctx.globalAlpha = 1;
           }
           ctx.scale(fontSize, fontSize);

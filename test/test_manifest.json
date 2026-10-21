@@ -14750,5 +14750,13 @@
     "type": "eq",
     "annotations": true,
     "about": "NoRotate FreeText annotation on a page with /Rotate 270."
+  },
+  {
+    "id": "type3_d0_alpha",
+    "file": "pdfs/type3_d0_alpha.pdf",
+    "md5": "f0273a0ba9c41b5f5033ca86fff062f0",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Colored Type3 glyph followed by a semi-transparent stroke and fill."
   }
 ]
