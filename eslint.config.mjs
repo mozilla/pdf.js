@@ -370,6 +370,12 @@ export default [
             "Use `instanceof Name` rather than `isName()` with one argument.",
         },
         {
+          selector:
+            "CallExpression[callee.object.name='Math'][callee.property.name=/^(max|min)$/][arguments.length>4]",
+          message:
+            "Avoid calling `Math.max`/`Math.min` with more than four arguments, since SpiderMonkey doesn't optimize those (nest the calls instead).",
+        },
+        {
           selector: "NewExpression[callee.name='Cmd']",
           message: "Use `Cmd.get()` rather than `new Cmd()`.",
         },
