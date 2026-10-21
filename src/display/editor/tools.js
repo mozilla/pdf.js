@@ -2032,7 +2032,7 @@ class AnnotationEditorUIManager {
         isEmpty: this.#isEmpty(),
         hasSomethingToUndo: this.#commandManager.hasSomethingToUndo(),
         hasSomethingToRedo: this.#commandManager.hasSomethingToRedo(),
-        hasSelectedEditor: false,
+        hasSelectedEditor: this.hasSelection,
       });
     } else {
       this.#removeFocusManager();
