@@ -425,64 +425,28 @@ class Parser {
         break;
       }
     }
-    const length = stream.pos - startPos;
-    if (b === -1) {
-      warn(
-        "Inline DCTDecode image stream: " +
-          "EOI marker not found, searching for /EI/ instead."
-      );
-      stream.skip(-length); // Reset the stream position.
-      return this.findDefaultInlineStreamEnd(stream);
-    }
-    this.inlineStreamSkipEI(stream);
-    return length;
+    return this.inlineStreamSkipEI(stream, startPos, b, "DCTDecode");
   }
 
   /**
    * Find the EOD (end-of-data) marker '~>' (i.e. TILDE + GT) of the stream.
+   *
+   * Since `Ascii85Stream` stops reading immediately upon encountering TILDE,
+   * we do the same thing here to simplify handling of corrupt PDFs; e.g.
+   *  - whitespace "inside" of the EOD marker (fixes issue10614.pdf).
+   *  - truncated EOD marker, missing the '>' character (fixes issue11385.pdf).
    * @returns {number} The inline stream length.
    */
   findASCII85DecodeInlineStreamEnd(stream) {
-    const TILDE = 0x7e,
-      GT = 0x3e;
+    const TILDE = 0x7e;
     const startPos = stream.pos;
     let ch;
     while ((ch = stream.getByte()) !== -1) {
       if (ch === TILDE) {
-        const tildePos = stream.pos;
-
-        ch = stream.peekByte();
-        // Handle corrupt PDF documents which contains whitespace "inside" of
-        // the EOD marker (fixes issue10614.pdf).
-        while (isWhiteSpace(ch)) {
-          stream.skip();
-          ch = stream.peekByte();
-        }
-        if (ch === GT) {
-          stream.skip();
-          break;
-        }
-        // Handle corrupt PDF documents which contains truncated EOD markers,
-        // where the '>' character is missing (fixes issue11385.pdf).
-        if (stream.pos > tildePos) {
-          const maybeEI = stream.peekBytes(2);
-          if (maybeEI[0] === /* E = */ 0x45 && maybeEI[1] === /* I = */ 0x49) {
-            break;
-          }
-        }
+        break;
       }
     }
-    const length = stream.pos - startPos;
-    if (ch === -1) {
-      warn(
-        "Inline ASCII85Decode image stream: " +
-          "EOD marker not found, searching for /EI/ instead."
-      );
-      stream.skip(-length); // Reset the stream position.
-      return this.findDefaultInlineStreamEnd(stream);
-    }
-    this.inlineStreamSkipEI(stream);
-    return length;
+    return this.inlineStreamSkipEI(stream, startPos, ch, "ASCII85Decode");
   }
 
   /**
@@ -498,27 +462,26 @@ class Parser {
         break;
       }
     }
-    const length = stream.pos - startPos;
-    if (ch === -1) {
-      warn(
-        "Inline ASCIIHexDecode image stream: " +
-          "EOD marker not found, searching for /EI/ instead."
-      );
-      stream.skip(-length); // Reset the stream position.
-      return this.findDefaultInlineStreamEnd(stream);
-    }
-    this.inlineStreamSkipEI(stream);
-    return length;
+    return this.inlineStreamSkipEI(stream, startPos, ch, "ASCIIHexDecode");
   }
 
   /**
    * Skip over the /EI/ for streams where we search for an EOD marker.
+   * @returns {number} The inline stream length.
    */
-  inlineStreamSkipEI(stream) {
+  inlineStreamSkipEI(stream, startPos, ch, name) {
+    const length = stream.pos - startPos;
+    if (ch === -1) {
+      const type = name === "DCTDecode" ? "EOI" : "EOD";
+      warn(
+        `Inline ${name} image stream: ${type} marker not found, searching for /EI/ instead.`
+      );
+      stream.skip(-length); // Reset the stream position.
+      return this.findDefaultInlineStreamEnd(stream);
+    }
     const E = 0x45,
       I = 0x49;
-    let state = 0,
-      ch;
+    let state = 0;
     while ((ch = stream.getByte()) !== -1) {
       if (state === 0) {
         state = ch === E ? 1 : 0;
@@ -528,6 +491,7 @@ class Parser {
         break;
       }
     }
+    return length;
   }
 
   /**
