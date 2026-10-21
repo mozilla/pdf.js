@@ -470,9 +470,6 @@ class PageView {
         return;
       }
       this.#clearPausedState();
-      // Reset recorded bboxes so they get re-recorded for the modified op
-      // list.
-      this.#renderedPage.recordedBBoxes = null;
       if (this.#textFilter || this.#opsView.breakpoints.size > 0) {
         globalThis.StepperManager._active = new ViewerStepper(i =>
           this.#onStepped(i)
@@ -730,13 +727,10 @@ class PageView {
       this.#pdfDoc?.canvasFactory.clear();
     }
 
-    // Record bboxes only on the first render; they stay valid for subsequent
-    // re-renders because BBoxReader returns normalised [0, 1] fractions.
-    const firstRender = !this.#renderedPage.recordedBBoxes;
+    const firstRender = this.#currentOpList === null;
     const renderTask = this.#renderedPage.render({
       canvasContext: this.#gfxStateComp.wrapCanvasGetContext(newCanvas, "Page"),
       viewport,
-      recordOperations: firstRender,
     });
     this.#currentRenderTask = renderTask;
 
@@ -790,19 +784,20 @@ class PageView {
   }
 
   #drawHighlight(opIdx) {
-    const bboxes = this.#renderedPage?.recordedBBoxes;
-    if (!bboxes || opIdx >= bboxes.length || bboxes.isEmpty(opIdx)) {
+    const bbox = this.#currentOpList?.bboxes?.getViewportBBox(
+      opIdx,
+      this.#renderedPage.getViewport({
+        scale: this.#renderScale ?? this.#getFitScale(),
+      })
+    );
+    if (!bbox) {
       this.#clearHighlight();
       return;
     }
-    const canvas = document.getElementById("render-canvas");
     const highlight = this.#highlightCanvas;
-    const cssW = parseFloat(canvas.style.width);
-    const cssH = parseFloat(canvas.style.height);
-    const x = bboxes.minX(opIdx) * cssW;
-    const y = bboxes.minY(opIdx) * cssH;
-    const w = (bboxes.maxX(opIdx) - bboxes.minX(opIdx)) * cssW;
-    const h = (bboxes.maxY(opIdx) - bboxes.minY(opIdx)) * cssH;
+    const [x, y] = bbox;
+    const w = bbox[2] - x;
+    const h = bbox[3] - y;
     const dpr = window.devicePixelRatio || 1;
     const ctx = highlight.getContext("2d");
     ctx.clearRect(0, 0, highlight.width, highlight.height);
@@ -866,7 +861,6 @@ class PageView {
         if (this.#debugViewGeneration !== generation) {
           return;
         }
-        this.#renderedPage.recordedBBoxes = null;
         globalThis.StepperManager._active = new ViewerStepper(i =>
           this.#onStepped(i)
         );

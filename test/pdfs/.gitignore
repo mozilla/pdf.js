@@ -983,3 +983,7 @@
 !bug1888084.pdf
 !many_inferred_links.pdf
 !multiline_inferred_links.pdf
+!bbox_stroke_text_matrix.pdf
+!bbox_hidden_text_clip.pdf
+!bbox_type3_text_clip.pdf
+!bbox_text_clip_save.pdf

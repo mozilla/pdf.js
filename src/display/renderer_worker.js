@@ -15,7 +15,7 @@
 
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
 import { isNodeJS, makeMap, setVerbosityLevel, warn } from "../shared/util.js";
-import { createCanvasTrackers } from "./canvas_dependency_tracker.js";
+import { CanvasImagesTracker } from "./canvas_images_tracker.js";
 import { FontLoader } from "./font_loader.js";
 import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
@@ -226,9 +226,6 @@ class RendererMessageHandler {
       }
     }
     operatorList.lastChunk = lastChunk;
-    renderTaskState.dependencyTracker?.growOperationsCount(
-      operatorList.fnArray.length
-    );
   }
 
   // `renderTaskState.gfx` is always non-null here: the main thread awaits the
@@ -377,7 +374,6 @@ class RendererMessageHandler {
         transparency,
         background,
         pixelRatio,
-        recordOperations = false,
         recordImages = false,
         partialFrames = false,
       } = data;
@@ -394,7 +390,6 @@ class RendererMessageHandler {
         lastFrameTime: Date.now(),
         gfx: null,
         sharedOperatorList,
-        dependencyTracker: null,
         imagesTracker: null,
         operatorList: {
           fnArray: [],
@@ -427,11 +422,9 @@ class RendererMessageHandler {
         const filterFactory = (this.#filterFactory ??=
           new WorkerFilterFactory());
         const annotationCanvases = hasAnnotationCanvasMap ? new Map() : null;
-        const { dependencyTracker, imagesTracker } = createCanvasTrackers(
-          canvas,
-          /* operationsCount = */ 0,
-          { recordOperations, recordImages }
-        );
+        const imagesTracker = recordImages
+          ? new CanvasImagesTracker(canvas)
+          : null;
 
         // `pageColors` requires DOM-based SVG filters, so pages that need it
         // never render in the worker.
@@ -444,7 +437,6 @@ class RendererMessageHandler {
           { optionalContentConfig, pixelRatio },
           annotationCanvases,
           /* pageColors = */ null,
-          dependencyTracker,
           imagesTracker
         );
 
@@ -456,7 +448,6 @@ class RendererMessageHandler {
         });
 
         renderTaskState.gfx = gfx;
-        renderTaskState.dependencyTracker = dependencyTracker;
         renderTaskState.imagesTracker = imagesTracker;
       } catch (ex) {
         this.#cleanupRenderTask(renderTaskId);
@@ -492,14 +483,11 @@ class RendererMessageHandler {
         renderTaskState
       );
 
-      let recordedBBoxesBuffer = null;
       let imageCoordinates = null;
       if (
         renderTaskState.operatorList.lastChunk &&
         currentOperatorListIdx === renderTaskState.operatorList.argsArray.length
       ) {
-        recordedBBoxesBuffer =
-          renderTaskState.dependencyTracker?.take().buffer ?? null;
         imageCoordinates = renderTaskState.imagesTracker?.take() ?? null;
         const aborted = renderTaskState.aborted;
 
@@ -521,7 +509,6 @@ class RendererMessageHandler {
       }
       return {
         operatorListIdx: currentOperatorListIdx,
-        recordedBBoxesBuffer,
         imageCoordinates,
       };
     });

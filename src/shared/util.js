@@ -756,18 +756,6 @@ class Util {
     ];
   }
 
-  // Multiplies m (an array-based transform) by md (a DOMMatrix transform).
-  static multiplyByDOMMatrix(m, md) {
-    return [
-      m[0] * md.a + m[2] * md.b,
-      m[1] * md.a + m[3] * md.b,
-      m[0] * md.c + m[2] * md.d,
-      m[1] * md.c + m[3] * md.d,
-      m[0] * md.e + m[2] * md.f + m[4],
-      m[1] * md.e + m[3] * md.f + m[5],
-    ];
-  }
-
   // For 2d affine transforms
   static applyTransform(p, m, pos = 0) {
     const p0 = p[pos];

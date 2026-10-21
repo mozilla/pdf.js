@@ -6379,22 +6379,17 @@ have written that much by now. So, here’s to squashing bugs.`);
         viewport.width,
         viewport.height
       );
-      for (const recordOptions of [
-        { recordImages: true },
-        { recordOperations: true },
-      ]) {
-        for (let i = 0; i < 2; i++) {
-          const renderTask = pdfPage.render({
-            canvas: canvasAndCtx.canvas,
-            viewport,
-            ...recordOptions,
-          });
-          await expectAsync(renderTask.promise).toBeRejectedWith(
-            jasmine.objectContaining({ name: "IndexSizeError" })
-          );
-          // Cancelling runs the completion callback again.
-          expect(() => renderTask.cancel()).not.toThrow();
-        }
+      for (let i = 0; i < 2; i++) {
+        const renderTask = pdfPage.render({
+          canvas: canvasAndCtx.canvas,
+          viewport,
+          recordImages: true,
+        });
+        await expectAsync(renderTask.promise).toBeRejectedWith(
+          jasmine.objectContaining({ name: "IndexSizeError" })
+        );
+        // Cancelling runs the completion callback again.
+        expect(() => renderTask.cancel()).not.toThrow();
       }
 
       canvasFactory.destroy(canvasAndCtx);

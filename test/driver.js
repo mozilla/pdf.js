@@ -1233,9 +1233,6 @@ class Driver {
               }
               renderContext.intent = "print";
             }
-            if (partialCrop) {
-              renderContext.recordOperations = true;
-            }
 
             const completeRender = error => {
               // if text layer is present, compose it on top of the page
@@ -1328,7 +1325,10 @@ class Driver {
                       : null;
                   this._clearCanvas();
 
-                  const recordedBBoxes = page.recordedBBoxes;
+                  const operatorBBoxes = renderTask.getOperatorList().bboxes;
+                  if (!operatorBBoxes) {
+                    throw new Error("Missing worker operator bounding boxes.");
+                  }
 
                   const partialRenderContext = {
                     canvas: this.canvas,
@@ -1338,18 +1338,12 @@ class Driver {
                     annotationCanvasMap,
                     pageColors,
                     transform,
-                    recordOperations: false,
-                    operationsFilter(index) {
-                      if (recordedBBoxes.isEmpty(index)) {
-                        return false;
-                      }
-                      return (
-                        recordedBBoxes.minX(index) <= partialCrop.maxX &&
-                        recordedBBoxes.maxX(index) >= partialCrop.minX &&
-                        recordedBBoxes.minY(index) <= partialCrop.maxY &&
-                        recordedBBoxes.maxY(index) >= partialCrop.minY
-                      );
-                    },
+                    operationsFilter: operatorBBoxes.getFilter(viewport, [
+                      partialCrop.minX * viewport.width,
+                      partialCrop.minY * viewport.height,
+                      partialCrop.maxX * viewport.width,
+                      partialCrop.maxY * viewport.height,
+                    ]),
                   };
 
                   const partialRenderTask = page.render(partialRenderContext);
