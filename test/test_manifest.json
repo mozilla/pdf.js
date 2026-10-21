@@ -14758,5 +14758,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Colored Type3 glyph followed by a semi-transparent stroke and fill."
+  },
+  {
+    "id": "tiling_pattern_cell_state",
+    "file": "pdfs/tiling_pattern_cell_state.pdf",
+    "md5": "90b0372ae9280cb46a723ad549f01bfc",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Single-tile pattern fills after setting the line width, the dash and the stroke alpha."
   }
 ]
