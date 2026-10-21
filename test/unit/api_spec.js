@@ -4959,6 +4959,39 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets annotations containing GoToE action with nested targets (issue 21959)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue21959.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const annotations = await pdfPage.getAnnotations();
+      const links = annotations.filter(
+        a => a.annotationType === AnnotationType.LINK && a.attachmentId
+      );
+      expect(links.length).toEqual(3);
+      expect(links.every(link => link.attachmentId === "green.pdf")).toEqual(
+        true
+      );
+
+      // The links to the child have no path, only the link to the grandchild
+      // (nested inside of the child) has one.
+      expect(links.map(link => link.attachmentPath)).toEqual([
+        undefined,
+        undefined,
+        ["blue.pdf"],
+      ]);
+
+      const content = await pdfDoc.getAttachmentContent("green.pdf");
+      const childTask = getDocument({ data: content });
+      const childDoc = await childTask.promise;
+      expect(await childDoc.getAttachmentContent("blue.pdf")).toBeInstanceOf(
+        Uint8Array
+      );
+
+      await childTask.destroy();
+      await loadingTask.destroy();
+    });
+
     it("gets FileAttachment annotation content that stays readable after cleanup", async function () {
       // The embedded files are reachable only via the annotations (no catalog
       // `/Names` tree), so their content must survive `cleanup` by being

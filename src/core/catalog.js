@@ -1904,22 +1904,35 @@ class Catalog {
           break;
 
         case "GoToE":
-          const target = action.get("T");
-          /** @type {string | null} */
-          let id = null;
+          // The target dictionary describes a chain of child embedded files,
+          // e.g. `<< /R /C /N (a.pdf) /T << /R /C /N (b.pdf) >> >>`.
+          /** @type {Array<string>} */
+          const names = [];
+          const seenTargets = new Set();
+          let target = action.get("T");
 
-          if (target instanceof Dict) {
-            const relationship = target.get("R");
+          while (target instanceof Dict && !seenTargets.has(target)) {
+            seenTargets.add(target);
             const name = target.get("N");
 
-            if (isName(relationship, "C") && typeof name === "string") {
-              id = stringToPDFString(name, /* keepEscapeSequence = */ true);
+            if (!isName(target.get("R"), "C") || typeof name !== "string") {
+              names.length = 0;
+              break;
             }
+            names.push(
+              stringToPDFString(name, /* keepEscapeSequence = */ true)
+            );
+            target = target.get("T");
           }
+          const id = names[0];
 
           if (docAttachments && id) {
             resultObj.attachmentId = id;
             resultObj.attachment = docAttachments.get(id);
+            if (names.length > 1) {
+              // Names of the embedded files nested inside the attachment.
+              resultObj.attachmentPath = names.slice(1);
+            }
 
             // NOTE: the destination is relative to the *attachment*.
             const attachmentDest = fetchRemoteDest(action);
