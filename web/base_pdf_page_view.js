@@ -34,7 +34,7 @@ class BasePDFPageView extends RenderableView {
   /** @type {null | HTMLDivElement} */
   div = null;
 
-  enableOptimizedPartialRendering = false;
+  enableOptimizedPartialRendering = true;
 
   enableSelectionRendering = true;
 
@@ -57,7 +57,7 @@ class BasePDFPageView extends RenderableView {
     this.pageColors = options.pageColors || null;
     this.renderingQueue = options.renderingQueue;
     this.enableOptimizedPartialRendering =
-      options.enableOptimizedPartialRendering ?? false;
+      options.enableOptimizedPartialRendering ?? true;
     this.enableSelectionRendering =
       options.enableSelectionRendering !== false &&
       FeatureTest.isBackdropFilterSupported;

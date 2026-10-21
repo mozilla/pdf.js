@@ -100,7 +100,7 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   rendering will keep track of which areas of the page each PDF operation
  *   affects. Then, when rendering a partial page (if `enableDetailCanvas` is
  *   enabled), it will only run through the operations that affect that portion.
- *   The default value is `false`.
+ *   The default value is `true`.
  * @property {object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
