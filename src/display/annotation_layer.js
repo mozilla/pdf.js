@@ -982,7 +982,8 @@ class LinkAnnotationElement extends AnnotationElement {
         data.attachmentId,
         data.attachment,
         data.overlaidText,
-        data.attachmentDest
+        data.attachmentDest,
+        data.attachmentPath
       );
       isBound = true;
     } else if (data.setOCGState) {
@@ -1077,13 +1078,16 @@ class LinkAnnotationElement extends AnnotationElement {
    * @param {CatalogAttachment} attachment
    * @param {string} [overlaidText]
    * @param {string} [dest]
+   * @param {Array<string>} [path] - Names of the embedded files nested inside
+   *   of the attachment, the last one being the file to open.
    */
   #bindAttachment(
     link,
     attachmentId,
     attachment,
     overlaidText = "",
-    dest = null
+    dest = null,
+    path = null
   ) {
     link.href = this.linkService.getAnchorUrl("");
     if (attachment.description) {
@@ -1094,12 +1098,15 @@ class LinkAnnotationElement extends AnnotationElement {
 
     const openAttachment = async () => {
       /** @type {CatalogAttachmentContent} */
-      const content = await this.linkService.getAttachmentContent(attachmentId);
+      const content = await this.linkService.getAttachmentContent(
+        attachmentId,
+        path
+      );
 
       if (content) {
         this.downloadManager?.openOrDownloadData(
           content,
-          attachment.filename,
+          path ? path.at(-1) : attachment.filename,
           dest
         );
       }

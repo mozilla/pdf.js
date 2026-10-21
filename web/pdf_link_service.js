@@ -19,7 +19,7 @@
  * @import { CatalogAttachmentContent } from "../src/core/catalog.js";
  */
 
-import { isValidExplicitDest, PasswordException } from "pdfjs-lib";
+import { getDocument, isValidExplicitDest, PasswordException } from "pdfjs-lib";
 import { internalOpt } from "./internal_evt.js";
 import { parseQueryString } from "./ui_utils.js";
 
@@ -257,12 +257,29 @@ class PDFLinkService {
   /**
    * @param {string} id
    *   Unique attachment identifier (required).
+   * @param {Array<string>} [path]
+   *   Names of the embedded files nested inside of the attachment, to follow
+   *   in order (e.g. for a "GoToE" action targeting a grandchild).
    * @returns {Promise<CatalogAttachmentContent>}
    *   Content.
    */
-  async getAttachmentContent(id) {
+  async getAttachmentContent(id, path = []) {
     try {
-      return await this.pdfDocument?.getAttachmentContent(id);
+      let content = await this.pdfDocument?.getAttachmentContent(id);
+
+      for (const name of path) {
+        if (!content) {
+          break;
+        }
+        const loadingTask = getDocument({ data: content });
+        try {
+          const pdfDocument = await loadingTask.promise;
+          content = await pdfDocument.getAttachmentContent(name);
+        } finally {
+          await loadingTask.destroy();
+        }
+      }
+      return content;
     } catch (error) {
       if (!(error instanceof PasswordException)) {
         console.warn(`Unable to load attachment content: ${error}`);
