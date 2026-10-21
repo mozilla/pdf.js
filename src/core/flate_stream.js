@@ -19,7 +19,7 @@
  * license.
  */
 
-import { FormatError, info } from "../shared/util.js";
+import { assert, FormatError, info } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Stream } from "./stream.js";
 
@@ -122,6 +122,12 @@ const fixedDistCodeTab = [
 ];
 
 class FlateStream extends DecodeStream {
+  // Only mark the FlateStream as async if its compressed length is above
+  // this threshold. Using the browser;s built-in `DecompressionStream` is
+  // faster than the JS decoder per byte, but it has a higher fixed cost
+  // that is not worth paying on small streams.
+  static #MIN_ASYNC_COMPRESSED_LENGTH = 1024;
+
   #isAsync = true;
 
   constructor(str, maybeLength) {
@@ -129,6 +135,14 @@ class FlateStream extends DecodeStream {
 
     this.stream = str;
     this.dict = str.dict;
+
+    if (
+      str instanceof Stream &&
+      str.length < FlateStream.#MIN_ASYNC_COMPRESSED_LENGTH
+    ) {
+      assert(!str.isAsync, "Stream sub-classes are never asynchronous");
+      this.#isAsync = false;
+    }
 
     const cmf = str.getByte();
     const flg = str.getByte();
