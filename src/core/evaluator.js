@@ -4980,6 +4980,14 @@ class TranslatedFont {
             if (!fontBBoxSize) {
               this.#guessType3FontBBox(operatorList);
             }
+            // Reset inherited alpha for colored glyphs (issue 21430).
+            operatorList.fnArray.splice(1, 0, OPS.setGState);
+            operatorList.argsArray.splice(1, 0, [
+              [
+                ["ca", 1],
+                ["CA", 1],
+              ],
+            ]);
             break;
         }
         charProcOperatorList.set(key, operatorList.getIR());

@@ -3091,11 +3091,6 @@ class CanvasGraphics {
           warn(`Type3 character "${glyph.operatorListId}" is not available.`);
         } else if (this.contentVisible) {
           this.save();
-          // Reset inherited alpha for colored (d0) glyphs (issue 21430).
-          if (operatorList.fnArray[0] === OPS.setCharWidth) {
-            this.current.fillAlpha = this.current.strokeAlpha = 1;
-            ctx.globalAlpha = 1;
-          }
           ctx.scale(fontSize, fontSize);
           ctx.transform(...fontMatrix);
           this.executeOperatorList(operatorList);
