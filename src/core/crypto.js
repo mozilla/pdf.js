@@ -27,6 +27,7 @@ import {
   stringToBytes,
   unreachable,
   utf8StringToString,
+  Util,
   warn,
 } from "../shared/util.js";
 import { calculateSHA384, calculateSHA512 } from "./calculate_sha_other.js";
@@ -56,7 +57,7 @@ class ARCFourCipher {
   b = 0;
 
   constructor(key) {
-    const s = Uint8Array.from({ length: 256 }, (_, i) => i);
+    const s = Util.identity0to256Map.slice();
     const keyLength = key.length;
 
     for (let i = 0, j = 0; i < 256; ++i) {
