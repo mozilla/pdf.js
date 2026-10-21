@@ -3052,11 +3052,11 @@ class CanvasGraphics {
     const textHScale = current.textHScale * fontDirection;
     const fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
     const glyphsLength = glyphs.length;
-    const isTextInvisible =
-      current.textRenderingMode === TextRenderingMode.INVISIBLE;
+    const isTextVisible =
+      current.textRenderingMode !== TextRenderingMode.INVISIBLE;
     let i, glyph, width, spacingLength;
 
-    if (isTextInvisible || fontSize === 0) {
+    if (fontSize === 0) {
       return;
     }
     this._cachedScaleForStroking[0] = -1;
@@ -3092,7 +3092,7 @@ class CanvasGraphics {
         );
         if (!operatorList) {
           warn(`Type3 character "${glyph.operatorListId}" is not available.`);
-        } else if (this.contentVisible) {
+        } else if (this.contentVisible && isTextVisible) {
           this.save();
           ctx.scale(fontSize, fontSize);
           ctx.transform(...fontMatrix);
@@ -3100,9 +3100,8 @@ class CanvasGraphics {
           this.restore();
         }
 
-        const p = [glyph.width, 0];
-        Util.applyTransform(p, fontMatrix);
-        width = p[0] * fontSize + spacing;
+        width =
+          glyph.width * fontMatrix[0] * fontSize + spacing * fontDirection;
 
         ctx.translate(width, 0);
         current.x += width * textHScale;

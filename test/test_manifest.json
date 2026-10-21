@@ -14783,5 +14783,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Single-tile patterns with pending clips and even-odd fills."
+  },
+  {
+    "id": "type3_advance",
+    "file": "pdfs/type3_advance.pdf",
+    "md5": "700b0da25aeb1b5d22e5c139d80e86db",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Type3 advances: invisible text, character spacing at negative font sizes, and font matrix translation."
   }
 ]
