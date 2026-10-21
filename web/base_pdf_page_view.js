@@ -48,8 +48,6 @@ class BasePDFPageView extends RenderableView {
 
   pageColors = null;
 
-  recordedBBoxes = null;
-
   renderingQueue = null;
 
   constructor(options) {
@@ -251,9 +249,6 @@ class BasePDFPageView extends RenderableView {
       // triggering this callback.
       if (renderTask === this.renderTask) {
         this.renderTask = null;
-        if (this.enableOptimizedPartialRendering) {
-          this.recordedBBoxes ??= renderTask.recordedBBoxes;
-        }
         if (this.imagesRightClickMinSize !== -1) {
           this.imageCoordinates ??= this.pdfPage.imageCoordinates;
         }

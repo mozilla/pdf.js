@@ -14,7 +14,6 @@
  */
 
 import { FeatureTest, getVerbosityLevel, warn } from "../shared/util.js";
-import { BBoxReader } from "./canvas_dependency_tracker.js";
 import { getWorkerSrc } from "./api_utils.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { MessageHandler } from "../shared/message_handler.js";
@@ -61,8 +60,6 @@ class WorkerRenderTask {
   #renderTasks;
 
   imageCoordinates = null;
-
-  recordedBBoxes = null;
 
   constructor({
     rendererWorker,
@@ -179,11 +176,7 @@ class WorkerRenderTask {
     if (lastChunk && response.operatorListIdx === end) {
       this.#renderTasks.delete(this.#id);
 
-      const { recordedBBoxesBuffer, imageCoordinates } = response;
-      if (recordedBBoxesBuffer) {
-        this.recordedBBoxes = BBoxReader.fromBuffer(recordedBBoxesBuffer);
-      }
-      this.imageCoordinates = imageCoordinates ?? null;
+      this.imageCoordinates = response.imageCoordinates ?? null;
     }
     return response.operatorListIdx;
   }
@@ -682,7 +675,6 @@ class RendererWorker {
         operatorListId: operatorListState.id,
         renderTaskId: this.#renderTaskId++,
         hasAnnotationCanvasMap: !!annotationCanvasMap,
-        recordOperations: params.recordOperations,
         recordImages: params.recordImages,
         partialFrames: params.partialFrames,
         transform: params.transform,
