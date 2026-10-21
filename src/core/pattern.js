@@ -373,14 +373,10 @@ function meshUpdateBounds(self) {
 }
 
 function meshPackData(self) {
-  let i, j, ii;
-
   const coords = self.coords;
   const coordsPacked = new Float32Array(coords.length * 2);
-  for (i = 0, j = 0, ii = coords.length; i < ii; i++) {
-    const xy = coords[i];
-    coordsPacked[j++] = xy[0];
-    coordsPacked[j++] = xy[1];
+  for (let i = 0, ii = coords.length; i < ii; i++) {
+    coordsPacked.set(coords[i], i * 2);
   }
   self.coords = coordsPacked;
 
@@ -388,12 +384,8 @@ function meshPackData(self) {
   // the WebGPU vertex shader read colors as array<u32> without repacking.
   const colors = self.colors;
   const colorsPacked = new Uint8Array(colors.length * 4);
-  for (i = 0, j = 0, ii = colors.length; i < ii; i++) {
-    const c = colors[i];
-    colorsPacked[j++] = c[0];
-    colorsPacked[j++] = c[1];
-    colorsPacked[j++] = c[2];
-    j++; // alpha — unused, stays 0
+  for (let i = 0, ii = colors.length; i < ii; i++) {
+    colorsPacked.set(colors[i], i * 4); // alpha is skipped, stays 0.
   }
   self.colors = colorsPacked;
 
