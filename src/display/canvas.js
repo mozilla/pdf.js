@@ -2327,9 +2327,12 @@ class CanvasGraphics {
       const dims = this.current.tilingPatternDims;
       const tileIdx = dims && fillColor.canSkipPatternCanvas(dims);
       if (tileIdx) {
-        // Draw the tile directly, skipping the pattern canvas.
-        fillColor.drawPattern(this, path, this.pendingEOFill, tileIdx, opIdx);
+        // Keep the fill's pending state out of the tile operators.
+        const { pendingClip, pendingEOFill } = this;
+        this.pendingClip = null;
         this.pendingEOFill = false;
+        fillColor.drawPattern(this, path, pendingEOFill, tileIdx, opIdx);
+        this.pendingClip = pendingClip;
         if (consumePath) {
           this.consumePath(opIdx, path, intersect);
         }

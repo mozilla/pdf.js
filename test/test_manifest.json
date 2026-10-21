@@ -14775,5 +14775,13 @@
     "link": false,
     "type": "load",
     "about": "Format 12 cmap group spanning 0 to 0xffffffff; must load without exhausting memory."
+  },
+  {
+    "id": "pattern_fill_pending_state",
+    "file": "pdfs/pattern_fill_pending_state.pdf",
+    "md5": "ab250767031b8c1dfc14d8c6728a4b40",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Single-tile patterns with pending clips and even-odd fills."
   }
 ]
