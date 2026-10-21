@@ -21,6 +21,12 @@
 /** @typedef {import("../../shared/message_handler.js").MessageHandler} MessageHandler */
 
 import {
+  AnnotationEditorPrefix,
+  isArrayEqual,
+  makeArr,
+  stringToBytes,
+} from "../../shared/util.js";
+import {
   deepCompare,
   getInheritableProperty,
   getModificationDate,
@@ -37,7 +43,6 @@ import {
   RefSet,
 } from "../primitives.js";
 import { incrementalUpdate, writeObject, writeValue } from "../writer.js";
-import { isArrayEqual, makeArr, stringToBytes } from "../../shared/util.js";
 import { NameTree, NumberTree } from "../name_number_tree.js";
 import { stringToAsciiOrUTF16BE, stringToPDFString } from "../string_utils.js";
 import { AnnotationFactory } from "../annotation.js";
@@ -147,6 +152,8 @@ class PDFEditor {
   #newAnnotationsParams = null;
 
   #primaryDocument = null;
+
+  #annotationChanges = null;
 
   // Deduplicates resource streams (fonts/images) shared across the merged
   // documents. Maps a cheap content key to a bucket of { ref, dictStr, stream }
@@ -278,7 +285,10 @@ class PDFEditor {
         return existingRef;
       }
       const oldRef = obj;
-      obj = await xref.fetchAsync(oldRef);
+      obj =
+        (this.currentDocument.document === this.#primaryDocument &&
+          this.#annotationChanges?.get(oldRef)?.data) ||
+        (await xref.fetchAsync(oldRef));
       const mappedRef = oldRefMapping.get(oldRef);
       if (mappedRef) {
         // Another concurrent traversal may have allocated the clone while the
@@ -1118,6 +1128,27 @@ class PDFEditor {
     }
     this.isSingleFile = documents.size === 1;
     promises.length = 0;
+
+    if (
+      documents.has(primaryDocument) &&
+      annotationStorage
+        ?.keys()
+        .some(key => !key.startsWith(AnnotationEditorPrefix))
+    ) {
+      const changes = (this.#annotationChanges = new RefMap());
+      // A retained widget may share its value with a widget on an excluded
+      // page. Save all source fields before copying only retained objects,
+      // without changing the source XRef or its cached dictionaries.
+      for (let i = 0; i < primaryDocument.numPages; i++) {
+        promises.push(
+          primaryDocument
+            .getPage(i)
+            .then(page => page.save(handler, task, annotationStorage, changes))
+        );
+      }
+      await Promise.all(promises);
+      promises.length = 0;
+    }
 
     this.#collectValidDestinations(allDocumentData);
     this.#collectOutlineDestinations(allDocumentData);
@@ -2037,7 +2068,10 @@ class PDFEditor {
 
   #setAcroFormDefaultBasicValues(allDocumentData) {
     let sigFlags = 0;
-    let needAppearances = false;
+    let needAppearances =
+      this.#annotationChanges
+        ?.values()
+        .some(change => change.needAppearances) || false;
     for (const documentData of allDocumentData) {
       if (!documentData.acroForm) {
         continue;
@@ -2248,7 +2282,10 @@ class PDFEditor {
         continue;
       }
       processed.put(oldKidRef);
-      const kid = xref.fetchIfRef(oldKidRef);
+      const kid =
+        (this.currentDocument.document === this.#primaryDocument &&
+          this.#annotationChanges?.get(oldKidRef)?.data) ||
+        xref.fetchIfRef(oldKidRef);
       if (!(kid instanceof Dict)) {
         continue;
       }
@@ -2495,25 +2532,66 @@ class PDFEditor {
 
     let newAnnots = null;
 
-    if (annotations) {
-      const newAnnotations = await this.#collectDependencies(
-        annotations,
-        true,
-        xref
-      );
-      this.#fixNamedDestinations(newAnnotations, dedupNamedDestinations);
-      if (Array.isArray(newAnnotations) && newAnnotations.length > 0) {
-        newAnnots = newAnnotations;
-      }
-    }
-
     const newAnnotations =
       documentData.document === this.#primaryDocument
         ? this.#newAnnotationsParams?.newAnnotationsByPage
             ?.get(page.pageIndex)
             ?.filter(({ copyLevel: level }) => (level ?? 0) === copyLevel)
+            .map(annotation => ({
+              ...annotation,
+              ...(annotation.popup && { popup: { ...annotation.popup } }),
+            }))
         : null;
+    const deletedAnnotations = new RefSet();
+    for (const annotation of newAnnotations || []) {
+      if (annotation.deleted) {
+        const ref = annotation.id && Ref.fromString(annotation.id);
+        if (ref) {
+          deletedAnnotations.put(ref);
+        }
+      }
+      if (annotation.deleted || annotation.popup?.deleted) {
+        const ref = annotation.popupRef && Ref.fromString(annotation.popupRef);
+        if (ref) {
+          deletedAnnotations.put(ref);
+        }
+      }
+    }
+
+    if (annotations) {
+      const copiedAnnotations = await this.#collectDependencies(
+        annotations.filter(
+          ref => !(ref instanceof Ref && deletedAnnotations.has(ref))
+        ),
+        true,
+        xref
+      );
+      this.#fixNamedDestinations(copiedAnnotations, dedupNamedDestinations);
+      if (Array.isArray(copiedAnnotations) && copiedAnnotations.length > 0) {
+        newAnnots = copiedAnnotations;
+      }
+    }
+
     if (newAnnotations?.length) {
+      for (const annotation of newAnnotations) {
+        const oldRef = annotation.id && Ref.fromString(annotation.id);
+        const ref = oldRef && oldRefMapping.get(oldRef);
+        if (!ref || annotation.deleted) {
+          continue;
+        }
+        // Update the output dictionaries in place: postponed page references
+        // already point to them. The source dictionaries remain untouched.
+        annotation.ref = ref;
+        annotation.oldAnnotation = this.xref[ref.num];
+        const { popup } = annotation;
+        const oldPopupRef =
+          annotation.popupRef && Ref.fromString(annotation.popupRef);
+        const popupRef = oldPopupRef && oldRefMapping.get(oldPopupRef);
+        if (popup && popupRef && !popup.deleted) {
+          popup.ref = popupRef;
+          popup.oldAnnotation = this.xref[popupRef.num];
+        }
+      }
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
       const changes = new RefMap();
       const newData = await AnnotationFactory.saveNewAnnotations(
@@ -2528,8 +2606,15 @@ class PDFEditor {
         this.xref[ref.num] = data;
       }
       newAnnots ||= [];
+      const existingRefs = new Set(newAnnots);
       for (const { ref } of newData.annotations) {
-        newAnnots.push(ref);
+        if (!existingRefs.has(ref)) {
+          newAnnots.push(ref);
+          existingRefs.add(ref);
+        }
+      }
+      for (const ref of deletedAnnotations) {
+        oldRefMapping.remove(ref);
       }
     }
 

@@ -9880,6 +9880,79 @@ small scripts as well as for`);
         await loadingTask.destroy();
       });
 
+      it("preserves an edited existing comment when extracting pages (issue 22132)", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("highlight_popup.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const sourceAnnotations = await (
+          await pdfDoc.getPage(1)
+        ).getAnnotations();
+        const sourceHighlight = sourceAnnotations.find(
+          ({ annotationType }) => annotationType === AnnotationType.HIGHLIGHT
+        );
+        const contents = "Edited before extracting pages";
+        pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+          annotationType: AnnotationEditorType.HIGHLIGHT,
+          id: sourceHighlight.id,
+          pageIndex: 0,
+          popup: { deleted: false, contents },
+          popupRef: sourceHighlight.popupRef,
+        });
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations.length).toEqual(2);
+        const highlight = annotations.find(
+          ({ annotationType }) => annotationType === AnnotationType.HIGHLIGHT
+        );
+        const popup = annotations.find(
+          ({ annotationType }) => annotationType === AnnotationType.POPUP
+        );
+        expect(highlight.contentsObj.str).toEqual(contents);
+        expect(highlight.popupRef).toEqual(popup.id);
+        await loadingTask.destroy();
+      });
+
+      for (const deleteHighlight of [false, true]) {
+        it(`preserves ${deleteHighlight ? "highlight" : "popup-only"} deletion when extracting pages (issue 22132)`, async function () {
+          let loadingTask = getDocument(
+            buildGetDocumentParams("highlight_popup.pdf")
+          );
+          let pdfDoc = await loadingTask.promise;
+          pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
+            annotationType: AnnotationEditorType.HIGHLIGHT,
+            id: "24R",
+            pageIndex: 0,
+            deleted: deleteHighlight,
+            popup: { deleted: true },
+            popupRef: "25R",
+          });
+
+          const data = await pdfDoc.extractPages([{ document: null }]);
+          await loadingTask.destroy();
+
+          loadingTask = getDocument({ data });
+          pdfDoc = await loadingTask.promise;
+          const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+          if (deleteHighlight) {
+            expect(annotations).toEqual([]);
+          } else {
+            expect(annotations.length).toEqual(1);
+            expect(annotations[0].annotationType).toEqual(
+              AnnotationType.HIGHLIGHT
+            );
+            expect(annotations[0].popupRef).toBeNull();
+            expect(annotations[0].contentsObj.str).toEqual("");
+          }
+          await loadingTask.destroy();
+        });
+      }
+
       it("places new annotations on the correct page after reordering (bug 2027682)", async function () {
         let loadingTask = getDocument(
           buildGetDocumentParams("doc_1_3_pages.pdf")
@@ -10309,6 +10382,250 @@ small scripts as well as for`);
         const fontIndex = operatorList.fnArray.indexOf(OPS.setFont);
         return fontIndex < 0 ? null : operatorList.argsArray[fontIndex][0];
       };
+
+      it("preserves an edited text field when removing a page (issue 22132)", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("prefilled_f1040.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        const field = annotations.find(({ fieldType }) => fieldType === "Tx");
+        const value = "Edited before extracting pages";
+        pdfDoc.annotationStorage.setValue(field.id, { value });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, excludePages: [1] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+        const extractedAnnotations = await (
+          await pdfDoc.getPage(1)
+        ).getAnnotations();
+        const extractedField = extractedAnnotations.find(
+          ({ fieldName }) => fieldName === field.fieldName
+        );
+        expect(extractedField.fieldValue).toEqual(value);
+        await loadingTask.destroy();
+      });
+
+      it("preserves edited fields on reordered pages without changing the source (issue 22132)", async function () {
+        let loadingTask = getDocument(
+          buildGetDocumentParams("form_two_pages.pdf")
+        );
+        let pdfDoc = await loadingTask.promise;
+        const sourceData = await pdfDoc.getData();
+        const fields = [];
+        for (const pageNumber of [1, 2]) {
+          const annotations = await (
+            await pdfDoc.getPage(pageNumber)
+          ).getAnnotations();
+          const field = annotations.find(({ fieldType }) => fieldType === "Tx");
+          fields.push(field);
+          pdfDoc.annotationStorage.setValue(field.id, {
+            value: `Edited on source page ${pageNumber}`,
+          });
+        }
+
+        const data = await pdfDoc.extractPages([
+          { document: null, includePages: [0, 1], pageIndices: [1, 0] },
+        ]);
+        expect(await pdfDoc.getData()).toEqual(sourceData);
+        expect(pdfDoc.numPages).toEqual(2);
+        for (const [index, field] of fields.entries()) {
+          const annotations = await (
+            await pdfDoc.getPage(index + 1)
+          ).getAnnotations();
+          expect(annotations.find(({ id }) => id === field.id).fieldValue)
+            .withContext(`Source page ${index + 1}`)
+            .toEqual(field.fieldValue);
+          expect(pdfDoc.annotationStorage.getValue(field.id, {})).toEqual({
+            value: `Edited on source page ${index + 1}`,
+          });
+        }
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(2);
+        for (const pageNumber of [1, 2]) {
+          const sourcePageNumber = 3 - pageNumber;
+          const annotations = await (
+            await pdfDoc.getPage(pageNumber)
+          ).getAnnotations();
+          const field = annotations.find(
+            ({ fieldName }) =>
+              fieldName === fields[sourcePageNumber - 1].fieldName
+          );
+          expect(field.fieldValue)
+            .withContext(`Extracted page ${pageNumber}`)
+            .toEqual(`Edited on source page ${sourcePageNumber}`);
+        }
+        await loadingTask.destroy();
+      });
+
+      it("preserves edited inherited checkbox and radio values (issue 22132)", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 9 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Annots [4 0 R 6 0 R 7 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [0 0 20 20] " +
+            "/Parent 5 0 R /AS /Off " +
+            "/AP << /N << /Yes 11 0 R /Off 10 0 R >> >> >>\nendobj\n",
+          "5 0 obj\n<< /FT /Btn /T (check) /V /Off /Kids [4 0 R] >>\nendobj\n",
+          "6 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [20 0 40 20] " +
+            "/Parent 8 0 R /AS /First " +
+            "/AP << /N << /First 11 0 R /Off 10 0 R >> >> >>\nendobj\n",
+          "7 0 obj\n<< /Type /Annot /Subtype /Widget /Rect [40 0 60 20] " +
+            "/Parent 8 0 R /AS /Off " +
+            "/AP << /N << /Second 11 0 R /Off 10 0 R >> >> >>\nendobj\n",
+          "8 0 obj\n<< /FT /Btn /Ff 32768 /T (radio) /V /First " +
+            "/Kids [6 0 R 7 0 R] >>\nendobj\n",
+          "9 0 obj\n<< /Fields [5 0 R 8 0 R] >>\nendobj\n",
+          "10 0 obj\n<< /Subtype /Form /BBox [0 0 20 20] /Length 1 >>\n" +
+            "stream\n \nendstream\nendobj\n",
+          "11 0 obj\n<< /Subtype /Form /BBox [0 0 20 20] /Length 3 >>\n" +
+            "stream\nq Q\nendstream\nendobj\n",
+        ]);
+        let loadingTask = getDocument({ data: pdfData });
+        let pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("4R", { value: true });
+        pdfDoc.annotationStorage.setValue("6R", { value: false });
+        pdfDoc.annotationStorage.setValue("7R", { value: true });
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        const checkbox = annotations.find(({ checkBox }) => checkBox);
+        const radios = annotations.filter(({ radioButton }) => radioButton);
+        expect(checkbox.fieldValue).toEqual("Yes");
+        expect(radios.length).toEqual(2);
+        expect(radios.map(({ fieldValue }) => fieldValue)).toEqual([
+          "Second",
+          "Second",
+        ]);
+        expect(radios.map(({ buttonValue }) => buttonValue)).toEqual([
+          "First",
+          "Second",
+        ]);
+        const fieldObjects = await pdfDoc.getFieldObjects();
+        expect([...fieldObjects.keys()].sort()).toEqual(["check", "radio"]);
+        await loadingTask.destroy();
+      });
+
+      it("isolates edits from imported copies across repeated extraction and saving (issue 22132)", async function () {
+        const loadingTask = getDocument({ data: buildTextFieldPdf("field") });
+        const pdfDoc = await loadingTask.promise;
+        const sourceData = await pdfDoc.getData();
+        const [field] = await (await pdfDoc.getPage(1)).getAnnotations();
+        const value = "Edited only in the primary document";
+        pdfDoc.annotationStorage.setValue(field.id, { value });
+
+        for (let i = 0; i < 2; i++) {
+          // Both inputs use identical object numbers, but only the primary
+          // document has unsaved changes in its annotation storage.
+          const data = await pdfDoc.extractPages([
+            { document: null },
+            { document: sourceData.slice() },
+          ]);
+          const extractedTask = getDocument({ data });
+          const extractedDoc = await extractedTask.promise;
+          expect(extractedDoc.numPages).toEqual(2);
+          const [editedField] = await (
+            await extractedDoc.getPage(1)
+          ).getAnnotations();
+          const [importedField] = await (
+            await extractedDoc.getPage(2)
+          ).getAnnotations();
+          expect(editedField.fieldValue).toEqual(value);
+          expect(importedField.fieldValue).toEqual(field.fieldValue);
+          await extractedTask.destroy();
+        }
+
+        const savedTask = getDocument({ data: await pdfDoc.saveDocument() });
+        const savedDoc = await savedTask.promise;
+        expect(savedDoc.numPages).toEqual(1);
+        const [savedField] = await (await savedDoc.getPage(1)).getAnnotations();
+        expect(savedField.fieldValue).toEqual(value);
+        expect(await pdfDoc.getData()).toEqual(sourceData);
+        await savedTask.destroy();
+        await loadingTask.destroy();
+      });
+
+      it("preserves a shared field edited through an excluded page (issue 22132)", async function () {
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R 8 0 R] /Count 2 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Annots [4 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R " +
+            "/Rect [0 0 80 20] >>\nendobj\n",
+          "5 0 obj\n<< /FT /Tx /T (shared) /V (original) " +
+            "/Kids [4 0 R 7 0 R] >>\nendobj\n",
+          "6 0 obj\n<< /Fields [5 0 R] /DA (/Helv 10 Tf) " +
+            "/DR << /Font << /Helv 9 0 R >> >> >>\nendobj\n",
+          "7 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R " +
+            "/Rect [0 0 80 20] >>\nendobj\n",
+          "8 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+            "/Annots [7 0 R] >>\nendobj\n",
+          "9 0 obj\n<< /Type /Font /Subtype /Type1 " +
+            "/BaseFont /Helvetica >>\nendobj\n",
+        ]);
+        let loadingTask = getDocument({ data: pdfData });
+        let pdfDoc = await loadingTask.promise;
+        const value = "Updated shared value";
+        pdfDoc.annotationStorage.setValue("4R", { value });
+
+        const data = await pdfDoc.extractPages([
+          { document: null, excludePages: [0] },
+        ]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(pdfDoc.numPages).toEqual(1);
+        const annotations = await (await pdfDoc.getPage(1)).getAnnotations();
+        expect(annotations.length).toEqual(1);
+        expect(annotations[0].fieldName).toEqual("shared");
+        expect(annotations[0].fieldValue).toEqual(value);
+        await loadingTask.destroy();
+      });
+
+      it("updates the rendered text appearance of an edited field (issue 22132)", async function () {
+        let loadingTask = getDocument({ data: buildTextFieldPdf("field") });
+        let pdfDoc = await loadingTask.promise;
+        const [field] = await (await pdfDoc.getPage(1)).getAnnotations();
+        const value = "Hi";
+        pdfDoc.annotationStorage.setValue(field.id, { value });
+
+        const data = await pdfDoc.extractPages([{ document: null }]);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        const operatorList = await page.getOperatorList({
+          annotationMode: AnnotationMode.ENABLE,
+        });
+        const renderedText = [];
+        for (const [index, op] of operatorList.fnArray.entries()) {
+          if (op === OPS.showText) {
+            renderedText.push(
+              ...operatorList.argsArray[index][0].map(
+                glyph => glyph?.unicode || ""
+              )
+            );
+          }
+        }
+        expect(renderedText.join("")).toEqual(value);
+        await loadingTask.destroy();
+      });
 
       it("does not mutate source widget parents", async function () {
         const pdfData = assemblePdf([
