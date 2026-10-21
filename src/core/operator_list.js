@@ -22,6 +22,7 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { OperatorListBBoxTracker } from "./operator_list_bbox_tracker.js";
 
 function addState(parentState, pattern, checkFn, iterateFn, processFn) {
   let state = parentState;
@@ -522,7 +523,14 @@ addState(
 
     if (minMax) {
       const newBBox = F32_BBOX_INIT.slice();
-      Util.axialAlignedBoundingBox(minMax, transform, newBBox);
+      Util.transformedRectBoundingBox(
+        minMax[0],
+        minMax[1],
+        minMax[2],
+        minMax[3],
+        transform,
+        newBBox
+      );
       minMax.set(newBBox);
       for (let k = 0, kk = buffer.length; k < kk;) {
         switch (buffer[k++]) {
@@ -669,6 +677,8 @@ class OperatorList {
     this.dependencies = new Set();
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
+    this._bboxTracker = null;
+    this._bboxFonts = new Map();
   }
 
   static setOptions({ isOffscreenCanvasSupported }) {
@@ -681,6 +691,14 @@ class OperatorList {
 
   get ready() {
     return this._resolved || this._streamSink.ready;
+  }
+
+  enableBBoxes(pageBBox) {
+    this._bboxTracker = new OperatorListBBoxTracker(pageBBox, this._bboxFonts);
+  }
+
+  addFont(loadedName, font) {
+    this._bboxFonts.set(loadedName, font);
   }
 
   addOp(fn, args) {
@@ -740,6 +758,9 @@ class OperatorList {
     for (const dependency of opList.dependencies) {
       this.dependencies.add(dependency);
     }
+    for (const [loadedName, font] of opList._bboxFonts) {
+      this.addFont(loadedName, font);
+    }
     for (let i = 0, ii = opList.length; i < ii; i++) {
       this.addOp(opList.fnArray[i], opList.argsArray[i]);
     }
@@ -793,6 +814,15 @@ class OperatorList {
 
   flush(lastChunk = false, separateAnnots = null) {
     this.optimizer.flush();
+    const transfers = this._transfers;
+    let bboxes = null;
+    if (this._bboxTracker) {
+      this._bboxTracker.process(this.fnArray, this.argsArray);
+      if (lastChunk) {
+        bboxes = this._bboxTracker.finish();
+        transfers.push(bboxes.buffer);
+      }
+    }
 
     this._streamSink.enqueue(
       {
@@ -801,9 +831,10 @@ class OperatorList {
         lastChunk,
         separateAnnots,
         length: this.length,
+        bboxes,
       },
       1,
-      this._transfers
+      transfers
     );
 
     this.dependencies.clear();

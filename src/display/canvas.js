@@ -1079,7 +1079,7 @@ class CanvasGraphics {
     ]);
     maskToCanvas = Util.transform(maskToCanvas, [1, 0, 0, 1, 0, -height]);
     const minMax = F32_BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox([0, 0, width, height], maskToCanvas, minMax);
+    Util.transformedRectBoundingBox(0, 0, width, height, maskToCanvas, minMax);
     const [minX, minY, maxX, maxY] = minMax;
     const drawnWidth = Math.round(maxX - minX) || 1;
     const drawnHeight = Math.round(maxY - minY) || 1;
@@ -2219,8 +2219,11 @@ class CanvasGraphics {
       path = makePathFromDrawOPS(data[0]);
       this._pathCache.set(opIdx, path);
     }
-    Util.axialAlignedBoundingBox(
-      minMax,
+    Util.transformedRectBoundingBox(
+      minMax[0],
+      minMax[1],
+      minMax[2],
+      minMax[3],
       getCurrentTransform(this.ctx),
       this.current.minMax
     );
@@ -3251,7 +3254,7 @@ class CanvasGraphics {
     if (inv) {
       const { width, height } = ctx.canvas;
       const minMax = F32_BBOX_INIT.slice();
-      Util.axialAlignedBoundingBox([0, 0, width, height], inv, minMax);
+      Util.transformedRectBoundingBox(0, 0, width, height, inv, minMax);
       const [x0, y0, x1, y1] = minMax;
 
       this.ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
@@ -3300,12 +3303,15 @@ class CanvasGraphics {
     this.baseTransform = getCurrentTransform(this.ctx);
 
     if (bbox) {
-      Util.axialAlignedBoundingBox(
-        bbox,
+      const [x0, y0, x1, y1] = bbox;
+      Util.transformedRectBoundingBox(
+        x0,
+        y0,
+        x1,
+        y1,
         this.baseTransform,
         this.current.minMax
       );
-      const [x0, y0, x1, y1] = bbox;
       const clip = new Path2D();
       clip.rect(x0, y0, x1 - x0, y1 - y0);
       this.ctx.clip(clip);
@@ -3396,8 +3402,12 @@ class CanvasGraphics {
     let bounds;
     if (group.bbox) {
       bounds = F32_BBOX_INIT.slice();
-      Util.axialAlignedBoundingBox(
-        group.bbox,
+      const [x0, y0, x1, y1] = group.bbox;
+      Util.transformedRectBoundingBox(
+        x0,
+        y0,
+        x1,
+        y1,
         getCurrentTransform(currentCtx),
         bounds
       );
@@ -3641,8 +3651,11 @@ class CanvasGraphics {
       this.ctx.save();
       this.ctx.setTransform(...currentMtx);
       const dirtyBox = F32_BBOX_INIT.slice();
-      Util.axialAlignedBoundingBox(
-        [0, 0, groupCtx.canvas.width, groupCtx.canvas.height],
+      Util.transformedRectBoundingBox(
+        0,
+        0,
+        groupCtx.canvas.width,
+        groupCtx.canvas.height,
         currentMtx,
         dirtyBox
       );

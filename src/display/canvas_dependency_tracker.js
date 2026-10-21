@@ -258,7 +258,7 @@ class CanvasBBoxTracker {
       ctx.getTransform()
     );
     const clipBox = BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, clipBox);
+    Util.transformedRectBoundingBox(minX, minY, maxX, maxY, transform, clipBox);
     const intersection = Util.intersect(this.#clipBox, clipBox);
     if (intersection) {
       this.#clipBox[0] = intersection[0];
@@ -283,8 +283,11 @@ class CanvasBBoxTracker {
       ctx.getTransform()
     );
     if (clipBox[0] === -Infinity) {
-      Util.axialAlignedBoundingBox(
-        [minX, minY, maxX, maxY],
+      Util.transformedRectBoundingBox(
+        minX,
+        minY,
+        maxX,
+        maxY,
         transform,
         this.#pendingBBox
       );
@@ -292,7 +295,7 @@ class CanvasBBoxTracker {
     }
 
     const bbox = BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox([minX, minY, maxX, maxY], transform, bbox);
+    Util.transformedRectBoundingBox(minX, minY, maxX, maxY, transform, bbox);
 
     this.#pendingBBox[0] = MathClamp(bbox[0], clipBox[0], this.#pendingBBox[0]);
     this.#pendingBBox[1] = MathClamp(bbox[1], clipBox[1], this.#pendingBBox[1]);
@@ -652,7 +655,14 @@ class CanvasDependencyTracker {
 
       if (isBBoxTrustworthy !== false) {
         computedBBox = [0, 0, 0, 0];
-        Util.axialAlignedBoundingBox(fontBBox, font.fontMatrix, computedBBox);
+        Util.transformedRectBoundingBox(
+          fontBBox[0],
+          fontBBox[1],
+          fontBBox[2],
+          fontBBox[3],
+          font.fontMatrix,
+          computedBBox
+        );
         if (scale !== 1 || x !== 0 || y !== 0) {
           scaleCharBBox(scale, -scale, x, y, computedBBox);
         }
@@ -1171,7 +1181,7 @@ class CanvasImagesTracker {
 
     if (clipBox[0] !== Infinity) {
       const bbox = BBOX_INIT.slice();
-      Util.axialAlignedBoundingBox([0, -height, width, 0], transform, bbox);
+      Util.transformedRectBoundingBox(0, -height, width, 0, transform, bbox);
 
       const finalBBox = Util.intersect(clipBox, bbox);
       if (!finalBBox) {

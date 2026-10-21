@@ -801,47 +801,43 @@ class Util {
 
   // Applies the transform to the rectangle and finds the minimum axially
   // aligned bounding box.
-  static axialAlignedBoundingBox(rect, transform, output) {
+  static transformedRectBoundingBox(x0, y0, x1, y1, transform, minMax) {
     const m0 = transform[0];
     const m1 = transform[1];
     const m2 = transform[2];
     const m3 = transform[3];
     const m4 = transform[4];
     const m5 = transform[5];
-    const r0 = rect[0];
-    const r1 = rect[1];
-    const r2 = rect[2];
-    const r3 = rect[3];
 
-    let a0 = m0 * r0 + m4;
+    let a0 = m0 * x0 + m4;
     let a2 = a0;
-    let a1 = m0 * r2 + m4;
+    let a1 = m0 * x1 + m4;
     let a3 = a1;
-    let b0 = m3 * r1 + m5;
+    let b0 = m3 * y0 + m5;
     let b2 = b0;
-    let b1 = m3 * r3 + m5;
+    let b1 = m3 * y1 + m5;
     let b3 = b1;
 
     if (m1 !== 0 || m2 !== 0) {
       // Non-scaling matrix: shouldn't be frequent.
-      const m1r0 = m1 * r0;
-      const m1r2 = m1 * r2;
-      const m2r1 = m2 * r1;
-      const m2r3 = m2 * r3;
-      a0 += m2r1;
-      a3 += m2r1;
-      a1 += m2r3;
-      a2 += m2r3;
-      b0 += m1r0;
-      b3 += m1r0;
-      b1 += m1r2;
-      b2 += m1r2;
+      const m1x0 = m1 * x0;
+      const m1x1 = m1 * x1;
+      const m2y0 = m2 * y0;
+      const m2y1 = m2 * y1;
+      a0 += m2y0;
+      a3 += m2y0;
+      a1 += m2y1;
+      a2 += m2y1;
+      b0 += m1x0;
+      b3 += m1x0;
+      b1 += m1x1;
+      b2 += m1x1;
     }
 
-    output[0] = Math.min(output[0], a0, a1, Math.min(a2, a3));
-    output[1] = Math.min(output[1], b0, b1, Math.min(b2, b3));
-    output[2] = Math.max(output[2], a0, a1, Math.max(a2, a3));
-    output[3] = Math.max(output[3], b0, b1, Math.max(b2, b3));
+    minMax[0] = Math.min(minMax[0], a0, a1, Math.min(a2, a3));
+    minMax[1] = Math.min(minMax[1], b0, b1, Math.min(b2, b3));
+    minMax[2] = Math.max(minMax[2], a0, a1, Math.max(a2, a3));
+    minMax[3] = Math.max(minMax[3], b0, b1, Math.max(b2, b3));
   }
 
   static inverseTransform(m) {

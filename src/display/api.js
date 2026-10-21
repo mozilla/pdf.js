@@ -64,6 +64,7 @@ import { initGPU } from "./webgpu.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { ObjectHandler } from "./object_handler.js";
+import { OperatorBBoxes } from "./operator_bboxes.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PagesMapper } from "./pages_mapper.js";
 import { PageViewport } from "./page_viewport.js";
@@ -1563,6 +1564,7 @@ class PDFPageProxy {
       intentState.operatorList = {
         fnArray: [],
         argsArray: [],
+        bboxes: null,
         lastChunk: false,
         separateAnnots: null,
       };
@@ -1688,6 +1690,27 @@ class PDFPageProxy {
       .catch(complete);
 
     return renderTask;
+  }
+
+  /**
+   * Returns cached display-operation bounds, or null if unavailable.
+   * @private
+   */
+  _getOperatorBBoxes({
+    intent = "display",
+    annotationMode = AnnotationMode.ENABLE,
+    printAnnotationStorage = null,
+    isEditing = false,
+  } = {}) {
+    const { renderingIntent, cacheKey } = this._transport.getRenderingIntent(
+      intent,
+      annotationMode,
+      printAnnotationStorage,
+      isEditing
+    );
+    return !(renderingIntent & RenderingIntentFlag.DISPLAY)
+      ? null
+      : (this._intentStates.get(cacheKey)?.operatorList?.bboxes ?? null);
   }
 
   /**
@@ -1902,6 +1925,12 @@ class PDFPageProxy {
     }
     intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
     intentState.operatorList.separateAnnots = operatorListChunk.separateAnnots;
+    if (operatorListChunk.bboxes) {
+      intentState.operatorList.bboxes = new OperatorBBoxes(
+        operatorListChunk.bboxes,
+        this.view
+      );
+    }
 
     // Notify all the rendering tasks there are more operators to be consumed.
     for (const internalRenderTask of intentState.renderTasks) {

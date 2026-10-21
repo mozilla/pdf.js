@@ -687,7 +687,14 @@ function getQuadPoints(dict, rect) {
 function getTransformMatrix(rect, bbox, matrix) {
   // 12.5.5: Algorithm: Appearance streams
   const minMax = F32_BBOX_INIT.slice();
-  Util.axialAlignedBoundingBox(bbox, matrix, minMax);
+  Util.transformedRectBoundingBox(
+    bbox[0],
+    bbox[1],
+    bbox[2],
+    bbox[3],
+    matrix,
+    minMax
+  );
   const [minX, minY, maxX, maxY] = minMax;
   if (minX === maxX || minY === maxY) {
     // From real-life file, bbox was [0, 0, 0, 0]. In this case,

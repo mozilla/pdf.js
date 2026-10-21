@@ -623,8 +623,11 @@ class TilingPattern {
   updatePatternDims(clippedBBox, dims) {
     // Two diagonal corners aren't enough when the pattern matrix is rotated.
     const bbox = BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox(
-      clippedBBox,
+    Util.transformedRectBoundingBox(
+      clippedBBox[0],
+      clippedBBox[1],
+      clippedBBox[2],
+      clippedBBox[3],
       Util.inverseTransform(this.patternBaseMatrix),
       bbox
     );
@@ -927,8 +930,11 @@ class TilingPattern {
     const bboxHeight = y1 - y0;
     const clip = new Path2D();
     clip.rect(x0, y0, bboxWidth, bboxHeight);
-    Util.axialAlignedBoundingBox(
-      [x0, y0, x1, y1],
+    Util.transformedRectBoundingBox(
+      x0,
+      y0,
+      x1,
+      y1,
       getCurrentTransform(graphics.ctx),
       graphics.current.minMax
     );
