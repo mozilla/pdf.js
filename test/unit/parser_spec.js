@@ -32,7 +32,7 @@ describe("parser", function () {
           allowStreams: true,
         });
 
-        parser.inlineStreamSkipEI(input);
+        parser.inlineStreamSkipEI(input, 0);
         expect(input.pos).toEqual(string.indexOf("Q"));
         expect(input.peekByte()).toEqual(0x51); // 'Q'
       });
@@ -47,7 +47,7 @@ describe("parser", function () {
           allowStreams: true,
         });
 
-        parser.inlineStreamSkipEI(input);
+        parser.inlineStreamSkipEI(input, 0);
         expect(input.pos).toEqual(string.length);
         expect(input.peekByte()).toEqual(-1);
       });

@@ -425,17 +425,7 @@ class Parser {
         break;
       }
     }
-    const length = stream.pos - startPos;
-    if (b === -1) {
-      warn(
-        "Inline DCTDecode image stream: " +
-          "EOI marker not found, searching for /EI/ instead."
-      );
-      stream.skip(-length); // Reset the stream position.
-      return this.findDefaultInlineStreamEnd(stream);
-    }
-    this.inlineStreamSkipEI(stream);
-    return length;
+    return this.inlineStreamSkipEI(stream, startPos, b, "DCTDecode");
   }
 
   /**
@@ -456,17 +446,7 @@ class Parser {
         break;
       }
     }
-    const length = stream.pos - startPos;
-    if (ch === -1) {
-      warn(
-        "Inline ASCII85Decode image stream: " +
-          "EOD marker not found, searching for /EI/ instead."
-      );
-      stream.skip(-length); // Reset the stream position.
-      return this.findDefaultInlineStreamEnd(stream);
-    }
-    this.inlineStreamSkipEI(stream);
-    return length;
+    return this.inlineStreamSkipEI(stream, startPos, ch, "ASCII85Decode");
   }
 
   /**
@@ -482,27 +462,26 @@ class Parser {
         break;
       }
     }
-    const length = stream.pos - startPos;
-    if (ch === -1) {
-      warn(
-        "Inline ASCIIHexDecode image stream: " +
-          "EOD marker not found, searching for /EI/ instead."
-      );
-      stream.skip(-length); // Reset the stream position.
-      return this.findDefaultInlineStreamEnd(stream);
-    }
-    this.inlineStreamSkipEI(stream);
-    return length;
+    return this.inlineStreamSkipEI(stream, startPos, ch, "ASCIIHexDecode");
   }
 
   /**
    * Skip over the /EI/ for streams where we search for an EOD marker.
+   * @returns {number} The inline stream length.
    */
-  inlineStreamSkipEI(stream) {
+  inlineStreamSkipEI(stream, startPos, ch, name) {
+    const length = stream.pos - startPos;
+    if (ch === -1) {
+      const type = name === "DCTDecode" ? "EOI" : "EOD";
+      warn(
+        `Inline ${name} image stream: ${type} marker not found, searching for /EI/ instead.`
+      );
+      stream.skip(-length); // Reset the stream position.
+      return this.findDefaultInlineStreamEnd(stream);
+    }
     const E = 0x45,
       I = 0x49;
-    let state = 0,
-      ch;
+    let state = 0;
     while ((ch = stream.getByte()) !== -1) {
       if (state === 0) {
         state = ch === E ? 1 : 0;
@@ -512,6 +491,7 @@ class Parser {
         break;
       }
     }
+    return length;
   }
 
   /**
