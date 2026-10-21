@@ -2164,6 +2164,28 @@ class CanvasGraphics {
     this._cachedScaleForStroking[0] = -1;
   }
 
+  /**
+   * Resets the graphics state, except the clip and the transfer maps.
+   */
+  resetGraphicsState() {
+    const { clipBox, transferMaps, transferMapsFallback } = this.current;
+    const current = (this.current = new CanvasExtraState(0, 0));
+    current.clipBox = clipBox;
+    current.transferMaps = transferMaps;
+    current.transferMapsFallback = transferMapsFallback;
+
+    const ctx = this.ctx;
+    ctx.lineWidth = 1;
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+    ctx.miterLimit = 10;
+    if (ctx.setLineDash !== undefined) {
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+    }
+    this._cachedScaleForStroking[0] = -1;
+  }
+
   transform(opIdx, a, b, c, d, e, f) {
     this.dependencyTracker?.recordIncrementalData("transform", opIdx);
     this.ctx.transform(a, b, c, d, e, f);

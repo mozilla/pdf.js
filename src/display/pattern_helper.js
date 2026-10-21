@@ -724,6 +724,7 @@ class TilingPattern {
         owner.canvasFactory.destroy(tmpCanvas);
       } else {
         // Render directly when isolation is unnecessary.
+        owner.resetGraphicsState();
         this.setFillAndStrokeStyleToContext(owner, this.paintType, this.color);
         this.clipBbox(owner, x0, y0, x1, y1);
         owner.baseTransformStack.push(owner.baseTransform);
