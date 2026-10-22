@@ -1127,13 +1127,14 @@ class CipherTransformFactory {
     let eff = stmf;
 
     if (algorithm >= 4) {
-      cf = dict.get("CF");
-      if (cf instanceof Dict) {
+      const cfDict = dict.get("CF");
+      if (cfDict instanceof Dict) {
         // The 'CF' dictionary itself should not be encrypted, and by setting
         // `suppressEncryption` we can prevent an infinite loop inside of
         // `XRef_fetchUncompressed` if the dictionary contains indirect
         // objects (fixes issue7665.pdf).
-        cf.suppressEncryption = true;
+        cfDict.suppressEncryption = true;
+        cf = cfDict;
       }
       stmf = dict.get("StmF") || Name.get("Identity");
       strf = dict.get("StrF") || Name.get("Identity");
@@ -1306,7 +1307,8 @@ class CipherTransformFactory {
         if (!(filterName instanceof Name)) {
           throw new FormatError("Invalid crypt filter name.");
         }
-        const cryptFilter = this.cf.get(filterName.name);
+        // Without /CF, only the predefined Identity filter can be referenced.
+        const cryptFilter = this.cf?.get(filterName.name);
         const cfm = cryptFilter?.get("CFM");
 
         if (!cfm || cfm.name === "None") {
