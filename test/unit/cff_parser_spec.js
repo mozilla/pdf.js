@@ -17,6 +17,7 @@ import {
   CFFCharset,
   CFFCompiler,
   CFFFDSelect,
+  CFFIndex,
   CFFParser,
   CFFPrivateDict,
   CFFStrings,
@@ -521,6 +522,45 @@ describe("CFFParser", function () {
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0)[0]).toEqual(14);
     expect(result.seacs.size).toEqual(0);
+  });
+
+  it("rejects a CharString executing too many operators and operands", function () {
+    const repeat = (ops, count, last) => {
+      const data = new Uint8Array(ops.length * count + 1);
+      for (let i = 0; i < count; i++) {
+        data.set(ops, i * ops.length);
+      }
+      data[data.length - 1] = last;
+      return data;
+    };
+    const subrs = new CFFIndex();
+    subrs.add(repeat([/* 1 - bias */ 33, /* callsubr */ 10], 256, 11));
+    subrs.add(repeat([/* 0 */ 139, /* hmoveto */ 22], 1024, 11));
+
+    const charStrings = new CFFIndex();
+    charStrings.add(repeat([/* 0 - bias */ 32, /* callsubr */ 10], 512, 14));
+    charStrings.add(new Uint8Array([32, 10, 14]));
+
+    const result = parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+    expect(result.charStrings.get(0)).toEqual(new Uint8Array([14]));
+    expect(result.charStrings.get(1)).toEqual(new Uint8Array([32, 10, 14]));
+  });
+
+  it("rejects a CharString overflowing the operand stack", function () {
+    const charStrings = new CFFIndex();
+    charStrings.add(new Uint8Array([...new Array(49).fill(139), 22, 14]));
+    charStrings.add(new Uint8Array([...new Array(48).fill(139), 22, 14]));
+
+    const result = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+    expect(result.charStrings.get(0)).toEqual(new Uint8Array([14]));
+    expect(result.charStrings.get(1).length).toEqual(50);
   });
 
   it("parses predefined charsets", function () {

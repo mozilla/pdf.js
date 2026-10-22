@@ -35,6 +35,12 @@ import { MathClamp } from "../shared/math_clamp.js";
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
 
+// Per-glyph token limit, including subroutines.
+const MAX_CHARSTRING_TOKENS = 64 * 1024 * 1024;
+
+// Type 2 operand stack limit (OTS).
+const MAX_STACK_SIZE = 48;
+
 // CFF FDSelect uses Card8 indices, so only 256 font DICTs are addressable.
 const MAX_FD_ARRAY_COUNT = 256;
 
@@ -562,6 +568,13 @@ class CFFParser {
 
     for (let j = 0; j < length;) {
       const value = data[j++];
+      if (
+        ++state.tokens > MAX_CHARSTRING_TOKENS ||
+        stackSize > MAX_STACK_SIZE
+      ) {
+        warn("Charstring exceeds the execution limits.");
+        return false;
+      }
       let validationCommand = null;
       if (value === 12) {
         const q = data[j++];
@@ -761,6 +774,7 @@ class CFFParser {
       const charstring = charStrings.get(i);
       const state = {
         callDepth: 0,
+        tokens: 0,
         stackSize: 0,
         stack: [],
         hints: 0,
