@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
+import { CFFCompiler, CFFParser } from "../../src/core/cff_parser.js";
 import { Font } from "../../src/core/fonts.js";
 import { IdentityCMap } from "../../src/core/cmap.js";
 import { IdentityToUnicodeMap } from "../../src/core/to_unicode_map.js";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("Font", () => {
@@ -353,6 +355,90 @@ describe("Font", () => {
       const groups = Array.from({ length: 1024 }, () => [0, 65534, 0]);
       const font = loadFont(65535, format12(groups));
       expect(font.data.length).toBeLessThan(0x400000);
+    });
+  });
+
+  describe("head table", () => {
+    // Example font from Appendix D of the CFF spec:
+    // https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf
+    const exampleFont = Uint8Array.fromHex(
+      "0100040100010101134142434445462b" +
+        "54696d65732d526f6d616e000101011f" +
+        "f81b00f81c02f81d03f819041c6f000d" +
+        "fb3cfb6efa7cfa1605e911b8f1120003" +
+        "01010813183030312e30303754696d65" +
+        "7320526f6d616e54696d657300000002" +
+        "010102030e0e7d99f92a99fb7695f773" +
+        "8b06f79a93fc7c8c077d99f85695f75e" +
+        "9908fb6e8cf87393f7108b09a70adf0b" +
+        "f78e14"
+    );
+
+    function createFont(fontBBox) {
+      const cff = new CFFParser(
+        new Stream(exampleFont),
+        {},
+        SEAC_ANALYSIS_ENABLED
+      ).parse();
+      cff.topDict.setByName("FontBBox", fontBBox);
+
+      return new Font(
+        "TestFont",
+        new Stream(new CFFCompiler(cff).compile()),
+        {
+          type: "Type1",
+          subtype: "Type1C",
+          composite: false,
+          loadedName: "font",
+          differences: new Map(),
+          defaultEncoding: [],
+          toUnicode: new IdentityToUnicodeMap(0, 255),
+          widths: [],
+          defaultWidth: 0,
+          italicAngle: 0,
+          xHeight: 0,
+          capHeight: 0,
+        },
+        {}
+      );
+    }
+
+    function getHorizontalExtents(data) {
+      const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      const numTables = view.getUint16(4);
+      for (let i = 0; i < numTables; i++) {
+        const record = 12 + i * 16;
+        const tag = String.fromCharCode(...data.subarray(record, record + 4));
+        if (tag === "head") {
+          const offset = view.getUint32(record + 8);
+          return [view.getInt16(offset + 36), view.getInt16(offset + 40)];
+        }
+      }
+      return null;
+    }
+
+    it("should extend the horizontal extents with the font bbox", () => {
+      // FontDescriptor bbox from bug 1888084.
+      let font = createFont([-1044, -3060, 4087.9998, 3560]);
+
+      expect(font.missingFile).withContext("bug 1888084").toBeFalse();
+      expect(getHorizontalExtents(font.data))
+        .withContext("bug 1888084")
+        .toEqual([-1044, 0x0fff]);
+
+      font = createFont([-100.5, -218, 5000.5, 898]);
+
+      expect(font.missingFile).withContext("wide bbox").toBeFalse();
+      expect(getHorizontalExtents(font.data))
+        .withContext("wide bbox")
+        .toEqual([-101, 5001]);
+    });
+
+    it("should not shrink the default horizontal extents", () => {
+      const font = createFont([100, -218, 1000, 898]);
+
+      expect(font.missingFile).toBeFalse();
+      expect(getHorizontalExtents(font.data)).toEqual([0, 0x0fff]);
     });
   });
 });

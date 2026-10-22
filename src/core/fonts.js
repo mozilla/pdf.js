@@ -3411,6 +3411,11 @@ class Font {
       "head",
       (function fontTableHead() {
         const dateArr = [0x00, 0x00, 0x00, 0x00, 0x9e, 0x0b, 0x7e, 0x27];
+        // The default xMin of 0 clips the accent in bug 1888084 on macOS.
+        // Extend the head bbox without shrinking the default extents.
+        const bbox = font.cff?.topDict.getByName("FontBBox") ?? properties.bbox;
+        const xMin = Math.min(Math.floor(bbox?.[0] || 0), 0);
+        const xMax = Math.max(Math.ceil(bbox?.[2] || 0), 0x0fff);
 
         const head = new DataBuilder({ exactLength: 54 });
         head.setArray([0x00, 0x01, 0x00, 0x00]); // Version number
@@ -3421,9 +3426,9 @@ class Font {
         head.setSafeInt16(unitsPerEm); // unitsPerEM
         head.setArray(dateArr); // creation date
         head.setArray(dateArr); // modifification date
-        head.skip(2); // xMin, skip redundant "\x00\x00"
+        head.setSafeInt16(xMin); // xMin
         head.setSafeInt16(properties.descent); // yMin
-        head.setArray([0x0f, 0xff]); // xMax
+        head.setSafeInt16(xMax); // xMax
         head.setSafeInt16(properties.ascent); // yMax
         head.setInt16(properties.italicAngle ? 2 : 0); // macStyle
         head.setArray([0x00, 0x11]); // lowestRecPPEM
