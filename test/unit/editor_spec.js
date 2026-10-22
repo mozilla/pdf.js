@@ -17,8 +17,11 @@ import {
   CommandManager,
   KeyboardManager,
 } from "../../src/display/editor/tools.js";
+import {
+  InkDrawOutline,
+  InkDrawOutliner,
+} from "../../src/display/editor/drawers/inkdraw.js";
 import { FeatureTest } from "../../src/shared/util.js";
-import { InkDrawOutliner } from "../../src/display/editor/drawers/inkdraw.js";
 import { InputSmoother } from "../../src/display/editor/drawers/input_smoother.js";
 import { SignatureExtractor } from "../../src/display/editor/drawers/signaturedraw.js";
 
@@ -353,6 +356,32 @@ describe("editor", function () {
   });
 
   describe("Ink Draw Outliner", function () {
+    // The points are normalized to [0, 1] relative to the parent dimensions,
+    // and `Outline.svgRound` multiplies them by 10000 in the SVG path, to
+    // match the "0 0 10000 10000" viewBox of the drawing.
+    const getLastPoint = d =>
+      d
+        .match(/-?[\d.]+/g)
+        .slice(-2)
+        .map(Number);
+
+    it("must end a line on its last point", function () {
+      const outliner = new InkDrawOutliner(0, 0, 1000, 1000, 0, 1);
+      for (let i = 1; i <= 5; i++) {
+        outliner.add(10 * i, 5 * i * i);
+      }
+      expect(getLastPoint(outliner.end().path.d)).toEqual([500, 1250]);
+    });
+
+    it("must end a deserialized line on its last point", function () {
+      const outline = InkDrawOutline.deserialize(0, 0, 100, 100, 0, {
+        paths: { points: [new Float32Array([0, 0, 10, 20, 30, 20, 40, 0])] },
+        rotation: 0,
+        thickness: 1,
+      });
+      expect(getLastPoint(outline.toSVGPath())).toEqual([4000, 10000]);
+    });
+
     it("must keep the other lines when the last one is removed", function () {
       const outliner = new InkDrawOutliner(0, 0, 1000, 1000, 0, 1);
       for (let i = 1; i <= 10; i++) {

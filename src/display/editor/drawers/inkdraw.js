@@ -106,14 +106,6 @@ class InkDrawOutliner {
       timeStamp === undefined ? null : new InputSmoother(x, y, timeStamp);
   }
 
-  #endSmoothing() {
-    if (!this.#smoother) {
-      return;
-    }
-    this.#addSmoothedPoints(this.#smoother.end());
-    this.#smoother = null;
-  }
-
   updateProperty(name, value) {
     if (name === "stroke-width") {
       this.#thickness = value;
@@ -231,19 +223,30 @@ class InkDrawOutliner {
     this.#lastIndex = line.length;
   }
 
-  end(x, y, timeStamp) {
-    if (this.#line) {
-      if (x !== undefined) {
-        this.#addSample(x, y, timeStamp);
-      }
-      this.#endSmoothing();
-      if (this.#points.length < 6) {
-        this.#lastSVGPath += lineToSVGPath(this.#line);
-      } else {
-        this.#updatePath();
-      }
-      this.#line = this.#points = null;
+  #endLine() {
+    if (!this.#line) {
+      return;
     }
+    if (this.#smoother) {
+      this.#addSmoothedPoints(this.#smoother.end());
+      this.#smoother = null;
+    }
+    if (this.#points.length < 6) {
+      this.#lastSVGPath += lineToSVGPath(this.#line);
+    } else {
+      // Repeat the last accepted point so the final curve reaches it.
+      const [, , x1, y1, x2, y2] = this.#last;
+      Outline.createBezierPoints(x1, y1, x2, y2, x2, y2, this.#line);
+      this.#updatePath();
+    }
+    this.#line = this.#points = null;
+  }
+
+  end(x, y, timeStamp) {
+    if (this.#line && x !== undefined) {
+      this.#addSample(x, y, timeStamp);
+    }
+    this.#endLine();
     return {
       path: {
         d: this.#lastSVGPath,
@@ -328,7 +331,7 @@ class InkDrawOutliner {
 
   getOutlines(parentWidth, parentHeight, scale, innerMargin) {
     // pointercancel can end the session without calling end().
-    this.#endSmoothing();
+    this.#endLine();
     const last = this.#lines.at(-1);
     last.line = new Float32Array(last.line);
     last.points = new Float32Array(last.points);
@@ -583,13 +586,15 @@ class InkDrawOutline extends Outline {
           );
           continue;
         }
-        const line = new Float32Array(3 * (len - 2));
+        const line = new Float32Array(3 * len);
         lines.push(line);
         let [x1, y1, x2, y2] = point.subarray(0, 4);
         line.set([NaN, NaN, NaN, NaN, x1, y1], 0);
-        for (let i = 4; i < len; i += 2) {
-          const x = point[i];
-          const y = point[i + 1];
+        for (let i = 4; i <= len; i += 2) {
+          // Repeat the last point so the final curve reaches it.
+          const j = Math.min(i, len - 2);
+          const x = point[j];
+          const y = point[j + 1];
           line.set(
             Outline.createBezierPoints(x1, y1, x2, y2, x, y),
             (i - 2) * 3
