@@ -66,11 +66,13 @@
     --button-background-color-toolbar-hover,
     color-mix(in srgb, currentColor 17%, transparent)
   );
+  --button-hover-text-color: var(--toggled-btn-text-color);
   --toggled-btn-color: light-dark(rgb(0 0 0), rgb(255 255 255));
   --toggled-btn-text-color: var(--toggled-btn-color);
   --toggled-btn-bg-color: rgb(0 0 0 / 0.3);
   --toggled-hover-active-btn-color: rgb(0 0 0 / 0.4);
   --toggled-hover-btn-outline: none;
+  --toggled-hover-btn-outline-offset: 0;
   --dropdown-btn-bg-color: light-dark(rgb(215 215 219), rgb(74 74 79));
   --dropdown-btn-border: none;
   --separator-color: rgb(0 0 0 / 0.3);
@@ -202,16 +204,20 @@
        color-mix(currentColor 17%, transparent)), which would make the hover
        background a faint translucent overlay and hide the ButtonFace icon. */
     --button-hover-color: Highlight;
+    --button-hover-text-color: HighlightText;
     --toolbar-icon-opacity: 1;
     --toolbar-icon-bg-color: ButtonText;
     --toolbar-icon-hover-bg-color: ButtonFace;
     --toggled-hover-active-btn-color: ButtonText;
     --toggled-hover-btn-outline: 2px solid ButtonBorder;
+    /* Keep the outline inside the menu's scroll container. */
+    --toggled-hover-btn-outline-offset: -2px;
     --toolbar-border-color: CanvasText;
     --toolbar-border-bottom: 1px solid var(--toolbar-border-color);
     --toolbar-box-shadow: none;
-    --toggled-btn-color: HighlightText;
-    --toggled-btn-text-color: HighlightText;
+    /* Pair LinkText with Canvas for contrast. */
+    --toggled-btn-color: Canvas;
+    --toggled-btn-text-color: Canvas;
     --toggled-btn-bg-color: LinkText;
     --doorhanger-hover-color: ButtonFace;
     --doorhanger-border-color-whcm: 1px solid ButtonText;
@@ -676,7 +682,7 @@ body {
   }
 
   &:is(:hover, :has(> input:focus-visible)) {
-    color: var(--toggled-btn-text-color);
+    color: var(--button-hover-text-color);
     background-color: var(--button-hover-color);
   }
 
@@ -972,6 +978,7 @@ dialog :link {
 
     &:hover {
       outline: var(--toggled-hover-btn-outline) !important;
+      outline-offset: var(--toggled-hover-btn-outline-offset);
 
       &:active {
         background-color: var(--toggled-hover-active-btn-color);
@@ -1040,6 +1047,7 @@ dialog :link {
 
     &.toggled:hover:focus-visible {
       --toggled-hover-btn-outline: var(--focus-outline);
+      --toggled-hover-btn-outline-offset: var(--focus-outline-inset);
     }
 
     &.labeled {
@@ -1617,7 +1625,7 @@ dialog :link {
 
     &:is(:hover, :focus-visible) {
       background-color: var(--button-hover-color);
-      color: var(--toggled-btn-text-color);
+      color: var(--button-hover-text-color);
     }
   }
 
