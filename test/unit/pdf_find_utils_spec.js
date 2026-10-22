@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-import { isEntireWord } from "../../web/pdf_find_utils.js";
+import {
+  getNormalizeWithNFKC,
+  isEntireWord,
+} from "../../web/pdf_find_utils.js";
 
 describe("pdf_find_utils", function () {
   describe("isEntireWord", function () {
@@ -104,6 +107,20 @@ describe("pdf_find_utils", function () {
       expect(isEntireWord(withBoldA, 3, 1)).toBeFalse(); // "b"
       // Each CJK ideograph is its own word (𠀀 = U+20000, a surrogate pair).
       expect(isEntireWord("中\u{20000}国", 0, 1)).toBeTrue(); // "中"
+    });
+  });
+
+  describe("getNormalizeWithNFKC", function () {
+    it("includes the last range of the BMP", function () {
+      // U+FFE8-U+FFEE is the last NFKC range in the BMP.
+      const re = new RegExp(`^[${getNormalizeWithNFKC()}]$`, "u");
+      for (let i = 0xffe8; i <= 0xffee; i++) {
+        expect(re.test(String.fromCharCode(i)))
+          .withContext(`U+${i.toString(16).toUpperCase()}`)
+          .toBeTrue();
+      }
+      expect(re.test("\uFFE7")).toBeFalse();
+      expect(re.test("\uFFEF")).toBeFalse();
     });
   });
 });
