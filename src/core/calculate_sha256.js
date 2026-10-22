@@ -79,9 +79,11 @@ function calculateSHA256(data, offset, length) {
   const paddedLength = Math.ceil((length + 9) / 64) * 64;
   const padded = new Uint8Array(paddedLength),
     view = new DataView(padded.buffer);
-  let i, j;
-  for (i = 0; i < length; ++i) {
-    padded[i] = data[offset++];
+  let i = 0,
+    j;
+  if (length > 0) {
+    padded.set(data.subarray(offset, offset + length), i);
+    i += length;
   }
   padded[i++] = 0x80;
   const n = paddedLength - 8;
