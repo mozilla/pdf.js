@@ -1825,12 +1825,24 @@ class Catalog {
       } else {
         action = destDict.get("AA");
         if (action instanceof Dict) {
-          if (action.has("D")) {
+          if (action.has("E")) {
+            // MouseEnter
+            action = action.get("E");
+          } else if (action.has("X")) {
+            // MouseExit
+            action = action.get("X");
+          } else if (action.has("D")) {
             // MouseDown
             action = action.get("D");
           } else if (action.has("U")) {
             // MouseUp
             action = action.get("U");
+          } else if (action.has("Fo")) {
+            // Focus
+            action = action.get("Fo");
+          } else if (action.has("Bl")) {
+            // Blur
+            action = action.get("Bl");
           }
         }
       }
