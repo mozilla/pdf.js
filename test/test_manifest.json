@@ -14791,5 +14791,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Type3 advances: invisible text, character spacing at negative font sizes, and font matrix translation."
+  },
+  {
+    "id": "bug1888084",
+    "file": "pdfs/bug1888084.pdf",
+    "md5": "03c1a222194b6c2ebe2e063fc9b6c1ad",
+    "rounds": 1,
+    "type": "eq",
+    "about": "CFF font with an accent left of its origin."
   }
 ]
