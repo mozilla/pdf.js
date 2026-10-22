@@ -1161,7 +1161,7 @@ describe("The drawn line must reach the pointer", () => {
           `.canvasWrapper svg.draw path[d]:not([d=""])`,
           el => el.getAttribute("d")
         );
-        expect(/\sL\s[\d.-]+\s[\d.-]+\s*$/.test(d))
+        expect(/L\s*[\d.-]+\s+[\d.-]+\s*$/.test(d))
           .withContext(`In ${browserName}, with "${d}"`)
           .toBeFalse();
       })

@@ -18,6 +18,36 @@ import { InputSmoother } from "./input_smoother.js";
 import { MathClamp } from "../../../shared/math_clamp.js";
 import { Outline } from "./outline.js";
 
+function svgPoint(data, i) {
+  return `${Outline.svgRound(data[i])} ${Outline.svgRound(data[i + 1])}`;
+}
+
+function pushCurves(buffer, line, start) {
+  for (let i = start, ii = line.length; i < ii; i += 6) {
+    buffer.push(
+      `C${svgPoint(line, i)} ${svgPoint(line, i + 2)} ${svgPoint(line, i + 4)}`
+    );
+  }
+}
+
+/**
+ * @param {Array<number>|Float32Array} line - Start point prefixed by four NaNs,
+ *   optionally followed by a similarly prefixed point or Bézier segments.
+ * @returns {string}
+ */
+function lineToSVGPath(line) {
+  const start = `M${svgPoint(line, 4)}`;
+  if (line.length === 6) {
+    return `${start}Z`;
+  }
+  if (line.length === 12 && isNaN(line[6])) {
+    return `${start}L${svgPoint(line, 10)}`;
+  }
+  const buffer = [start];
+  pushCurves(buffer, line, 6);
+  return buffer.join("");
+}
+
 class InkDrawOutliner {
   // The last 3 points of the line.
   #last = new Float64Array(6);
@@ -183,30 +213,36 @@ class InkDrawOutliner {
     this.#last.copyWithin(0, 2);
     this.#last[4] = x;
     this.#last[5] = y;
-
-    // Two or three points require rewriting the subpath. Later segments can
-    // be appended together by #updatePath.
-    if (this.#points.length <= 6) {
-      this.toSVGPath();
-    }
   }
 
   #updatePath() {
-    if (this.#points.length > 6 && this.#lastIndex < this.#line.length) {
-      this.toSVGPath();
+    // Wait for the third point to replace the initial straight segment.
+    const line = this.#line;
+    if (this.#points.length < 6 || this.#lastIndex === line.length) {
+      return;
     }
+    const buffer = [this.#lastSVGPath];
+    if (this.#lastIndex === 0) {
+      buffer.push(`M${svgPoint(line, 4)}`);
+      this.#lastIndex = 6;
+    }
+    pushCurves(buffer, line, this.#lastIndex);
+    this.#lastSVGPath = buffer.join("");
+    this.#lastIndex = line.length;
   }
 
   end(x, y, timeStamp) {
-    if (x !== undefined) {
-      this.#addSample(x, y, timeStamp);
-    }
-    this.#endSmoothing();
-    if (this.#points.length === 2) {
-      // We've only one point.
-      this.toSVGPath();
-    } else {
-      this.#updatePath();
+    if (this.#line) {
+      if (x !== undefined) {
+        this.#addSample(x, y, timeStamp);
+      }
+      this.#endSmoothing();
+      if (this.#points.length < 6) {
+        this.#lastSVGPath += lineToSVGPath(this.#line);
+      } else {
+        this.#updatePath();
+      }
+      this.#line = this.#points = null;
     }
     return {
       path: {
@@ -226,7 +262,6 @@ class InkDrawOutliner {
       last.points = new Float32Array(last.points);
     }
     this.#startLine(x, y, timeStamp);
-    this.toSVGPath();
 
     return null;
   }
@@ -240,12 +275,10 @@ class InkDrawOutliner {
       return this.#outlines.setLastElement(element);
     }
     this.#lines.push(element);
-    this.#line = element.line;
-    this.#points = element.points;
-    this.#lastIndex = 0;
+    this.#lastSVGPath += lineToSVGPath(element.line);
     return {
       path: {
-        d: this.toSVGPath(),
+        d: this.#lastSVGPath,
       },
     };
   }
@@ -254,17 +287,12 @@ class InkDrawOutliner {
     if (!this.#lines) {
       return this.#outlines.removeLastElement();
     }
-    // Discard pending samples if the removed line is still being drawn.
-    this.#smoother = null;
+    // The removed line can be the one being drawn.
+    this.#line = this.#points = this.#smoother = null;
     this.#lines.pop();
-    this.#lastSVGPath = "";
-    for (let i = 0, ii = this.#lines.length; i < ii; i++) {
-      const { line, points } = this.#lines[i];
-      this.#line = line;
-      this.#points = points;
-      this.#lastIndex = 0;
-      this.toSVGPath();
-    }
+    this.#lastSVGPath = this.#lines
+      .map(({ line }) => lineToSVGPath(line))
+      .join("");
 
     return {
       path: {
@@ -281,67 +309,21 @@ class InkDrawOutliner {
   #toSVGPathWithTip() {
     this.#updatePath();
     const buffer = [this.#lastSVGPath];
-    if (this.#points.length === 2) {
-      // Start a subpath when the line has only its initial point.
-      const firstX = Outline.svgRound(this.#line[4]);
-      const firstY = Outline.svgRound(this.#line[5]);
-      buffer.push(`M ${firstX} ${firstY}`);
+    if (this.#lastIndex === 0) {
+      // Preview the first one or two points until a curve is stored.
+      buffer.push(`M${svgPoint(this.#line, 4)}`);
+      if (this.#points.length === 4) {
+        buffer.push(`L${svgPoint(this.#line, 10)}`);
+      }
     }
     let points = this.#smoother?.pendingPoints;
     if (!points?.length) {
       points = this.#tip;
     }
     for (let i = 0, ii = points.length; i < ii; i += 2) {
-      buffer.push(
-        `L ${Outline.svgRound(points[i])} ${Outline.svgRound(points[i + 1])}`
-      );
+      buffer.push(`L${svgPoint(points, i)}`);
     }
-    return buffer.join(" ");
-  }
-
-  toSVGPath() {
-    const firstX = Outline.svgRound(this.#line[4]);
-    const firstY = Outline.svgRound(this.#line[5]);
-    if (this.#points.length === 2) {
-      this.#lastSVGPath = `${this.#lastSVGPath} M ${firstX} ${firstY} Z`;
-      return this.#lastSVGPath;
-    }
-
-    if (this.#points.length <= 6) {
-      // We've 2 or 3 points.
-      const i = this.#lastSVGPath.lastIndexOf("M");
-      this.#lastSVGPath = `${this.#lastSVGPath.slice(0, i)} M ${firstX} ${firstY}`;
-      this.#lastIndex = 6;
-    }
-
-    if (this.#points.length === 4) {
-      const secondX = Outline.svgRound(this.#line[10]);
-      const secondY = Outline.svgRound(this.#line[11]);
-      this.#lastSVGPath = `${this.#lastSVGPath} L ${secondX} ${secondY}`;
-      this.#lastIndex = 12;
-      return this.#lastSVGPath;
-    }
-
-    const buffer = [];
-    if (this.#lastIndex === 0) {
-      buffer.push(`M ${firstX} ${firstY}`);
-      this.#lastIndex = 6;
-    }
-
-    const line = this.#line;
-    for (let i = this.#lastIndex, ii = line.length; i < ii; i += 6) {
-      const c1x = Outline.svgRound(line[i]),
-        c1y = Outline.svgRound(line[i + 1]),
-        c2x = Outline.svgRound(line[i + 2]),
-        c2y = Outline.svgRound(line[i + 3]),
-        x = Outline.svgRound(line[i + 4]),
-        y = Outline.svgRound(line[i + 5]);
-      buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`);
-    }
-    this.#lastSVGPath += buffer.join(" ");
-    this.#lastIndex = this.#line.length;
-
-    return this.#lastSVGPath;
+    return buffer.join("");
   }
 
   getOutlines(parentWidth, parentHeight, scale, innerMargin) {
@@ -445,27 +427,7 @@ class InkDrawOutline extends Outline {
   }
 
   toSVGPath() {
-    const buffer = [];
-    for (const { line } of this.#lines) {
-      buffer.push(`M${Outline.svgRound(line[4])} ${Outline.svgRound(line[5])}`);
-      if (line.length === 6) {
-        buffer.push("Z");
-        continue;
-      }
-      if (line.length === 12 && isNaN(line[6])) {
-        buffer.push(
-          `L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`
-        );
-        continue;
-      }
-      for (let i = 6, ii = line.length; i < ii; i += 6) {
-        const [c1x, c1y, c2x, c2y, x, y] = line
-          .subarray(i, i + 6)
-          .map(Outline.svgRound);
-        buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`);
-      }
-    }
-    return buffer.join("");
+    return this.#lines.map(({ line }) => lineToSVGPath(line)).join("");
   }
 
   serialize([pageX, pageY, pageWidth, pageHeight], isForCopying) {

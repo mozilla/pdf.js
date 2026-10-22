@@ -353,6 +353,27 @@ describe("editor", function () {
   });
 
   describe("Ink Draw Outliner", function () {
+    it("must keep the other lines when the last one is removed", function () {
+      const outliner = new InkDrawOutliner(0, 0, 1000, 1000, 0, 1);
+      for (let i = 1; i <= 10; i++) {
+        outliner.add(10 * i, 0);
+      }
+      outliner.end();
+      // A line with only two points.
+      outliner.startNew(0, 100, 1000, 1000, 0);
+      outliner.add(50, 100);
+      outliner.end();
+      outliner.startNew(0, 200, 1000, 1000, 0);
+      for (let i = 1; i <= 10; i++) {
+        outliner.add(10 * i, 200);
+      }
+      const { d } = outliner.end().path;
+
+      expect(outliner.removeLastElement().path.d).toEqual(
+        d.slice(0, d.lastIndexOf("M"))
+      );
+    });
+
     it("must check that a short smoothed line is cancellable", function () {
       // Upsampling must not count toward the five-input cancellation threshold.
       const outliner = new InkDrawOutliner(0, 0, 1000, 1000, 0, 1, 0);
