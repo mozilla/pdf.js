@@ -446,9 +446,9 @@ pdfjs-editor-colorpicker-red =
 ## Show all highlights
 ## This is a toggle button to show/hide all the highlights.
 
-pdfjs-editor-highlight-show-all-button-label = 모두 보기
+pdfjs-editor-highlight-show-all-button-label = 모두 표시
 pdfjs-editor-highlight-show-all-button =
-    .title = 모두 보기
+    .title = 모두 표시
 
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.

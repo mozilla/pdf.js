@@ -359,16 +359,47 @@ pdfjs-editor-colorpicker-red =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Добавяне на заместващ текст (alt text, описание на изображението)
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Научете повече
+pdfjs-editor-new-alt-text-create-automatically-button-label = Автоматично създаване на заместващ текст
 pdfjs-editor-new-alt-text-not-now-button = Не сега
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alt text добавен
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Липсва alt текст
+pdfjs-editor-new-alt-text-missing-button-label = Липсва alt текст
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Преглед на заместващия текст
+pdfjs-editor-new-alt-text-to-review-button-label = Преглед на заместващия текст
 
 ## Image alt-text settings
 
-pdfjs-editor-alt-text-settings-show-dialog-button-label = Показване на заместващ текстов редактор веднага при добавяне на изображение
+pdfjs-editor-alt-text-settings-automatic-title = Автоматичен заместващ текст
+pdfjs-editor-alt-text-settings-create-model-button-label = Автоматично създаване на заместващ текст
+pdfjs-editor-alt-text-settings-editor-title = Редактор за заместващ (alt) текст
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Показване на текстовия редактор за заместващия (alt) текст веднага при добавяне на изображение
+pdfjs-editor-alt-text-settings-show-dialog-description = Помага ви да се уверите, че всичките ви изображения имат заместващ текст.
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Описание (заместващ текст)
+pdfjs-editor-add-signature-description-input =
+    .title = Описание (заместващ текст)
 pdfjs-editor-add-signature-image-upload-error-description = Проверете мрежовата си връзка или опитайте с друго изображение.
+
+##  Edit a comment dialog
+
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Добавяне на коментар
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-add-comment-button =
+    .title = Добавяне на коментар
 
 ## The view manager is a sidebar displaying different views:
 ##  - thumbnails;
