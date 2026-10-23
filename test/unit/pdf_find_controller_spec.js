@@ -1291,6 +1291,77 @@ describe("pdf_find_controller", function () {
     await loadingTask.destroy();
   });
 
+  it("performs a search with whitespaces around punctuation signs", async () => {
+    const { eventBus, loadingTask, pdfFindController } =
+      await initPdfFindController();
+
+    await testEmptySearch({
+      eventBus,
+      pdfFindController,
+      state: { query: ". ," },
+    });
+
+    expect(pdfFindController.match(". ,", "a.   ,b", 0)).toEqual([
+      { index: 1, length: 5 },
+    ]);
+    expect(pdfFindController.match("a . b", "a.b a  .  b", 0)).toEqual([
+      { index: 4, length: 7 },
+    ]);
+    expect(pdfFindController.match(" \u0301 b", "a  b a b", 0)).toEqual([
+      { index: 1, length: 3 },
+    ]);
+    expect(pdfFindController.match(" y", "a   y y  y", 0)).toEqual([
+      { index: 1, length: 4 },
+      { index: 5, length: 2 },
+      { index: 7, length: 3 },
+    ]);
+    expect(pdfFindController.match("\u0301, y", "a, y  , y,  y", 0)).toEqual([
+      { index: 1, length: 3 },
+      { index: 4, length: 5 },
+      { index: 9, length: 4 },
+    ]);
+
+    const startTime = performance.now();
+    for (const [query, pageContent] of [
+      [". ,", `.${" ".repeat(3000)}x`],
+      ["a .", `a${" ".repeat(3000)}x`],
+      [", .", `,${" ".repeat(3000)}x`],
+      [" y", `.${" ".repeat(100000)}x`],
+      ["\u0301, y", `.${" ".repeat(100000)}x`],
+    ]) {
+      expect(pdfFindController.match(query, pageContent, 0)).toEqual([]);
+    }
+    expect(performance.now() - startTime).toBeLessThan(1000);
+
+    pdfFindController.setDocument(null);
+    await loadingTask.destroy();
+  });
+
+  it("performs a search with whitespaces around a diacritic", async () => {
+    const { eventBus, loadingTask, pdfFindController } =
+      await initPdfFindController("issue12909.pdf");
+
+    await testEmptySearch({
+      eventBus,
+      pdfFindController,
+      state: { query: "\u00b4 ", matchDiacritics: true },
+    });
+
+    expect(pdfFindController.match(" \u0301 ", " \u0301  \u0301 ", 1)).toEqual([
+      { index: 0, length: 3 },
+      { index: 3, length: 3 },
+    ]);
+
+    const startTime = performance.now();
+    expect(
+      pdfFindController.match(" \u0301 ", `.${" ".repeat(100000)}x`, 1)
+    ).toEqual([]);
+    expect(performance.now() - startTime).toBeLessThan(1000);
+
+    pdfFindController.setDocument(null);
+    await loadingTask.destroy();
+  });
+
   describe("custom matcher", () => {
     it("calls to the matcher with the right arguments", async () => {
       const QUERY = "Foo  bar";
