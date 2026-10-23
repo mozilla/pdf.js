@@ -21,6 +21,7 @@ import { transformSync } from "@babel/core";
 
 const rootDir = fileURLToPath(new URL("../../", import.meta.url));
 const srcDir = `${rootDir}src/`;
+const webDir = `${rootDir}web/`;
 
 // Use the same defines as the `gulp lib-legacy` target, such that the
 // benchmarked code paths match the ones of the library build in Node.js.
@@ -52,7 +53,10 @@ function pdfjsPreprocessorPlugin() {
     name: "pdfjs-preprocessor",
     enforce: "pre",
     transform(code, id) {
-      if (!id.startsWith(srcDir) || !id.endsWith(".js")) {
+      if (
+        !(id.startsWith(srcDir) || id.startsWith(webDir)) ||
+        !id.endsWith(".js")
+      ) {
         return null;
       }
       const result = transformSync(code, {
@@ -94,6 +98,7 @@ export default defineConfig({
       "display-binary_data_factory": `${rootDir}src/display/binary_data_factory.js`,
       "display-network_stream": `${rootDir}src/display/network_stream.js`,
       "display-node_utils": `${rootDir}src/display/node_utils.js`,
+      "pdfjs-lib": `${rootDir}src/pdf.js`,
     },
   },
   test: {
