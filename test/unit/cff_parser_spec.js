@@ -17,6 +17,7 @@ import {
   CFFCharset,
   CFFCompiler,
   CFFFDSelect,
+  CFFIndex,
   CFFParser,
   CFFPrivateDict,
   CFFStrings,
@@ -521,6 +522,142 @@ describe("CFFParser", function () {
     expect(result.charStrings.count).toEqual(1);
     expect(result.charStrings.get(0)[0]).toEqual(14);
     expect(result.seacs.size).toEqual(0);
+  });
+
+  it("removes invalid operators without repeatedly copying the suffix", function () {
+    const bytes = new Uint8Array(4096);
+    for (let i = 0; i < bytes.length - 1; i++) {
+      bytes[i] = [9, 19, 20][i % 3];
+    }
+    bytes[bytes.length - 1] = 14;
+    const copyWithin = bytes.copyWithin;
+    let copiedBytes = 0;
+    spyOn(bytes, "copyWithin").and.callFake(function (target, start, end) {
+      const endPos = end < 0 ? this.length + end : (end ?? this.length);
+      copiedBytes += Math.max(0, endPos - start);
+      return copyWithin.call(this, target, start, end);
+    });
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({ charStrings, privateDict: privateDictStub });
+
+    expect(Array.from(bytes)).toEqual(new Array(bytes.length).fill(14));
+    expect(copiedBytes).toBeLessThanOrEqual(bytes.length);
+  });
+
+  it("preserves operand bytes while removing invalid operators", function () {
+    // Byte 9 can be part of a number.
+    const expected = [28, 0, 9, 22, 255, 0, 9, 0, 0, 22, 247, 9, 22, 14];
+    const bytes = new Uint8Array([
+      9, 28, 0, 9, 22, 9, 255, 0, 9, 0, 0, 22, 9, 247, 9, 22, 9, 14,
+    ]);
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({ charStrings, privateDict: privateDictStub });
+
+    expect(bytes).toEqual(new Uint8Array([...expected, 14, 14, 14, 14]));
+  });
+
+  it("preserves hint mask bytes while removing invalid operators", function () {
+    const bytes = new Uint8Array([
+      19, 20, 139, 139, 1, 19, 9, 9, 20, 9, 139, 22, 12, 0, 14,
+    ]);
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({ charStrings, privateDict: privateDictStub });
+
+    expect(bytes).toEqual(
+      new Uint8Array([
+        139, 139, 1, 19, 9, 20, 9, 139, 22, 139, 22, 14, 14, 14, 14,
+      ])
+    );
+  });
+
+  it("compacts invalid operators before returning from a reused subroutine", function () {
+    const subrs = new CFFIndex();
+    subrs.add(new Uint8Array([9, 139, 22, 9, 11]));
+    const charStrings = new CFFIndex();
+    const bytes = new Uint8Array([32, 10, 32, 10, 14]);
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(bytes);
+    expect(subrs.get(0)).toEqual(new Uint8Array([139, 22, 11, 14, 14]));
+  });
+
+  it("compacts invalid operators in nested local and global subroutines", function () {
+    const globalSubrs = new CFFIndex();
+    globalSubrs.add(new Uint8Array([9, 139, 22, 9, 11]));
+    const localSubrs = new CFFIndex();
+    localSubrs.add(
+      new Uint8Array([9, 139, 22, 9, 32, /* callgsubr */ 29, 9, 139, 22, 9, 11])
+    );
+    const charStrings = new CFFIndex();
+    charStrings.add(
+      new Uint8Array([9, 139, 22, 9, 32, /* callsubr */ 10, 9, 139, 22, 9, 14])
+    );
+
+    parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: localSubrs,
+      globalSubrIndex: globalSubrs,
+      privateDict: privateDictStub,
+    });
+
+    expect(globalSubrs.get(0)).toEqual(new Uint8Array([139, 22, 11, 14, 14]));
+    expect(localSubrs.get(0)).toEqual(
+      new Uint8Array([139, 22, 32, 29, 139, 22, 11, 14, 14, 14, 14])
+    );
+    expect(charStrings.get(0)).toEqual(
+      new Uint8Array([139, 22, 32, 10, 139, 22, 14, 14, 14, 14, 14])
+    );
+  });
+
+  it("rejects a CharString executing too many operators and operands", function () {
+    const repeat = (ops, count, last) => {
+      const data = new Uint8Array(ops.length * count + 1);
+      for (let i = 0; i < count; i++) {
+        data.set(ops, i * ops.length);
+      }
+      data[data.length - 1] = last;
+      return data;
+    };
+    const subrs = new CFFIndex();
+    subrs.add(repeat([/* 1 - bias */ 33, /* callsubr */ 10], 256, 11));
+    subrs.add(repeat([/* 0 */ 139, /* hmoveto */ 22], 1024, 11));
+
+    const charStrings = new CFFIndex();
+    charStrings.add(repeat([/* 0 - bias */ 32, /* callsubr */ 10], 512, 14));
+    charStrings.add(new Uint8Array([32, 10, 14]));
+
+    const result = parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+    expect(result.charStrings.get(0)).toEqual(new Uint8Array([14]));
+    expect(result.charStrings.get(1)).toEqual(new Uint8Array([32, 10, 14]));
+  });
+
+  it("rejects a CharString overflowing the operand stack", function () {
+    const charStrings = new CFFIndex();
+    charStrings.add(new Uint8Array([...new Array(49).fill(139), 22, 14]));
+    charStrings.add(new Uint8Array([...new Array(48).fill(139), 22, 14]));
+
+    const result = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+    expect(result.charStrings.get(0)).toEqual(new Uint8Array([14]));
+    expect(result.charStrings.get(1).length).toEqual(50);
   });
 
   it("parses predefined charsets", function () {

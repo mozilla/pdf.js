@@ -35,8 +35,23 @@ import { MathClamp } from "../shared/math_clamp.js";
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
 
+// Per-glyph token limit, including subroutines.
+const MAX_CHARSTRING_TOKENS = 64 * 1024 * 1024;
+
+// Type 2 operand stack limit (OTS).
+const MAX_STACK_SIZE = 48;
+
 // CFF FDSelect uses Card8 indices, so only 256 font DICTs are addressable.
 const MAX_FD_ARRAY_COUNT = 256;
+
+function removeCharStringByte(cursor, data, pos) {
+  const { readStart } = cursor;
+  if (pos > readStart) {
+    data.copyWithin(cursor.writePos, readStart, pos);
+    cursor.writePos += pos - readStart;
+  }
+  cursor.readStart = pos + 1;
+}
 
 function looksLikeUnsigned16BitNegative(coord) {
   return coord > 0x7fff && coord <= 0xffff;
@@ -554,14 +569,40 @@ class CFFParser {
     if (!data || state.callDepth > MAX_SUBR_NESTING) {
       return false;
     }
+    const cursor = { readStart: 0, writePos: 0 };
+    try {
+      return this.#parseCharString(
+        state,
+        data,
+        localSubrIndex,
+        globalSubrIndex,
+        cursor
+      );
+    } finally {
+      const { readStart, writePos } = cursor;
+      if (readStart > 0) {
+        data.copyWithin(writePos, readStart);
+        data.fill(/* endchar = */ 14, data.length - readStart + writePos);
+      }
+    }
+  }
+
+  #parseCharString(state, data, localSubrIndex, globalSubrIndex, cursor) {
     const view = new DataView(data.buffer, data.byteOffset, data.bytesLength);
     let stackSize = state.stackSize;
     const stack = state.stack;
 
-    let length = data.length;
+    const length = data.length;
 
     for (let j = 0; j < length;) {
       const value = data[j++];
+      if (
+        ++state.tokens > MAX_CHARSTRING_TOKENS ||
+        stackSize > MAX_STACK_SIZE
+      ) {
+        warn("Charstring exceeds the execution limits.");
+        return false;
+      }
       let validationCommand = null;
       if (value === 12) {
         const q = data[j++];
@@ -612,9 +653,7 @@ class CFFParser {
         state.hints += stackSize >> 1;
         if (state.hints === 0) {
           // Not a valid value (see bug 1529502): just remove it.
-          data.copyWithin(j - 1, j, -1);
-          j -= 1;
-          length -= 1;
+          removeCharStringByte(cursor, data, j - 1);
           continue;
         }
         // skipping right amount of hints flag data
@@ -669,9 +708,7 @@ class CFFParser {
         validationCommand = CharstringValidationData[14];
       } else if (value === 9) {
         // Not a valid value.
-        data.copyWithin(j - 1, j, -1);
-        j -= 1;
-        length -= 1;
+        removeCharStringByte(cursor, data, j - 1);
         continue;
       } else {
         validationCommand = CharstringValidationData[value];
@@ -739,9 +776,6 @@ class CFFParser {
         }
       }
     }
-    if (length < data.length) {
-      data.fill(/* endchar = */ 14, length);
-    }
     state.stackSize = stackSize;
     return true;
   }
@@ -761,6 +795,7 @@ class CFFParser {
       const charstring = charStrings.get(i);
       const state = {
         callDepth: 0,
+        tokens: 0,
         stackSize: 0,
         stack: [],
         hints: 0,
