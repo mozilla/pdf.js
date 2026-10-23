@@ -101,7 +101,13 @@ export default defineConfig({
     // Compile WebAssembly with TurboFan only to avoid timing variation from
     // background tier-up from Liftoff.
     // Compile JavaScript with Sparkplug on first call to avoid delayed batches.
-    execArgv: ["--no-liftoff", "--always-sparkplug"],
+    // Use fixed hash and random seeds to reduce the variation between runs.
+    execArgv: [
+      "--no-liftoff",
+      "--always-sparkplug",
+      "--hash-seed=1",
+      "--random-seed=1",
+    ],
     benchmark: {
       include: ["test/benchmarks/**/*.bench.js"],
     },
