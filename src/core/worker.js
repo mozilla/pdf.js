@@ -665,6 +665,7 @@ class WorkerMessageHandler {
           warn(`extractPages: "${reason}".`);
           return null;
         } finally {
+          pdfManager.pdfDocument.xref.resetNewTemporaryRef();
           if (task) {
             finishWorkerTask(task);
           }
