@@ -740,6 +740,16 @@ class PDFFindController {
       query = query.slice(0, query.length - trailingSpaces.length);
     }
 
+    // Each "+" contributes one required space.
+    query = query.replaceAll(
+      /(?:\[ \][*+]){2,}/g,
+      spaces => `[ ]{${spaces.split("+").length - 1},}`
+    );
+    if (query.startsWith("[ ]")) {
+      // Avoid quadratic retries; keep the last space for diacritic matches.
+      query = `(?:(?<![ ])|(?![ ]{2}))${query}`;
+    }
+
     if (matchDiacritics) {
       // aX must not match aXY.
       if (hasDiacritics) {
