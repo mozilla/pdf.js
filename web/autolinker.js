@@ -182,7 +182,9 @@ class Autolinker {
         annotationType: AnnotationType.LINK,
         rotation: 0,
         ...calculateLinkPosition(range, pdfPageView),
-        // Assigned by AnnotationLayer after overlap filtering.
+        // Populated in the annotationLayer to avoid unnecessary object
+        // creation, since most inferred links overlap existing
+        // LinkAnnotations:
         borderStyle: null,
       };
     });
