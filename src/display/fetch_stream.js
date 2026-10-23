@@ -166,6 +166,15 @@ class PDFFetchStreamRangeReader extends BasePDFStreamRangeReader {
 
         ensureResponseOrigin(responseOrigin, stream._responseOrigin);
         ensureResponseStatus(response.status, url);
+        // The server may ignore the Range header and send the whole file,
+        // which cannot be used for a range that doesn't start at zero.
+        if (
+          response.status === 200 &&
+          begin > 0 &&
+          parseInt(response.headers.get("Content-Length"), 10) !== end - begin
+        ) {
+          throw createResponseError(response.status, url);
+        }
         this._reader = response.body.getReader();
 
         this._readCapability.resolve();
