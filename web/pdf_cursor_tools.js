@@ -17,6 +17,7 @@
 
 import { AnnotationEditorType, shadow } from "pdfjs-lib";
 import { CursorTool, PresentationModeState } from "./ui_utils.js";
+import { AnonymizationTool } from "./anonymization_tool.js";
 import { GrabToPan } from "./grab_to_pan.js";
 import { internalOpt } from "./internal_evt.js";
 
@@ -24,6 +25,8 @@ import { internalOpt } from "./internal_evt.js";
  * @typedef {object} PDFCursorToolsOptions
  * @property {HTMLDivElement} container - The document container.
  * @property {EventBus} eventBus - The application event bus.
+ * @property {PDFViewer} pdfViewer - The document viewer, used by the
+ *   anonymization tool.
  * @property {number} [cursorToolOnLoad] - The cursor tool that will be enabled
  *   on load; the constants from {CursorTool} should be used. The default value
  *   is `CursorTool.SELECT`.
@@ -37,11 +40,22 @@ class PDFCursorTools {
   /**
    * @param {PDFCursorToolsOptions} options
    */
-  constructor({ container, eventBus, cursorToolOnLoad = CursorTool.SELECT }) {
+  constructor({
+    container,
+    eventBus,
+    pdfViewer,
+    cursorToolOnLoad = CursorTool.SELECT,
+  }) {
     this.container = container;
     this.eventBus = eventBus;
 
     this.#addEventListeners();
+
+    this.rectTool = new AnonymizationTool({
+      element: this.container,
+      eventBus: this.eventBus,
+      pdfViewer,
+    });
 
     // Defer the initial `switchTool` call, to give other viewer components
     // time to initialize *and* register 'cursortoolchanged' event listeners.
@@ -89,6 +103,9 @@ class PDFCursorTools {
         case CursorTool.HAND:
           this._handTool.deactivate();
           break;
+        case CursorTool.RECT:
+          this.rectTool.deactivate();
+          break;
         case CursorTool.ZOOM:
         /* falls through */
       }
@@ -102,6 +119,10 @@ class PDFCursorTools {
       case CursorTool.HAND:
         disableActiveTool();
         this._handTool.activate();
+        break;
+      case CursorTool.RECT:
+        disableActiveTool();
+        this.rectTool.activate();
         break;
       case CursorTool.ZOOM:
       /* falls through */

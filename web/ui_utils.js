@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+const CSS_UNITS = 150.0 / 72.0;
 const DEFAULT_SCALE_VALUE = "auto";
 const DEFAULT_SCALE = 1.0;
 const DEFAULT_SCALE_DELTA = 1.1;
@@ -64,11 +65,40 @@ const CursorTool = {
   SELECT: 0, // The default value.
   HAND: 1,
   ZOOM: 2,
+  RECT: 3,
 };
-
 // Used by `PDFViewerApplication`, and by the API unit-tests.
 const AutoPrintRegExp = /\bprint\s*\(/;
 
+// Replaces {{arguments}} with their values.
+function formatL10nValue(text, args) {
+  if (!args) {
+    return text;
+  }
+  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (all, name) => {
+    return name in args ? args[name] : "{{" + name + "}}";
+  });
+}
+
+/**
+ * No-op implementation of the localization service.
+ * @implements {IL10n}
+ */
+const NullL10n = {
+  async getLanguage() {
+    return "en-us";
+  },
+
+  async getDirection() {
+    return "ltr";
+  },
+
+  async get(property, args, fallback) {
+    return formatL10nValue(fallback, args);
+  },
+
+  async translate(element) { },
+};
 /**
  * Scrolls specified element into view of its parent.
  * @param {HTMLElement} element - The element to be visible.
@@ -890,4 +920,6 @@ export {
   UNKNOWN_SCALE,
   VERTICAL_PADDING,
   watchScroll,
+  CSS_UNITS,
+  NullL10n,
 };

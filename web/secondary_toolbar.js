@@ -36,6 +36,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  * @property {HTMLButtonElement} printButton - Button to print the document.
  * @property {HTMLButtonElement} downloadButton - Button to download the
  *   document.
+ * @property {HTMLButtonElement} saveButton - Button to save the anonymized
+ *   document.
  * @property {HTMLAnchorElement} viewBookmarkButton - Button to obtain a
  *   bookmark link to the current location in the document.
  * @property {HTMLButtonElement} firstPageButton - Button to go to the first
@@ -52,6 +54,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   hand tool.
  * @property {HTMLButtonElement} imageAltTextSettingsButton - Button for opening
  *   the image alt-text settings dialog.
+ * @property {HTMLButtonElement} cursorRectToolButton - Button to enable the
+ *   anonymization tool.
  * @property {HTMLButtonElement} documentPropertiesButton - Button for opening
  *   the document properties dialog.
  */
@@ -73,6 +77,7 @@ class SecondaryToolbar {
       },
       { element: options.printButton, eventName: "print", close: true },
       { element: options.downloadButton, eventName: "download", close: true },
+      { element: options.saveButton, eventName: "save", close: true },
       { element: options.viewBookmarkButton, eventName: null, close: true },
       { element: options.firstPageButton, eventName: "firstpage", close: true },
       { element: options.lastPageButton, eventName: "lastpage", close: true },
@@ -102,6 +107,12 @@ class SecondaryToolbar {
         element: options.scrollPageButton,
         eventName: "switchscrollmode",
         eventDetails: { mode: ScrollMode.PAGE },
+        close: true,
+      },
+      {
+        element: options.cursorRectToolButton,
+        eventName: "switchcursortool",
+        eventDetails: { tool: CursorTool.RECT },
         close: true,
       },
       {
@@ -254,13 +265,19 @@ class SecondaryToolbar {
   }
 
   #cursorToolChanged({ tool, disabled }) {
-    const { cursorSelectToolButton, cursorHandToolButton } = this.#opts;
+    const {
+      cursorSelectToolButton,
+      cursorHandToolButton,
+      cursorRectToolButton,
+    } = this.#opts;
 
     toggleCheckedBtn(cursorSelectToolButton, tool === CursorTool.SELECT);
     toggleCheckedBtn(cursorHandToolButton, tool === CursorTool.HAND);
+    toggleCheckedBtn(cursorRectToolButton, tool === CursorTool.RECT);
 
     cursorSelectToolButton.disabled = disabled;
     cursorHandToolButton.disabled = disabled;
+    cursorRectToolButton.disabled = disabled;
   }
 
   #scrollModeChanged({ mode }) {

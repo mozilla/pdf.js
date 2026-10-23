@@ -42,6 +42,7 @@ import { internalOpt } from "./internal_evt.js";
  * @property {HTMLButtonElement} editorFreeTextButton - Button to switch to
  *   FreeText editing.
  * @property {HTMLButtonElement} download - Button to download the document.
+ * @property {HTMLButtonElement} save - Save document.
  */
 
 class Toolbar {
@@ -132,6 +133,7 @@ class Toolbar {
           data: { action: "pdfjs.image.icon_click" },
         },
       },
+      { element: options.save, eventName: "save" },
       {
         element: options.editorSignatureButton,
         eventName: "switchannotationeditormode",
@@ -144,6 +146,8 @@ class Toolbar {
           },
         },
       },
+      { element: options.undo, eventName: "undo" },
+      { element: options.redo, eventName: "redo" },
     ];
 
     // Bind the event listeners for click and various other actions.
@@ -172,6 +176,10 @@ class Toolbar {
     this.#updateUIState(false);
   }
 
+  setFileName(fileName) {
+    this.fileName = fileName;
+    this.#opts.fileName.value = fileName;
+  }
   setPagesCount(pagesCount, hasPageLabels) {
     this.pagesCount = pagesCount;
     this.hasPageLabels = hasPageLabels;
@@ -206,6 +214,7 @@ class Toolbar {
       editorHighlightButton,
       pageNumber,
       scaleSelect,
+      fileName,
     } = this.#opts;
     const self = this;
 
@@ -248,7 +257,12 @@ class Toolbar {
       },
       internalOpt
     );
-
+    fileName.addEventListener("change", function () {
+        self.eventBus.dispatch("filenamechanged", {
+            source: self,
+            value: this.value,
+        });
+    });
     scaleSelect.addEventListener("change", function () {
       if (this.value === "custom") {
         return;

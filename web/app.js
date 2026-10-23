@@ -89,6 +89,7 @@ import { PDFOutlineViewer } from "web-pdf_outline_viewer";
 import { PDFPresentationMode } from "web-pdf_presentation_mode";
 import { PDFPrintServiceFactory } from "web-print_service";
 import { PDFRenderingQueue } from "./pdf_rendering_queue.js";
+import { PDFSaveService } from "./pdf_save_service.js";
 import { PDFScriptingManager } from "./pdf_scripting_manager.js";
 import { PdfTextExtractor } from "./pdf_text_extractor.js";
 import { PDFThumbnailViewer } from "web-pdf_thumbnail_viewer";
@@ -122,6 +123,8 @@ const PDFViewerApplication = {
   /** @type {PDFDocumentLoadingTask} */
   pdfLoadingTask: null,
   printService: null,
+  saveService: null,
+  savingInProgress: false,
   /** @type {PDFViewer} */
   pdfViewer: null,
   /** @type {PDFThumbnailViewer} */
@@ -215,6 +218,7 @@ const PDFViewerApplication = {
     if (AppOptions.get("pdfBugEnabled")) {
       await this._parseHashParams();
     }
+    this._parseAnonymizationParams();
 
     let mode;
     switch (AppOptions.get("viewerCssTheme")) {
@@ -257,8 +261,11 @@ const PDFViewerApplication = {
     this.l10n = await this.externalServices.createL10n();
     document.getElementsByTagName("html")[0].dir = this.l10n.getDirection();
     // Connect Fluent, when necessary, and translate what we already have.
+    let translatePromise = Promise.resolve();
     if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-      this.l10n.translate(appConfig.appContainer || document.documentElement);
+      translatePromise = this.l10n.translate(
+        appConfig.appContainer || document.documentElement
+      );
     }
 
     if (
@@ -276,8 +283,37 @@ const PDFViewerApplication = {
     this.bindEvents();
     this.bindWindowEvents();
 
+    // Dispatch the 'localized' event on the `eventBus` once the viewer
+    // has been fully initialized and translated.
+    translatePromise.then(() => {
+      this.eventBus.dispatch("localized", { source: this });
+    });
+
     this._initializedCapability.settled = true;
     this._initializedCapability.resolve();
+  },
+
+  /**
+   * Parse the anonymization flags in the hash section of the URL; unlike the
+   * debugging flags, these must be honoured in production builds as well.
+   * @private
+   */
+  _parseAnonymizationParams() {
+    const params = parseQueryString(document.location.hash.substring(1));
+
+    if (params.get("anonymizationmode") === "true") {
+      AppOptions.setAll({
+        anonymizationMode: true,
+        // Annotations added with the editors aren't part of the anonymized
+        // output, so don't offer them (this also frees toolbar space).
+        annotationEditorMode: AnnotationEditorType.DISABLE,
+        textLayerMode: TextLayerMode.DISABLE,
+        cursorToolOnLoad: CursorTool.RECT,
+      });
+    }
+    if (params.get("allowfilenamechange") === "true") {
+      AppOptions.set("allowFileNameChange", true);
+    }
   },
 
   /**
@@ -820,6 +856,7 @@ const PDFViewerApplication = {
       this.pdfCursorTools = new PDFCursorTools({
         container,
         eventBus,
+        pdfViewer,
         cursorToolOnLoad: AppOptions.get("cursorToolOnLoad"),
       });
     }
@@ -1015,7 +1052,11 @@ const PDFViewerApplication = {
       });
     }
 
+    const anonymizationMode = AppOptions.get("anonymizationMode");
+
     const togglePrintingButtons = visible => {
+      // Printing would expose the un-anonymized document.
+      visible &&= !anonymizationMode;
       appConfig.toolbar?.print?.classList.toggle("hidden", !visible);
       appConfig.secondaryToolbar?.printButton.classList.toggle(
         "hidden",
@@ -1032,7 +1073,7 @@ const PDFViewerApplication = {
       );
     }
 
-    if (!this.supportsFullscreen) {
+    if (!this.supportsFullscreen || anonymizationMode) {
       appConfig.secondaryToolbar?.presentationModeButton.classList.add(
         "hidden"
       );
@@ -1042,6 +1083,30 @@ const PDFViewerApplication = {
       appConfig.findBar?.toggleButton?.classList.add("hidden");
     }
 
+    // In anonymization mode, hide everything that would expose or alter the
+    // original document; otherwise, hide the anonymization controls.
+    const hiddenElements = anonymizationMode
+      ? [
+          appConfig.secondaryToolbar?.openFileButton,
+          appConfig.secondaryToolbar?.pageRotateCwButton,
+          appConfig.secondaryToolbar?.pageRotateCcwButton,
+          appConfig.secondaryToolbar?.downloadButton,
+          appConfig.toolbar?.download,
+        ]
+      : [
+          appConfig.secondaryToolbar?.cursorRectToolButton,
+          appConfig.secondaryToolbar?.saveButton,
+          appConfig.toolbar?.save,
+          appConfig.toolbar?.undo,
+          appConfig.toolbar?.redo,
+          appConfig.toolbar?.fileName,
+        ];
+    for (const element of hiddenElements) {
+      element?.classList.add("hidden");
+    }
+    if (AppOptions.get("allowFileNameChange")) {
+      appConfig.toolbar?.fileName?.removeAttribute("readonly");
+    }
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
         this.open({ url: file });
@@ -1339,6 +1404,12 @@ const PDFViewerApplication = {
     promises.push(this.pdfLoadingTask.destroy());
     this.pdfLoadingTask = null;
 
+    // Redactions belong to this document, and an ongoing save would keep
+    // rendering it.
+    this.saveService?.destroy();
+    this.saveService = null;
+    this.pdfCursorTools?.rectTool.reset();
+
     if (this.pdfDocument) {
       this.pdfDocument = null;
 
@@ -1409,6 +1480,11 @@ const PDFViewerApplication = {
         /* downloadUrl = */ args.url
       );
     }
+    // Reset the anonymized file name, so it doesn't carry over from a
+    // previously opened document.
+    const fileName = args.fileName || "";
+    this.pdfViewer.saveAsFileName = fileName;
+    this.toolbar?.setFileName(fileName);
 
     // Set the necessary API parameters, using all the available options.
     const apiParams = AppOptions.getAll(OptionKind.API);
@@ -1520,6 +1596,37 @@ const PDFViewerApplication = {
         },
       });
     }
+  },
+  async saveAnon() {
+    const redactions = this.pdfCursorTools?.rectTool;
+    if (!this.pdfDocument || !redactions) {
+      return;
+    }
+    if (!this.pdfViewer.pageViewsReady) {
+      // eslint-disable-next-line no-alert
+      window.alert(await this.l10n.get("pdfjs-printing-not-ready"));
+      return;
+    }
+
+    this.saveService = new PDFSaveService({
+      pdfDocument: this.pdfDocument,
+      pagesOverview: this.pdfViewer.getPagesOverview(),
+      fileName: this.pdfViewer.saveAsFileName,
+      uploadUrl: this.baseUrl,
+      eventBus: this.eventBus,
+      overlayManager: this.overlayManager,
+      loadingBar: this.loadingBar,
+      redactions,
+    });
+    await this.saveService.performSave();
+  },
+
+  undo() {
+    this.pdfCursorTools?.rectTool.undo();
+  },
+
+  redo() {
+    this.pdfCursorTools?.rectTool.redo();
   },
 
   async downloadOrSave() {
@@ -2231,12 +2338,20 @@ const PDFViewerApplication = {
   },
 
   forceRendering() {
-    this.pdfRenderingQueue.printing = !!this.printService;
+    this.pdfRenderingQueue.printing =
+      !!this.printService || this.savingInProgress;
     this.pdfRenderingQueue.isThumbnailViewEnabled =
       this.viewsManager?.visibleView === SidebarView.THUMBS;
     this.pdfRenderingQueue.renderHighestPriority();
   },
-
+  beforeSave() {
+    this.savingInProgress = true;
+    this.forceRendering();
+  },
+  afterSave() {
+    this.savingInProgress = false;
+    this.forceRendering();
+  },
   beforePrint() {
     this._printAnnotationStoragePromise = this.pdfScriptingManager
       .dispatchWillPrint()
@@ -2345,6 +2460,8 @@ const PDFViewerApplication = {
     eventBus.on("hashchange", onHashchange.bind(this), opts);
     eventBus.on("beforeprint", this.beforePrint.bind(this), opts);
     eventBus.on("afterprint", this.afterPrint.bind(this), opts);
+    eventBus.on("beforesave", this.beforeSave.bind(this), opts);
+    eventBus.on("aftersave", this.afterSave.bind(this), opts);
     eventBus.on("pagerender", onPageRender.bind(this), opts);
     eventBus.on("pagerendered", onPageRendered.bind(this), opts);
     eventBus.on("updateviewarea", onUpdateViewarea.bind(this), opts);
@@ -2370,6 +2487,9 @@ const PDFViewerApplication = {
       opts
     );
     eventBus.on("print", this.triggerPrinting.bind(this), opts);
+    eventBus.on("save", this.saveAnon.bind(this), opts);
+    eventBus.on("undo", this.undo.bind(this), opts);
+    eventBus.on("redo", this.redo.bind(this), opts);
     eventBus.on("download", this.downloadOrSave.bind(this), opts);
     eventBus.on("firstpage", () => (this.page = 1), opts);
     eventBus.on("lastpage", () => (this.page = this.pagesCount), opts);
@@ -2384,6 +2504,7 @@ const PDFViewerApplication = {
       evt => (pdfViewer.currentScaleValue = evt.value),
       opts
     );
+    eventBus.on("filenamechanged", onFileNameChanged.bind(this), opts);
     eventBus.on("rotatecw", this.rotatePages.bind(this, 90), opts);
     eventBus.on("rotateccw", this.rotatePages.bind(this, -90), opts);
     eventBus.on(
@@ -2947,6 +3068,12 @@ function onHashchange(evt) {
   } else if (!this.pdfHistory?.popStateInProgress) {
     this.pdfLinkService.setHash(hash);
   }
+}
+
+function onFileNameChanged({ value }) {
+  // An empty name makes `PDFSaveService` fall back to the document title.
+  this.pdfViewer.saveAsFileName = value;
+  this.toolbar?.setFileName(value);
 }
 
 function onPageNumberChanged(evt) {

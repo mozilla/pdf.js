@@ -187,6 +187,14 @@ const defaultOptions = new Map([
 
   // Begin OptionKind.VIEWER
   [
+    "allowFileNameChange",
+    {
+      /** @type {boolean} */
+      value: false,
+      kind: OptionKind.VIEWER,
+    },
+  ],
+  [
     "altTextLearnMoreUrl",
     {
       /** @type {string} */
@@ -211,6 +219,14 @@ const defaultOptions = new Map([
       /** @type {number} */
       value: 2,
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+    },
+  ],
+  [
+    "anonymizationMode",
+    {
+      /** @type {boolean} */
+      value: false,
+      kind: OptionKind.VIEWER,
     },
   ],
   [
@@ -396,7 +412,7 @@ const defaultOptions = new Map([
     "enableMerge",
     {
       /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+      value: false,
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
@@ -491,7 +507,7 @@ const defaultOptions = new Map([
     "enableSplitMerge",
     {
       /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+      value: false,
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],

@@ -1,6 +1,7 @@
 *~
 local.mk
-build/
+build/*
+!build/minified/
 tags
 .DS_Store
 Makefile
@@ -8,3 +9,4 @@ node_modules/
 examples/node/svgdump/
 examples/node/pdf2png/*.png
 .vscode/
+/.vs

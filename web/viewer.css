@@ -104,6 +104,9 @@
   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
   /*#endif*/
   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
+  --toolbarButton-save-icon: url(images/toolbarButton-save.svg);
+  --toolbarButton-undo-icon: url(images/toolbarButton-undo.svg);
+  --toolbarButton-redo-icon: url(images/toolbarButton-redo.svg);
   --toolbarButton-bookmark-icon: url(images/toolbarButton-bookmark.svg);
   --toolbarButton-viewThumbnail-icon: url(images/toolbarButton-viewThumbnail.svg);
   --toolbarButton-viewOutline-icon: url(images/toolbarButton-viewOutline.svg);
@@ -119,6 +122,7 @@
   --secondaryToolbarButton-rotateCw-icon: url(images/secondaryToolbarButton-rotateCw.svg);
   --secondaryToolbarButton-selectTool-icon: url(images/secondaryToolbarButton-selectTool.svg);
   --secondaryToolbarButton-handTool-icon: url(images/secondaryToolbarButton-handTool.svg);
+  --secondaryToolbarButton-rectTool-icon: url(images/secondaryToolbarButton-rectTool.svg);
   --secondaryToolbarButton-scrollPage-icon: url(images/secondaryToolbarButton-scrollPage.svg);
   --secondaryToolbarButton-scrollVertical-icon: url(images/secondaryToolbarButton-scrollVertical.svg);
   --secondaryToolbarButton-scrollHorizontal-icon: url(images/secondaryToolbarButton-scrollHorizontal.svg);
@@ -615,6 +619,18 @@ body {
 
 #downloadButton::before {
   mask-image: var(--toolbarButton-download-icon);
+}
+
+#save::before {
+  mask-image: var(--toolbarButton-save-icon);
+}
+
+#undo::before {
+  mask-image: var(--toolbarButton-undo-icon);
+}
+
+#redo::before {
+  mask-image: var(--toolbarButton-redo-icon);
 }
 
 #currentOutlineItem::before {
@@ -1213,6 +1229,10 @@ dialog :link {
       mask-image: var(--toolbarButton-download-icon);
     }
 
+    #secondarySave::before {
+      mask-image: var(--toolbarButton-save-icon);
+    }
+
     #presentationMode::before {
       mask-image: var(--toolbarButton-presentationMode-icon);
     }
@@ -1243,6 +1263,10 @@ dialog :link {
 
     #cursorHandTool::before {
       mask-image: var(--secondaryToolbarButton-handTool-icon);
+    }
+
+    #cursorRectTool::before {
+      mask-image: var(--secondaryToolbarButton-rectTool-icon);
     }
 
     #scrollPage::before {
@@ -1739,6 +1763,38 @@ dialog :link {
         flex: none;
       }
     }
+
+    /* Only the anonymization file name field may shrink, so that the rest of
+       the toolbar (and the secondary toolbar toggle) stays reachable in
+       narrow windows. */
+    #toolbarViewerRight {
+      flex: 0 1 auto;
+      min-width: 0;
+
+      > * {
+        flex-shrink: 0;
+      }
+
+      > #anonymizationButtons {
+        flex-shrink: 1;
+        min-width: 0;
+
+        > * {
+          flex-shrink: 0;
+        }
+
+        > #fileName {
+          flex-shrink: 1;
+          width: 160px;
+          min-width: 64px;
+
+          @media all and (max-width: 400px) {
+            min-width: 40px;
+            padding-inline: 4px;
+          }
+        }
+      }
+    }
   }
 
   #loadingBar {
@@ -1829,4 +1885,11 @@ dialog :link {
   #scaleSelectContainer {
     display: none;
   }
+}
+
+.rectangle {
+  border: 1px dotted black;
+  position: absolute;
+  background-color: black;
+  opacity: 0.5;
 }

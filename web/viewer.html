@@ -67,6 +67,9 @@ See https://github.com/adobe-type-tools/cmap-resources
     <link rel="stylesheet" href="viewer.css" />
     <!--#endif-->
 
+    <!-- jsPDF provides the global `jsPDF` used by pdf_save_service.js. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.5.3/jspdf.min.js"></script>
+
     <!--#if MOZCENTRAL-->
     <!--<script src="resource://pdf.js/web/viewer.mjs" type="module"></script>-->
     <!--#elif !MOZCENTRAL-->
@@ -651,6 +654,19 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                 <div id="editorModeSeparator" class="verticalToolbarSeparator"></div>
 
+                <div id="anonymizationButtons" class="toolbarHorizontalGroup">
+                  <button id="undo" class="toolbarButton undo" type="button" tabindex="0" title="Undo" data-l10n-id="undo">
+                    <span data-l10n-id="undo_label">Undo</span>
+                  </button>
+                  <button id="redo" class="toolbarButton redo" type="button" tabindex="0" title="Redo" data-l10n-id="redo">
+                    <span data-l10n-id="redo_label">Redo</span>
+                  </button>
+                  <input id="fileName" class="toolbarField" type="text" tabindex="0" data-l10n-id="file_name" readonly />
+                  <button id="save" class="toolbarButton save hiddenMediumView" type="button" tabindex="0" title="Saglabāt" data-l10n-id="save">
+                    <span data-l10n-id="save_label">Saglabāt</span>
+                  </button>
+                </div>
+
                 <div class="toolbarHorizontalGroup hiddenMediumView">
                   <button id="printButton" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-print-button">
                     <span data-l10n-id="pdfjs-print-button-label"></span>
@@ -691,6 +707,10 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                         <button id="secondaryDownload" class="toolbarButton labeled" type="button" tabindex="0" data-l10n-id="pdfjs-save-button">
                           <span data-l10n-id="pdfjs-save-button-label"></span>
+                        </button>
+
+                        <button id="secondarySave" class="toolbarButton labeled" type="button" tabindex="0" title="Saglabāt" data-l10n-id="save">
+                          <span data-l10n-id="save_label">Saglabāt</span>
                         </button>
 
                         <!--#if !GENERIC-->
@@ -752,6 +772,18 @@ See https://github.com/adobe-type-tools/cmap-resources
                           aria-checked="false"
                         >
                           <span data-l10n-id="pdfjs-cursor-hand-tool-button-label"></span>
+                        </button>
+                        <button
+                          id="cursorRectTool"
+                          class="toolbarButton labeled"
+                          type="button"
+                          tabindex="0"
+                          title="Enable Anonymization Tool"
+                          data-l10n-id="cursor_rect_tool"
+                          role="radio"
+                          aria-checked="false"
+                        >
+                          <span data-l10n-id="cursor_rect_tool_label">Anonimizācijas rīks</span>
                         </button>
                       </div>
 
@@ -1303,6 +1335,19 @@ See https://github.com/adobe-type-tools/cmap-resources
           </div>
         </dialog>
         <!--#endif-->
+
+        <dialog id="saveOverlay">
+          <div class="row">
+            <span class="progress-action">Saglabā dokumentu…</span>
+          </div>
+          <div class="row">
+            <progress value="0" max="100"></progress>
+            <span data-l10n-id="pdfjs-print-progress-percent" data-l10n-args='{ "progress": 0 }' class="relative-progress">0%</span>
+          </div>
+          <div class="buttonRow">
+            <button id="saveCancel" class="secondaryButton" type="button"><span data-l10n-id="pdfjs-print-progress-close-button"></span></button>
+          </div>
+        </dialog>
         <!--#if CHROME-->
         <!--#include viewer-snippet-chrome-overlays.html-->
         <!--#endif-->

@@ -90,6 +90,10 @@ function getViewerConfiguration() {
         "signaturePropertiesSeparator"
       ),
       download: document.getElementById("downloadButton"),
+      save: document.getElementById("save"),
+      fileName: document.getElementById("fileName"),
+      undo: document.getElementById("undo"),
+      redo: document.getElementById("redo"),
     },
     secondaryToolbar: {
       toolbar: document.getElementById("secondaryToolbar"),
@@ -101,6 +105,7 @@ function getViewerConfiguration() {
           : null,
       printButton: document.getElementById("secondaryPrint"),
       downloadButton: document.getElementById("secondaryDownload"),
+      saveButton: document.getElementById("secondarySave"),
       viewBookmarkButton: document.getElementById("viewBookmark"),
       firstPageButton: document.getElementById("firstPage"),
       lastPageButton: document.getElementById("lastPage"),
@@ -109,6 +114,7 @@ function getViewerConfiguration() {
       cursorSelectToolButton: document.getElementById("cursorSelectTool"),
       cursorHandToolButton: document.getElementById("cursorHandTool"),
       scrollPageButton: document.getElementById("scrollPage"),
+      cursorRectToolButton: document.getElementById("cursorRectTool"),
       scrollVerticalButton: document.getElementById("scrollVertical"),
       scrollHorizontalButton: document.getElementById("scrollHorizontal"),
       scrollWrappedButton: document.getElementById("scrollWrapped"),
