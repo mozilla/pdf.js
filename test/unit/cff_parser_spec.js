@@ -415,7 +415,7 @@ describe("CFFParser", function () {
       const bytes = new Uint8Array([
         64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6,
       ]);
-      parser.bytes = bytes;
+      parser = new CFFParser(new Stream(bytes), {}, SEAC_ANALYSIS_ENABLED);
       const topDict = cff.topDict;
       topDict.setByName("Private", [bytes.length, 0]);
 
@@ -868,6 +868,72 @@ describe("CFFParser", function () {
     ).parse();
 
     expect(reparsedCff.fdArray.length).toEqual(256);
+  });
+
+  it("compiles shared Private DICTs and Subrs only once", function () {
+    cff.isCIDFont = true;
+    cff.topDict.setByName("ROS", [0, 0, 0]);
+    cff.topDict.setByName("FDSelect", 0);
+    cff.topDict.setByName("FDArray", 0);
+
+    const subr = new Uint8Array(1000).fill(0x0b);
+    const subrsIndex = new CFFIndex();
+    subrsIndex.add(subr);
+    const privateDicts = [50, 60].map(stdHW => {
+      const privateDict = new CFFPrivateDict(cff.strings);
+      privateDict.setByName("StdHW", stdHW);
+      privateDict.setByName("Subrs", 0);
+      privateDict.subrsIndex = subrsIndex;
+      return privateDict;
+    });
+    cff.fdArray = [0, 0, 1].map(i => {
+      const fdDict = new CFFTopDict(cff.strings);
+      fdDict.setByName("Private", [0, 0]);
+      fdDict.privateDict = privateDicts[i];
+      return fdDict;
+    });
+    cff.fdSelect = new CFFFDSelect(0, Array(cff.charStrings.count).fill(0));
+
+    const { fdArray } = new CFFParser(
+      new Stream(new CFFCompiler(cff).compile()),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+    const getSubrsOffset = fdDict =>
+      fdDict.getByName("Private")[1] + fdDict.privateDict.getByName("Subrs");
+
+    expect(fdArray[1].getByName("Private")).toEqual(
+      fdArray[0].getByName("Private")
+    );
+    expect(fdArray[1].privateDict).toBe(fdArray[0].privateDict);
+    expect(fdArray[2].privateDict.getByName("StdHW")).toEqual(60);
+    expect(getSubrsOffset(fdArray[2])).toEqual(getSubrsOffset(fdArray[0]));
+    expect(fdArray[2].privateDict.subrsIndex).toBe(
+      fdArray[0].privateDict.subrsIndex
+    );
+    expect(fdArray[0].privateDict.subrsIndex.get(0)).toEqual(subr);
+  });
+
+  it("throws on overlapping Private DICT data", function () {
+    // prettier-ignore
+    const bytes = new Uint8Array([0x8b, 0x8b, 0x8b, 0x8b, 0x06, // BlueValues
+                                  0x8b, 0x0a]); // StdHW
+    parser = new CFFParser(new Stream(bytes), {}, SEAC_ANALYSIS_ENABLED);
+
+    const parsePrivateDict = function (size, offset) {
+      const fdDict = new CFFTopDict(cff.strings);
+      fdDict.setByName("Private", [size, offset]);
+      parser.parsePrivateDict(fdDict);
+      return fdDict.privateDict;
+    };
+    // Negative sizes must not reduce the parsed length.
+    expect(parsePrivateDict(-bytes.length, 0).getByName("StdHW")).toBeNull();
+    expect(parsePrivateDict(5, 0).getByName("BlueValues").length).toEqual(4);
+    expect(parsePrivateDict(2, 5).getByName("StdHW")).toEqual(0);
+    expect(() => parsePrivateDict(4, 1)).toThrowError(
+      FormatError,
+      "CFF Private DICT data exceeds the font length"
+    );
   });
 
   // TODO fdArray
