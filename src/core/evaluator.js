@@ -3594,12 +3594,18 @@ class PartialEvaluator {
               markedContentLevel++;
 
               const mcid = args[1] instanceof Dict ? args[1].get("MCID") : null;
+              const actualText =
+                args[1] instanceof Dict ? args[1].get("ActualText") : null;
               textContent.items.push({
                 type: "beginMarkedContentProps",
                 id: Number.isInteger(mcid)
                   ? `${self.idFactory.getPageObjId()}_mc${mcid}`
                   : null,
                 tag: args[0] instanceof Name ? args[0].name : null,
+                actualText:
+                  typeof actualText === "string"
+                    ? stringToPDFString(actualText)
+                    : null,
               });
             }
             break;
