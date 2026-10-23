@@ -14799,5 +14799,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "CFF font with an accent left of its origin."
+  },
+  {
+    "id": "issue5377",
+    "file": "pdfs/issue5377.pdf",
+    "md5": "3ce78b01d7940d5332117055803fc9a3",
+    "rounds": 1,
+    "type": "eq",
+    "about": "CID-keyed CFF font with 65535 glyphs and a nonempty glyph 0."
   }
 ]

@@ -53,6 +53,22 @@ function removeCharStringByte(cursor, data, pos) {
   cursor.readStart = pos + 1;
 }
 
+// A charstring with only an optional width and endchar has no outline.
+function isEmptyCharString(data) {
+  const b0 = data[0];
+  let pos = 0;
+  if (b0 === 28) {
+    pos = 3;
+  } else if (b0 >= 32 && b0 <= 246) {
+    pos = 1;
+  } else if (b0 >= 247 && b0 <= 254) {
+    pos = 2;
+  } else if (b0 === 255) {
+    pos = 5;
+  }
+  return data[pos] === 14;
+}
+
 function looksLikeUnsigned16BitNegative(coord) {
   return coord > 0x7fff && coord <= 0xffff;
 }
@@ -1189,19 +1205,36 @@ class CFF {
     this.rawFileLength = rawFileLength;
   }
 
-  duplicateFirstGlyph() {
-    // Browsers will not display a glyph at position 0. Typically glyph 0 is
-    // notdef, but a number of fonts put a valid glyph there so it must be
-    // duplicated and appended.
-    if (this.charStrings.count >= 65535) {
-      warn("Not enough space in charstrings to duplicate first glyph.");
-      return;
+  /**
+   * Copy glyph 0 to a nonzero index; cmap reserves index 0 for .notdef.
+   * @param {boolean} [replaceEmptyGlyph] - Reuse an empty glyph if full.
+   * @returns {number} The copy's glyph ID, or 0 if no slot is available.
+   */
+  duplicateFirstGlyph(replaceEmptyGlyph = false) {
+    const { charStrings, fdSelect } = this;
+    const glyphZero = charStrings.get(0);
+    let id = charStrings.count;
+    if (id < 65535) {
+      charStrings.add(glyphZero);
+    } else {
+      id = replaceEmptyGlyph ? id - 1 : 0;
+      while (
+        id > 0 &&
+        (this.seacs.has(id) || !isEmptyCharString(charStrings.get(id)))
+      ) {
+        id--;
+      }
+      if (id === 0) {
+        warn("Not enough space in charstrings to duplicate first glyph.");
+        return 0;
+      }
+      charStrings.set(id, glyphZero);
     }
-    const glyphZero = this.charStrings.get(0);
-    this.charStrings.add(glyphZero);
+    this.widths[id] = this.widths[0];
     if (this.isCIDFont) {
-      this.fdSelect.fdSelect.push(this.fdSelect.fdSelect[0]);
+      fdSelect.fdSelect[id] = fdSelect.fdSelect[0];
     }
+    return id;
   }
 
   hasGlyphId(id) {
