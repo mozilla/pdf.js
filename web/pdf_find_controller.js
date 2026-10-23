@@ -731,6 +731,9 @@ class PDFFindController {
         return p5;
       }
     );
+    if (!query) {
+      return [false, ""];
+    }
 
     const trailingSpaces = "[ ]*";
     if (query.endsWith(trailingSpaces)) {
@@ -844,8 +847,9 @@ class PDFFindController {
             hasDiacritics
           );
           isUnicode ||= isUnicodePart;
-          return `(${queryPart})`;
+          return queryPart && `(${queryPart})`;
         })
+        .filter(Boolean)
         .join("|");
     }
     if (!query) {
