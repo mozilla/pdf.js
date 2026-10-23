@@ -303,4 +303,60 @@ describe("textLayer", function () {
 
     await loadingTask.destroy();
   });
+
+  it("measures text without a language in the document's language", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+
+    const items = [
+      {
+        str: "Hello World",
+        dir: "ltr",
+        width: 55,
+        height: 10,
+        transform: [10, 0, 0, 10, 50, 700],
+        fontName: "g_d0_f1",
+        hasEOL: false,
+      },
+    ];
+    const styles = {
+      g_d0_f1: {
+        ascent: 0.75,
+        descent: -0.25,
+        fontFamily: "sans-serif",
+        vertical: false,
+      },
+    };
+
+    // Create the measuring canvases anew.
+    TextLayer.cleanup();
+    const canvases = () =>
+      [...document.body.children].filter(
+        element => element instanceof HTMLCanvasElement
+      );
+    const before = new Set(canvases());
+
+    for (const lang of [null, "ja"]) {
+      const textLayer = new TextLayer({
+        textContentSource: { items, styles, lang },
+        container: document.createElement("div"),
+        viewport: page.getViewport({ scale: 1 }),
+      });
+      await textLayer.render();
+    }
+
+    // The text layer inherits the document's language, so the canvas measuring
+    // text without one must inherit it as well: lang="" would make it unknown.
+    const langs = canvases()
+      .filter(canvas => !before.has(canvas))
+      .map(canvas => canvas.getAttribute("lang"));
+    expect(langs).toEqual([null, "ja"]);
+
+    TextLayer.cleanup();
+    await loadingTask.destroy();
+  });
 });

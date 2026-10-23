@@ -473,7 +473,12 @@ class TextLayer {
       canvas.style.cssText =
         "position:absolute;top:0;left:0;width:0;height:0;display:none;" +
         "letter-spacing:normal;word-spacing:normal";
-      canvas.lang = lang;
+      // Without a language, the canvas must inherit the document's one, as
+      // the text layer does: an empty lang attribute would instead declare
+      // the language unknown, which can resolve to other fonts.
+      if (lang) {
+        canvas.lang = lang;
+      }
       document.body.append(canvas);
       ctx = canvas.getContext("2d", {
         alpha: false,
