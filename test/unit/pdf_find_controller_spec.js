@@ -360,6 +360,27 @@ describe("pdf_find_controller", function () {
     await loadingTask.destroy();
   });
 
+  it("performs a multiple term (no phrase) search with a stripped term", async function () {
+    const { eventBus, loadingTask, pdfFindController } =
+      await initPdfFindController();
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: ["alternate", "\u0301", "solution"],
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0],
+      selectedMatch: {
+        pageIndex: 5,
+        matchIndex: 0,
+      },
+    });
+
+    pdfFindController.setDocument(null);
+    await loadingTask.destroy();
+  });
+
   it("performs a multiple term (phrase) search", async function () {
     // Page 9 contains 'alternate solution' and pages 6 and 9 contain
     // 'solution'. Both should be found for multiple term (phrase) search.
