@@ -118,6 +118,27 @@ describe("fetch_stream", function () {
     expect(result2.value).toEqual(tailSize);
   });
 
+  it("rejects a range request answered with another range", async function () {
+    spyOn(globalThis, "fetch").and.callFake(
+      async () =>
+        new Response(new Uint8Array(32768), {
+          status: 206,
+          headers: { "Content-Range": "bytes 0-32767/65536" },
+        })
+    );
+    const stream = new PDFFetchStream({
+      url: getPdfUrl(),
+      rangeChunkSize: 32768,
+      disableStream: false,
+      disableRange: false,
+    });
+
+    const rangeReader = stream.getRangeReader(32768, 65536);
+    await expectAsync(rangeReader.read()).toBeRejectedWith(
+      jasmine.objectContaining({ name: "ResponseException", status: 206 })
+    );
+  });
+
   describe("Redirects", function () {
     it("redirects allowed if all responses are same-origin", async function () {
       await testCrossOriginRedirects({
