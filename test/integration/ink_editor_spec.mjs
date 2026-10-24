@@ -26,6 +26,7 @@ import {
   getRect,
   getSerialized,
   isCanvasMonochrome,
+  kbDelete,
   kbRedo,
   kbSave,
   kbUndo,
@@ -1859,6 +1860,58 @@ describe("Removal during a pinch-resize", () => {
           await finger0?.end();
           await finger1?.end();
         }
+      })
+    );
+  });
+});
+
+describe("Undo the deletion of an ink annotation", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("comments.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that undoing the deletion of an ink annotation navigates to its page", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const getCurrentPage = () =>
+          page.evaluate(
+            () => window.PDFViewerApplication.pdfViewer.currentPageNumber
+          );
+        const inkSelector = '.page[data-page-number="5"] .inkEditor';
+
+        await switchToInk(page);
+        await scrollIntoView(page, '.page[data-page-number="5"]');
+        await page.waitForSelector(inkSelector, { visible: true });
+        await page.waitForFunction(
+          "window.PDFViewerApplication.pdfViewer.currentPageNumber === 5"
+        );
+
+        await selectEditor(page, inkSelector);
+        await kbDelete(page);
+        await waitForNoElement(page, inkSelector);
+
+        await scrollIntoView(page, '.page[data-page-number="7"]');
+        await page.waitForFunction(
+          "window.PDFViewerApplication.pdfViewer.currentPageNumber === 7"
+        );
+        expect(await getCurrentPage())
+          .withContext(`In ${browserName}`)
+          .toEqual(7);
+
+        await kbUndo(page);
+        await page.waitForSelector(inkSelector);
+        await page.waitForFunction(
+          "window.PDFViewerApplication.pdfViewer.currentPageNumber === 5"
+        );
+        expect(await getCurrentPage())
+          .withContext(`In ${browserName}`)
+          .toEqual(5);
       })
     );
   });
