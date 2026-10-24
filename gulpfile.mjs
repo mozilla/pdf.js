@@ -106,7 +106,7 @@ const BABEL_TARGETS = ENV_TARGETS.join(", ");
 
 const BABEL_COREJS_OPTS = Object.freeze({
   method: "usage-global",
-  version: "3.50.0",
+  version: "3.51.0",
   exclude: ["web.structured-clone"],
   shippedProposals: true,
 });
@@ -3537,7 +3537,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      "@napi-rs/canvas": "^1.0.11",
+      "@napi-rs/canvas": "^1.0.13",
     },
     browser: {
       canvas: false,
