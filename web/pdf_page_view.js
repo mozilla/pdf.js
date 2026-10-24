@@ -617,9 +617,12 @@ class PDFPageView extends BasePDFPageView {
       if (
         textLayerAborted ||
         annotationLayer !== this.annotationLayer ||
-        textLayer !== this.textLayer
+        textLayer !== this.textLayer ||
+        annotationLayer.linksInjected
       ) {
-        return; // Rendering was cancelled while the textLayerPromise resolved.
+        // Rendering was cancelled while the textLayerPromise resolved,
+        // or inferred links were previously injected in the annotationLayer.
+        return;
       }
       await annotationLayer.injectLinkAnnotations(
         Autolinker.processLinks(this)

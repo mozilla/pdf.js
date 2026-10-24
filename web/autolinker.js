@@ -163,7 +163,14 @@ class Autolinker {
 
   static processLinks(pdfPageView) {
     const highlighter = pdfPageView._textHighlighter;
-    const links = this.findLinks(highlighter.textContentItemsStr.join("\n"));
+    const textContent = highlighter.textContentItemsStr.join("\n");
+    if (!textContent) {
+      return []; // The page has no text content.
+    }
+    const links = this.findLinks(textContent);
+    if (!links.length) {
+      return []; // The page has no inferred links.
+    }
     const matches = highlighter._convertMatches(
       links.map(({ index }) => index),
       links.map(({ length }) => length)
