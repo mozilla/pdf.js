@@ -89,7 +89,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/network_spec.js",
       "pdfjs-test/unit/network_utils_spec.js",
       "pdfjs-test/unit/obj_bin_transform_spec.js",
-      "pdfjs-test/unit/operator_list_dependencies_spec.js",
+      "pdfjs-test/unit/operator_bboxes_spec.js",
       "pdfjs-test/unit/parser_spec.js",
       "pdfjs-test/unit/pattern_spec.js",
       "pdfjs-test/unit/pdf.image_decoders_spec.js",

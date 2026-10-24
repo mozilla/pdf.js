@@ -34,7 +34,7 @@ class BasePDFPageView extends RenderableView {
   /** @type {null | HTMLDivElement} */
   div = null;
 
-  enableOptimizedPartialRendering = false;
+  enableOptimizedPartialRendering = true;
 
   enableSelectionRendering = true;
 
@@ -48,8 +48,6 @@ class BasePDFPageView extends RenderableView {
 
   pageColors = null;
 
-  recordedBBoxes = null;
-
   renderingQueue = null;
 
   constructor(options) {
@@ -59,7 +57,7 @@ class BasePDFPageView extends RenderableView {
     this.pageColors = options.pageColors || null;
     this.renderingQueue = options.renderingQueue;
     this.enableOptimizedPartialRendering =
-      options.enableOptimizedPartialRendering ?? false;
+      options.enableOptimizedPartialRendering ?? true;
     this.enableSelectionRendering =
       options.enableSelectionRendering !== false &&
       FeatureTest.isBackdropFilterSupported;
@@ -251,9 +249,6 @@ class BasePDFPageView extends RenderableView {
       // triggering this callback.
       if (renderTask === this.renderTask) {
         this.renderTask = null;
-        if (this.enableOptimizedPartialRendering) {
-          this.recordedBBoxes ??= renderTask.recordedBBoxes;
-        }
         if (this.imagesRightClickMinSize !== -1) {
           this.imageCoordinates ??= this.pdfPage.imageCoordinates;
         }

@@ -58,6 +58,7 @@ import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { MessageHandler } from "../../src/shared/message_handler.js";
 import { Metadata } from "../../src/display/metadata.js";
+import { OperatorBBoxes } from "../../src/display/operator_bboxes.js";
 import { PageViewport } from "../../src/display/page_viewport.js";
 import { RenderingCancelledException } from "../../src/display/display_utils.js";
 import { StringStream } from "../../src/core/stream.js";
@@ -5938,6 +5939,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         form: false,
         canvas: false,
       });
+      expect(operatorList.bboxes).toBeUndefined();
     });
 
     it("gets operatorList with JPEG image (issue 4888)", async function () {
@@ -6213,6 +6215,9 @@ have written that much by now. So, here’s to squashing bugs.`);
 
       await renderTask.promise;
       expect(renderTask.separateAnnots).toBeFalse();
+      const { bboxes, fnArray } = renderTask.getOperatorList();
+      expect(bboxes).toBeInstanceOf(OperatorBBoxes);
+      expect(bboxes.length).toEqual(fnArray.length);
 
       const { stats } = pdfPage;
       expect(stats).toBeInstanceOf(StatTimer);
@@ -6374,22 +6379,17 @@ have written that much by now. So, here’s to squashing bugs.`);
         viewport.width,
         viewport.height
       );
-      for (const recordOptions of [
-        { recordImages: true },
-        { recordOperations: true },
-      ]) {
-        for (let i = 0; i < 2; i++) {
-          const renderTask = pdfPage.render({
-            canvas: canvasAndCtx.canvas,
-            viewport,
-            ...recordOptions,
-          });
-          await expectAsync(renderTask.promise).toBeRejectedWith(
-            jasmine.objectContaining({ name: "IndexSizeError" })
-          );
-          // Cancelling runs the completion callback again.
-          expect(() => renderTask.cancel()).not.toThrow();
-        }
+      for (let i = 0; i < 2; i++) {
+        const renderTask = pdfPage.render({
+          canvas: canvasAndCtx.canvas,
+          viewport,
+          recordImages: true,
+        });
+        await expectAsync(renderTask.promise).toBeRejectedWith(
+          jasmine.objectContaining({ name: "IndexSizeError" })
+        );
+        // Cancelling runs the completion callback again.
+        expect(() => renderTask.cancel()).not.toThrow();
       }
 
       canvasFactory.destroy(canvasAndCtx);
@@ -7249,6 +7249,7 @@ have written that much by now. So, here’s to squashing bugs.`);
 
         await renderTask.promise;
         expect(renderTask.separateAnnots).toBeFalse();
+        expect(renderTask.getOperatorList().bboxes).toBeNull();
 
         const printData = canvasAndCtx.canvas.toDataURL();
         canvasFactory.destroy(canvasAndCtx);

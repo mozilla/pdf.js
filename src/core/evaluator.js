@@ -1084,6 +1084,7 @@ class PartialEvaluator {
     }
 
     state.font = translated.font;
+    operatorList.addFont(translated.loadedName, translated.font);
     translated.send(this.handler);
     return translated.loadedName;
   }

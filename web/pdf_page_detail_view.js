@@ -187,40 +187,27 @@ class PDFPageDetailView extends BasePDFPageView {
       transform,
       false
     );
-    const recordedBBoxes = this.pdfPage.recordedBBoxes;
+    const operatorBBoxes =
+      this.enableOptimizedPartialRendering &&
+      this.pdfPage._getOperatorBBoxes({
+        annotationMode: baseContext.annotationMode,
+        isEditing: baseContext.isEditing,
+      });
 
-    if (!recordedBBoxes || !this.enableOptimizedPartialRendering) {
+    if (!operatorBBoxes) {
       return baseContext;
     }
 
-    const {
-      viewport: { width: vWidth, height: vHeight },
-    } = this.pageView;
-    const {
-      width: aWidth,
-      height: aHeight,
-      minX: aMinX,
-      minY: aMinY,
-    } = this.#detailArea;
-
-    const detailMinX = aMinX / vWidth;
-    const detailMinY = aMinY / vHeight;
-    const detailMaxX = (aMinX + aWidth) / vWidth;
-    const detailMaxY = (aMinY + aHeight) / vHeight;
+    const { minX, minY, width, height } = this.#detailArea;
 
     return {
       ...baseContext,
-      operationsFilter(index) {
-        if (recordedBBoxes.isEmpty(index)) {
-          return false;
-        }
-        return (
-          recordedBBoxes.minX(index) <= detailMaxX &&
-          recordedBBoxes.maxX(index) >= detailMinX &&
-          recordedBBoxes.minY(index) <= detailMaxY &&
-          recordedBBoxes.maxY(index) >= detailMinY
-        );
-      },
+      operationsFilter: operatorBBoxes.getFilter(this.pageView.viewport, [
+        minX,
+        minY,
+        minX + width,
+        minY + height,
+      ]),
     };
   }
 

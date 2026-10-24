@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const { makeSet, OPS } = globalThis.pdfjsLib || (await import("pdfjs-lib"));
+const { OPS } = globalThis.pdfjsLib || (await import("pdfjs-lib"));
 
 const opMap = Object.create(null);
 for (const key in OPS) {
@@ -438,7 +438,7 @@ class Stepper {
     this.table.append(chunk);
   }
 
-  setOperatorBBoxes(bboxes, metadata) {
+  setOperatorBBoxes(bboxes, viewport) {
     let boxesContainer = this.pageContainer.querySelector(".pdfBugGroupsLayer");
     if (!boxesContainer) {
       boxesContainer = this.#c("div");
@@ -456,35 +456,16 @@ class Stepper {
     }
     boxesContainer.innerHTML = "";
 
-    const dependents = new Map();
-    for (const [dependentIdx, { dependencies: ownDependencies }] of metadata) {
-      for (const dependencyIdx of ownDependencies) {
-        dependents
-          .getOrInsertComputed(dependencyIdx, makeSet)
-          .add(dependentIdx);
-      }
-    }
-
     const groups = Array.from({ length: bboxes.length }, (_, i) => {
-      let minX = null;
-      let minY = null;
-      let maxX = null;
-      let maxY = null;
-      if (!bboxes.isEmpty(i)) {
-        minX = bboxes.minX(i);
-        minY = bboxes.minY(i);
-        maxX = bboxes.maxX(i);
-        maxY = bboxes.maxY(i);
-      }
-
+      const bbox = bboxes.getViewportBBox(i, viewport);
       return {
-        minX,
-        minY,
-        maxX,
-        maxY,
-        dependencies: Array.from(metadata.get(i)?.dependencies ?? []).sort(),
-        dependents: Array.from(dependents.get(i) ?? []).sort(),
-        isRenderingOperation: metadata.get(i)?.isRenderingOperation ?? false,
+        minX: bbox && bbox[0] / viewport.width,
+        minY: bbox && bbox[1] / viewport.height,
+        maxX: bbox && bbox[2] / viewport.width,
+        maxY: bbox && bbox[3] / viewport.height,
+        dependencies: [],
+        dependents: [],
+        isRenderingOperation: bbox !== null,
         idx: i,
       };
     });

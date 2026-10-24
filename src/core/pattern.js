@@ -497,7 +497,7 @@ class FunctionBasedShading extends BaseShading {
 
     // Transform the four domain corners to find the user-space bounding box.
     this.bounds = BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox([x0, y0, x1, y1], matrix, this.bounds);
+    Util.transformedRectBoundingBox(x0, y0, x1, y1, matrix, this.bounds);
 
     const bboxW = this.bounds[2] - this.bounds[0];
     const bboxH = this.bounds[3] - this.bounds[1];
