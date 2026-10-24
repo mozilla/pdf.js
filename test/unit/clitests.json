@@ -64,6 +64,7 @@
     "struct_tree_layer_builder_spec.js",
     "struct_tree_spec.js",
     "svg_factory_spec.js",
+    "text_layer_builder_spec.js",
     "text_layer_spec.js",
     "to_unicode_map_spec.js",
     "touch_manager_spec.js",

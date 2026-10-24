@@ -111,6 +111,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/struct_tree_layer_builder_spec.js",
       "pdfjs-test/unit/struct_tree_spec.js",
       "pdfjs-test/unit/svg_factory_spec.js",
+      "pdfjs-test/unit/text_layer_builder_spec.js",
       "pdfjs-test/unit/text_layer_spec.js",
       "pdfjs-test/unit/to_unicode_map_spec.js",
       "pdfjs-test/unit/touch_manager_spec.js",
