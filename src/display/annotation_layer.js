@@ -995,8 +995,12 @@ class LinkAnnotationElement extends AnnotationElement {
       if (
         data.actions &&
         (data.actions.has("Action") ||
+          data.actions.has("Mouse Enter") ||
+          data.actions.has("Mouse Exit") ||
           data.actions.has("Mouse Up") ||
-          data.actions.has("Mouse Down")) &&
+          data.actions.has("Mouse Down") ||
+          data.actions.has("Focus") ||
+          data.actions.has("Blur")) &&
         this.enableScripting &&
         this.hasJSActions
       ) {
@@ -1144,8 +1148,12 @@ class LinkAnnotationElement extends AnnotationElement {
     link.href = this.linkService.getAnchorUrl("");
     const map = new Map([
       ["Action", "onclick"],
+      ["Mouse Enter", "onmouseenter"],
+      ["Mouse Exit", "onmouseleave"],
       ["Mouse Up", "onmouseup"],
       ["Mouse Down", "onmousedown"],
+      ["Focus", "onfocus"],
+      ["Blur", "onblur"],
     ]);
     for (const name of actions.keys()) {
       const jsName = map.get(name);
