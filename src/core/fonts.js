@@ -3300,10 +3300,15 @@ class Font {
       adjustType1ToUnicode(properties, properties.builtInEncoding);
     }
 
-    // Type 1 fonts have a notdef inserted at the beginning, so glyph 0
-    // becomes glyph 1. In a CFF font glyph 0 is appended to the end of the
-    // char strings.
-    const glyphZeroId = font instanceof CFFFont ? font.numGlyphs - 1 : 1;
+    // Glyph 0 is reserved for .notdef, hence characters using glyph 0 must be
+    // mapped to a copy of it:
+    //  - Type 1 fonts have a .notdef inserted at the beginning, so glyph 0
+    //    becomes glyph 1.
+    //  - CFF fonts get a copy of glyph 0 appended to the char strings or, when
+    //    the font is full, written over an empty glyph (see
+    //    `CFF.duplicateFirstGlyph`). `CFFFont.glyphZeroId` is the ID of that
+    //    copy, or 0 if no slot was available.
+    const glyphZeroId = font instanceof CFFFont ? font.glyphZeroId : 1;
     const mapping = font.getGlyphMapping(properties);
     let newMapping = null;
     let newCharCodeToGlyphId = mapping;

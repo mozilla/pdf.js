@@ -524,6 +524,93 @@ describe("CFFParser", function () {
     expect(result.seacs.size).toEqual(0);
   });
 
+  it("duplicates glyph 0 with its width and FDSelect", function () {
+    const { charStrings, widths } = cff;
+    cff.isCIDFont = true;
+    const fdSelect = [1, 0];
+    cff.fdSelect = new CFFFDSelect(0, fdSelect);
+    expect(widths[0]).toEqual(250);
+
+    expect(cff.duplicateFirstGlyph()).toEqual(2);
+    expect(charStrings.count).toEqual(3);
+    expect(charStrings.get(2)).toBe(charStrings.get(0));
+    expect(widths[2]).toEqual(250);
+    expect(cff.fdSelect.getFDIndex(2)).toEqual(1);
+    expect(fdSelect).toEqual([1, 0, 1]);
+  });
+
+  it("duplicates glyph 0 over an empty glyph with its FDSelect when the CID font is full", function () {
+    const { charStrings } = cff;
+    // 500 0 0 rmoveto 100 hlineto endchar
+    const glyphZero = new Uint8Array([248, 136, 139, 139, 21, 239, 6, 14]);
+    const glyph = new Uint8Array([139, 139, 21, 239, 6, 14]);
+    charStrings.set(0, glyphZero);
+    charStrings.set(1, glyph);
+    while (charStrings.count < 65535) {
+      charStrings.add(glyph);
+    }
+    // Width 108, then endchar.
+    const emptyGlyph = new Uint8Array([247, 0, 14]);
+    charStrings.set(1000, emptyGlyph);
+    cff.widths = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    }).widths;
+    cff.isCIDFont = true;
+    const fdSelect = Array(charStrings.count).fill(1);
+    fdSelect[0] = 0;
+    cff.fdSelect = new CFFFDSelect(3, fdSelect);
+    expect(cff.widths[0]).toEqual(500);
+
+    expect(cff.duplicateFirstGlyph()).toEqual(0);
+    expect(charStrings.get(1000)).toBe(emptyGlyph);
+    expect(cff.widths[1000]).toEqual(108);
+    expect(cff.fdSelect.getFDIndex(1000)).toEqual(1);
+
+    expect(cff.duplicateFirstGlyph(/* replaceEmptyGlyph = */ true)).toEqual(
+      1000
+    );
+    expect(charStrings.count).toEqual(65535);
+    expect(charStrings.get(1000)).toBe(glyphZero);
+    expect(cff.widths[1000]).toEqual(500);
+    expect(cff.fdSelect.getFDIndex(1000)).toEqual(0);
+    expect(cff.fdSelect.getFDIndex(999)).toEqual(1);
+    expect(cff.fdSelect.getFDIndex(1001)).toEqual(1);
+    expect(fdSelect.length).toEqual(65535);
+  });
+
+  it("preserves SEAC glyphs when replacing an empty glyph in a full font", function () {
+    const { charStrings } = cff;
+    // 0 0 rmoveto 100 hlineto endchar
+    const glyphZero = new Uint8Array([139, 139, 21, 239, 6, 14]);
+    const glyph = new Uint8Array([139, 139, 21, 239, 6, 14]);
+    charStrings.set(0, glyphZero);
+    charStrings.set(1, glyph);
+    while (charStrings.count < 65535) {
+      charStrings.add(glyph);
+    }
+    charStrings.set(65533, new Uint8Array([14]));
+    // SEAC: 0 0 65 194 endchar; parsing leaves only endchar.
+    charStrings.set(65534, new Uint8Array([139, 139, 204, 247, 86, 14]));
+    const { seacs, widths } = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+    cff.seacs = seacs;
+    cff.widths = widths;
+    const seacGlyph = charStrings.get(65534);
+    expect(seacGlyph).toEqual(new Uint8Array([14]));
+    expect(seacs.get(65534)).toEqual([0, 0, 65, 194]);
+
+    expect(cff.duplicateFirstGlyph(/* replaceEmptyGlyph = */ true)).toEqual(
+      65533
+    );
+    expect(charStrings.count).toEqual(65535);
+    expect(charStrings.get(65533)).toBe(glyphZero);
+    expect(charStrings.get(65534)).toBe(seacGlyph);
+    expect(seacs.get(65534)).toEqual([0, 0, 65, 194]);
+  });
+
   it("removes invalid operators without repeatedly copying the suffix", function () {
     const bytes = new Uint8Array(4096);
     for (let i = 0; i < bytes.length - 1; i++) {
