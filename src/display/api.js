@@ -1785,6 +1785,8 @@ class PDFPageProxy {
       return this.getXfa().then(xfa => XfaText.textContent(xfa));
     }
     const readableStream = this.streamTextContent(params);
+    // Faster than `for await`.
+    const reader = readableStream.getReader();
 
     const textContent = {
       items: [],
@@ -1792,7 +1794,11 @@ class PDFPageProxy {
       lang: null,
     };
 
-    for await (const value of readableStream) {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
       textContent.lang ??= value.lang;
       Object.assign(textContent.styles, value.styles);
       textContent.items.push(...value.items);
