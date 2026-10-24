@@ -269,6 +269,10 @@ class AnnotationLayerBuilder {
     await this.annotationLayer.addLinkAnnotations(newLinks);
   }
 
+  get linksInjected() {
+    return this.#linksInjected;
+  }
+
   #updatePresentationModeState(state) {
     if (!this.div) {
       return;
