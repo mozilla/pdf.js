@@ -14807,5 +14807,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "CID-keyed CFF font with 65535 glyphs and a nonempty glyph 0."
+  },
+  {
+    "id": "issue10175",
+    "file": "pdfs/issue10175.pdf",
+    "md5": "98bbb5e9b62c7e6850aec50be249e9e0",
+    "rounds": 1,
+    "type": "eq",
+    "about": "CFF fonts with repeated rmoveto width operands."
   }
 ]

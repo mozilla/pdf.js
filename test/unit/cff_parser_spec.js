@@ -708,6 +708,132 @@ describe("CFFParser", function () {
     );
   });
 
+  it("removes the extra arguments of stack-clearing operators (issue 10175)", function () {
+    const subrs = new CFFIndex();
+    subrs.add(new Uint8Array([/* rmoveto */ 21, /* return */ 11]));
+    const charStrings = new CFFIndex();
+    // Repeat the width (130) before each moveto.
+    charStrings.add(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 159, 169, /* rmoveto */ 21,
+        149, /* hlineto */ 6,
+        247, 22, 179, 189, /* rmoveto */ 21,
+        247, 22, 199, /* hmoveto */ 22,
+        14,
+      ])
+    );
+    // One excess operand before the initial width and rmoveto coordinates.
+    charStrings.add(new Uint8Array([140, 141, 142, 143, /* rmoveto */ 21, 14]));
+    // The caller supplies the subroutine's operands.
+    charStrings.add(
+      new Uint8Array([139, 139, /* hstem */ 1, 149, 159, 169, 32, 10, 14])
+    );
+
+    const { widths } = parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 159, 169, 21,
+        149, 6,
+        179, 189, 21,
+        199, 22,
+        14, 14, 14, 14, 14,
+      ])
+    );
+    expect(charStrings.get(1)).toEqual(
+      new Uint8Array([141, 142, 143, 21, 14, 14])
+    );
+    expect(charStrings.get(2)).toEqual(
+      new Uint8Array([139, 139, 1, 149, 159, 169, 32, 10, 14])
+    );
+    expect(subrs.get(0)).toEqual(new Uint8Array([21, 11]));
+    expect(widths.slice(0, 2)).toEqual([130, 2]);
+  });
+
+  it("preserves reordered extra arguments of stack-clearing operators", function () {
+    // exch moves the repeated width below the moveto coordinates.
+    // prettier-ignore
+    const bytes = new Uint8Array([
+      247, 22, 139, 139, /* rmoveto */ 21,
+      159, 247, 22, /* exch */ 12, 28, 169, /* rmoveto */ 21,
+      14,
+    ]);
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes.slice());
+
+    const { widths } = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(bytes);
+    expect(widths).toEqual([130]);
+  });
+
+  it("removes a repeated width before hintmask while preserving its stems and mask", function () {
+    const charStrings = new CFFIndex();
+    charStrings.add(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 139, 149, /* hstem */ 1,
+        247, 22, 159, 169, /* hintmask */ 19, 0xc0,
+        139, 139, /* rmoveto */ 21,
+        14,
+      ])
+    );
+
+    const { widths } = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 139, 149, 1,
+        159, 169, 19, 0xc0,
+        139, 139, 21,
+        14, 14, 14,
+      ])
+    );
+    expect(widths).toEqual([130]);
+  });
+
+  it("doesn't remove the extra arguments of a shared subroutine", function () {
+    // The call follows the first moveto.
+    const notFirst = [139, 139, /* rmoveto */ 21, 32, /* callsubr */ 10, 14];
+    // The call supplies the first moveto and its width (130).
+    const first = [32, /* callsubr */ 10, 14];
+
+    for (const [name, glyphs, expectedWidths] of [
+      ["width last", [notFirst, first], [0, 130]],
+      ["width first", [first, notFirst], [130, 0]],
+    ]) {
+      const subrBytes = [247, 22, 179, 189, /* rmoveto */ 21, /* return */ 11];
+      const subrs = new CFFIndex();
+      subrs.add(new Uint8Array(subrBytes));
+      const charStrings = new CFFIndex();
+      for (const glyph of glyphs) {
+        charStrings.add(new Uint8Array(glyph));
+      }
+
+      const { widths } = parser.parseCharStrings({
+        charStrings,
+        localSubrIndex: subrs,
+        privateDict: privateDictStub,
+      });
+
+      expect(subrs.get(0)).withContext(name).toEqual(new Uint8Array(subrBytes));
+      expect(widths).withContext(name).toEqual(expectedWidths);
+    }
+  });
+
   it("rejects a CharString executing too many operators and operands", function () {
     const repeat = (ops, count, last) => {
       const data = new Uint8Array(ops.length * count + 1);
