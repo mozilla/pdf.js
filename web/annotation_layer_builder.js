@@ -256,6 +256,9 @@ class AnnotationLayerBuilder {
     }
     this.#linksInjected = true;
 
+    if (!inferredLinks.length) {
+      return;
+    }
     const newLinks = this.#annotations.length
       ? this.#checkInferredLinks(inferredLinks)
       : inferredLinks;
@@ -263,7 +266,6 @@ class AnnotationLayerBuilder {
     if (!newLinks.length) {
       return;
     }
-
     await this.annotationLayer.addLinkAnnotations(newLinks);
   }
 
