@@ -14,15 +14,45 @@
  */
 
 import { F32_BBOX_INIT, Util } from "../../../shared/util.js";
+import { InputSmoother } from "./input_smoother.js";
 import { MathClamp } from "../../../shared/math_clamp.js";
 import { Outline } from "./outline.js";
+
+function svgPoint(data, i) {
+  return `${Outline.svgRound(data[i])} ${Outline.svgRound(data[i + 1])}`;
+}
+
+function pushCurves(buffer, line, start) {
+  for (let i = start, ii = line.length; i < ii; i += 6) {
+    buffer.push(
+      `C${svgPoint(line, i)} ${svgPoint(line, i + 2)} ${svgPoint(line, i + 4)}`
+    );
+  }
+}
+
+/**
+ * @param {Array<number>|Float32Array} line - Start point prefixed by four NaNs,
+ *   optionally followed by a similarly prefixed point or Bézier segments.
+ * @returns {string}
+ */
+function lineToSVGPath(line) {
+  const start = `M${svgPoint(line, 4)}`;
+  if (line.length === 6) {
+    return `${start}Z`;
+  }
+  if (line.length === 12 && isNaN(line[6])) {
+    return `${start}L${svgPoint(line, 10)}`;
+  }
+  const buffer = [start];
+  pushCurves(buffer, line, 6);
+  return buffer.join("");
+}
 
 class InkDrawOutliner {
   // The last 3 points of the line.
   #last = new Float64Array(6);
 
-  // The most recent normalized input position. The displayed path is extended
-  // to it while drawing; see #toSVGPathWithTip.
+  // Latest normalized input position, set by #normalizeToTip.
   #tip = new Float64Array(2);
 
   #line;
@@ -31,9 +61,17 @@ class InkDrawOutliner {
 
   #rotation;
 
+  #smoother = null;
+
   #thickness;
 
   #points;
+
+  // Count input points that pass the distance filter, including the start.
+  #inputCount = 1;
+
+  // Last input point accepted by the distance filter.
+  #lastInput = new Float64Array(2);
 
   #lastSVGPath = "";
 
@@ -45,19 +83,27 @@ class InkDrawOutliner {
 
   #parentHeight;
 
-  constructor(x, y, parentWidth, parentHeight, rotation, thickness) {
+  constructor(x, y, parentWidth, parentHeight, rotation, thickness, timeStamp) {
     this.#parentWidth = parentWidth;
     this.#parentHeight = parentHeight;
     this.#rotation = rotation;
     this.#thickness = thickness;
+    this.#lines = [];
+    this.#startLine(x, y, timeStamp);
+  }
 
-    [x, y] = this.#normalizePoint(x, y);
+  #startLine(x, y, timeStamp) {
+    [x, y] = this.#normalizeToTip(x, y);
 
     const line = (this.#line = [NaN, NaN, NaN, NaN, x, y]);
     this.#points = [x, y];
-    this.#lines = [{ line, points: this.#points }];
+    this.#lines.push({ line, points: this.#points });
     this.#last.set(line, 0);
-    this.#tip.set([x, y], 0);
+    this.#lastIndex = 0;
+    this.#inputCount = 1;
+    this.#lastInput.set(this.#tip);
+    this.#smoother =
+      timeStamp === undefined ? null : new InputSmoother(x, y, timeStamp);
   }
 
   updateProperty(name, value) {
@@ -66,13 +112,14 @@ class InkDrawOutliner {
     }
   }
 
-  #normalizePoint(x, y) {
+  #normalizeToTip(x, y) {
     return Outline._normalizePoint(
       x,
       y,
       this.#parentWidth,
       this.#parentHeight,
-      this.#rotation
+      this.#rotation,
+      this.#tip
     );
   }
 
@@ -81,15 +128,12 @@ class InkDrawOutliner {
   }
 
   isCancellable() {
-    // The user a second finger after drawing 5 points: it's small enough
-    // to not be a real drawing.
-    return this.#points.length <= 10;
+    // A second finger can cancel a short stroke; upsampled points don't count.
+    return this.#inputCount <= 5;
   }
 
-  add(x, y) {
-    if (this.#add(x, y)) {
-      this.toSVGPath();
-    }
+  add(x, y, timeStamp) {
+    this.#addSample(x, y, timeStamp);
 
     return {
       path: {
@@ -98,24 +142,9 @@ class InkDrawOutliner {
     };
   }
 
-  addPoints(points) {
-    let needsPathUpdate = false;
+  addPoints(points, timeStamps) {
     for (let i = 0, ii = points.length; i < ii; i += 2) {
-      if (!this.#add(points[i], points[i + 1])) {
-        continue;
-      }
-      needsPathUpdate = true;
-
-      // `toSVGPath` rewrites the current subpath for two or three points. Run
-      // those cases immediately; once there are more points, the call below
-      // can append all remaining Bézier segments.
-      if (this.#points.length <= 6) {
-        this.toSVGPath();
-        needsPathUpdate = false;
-      }
-    }
-    if (needsPathUpdate) {
-      this.toSVGPath();
+      this.#addSample(points[i], points[i + 1], timeStamps?.[i / 2]);
     }
 
     return {
@@ -125,59 +154,99 @@ class InkDrawOutliner {
     };
   }
 
-  #add(x, y) {
-    // The point is in canvas coordinates which means that there is no rotation.
-    // It's the same as parent coordinates.
-    [x, y] = this.#normalizePoint(x, y);
-    this.#tip.set([x, y], 0);
-    const [x1, y1, x2, y2] = this.#last.subarray(2, 6);
-    const diffX = x - x2;
-    const diffY = y - y2;
-    const d = Math.hypot(this.#parentWidth * diffX, this.#parentHeight * diffY);
-    if (d <= 2) {
-      // The idea is to avoid garbage points around the last point.
-      // When the points are too close, it just leads to bad normal vectors and
-      // control points.
-      return false;
+  #addSample(x, y, timeStamp) {
+    [x, y] = this.#normalizeToTip(x, y);
+    const [lastX, lastY] = this.#lastInput;
+    if (!this.#isTooClose(x, y, lastX, lastY)) {
+      this.#inputCount++;
+      this.#lastInput.set(this.#tip);
+    }
+    if (this.#smoother) {
+      this.#addSmoothedPoints(this.#smoother.add(x, y, timeStamp));
+    } else {
+      this.#addPoint(x, y);
+    }
+  }
+
+  #isTooClose(x, y, lastX, lastY) {
+    return (
+      Math.hypot(
+        this.#parentWidth * (x - lastX),
+        this.#parentHeight * (y - lastY)
+      ) <= 2
+    );
+  }
+
+  #addSmoothedPoints(points) {
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      this.#addPoint(points[i], points[i + 1]);
+    }
+  }
+
+  #addPoint(x, y) {
+    const [, , x1, y1, x2, y2] = this.#last;
+    if (this.#isTooClose(x, y, x2, y2)) {
+      // Ignore points within two pixels of the last accepted point.
+      return;
     }
 
     this.#points.push(x, y);
 
     if (isNaN(x1)) {
-      // We've only one point.
-      this.#last.set([x2, y2, x, y], 2);
+      // The second point creates a straight segment.
       this.#line.push(NaN, NaN, NaN, NaN, x, y);
-      return true;
+    } else {
+      if (isNaN(this.#last[0])) {
+        // The third point replaces the straight segment with a Bézier curve.
+        this.#line.splice(6, 6);
+      }
+      Outline.createBezierPoints(x1, y1, x2, y2, x, y, this.#line);
     }
-
-    if (isNaN(this.#last[0])) {
-      // We've only two points.
-      this.#line.splice(6, 6);
-    }
-
-    this.#last.set([x1, y1, x2, y2, x, y], 0);
-    this.#line.push(...Outline.createBezierPoints(x1, y1, x2, y2, x, y));
-
-    return true;
+    this.#last.copyWithin(0, 2);
+    this.#last[4] = x;
+    this.#last[5] = y;
   }
 
-  end(x, y) {
-    if (x !== undefined && this.#add(x, y)) {
-      return {
-        path: {
-          d: this.toSVGPath(),
-        },
-      };
+  #updatePath() {
+    // Wait for the third point to replace the initial straight segment.
+    const line = this.#line;
+    if (this.#points.length < 6 || this.#lastIndex === line.length) {
+      return;
     }
-    if (this.#points.length === 2) {
-      // We've only one point.
-      return {
-        path: {
-          d: this.toSVGPath(),
-        },
-      };
+    const buffer = [this.#lastSVGPath];
+    if (this.#lastIndex === 0) {
+      buffer.push(`M${svgPoint(line, 4)}`);
+      this.#lastIndex = 6;
     }
-    // The line is done: drop the transient tip added by `add`.
+    pushCurves(buffer, line, this.#lastIndex);
+    this.#lastSVGPath = buffer.join("");
+    this.#lastIndex = line.length;
+  }
+
+  #endLine() {
+    if (!this.#line) {
+      return;
+    }
+    if (this.#smoother) {
+      this.#addSmoothedPoints(this.#smoother.end());
+      this.#smoother = null;
+    }
+    if (this.#points.length < 6) {
+      this.#lastSVGPath += lineToSVGPath(this.#line);
+    } else {
+      // Repeat the last accepted point so the final curve reaches it.
+      const [, , x1, y1, x2, y2] = this.#last;
+      Outline.createBezierPoints(x1, y1, x2, y2, x2, y2, this.#line);
+      this.#updatePath();
+    }
+    this.#line = this.#points = null;
+  }
+
+  end(x, y, timeStamp) {
+    if (this.#line && x !== undefined) {
+      this.#addSample(x, y, timeStamp);
+    }
+    this.#endLine();
     return {
       path: {
         d: this.#lastSVGPath,
@@ -185,25 +254,17 @@ class InkDrawOutliner {
     };
   }
 
-  startNew(x, y, parentWidth, parentHeight, rotation) {
+  startNew(x, y, parentWidth, parentHeight, rotation, timeStamp) {
     this.#parentWidth = parentWidth;
     this.#parentHeight = parentHeight;
     this.#rotation = rotation;
 
-    [x, y] = this.#normalizePoint(x, y);
-
-    const line = (this.#line = [NaN, NaN, NaN, NaN, x, y]);
-    this.#points = [x, y];
-    this.#tip.set([x, y], 0);
     const last = this.#lines.at(-1);
     if (last) {
       last.line = new Float32Array(last.line);
       last.points = new Float32Array(last.points);
     }
-    this.#lines.push({ line, points: this.#points });
-    this.#last.set(line, 0);
-    this.#lastIndex = 0;
-    this.toSVGPath();
+    this.#startLine(x, y, timeStamp);
 
     return null;
   }
@@ -217,12 +278,10 @@ class InkDrawOutliner {
       return this.#outlines.setLastElement(element);
     }
     this.#lines.push(element);
-    this.#line = element.line;
-    this.#points = element.points;
-    this.#lastIndex = 0;
+    this.#lastSVGPath += lineToSVGPath(element.line);
     return {
       path: {
-        d: this.toSVGPath(),
+        d: this.#lastSVGPath,
       },
     };
   }
@@ -231,15 +290,12 @@ class InkDrawOutliner {
     if (!this.#lines) {
       return this.#outlines.removeLastElement();
     }
+    // The removed line can be the one being drawn.
+    this.#line = this.#points = this.#smoother = null;
     this.#lines.pop();
-    this.#lastSVGPath = "";
-    for (let i = 0, ii = this.#lines.length; i < ii; i++) {
-      const { line, points } = this.#lines[i];
-      this.#line = line;
-      this.#points = points;
-      this.#lastIndex = 0;
-      this.toSVGPath();
-    }
+    this.#lastSVGPath = this.#lines
+      .map(({ line }) => lineToSVGPath(line))
+      .join("");
 
     return {
       path: {
@@ -249,69 +305,33 @@ class InkDrawOutliner {
   }
 
   /**
-   * With at least three accepted points, the last Bézier segment ends halfway
-   * between the two latest points (see Outline.createBezierPoints). Input no
-   * more than two pixels from the latest accepted point is also omitted from
-   * this.#lastSVGPath. Hence the stored path can end before this.#tip. Append a
-   * straight segment to the tip for display only; the segment is recomputed on
-   * each input update and omitted when the line ends.
+   * Extend the stored path through pending smoothed points to the pointer.
+   * This preview polyline is rebuilt on each update and is not stored.
    * @returns {string} the SVG path to display while drawing.
    */
   #toSVGPathWithTip() {
-    const tipX = Outline.svgRound(this.#tip[0]);
-    const tipY = Outline.svgRound(this.#tip[1]);
-    if (this.#points.length === 2) {
-      // This line contains only its starting point, so create an explicit
-      // subpath from it to the tip.
-      const firstX = Outline.svgRound(this.#line[4]);
-      const firstY = Outline.svgRound(this.#line[5]);
-      return `${this.#lastSVGPath} M ${firstX} ${firstY} L ${tipX} ${tipY}`;
-    }
-    return `${this.#lastSVGPath} L ${tipX} ${tipY}`;
-  }
-
-  toSVGPath() {
-    const firstX = Outline.svgRound(this.#line[4]);
-    const firstY = Outline.svgRound(this.#line[5]);
-    if (this.#points.length === 2) {
-      this.#lastSVGPath = `${this.#lastSVGPath} M ${firstX} ${firstY} Z`;
-      return this.#lastSVGPath;
-    }
-
-    if (this.#points.length <= 6) {
-      // We've 2 or 3 points.
-      const i = this.#lastSVGPath.lastIndexOf("M");
-      this.#lastSVGPath = `${this.#lastSVGPath.slice(0, i)} M ${firstX} ${firstY}`;
-      this.#lastIndex = 6;
-    }
-
-    if (this.#points.length === 4) {
-      const secondX = Outline.svgRound(this.#line[10]);
-      const secondY = Outline.svgRound(this.#line[11]);
-      this.#lastSVGPath = `${this.#lastSVGPath} L ${secondX} ${secondY}`;
-      this.#lastIndex = 12;
-      return this.#lastSVGPath;
-    }
-
-    const buffer = [];
+    this.#updatePath();
+    const buffer = [this.#lastSVGPath];
     if (this.#lastIndex === 0) {
-      buffer.push(`M ${firstX} ${firstY}`);
-      this.#lastIndex = 6;
+      // Preview the first one or two points until a curve is stored.
+      buffer.push(`M${svgPoint(this.#line, 4)}`);
+      if (this.#points.length === 4) {
+        buffer.push(`L${svgPoint(this.#line, 10)}`);
+      }
     }
-
-    for (let i = this.#lastIndex, ii = this.#line.length; i < ii; i += 6) {
-      const [c1x, c1y, c2x, c2y, x, y] = this.#line
-        .slice(i, i + 6)
-        .map(Outline.svgRound);
-      buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`);
+    let points = this.#smoother?.pendingPoints;
+    if (!points?.length) {
+      points = this.#tip;
     }
-    this.#lastSVGPath += buffer.join(" ");
-    this.#lastIndex = this.#line.length;
-
-    return this.#lastSVGPath;
+    for (let i = 0, ii = points.length; i < ii; i += 2) {
+      buffer.push(`L${svgPoint(points, i)}`);
+    }
+    return buffer.join("");
   }
 
   getOutlines(parentWidth, parentHeight, scale, innerMargin) {
+    // pointercancel can end the session without calling end().
+    this.#endLine();
     const last = this.#lines.at(-1);
     last.line = new Float32Array(last.line);
     last.points = new Float32Array(last.points);
@@ -410,27 +430,7 @@ class InkDrawOutline extends Outline {
   }
 
   toSVGPath() {
-    const buffer = [];
-    for (const { line } of this.#lines) {
-      buffer.push(`M${Outline.svgRound(line[4])} ${Outline.svgRound(line[5])}`);
-      if (line.length === 6) {
-        buffer.push("Z");
-        continue;
-      }
-      if (line.length === 12 && isNaN(line[6])) {
-        buffer.push(
-          `L${Outline.svgRound(line[10])} ${Outline.svgRound(line[11])}`
-        );
-        continue;
-      }
-      for (let i = 6, ii = line.length; i < ii; i += 6) {
-        const [c1x, c1y, c2x, c2y, x, y] = line
-          .subarray(i, i + 6)
-          .map(Outline.svgRound);
-        buffer.push(`C${c1x} ${c1y} ${c2x} ${c2y} ${x} ${y}`);
-      }
-    }
-    return buffer.join("");
+    return this.#lines.map(({ line }) => lineToSVGPath(line)).join("");
   }
 
   serialize([pageX, pageY, pageWidth, pageHeight], isForCopying) {
@@ -586,13 +586,15 @@ class InkDrawOutline extends Outline {
           );
           continue;
         }
-        const line = new Float32Array(3 * (len - 2));
+        const line = new Float32Array(3 * len);
         lines.push(line);
         let [x1, y1, x2, y2] = point.subarray(0, 4);
         line.set([NaN, NaN, NaN, NaN, x1, y1], 0);
-        for (let i = 4; i < len; i += 2) {
-          const x = point[i];
-          const y = point[i + 1];
+        for (let i = 4; i <= len; i += 2) {
+          // Repeat the last point so the final curve reaches it.
+          const j = Math.min(i, len - 2);
+          const x = point[j];
+          const y = point[j + 1];
           line.set(
             Outline.createBezierPoints(x1, y1, x2, y2, x, y),
             (i - 2) * 3

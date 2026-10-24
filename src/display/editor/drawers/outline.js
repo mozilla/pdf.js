@@ -181,28 +181,38 @@ class Outline {
     return Math.round(x * 10000);
   }
 
-  static _normalizePoint(x, y, parentWidth, parentHeight, rotation) {
+  static _normalizePoint(x, y, parentWidth, parentHeight, rotation, dest = []) {
     switch (rotation) {
       case 90:
-        return [1 - y / parentWidth, x / parentHeight];
+        dest[0] = 1 - y / parentWidth;
+        dest[1] = x / parentHeight;
+        break;
       case 180:
-        return [1 - x / parentWidth, 1 - y / parentHeight];
+        dest[0] = 1 - x / parentWidth;
+        dest[1] = 1 - y / parentHeight;
+        break;
       case 270:
-        return [y / parentWidth, 1 - x / parentHeight];
+        dest[0] = y / parentWidth;
+        dest[1] = 1 - x / parentHeight;
+        break;
       default:
-        return [x / parentWidth, y / parentHeight];
+        dest[0] = x / parentWidth;
+        dest[1] = y / parentHeight;
+        break;
     }
+    return dest;
   }
 
-  static createBezierPoints(x1, y1, x2, y2, x3, y3) {
-    return [
+  static createBezierPoints(x1, y1, x2, y2, x3, y3, dest = []) {
+    dest.push(
       (x1 + 5 * x2) / 6,
       (y1 + 5 * y2) / 6,
       (5 * x2 + x3) / 6,
       (5 * y2 + y3) / 6,
       (x2 + x3) / 2,
-      (y2 + y3) / 2,
-    ];
+      (y2 + y3) / 2
+    );
+    return dest;
   }
 }
 
