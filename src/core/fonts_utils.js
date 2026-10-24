@@ -206,6 +206,24 @@ const getVerticalPresentationForm = getLookupTableFactory(t => {
   t[0xff5d] = 0xfe38; // FULLWIDTH RIGHT CURLY BRACKET
 });
 
+// Rotation fallbacks for characters without encoded vertical forms.
+// Exclude U+FFE3: its vertical stroke is on the right in UAX #50, Table 3.
+const VERTICAL_ROTATED_CHARS = new Set([
+  0x2010, // HYPHEN
+  0x2015, // HORIZONTAL BAR
+  0x2016, // DOUBLE VERTICAL LINE
+  0x3018, // LEFT WHITE TORTOISE SHELL BRACKET
+  0x3019, // RIGHT WHITE TORTOISE SHELL BRACKET
+  0x301c, // WAVE DASH
+  0x30a0, // KATAKANA-HIRAGANA DOUBLE HYPHEN
+  0x30fc, // KATAKANA-HIRAGANA PROLONGED SOUND MARK
+  0xff1d, // FULLWIDTH EQUALS SIGN
+  0xff5c, // FULLWIDTH VERTICAL LINE
+  0xff5e, // FULLWIDTH TILDE
+  0xff5f, // FULLWIDTH LEFT WHITE PARENTHESIS
+  0xff60, // FULLWIDTH RIGHT WHITE PARENTHESIS
+]);
+
 // To disable Type3 compilation, set the value to `-1`.
 const MAX_SIZE_TO_COMPILE = 1000;
 
@@ -384,4 +402,5 @@ export {
   recoverGlyphName,
   SEAC_ANALYSIS_ENABLED,
   type1FontGlyphMapping,
+  VERTICAL_ROTATED_CHARS,
 };

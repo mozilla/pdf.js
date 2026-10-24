@@ -17,6 +17,8 @@ import {
   AbortException,
   assert,
   BBOX_INIT,
+  DEFAULT_VERTICAL_ADVANCE,
+  DEFAULT_VERTICAL_ORIGIN_Y,
   DrawOPS,
   F32_BBOX_INIT,
   FONT_IDENTITY_MATRIX,
@@ -4179,7 +4181,9 @@ class PartialEvaluator {
 
       if (properties.vertical) {
         const dw2 = dict.getArray("DW2");
-        let vmetrics = isNumberArray(dw2, 2) ? dw2 : [880, -1000];
+        let vmetrics = isNumberArray(dw2, 2)
+          ? dw2
+          : [DEFAULT_VERTICAL_ORIGIN_Y, -DEFAULT_VERTICAL_ADVANCE];
         defaultVMetrics = [vmetrics[1], defaultWidth * 0.5, vmetrics[0]];
         vmetrics = dict.get("W2");
         if (Array.isArray(vmetrics)) {

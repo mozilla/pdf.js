@@ -22,6 +22,8 @@ import {
   convertRGBToRGBA,
 } from "../shared/image_utils.js";
 import {
+  DEFAULT_VERTICAL_ADVANCE,
+  DEFAULT_VERTICAL_ORIGIN_Y,
   F32_BBOX_INIT,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
@@ -2938,7 +2940,7 @@ class CanvasGraphics {
       const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
       const character = glyph.fontChar;
       const accent = glyph.accent;
-      let scaledX, scaledY;
+      let scaledX, scaledY, measure;
       let width = glyph.width;
       if (vertical) {
         const vmetric = glyph.vmetric;
@@ -2948,30 +2950,56 @@ class CanvasGraphics {
         width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
+        if (glyph.isRotated) {
+          // Anchor at 880 - 1000 / 2 = 380 glyph units above the horizontal
+          // baseline. Use ink bounds to center the glyph across the column.
+          measure = ctx.measureText(character);
+          const glyphScale = widthAdvanceScale / fontSizeScale;
+          const halfWidth = (glyph.width / 2) * glyphScale;
+          const centerX = scaledX + halfWidth;
+          // Convert to the 90-degree clockwise frame: (x, y) -> (y, -x).
+          scaledX =
+            scaledY -
+            (DEFAULT_VERTICAL_ORIGIN_Y - DEFAULT_VERTICAL_ADVANCE / 2) *
+              glyphScale -
+            halfWidth;
+          scaledY =
+            (measure.actualBoundingBoxAscent -
+              measure.actualBoundingBoxDescent) /
+              2 -
+            centerX;
+
+          restoreNeeded = true;
+          ctx.save();
+          ctx.rotate(Math.PI / 2);
+        }
       } else {
         scaledX = x / fontSizeScale;
         scaledY = 0;
       }
 
-      let measure;
-
-      if (font.remeasure && width > 0) {
-        measure = ctx.measureText(character);
+      // Fit rotated glyphs using their horizontal width; the vertical advance
+      // only controls spacing to the next glyph.
+      const glyphWidth = glyph.isRotated ? glyph.width : width;
+      if ((font.remeasure || glyph.isRotated) && glyphWidth > 0) {
+        measure ??= ctx.measureText(character);
 
         // Some standard fonts may not have the exact width: rescale per
         // character if measured width is greater than expected glyph width
         // and subpixel-aa is enabled, otherwise just center the glyph.
         const measuredWidth =
           ((measure.width * 1000) / fontSize) * fontSizeScale;
-        if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
-          const characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
+        if (glyphWidth < measuredWidth && this.isFontSubpixelAAEnabled) {
+          const characterScaleX = glyphWidth / measuredWidth;
+          if (!restoreNeeded) {
+            restoreNeeded = true;
+            ctx.save();
+          }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
-        } else if (width !== measuredWidth) {
+        } else if (glyphWidth !== measuredWidth) {
           scaledX +=
-            (((width - measuredWidth) / 2000) * fontSize) / fontSizeScale;
+            (((glyphWidth - measuredWidth) / 2000) * fontSize) / fontSizeScale;
         }
       }
 
