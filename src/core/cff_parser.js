@@ -45,13 +45,13 @@ const MAX_STACK_SIZE = 48;
 // CFF FDSelect uses Card8 indices, so only 256 font DICTs are addressable.
 const MAX_FD_ARRAY_COUNT = 256;
 
-function removeCharStringByte(cursor, data, pos) {
+function removeCharStringBytes(cursor, data, start, end) {
   const { readStart } = cursor;
-  if (pos > readStart) {
-    data.copyWithin(cursor.writePos, readStart, pos);
-    cursor.writePos += pos - readStart;
+  if (start > readStart) {
+    data.copyWithin(cursor.writePos, readStart, start);
+    cursor.writePos += start - readStart;
   }
-  cursor.readStart = pos + 1;
+  cursor.readStart = end;
 }
 
 // A charstring with only an optional width and endchar has no outline.
@@ -613,11 +613,14 @@ class CFFParser {
   #parseCharString(state, data, localSubrIndex, globalSubrIndex, cursor) {
     const view = new DataView(data.buffer, data.byteOffset, data.bytesLength);
     let stackSize = state.stackSize;
-    const stack = state.stack;
+    const { stack, argStarts } = state;
 
     const length = data.length;
 
     for (let j = 0; j < length;) {
+      // Track operand byte offsets, including the following operator.
+      // A negative first offset marks operands unsafe to remove.
+      argStarts[stackSize] = j;
       const value = data[j++];
       if (
         ++state.tokens > MAX_CHARSTRING_TOKENS ||
@@ -676,7 +679,7 @@ class CFFParser {
         state.hints += stackSize >> 1;
         if (state.hints === 0) {
           // Not a valid value (see bug 1529502): just remove it.
-          removeCharStringByte(cursor, data, j - 1);
+          removeCharStringBytes(cursor, data, j - 1, j);
           continue;
         }
         // skipping right amount of hints flag data
@@ -719,6 +722,7 @@ class CFFParser {
         }
         state.callDepth--;
         stackSize = state.stackSize;
+        argStarts[0] = -1;
         continue;
       } else if (value === 11) {
         state.stackSize = stackSize;
@@ -731,7 +735,7 @@ class CFFParser {
         validationCommand = CharstringValidationData[14];
       } else if (value === 9) {
         // Not a valid value.
-        removeCharStringByte(cursor, data, j - 1);
+        removeCharStringBytes(cursor, data, j - 1, j);
         continue;
       } else {
         validationCommand = CharstringValidationData[value];
@@ -769,21 +773,30 @@ class CFFParser {
           }
           return false;
         }
-        if (state.firstStackClearing && validationCommand.stackClearing) {
-          state.firstStackClearing = false;
-          // the optional character width can be found before the first
-          // stack-clearing command arguments
-          stackSize -= validationCommand.min;
-          if (stackSize >= 2 && validationCommand.stem) {
-            // there are even amount of arguments for stem commands
-            stackSize %= 2;
-          } else if (stackSize > 1) {
-            warn("Found too many parameters for stack-clearing command");
+        if (validationCommand.stackClearing) {
+          // Stem operands come in pairs.
+          let extraArgs = validationCommand.stem
+            ? stackSize % 2
+            : stackSize - validationCommand.min;
+          if (state.firstStackClearing && extraArgs > 0) {
+            // Use the last extra operand as a width delta from nominalWidthX.
+            state.width = stack[--extraArgs];
           }
-          if (stackSize > 0) {
-            // Width can be any number since its the difference
-            // from nominalWidthX.
-            state.width = stack[stackSize - 1];
+          state.firstStackClearing = false;
+          if (
+            extraArgs > 0 &&
+            state.callDepth === 0 &&
+            argStarts[0] >= cursor.readStart
+          ) {
+            // OTS rejects the repeated rmoveto widths in issue 10175;
+            // FreeType ignores them. Preserve shared subroutines, where an
+            // operand may be another glyph's width.
+            removeCharStringBytes(
+              cursor,
+              data,
+              argStarts[0],
+              argStarts[extraArgs]
+            );
           }
         }
         if ("stackDelta" in validationCommand) {
@@ -791,6 +804,7 @@ class CFFParser {
             validationCommand.stackFn(stack, stackSize);
           }
           stackSize += validationCommand.stackDelta;
+          argStarts[0] = -1;
         } else if (
           validationCommand.stackClearing ||
           validationCommand.resetStack
@@ -821,6 +835,7 @@ class CFFParser {
         tokens: 0,
         stackSize: 0,
         stack: [],
+        argStarts: [],
         hints: 0,
         firstStackClearing: true,
         seac: null,
