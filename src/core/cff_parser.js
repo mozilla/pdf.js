@@ -18,6 +18,7 @@ import {
   FormatError,
   info,
   isArrayEqual,
+  makeArr,
   shadow,
   stringToBytes,
   Util,
@@ -275,6 +276,12 @@ const CharstringValidationData12 = [
 ];
 
 class CFFParser {
+  #privateDicts = new Map();
+
+  #privateDataLength = 0;
+
+  #subrsIndexes = new Map();
+
   constructor(file, properties, seacAnalysisEnabled) {
     this.bytes = file.getBytes();
     this.properties = properties;
@@ -870,6 +877,13 @@ class CFFParser {
     parentDict.privateDict = privateDict;
   }
 
+  #addPrivateDataLength(length) {
+    this.#privateDataLength += length;
+    if (this.#privateDataLength > this.bytes.length) {
+      throw new FormatError("CFF Private DICT data exceeds the font length");
+    }
+  }
+
   parsePrivateDict(parentDict) {
     // no private dict, do nothing
     if (!parentDict.hasName("Private")) {
@@ -896,8 +910,16 @@ class CFFParser {
       throw new FormatError("CFF Private DICT extends past end of font");
     }
 
+    const cacheKey = `${offset}_${size}`;
+    const cachedDict = this.#privateDicts.get(cacheKey);
+    if (cachedDict) {
+      parentDict.privateDict = cachedDict;
+      return;
+    }
+
     const privateDictEnd = offset + size;
     const dictData = this.bytes.subarray(offset, privateDictEnd);
+    this.#addPrivateDataLength(dictData.length);
     const dict = this.parseDict(dictData);
     const privateDict = this.createDict(
       CFFPrivateDict,
@@ -905,6 +927,7 @@ class CFFParser {
       parentDict.strings
     );
     parentDict.privateDict = privateDict;
+    this.#privateDicts.set(cacheKey, privateDict);
 
     const blueScale = privateDict.getByName("BlueScale");
     const blueShift = privateDict.getByName("BlueShift");
@@ -989,10 +1012,19 @@ class CFFParser {
     // Validate the offset.
     if (subrsOffset === 0 || relativeOffset >= this.bytes.length) {
       this.emptyPrivateDictionary(parentDict);
+      this.#privateDicts.set(cacheKey, parentDict.privateDict);
       return;
     }
-    const subrsIndex = this.parseIndex(relativeOffset);
-    privateDict.subrsIndex = subrsIndex.obj;
+    privateDict.subrsIndex = this.#subrsIndexes.getOrInsertComputed(
+      relativeOffset,
+      () => {
+        const { obj, endPos } = this.parseIndex(relativeOffset);
+        this.#addPrivateDataLength(
+          Math.max(endPos - relativeOffset, obj.count)
+        );
+        return obj;
+      }
+    );
   }
 
   parseCharsets(pos, length, strings, cid) {
@@ -1829,11 +1861,18 @@ class CFFCompiler {
   }
 
   compilePrivateDicts(dicts, trackers, output) {
+    const locations = new Map();
+    const subrs = new Map();
     for (let i = 0, ii = dicts.length; i < ii; ++i) {
       const fontDict = dicts[i];
       const privateDict = fontDict.privateDict;
       if (!privateDict || !fontDict.hasName("Private")) {
         throw new FormatError("There must be a private dictionary.");
+      }
+      let location = locations.get(privateDict);
+      if (location) {
+        trackers[i].setEntryLocation("Private", location, output);
+        continue;
       }
       const privateDictTracker = new CFFOffsetTracker();
       const privateDictData = this.compileDict(privateDict, privateDictTracker);
@@ -1847,22 +1886,28 @@ class CFFCompiler {
         outputLength = 0;
       }
 
-      trackers[i].setEntryLocation(
-        "Private",
-        [privateDictData.length, outputLength],
-        output
-      );
+      location = [privateDictData.length, outputLength];
+      locations.set(privateDict, location);
+      trackers[i].setEntryLocation("Private", location, output);
       output.setArray(privateDictData);
 
       if (privateDict.subrsIndex && privateDict.hasName("Subrs")) {
-        const subrs = this.compileIndex(privateDict.subrsIndex);
+        subrs
+          .getOrInsertComputed(privateDict.subrsIndex, makeArr)
+          .push([privateDictTracker, outputLength]);
+      }
+    }
+    // Write Subrs last to keep relative offsets positive.
+    for (const [subrsIndex, users] of subrs) {
+      const subrsStart = output.length;
+      for (const [privateDictTracker, privateDictStart] of users) {
         privateDictTracker.setEntryLocation(
           "Subrs",
-          [privateDictData.length],
+          [subrsStart - privateDictStart],
           output
         );
-        output.setArray(subrs);
       }
+      output.setArray(this.compileIndex(subrsIndex));
     }
   }
 
