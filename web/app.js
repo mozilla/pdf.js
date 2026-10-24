@@ -52,7 +52,6 @@ import {
   isDataScheme,
   isPdfFile,
   MathClamp,
-  OutputScale,
   PDFWorker,
   ResponseException,
   shadow,
@@ -2532,20 +2531,6 @@ const PDFViewerApplication = {
       onPanning: this.touchPanCallback.bind(this),
       signal,
     });
-
-    function addWindowResolutionChange(evt = null) {
-      if (evt) {
-        pdfViewer.refresh();
-      }
-      const mediaQueryList = window.matchMedia(
-        `(resolution: ${OutputScale.pixelRatio}dppx)`
-      );
-      mediaQueryList.addEventListener("change", addWindowResolutionChange, {
-        once: true,
-        signal,
-      });
-    }
-    addWindowResolutionChange();
 
     window.addEventListener("wheel", onWheel.bind(this), {
       passive: false,
