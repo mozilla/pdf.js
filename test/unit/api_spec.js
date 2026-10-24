@@ -453,6 +453,22 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("creates pdf doc from PDF file truncated before its trailer", async function () {
+      const loadingTask = getDocument({
+        data: stringToBytes(
+          "%PDF-1.7\n" +
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] >>\n" +
+            "endobj\n4 0 obj\n<< /Length 100 >>\nstream\n0 0 m"
+        ),
+      });
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(1);
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from non-existent URL", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("non-existent.pdf")

@@ -21,7 +21,15 @@ import {
   InvalidPDFException,
   warn,
 } from "../shared/util.js";
-import { CIRCULAR_REF, Cmd, Dict, isCmd, Ref, RefSet } from "./primitives.js";
+import {
+  CIRCULAR_REF,
+  Cmd,
+  Dict,
+  isCmd,
+  isDict,
+  Ref,
+  RefSet,
+} from "./primitives.js";
 import { Lexer, Parser } from "./parser.js";
 import {
   MissingDataException,
@@ -701,8 +709,10 @@ class XRef {
     }
 
     // When no trailer dictionary candidate exists, try picking the first
-    // dictionary that contains a /Root entry (fixes issue18986.pdf).
+    // dictionary that contains a /Root entry (fixes issue18986.pdf), or else
+    // the first /Catalog dictionary (e.g. for files truncated before the end).
     if (!trailerDicts.length) {
+      let catalogRef = null;
       // In case, this.#entries is a sparse array we don't want to
       // iterate over empty entries so we use the `in` operator instead of
       // using for..of on entries() or a for with the array length.
@@ -725,6 +735,14 @@ class XRef {
         if (obj instanceof Dict && obj.has("Root")) {
           return obj;
         }
+        if (!catalogRef && isDict(obj, "Catalog")) {
+          catalogRef = ref;
+        }
+      }
+      if (catalogRef) {
+        const dict = new Dict(this);
+        dict.set("Root", catalogRef);
+        return dict;
       }
     }
 
