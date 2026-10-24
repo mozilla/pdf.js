@@ -1,0 +1,56 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 300 340] /Resources << /Font << /F1 5 0 R >> /Pattern << /P1 7 0 R /P2 8 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 329 >>
+stream
+q /Pattern cs /P2 scn 0 60 300 280 re f Q
+q /Pattern cs /P1 scn 0 0 300 60 re f Q
+q /Pattern CS /P1 SCN 3 w 1 Tr BT /F1 80 Tf 20 75 Td (WWW) Tj ET Q
+BT /Pattern cs /P1 scn /F1 80 Tf 20 140 Td (WWW) Tj ET
+BT /Pattern cs /P1 scn /F1 80 Tf 20 205 Td (WiWi) Tj ET
+q /Pattern CS /P1 SCN 3 w 1 Tr BT /F1 80 Tf 20 270 Td (WiWi) Tj ET Q
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /PatternTextTest /FirstChar 87 /LastChar 105 /Widths [400 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 500] /Encoding /WinAnsiEncoding /FontDescriptor 6 0 R >>
+endobj
+6 0 obj
+<< /Type /FontDescriptor /FontName /PatternTextTest /Flags 32 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 900 /Descent -200 /CapHeight 700 /StemV 80 >>
+endobj
+7 0 obj
+<< /Type /Pattern /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 8 10] /XStep 8 /YStep 10 /Resources << >> /Length 45 >>
+stream
+1 0 0 rg 0 0 4 10 re f 0 0 1 rg 4 0 4 10 re f
+endstream
+endobj
+8 0 obj
+<< /Type /Pattern /PatternType 1 /PaintType 1 /TilingType 1 /BBox [0 0 8 10] /XStep 8 /YStep 10 /Resources << >> /Length 53 >>
+stream
+1 0.8 0.8 rg 0 0 4 10 re f 0.8 0.8 1 rg 4 0 4 10 re f
+endstream
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000121 00000 n 
+0000000282 00000 n 
+0000000661 00000 n 
+0000000866 00000 n 
+0000001040 00000 n 
+0000001245 00000 n 
+trailer
+<< /Size 9 /Root 1 0 R >>
+startxref
+1458
+%%EOF
