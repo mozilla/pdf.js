@@ -49,8 +49,8 @@ class InkDrawingOptions extends DrawingOptions {
     super.updateSVGProperty(name, value);
   }
 
-  clone() {
-    const clone = new InkDrawingOptions(this._viewParameters);
+  clone(viewParameters = this._viewParameters) {
+    const clone = new InkDrawingOptions(viewParameters);
     clone.updateAll(this);
     return clone;
   }
@@ -81,8 +81,8 @@ class InkEditor extends DrawingEditor {
   }
 
   /** @inheritdoc */
-  static getDefaultDrawingOptions(options) {
-    const clone = this._defaultDrawingOptions.clone();
+  static getDefaultDrawingOptions(options, uiManager) {
+    const clone = this._defaultDrawingOptions.clone(uiManager.viewParameters);
     clone.updateProperties(options);
     return clone;
   }
@@ -260,20 +260,21 @@ class InkEditor extends DrawingEditor {
       return;
     }
     super.onScaleChangingWhenDrawing();
-    this._defaultDrawingOptions.updateSVGProperty("stroke-width");
-    parent.drawLayer.updateProperties(
-      this._currentDrawId,
-      this._defaultDrawingOptions.toSVGProperties()
-    );
+    this._updateDrawingOptions({
+      "stroke-width": this._defaultDrawingOptions["stroke-width"],
+    });
   }
 
   /** @inheritdoc */
   createDrawingOptions({ color, thickness, opacity }) {
-    this._drawingOptions = InkEditor.getDefaultDrawingOptions({
-      stroke: Util.makeHexColor(...color),
-      "stroke-width": thickness,
-      "stroke-opacity": opacity,
-    });
+    this._drawingOptions = InkEditor.getDefaultDrawingOptions(
+      {
+        stroke: Util.makeHexColor(...color),
+        "stroke-width": thickness,
+        "stroke-opacity": opacity,
+      },
+      this._uiManager
+    );
   }
 
   /** @inheritdoc */

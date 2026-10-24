@@ -220,9 +220,10 @@ class DrawingEditor extends AnnotationEditor {
   /**
    * @abstract
    * @param {object} _options
+   * @param {AnnotationEditorUIManager} _uiManager
    * @returns {DrawingOptions} the default options to use for a new editor.
    */
-  static getDefaultDrawingOptions(_options) {
+  static getDefaultDrawingOptions(_options, _uiManager) {
     unreachable("Not implemented");
   }
 
@@ -276,11 +277,17 @@ class DrawingEditor extends AnnotationEditor {
     }
     if (this._currentParent) {
       DrawingEditor.#currentDraw.updateProperty(propertyName, value);
-      this._currentParent.drawLayer.updateProperties(
-        this._currentDrawId,
-        this._defaultDrawingOptions.toSVGProperties()
-      );
+      this._updateDrawingOptions({ [propertyName]: value });
     }
+  }
+
+  static _updateDrawingOptions(properties) {
+    const options = DrawingEditor.#currentDrawingOptions;
+    options.updateProperties(properties);
+    this._currentParent.drawLayer.updateProperties(
+      this._currentDrawId,
+      options.toSVGProperties()
+    );
   }
 
   /** @inheritdoc */
@@ -1025,7 +1032,10 @@ class DrawingEditor extends AnnotationEditor {
       parent,
       isLTR,
     });
-    DrawingEditor.#currentDrawingOptions = this.getDefaultDrawingOptions();
+    DrawingEditor.#currentDrawingOptions = this.getDefaultDrawingOptions(
+      null,
+      uiManager
+    );
     this._currentParent = parent;
 
     const { id, clipPathId } = parent.drawLayer.draw(
