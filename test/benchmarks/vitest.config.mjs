@@ -74,7 +74,7 @@ function pdfjsPreprocessorPlugin() {
             "babel-plugin-polyfill-corejs3",
             {
               method: "usage-global",
-              version: "3.50.0",
+              version: "3.51.0",
               exclude: ["web.structured-clone"],
               shippedProposals: true,
             },
