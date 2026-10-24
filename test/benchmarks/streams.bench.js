@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import {
   captureFilterInputs,
   capturePNGPredictorInputs,
   createChunkedStream,
 } from "./stream_utils.js";
 import { Ascii85Stream } from "../../src/core/ascii_85_stream.js";
+import { benchmark } from "./bench_utils.js";
+import { describe } from "vitest";
 import { FlateStream } from "../../src/core/flate_stream.js";
 import { isName } from "../../src/core/primitives.js";
 import { LZWStream } from "../../src/core/lzw_stream.js";
@@ -93,14 +94,14 @@ const RUN_LENGTH_INPUTS = await captureFilterInputs(
 
 describe("streams", () => {
   for (const { kind, filename, inputs } of FLATE_STREAMS) {
-    bench(`FlateStream: ${kind} (${filename})`, () =>
+    benchmark(`FlateStream: ${kind} (${filename})`, () =>
       inputs.map(({ bytes, maybeLength }) =>
         new FlateStream(new Stream(bytes), maybeLength).getBytes()
       )
     );
   }
 
-  bench(
+  benchmark(
     "FlateStream: content streams from a ChunkedStream (tracemonkey.pdf)",
     () =>
       CHUNKED_CONTENT_STREAMS.map(({ stream, maybeLength }) =>
@@ -112,20 +113,20 @@ describe("streams", () => {
   );
 
   for (const { kind, filename, inputs } of PNG_PREDICTOR_STREAMS) {
-    bench(`PredictorStream: PNG ${kind} (${filename})`, () =>
+    benchmark(`PredictorStream: PNG ${kind} (${filename})`, () =>
       inputs.map(({ bytes, maybeLength, params }) =>
         new PredictorStream(new Stream(bytes), maybeLength, params).getBytes()
       )
     );
   }
 
-  bench("Ascii85Stream (bug1337429.pdf)", () =>
+  benchmark("Ascii85Stream (bug1337429.pdf)", () =>
     ASCII85_INPUTS.map(({ bytes, maybeLength }) =>
       new Ascii85Stream(new Stream(bytes), maybeLength).getBytes()
     )
   );
 
-  bench("LZWStream (bug864847.pdf)", () =>
+  benchmark("LZWStream (bug864847.pdf)", () =>
     LZW_INPUTS.map(({ bytes, maybeLength }) =>
       new LZWStream(
         new Stream(bytes),
@@ -135,7 +136,7 @@ describe("streams", () => {
     )
   );
 
-  bench("RunLengthStream (issue19326.pdf)", () =>
+  benchmark("RunLengthStream (issue19326.pdf)", () =>
     RUN_LENGTH_INPUTS.map(({ bytes, maybeLength }) =>
       new RunLengthStream(new Stream(bytes), maybeLength).getBytes()
     )

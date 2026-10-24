@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import {
   captureBuiltInCMaps,
   captureCFFPrograms,
@@ -23,9 +22,11 @@ import {
   captureToUnicodeStreams,
   captureType3GlyphMasks,
 } from "./font_utils.js";
+import { benchmark } from "./bench_utils.js";
 import { CFFParser } from "../../src/core/cff_parser.js";
 import { CMapFactory } from "../../src/core/cmap.js";
 import { compileType3Glyph } from "../../src/core/fonts_utils.js";
+import { describe } from "vitest";
 import { Font } from "../../src/core/fonts.js";
 import { getUnicodeRangeFor } from "../../src/core/unicode.js";
 import { Name } from "../../src/core/primitives.js";
@@ -85,16 +86,16 @@ const TYPE3_GLYPH_MASKS = await captureType3GlyphMasks("issue918.pdf");
 
 describe("fonts", () => {
   for (const { type, filename, fonts } of FONTS) {
-    bench(`Font: ${type} (${filename})`, () =>
+    benchmark(`Font: ${type} (${filename})`, () =>
       fonts.map(font => new Font(...font.args()))
     );
   }
 
-  bench("CFFParser.parse", () =>
+  benchmark("CFFParser.parse", () =>
     CFF_PROGRAMS.map(cff => new CFFParser(...cff.args()).parse())
   );
 
-  bench("OpenTypeFileBuilder.toArray", () =>
+  benchmark("OpenTypeFileBuilder.toArray", () =>
     OPENTYPE_TABLES.map(({ sfnt, tables }) => {
       const builder = new OpenTypeFileBuilder(sfnt);
       for (const [tag, data] of tables) {
@@ -104,7 +105,7 @@ describe("fonts", () => {
     })
   );
 
-  bench("getUnicodeRangeFor (bug1473809.pdf)", () => {
+  benchmark("getUnicodeRangeFor (bug1473809.pdf)", () => {
     let count = 0;
     for (const charCodes of FONT_CHAR_CODES) {
       let position = -1;
@@ -116,7 +117,7 @@ describe("fonts", () => {
     return count;
   });
 
-  bench("readToUnicode (issue6127.pdf)", async () =>
+  benchmark("readToUnicode (issue6127.pdf)", async () =>
     Promise.all(
       TO_UNICODE_STREAMS.map(({ evaluator, bytes }) =>
         evaluator.readToUnicode(new Stream(bytes))
@@ -124,7 +125,7 @@ describe("fonts", () => {
     )
   );
 
-  bench("CMapFactory.create: built-in CMaps", async () =>
+  benchmark("CMapFactory.create: built-in CMaps", async () =>
     Promise.all(
       BUILT_IN_CMAPS.flatMap(({ names, fetchBuiltInCMap }) =>
         names.map(name =>
@@ -138,7 +139,7 @@ describe("fonts", () => {
     )
   );
 
-  bench("compileType3Glyph (issue918.pdf)", () =>
+  benchmark("compileType3Glyph (issue918.pdf)", () =>
     TYPE3_GLYPH_MASKS.map(mask => compileType3Glyph(mask))
   );
 });

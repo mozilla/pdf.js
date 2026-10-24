@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import { Autolinker } from "../../web/autolinker.js";
+import { benchmark } from "./bench_utils.js";
 import { createPageView } from "./autolinker_utils.js";
+import { describe } from "vitest";
 
 const PAGES = [
   {
@@ -35,7 +36,7 @@ const PAGES = [
 
 describe("autolinker", () => {
   for (const { kind, pageView } of PAGES) {
-    bench(`Autolinker.processLinks: ${kind}`, () =>
+    benchmark(`Autolinker.processLinks: ${kind}`, () =>
       Autolinker.processLinks(pageView)
     );
   }

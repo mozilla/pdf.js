@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
+import { benchmark, readFile } from "./bench_utils.js";
 import { Lexer, Parser } from "../../src/core/parser.js";
 import { Stream, StringStream } from "../../src/core/stream.js";
 import { calculateMD5 } from "../../src/core/calculate_md5.js";
 import { calculateSHA256 } from "../../src/core/calculate_sha256.js";
 import { deflateSync } from "zlib";
+import { describe } from "vitest";
 import { EOF } from "../../src/core/primitives.js";
 import { FlateStream } from "../../src/core/flate_stream.js";
 import { JpegImage } from "../../src/core/jpg.js";
-import { readFile } from "./bench_utils.js";
 
 // A synthetic, but representative, page content stream.
 function buildContentStream(numBlocks) {
@@ -52,7 +52,7 @@ const DEFLATED_DATA = new Uint8Array(deflateSync(RAW_DATA));
 const JPEG_DATA = readFile("examples/image_decoders/fish.jpg");
 
 describe("core", () => {
-  bench("Lexer: tokenize content stream", () => {
+  benchmark("Lexer: tokenize content stream", () => {
     const lexer = new Lexer(new StringStream(CONTENT_STREAM));
     let count = 0;
     while (lexer.getObj() !== EOF) {
@@ -61,7 +61,7 @@ describe("core", () => {
     return count;
   });
 
-  bench("Parser: parse content stream objects", () => {
+  benchmark("Parser: parse content stream objects", () => {
     const parser = new Parser({
       lexer: new Lexer(new StringStream(CONTENT_STREAM)),
       xref: null,
@@ -73,12 +73,12 @@ describe("core", () => {
     return count;
   });
 
-  bench("FlateStream: inflate", () => {
+  benchmark("FlateStream: inflate", () => {
     const stream = new FlateStream(new Stream(DEFLATED_DATA));
     return stream.getBytes().length;
   });
 
-  bench("JpegImage: decode baseline JPEG", () => {
+  benchmark("JpegImage: decode baseline JPEG", () => {
     const jpegImage = new JpegImage();
     jpegImage.parse(JPEG_DATA);
     return jpegImage.getData({
@@ -88,7 +88,9 @@ describe("core", () => {
     });
   });
 
-  bench("calculateMD5", () => calculateMD5(RAW_DATA, 0, RAW_DATA.length));
+  benchmark("calculateMD5", () => calculateMD5(RAW_DATA, 0, RAW_DATA.length));
 
-  bench("calculateSHA256", () => calculateSHA256(RAW_DATA, 0, RAW_DATA.length));
+  benchmark("calculateSHA256", () =>
+    calculateSHA256(RAW_DATA, 0, RAW_DATA.length)
+  );
 });

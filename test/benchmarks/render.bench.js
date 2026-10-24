@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
+import { benchmark } from "./bench_utils.js";
+import { describe } from "vitest";
 import { openPage } from "./render_utils.js";
 
 const TEXT_PAGE = { kind: "text", filename: "tracemonkey.pdf" };
@@ -29,7 +30,7 @@ for (const entry of PAGES) {
 
 describe("render", () => {
   for (const { kind, filename, page, viewport, canvasFactory } of PAGES) {
-    bench(`PDFPageProxy.render: ${kind} (${filename})`, async () => {
+    benchmark(`PDFPageProxy.render: ${kind} (${filename})`, async () => {
       const canvasAndContext = canvasFactory.create(
         viewport.width,
         viewport.height
@@ -39,7 +40,7 @@ describe("render", () => {
     });
   }
 
-  bench(
+  benchmark(
     "PDFPageProxy.render: text, recording the operations (tracemonkey.pdf)",
     async () => {
       const { page, viewport, canvasFactory } = TEXT_PAGE;

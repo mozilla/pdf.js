@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
+import { benchmark, readTestPdf } from "./bench_utils.js";
 import { captureContentStreams } from "./capture_utils.js";
+import { describe } from "vitest";
 import { EOF } from "../../src/core/primitives.js";
 import { EvaluatorPreprocessor } from "../../src/core/evaluator.js";
 import { Lexer } from "../../src/core/parser.js";
-import { readTestPdf } from "./bench_utils.js";
 import { Stream } from "../../src/core/stream.js";
 import { XRef } from "../../src/core/xref.js";
 
@@ -39,7 +39,7 @@ describe("parser", () => {
       // `Parser.makeInlineImage`), which the `Lexer` alone can't tokenize.
       continue;
     }
-    bench(`Lexer.getObj: ${kind} (${filename})`, () => {
+    benchmark(`Lexer.getObj: ${kind} (${filename})`, () => {
       let count = 0;
       for (const bytes of streams) {
         const lexer = new Lexer(new Stream(bytes), EvaluatorPreprocessor.opMap);
@@ -52,7 +52,7 @@ describe("parser", () => {
   }
 
   for (const { kind, filename, streams } of CONTENT_STREAMS) {
-    bench(`EvaluatorPreprocessor.read: ${kind} (${filename})`, () => {
+    benchmark(`EvaluatorPreprocessor.read: ${kind} (${filename})`, () => {
       let count = 0;
       for (const bytes of streams) {
         const preprocessor = new EvaluatorPreprocessor(new Stream(bytes), null);
@@ -66,7 +66,7 @@ describe("parser", () => {
     });
   }
 
-  bench("XRef.indexObjects (bug1795263.pdf)", () =>
+  benchmark("XRef.indexObjects (bug1795263.pdf)", () =>
     new XRef(new Stream(BROKEN_XREF_PDF), null).indexObjects()
   );
 });
