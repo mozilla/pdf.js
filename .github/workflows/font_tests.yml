@@ -65,10 +65,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Use Python 3.14
+      - name: Use Python 3.15
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: '3.14'
+          python-version: '3.15'
           cache: 'pip'
           cache-dependency-path: '.github/font_tests_requirements.txt'
 
