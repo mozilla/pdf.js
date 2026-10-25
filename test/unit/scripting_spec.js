@@ -117,7 +117,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeTrue();
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        siblings: null,
         value: expected,
         formattedValue: null,
       });
@@ -596,6 +595,52 @@ describe("Scripting", function () {
       });
     });
 
+    it("should expose an event with Object.prototype methods", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Focus",
+        value: "",
+      });
+
+      const value = await myeval(`({
+        constructorIsObject: event.constructor === Object,
+        hasValue: event.hasOwnProperty("value"),
+        isObject: event instanceof Object,
+        methodsAreEnumerable:
+          event.propertyIsEnumerable("hasOwnProperty") ||
+          event.propertyIsEnumerable("toString") ||
+          event.propertyIsEnumerable("valueOf"),
+        objectToString: Object.prototype.toString.call(event),
+        prototypeIsObjectPrototype:
+          Object.getPrototypeOf(Object.getPrototypeOf(event)) ===
+          Object.prototype,
+        sourceIsNative: Function.prototype.toString
+          .call(event.toString)
+          .includes("[native code]"),
+        toString: event.toString(),
+        valueOfReturnsSelf: event.valueOf() === event,
+      })`);
+      expect(value).toEqual({
+        constructorIsObject: true,
+        hasValue: true,
+        isObject: true,
+        methodsAreEnumerable: false,
+        objectToString: "[object Event]",
+        prototypeIsObjectPrototype: true,
+        sourceIsNative: true,
+        toString: "[object Event]",
+        valueOfReturnsSelf: true,
+      });
+    });
+
     it("should support custom valueOf and Number prototype methods", async () => {
       sandbox.createSandbox({
         appInfo: { language: "en-US", platform: "Linux x86_64" },
@@ -610,6 +655,158 @@ describe("Scripting", function () {
         return [new Num(5) + 1, (7).formatMoney()];
       })()`);
       expect(value).toEqual([6, "$7"]);
+    });
+
+    it("should let the scripting objects inherit from Object.prototype", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Focus",
+        value: "",
+      });
+
+      const value = await myeval(`(() => {
+        Object.prototype.itself = function () { return this; };
+        const objects = [
+          app,
+          app.fs,
+          app.thermometer,
+          color,
+          console,
+          util,
+          getField("field"),
+          getPrintParams(),
+          event,
+        ];
+        return objects.map(
+          o =>
+            o instanceof Object &&
+            o.itself() === o &&
+            o.constructor === Object &&
+            Object.getPrototypeOf(Object.getPrototypeOf(o)) === Object.prototype
+        );
+      })()`);
+      expect(value).toEqual(Array(9).fill(true));
+    });
+
+    it("should show the API functions as native ones", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const { toString } = Function.prototype;
+        const nativeSource = toString.call(Math.max);
+        return {
+          source: [
+            getField("field").setFocus,
+            Object.getOwnPropertyDescriptor(Object.getPrototypeOf(app), "language")
+              .get,
+            toString,
+          ].map(
+            fn => toString.call(fn) === nativeSource.replace("max", fn.name)
+          ),
+          toStringHasPrototype: Object.hasOwn(toString, "prototype"),
+        };
+      })()`);
+      expect(value).toEqual({
+        source: [true, true, true],
+        toStringHasPrototype: false,
+      });
+    });
+
+    it("should keep the implementation names out of the global scope", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`[
+        "addPublicFunctions",
+        "AForm",
+        "App",
+        "AppInternals",
+        "callExternalFunction",
+        "Color",
+        "ColorConverters",
+        "Console",
+        "createEvent",
+        "DOC_EXTERNAL",
+        "Doc",
+        "DocInternals",
+        "EventDispatcher",
+        "exposeObject",
+        "Field",
+        "FieldInternals",
+        "FullScreen",
+        "InfoProxyHandler",
+        "initSandbox",
+        "isValidColor",
+        "MathClamp",
+        "mergeChange",
+        "pdfjsScripting",
+        "PrintParams",
+        "serializeError",
+        "Thermometer",
+        "Util",
+      ].filter(name => globalThis.eval("typeof " + name) !== "undefined")`);
+      expect(value).toEqual([]);
+    });
+
+    it("should keep the timers working when a script redefines the collection methods", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      // The redefined methods are kept until the sandbox is recreated.
+      const value = await myeval(`(() => {
+        const prototypes = [
+          [Map.prototype, ["delete", "get", "set"]],
+          [WeakMap.prototype, ["delete", "get", "set"]],
+          [FinalizationRegistry.prototype, ["register", "unregister"]],
+        ];
+        for (const [proto, names] of prototypes) {
+          for (const name of names) {
+            proto[name] = () => {
+              throw new Error("Redefined");
+            };
+          }
+        }
+        try {
+          app.clearTimeOut(app.setTimeOut("0", 100000));
+          app.clearInterval(app.setInterval("0", 100000));
+          // Keep the handle alive to prevent cancellation by GC.
+          globalThis.kept = app.setTimeOut("globalThis.fired = true;", 0);
+          return true;
+        } catch {
+          return false;
+        }
+      })()`);
+      expect(value).toBeTrue();
+
+      let fired;
+      for (let i = 0; i < 100 && !fired; i++) {
+        await new Promise(resolve => {
+          setTimeout(resolve, 10);
+        });
+        fired = await myeval(`globalThis.fired`);
+      }
+      expect(fired).toBeTrue();
     });
 
     it("should call detached app, color, console and util methods", async () => {
@@ -636,6 +833,31 @@ describe("Scripting", function () {
         command: "println",
         value: "PDF.js Console:: Hello",
       });
+    });
+
+    it("should throw when calling setFocus without its field as `this`", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+
+      // Unlike the app, color, console and util methods, the field methods are
+      // shared by all the fields, hence not bound to any of them.
+      const value = await myeval(`(() => {
+        const { setFocus } = getField("field");
+        try {
+          setFocus();
+        } catch (error) {
+          return error instanceof TypeError;
+        }
+        return false;
+      })()`);
+      expect(value).toBeTrue();
+      expect(send_queue.has(refId)).toBeFalse();
     });
 
     it("should send display and value updates for descendant fields", async () => {
@@ -712,6 +934,62 @@ describe("Scripting", function () {
         ];
       })()`);
       expect(value).toEqual([12, "hello", "b", 7, 12, true]);
+    });
+
+    it("should keep custom properties on the field they are set on", async () => {
+      const refIds = [0, 1, 2, 3].map(_ => getId());
+      const text = id => ({ id, value: "", actions: {}, type: "text" });
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          A: [{ id: refIds[0], type: "", kidIds: [refIds[1], refIds[2]] }],
+          "A.B": [text(refIds[1])],
+          "A.C": [{ id: refIds[2], type: "", kidIds: [refIds[3]] }],
+          "A.C.D": [text(refIds[3])],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        getField("A.B").shared = "kid";
+        getField("A").custom = 42;
+        getField("A").shared = "parent";
+        return [
+          getField("A").custom,
+          typeof getField("A.B").custom,
+          typeof getField("A.C").custom,
+          typeof getField("A.C.D").custom,
+          getField("A.B").shared,
+        ];
+      })()`);
+      expect(value).toEqual([42, "undefined", "undefined", "undefined", "kid"]);
+    });
+
+    it("should ignore assignment to field methods in non-strict scripts", async () => {
+      const refIds = [0, 1, 2].map(_ => getId());
+      const text = id => ({ id, value: "", actions: {}, type: "text" });
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          A: [{ id: refIds[0], type: "", kidIds: [refIds[1]] }],
+          "A.B": [text(refIds[1])],
+          C: [text(refIds[2])],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const f = () => "overridden";
+        getField("A").setFocus = f;
+        getField("C").setFocus = f;
+        return [
+          getField("A").setFocus === f,
+          getField("A.B").setFocus === f,
+          getField("C").setFocus === f,
+          Object.hasOwn(getField("C"), "setFocus"),
+        ];
+      })()`);
+      expect(value).toEqual([false, false, false, false]);
     });
 
     it("should handle ResetForm without sending field updates", async () => {
@@ -796,6 +1074,37 @@ describe("Scripting", function () {
         multipleSelection: true,
       });
     });
+
+    it("should set the colors of a field through their aliases", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+
+      const value = await myeval(`(() => {
+        const field = getField("field");
+        field.bgColor = color.red;
+        field.fgColor = color.blue;
+        field.borderColor = color.green;
+        field.bgColor = ["bad"];
+        return [field.fillColor, field.textColor, field.strokeColor];
+      })()`);
+      expect(value).toEqual([
+        ["RGB", 1, 0, 0],
+        ["RGB", 0, 0, 1],
+        ["RGB", 0, 1, 0],
+      ]);
+      expect(send_queue.get(refId)).toEqual({
+        id: refId,
+        fillColor: ["RGB", 1, 0, 0],
+        textColor: ["RGB", 0, 0, 1],
+        strokeColor: ["RGB", 0, 1, 0],
+      });
+    });
   });
 
   describe("Doc", function () {
@@ -821,6 +1130,44 @@ describe("Scripting", function () {
       await myeval(`(this.foobar = 123456, 0)`);
       const value = await myeval(`this.getField("field").doc.foobar`);
       expect(value).toEqual(123456);
+    });
+
+    it("should give the global object as the doc to the scripts", async () => {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: {
+          actions: {
+            WillClose: ["globalThis.eventDocs = [event.source, event.target];"],
+          },
+        },
+        objects: {
+          field: [{ id: refId, value: "", actions: {}, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+      await sandbox.dispatchEventInSandbox({ id: "doc", name: "WillClose" });
+
+      const value = await myeval(
+        `[...eventDocs, getField("field").doc, app.activeDocs[0]].map(
+          doc => doc === this
+        )`
+      );
+      expect(value).toEqual([true, true, true, true]);
+    });
+
+    it("should only give the document info to doc.info", async () => {
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        docInfo: { Title: "Hello" },
+        objects: {},
+        calculationOrder: [],
+      });
+
+      const value = await myeval(
+        `[info.TITLE, typeof info.constructor, typeof info.__proto__]`
+      );
+      expect(value).toEqual(["Hello", "undefined", "undefined"]);
     });
 
     it("should get field using a path", async () => {
@@ -907,7 +1254,6 @@ describe("Scripting", function () {
       for (const id of [refIds[1], refIds[3]]) {
         expect(send_queue.get(id)).toEqual({
           id,
-          siblings: null,
           value: "",
           formattedValue: null,
           selRange: [0, 0],
@@ -1369,7 +1715,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeTrue();
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        siblings: null,
         value: "hell",
         selRange: [4, 4],
       });
@@ -1407,7 +1752,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId)).toBeTrue();
       expect(send_queue.get(refId)).toEqual({
         id: refId,
-        siblings: null,
         value: "hella",
         selRange: [5, 5],
       });
@@ -1481,7 +1825,6 @@ describe("Scripting", function () {
       expect(send_queue.has(refId1)).toBeTrue();
       expect(send_queue.get(refId1)).toEqual({
         id: refId1,
-        siblings: null,
         value: "world",
         formattedValue: null,
       });
@@ -1951,7 +2294,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "123456.789",
           formattedValue: null,
         });
@@ -2130,7 +2472,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "12.06.2023",
           formattedValue: "12.06.2023",
         });
@@ -2145,7 +2486,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "12.06.202",
           formattedValue: "12.06.0202",
         });
@@ -2161,7 +2501,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "02.06.2023",
           formattedValue: "02.06.2023",
         });
@@ -2177,7 +2516,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "2.6.2023",
           formattedValue: "02.06.2023",
         });
@@ -2216,7 +2554,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "321",
           formattedValue: null,
         });
@@ -2327,7 +2664,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 1,
           formattedValue: null,
         });
@@ -2341,7 +2677,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -2355,7 +2690,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 6,
           formattedValue: null,
         });
@@ -2363,7 +2697,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[4])).toBeTrue();
         expect(send_queue.get(refIds[4])).toEqual({
           id: refIds[4],
-          siblings: null,
           value: 6,
           formattedValue: null,
         });
@@ -2433,7 +2766,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[5])).toBeTrue();
         expect(send_queue.get(refIds[5])).toEqual({
           id: refIds[5],
-          siblings: null,
           value: 123,
           formattedValue: null,
         });
@@ -2447,7 +2779,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[5])).toBeTrue();
         expect(send_queue.get(refIds[5])).toEqual({
           id: refIds[5],
-          siblings: null,
           value: 579,
           formattedValue: null,
         });
@@ -2521,7 +2852,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 1,
           formattedValue: null,
         });
@@ -2535,7 +2865,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 2,
           formattedValue: null,
         });
@@ -2549,7 +2878,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[3])).toBeTrue();
         expect(send_queue.get(refIds[3])).toEqual({
           id: refIds[3],
-          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -2557,7 +2885,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refIds[4])).toBeTrue();
         expect(send_queue.get(refIds[4])).toEqual({
           id: refIds[4],
-          siblings: null,
           value: 3,
           formattedValue: null,
         });
@@ -2633,7 +2960,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "3F?",
           selRange: [3, 3],
         });
@@ -2662,7 +2988,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value: "3F?0",
           formattedValue: null,
         });
@@ -2723,7 +3048,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -2784,7 +3108,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -2845,7 +3168,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -2906,7 +3228,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -2967,7 +3288,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });
@@ -3028,7 +3348,6 @@ describe("Scripting", function () {
         expect(send_queue.has(refId)).toBeTrue();
         expect(send_queue.get(refId)).toEqual({
           id: refId,
-          siblings: null,
           value,
           selRange: [i, i],
         });

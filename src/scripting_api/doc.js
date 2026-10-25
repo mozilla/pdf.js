@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import { makeArr, makeMap, serializeError } from "./app_utils.js";
+import { exposeObject, makeArr, makeMap, serializeError } from "./app_utils.js";
 import { createMap } from "./common.js";
-import { PDFObject } from "./pdf_object.js";
+import { FieldInternals } from "./field.js";
 import { PrintParams } from "./print_params.js";
 import { ZoomType } from "./constants.js";
 
@@ -31,91 +31,164 @@ class InfoProxyHandler {
   }
 }
 
-class Doc extends PDFObject {
+// Internal helpers for initialization and event dispatch, populated below.
+const DocInternals = Object.create(null);
+
+class Doc {
   #pageActions = null;
 
   #otherPageActions = null;
 
+  #baseURL;
+
+  #calculate = true;
+
+  #delay = false;
+
+  #dirty = false;
+
+  #disclosed = false;
+
+  #media;
+
+  #metadata;
+
+  #noautocomplete;
+
+  #nocache;
+
+  #spellDictionaryOrder = [];
+
+  #spellLanguageOrder = [];
+
+  #printParams;
+
+  #fields = new Map();
+
+  #fieldNames = [];
+
+  #author;
+
+  #creator;
+
+  #creationDate;
+
+  #docID;
+
+  #documentFileName;
+
+  #filesize;
+
+  #keywords;
+
+  #layout;
+
+  #modDate;
+
+  #numPages;
+
+  #pageNum;
+
+  #producer;
+
+  #securityHandler;
+
+  #subject;
+
+  #title;
+
+  #URL;
+
+  #info;
+
+  #zoomType = ZoomType.none;
+
+  #zoom;
+
+  #actions;
+
+  #appObjects;
+
+  #globalEval;
+
+  #send;
+
+  #userActivationData;
+
+  #calculateNow;
+
   constructor(data) {
-    super(data);
+    this.#baseURL = data.baseURL || "";
+    this.#metadata = data.metadata || "";
 
-    // In a script doc === this.
-    // So adding a property to the doc means adding it to this
-    this._expandos = globalThis;
+    this.#author = data.Author || "";
+    this.#creator = data.Creator || "";
+    this.#creationDate = this.#getDate(data.CreationDate) || null;
+    this.#docID = data.docID || ["", ""];
+    this.#documentFileName = data.filename || "";
+    this.#filesize = data.filesize || 0;
+    this.#keywords = data.Keywords || "";
+    this.#layout = data.layout || "";
+    this.#modDate = this.#getDate(data.ModDate) || null;
+    this.#numPages = data.numPages || 1;
+    this.#pageNum = data.pageNum || 0;
+    this.#producer = data.Producer || "";
+    this.#securityHandler = data.EncryptFilterName || null;
+    this.#subject = data.Subject || "";
+    this.#title = data.Title || "";
+    this.#URL = data.URL || "";
 
-    this._baseURL = data.baseURL || "";
-    this._calculate = true;
-    this._delay = false;
-    this._dirty = false;
-    this._disclosed = false;
-    this._media = undefined;
-    this._metadata = data.metadata || "";
-    this._noautocomplete = undefined;
-    this._nocache = undefined;
-    this._spellDictionaryOrder = [];
-    this._spellLanguageOrder = [];
-
-    this._printParams = null;
-    this._fields = new Map();
-    this._fieldNames = [];
-    this._event = null;
-
-    this._author = data.Author || "";
-    this._creator = data.Creator || "";
-    this._creationDate = this._getDate(data.CreationDate) || null;
-    this._docID = data.docID || ["", ""];
-    this._documentFileName = data.filename || "";
-    this._filesize = data.filesize || 0;
-    this._keywords = data.Keywords || "";
-    this._layout = data.layout || "";
-    this._modDate = this._getDate(data.ModDate) || null;
-    this._numFields = 0;
-    this._numPages = data.numPages || 1;
-    this._pageNum = data.pageNum || 0;
-    this._producer = data.Producer || "";
-    this._securityHandler = data.EncryptFilterName || null;
-    this._subject = data.Subject || "";
-    this._title = data.Title || "";
-    this._URL = data.URL || "";
-
-    // info has case insensitive properties
-    // and they're are read-only.
-    this._info = new Proxy(
-      {
-        title: this._title,
-        author: this._author,
-        authors: data.authors || [this._author],
-        subject: this._subject,
-        keywords: this._keywords,
-        creator: this._creator,
-        producer: this._producer,
-        creationdate: this._creationDate,
-        moddate: this._modDate,
+    // Lookups ignore case; assignments are rejected.
+    // A null prototype keeps Object.prototype properties out of lookups.
+    this.#info = new Proxy(
+      Object.assign(Object.create(null), {
+        title: this.#title,
+        author: this.#author,
+        authors: data.authors || [this.#author],
+        subject: this.#subject,
+        keywords: this.#keywords,
+        creator: this.#creator,
+        producer: this.#producer,
+        creationdate: this.#creationDate,
+        moddate: this.#modDate,
         trapped: data.Trapped || "Unknown",
-      },
+      }),
       InfoProxyHandler
     );
 
-    this._zoomType = ZoomType.none;
-    this._zoom = data.zoom || 100;
-    this._actions = createMap(data.actions);
-    this._globalEval = data.globalEval;
-    this._userActivation = false;
-    this._disablePrinting = false;
-    this._disableSaving = false;
+    this.#zoom = data.zoom || 100;
+    this.#actions = createMap(data.actions);
+    this.#appObjects = data.appObjects;
+    this.#calculateNow = data.calculateNow;
+    this.#globalEval = data.globalEval;
+    this.#send = data.send;
+    this.#userActivationData = data.userActivationData;
+    this.#printParams = exposeObject(
+      new PrintParams({ lastPage: this.#numPages - 1 }),
+      /* bindMethods = */ true
+    );
   }
 
-  _initActions() {
-    for (const { obj } of this._fields.values()) {
-      // Some fields may have compute their values so we need to send them
-      // to the view.
-      const initialValue = obj._initialValue;
+  static {
+    Object.assign(DocInternals, {
+      addField: (doc, name, field) => doc.#addField(name, field),
+      dispatchDocEvent: (doc, name) => doc.#dispatchDocEvent(name),
+      dispatchPageEvent: (doc, name, actions, pageNumber) =>
+        doc.#dispatchPageEvent(name, actions, pageNumber),
+      getTerminalChildren: (doc, fieldName) =>
+        doc.#getTerminalChildren(fieldName),
+      initActions: doc => doc.#initActions(),
+    });
+  }
+
+  #initActions() {
+    for (const field of this.#fields.values()) {
+      // Send date/time values converted during field initialization.
+      const initialValue = FieldInternals.getInitialValue(field);
       if (initialValue) {
-        this._send({
-          id: obj._id,
-          siblings: obj._siblings,
+        FieldInternals.send(field, {
           value: initialValue,
-          formattedValue: obj.value.toString(),
+          formattedValue: FieldInternals.getValue(field).toString(),
         });
       }
     }
@@ -133,90 +206,91 @@ class Doc extends PDFObject {
     // A pdf can contain an action /FooBar which will trigger a save
     // even if there are no WillSave/DidSave (which are themselves triggered
     // after a save).
-    this._disableSaving = true;
-    for (const actionName of this._actions.keys()) {
+    this.#userActivationData.disableSaving = true;
+    for (const actionName of this.#actions.keys()) {
       if (!dontRun.has(actionName)) {
-        this._runActions(actionName);
+        this.#runActions(actionName);
       }
     }
-    this._disableSaving = false;
+    this.#userActivationData.disableSaving = false;
   }
 
-  _dispatchDocEvent(name) {
+  #dispatchDocEvent(name) {
     switch (name) {
       case "Open":
-        this._disableSaving = true;
-        this._runActions("OpenAction");
-        this._disableSaving = false;
+        this.#userActivationData.disableSaving = true;
+        this.#runActions("OpenAction");
+        this.#userActivationData.disableSaving = false;
         break;
       case "WillPrint":
-        this._disablePrinting = true;
+        this.#userActivationData.disablePrinting = true;
         try {
-          this._runActions(name);
+          this.#runActions(name);
         } catch (error) {
-          this._send(serializeError(error));
+          this.#send(serializeError(error));
         }
-        this._send({ command: "WillPrintFinished" });
-        this._disablePrinting = false;
+        this.#send({ command: "WillPrintFinished" });
+        this.#userActivationData.disablePrinting = false;
         break;
       case "WillSave":
-        this._disableSaving = true;
+        this.#userActivationData.disableSaving = true;
         try {
-          this._runActions(name);
+          this.#runActions(name);
         } catch (error) {
-          this._send(serializeError(error));
+          this.#send(serializeError(error));
         }
         // Let the viewer save the updated field values.
-        this._send({ command: "WillSaveFinished" });
-        this._disableSaving = false;
+        this.#send({ command: "WillSaveFinished" });
+        this.#userActivationData.disableSaving = false;
         break;
       default:
-        this._runActions(name);
+        this.#runActions(name);
     }
   }
 
-  _dispatchPageEvent(name, actions, pageNumber) {
+  #dispatchPageEvent(name, actions, pageNumber) {
     if (name === "PageOpen") {
       this.#pageActions ??= new Map();
       this.#pageActions.getOrInsertComputed(pageNumber, () =>
         createMap(actions)
       );
-      this._pageNum = pageNumber - 1;
+      this.#pageNum = pageNumber - 1;
     }
 
     for (const acts of [this.#pageActions, this.#otherPageActions]) {
       actions = acts?.get(pageNumber)?.get(name);
       if (actions) {
         for (const action of actions) {
-          this._globalEval(action);
+          this.#globalEval(action);
         }
       }
     }
   }
 
-  _runActions(name) {
-    const actions = this._actions.get(name);
+  #runActions(name) {
+    const actions = this.#actions.get(name);
     if (!actions) {
       return;
     }
     for (const action of actions) {
       try {
-        this._globalEval(action);
+        this.#globalEval(action);
       } catch (error) {
-        this._send(
+        this.#send(
           serializeError(error, `Error when executing "${name}" for document\n`)
         );
       }
     }
   }
 
-  _addField(name, field) {
-    this._fields.set(name, field);
-    this._fieldNames.push(name);
-    this._numFields++;
+  #addField(name, field) {
+    this.#fields.set(name, field);
+    this.#fieldNames.push(name);
 
     // Register field and widget page actions.
-    for (const [page, eventName, scripts] of field.obj._getPageActions()) {
+    for (const [page, eventName, scripts] of FieldInternals.getPageActions(
+      field
+    )) {
       this.#otherPageActions ??= new Map();
       this.#otherPageActions
         .getOrInsertComputed(page + 1, makeMap)
@@ -225,7 +299,7 @@ class Doc extends PDFObject {
     }
   }
 
-  _getDate(date) {
+  #getDate(date) {
     // date format is D:YYYYMMDDHHmmSS[OHH'mm']
     if (!date || date.length < 15 || !date.startsWith("D:")) {
       return date;
@@ -253,7 +327,7 @@ class Doc extends PDFObject {
   }
 
   get author() {
-    return this._author;
+    return this.#author;
   }
 
   set author(_) {
@@ -261,11 +335,11 @@ class Doc extends PDFObject {
   }
 
   get baseURL() {
-    return this._baseURL;
+    return this.#baseURL;
   }
 
   set baseURL(baseURL) {
-    this._baseURL = baseURL;
+    this.#baseURL = baseURL;
   }
 
   get bookmarkRoot() {
@@ -277,15 +351,15 @@ class Doc extends PDFObject {
   }
 
   get calculate() {
-    return this._calculate;
+    return this.#calculate;
   }
 
   set calculate(calculate) {
-    this._calculate = calculate;
+    this.#calculate = calculate;
   }
 
   get creator() {
-    return this._creator;
+    return this.#creator;
   }
 
   set creator(_) {
@@ -301,31 +375,31 @@ class Doc extends PDFObject {
   }
 
   get delay() {
-    return this._delay;
+    return this.#delay;
   }
 
   set delay(delay) {
-    this._delay = delay;
+    this.#delay = delay;
   }
 
   get dirty() {
-    return this._dirty;
+    return this.#dirty;
   }
 
   set dirty(dirty) {
-    this._dirty = dirty;
+    this.#dirty = dirty;
   }
 
   get disclosed() {
-    return this._disclosed;
+    return this.#disclosed;
   }
 
   set disclosed(disclosed) {
-    this._disclosed = disclosed;
+    this.#disclosed = disclosed;
   }
 
   get docID() {
-    return this._docID;
+    return this.#docID;
   }
 
   set docID(_) {
@@ -333,7 +407,7 @@ class Doc extends PDFObject {
   }
 
   get documentFileName() {
-    return this._documentFileName;
+    return this.#documentFileName;
   }
 
   set documentFileName(_) {
@@ -360,7 +434,7 @@ class Doc extends PDFObject {
   }
 
   get filesize() {
-    return this._filesize;
+    return this.#filesize;
   }
 
   set filesize(_) {
@@ -392,7 +466,7 @@ class Doc extends PDFObject {
   }
 
   get info() {
-    return this._info;
+    return this.#info;
   }
 
   set info(_) {
@@ -424,7 +498,7 @@ class Doc extends PDFObject {
   }
 
   get keywords() {
-    return this._keywords;
+    return this.#keywords;
   }
 
   set keywords(_) {
@@ -432,14 +506,14 @@ class Doc extends PDFObject {
   }
 
   get layout() {
-    return this._layout;
+    return this.#layout;
   }
 
   set layout(value) {
-    if (!this._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     if (typeof value !== "string") {
       return;
@@ -455,28 +529,28 @@ class Doc extends PDFObject {
     ) {
       value = "SinglePage";
     }
-    this._send({ command: "layout", value });
-    this._layout = value;
+    this.#send({ command: "layout", value });
+    this.#layout = value;
   }
 
   get media() {
-    return this._media;
+    return this.#media;
   }
 
   set media(media) {
-    this._media = media;
+    this.#media = media;
   }
 
   get metadata() {
-    return this._metadata;
+    return this.#metadata;
   }
 
   set metadata(metadata) {
-    this._metadata = metadata;
+    this.#metadata = metadata;
   }
 
   get modDate() {
-    return this._modDate;
+    return this.#modDate;
   }
 
   set modDate(_) {
@@ -500,23 +574,23 @@ class Doc extends PDFObject {
   }
 
   get noautocomplete() {
-    return this._noautocomplete;
+    return this.#noautocomplete;
   }
 
   set noautocomplete(noautocomplete) {
-    this._noautocomplete = noautocomplete;
+    this.#noautocomplete = noautocomplete;
   }
 
   get nocache() {
-    return this._nocache;
+    return this.#nocache;
   }
 
   set nocache(nocache) {
-    this._nocache = nocache;
+    this.#nocache = nocache;
   }
 
   get numFields() {
-    return this._numFields;
+    return this.#fieldNames.length;
   }
 
   set numFields(_) {
@@ -524,7 +598,7 @@ class Doc extends PDFObject {
   }
 
   get numPages() {
-    return this._numPages;
+    return this.#numPages;
   }
 
   set numPages(_) {
@@ -556,20 +630,20 @@ class Doc extends PDFObject {
   }
 
   get pageNum() {
-    return this._pageNum;
+    return this.#pageNum;
   }
 
   set pageNum(value) {
-    if (!this._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
-    if (typeof value !== "number" || value < 0 || value >= this._numPages) {
+    if (typeof value !== "number" || value < 0 || value >= this.#numPages) {
       return;
     }
-    this._send({ command: "page-num", value });
-    this._pageNum = value;
+    this.#send({ command: "page-num", value });
+    this.#pageNum = value;
   }
 
   get pageWindowRect() {
@@ -597,7 +671,7 @@ class Doc extends PDFObject {
   }
 
   get producer() {
-    return this._producer;
+    return this.#producer;
   }
 
   set producer(_) {
@@ -613,7 +687,7 @@ class Doc extends PDFObject {
   }
 
   get securityHandler() {
-    return this._securityHandler;
+    return this.#securityHandler;
   }
 
   set securityHandler(_) {
@@ -637,23 +711,23 @@ class Doc extends PDFObject {
   }
 
   get spellDictionaryOrder() {
-    return this._spellDictionaryOrder;
+    return this.#spellDictionaryOrder;
   }
 
   set spellDictionaryOrder(spellDictionaryOrder) {
-    this._spellDictionaryOrder = spellDictionaryOrder;
+    this.#spellDictionaryOrder = spellDictionaryOrder;
   }
 
   get spellLanguageOrder() {
-    return this._spellLanguageOrder;
+    return this.#spellLanguageOrder;
   }
 
   set spellLanguageOrder(spellLanguageOrder) {
-    this._spellLanguageOrder = spellLanguageOrder;
+    this.#spellLanguageOrder = spellLanguageOrder;
   }
 
   get subject() {
-    return this._subject;
+    return this.#subject;
   }
 
   set subject(_) {
@@ -669,7 +743,7 @@ class Doc extends PDFObject {
   }
 
   get title() {
-    return this._title;
+    return this.#title;
   }
 
   set title(_) {
@@ -677,7 +751,7 @@ class Doc extends PDFObject {
   }
 
   get URL() {
-    return this._URL;
+    return this.#URL;
   }
 
   set URL(_) {
@@ -693,7 +767,7 @@ class Doc extends PDFObject {
   }
 
   get xfa() {
-    return this._xfa;
+    return undefined;
   }
 
   set xfa(_) {
@@ -709,33 +783,33 @@ class Doc extends PDFObject {
   }
 
   get zoomType() {
-    return this._zoomType;
+    return this.#zoomType;
   }
 
   set zoomType(type) {
-    if (!this._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     if (typeof type !== "string") {
       return;
     }
     switch (type) {
       case ZoomType.none:
-        this._send({ command: "zoom", value: 1 });
+        this.#send({ command: "zoom", value: 1 });
         break;
       case ZoomType.fitP:
-        this._send({ command: "zoom", value: "page-fit" });
+        this.#send({ command: "zoom", value: "page-fit" });
         break;
       case ZoomType.fitW:
-        this._send({ command: "zoom", value: "page-width" });
+        this.#send({ command: "zoom", value: "page-width" });
         break;
       case ZoomType.fitH:
-        this._send({ command: "zoom", value: "page-height" });
+        this.#send({ command: "zoom", value: "page-height" });
         break;
       case ZoomType.fitV:
-        this._send({ command: "zoom", value: "auto" });
+        this.#send({ command: "zoom", value: "auto" });
         break;
       case ZoomType.pref:
       case ZoomType.refW:
@@ -744,24 +818,24 @@ class Doc extends PDFObject {
         return;
     }
 
-    this._zoomType = type;
+    this.#zoomType = type;
   }
 
   get zoom() {
-    return this._zoom;
+    return this.#zoom;
   }
 
   set zoom(value) {
-    if (!this._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return;
     }
-    this._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     if (typeof value !== "number" || value < 8.33 || value > 6400) {
       return;
     }
 
-    this._send({ command: "zoom", value: value / 100 });
+    this.#send({ command: "zoom", value: value / 100 });
   }
 
   addAnnot() {
@@ -813,7 +887,7 @@ class Doc extends PDFObject {
   }
 
   calculateNow() {
-    this._eventDispatcher.calculateNow();
+    this.#calculateNow();
   }
 
   closeDoc() {
@@ -920,14 +994,14 @@ class Doc extends PDFObject {
     /* Not implemented */
   }
 
-  _getField(cName) {
+  getField(cName) {
     if (cName && typeof cName === "object") {
       cName = cName.cName;
     }
     if (typeof cName !== "string") {
       throw new TypeError("Invalid field name: must be a string");
     }
-    const searchedField = this._fields.get(cName);
+    const searchedField = this.#fields.get(cName);
     if (searchedField) {
       return searchedField;
     }
@@ -939,19 +1013,19 @@ class Doc extends PDFObject {
       cName = parts[0];
     }
 
-    for (const [name, field] of this._fields) {
+    for (const [name, field] of this.#fields) {
       if (name.endsWith(cName)) {
         if (!isNaN(childIndex)) {
-          const children = this._getChildren(name);
+          const children = this.#getChildren(name);
           if (childIndex < 0 || childIndex >= children.length) {
             childIndex = 0;
           }
           if (childIndex < children.length) {
-            this._fields.set(cName, children[childIndex]);
+            this.#fields.set(cName, children[childIndex]);
             return children[childIndex];
           }
         }
-        this._fields.set(cName, field);
+        this.#fields.set(cName, field);
         return field;
       }
     }
@@ -959,18 +1033,13 @@ class Doc extends PDFObject {
     return null;
   }
 
-  getField(cName) {
-    const field = this._getField(cName);
-    return !field ? null : field.wrapped;
-  }
-
-  _getChildren(fieldName) {
+  #getChildren(fieldName) {
     // Children of foo.bar are foo.bar.oof, foo.bar.rab
     // but not foo.bar.oof.FOO.
     const len = fieldName.length;
     const children = [];
     const pattern = /^\.[^.]+$/;
-    for (const [name, field] of this._fields) {
+    for (const [name, field] of this.#fields) {
       if (name.startsWith(fieldName)) {
         const finalPart = name.slice(len);
         if (pattern.test(finalPart)) {
@@ -981,18 +1050,18 @@ class Doc extends PDFObject {
     return children;
   }
 
-  _getTerminalChildren(fieldName) {
-    // Get all the descendants which have a value.
+  #getTerminalChildren(fieldName) {
+    // Get fields with a value, including fieldName itself and its descendants.
     const children = [];
     const len = fieldName.length;
-    for (const [name, field] of this._fields) {
+    for (const [name, field] of this.#fields) {
       if (name.startsWith(fieldName)) {
         const finalPart = name.slice(len);
         if (
-          field.obj._hasValue &&
+          FieldInternals.getHasValue(field) &&
           (finalPart === "" || finalPart.startsWith("."))
         ) {
-          children.push(field.wrapped);
+          children.push(field);
         }
       }
     }
@@ -1019,7 +1088,7 @@ class Doc extends PDFObject {
       throw new TypeError("Invalid field index: must be a number");
     }
     return nIndex >= 0 && nIndex < this.numFields
-      ? this._fieldNames[Math.trunc(nIndex)]
+      ? this.#fieldNames[Math.trunc(nIndex)]
       : null;
   }
 
@@ -1064,9 +1133,7 @@ class Doc extends PDFObject {
   }
 
   getPrintParams() {
-    return (this._printParams ||= new PrintParams({
-      lastPage: this._numPages - 1,
-    }));
+    return this.#printParams;
   }
 
   getSound() {
@@ -1148,10 +1215,13 @@ class Doc extends PDFObject {
     bAnnotations = true,
     printParams = null
   ) {
-    if (this._disablePrinting || !this._userActivation) {
+    if (
+      this.#userActivationData.disablePrinting ||
+      !this.#userActivationData.userActivation
+    ) {
       return;
     }
-    this._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     if (bUI && typeof bUI === "object") {
       nStart = bUI.nStart;
@@ -1177,7 +1247,7 @@ class Doc extends PDFObject {
 
     nEnd = typeof nEnd === "number" ? Math.max(0, Math.trunc(nEnd)) : -1;
 
-    this._send({ command: "print", start: nStart, end: nEnd });
+    this.#send({ command: "print", start: nStart, end: nEnd });
   }
 
   removeDataObject() {
@@ -1243,7 +1313,7 @@ class Doc extends PDFObject {
           fieldsToReset = null;
           break;
         }
-        const field = this._getField(fieldName);
+        const field = this.getField(fieldName);
         if (!field) {
           continue;
         }
@@ -1253,27 +1323,24 @@ class Doc extends PDFObject {
     }
 
     if (fieldsToReset) {
-      // A non-terminal field stands for all its descendants, hence add the
-      // kids (the Set iterator also visits the newly added fields).
-      for (const { obj } of fieldsToReset) {
-        for (const id of obj._kidIds || []) {
-          const kid = obj._appObjects[id];
+      // Include descendants: Set iteration also visits newly added fields.
+      for (const field of fieldsToReset) {
+        for (const id of FieldInternals.getKidIds(field) || []) {
+          const kid = this.#appObjects[id];
           if (kid) {
             fieldsToReset.add(kid);
           }
         }
       }
     } else {
-      fieldsToReset = this._fields.values();
-      mustCalculate = this._fields.size !== 0;
+      fieldsToReset = this.#fields.values();
+      mustCalculate = this.#fields.size !== 0;
     }
 
     for (const field of fieldsToReset) {
-      field.obj.value = field.obj.defaultValue;
-      this._send({
-        id: field.obj._id,
-        siblings: field.obj._siblings,
-        value: field.obj.defaultValue,
+      FieldInternals.setValue(field, field.defaultValue);
+      FieldInternals.send(field, {
+        value: field.defaultValue,
         formattedValue: null,
         selRange: [0, 0],
       });
@@ -1345,4 +1412,4 @@ class Doc extends PDFObject {
   }
 }
 
-export { Doc };
+export { Doc, DocInternals };
