@@ -1064,6 +1064,27 @@ class PDFDocument {
     };
   }
 
+  #createPage(pageIndex, pageDict, ref) {
+    const { catalog, pdfManager, xfaFactory, xref } = this;
+
+    return new Page({
+      pdfManager,
+      xref,
+      pageIndex,
+      pageDict,
+      ref,
+      globalIdFactory: this._globalIdFactory,
+      fontCache: catalog.fontCache,
+      builtInCMapCache: catalog.builtInCMapCache,
+      standardFontDataCache: catalog.standardFontDataCache,
+      globalColorSpaceCache: catalog.globalColorSpaceCache,
+      globalImageCache: catalog.globalImageCache,
+      systemFontCache: catalog.systemFontCache,
+      nonBlendModesSet: catalog.nonBlendModesSet,
+      xfaFactory,
+    });
+  }
+
   parse(recoveryMode) {
     this.xref.parse(recoveryMode);
     this.catalog = new Catalog(this.pdfManager, this.xref);
@@ -1721,24 +1742,8 @@ class PDFDocument {
     } else {
       promise = catalog.getPageDict(pageIndex);
     }
-    promise = promise.then(
-      ([pageDict, ref]) =>
-        new Page({
-          pdfManager: this.pdfManager,
-          xref: this.xref,
-          pageIndex,
-          pageDict,
-          ref,
-          globalIdFactory: this._globalIdFactory,
-          fontCache: catalog.fontCache,
-          builtInCMapCache: catalog.builtInCMapCache,
-          standardFontDataCache: catalog.standardFontDataCache,
-          globalColorSpaceCache: catalog.globalColorSpaceCache,
-          globalImageCache: catalog.globalImageCache,
-          systemFontCache: catalog.systemFontCache,
-          nonBlendModesSet: catalog.nonBlendModesSet,
-          xfaFactory,
-        })
+    promise = promise.then(([pageDict, ref]) =>
+      this.#createPage(pageIndex, pageDict, ref)
     );
 
     this.#pagePromises.set(pageIndex, promise);
@@ -1822,24 +1827,7 @@ class PDFDocument {
           // Prevent "uncaught exception: Object"-messages in the console.
           promise.catch(() => {});
         } else {
-          promise = Promise.resolve(
-            new Page({
-              pdfManager,
-              xref: this.xref,
-              pageIndex,
-              pageDict,
-              ref,
-              globalIdFactory: this._globalIdFactory,
-              fontCache: catalog.fontCache,
-              builtInCMapCache: catalog.builtInCMapCache,
-              standardFontDataCache: catalog.standardFontDataCache,
-              globalColorSpaceCache: this.globalColorSpaceCache,
-              globalImageCache: catalog.globalImageCache,
-              systemFontCache: catalog.systemFontCache,
-              nonBlendModesSet: catalog.nonBlendModesSet,
-              xfaFactory: null,
-            })
-          );
+          promise = Promise.resolve(this.#createPage(pageIndex, pageDict, ref));
         }
 
         this.#pagePromises.set(pageIndex, promise);
