@@ -479,7 +479,13 @@ class PDFPageView extends BasePDFPageView {
       this.#dispatchLayerRendered("annotationlayerrendered", error);
     }
 
-    if (this.#enableAutoLinking && textLayerPromise) {
+    // When re-rendering the page, with the annotationLayer kept,
+    // inferred links MAY have already been injected previously.
+    if (
+      this.#enableAutoLinking &&
+      textLayerPromise &&
+      !annotationLayer.linksInjected
+    ) {
       this.#injectLinkAnnotations(textLayerPromise, annotationLayer, textLayer);
     }
   }
