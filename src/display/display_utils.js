@@ -138,6 +138,9 @@ class OutputScale {
    *   `false` otherwise.
    */
   limitCanvas(width, height, maxPixels, maxDim, capAreaFactor = -1) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      return false;
+    }
     let maxAreaScale = Infinity,
       maxWidthScale = Infinity,
       maxHeightScale = Infinity;
@@ -181,20 +184,6 @@ class OutputScale {
     return maxPixels;
   }
 }
-
-// See https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
-// to know which types are supported by the browser.
-const SupportedImageMimeTypes = new Set([
-  "image/apng",
-  "image/avif",
-  "image/bmp",
-  "image/gif",
-  "image/jpeg",
-  "image/png",
-  "image/svg+xml",
-  "image/webp",
-  "image/x-icon",
-]);
 
 function applyOpacity(color, opacity) {
   opacity = MathClamp(opacity ?? 1, 0, 1);
@@ -417,5 +406,4 @@ export {
   OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
-  SupportedImageMimeTypes,
 };
