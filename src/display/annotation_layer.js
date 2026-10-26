@@ -434,7 +434,7 @@ class AnnotationElement {
     const { width, height } = this;
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
-      style.borderWidth = `${data.borderStyle.width}px`;
+      style.borderWidth = `calc(${data.borderStyle.width}px * var(--total-scale-factor))`;
 
       const horizontalRadius = data.borderStyle.horizontalCornerRadius;
       const verticalRadius = data.borderStyle.verticalCornerRadius;
@@ -667,12 +667,12 @@ class AnnotationElement {
     const { style } = this.container;
     let svgBuffer;
     if (this.#hasBorder) {
-      const { borderColor, borderWidth } = style;
+      const { borderColor } = style;
       style.borderWidth = 0;
       svgBuffer = [
         "url('data:image/svg+xml;utf8,",
         `<svg xmlns="${SVG_NS}" preserveAspectRatio="none" viewBox="0 0 1 1">`,
-        `<g fill="transparent" stroke="${borderColor}" stroke-width="${borderWidth}">`,
+        `<g fill="transparent" stroke="${borderColor}" stroke-width="${this.data.borderStyle.width}px">`,
       ];
       this.container.classList.add("hasBorder");
     }
