@@ -52,6 +52,7 @@ import {
 } from "./core_utils.js";
 import {
   Dict,
+  EOF,
   isName,
   isRefsEqual,
   Name,
@@ -61,6 +62,7 @@ import {
 } from "./primitives.js";
 import { FunctionType, PDFFunctionFactory } from "./function.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
+import { Lexer, Linearization } from "./parser.js";
 import { NullStream, Stream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./calculate_md5.js";
@@ -68,7 +70,6 @@ import { Catalog } from "./catalog.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { DatasetReader } from "./dataset_reader.js";
 import { Intersector } from "./intersector.js";
-import { Linearization } from "./parser.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
@@ -2252,7 +2253,33 @@ class PDFDocument {
       this.#getByteRange(a, a + b),
       this.#getByteRange(c, c + d),
     ]);
-    return { data, pkcs7 };
+    // The signature value is written into the file once it's complete, hence
+    // it isn't encrypted. Since the parser decrypts the /Contents string of an
+    // encrypted PDF, read the value from the file instead: it's in the gap
+    // between the two signed byte spans.
+    const rawPkcs7 = this.xref.encrypt
+      ? await this.#getRawSignatureValue(a + b, c)
+      : null;
+    return { data, pkcs7: rawPkcs7 || pkcs7 };
+  }
+
+  async #getRawSignatureValue(begin, end) {
+    const bytes = await this.#getByteRange(begin, end);
+    try {
+      const lexer = new Lexer(new Stream(bytes));
+      const value = lexer.getObj();
+      // The gap holds the /Contents string, and nothing else.
+      if (
+        typeof value === "string" &&
+        value.length > 0 &&
+        lexer.getObj() === EOF
+      ) {
+        return stringToBytes(value);
+      }
+    } catch (ex) {
+      warn(`Unable to read the signature value: "${ex}".`);
+    }
+    return null;
   }
 
   get hasJSActions() {

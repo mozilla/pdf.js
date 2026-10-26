@@ -141,7 +141,6 @@ class Parser {
           return array;
         case "<<": // dictionary or stream
           const dict = new Dict(this.xref);
-          let contents = null;
           while (!isCmd(this.buf1, ">>") && this.buf1 !== EOF) {
             if (!(this.buf1 instanceof Name)) {
               info("Malformed dictionary: key must be a name object");
@@ -154,9 +153,6 @@ class Parser {
             if (this.buf1 === EOF) {
               break;
             }
-            if (key === "Contents" && typeof this.buf1 === "string") {
-              contents = this.buf1;
-            }
             dict.set(key, this.getObj(cipherTransform));
           }
           if (this.buf1 === EOF) {
@@ -164,11 +160,6 @@ class Parser {
               return dict;
             }
             throw new ParserEOFException("End of file inside dictionary.");
-          }
-          // The /Contents of a signature dictionary isn't encrypted, since the
-          // signature is written into the file after it has been encrypted.
-          if (cipherTransform && contents !== null && dict.has("ByteRange")) {
-            dict.set("Contents", contents);
           }
 
           // Stream objects are not allowed inside content streams or

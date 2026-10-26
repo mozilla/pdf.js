@@ -197,26 +197,6 @@ describe("Writer", function () {
       expect(buffer.join("")).toEqual(expected);
     });
 
-    it("should not encrypt the /Contents of a signature dictionary", async function () {
-      const transform = { encryptString: s => s.toUpperCase() };
-      const sigDict = new Dict(null);
-      sigDict.set("ByteRange", [0, 10, 20, 30]);
-      sigDict.set("Contents", "signature");
-      sigDict.set("Reason", "approved");
-      const annotDict = new Dict(null);
-      annotDict.set("Contents", "comment");
-
-      const buffer = [];
-      await writeDict(sigDict, buffer, transform);
-      await writeDict(annotDict, buffer, transform);
-
-      const expected =
-        "<< /ByteRange [0 10 20 30] /Contents (signature) /Reason (APPROVED)>>" +
-        "<< /Contents (COMMENT)>>";
-
-      expect(buffer.join("")).toEqual(expected);
-    });
-
     it("should encrypt a stream with its Crypt filter", async function () {
       const string = "a".repeat(300);
       const encryptStream = jasmine

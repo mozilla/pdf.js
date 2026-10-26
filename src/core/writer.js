@@ -46,12 +46,7 @@ async function writeDict(dict, buffer, transform) {
   buffer.push("<<");
   for (const [key, rawObj] of dict.getRawEntries()) {
     buffer.push(` /${escapePDFName(key)} `);
-    // The /Contents of a signature dictionary isn't encrypted.
-    await writeValue(
-      rawObj,
-      buffer,
-      key === "Contents" && dict.has("ByteRange") ? null : transform
-    );
+    await writeValue(rawObj, buffer, transform);
   }
   buffer.push(">>");
 }
