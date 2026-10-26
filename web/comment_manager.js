@@ -29,6 +29,16 @@ import {
 import { binarySearchFirstItem } from "./ui_utils.js";
 import { Sidebar } from "./sidebar.js";
 
+/**
+ * @param {DOMRect} layerRect - the visual rectangle of the layer.
+ * @param {number} rotation - the rotation of the layer.
+ * @returns {Array<number>} the dimensions of the layer in its own (i.e.
+ *   unrotated) coordinate system, which is the one used by the popup.
+ */
+function getLayerSize({ width, height }, rotation) {
+  return rotation % 180 === 0 ? [width, height] : [height, width];
+}
+
 class CommentManager {
   #dialog;
 
@@ -768,16 +778,20 @@ class CommentDialog {
     if (editor.hasDefaultPopupPosition()) {
       const { dialogWidth, dialogHeight } = this._dialogDimensions;
       if (parentDimensions) {
+        // `commentButtonWidth` is a fraction of the width of the layer in its
+        // own (i.e. unrotated) coordinate system.
+        const [layerWidth] = getLayerSize(
+          parentDimensions,
+          this.#editor.parentRotation
+        );
+        const buttonWidth = this.#editor.commentButtonWidth * layerWidth;
         if (
           this.#isLTR &&
           posX + dialogWidth >
             Math.min(parentDimensions.x + parentDimensions.width, innerWidth)
         ) {
-          const buttonWidth = this.#editor.commentButtonWidth;
-          posX -= dialogWidth - buttonWidth * parentDimensions.width;
+          posX -= dialogWidth - buttonWidth;
         } else if (!this.#isLTR) {
-          const buttonWidth =
-            this.#editor.commentButtonWidth * parentDimensions.width;
           if (posX - dialogWidth < Math.max(0, parentDimensions.x)) {
             posX = Math.max(0, posX);
           } else {
