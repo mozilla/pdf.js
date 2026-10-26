@@ -56,7 +56,6 @@ import {
   OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
-  SupportedImageMimeTypes,
 } from "./display/display_utils.js";
 import {
   build,
@@ -77,6 +76,7 @@ import {
   renderRichText,
   setLayerDimensions,
   stopEvent,
+  SupportedImageMimeTypes,
 } from "./display/dom_utils.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
