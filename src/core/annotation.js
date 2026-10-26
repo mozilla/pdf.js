@@ -2090,6 +2090,11 @@ class WidgetAnnotation extends Annotation {
     if (renderForms) {
       return this.viewable;
     }
+    // Stored noView overrides flags when rendering widgets on canvas.
+    const noView = annotationStorage?.get(this.data.id)?.noView;
+    if (noView !== undefined) {
+      return !noView;
+    }
     return (
       super.mustBeViewed(annotationStorage, renderForms) &&
       !this._hasFlag(this.flags, AnnotationFlag.NOVIEW)
