@@ -176,6 +176,11 @@ class AnnotationLayerBuilder {
       renderForms: this.renderForms,
       downloadManager: this.downloadManager,
       enableComment: this.enableComment,
+      // Disable editor conversion for existing annotations in GeckoView.
+      enableAnnotationEditing:
+        typeof PDFJSDev === "undefined"
+          ? !window.isGECKOVIEW
+          : !PDFJSDev.test("GECKOVIEW"),
       enableScripting: this.enableScripting,
       hasJSActions,
       fieldObjects,
