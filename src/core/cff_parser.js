@@ -1080,6 +1080,10 @@ class CFFParser {
         break;
       case 1:
         while (charset.length <= length) {
+          if (pos + 3 > bytes.length) {
+            warn("parseCharsets: Truncated charset.");
+            break;
+          }
           id = (bytes[pos++] << 8) | bytes[pos++];
           count = bytes[pos++];
           for (i = 0; i <= count; i++) {
