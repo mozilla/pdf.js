@@ -259,12 +259,16 @@ class AnnotationLayerBuilder {
     if (!inferredLinks.length) {
       return;
     }
-    const newLinks = this.#annotations.length
-      ? this.#checkInferredLinks(inferredLinks)
-      : inferredLinks;
+    let newLinks;
 
-    if (!newLinks.length) {
-      return;
+    if (this.#annotations.length) {
+      newLinks = this.#checkInferredLinks(inferredLinks);
+
+      if (!newLinks.length) {
+        return; // All inferred links overlap existing annotations.
+      }
+    } else {
+      newLinks = inferredLinks;
     }
     await this.annotationLayer.addLinkAnnotations(newLinks);
   }
