@@ -2782,6 +2782,24 @@ class CanvasGraphics {
     return shadow(this, "isFontSubpixelAAEnabled", enabled);
   }
 
+  /**
+   * Return the pattern and the transform left by getPattern.
+   */
+  #getTextPattern(color, pathType, opIdx) {
+    const ctx = this.ctx;
+    ctx.save();
+    const pattern = color.getPattern(
+      ctx,
+      this,
+      getCurrentTransformInverse(ctx),
+      pathType,
+      opIdx
+    );
+    const transform = getCurrentTransform(ctx);
+    ctx.restore();
+    return [pattern, transform];
+  }
+
   showText(opIdx, glyphs) {
     if (this.dependencyTracker) {
       this.dependencyTracker
@@ -2871,31 +2889,19 @@ class CanvasGraphics {
     ctx.lineWidth = lineWidth;
 
     if (needsFill && current.patternFill) {
-      ctx.save();
-      const pattern = current.fillColor.getPattern(
-        ctx,
-        this,
-        getCurrentTransformInverse(ctx),
+      [ctx.fillStyle, patternFillTransform] = this.#getTextPattern(
+        current.fillColor,
         PathType.FILL,
         opIdx
       );
-      patternFillTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.fillStyle = pattern;
     }
 
     if (needsStroke && current.patternStroke) {
-      ctx.save();
-      const pattern = current.strokeColor.getPattern(
-        ctx,
-        this,
-        getCurrentTransformInverse(ctx),
+      [ctx.strokeStyle, patternStrokeTransform] = this.#getTextPattern(
+        current.strokeColor,
         PathType.STROKE,
         opIdx
       );
-      patternStrokeTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.strokeStyle = pattern;
     }
 
     if (font.isInvalidPDFjsFont) {
@@ -2928,7 +2934,8 @@ class CanvasGraphics {
     }
 
     let x = 0,
-      i;
+      i,
+      glyphPatterns = null;
     for (i = 0; i < glyphsLength; ++i) {
       const glyph = glyphs[i];
       if (typeof glyph === "number") {
@@ -2997,6 +3004,36 @@ class CanvasGraphics {
           }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
+
+          if (
+            font.missingFile &&
+            (patternFillTransform || patternStrokeTransform)
+          ) {
+            // Keep patterns aligned with the page after scaling the glyph.
+            // Cache by horizontal scale to avoid recreating patterns; the sign
+            // distinguishes rotated glyphs, which have another transform.
+            glyphPatterns ||= new Map();
+            [ctx.fillStyle, ctx.strokeStyle] =
+              glyphPatterns.getOrInsertComputed(
+                glyph.isRotated ? -characterScaleX : characterScaleX,
+                () => [
+                  patternFillTransform
+                    ? this.#getTextPattern(
+                        current.fillColor,
+                        PathType.FILL,
+                        opIdx
+                      )[0]
+                    : ctx.fillStyle,
+                  patternStrokeTransform
+                    ? this.#getTextPattern(
+                        current.strokeColor,
+                        PathType.STROKE,
+                        opIdx
+                      )[0]
+                    : ctx.strokeStyle,
+                ]
+              );
+          }
         } else if (glyphWidth !== measuredWidth) {
           scaledX +=
             (((glyphWidth - measuredWidth) / 2000) * fontSize) / fontSizeScale;

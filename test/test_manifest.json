@@ -14834,5 +14834,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Rotated fallback glyphs with various vertical metrics and font sizes."
+  },
+  {
+    "id": "pattern_text_non_embedded_font",
+    "file": "pdfs/pattern_text_non_embedded_font.pdf",
+    "md5": "bea8f9bf6f267ee7878c604ae9f450d0",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Pattern fill and stroke on scaled fallback glyphs."
   }
 ]
