@@ -14,9 +14,19 @@
  */
 
 import { CFFCompiler, CFFParser } from "../../src/core/cff_parser.js";
+import {
+  CMAP_URL,
+  DefaultBinaryDataFactory,
+  fetchBuiltInCMapHelper,
+} from "./test_utils.js";
+import { CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
+import {
+  IdentityToUnicodeMap,
+  ToUnicodeMap,
+} from "../../src/core/to_unicode_map.js";
+import { CharCodeMap } from "../../src/core/char_code_map.js";
 import { Font } from "../../src/core/fonts.js";
-import { IdentityCMap } from "../../src/core/cmap.js";
-import { IdentityToUnicodeMap } from "../../src/core/to_unicode_map.js";
+import { Name } from "../../src/core/primitives.js";
 import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
@@ -66,6 +76,109 @@ describe("Font", () => {
       for (const glyph of glyphs) {
         expect(glyph.vmetric).toBeUndefined();
       }
+    });
+  });
+
+  describe("vertical glyphs in non-embedded fonts", () => {
+    const binaryDataFactory = new DefaultBinaryDataFactory({
+      cMapUrl: CMAP_URL,
+    });
+    const fetchBuiltInCMap = name =>
+      fetchBuiltInCMapHelper(binaryDataFactory, /* cMapPacked = */ true, name);
+
+    async function getGlyphs(cMapName, charCodes, unicodes = charCodes) {
+      const cMap = await CMapFactory.create({
+        encoding: Name.get(cMapName),
+        fetchBuiltInCMap,
+        useCMap: null,
+      });
+      const toUnicode = new CharCodeMap();
+      for (let i = 0; i < charCodes.length; i++) {
+        toUnicode.set(charCodes[i], String.fromCharCode(unicodes[i]));
+      }
+      const font = new Font(
+        "TestFont",
+        null,
+        {
+          type: "CIDFontType0",
+          composite: true,
+          vertical: cMap.vertical,
+          cMap,
+          cidEncoding: cMapName,
+          toUnicode: new ToUnicodeMap(toUnicode),
+          differences: new Map(),
+          defaultEncoding: [],
+          widths: [],
+          defaultWidth: 1000,
+          vmetrics: [],
+          defaultVMetrics: [-1000, 500, 880],
+        },
+        {}
+      );
+      expect(font.missingFile).toBeTrue();
+
+      const chars = charCodes.map(c => String.fromCharCode(c >> 8, c & 0xff));
+      return font
+        .charsToGlyphs(chars.join(""))
+        .map(({ fontChar, isRotated }) => ({ fontChar, isRotated }));
+    }
+
+    it("should only use the vertical variants defined by the CMap", async () => {
+      const glyphs = await getGlyphs(
+        "UniJIS-UTF16-V",
+        [0x3001, 0xff01, 0x301c, 0x3042]
+      );
+
+      expect(glyphs).toEqual([
+        { fontChar: "︑", isRotated: false },
+        // U+FF01 maps to CID 642 in both UniJIS-UTF16-H and UniJIS-UTF16-V.
+        { fontChar: "！", isRotated: false },
+        { fontChar: "〜", isRotated: true },
+        { fontChar: "あ", isRotated: false },
+      ]);
+    });
+
+    it("should handle a half-width vertical CMap", async () => {
+      // UniJIS-UCS2-HW-V directly inherits UniJIS-UCS2-H.
+      const glyphs = await getGlyphs("UniJIS-UCS2-HW-V", [0x301c, 0xff01]);
+
+      expect(glyphs).toEqual([
+        { fontChar: "〜", isRotated: true },
+        { fontChar: "！", isRotated: false },
+      ]);
+    });
+
+    it("should use all the vertical variants with an Identity-V CMap", async () => {
+      // Identity-V has no base CMap to compare with.
+      const glyphs = await getGlyphs(
+        "Identity-V",
+        [7887, 642, 7894],
+        [0x3001, 0xff01, 0x301c]
+      );
+
+      expect(glyphs).toEqual([
+        { fontChar: "︑", isRotated: false },
+        { fontChar: "︕", isRotated: false },
+        { fontChar: "〜", isRotated: true },
+      ]);
+    });
+
+    it("should not use any vertical variant in a horizontal font", async () => {
+      const glyphs = await getGlyphs("UniJIS-UTF16-H", [0x3001, 0x301c]);
+
+      expect(glyphs).toEqual([
+        { fontChar: "、", isRotated: false },
+        { fontChar: "〜", isRotated: false },
+      ]);
+    });
+
+    it("should not rotate the fullwidth macron", async () => {
+      const glyphs = await getGlyphs("Identity-V", [1, 2], [0x30fc, 0xffe3]);
+
+      expect(glyphs).toEqual([
+        { fontChar: "ー", isRotated: true },
+        { fontChar: "￣", isRotated: false },
+      ]);
     });
   });
 

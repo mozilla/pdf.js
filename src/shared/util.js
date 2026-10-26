@@ -30,6 +30,11 @@ const F32_BBOX_INIT = new Float32Array(BBOX_INIT);
 
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+// Default CIDFont /DW2: [vertical origin y, vertical displacement y].
+// PDF 1.7, Table 5.14 specifies [880 -1000].
+const DEFAULT_VERTICAL_ORIGIN_Y = 880;
+const DEFAULT_VERTICAL_ADVANCE = 1000;
+
 // Represent the percentage of the height of a single-line field over
 // the font size. Acrobat seems to use this value.
 const LINE_FACTOR = 1.35;
@@ -1191,6 +1196,8 @@ export {
   BBOX_INIT,
   bytesToString,
   createValidAbsoluteUrl,
+  DEFAULT_VERTICAL_ADVANCE,
+  DEFAULT_VERTICAL_ORIGIN_Y,
   DocumentActionEventType,
   DrawOPS,
   F32_BBOX_INIT,

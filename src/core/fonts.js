@@ -31,6 +31,7 @@ import {
   normalizeFontName,
   recoverGlyphName,
   SEAC_ANALYSIS_ENABLED,
+  VERTICAL_ROTATED_CHARS,
 } from "./fonts_utils.js";
 import {
   getCharUnicodeCategory,
@@ -249,7 +250,8 @@ class Glyph {
     vmetric,
     operatorListId,
     isSpace,
-    isInFont
+    isInFont,
+    isRotated
   ) {
     this.originalCharCode = originalCharCode;
     this.fontChar = fontChar;
@@ -260,6 +262,7 @@ class Glyph {
     this.operatorListId = operatorListId;
     this.isSpace = isSpace;
     this.isInFont = isInFont;
+    this.isRotated = isRotated;
   }
 
   /**
@@ -3652,10 +3655,19 @@ class Font {
       }
     }
 
-    if (this.missingFile && this.vertical && fontChar.length === 1) {
-      const vertical = getVerticalPresentationForm()[fontChar.charCodeAt(0)];
+    let isRotated = false;
+    if (
+      this.missingFile &&
+      this.vertical &&
+      fontChar.length === 1 &&
+      this.#hasVerticalVariant(charcode)
+    ) {
+      const charCode = fontChar.charCodeAt(0);
+      const vertical = getVerticalPresentationForm()[charCode];
       if (vertical) {
         fontChar = unicode = String.fromCharCode(vertical);
+      } else {
+        isRotated = VERTICAL_ROTATED_CHARS.has(charCode);
       }
     }
 
@@ -3668,10 +3680,24 @@ class Font {
       vmetric,
       operatorListId,
       isSpace,
-      isInFont
+      isInFont,
+      isRotated
     );
     this.#glyphCache.set(charcode, glyph);
     return glyph;
+  }
+
+  #hasVerticalVariant(charcode) {
+    const { cMap } = this;
+    if (!cMap?.builtInCMap) {
+      return true;
+    }
+    // Compare CIDs with the horizontal base, when present.
+    let { useCMap } = cMap;
+    while (useCMap?.vertical) {
+      useCMap = useCMap.useCMap;
+    }
+    return !useCMap || cMap.lookup(charcode) !== useCMap.lookup(charcode);
   }
 
   charsToGlyphs(chars) {
