@@ -2275,18 +2275,17 @@ class PDFDocument {
   }
 
   get calculationOrderIds() {
-    const calculationOrder = this.catalog.acroForm?.get("CO");
-    if (!Array.isArray(calculationOrder) || calculationOrder.length === 0) {
-      return shadow(this, "calculationOrderIds", null);
-    }
+    const co = this.catalog.acroForm?.get("CO");
+    let ids = null;
 
-    const ids = [];
-    for (const id of calculationOrder) {
-      if (id instanceof Ref) {
-        ids.push(id.toString());
+    if (Array.isArray(co)) {
+      for (const id of co) {
+        if (id instanceof Ref) {
+          (ids ??= []).push(id.toString());
+        }
       }
     }
-    return shadow(this, "calculationOrderIds", ids.length ? ids : null);
+    return shadow(this, "calculationOrderIds", ids);
   }
 
   get annotationGlobals() {
