@@ -1510,9 +1510,9 @@ const PDFViewerApplication = {
 
     try {
       await this.pdfScriptingManager.dispatchWillSave();
-      const data = await pdfDocument.saveDocument(
-        this.externalServices.printToPDF
-      );
+      const data = await pdfDocument.saveDocument({
+        printToPDF: this.externalServices.printToPDF,
+      });
       this.downloadManager.download(
         data,
         this._downloadUrl,

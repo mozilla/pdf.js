@@ -3465,9 +3465,11 @@ describe("api", function () {
       });
 
       let generatedEntries;
-      const data = await pdfDoc.saveDocument(entries => {
-        generatedEntries = entries;
-        return buildGeneratedAppearancePdf();
+      const data = await pdfDoc.saveDocument({
+        printToPDF: entries => {
+          generatedEntries = entries;
+          return buildGeneratedAppearancePdf();
+        },
       });
       expect(generatedEntries).toEqual([
         {
@@ -3537,7 +3539,7 @@ describe("api", function () {
         pageIndex: 0,
       });
 
-      const data = await pdfDoc.saveDocument(() => generated);
+      const data = await pdfDoc.saveDocument({ printToPDF: () => generated });
       const savedString = bytesToString(data);
       expect(savedString).toContain("/Filter [/FlateDecode /ASCIIHexDecode]");
       await loadingTask.destroy();
@@ -3568,12 +3570,14 @@ describe("api", function () {
       }
 
       let generatedEntries;
-      const data = await pdfDoc.saveDocument(entries => {
-        generatedEntries = entries;
-        return buildGeneratedAppearancePdf([
-          "BT /F1 10 Tf (App0) Tj ET",
-          "BT /F1 10 Tf (App1) Tj ET",
-        ]);
+      const data = await pdfDoc.saveDocument({
+        printToPDF: entries => {
+          generatedEntries = entries;
+          return buildGeneratedAppearancePdf([
+            "BT /F1 10 Tf (App0) Tj ET",
+            "BT /F1 10 Tf (App1) Tj ET",
+          ]);
+        },
       });
       expect(generatedEntries.map(entry => entry.data.text)).toEqual([
         "Hello n°0",

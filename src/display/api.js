@@ -694,6 +694,14 @@ class PDFDataRangeTransport {
 }
 
 /**
+ * @typedef {object} SaveDocumentParameters
+ * @property {function(Array<object>): Promise<Uint8Array | null>} [printToPDF]
+ *   Firefox-only callback receiving ordered `{ data }` entries. Returns a PDF
+ *   with one page per entry, or `null`. Place each appearance within
+ *   `[0, 0, data.width, data.height]` in points.
+ */
+
+/**
  * Proxy to a `PDFDocument` in the worker thread.
  */
 class PDFDocumentProxy {
@@ -1001,17 +1009,13 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @param {function(Array<object>): Promise<Uint8Array | null>} [printToPDF] -
-   *   Firefox-only platform appearance renderer. It receives ordered
-   *   `{ data }` entries and returns a PDF with one page per entry, or `null`.
-   *   Each page must place its appearance in
-   *   `[0, 0, data.width, data.height]`, with dimensions in points.
+   * @param {SaveDocumentParameters} [params] - Save parameters.
    * @returns {Promise<Uint8Array<ArrayBuffer>>} A promise that is
    *   resolved with a {Uint8Array<ArrayBuffer>} containing the
    *   full data of the saved document.
    */
-  saveDocument(printToPDF) {
-    return this._transport.saveDocument(printToPDF);
+  saveDocument(params) {
+    return this._transport.saveDocument(params);
   }
 
   /**
@@ -2855,7 +2859,7 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
-  saveDocument(printToPDF = null) {
+  saveDocument({ printToPDF = null } = {}) {
     if (this.annotationStorage.size <= 0) {
       warn(
         "saveDocument called while `annotationStorage` is empty, " +
