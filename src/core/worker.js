@@ -150,6 +150,17 @@ class WorkerMessageHandler {
       WorkerTasks.delete(task);
     }
 
+    async function runPageTask(manager, pageIndex, name, callback) {
+      const page = await manager.getPage(pageIndex);
+      const task = new WorkerTask(`${name}: page ${pageIndex}`);
+      startWorkerTask(task);
+      try {
+        return await callback(page, task);
+      } finally {
+        finishWorkerTask(task);
+      }
+    }
+
     async function loadDocument(recoveryMode) {
       await pdfManager.initDocument(recoveryMode);
 
@@ -540,17 +551,13 @@ class WorkerMessageHandler {
       return stream.bytes;
     });
 
-    handler.on("GetAnnotations", async function ({ pageIndex, intent }) {
-      const page = await pdfManager.getPage(pageIndex);
-
-      const task = new WorkerTask(`GetAnnotations: page ${pageIndex}`);
-      startWorkerTask(task);
-
-      try {
-        return await page.getAnnotationsData(handler, task, intent);
-      } finally {
-        finishWorkerTask(task);
-      }
+    handler.on("GetAnnotations", function ({ pageIndex, intent }) {
+      return runPageTask(
+        pdfManager,
+        pageIndex,
+        "GetAnnotations",
+        (page, task) => page.getAnnotationsData(handler, task, intent)
+      );
     });
 
     handler.on("GetFieldObjects", async function () {
@@ -791,22 +798,19 @@ class WorkerMessageHandler {
             structTreeRoot === undefined ? promises : [];
           for (const [pageIndex, annotations] of newAnnotationsByPage) {
             newAnnotationPromises.push(
-              pdfManager.getPage(pageIndex).then(page => {
-                const task = new WorkerTask(`Save (editor): page ${pageIndex}`);
-                startWorkerTask(task);
-
-                return page
-                  .saveNewAnnotations(
+              runPageTask(
+                pdfManager,
+                pageIndex,
+                "Save (editor)",
+                (page, task) =>
+                  page.saveNewAnnotations(
                     handler,
                     task,
                     annotations,
                     imagePromises,
                     changes
                   )
-                  .finally(() => {
-                    finishWorkerTask(task);
-                  });
-              })
+              )
             );
           }
           if (structTreeRoot === null) {
@@ -842,16 +846,9 @@ class WorkerMessageHandler {
         } else {
           for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
             promises.push(
-              pdfManager.getPage(pageIndex).then(function (page) {
-                const task = new WorkerTask(`Save: page ${pageIndex}`);
-                startWorkerTask(task);
-
-                return page
-                  .save(handler, task, annotationStorage, changes)
-                  .finally(() => {
-                    finishWorkerTask(task);
-                  });
-              })
+              runPageTask(pdfManager, pageIndex, "Save", (page, task) =>
+                page.save(handler, task, annotationStorage, changes)
+              )
             );
           }
         }
