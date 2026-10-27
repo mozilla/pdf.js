@@ -69,6 +69,8 @@ class DrawingOptions {
  * Basic draw editor.
  */
 class DrawingEditor extends AnnotationEditor {
+  #hasBeenAddedInUndoStack = false;
+
   #internalDiv = null;
 
   #mustBeCommitted;
@@ -487,11 +489,23 @@ class DrawingEditor extends AnnotationEditor {
     return true;
   }
 
+  /**
+   * Record the creation of the editor in the undo stack.
+   * The editor is added again each time its page is rendered, so the creation
+   * must be recorded only once.
+   */
+  _addToUndoStack() {
+    if (!this.#hasBeenAddedInUndoStack) {
+      this.#hasBeenAddedInUndoStack = true;
+      this.parent.addUndoableEditor(this);
+    }
+  }
+
   /** @inheritdoc */
   onceAdded(focus) {
     // Don't record creation until the editor has a drawing.
     if (!this.annotationElementId && this._drawId !== null) {
-      this.parent.addUndoableEditor(this);
+      this._addToUndoStack();
     }
     this._isDraggable = true;
     if (this.#mustBeCommitted) {
