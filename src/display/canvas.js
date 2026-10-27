@@ -2988,6 +2988,7 @@ class CanvasGraphics {
       // Fit rotated glyphs using their horizontal width; the vertical advance
       // only controls spacing to the next glyph.
       const glyphWidth = glyph.isRotated ? glyph.width : width;
+      let characterScaleX = 1;
       if ((font.remeasure || glyph.isRotated) && glyphWidth > 0) {
         measure ??= ctx.measureText(character);
 
@@ -2997,47 +2998,42 @@ class CanvasGraphics {
         const measuredWidth =
           ((measure.width * 1000) / fontSize) * fontSizeScale;
         if (glyphWidth < measuredWidth && this.isFontSubpixelAAEnabled) {
-          const characterScaleX = glyphWidth / measuredWidth;
+          characterScaleX = glyphWidth / measuredWidth;
           if (!restoreNeeded) {
             restoreNeeded = true;
             ctx.save();
           }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
-
-          if (
-            font.missingFile &&
-            (patternFillTransform || patternStrokeTransform)
-          ) {
-            // Keep patterns aligned with the page after scaling the glyph.
-            // Cache by horizontal scale to avoid recreating patterns; the sign
-            // distinguishes rotated glyphs, which have another transform.
-            glyphPatterns ||= new Map();
-            [ctx.fillStyle, ctx.strokeStyle] =
-              glyphPatterns.getOrInsertComputed(
-                glyph.isRotated ? -characterScaleX : characterScaleX,
-                () => [
-                  patternFillTransform
-                    ? this.#getTextPattern(
-                        current.fillColor,
-                        PathType.FILL,
-                        opIdx
-                      )[0]
-                    : ctx.fillStyle,
-                  patternStrokeTransform
-                    ? this.#getTextPattern(
-                        current.strokeColor,
-                        PathType.STROKE,
-                        opIdx
-                      )[0]
-                    : ctx.strokeStyle,
-                ]
-              );
-          }
         } else if (glyphWidth !== measuredWidth) {
           scaledX +=
             (((glyphWidth - measuredWidth) / 2000) * fontSize) / fontSizeScale;
         }
+      }
+
+      if (
+        restoreNeeded &&
+        font.missingFile &&
+        (patternFillTransform || patternStrokeTransform)
+      ) {
+        // Compensate for glyph rotation and scaling in the pattern transform.
+        // Cache by scale; negative keys distinguish rotated glyphs.
+        glyphPatterns ||= new Map();
+        [ctx.fillStyle, ctx.strokeStyle] = glyphPatterns.getOrInsertComputed(
+          glyph.isRotated ? -characterScaleX : characterScaleX,
+          () => [
+            patternFillTransform
+              ? this.#getTextPattern(current.fillColor, PathType.FILL, opIdx)[0]
+              : ctx.fillStyle,
+            patternStrokeTransform
+              ? this.#getTextPattern(
+                  current.strokeColor,
+                  PathType.STROKE,
+                  opIdx
+                )[0]
+              : ctx.strokeStyle,
+          ]
+        );
       }
 
       // Only attempt to draw the glyph if it is actually in the embedded font

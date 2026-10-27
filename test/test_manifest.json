@@ -14842,5 +14842,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Pattern fill and stroke on scaled fallback glyphs."
+  },
+  {
+    "id": "pattern_text_rotated_fallback_glyphs",
+    "file": "pdfs/pattern_text_rotated_fallback_glyphs.pdf",
+    "md5": "77ed444ad0b1c01318bfeaa84c1e968b",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Pattern fill and stroke on rotated fallback glyphs."
   }
 ]
