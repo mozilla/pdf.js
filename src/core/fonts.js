@@ -242,7 +242,6 @@ function amendFallbackToUnicode(properties) {
 
 class Glyph {
   constructor(
-    fontExtraProperties,
     originalCharCode,
     fontChar,
     unicode,
@@ -254,9 +253,7 @@ class Glyph {
     isInFont,
     isRotated
   ) {
-    if (fontExtraProperties) {
-      this.originalCharCode = originalCharCode;
-    }
+    this.originalCharCode = originalCharCode;
     this.fontChar = fontChar;
     this.unicode = unicode;
     this.accent = accent;
@@ -3675,7 +3672,6 @@ class Font {
     }
 
     glyph = new Glyph(
-      this.fontExtraProperties,
       charcode,
       fontChar,
       unicode,

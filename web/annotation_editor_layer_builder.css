@@ -268,6 +268,14 @@
         &.deleteButton::before {
           mask-image: var(--editor-toolbar-delete-image);
         }
+
+        &.jumpHistoryMarkButton::before {
+          mask-image: url(images/toolbarButton-bookmark.svg);
+        }
+
+        &.jumpHistoryListButton::before {
+          mask-image: url(images/toolbarButton-viewOutline.svg);
+        }
       }
 
       > * {

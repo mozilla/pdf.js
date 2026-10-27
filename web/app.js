@@ -84,6 +84,7 @@ import { PDFDocumentProperties } from "web-pdf_document_properties";
 import { PDFFindBar } from "web-pdf_find_bar";
 import { PDFFindController } from "./pdf_find_controller.js";
 import { PDFHistory } from "./pdf_history.js";
+import { PDFJumpHistory } from "./pdf_jump_history.js";
 import { PDFLayerViewer } from "web-pdf_layer_viewer";
 import { PDFOutlineViewer } from "web-pdf_outline_viewer";
 import { PDFPresentationMode } from "web-pdf_presentation_mode";
@@ -138,6 +139,8 @@ const PDFViewerApplication = {
   pdfTextExtractor: null,
   /** @type {PDFHistory} */
   pdfHistory: null,
+  /** @type {PDFJumpHistory} */
+  pdfJumpHistory: null,
   /** @type {ViewsManager} */
   viewsManager: null,
   /** @type {PDFOutlineViewer} */
@@ -767,6 +770,14 @@ const PDFViewerApplication = {
       linkService.setHistory(this.pdfHistory);
     }
 
+    if (appConfig.jumpHistory) {
+      this.pdfJumpHistory = new PDFJumpHistory(
+        appConfig.jumpHistory,
+        eventBus,
+        pdfViewer
+      );
+    }
+
     if (!this.supportsIntegratedFind && appConfig.findBar) {
       this.findBar = new PDFFindBar(
         appConfig.findBar,
@@ -1379,6 +1390,7 @@ const PDFViewerApplication = {
     this.pdfLayerViewer?.reset();
 
     this.pdfHistory?.reset();
+    this.pdfJumpHistory?.reset();
     this.findBar?.reset();
     this.toolbar?.reset();
     this.secondaryToolbar?.reset();
@@ -2259,6 +2271,8 @@ const PDFViewerApplication = {
     // Scale was not initialized: invalid bookmark or scale was not specified.
     // Setting the default one.
     this.pdfViewer.currentScaleValue ||= DEFAULT_SCALE_VALUE;
+
+    this.pdfJumpHistory?.initialize(this.store, this._docFilename);
   },
 
   /**
@@ -3530,6 +3544,25 @@ function onKeyDown(evt) {
         this.rotatePages(90);
         break;
 
+      case 66: // 'b'
+        if (this.pdfJumpHistory?.canReturn) {
+          this.pdfJumpHistory.toggleReturn();
+          handled = true;
+        }
+        break;
+      case 77: // 'm'
+        if (this.pdfJumpHistory) {
+          this.pdfJumpHistory.markCurrentPosition();
+          handled = true;
+        }
+        break;
+      case 67: // 'c'
+        if (this.pdfJumpHistory?.hasMarks) {
+          this.pdfJumpHistory.cycleBack();
+          handled = true;
+        }
+        break;
+
       case 115: // F4
         this.viewsManager?.toggle();
         break;
@@ -3573,6 +3606,12 @@ function onKeyDown(evt) {
         break;
       case 82: // 'r'
         this.rotatePages(-90);
+        break;
+      case 67: // 'c'
+        if (this.pdfJumpHistory?.hasMarks) {
+          this.pdfJumpHistory.cycleForward();
+          handled = true;
+        }
         break;
     }
   }

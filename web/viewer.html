@@ -889,6 +889,31 @@ See https://github.com/adobe-type-tools/cmap-resources
         <div id="viewerContainer" tabindex="0">
           <div id="viewer" class="pdfViewer"></div>
         </div>
+
+        <div id="jumpHistory" role="group" hidden>
+          <button id="jumpHistoryBack" class="jumpHistoryButton" type="button" data-l10n-id="pdfjs-jump-history-back-button-empty" disabled>
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"><path d="M6 3 2.5 6.5 6 10M3 6.5h6.5a3.5 3.5 0 0 1 0 7H7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="jumpHistoryPage" aria-hidden="true"></span>
+          </button>
+          <button id="jumpHistoryList" class="jumpHistoryButton" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="jumpHistoryPanel" data-l10n-id="pdfjs-jump-history-list-button">
+            <svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16"><path d="M5.5 4h8M5.5 8h8M5.5 12h8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="2.5" cy="4" r="1" fill="currentColor"/><circle cx="2.5" cy="8" r="1" fill="currentColor"/><circle cx="2.5" cy="12" r="1" fill="currentColor"/></svg>
+          </button>
+        </div>
+
+        <div id="jumpHistoryPanel" role="dialog" aria-labelledby="jumpHistoryPanelTitle" hidden>
+          <div class="jumpHistoryPanelHeader">
+            <span id="jumpHistoryPanelTitle" data-l10n-id="pdfjs-jump-history-panel-title"></span>
+            <div class="jumpHistoryPanelActions">
+              <button id="jumpHistoryClear" class="secondaryButton" type="button" data-l10n-id="pdfjs-jump-history-clear-button"></button>
+              <button id="jumpHistorySave" class="secondaryButton" type="button" data-l10n-id="pdfjs-jump-history-save-button"></button>
+            </div>
+          </div>
+          <ol id="jumpHistoryEntries"></ol>
+          <div class="jumpHistoryPanelFooter">
+            <label for="jumpHistoryMaxEntries" data-l10n-id="pdfjs-jump-history-max-entries-label"></label>
+            <select id="jumpHistoryMaxEntries"></select>
+          </div>
+        </div>
       </div>
       <!-- mainContainer -->
 

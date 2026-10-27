@@ -188,6 +188,7 @@ class PDFLinkService {
       this.pdfHistory.pushCurrentPosition();
       this.pdfHistory.push({ namedDest, explicitDest, pageNumber });
     }
+    this.eventBus?.dispatch("beforenavigate", { source: this, pageNumber });
 
     this.pdfViewer.scrollPageIntoView({
       pageNumber,
@@ -234,6 +235,7 @@ class PDFLinkService {
       this.pdfHistory.pushCurrentPosition();
       this.pdfHistory.pushPage(pageNumber);
     }
+    this.eventBus?.dispatch("beforenavigate", { source: this, pageNumber });
 
     this.pdfViewer.scrollPageIntoView({ pageNumber });
   }

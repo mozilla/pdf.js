@@ -3020,7 +3020,7 @@ class PartialEvaluator {
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
-        const { category } = glyph;
+        const { category, originalCharCode } = glyph;
 
         if (category.isInvisibleFormatMark) {
           continue;
@@ -3030,7 +3030,7 @@ class PartialEvaluator {
         const glyphWidth = font.vertical ? glyph.vmetric[0] : glyph.width;
         let scaledDim = glyphWidth * scale;
 
-        if (glyph.isSpace) {
+        if (originalCharCode === 0x20) {
           charSpacing += textState.wordSpacing;
         }
 

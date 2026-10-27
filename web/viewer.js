@@ -346,6 +346,16 @@ function getViewerConfiguration() {
       editorHighlightShowAll: document.getElementById("editorHighlightShowAll"),
     },
     printContainer: document.getElementById("printContainer"),
+    jumpHistory: {
+      container: document.getElementById("jumpHistory"),
+      backButton: document.getElementById("jumpHistoryBack"),
+      listButton: document.getElementById("jumpHistoryList"),
+      panel: document.getElementById("jumpHistoryPanel"),
+      entries: document.getElementById("jumpHistoryEntries"),
+      saveButton: document.getElementById("jumpHistorySave"),
+      maxEntriesSelect: document.getElementById("jumpHistoryMaxEntries"),
+      clearButton: document.getElementById("jumpHistoryClear"),
+    },
     editorUndoBar: {
       container: document.getElementById("editorUndoBar"),
       message: document.getElementById("editorUndoBarMessage"),

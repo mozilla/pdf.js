@@ -574,6 +574,37 @@ pdfjs-editor-undo-bar-close-button =
     .title = Close
 pdfjs-editor-undo-bar-close-button-label = Close
 
+## Jump history (marks, and returning from links)
+
+# Variables:
+#   $page (Number) - the page number of the position to return to
+pdfjs-jump-history-back-button =
+    .title = Return to page { $page } (B)
+    .aria-label = Return to page { $page }
+pdfjs-jump-history-back-button-empty =
+    .title = Nothing to return to yet; follow a link, or use the outline, first (B)
+    .aria-label = Nothing to return to yet
+pdfjs-jump-history-list-button =
+    .title = Show marks (C / Shift+C to cycle)
+    .aria-label = Show marks
+pdfjs-jump-history-panel-title = Marks
+pdfjs-jump-history-save-button = Save to file
+pdfjs-jump-history-max-entries-label = Marks to remember
+# Variables:
+#   $page (Number) - the page number of the mark
+pdfjs-jump-history-entry-page = Page { $page }
+pdfjs-jump-history-entry-empty = No marks yet. Press M, or select text and use the mark button.
+pdfjs-jump-history-clear-button = Clear all
+pdfjs-jump-history-clear-button-confirm = Confirm clear
+pdfjs-jump-history-mark-floating-button =
+    .title = Mark this line (M)
+pdfjs-jump-history-mark-floating-button-label = Mark this line
+pdfjs-jump-history-list-floating-button =
+    .title = Show marks
+pdfjs-jump-history-list-floating-button-label = Show marks
+pdfjs-jump-history-entry-loading = Loading…
+pdfjs-jump-history-entry-no-text = (no text on this line)
+
 ## Add a signature dialog
 
 pdfjs-editor-add-signature-dialog-label = This modal allows the user to create a signature to add to a PDF document. The user can edit the name (which also serves as the alt text), and optionally save the signature for repeated use.

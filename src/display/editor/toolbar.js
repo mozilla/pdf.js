@@ -316,6 +316,11 @@ class FloatingToolbar {
       }
     );
 
+    for (const { className, l10nId, labelL10nId, onClick } of this.#uiManager
+      .floatingToolbarButtons) {
+      this.#makeButton(className, l10nId, labelL10nId, onClick);
+    }
+
     return editToolbar;
   }
 

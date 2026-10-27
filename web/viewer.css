@@ -377,6 +377,233 @@ body {
   transition-timing-function: var(--sidebar-transition-timing-function);
 }
 
+#jumpHistory {
+  position: absolute;
+  inset-block-end: 24px;
+  inset-inline-end: 32px;
+  z-index: 1;
+  display: flex;
+  gap: 1px;
+  border: 1px solid var(--doorhanger-border-color);
+  border-radius: 18px;
+  background-color: var(--doorhanger-bg-color);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.2);
+  overflow: hidden;
+
+  &[hidden] {
+    display: none;
+  }
+
+  > .jumpHistoryButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 36px;
+    min-width: 36px;
+    padding-inline: 10px;
+    border: none;
+    background: none;
+    color: var(--main-color);
+    font: message-box;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+
+    &[hidden] {
+      display: none;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: var(--button-hover-color);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--focus-ring-color, Highlight);
+      outline-offset: -2px;
+    }
+
+    > svg {
+      flex-shrink: 0;
+    }
+  }
+}
+
+#jumpHistory > #jumpHistoryList {
+  border-inline-start: 1px solid var(--doorhanger-border-color);
+}
+
+#jumpHistoryPanel {
+  position: absolute;
+  inset-block-end: 70px;
+  inset-inline-end: 32px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100% - 64px));
+  max-height: min(420px, calc(100% - var(--toolbar-height) - 100px));
+  border: 1px solid var(--doorhanger-border-color);
+  border-radius: 8px;
+  background-color: var(--doorhanger-bg-color);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.25);
+  color: var(--main-color);
+  font: message-box;
+  font-size: 13px;
+
+  &[hidden] {
+    display: none;
+  }
+
+  .jumpHistoryPanelActions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 4px;
+
+    > button {
+      white-space: nowrap;
+    }
+  }
+
+  #jumpHistoryClear.confirm {
+    color: light-dark(rgb(197 0 66), rgb(255 132 128));
+  }
+
+  > .jumpHistoryPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 8px 8px 12px;
+    border-bottom: 1px solid var(--doorhanger-border-color);
+    font-weight: 600;
+  }
+
+  > .jumpHistoryPanelFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 8px 8px 12px;
+    border-top: 1px solid var(--doorhanger-border-color);
+
+    > select {
+      padding: 2px 4px;
+      border: 1px solid var(--doorhanger-border-color);
+      border-radius: 4px;
+      background-color: var(--field-bg-color);
+      color: inherit;
+      font: inherit;
+    }
+  }
+
+  > #jumpHistoryEntries {
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+
+    > li > button {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 8px;
+      width: 100%;
+      padding: 6px 8px;
+      border: none;
+      border-radius: 4px;
+      background: none;
+      color: inherit;
+      font: inherit;
+      text-align: start;
+      cursor: pointer;
+
+      &:hover {
+        background-color: var(--button-hover-color);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--focus-ring-color, Highlight);
+        outline-offset: -2px;
+      }
+    }
+
+    .jumpHistoryEntryPage {
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .jumpHistoryEntryText {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      opacity: 0.8;
+    }
+
+    > li.empty {
+      padding: 6px 8px;
+      opacity: 0.7;
+    }
+
+    > li[aria-current] > button {
+      background-color: var(--button-hover-color);
+    }
+  }
+}
+
+.pdfViewer .page > :is(.jumpHistoryHighlight, .jumpHistoryFlash) {
+  --jump-history-highlight-color: rgb(255 212 0 / 0.4);
+  --jump-history-highlight-accent: rgb(234 128 0);
+
+  position: absolute;
+  border-radius: 2px;
+  background-color: var(--jump-history-highlight-color);
+  /* Keep the text readable, and selectable, below the highlight. */
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.pdfViewer .page > .jumpHistoryHighlight {
+  box-shadow: -3px 0 0 var(--jump-history-highlight-accent);
+}
+
+.pdfViewer .page > .jumpHistoryFlash {
+  --jump-history-highlight-color: rgb(255 170 0 / 0.55);
+
+  animation: jumpHistoryFlash 1.6s ease-out forwards;
+}
+
+@keyframes jumpHistoryFlash {
+  0%,
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdfViewer .page > .jumpHistoryFlash {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .pdfViewer .page > :is(.jumpHistoryHighlight, .jumpHistoryFlash) {
+    mix-blend-mode: normal;
+    background-color: transparent;
+    outline: 2px solid Highlight;
+  }
+}
+
+#viewerContainer.pdfPresentationMode ~ :is(#jumpHistory, #jumpHistoryPanel) {
+  display: none;
+}
+
 /*#if MOZCENTRAL*/
 #viewerContainer:not(.pdfPresentationMode) {
   inset-block-start: calc(var(--toolbar-height) + var(--pfn-bar-height, 0px));

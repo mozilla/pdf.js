@@ -779,6 +779,8 @@ class AnnotationEditorUIManager {
 
   #floatingToolbar = null;
 
+  #floatingToolbarButtons = [];
+
   #idManager = new IdManager();
 
   #isEnabled = false;
@@ -1216,6 +1218,26 @@ class AnnotationEditorUIManager {
 
   hasCommentManager() {
     return !!this.#commentManager;
+  }
+
+  /**
+   * Add a button to the floating toolbar shown when selecting text, after the
+   * built-in ones; the selection is still available when it's clicked.
+   * @param {object} button
+   * @param {string} button.className - Used to style the button, e.g. its icon.
+   * @param {string} button.l10nId - For the title of the button.
+   * @param {string} button.labelL10nId - For the label of the button.
+   * @param {Function} button.onClick
+   */
+  addFloatingToolbarButton(button) {
+    this.#floatingToolbarButtons.push(button);
+    // Re-create the toolbar, if already used, to include the new button.
+    this.#floatingToolbar?.hide();
+    this.#floatingToolbar = null;
+  }
+
+  get floatingToolbarButtons() {
+    return this.#floatingToolbarButtons;
   }
 
   editComment(editor, posX, posY, options) {
