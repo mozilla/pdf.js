@@ -2151,7 +2151,77 @@ class PushButtonWidgetAnnotationElement extends LinkAnnotationElement {
       });
     }
 
+    // Acrobat's "Select Icon" field-properties feature binds a push
+    // button's action to a `buttonImportIcon()` JavaScript call that isn't
+    // implemented anywhere (it's otherwise a dead action); such buttons are
+    // typically used as an icon placeholder, e.g. a character portrait in a
+    // fillable character sheet, so let the user click it to pick a
+    // replacement image.
+    if (
+      this.renderForms &&
+      this.data.canSetIcon &&
+      !this.data.readOnly &&
+      typeof createImageBitmap === "function"
+    ) {
+      this.#setupIconPicker(container, linkElement);
+    }
+
     return container;
+  }
+
+  #setupIconPicker(container, linkElement) {
+    const storage = this.annotationStorage;
+    const id = this.data.id;
+
+    container.classList.add("iconPicker");
+
+    const preview = document.createElement("img");
+    preview.className = "pushButtonIconPreview";
+    preview.setAttribute("aria-hidden", "true");
+    preview.hidden = true;
+    const { iconUrl } = storage.getValue(id, {});
+    if (iconUrl) {
+      preview.src = iconUrl;
+      preview.hidden = false;
+    }
+    container.append(preview);
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.className = "pushButtonIconInput";
+    input.tabIndex = -1;
+    container.append(input);
+
+    const pickIcon = event => {
+      event.preventDefault();
+      input.value = "";
+      input.click();
+    };
+    (linkElement || container).addEventListener("click", pickIcon);
+    linkElement?.setAttribute("title", "Click to choose an image");
+
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        return;
+      }
+      let bitmap;
+      try {
+        bitmap = await createImageBitmap(file);
+      } catch (ex) {
+        warn(`PushButtonWidgetAnnotationElement: ${ex}`);
+        return;
+      }
+      const previousUrl = storage.getValue(id, {}).iconUrl;
+      const url = URL.createObjectURL(file);
+      preview.src = url;
+      preview.hidden = false;
+      storage.setValue(id, { bitmap, iconUrl: url });
+      if (previousUrl) {
+        URL.revokeObjectURL(previousUrl);
+      }
+    });
   }
 }
 
