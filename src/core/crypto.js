@@ -1016,9 +1016,7 @@ class CipherTransformFactory {
         CipherTransformFactory._defaultPasswordBytes
       );
     }
-    return checkData.every((data, k) => userPassword[k] === data)
-      ? encryptionKey
-      : null;
+    return isArrayEqual(checkData, userPassword) ? encryptionKey : null;
   }
 
   #decodeUserPassword(password, ownerPassword, revision, keyLength) {

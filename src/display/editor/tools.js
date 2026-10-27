@@ -23,6 +23,7 @@ import {
   AnnotationEditorType,
   FeatureTest,
   getUuid,
+  isArrayEqual,
   makeArr,
   shadow,
   SVG_NS,
@@ -692,7 +693,7 @@ class ColorManager {
     }
 
     for (const [name, RGB] of this._colors) {
-      if (RGB.every((x, i) => x === rgb[i])) {
+      if (isArrayEqual(RGB, rgb)) {
         return ColorManager._colorsMapping.get(name);
       }
     }

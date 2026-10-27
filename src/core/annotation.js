@@ -4816,9 +4816,7 @@ class PolylineAnnotation extends MarkupAnnotation {
       let operator;
       if (fillColor) {
         if (this.color) {
-          operator = fillColor.every((c, i) => c === strokeColor[i])
-            ? "f"
-            : "B";
+          operator = isArrayEqual(fillColor, strokeColor) ? "f" : "B";
         } else {
           operator = "f";
         }
