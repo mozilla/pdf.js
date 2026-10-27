@@ -454,17 +454,30 @@ describe("api", function () {
     });
 
     it("creates pdf doc from PDF file truncated before its trailer", async function () {
+      const content =
+        "BT /F1 12 Tf 72 720 Td (Trailer-free synthetic page) Tj ET";
       const loadingTask = getDocument({
         data: stringToBytes(
           "%PDF-1.7\n" +
             "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
             "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
-            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] >>\n" +
-            "endobj\n"
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] " +
+            "/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\n" +
+            "endobj\n" +
+            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n" +
+            `5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
+            "endstream\nendobj\n"
         ),
       });
       const pdfDocument = await loadingTask.promise;
       expect(pdfDocument.numPages).toEqual(1);
+
+      const page = await pdfDocument.getPage(1);
+      const textContent = await page.getTextContent();
+      expect(mergeText(textContent.items)).toContain(
+        "Trailer-free synthetic page"
+      );
 
       await loadingTask.destroy();
     });
