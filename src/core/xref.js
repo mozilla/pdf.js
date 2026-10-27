@@ -726,7 +726,10 @@ class XRef {
 
         try {
           obj = this.fetch(ref);
-        } catch {
+        } catch (ex) {
+          if (ex instanceof MissingDataException) {
+            throw ex;
+          }
           continue;
         }
         if (obj instanceof BaseStream) {
