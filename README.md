@@ -6,6 +6,9 @@ PDF.js is community-driven and supported by Mozilla. Our goal is to
 create a general-purpose, web standards-based platform for parsing and
 rendering PDFs.
 
+## One difference from Mozilla repo 
+This fork of pdf.js has one single extra feature and that is to go back and forth (Use the Key B) to any link inside the pdf and come back. And we can create marked positions (Mark aline using M) and move between those positions in the pdf using a shortcut key "C"
+
 ## Contributing
 
 PDF.js is an open source project and always looking for more contributors. To
