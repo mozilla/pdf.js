@@ -119,17 +119,21 @@ describe("fetch_stream", function () {
   });
 
   it("cancel after a failed read doesn't cause an unhandled rejection", async function () {
-    spyOn(globalThis, "fetch").and.callFake(
-      async () =>
-        new Response(
-          new ReadableStream({
-            pull(controller) {
+    spyOn(globalThis, "fetch").and.callFake(async () => {
+      let chunksRead = 0;
+      return new Response(
+        new ReadableStream({
+          pull(controller) {
+            if (chunksRead++ === 0) {
+              controller.enqueue(new Uint8Array([1, 2, 3]));
+            } else {
               controller.error(new Error("Network error"));
-            },
-          }),
-          { status: 200 }
-        )
-    );
+            }
+          },
+        }),
+        { status: 200 }
+      );
+    });
     const stream = new PDFFetchStream({
       url: getPdfUrl(),
       rangeChunkSize: 32768,
@@ -139,6 +143,12 @@ describe("fetch_stream", function () {
 
     const fullReader = stream.getFullReader();
     const rangeReader = stream.getRangeReader(0, 32768);
+    const fullReaderResult = await fullReader.read();
+    expect(fullReaderResult.value.byteLength).toEqual(3);
+    expect(fullReaderResult.done).toBeFalse();
+    const rangeReaderResult = await rangeReader.read();
+    expect(rangeReaderResult.value.byteLength).toEqual(3);
+    expect(rangeReaderResult.done).toBeFalse();
     await expectAsync(fullReader.read()).toBeRejectedWithError("Network error");
     await expectAsync(rangeReader.read()).toBeRejectedWithError(
       "Network error"
