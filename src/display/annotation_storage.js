@@ -24,6 +24,18 @@ const SerializableEmpty = Object.freeze({
 });
 
 /**
+ * Clones the bitmap of a stored value so that, unlike an `AnnotationEditor`
+ * (whose `serialize` method already returns a fresh bitmap clone on every
+ * call), the original stays usable across repeated calls, e.g. when saving
+ * the document more than once.
+ * @param {object} val
+ * @returns {object}
+ */
+function cloneBitmap(val) {
+  return val.bitmap ? { ...val, bitmap: structuredClone(val.bitmap) } : val;
+}
+
+/**
  * Key/value storage for annotation data in forms.
  */
 class AnnotationStorage {
@@ -185,7 +197,7 @@ class AnnotationStorage {
       const serialized =
         val instanceof AnnotationEditor
           ? val.serialize(/* isForCopying = */ false, context)
-          : val;
+          : cloneBitmap(val);
       if (val.page) {
         val.pageIndex = val.page._pageIndex;
         delete val.page;
