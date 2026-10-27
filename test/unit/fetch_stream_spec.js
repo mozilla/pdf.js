@@ -120,24 +120,43 @@ describe("fetch_stream", function () {
 
   it("rejects a range request answered with the whole file", async function () {
     const pdfData = new Uint8Array(65536);
-    spyOn(globalThis, "fetch").and.callFake(
-      async () =>
-        new Response(pdfData, {
+    let requestCount = 0;
+    spyOn(globalThis, "fetch").and.callFake(async (url, { headers }) => {
+      requestCount++;
+      if (requestCount === 1) {
+        return new Response(pdfData, {
           status: 200,
-          headers: { "Content-Length": `${pdfData.length}` },
-        })
-    );
+          headers: {
+            "Accept-Ranges": "bytes",
+            "Content-Length": `${pdfData.length}`,
+            ETag: '"synthetic-etag"',
+          },
+        });
+      }
+
+      expect(headers.get("Range")).toEqual("bytes=1024-2047");
+      return new Response(pdfData, {
+        status: 200,
+        headers: { "Content-Length": `${pdfData.length}` },
+      });
+    });
     const stream = new PDFFetchStream({
       url: getPdfUrl(),
-      rangeChunkSize: 32768,
+      rangeChunkSize: 1024,
       disableStream: false,
       disableRange: false,
     });
 
-    const rangeReader = stream.getRangeReader(32768, 65536);
+    const fullReader = stream.getFullReader();
+    await fullReader.headersReady;
+    expect(fullReader.isRangeSupported).toBeTrue();
+    fullReader.cancel(new AbortException("Don't need fullReader."));
+
+    const rangeReader = stream.getRangeReader(1024, 2048);
     await expectAsync(rangeReader.read()).toBeRejectedWith(
       jasmine.objectContaining({ name: "ResponseException", status: 200 })
     );
+    expect(requestCount).toEqual(2);
   });
 
   describe("Redirects", function () {
