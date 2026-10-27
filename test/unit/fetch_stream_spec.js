@@ -159,6 +159,28 @@ describe("fetch_stream", function () {
     expect(requestCount).toEqual(2);
   });
 
+  it("accepts a 200 range response with the requested length", async function () {
+    const rangeData = new Uint8Array(1024);
+    spyOn(globalThis, "fetch").and.callFake(
+      async () =>
+        new Response(rangeData, {
+          status: 200,
+          headers: { "Content-Length": `${rangeData.length}` },
+        })
+    );
+    const stream = new PDFFetchStream({
+      url: getPdfUrl(),
+      rangeChunkSize: 1024,
+      disableStream: false,
+      disableRange: false,
+    });
+
+    const rangeReader = stream.getRangeReader(1024, 2048);
+    const { value, done } = await rangeReader.read();
+    expect(done).toBeFalse();
+    expect(value.byteLength).toEqual(rangeData.length);
+  });
+
   describe("Redirects", function () {
     it("redirects allowed if all responses are same-origin", async function () {
       await testCrossOriginRedirects({
