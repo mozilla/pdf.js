@@ -454,30 +454,84 @@ describe("api", function () {
     });
 
     it("creates pdf doc from PDF file truncated before its trailer", async function () {
-      const content =
-        "BT /F1 12 Tf 72 720 Td (Trailer-free synthetic page) Tj ET";
+      const compressedPixels =
+        "789c014000bfff00254a6f94b9de03284d7297bce1062b50759abfe4092e53789dc2e70c31567ba0c5ea0f34597ea3c8ed12375c81a6cbf0153a5f84a9cef3183d6287acd1f61ba08d1e61";
+      const streamObject = (num, content) =>
+        `${num} 0 obj\n<< /Length ${content.length} >>\nstream\n` +
+        `${content}\nendstream\nendobj\n`;
+      const imageObject = (num, data, complete) =>
+        `${num} 0 obj\n<< /Type /XObject /Subtype /Image /Width 4 ` +
+        `/Height 4 /ColorSpace /DeviceCMYK /BitsPerComponent 8 ` +
+        `/Filter [/ASCIIHexDecode /FlateDecode] ` +
+        `/Length ${compressedPixels.length + 1} >>\nstream\n` +
+        `${data}${complete ? ">\nendstream\nendobj\n" : ""}`;
+      const pageContents = [
+        "q 72 0 0 72 0 0 cm /Im0 Do /Im1 Do Q\n" +
+          "BT /F1 12 Tf 72 720 Td (Synthetic map page one) Tj ET",
+        "q 72 0 0 72 0 0 cm /Im0 Do /Im1 Do Q\n" +
+          "BT /F1 12 Tf 72 720 Td (Synthetic map page two) Tj ET",
+        "q 72 0 0 72 0 0 cm /Im0 Do /Im1 Do Q\n" +
+          "BT /F1 12 Tf 72 720 Td (Synthetic map page three) Tj ET",
+        "q 72 0 0 72 0 0 cm /Im0 Do /Im1 Do Q\n" +
+          "BT /F1 12 Tf 72 720 Td (Synthetic map page four) Tj ET",
+      ];
+      const pageObjects = [
+        [3, 4, 5],
+        [6, 15, 16],
+        [8, 25, 26],
+        [10, 32, 33],
+      ];
+      let pdf =
+        "%PDF-1.3\n" +
+        streamObject(4, pageContents[0]) +
+        "5 0 obj\n<< /ProcSet [/PDF /Text /ImageC] " +
+        "/XObject << /Im0 7 0 R /Im1 17 0 R >> " +
+        "/Font << /F1 11 0 R >> /ExtGState << /GS1 9 0 R >> >>\n" +
+        "endobj\n" +
+        "9 0 obj\n<< /Type /ExtGState /ca 1 /CA 1 >>\nendobj\n" +
+        "11 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+        "endobj\n" +
+        streamObject(15, pageContents[1]) +
+        "16 0 obj\n<< /ProcSet [/PDF /Text /ImageC] " +
+        "/XObject << /Im0 7 0 R /Im1 17 0 R >> " +
+        "/Font << /F1 11 0 R >> /ExtGState << /GS1 9 0 R >> >>\n" +
+        "endobj\n" +
+        streamObject(25, pageContents[2]) +
+        "26 0 obj\n<< /ProcSet [/PDF /Text /ImageC] " +
+        "/XObject << /Im0 7 0 R /Im1 17 0 R >> " +
+        "/Font << /F1 11 0 R >> /ExtGState << /GS1 9 0 R >> >>\n" +
+        "endobj\n" +
+        streamObject(32, pageContents[3]) +
+        "33 0 obj\n<< /ProcSet [/PDF /Text /ImageC] " +
+        "/XObject << /Im0 7 0 R /Im1 17 0 R >> " +
+        "/Font << /F1 11 0 R >> /ExtGState << /GS1 9 0 R >> >>\n" +
+        "endobj\n" +
+        imageObject(7, compressedPixels, /* complete = */ true) +
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R 6 0 R 8 0 R 10 0 R] " +
+        "/Count 4 >>\nendobj\n";
+      for (const [pageObj, contentObj, resourcesObj] of pageObjects) {
+        pdf +=
+          `${pageObj} 0 obj\n<< /Type /Page /Parent 2 0 R ` +
+          `/MediaBox [0 0 612 792] /Resources ${resourcesObj} 0 R ` +
+          `/Contents ${contentObj} 0 R >>\nendobj\n`;
+      }
+      // Keep the document tree intact, then truncate the final image stream.
+      pdf += imageObject(
+        17,
+        compressedPixels.slice(0, compressedPixels.length >> 1),
+        /* complete = */ false
+      );
+
       const loadingTask = getDocument({
-        data: stringToBytes(
-          "%PDF-1.7\n" +
-            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n" +
-            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n" +
-            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] " +
-            "/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\n" +
-            "endobj\n" +
-            "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
-            "endobj\n" +
-            `5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
-            "endstream\nendobj\n"
-        ),
+        data: stringToBytes(pdf),
       });
       const pdfDocument = await loadingTask.promise;
-      expect(pdfDocument.numPages).toEqual(1);
+      expect(pdfDocument.numPages).toEqual(4);
 
       const page = await pdfDocument.getPage(1);
       const textContent = await page.getTextContent();
-      expect(mergeText(textContent.items)).toContain(
-        "Trailer-free synthetic page"
-      );
+      expect(mergeText(textContent.items)).toContain("Synthetic map page one");
 
       await loadingTask.destroy();
     });
