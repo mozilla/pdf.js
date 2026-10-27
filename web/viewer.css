@@ -1866,3 +1866,34 @@ dialog :link {
     display: none;
   }
 }
+
+/* Account for Nova's larger toolbar buttons. */
+/*#if MOZCENTRAL*/
+@media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
+  @media (max-width: 880px) {
+    #outerContainer .hiddenMediumView {
+      display: none !important;
+    }
+    #outerContainer .visibleMediumView:not(.hidden, [hidden]) {
+      display: contents !important;
+    }
+  }
+
+  @media (max-width: 800px) {
+    .hiddenSmallView,
+    .hiddenSmallView * {
+      display: none !important;
+    }
+
+    #toolbarContainer #toolbarViewer .toolbarButtonSpacer {
+      width: 0;
+    }
+  }
+
+  @media (max-width: 700px) {
+    #scaleSelectContainer {
+      display: none;
+    }
+  }
+}
+/*#endif*/
