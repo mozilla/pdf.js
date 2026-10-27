@@ -911,6 +911,23 @@ describe("CFFParser", function () {
     expect(charset.charset).toEqual([0, 8, 9]);
   });
 
+  it("parses truncated charset format 1", function () {
+    // The first three bytes make the offset large enough to skip predefined.
+    // prettier-ignore
+    const bytes = new Uint8Array([0x00, 0x00, 0x00,
+                                0x01, // format
+                                0x00, 0x08, // sid/cid start
+                                0x00 // sid/cid left (too small)
+                              ]);
+    parser.bytes = bytes;
+    let charset = parser.parseCharsets(3, 3, new CFFStrings(), false);
+    expect(charset.charset).toEqual([".notdef", "quoteright"]);
+
+    // CID font
+    charset = parser.parseCharsets(3, 3, new CFFStrings(), true);
+    expect(charset.charset).toEqual([0, 8]);
+  });
+
   it("parses charset format 2", function () {
     // format 2 is the same as format 1 but the left is card16
     // The first three bytes make the offset large enough to skip predefined.
