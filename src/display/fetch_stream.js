@@ -51,6 +51,38 @@ function ensureResponseStatus(status, url) {
   }
 }
 
+function isValidContentRange(contentRange, begin, end, contentLength) {
+  const match = /^bytes (\d+)-(\d+)\/(\d+|\*)$/.exec(contentRange);
+  if (!match) {
+    return false;
+  }
+
+  const [start, last] = match.slice(1, 3).map(Number);
+  const total = match[3] === "*" ? null : Number(match[3]);
+  if (
+    !Number.isSafeInteger(start) ||
+    !Number.isSafeInteger(last) ||
+    (total !== null && !Number.isSafeInteger(total)) ||
+    start !== begin ||
+    last < start
+  ) {
+    return false;
+  }
+
+  if (total !== null) {
+    if (
+      total <= last ||
+      total <= begin ||
+      (contentLength > 0 && total !== contentLength)
+    ) {
+      return false;
+    }
+    return last === Math.min(end, total) - 1;
+  }
+
+  return last === end - 1;
+}
+
 function getArrayBuffer(val) {
   if (val instanceof Uint8Array) {
     return val.buffer;
@@ -168,13 +200,16 @@ class PDFFetchStreamRangeReader extends BasePDFStreamRangeReader {
         ensureResponseStatus(response.status, url);
         // Ensure that the server sent the requested range; note that the
         // header isn't available for cross-origin requests, unless exposed.
-        const contentRange = /^bytes (\d+)-/.exec(
-          response.headers.get("Content-Range")
-        );
+        const contentRange = response.headers.get("Content-Range");
         if (
           response.status === 206 &&
-          contentRange &&
-          parseInt(contentRange[1], 10) !== begin
+          contentRange !== null &&
+          !isValidContentRange(
+            contentRange,
+            begin,
+            end,
+            stream._fullReader?.contentLength ?? 0
+          )
         ) {
           throw createResponseError(response.status, url);
         }

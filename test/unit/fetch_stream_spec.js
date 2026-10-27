@@ -118,13 +118,44 @@ describe("fetch_stream", function () {
     expect(result2.value).toEqual(tailSize);
   });
 
-  it("rejects a range request answered with another range", async function () {
-    spyOn(globalThis, "fetch").and.callFake(
-      async () =>
-        new Response(new Uint8Array(32768), {
+  it("rejects invalid Content-Range values", async function () {
+    const fetchSpy = spyOn(globalThis, "fetch");
+    for (const contentRange of [
+      "bytes 0-32767/65536",
+      "bytes 32768-65534/65536",
+      "bytes 32768-65536/65536",
+      "bytes 32768-65535/65535",
+      "bytes 32768-65535/65536 trailing",
+      "bytes 32768-65535/0",
+      "bytes 32768-32767/65536",
+      "bytes 32768-9007199254740992/9007199254740993",
+    ]) {
+      fetchSpy.and.resolveTo(
+        new Response(new Uint8Array(0), {
           status: 206,
-          headers: { "Content-Range": "bytes 0-32767/65536" },
+          headers: { "Content-Range": contentRange },
         })
+      );
+      const stream = new PDFFetchStream({
+        url: getPdfUrl(),
+        rangeChunkSize: 32768,
+        disableStream: false,
+        disableRange: false,
+      });
+
+      const rangeReader = stream.getRangeReader(32768, 65536);
+      await expectAsync(rangeReader.read()).toBeRejectedWith(
+        jasmine.objectContaining({ name: "ResponseException", status: 206 })
+      );
+    }
+  });
+
+  it("accepts a range clipped at the document's end", async function () {
+    spyOn(globalThis, "fetch").and.resolveTo(
+      new Response(new Uint8Array(5536), {
+        status: 206,
+        headers: { "Content-Range": "bytes 60000-65535/65536" },
+      })
     );
     const stream = new PDFFetchStream({
       url: getPdfUrl(),
@@ -132,6 +163,75 @@ describe("fetch_stream", function () {
       disableStream: false,
       disableRange: false,
     });
+
+    const rangeReader = stream.getRangeReader(60000, 70000);
+    const { value, done } = await rangeReader.read();
+    expect(done).toBeFalse();
+    expect(value.byteLength).toEqual(5536);
+  });
+
+  it("accepts a 206 response when Content-Range is unavailable", async function () {
+    spyOn(globalThis, "fetch").and.resolveTo(
+      new Response(new Uint8Array([1]), { status: 206 })
+    );
+    const stream = new PDFFetchStream({
+      url: getPdfUrl(),
+      rangeChunkSize: 32768,
+      disableStream: false,
+      disableRange: false,
+    });
+
+    const rangeReader = stream.getRangeReader(32768, 65536);
+    const { value, done } = await rangeReader.read();
+    expect(done).toBeFalse();
+    expect(value.byteLength).toEqual(1);
+  });
+
+  it("accepts a complete range with an unknown document length", async function () {
+    spyOn(globalThis, "fetch").and.resolveTo(
+      new Response(new Uint8Array(32768), {
+        status: 206,
+        headers: { "Content-Range": "bytes 32768-65535/*" },
+      })
+    );
+    const stream = new PDFFetchStream({
+      url: getPdfUrl(),
+      rangeChunkSize: 32768,
+      disableStream: false,
+      disableRange: false,
+    });
+
+    const rangeReader = stream.getRangeReader(32768, 65536);
+    const { value, done } = await rangeReader.read();
+    expect(done).toBeFalse();
+    expect(value.byteLength).toEqual(32768);
+  });
+
+  it("rejects a Content-Range with an inconsistent document length", async function () {
+    spyOn(globalThis, "fetch").and.callFake(async (_url, { headers }) => {
+      if (headers.has("Range")) {
+        return new Response(new Uint8Array(32768), {
+          status: 206,
+          headers: { "Content-Range": "bytes 32768-65535/262144" },
+        });
+      }
+      return new Response(new Uint8Array(131072), {
+        status: 200,
+        headers: {
+          "Accept-Ranges": "bytes",
+          "Content-Length": "131072",
+        },
+      });
+    });
+    const stream = new PDFFetchStream({
+      url: getPdfUrl(),
+      rangeChunkSize: 32768,
+      disableStream: false,
+      disableRange: false,
+    });
+    const fullReader = stream.getFullReader();
+    await fullReader.headersReady;
+    fullReader.cancel(new AbortException("Don't need fullReader."));
 
     const rangeReader = stream.getRangeReader(32768, 65536);
     await expectAsync(rangeReader.read()).toBeRejectedWith(
