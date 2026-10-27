@@ -48,7 +48,7 @@ async function downloadManifestFiles(manifest) {
           return false;
         }
         seenFiles.add(file);
-        return !fs.existsSync(file);
+        return !fs.existsSync(file) || fs.statSync(file).size === 0;
       })
       .map(({ file }) => {
         const url = fs.readFileSync(`${file}.link`).toString().trimEnd();
