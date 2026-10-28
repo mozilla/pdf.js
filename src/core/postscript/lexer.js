@@ -195,9 +195,6 @@ class Lexer {
 
         case 0x2b /* + */:
         case 0x2d /* - */:
-          this.pos--;
-          return this._getNumber();
-
         case 0x2e /* . */:
           this.pos--;
           return this._getNumber();
