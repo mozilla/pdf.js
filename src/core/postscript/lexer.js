@@ -149,20 +149,19 @@ class Lexer {
     this._numberPattern.lastIndex = this.pos;
     const match = this._numberPattern.exec(this.data);
     if (!match) {
+      this.pos++;
       return new Token(TOKEN.number, 0);
     }
     const number = parseFloat(match[0]);
-    if (!Number.isFinite(number)) {
-      return new Token(TOKEN.number, 0);
-    }
     this.pos = this._numberPattern.lastIndex;
-    return new Token(TOKEN.number, number);
+    return new Token(TOKEN.number, Number.isFinite(number) ? number : 0);
   }
 
   _getOperator() {
     this._identifierPattern.lastIndex = this.pos;
     const match = this._identifierPattern.exec(this.data);
     if (!match) {
+      this.pos++;
       return new Token(TOKEN.number, 0);
     }
     this.pos = this._identifierPattern.lastIndex;
