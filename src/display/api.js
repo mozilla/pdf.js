@@ -45,6 +45,7 @@ import {
   LoopbackPort,
   StatTimer,
 } from "./api_utils.js";
+import { initGPU, isGPUReady } from "./webgpu.js";
 import { isDataScheme, isValidFetchUrl } from "./dom_utils.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import {
@@ -60,7 +61,6 @@ import { DOMFilterFactory } from "./dom_filter_factory.js";
 import { FontLoader } from "./font_loader.js";
 import { getNetworkStream } from "display-network_stream";
 import { GlobalWorkerOptions } from "./worker_options.js";
-import { initGPU } from "./webgpu.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { ObjectHandler } from "./object_handler.js";
@@ -296,9 +296,9 @@ function getDocument(src = {}) {
       : DOMBinaryDataFactory);
   const enableHWA = src.enableHWA === true;
   const enableWebGPU = src.enableWebGPU === true;
-  // Start GPU initialisation immediately so it runs in parallel with the
-  // worker bootstrap; the resolved boolean is forwarded to the worker.
-  const gpuPromise = enableWebGPU ? initGPU() : Promise.resolve(false);
+  if (enableWebGPU) {
+    initGPU(); // Initialize without delaying document loading.
+  }
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
@@ -403,7 +403,6 @@ function getDocument(src = {}) {
       iccUrl,
       standardFontDataUrl,
       wasmUrl,
-      hasGPU: false, // Set below.
     },
   };
   const transportParams = {
@@ -411,19 +410,18 @@ function getDocument(src = {}) {
     pdfBug,
     styleElement,
     rendererWorker: task._rendererWorker,
+    enableWebGPU,
     loadingParams: {
       disableAutoFetch,
       enableXfa,
     },
   };
 
-  Promise.all([worker.promise, gpuPromise])
-    .then(function ([, hasGPU]) {
+  worker.promise
+    .then(function () {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
       }
-      docParams.evaluatorOptions.hasGPU = hasGPU;
-
       const workerIdPromise = worker.messageHandler.sendWithPromise(
         "GetDocRequest",
         docParams,
@@ -1657,6 +1655,7 @@ class PDFPageProxy {
       pageColors,
       operationsFilter,
       rendererWorker: this._transport.rendererWorker,
+      waitForGPU: () => this._transport.waitForGPU(),
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -2368,6 +2367,8 @@ class WorkerTransport {
 
   #fullReader = null;
 
+  #hasMeshPattern = false;
+
   #methodPromises = new Map();
 
   #networkStream = null;
@@ -2807,6 +2808,10 @@ class WorkerTransport {
 
       if (!this.commonObjs.has(id)) {
         objectHandler.resolveCommonObject(id, type, exportedData);
+        // Patterns in Type 3 fonts use common objects.
+        if (type === "Pattern" && this.commonObjs.get(id)[0] === "Mesh") {
+          this.#hasMeshPattern = true;
+        }
       }
       return null;
     });
@@ -2815,6 +2820,9 @@ class WorkerTransport {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return;
+      }
+      if (type === "Pattern" && imageData[0] === "Mesh") {
+        this.#hasMeshPattern = true;
       }
 
       if (objectHandler.resolveObject(id, pageProxyId, type, imageData)) {
@@ -2947,6 +2955,16 @@ class WorkerTransport {
       .finally(() => {
         this.annotationStorage.resetModified();
       });
+  }
+
+  /**
+   * @returns {Promise<boolean> | null} GPU initialization result, or null if
+   *   no wait is needed.
+   */
+  waitForGPU() {
+    return this._params.enableWebGPU && this.#hasMeshPattern && !isGPUReady()
+      ? initGPU()
+      : null;
   }
 
   getPage(pageNumber) {
@@ -3299,6 +3317,8 @@ class InternalRenderTask {
 
   #rendererTask = null;
 
+  #waitForGPU = null;
+
   static #canvasInUse = new WeakSet();
 
   constructor({
@@ -3317,6 +3337,7 @@ class InternalRenderTask {
     pageColors = null,
     operationsFilter = null,
     rendererWorker = null,
+    waitForGPU = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3347,6 +3368,7 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._operationsFilter = operationsFilter;
+    this.#waitForGPU = waitForGPU;
 
     this.#rendererTask =
       rendererWorker?.createRenderTask({
@@ -3536,6 +3558,16 @@ class InternalRenderTask {
   async _next() {
     if (this.cancelled) {
       return;
+    }
+    if (!this.#rendererTask) {
+      // Pattern messages precede their operators.
+      const gpuPromise = this.#waitForGPU?.();
+      if (gpuPromise) {
+        await gpuPromise;
+        if (this.cancelled) {
+          return;
+        }
+      }
     }
     const { operatorList } = this;
     const { lastChunk } = operatorList;

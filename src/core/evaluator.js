@@ -108,7 +108,6 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   iccUrl: null,
   standardFontDataUrl: null,
   wasmUrl: null,
-  hasGPU: false,
 });
 
 const PatternType = {

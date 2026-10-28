@@ -25,7 +25,6 @@ import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { MissingDataException } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
-import { Pattern } from "./pattern.js";
 import { PDFDocument } from "./document.js";
 import { PDFFunctionFactory } from "./function.js";
 import { Stream } from "./stream.js";
@@ -99,7 +98,6 @@ class BasePdfManager {
     IccColorSpace.setOptions(options);
     CmykICCBasedCS.setOptions(options);
     PDFFunctionFactory.setOptions(options);
-    Pattern.setOptions(options);
     WasmImage.setOptions(options);
   }
 

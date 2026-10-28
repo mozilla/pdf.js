@@ -76,15 +76,8 @@ function parseShadingFunction(
 }
 
 class Pattern {
-  // eslint-disable-next-line no-unused-private-class-members
-  static #hasGPU = false;
-
   constructor() {
     unreachable("Cannot initialize Pattern.");
-  }
-
-  static setOptions({ hasGPU }) {
-    this.#hasGPU = hasGPU;
   }
 
   static parseShading(
