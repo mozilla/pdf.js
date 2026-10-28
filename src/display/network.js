@@ -63,6 +63,8 @@ class PDFNetworkStream extends BasePDFStream {
   _request(args) {
     const xhr = new XMLHttpRequest();
     const pendingRequest = {
+      begin: args.begin,
+      end: args.end,
       validateStatus: null,
       onHeadersReceived: args.onHeadersReceived,
       onDone: args.onDone,
@@ -139,6 +141,16 @@ class PDFNetworkStream extends BasePDFStream {
     }
 
     const chunk = getArrayBuffer(xhr.response);
+    // The server may ignore the Range header and send the whole file,
+    // which cannot be used for a range that doesn't start at zero.
+    if (
+      xhrStatus === OK_RESPONSE &&
+      pendingRequest.begin > 0 &&
+      chunk?.byteLength !== pendingRequest.end - pendingRequest.begin
+    ) {
+      pendingRequest.onError(xhrStatus);
+      return;
+    }
     if (xhrStatus === PARTIAL_CONTENT_RESPONSE) {
       const rangeHeader = xhr.getResponseHeader("Content-Range");
       if (/bytes \d+-\d+\/\d+/.test(rangeHeader)) {

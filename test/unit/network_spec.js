@@ -163,6 +163,39 @@ describe("network", function () {
     await Promise.all([readRanges("missing"), readRanges("invalid")]);
   });
 
+  it("rejects a range request answered with the whole file", async function () {
+    const pdfUrl = new URL(pdf1);
+    pdfUrl.searchParams.set("test-network-break-ranges", "whole-file");
+
+    const rangeSize = 32768;
+    const stream = new PDFNetworkStream({
+      url: pdfUrl,
+      length: pdf1Length,
+      rangeChunkSize: rangeSize,
+      disableStream: true,
+      disableRange: false,
+    });
+
+    const fullReader = stream.getFullReader();
+    await fullReader.headersReady;
+    expect(fullReader.isRangeSupported).toBeTrue();
+    fullReader.cancel(new AbortException("Don't need fullReader."));
+
+    const rangeReader = stream.getRangeReader(
+      pdf1Length - rangeSize,
+      pdf1Length
+    );
+    try {
+      await rangeReader.read();
+
+      // Shouldn't get here.
+      expect(false).toBeTrue();
+    } catch (ex) {
+      expect(ex).toBeInstanceOf(ResponseException);
+      expect(ex.status).toEqual(200);
+    }
+  });
+
   describe("Redirects", function () {
     beforeAll(async function () {
       await TestPdfsServer.ensureStarted();
