@@ -396,7 +396,8 @@ class WebServer {
       `bytes ${start}-${end - 1}/${fileSize}`
     );
 
-    // Support test in `test/unit/network_spec.js`.
+    // Support tests in `test/unit/network_spec.js` and
+    // `test/unit/fetch_stream_spec.js`.
     switch (searchParams.get("test-network-break-ranges")) {
       case "missing":
         response.removeHeader("Content-Range");
@@ -404,6 +405,22 @@ class WebServer {
       case "invalid":
         response.setHeader("Content-Range", "bytes abc-def/qwerty");
         break;
+      case "preceding-range": {
+        // The same length of data, but from the preceding range.
+        stream.destroy();
+        const begin = Math.max(0, 2 * start - end);
+        response.setHeader(
+          "Content-Range",
+          `bytes ${begin}-${begin + end - start - 1}/${fileSize}`
+        );
+        response.writeHead(206);
+        fs.createReadStream(fileURL, {
+          flags: "rs",
+          start: begin,
+          end: begin + end - start - 1,
+        }).pipe(response);
+        return;
+      }
     }
     response.writeHead(206);
     stream.pipe(response);

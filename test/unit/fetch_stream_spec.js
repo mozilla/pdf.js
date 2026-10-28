@@ -118,6 +118,29 @@ describe("fetch_stream", function () {
     expect(result2.value).toEqual(tailSize);
   });
 
+  it("rejects a range request answered with another range", async function () {
+    const pdfUrl = new URL(getPdfUrl());
+    pdfUrl.searchParams.set("test-network-break-ranges", "preceding-range");
+
+    const rangeSize = 32768;
+    const stream = new PDFFetchStream({
+      url: pdfUrl,
+      rangeChunkSize: rangeSize,
+      disableStream: true,
+      disableRange: false,
+    });
+
+    const fullReader = stream.getFullReader();
+    await fullReader.headersReady;
+    expect(fullReader.isRangeSupported).toBeTrue();
+    fullReader.cancel(new AbortException("Don't need fullReader."));
+
+    const rangeReader = stream.getRangeReader(pdfLength - rangeSize, pdfLength);
+    await expectAsync(rangeReader.read()).toBeRejectedWith(
+      jasmine.objectContaining({ name: "ResponseException", status: 206 })
+    );
+  });
+
   describe("Redirects", function () {
     it("redirects allowed if all responses are same-origin", async function () {
       await testCrossOriginRedirects({

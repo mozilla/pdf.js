@@ -166,6 +166,18 @@ class PDFFetchStreamRangeReader extends BasePDFStreamRangeReader {
 
         ensureResponseOrigin(responseOrigin, stream._responseOrigin);
         ensureResponseStatus(response.status, url);
+        // Ensure that the server sent the requested range; note that the
+        // header isn't available for cross-origin requests, unless exposed.
+        const contentRange = /^bytes (\d+)-/.exec(
+          response.headers.get("Content-Range")
+        );
+        if (
+          response.status === 206 &&
+          contentRange &&
+          parseInt(contentRange[1], 10) !== begin
+        ) {
+          throw createResponseError(response.status, url);
+        }
         this._reader = response.body.getReader();
 
         this._readCapability.resolve();
