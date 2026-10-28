@@ -125,6 +125,20 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(tok.id).toBe(TOKEN.number);
       expect(tok.value).toBe(0);
     });
+
+    it("returns number(0) for invalid operators/numbers, and correctly advances the position (bug 2086012)", function () {
+      const data = ["+", "foo", "-", "bar", "1e999", "baz"];
+      const lexer = new Lexer(data.join(" "));
+
+      for (let i = 0, ii = data.length; i < ii; i++) {
+        const tok = lexer.next();
+        expect(tok.id).toBe(TOKEN.number);
+        expect(tok.value).toBe(0);
+      }
+      const tok = lexer.next();
+      expect(tok.id).toBe(TOKEN.eof);
+      expect(tok.value).toBeNull();
+    });
   });
 
   // Parser

@@ -14641,6 +14641,13 @@
     "print": true
   },
   {
+    "id": "bug2086012",
+    "file": "pdfs/bug2086012.pdf",
+    "md5": "d03a0d571eb46724720fc96d553d6f76",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "devicen-none-zero-domain",
     "file": "pdfs/devicen-none-zero-domain.pdf",
     "md5": "65f0b4ca54f82d440e579638ab8abc96",
