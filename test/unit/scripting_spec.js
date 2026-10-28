@@ -1398,13 +1398,13 @@ describe("Scripting", function () {
         expect(value).toEqual([15, 16, 21]);
       });
 
-      for (const format of [
-        "yyyy-mm-dd ddd",
-        "yyyy-mm-dd dddd",
-        "ddd yyyy-mm-dd",
-        "dddd yyyy-mm-dd",
-      ]) {
-        it(`should preserve the day of the month in ${format}`, async () => {
+      it("should preserve the day of the month when matching weekday names", async () => {
+        for (const format of [
+          "yyyy-mm-dd ddd",
+          "yyyy-mm-dd dddd",
+          "ddd yyyy-mm-dd",
+          "dddd yyyy-mm-dd",
+        ]) {
           for (let day = 25; day <= 31; day++) {
             const time = new Date(2026, 9, day).getTime();
             const value = await myeval(
@@ -1412,8 +1412,8 @@ describe("Scripting", function () {
             );
             expect(value).toEqual(time);
           }
-        });
-      }
+        }
+      });
 
       it("should handle a format with repeated specifiers", async () => {
         const cFormat = "Hm".repeat(40);
