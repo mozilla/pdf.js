@@ -453,6 +453,19 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("creates pdf doc from PDF file truncated before its trailer", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("truncated_catalog.pdf")
+      );
+      const pdfDocument = await loadingTask.promise;
+      // The file was cut off partway through page 7.
+      const page = await pdfDocument.getPage(6);
+      const { items } = await page.getTextContent();
+      expect(items.map(item => item.str).join("")).toEqual("Page 6");
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from non-existent URL", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("non-existent.pdf")
