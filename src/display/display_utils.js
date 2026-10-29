@@ -271,10 +271,10 @@ function computeLuminance(x) {
 
 function contrastRatio(hsl1, hsl2, output) {
   HSLToRGB(hsl1, output);
-  output.map(computeLuminance);
+  output.set(output.map(computeLuminance));
   const lum1 = 0.2126 * output[0] + 0.7152 * output[1] + 0.0722 * output[2];
   HSLToRGB(hsl2, output);
-  output.map(computeLuminance);
+  output.set(output.map(computeLuminance));
   const lum2 = 0.2126 * output[0] + 0.7152 * output[1] + 0.0722 * output[2];
   return lum1 > lum2
     ? (lum1 + 0.05) / (lum2 + 0.05)
