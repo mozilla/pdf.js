@@ -74,6 +74,7 @@ import { Catalog } from "./catalog.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { createImage } from "./editor/pdf_images.js";
 import { FileSpec } from "./file_spec.js";
+import { getMetrics } from "./metrics.js";
 import { getSoundFormat } from "./sound.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { MathClamp } from "../shared/math_clamp.js";
@@ -82,6 +83,7 @@ import { OperatorList } from "./operator_list.js";
 import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { StringStream } from "./stream.js";
 import { XFAFactory } from "./xfa/factory.js";
+import { ZapfDingbatsEncoding } from "./encodings.js";
 
 class AnnotationFactory {
   static createGlobals(pdfManager) {
@@ -1186,6 +1188,7 @@ class Annotation {
       // specification and instead draws no border at all, so we do the same.
       // See also https://github.com/mozilla/pdf.js/issues/6179.
       this.borderStyle.setWidth(0);
+      this._noBorderEntries = true;
     }
   }
 
@@ -2107,7 +2110,7 @@ class WidgetAnnotation extends Annotation {
       : getRotationMatrix(rotation, this.width, this.height);
   }
 
-  getBorderAndBackgroundAppearances(annotationStorage) {
+  getBorderAndBackgroundAppearances(annotationStorage, isCircle = false) {
     let rotation = annotationStorage?.get(this.data.id)?.rotation;
     if (rotation === undefined) {
       rotation = this.rotation;
@@ -2116,25 +2119,46 @@ class WidgetAnnotation extends Annotation {
     if (!this.backgroundColor && !this.borderColor) {
       return "";
     }
-    const rect =
+    const [width, height] =
       rotation === 0 || rotation === 180
-        ? `0 0 ${this.width} ${this.height} re`
-        : `0 0 ${this.height} ${this.width} re`;
+        ? [this.width, this.height]
+        : [this.height, this.width];
+    // A border color without border entries defaults to a one-point stroke.
+    const borderWidth = this.borderColor
+      ? this.borderStyle.width || (this._noBorderEntries ? 1 : 0)
+      : 0;
+
+    let path;
+    if (isCircle) {
+      // Inset the circle by half the stroke width to keep it inside the bbox.
+      const r = (Math.min(width, height) - borderWidth) / 2;
+      const k = r * (4 / 3) * Math.tan(Math.PI / 8);
+      const cx = width / 2;
+      const cy = height / 2;
+      const p = (x, y) => `${numberToString(x)} ${numberToString(y)}`;
+      path =
+        `${p(cx + r, cy)} m ` +
+        `${p(cx + r, cy + k)} ${p(cx + k, cy + r)} ${p(cx, cy + r)} c ` +
+        `${p(cx - k, cy + r)} ${p(cx - r, cy + k)} ${p(cx - r, cy)} c ` +
+        `${p(cx - r, cy - k)} ${p(cx - k, cy - r)} ${p(cx, cy - r)} c ` +
+        `${p(cx + k, cy - r)} ${p(cx + r, cy - k)} ${p(cx + r, cy)} c h`;
+    } else {
+      path = `0 0 ${width} ${height} re`;
+    }
 
     let str = "";
     if (this.backgroundColor) {
       str = `${getPdfColor(
         this.backgroundColor,
         /* isFill */ true
-      )} ${rect} f `;
+      )} ${path} f `;
     }
 
-    if (this.borderColor) {
-      const borderWidth = this.borderStyle.width || 1;
+    if (borderWidth > 0) {
       str += `${borderWidth} w ${getPdfColor(
         this.borderColor,
         /* isFill */ false
-      )} ${rect} S `;
+      )} ${path} S `;
     }
 
     return str;
@@ -2217,14 +2241,22 @@ class WidgetAnnotation extends Annotation {
     return { opList, separateForm: false, separateCanvas: isUsingOwnCanvas };
   }
 
-  _getMKDict(rotation) {
-    const mk = new Dict(null);
+  _setMKDict(dict, rotation) {
+    // Preserve /CA when updating colors and rotation.
+    const oldMK = dict.get("MK");
+    const mk = oldMK instanceof Dict ? oldMK.clone() : new Dict(null);
     if (rotation) {
       mk.set("R", rotation);
+    } else {
+      mk.delete("R");
     }
     mk.setIfArray("BC", getPdfColorArray(this.borderColor));
     mk.setIfArray("BG", getPdfColorArray(this.backgroundColor));
-    return mk.size > 0 ? mk : null;
+    if (mk.size > 0) {
+      dict.set("MK", mk);
+    } else {
+      dict.delete("MK");
+    }
   }
 
   amendSavedDict(annotationStorage, dict) {}
@@ -2340,10 +2372,7 @@ class WidgetAnnotation extends Annotation {
     );
     this.amendSavedDict(annotationStorage, newParentDict || dict);
 
-    const maybeMK = this._getMKDict(rotation);
-    if (maybeMK) {
-      dict.set("MK", maybeMK);
-    }
+    this._setMKDict(dict, rotation);
 
     changes.put(this.ref, {
       data: dict,
@@ -3455,10 +3484,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       dict.set("F", flags);
     }
 
-    const maybeMK = this._getMKDict(rotation);
-    if (maybeMK) {
-      dict.set("MK", maybeMK);
-    }
+    this._setMKDict(dict, rotation);
 
     changes.put(this.ref, {
       data: dict,
@@ -3517,10 +3543,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       dict.set("F", flags);
     }
 
-    const maybeMK = this._getMKDict(rotation);
-    if (maybeMK) {
-      dict.set("MK", maybeMK);
-    }
+    this._setMKDict(dict, rotation);
 
     changes.put(this.ref, {
       data: dict,
@@ -3529,60 +3552,96 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     });
   }
 
-  _getDefaultCheckedAppearance(params, type) {
-    const { width, height } = this;
-    const bbox = [0, 0, width, height];
+  #getZapfDingbatsWidth(char) {
+    const glyphName = ZapfDingbatsEncoding[char.charCodeAt(0)];
+    return getMetrics().ZapfDingbats()[glyphName];
+  }
 
-    // Ratio used to have a mark slightly smaller than the bbox.
-    const FONT_RATIO = 0.8;
-    const fontSize = Math.min(width, height) * FONT_RATIO;
+  #getCaptionMark(dict) {
+    // /MK /CA uses ZapfDingbats character codes, e.g. "H" for a star.
+    const mk = dict.get("MK");
+    const caption = mk instanceof Dict ? mk.get("CA") : null;
+    if (typeof caption !== "string") {
+      return null;
+    }
+    const char = stringToPDFString(caption)[0];
+    return char && this.#getZapfDingbatsWidth(char) ? char : null;
+  }
 
-    // Char Metrics
-    // Widths came from widths for ZapfDingbats.
-    // Heights are guessed with Fontforge and FoxitDingbats.pfb.
-    let metrics, char;
-    if (type === "check") {
-      // Char 33 (2713 in unicode)
-      metrics = {
-        width: 0.755 * fontSize,
-        height: 0.705 * fontSize,
-      };
-      char = "\x33";
-    } else if (type === "disc") {
-      // Char 6C (25CF in unicode)
-      metrics = {
-        width: 0.791 * fontSize,
-        height: 0.705 * fontSize,
-      };
-      char = "\x6C";
-    } else {
-      unreachable(`_getDefaultCheckedAppearance - unsupported type: ${type}`);
+  #setAppearances(params, checked, unchecked, defaultMark) {
+    // Regenerate both states when /NeedAppearances is set.
+    if (this._needAppearances) {
+      // Don't use the /AS stream: the state is then taken from the value.
+      this.appearance = null;
+      checked = unchecked = null;
+    }
+    const hasChecked = checked instanceof BaseStream;
+    const mark = this.#getCaptionMark(params.dict) ?? defaultMark;
+
+    this.checkedAppearance = hasChecked
+      ? checked
+      : this.#createAppearance(params.xref, mark, true);
+    this.uncheckedAppearance =
+      unchecked instanceof BaseStream ? unchecked : null;
+    if (!hasChecked) {
+      this.uncheckedAppearance ??= this.#createAppearance(
+        params.xref,
+        mark,
+        false
+      );
     }
 
-    // Values to center the glyph in the bbox.
-    const xShift = numberToString((width - metrics.width) / 2);
-    const yShift = numberToString((height - metrics.height) / 2);
+    for (const stream of [this.checkedAppearance, this.uncheckedAppearance]) {
+      if (stream) {
+        this._streams.push(stream);
+      }
+    }
+  }
 
-    const appearance = `q BT /PdfJsZaDb ${fontSize} Tf 0 g ${xShift} ${yShift} Td (${char}) Tj ET Q`;
+  #createAppearance(xref, mark, isChecked) {
+    const { rotation } = this;
+    const [width, height] =
+      rotation % 180 === 0
+        ? [this.width, this.height]
+        : [this.height, this.width];
 
-    const appearanceStreamDict = new Dict(params.xref);
+    // Use round borders and backgrounds for disc-style radio buttons.
+    const isCircle = this.data.radioButton && mark === "\x6C";
+    let appearance = this.getBorderAndBackgroundAppearances(null, isCircle);
+    if (isChecked) {
+      const { fontColor, fontSize: daFontSize } =
+        this.data.defaultAppearanceData;
+      // Leave a margin when autosizing the mark.
+      const FONT_RATIO = 0.8;
+      const fontSize = daFontSize || Math.min(width, height) * FONT_RATIO;
+
+      // Approximate the glyph height as 0.705 em for vertical centering.
+      const glyphWidth = (this.#getZapfDingbatsWidth(mark) / 1000) * fontSize;
+      const xShift = numberToString((width - glyphWidth) / 2);
+      const yShift = numberToString((height - 0.705 * fontSize) / 2);
+      const color = getPdfColor(fontColor, /* isFill */ true);
+      appearance += `BT /PdfJsZaDb ${fontSize} Tf ${color} ${xShift} ${yShift} Td (${escapeString(mark)}) Tj ET`;
+    } else if (!appearance) {
+      return null;
+    }
+    appearance = `q ${appearance} Q`;
+
+    const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
     appearanceStreamDict.setIfName("Subtype", "Form");
     appearanceStreamDict.setIfName("Type", "XObject");
-    appearanceStreamDict.set("BBox", bbox);
-    appearanceStreamDict.set("Matrix", [1, 0, 0, 1, 0, 0]);
+    appearanceStreamDict.set("BBox", [0, 0, width, height]);
+    appearanceStreamDict.set("Matrix", this.getRotationMatrix());
     appearanceStreamDict.set("Length", appearance.length);
 
-    const resources = new Dict(params.xref);
-    const font = new Dict(params.xref);
+    const resources = new Dict(xref);
+    const font = new Dict(xref);
     font.set("PdfJsZaDb", this.fallbackFontDict);
     resources.set("Font", font);
 
     appearanceStreamDict.set("Resources", resources);
 
-    this.checkedAppearance = new StringStream(appearance, appearanceStreamDict);
-
-    this._streams.push(this.checkedAppearance);
+    return new StringStream(appearance, appearanceStreamDict);
   }
 
   _getOnStateName(dict) {
@@ -3753,21 +3812,13 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       params.xref
     );
 
-    const checkedAppearance = normalAppearance?.get(onState);
-    this.checkedAppearance =
-      checkedAppearance instanceof BaseStream ? checkedAppearance : null;
-    const uncheckedAppearance = normalAppearance?.get("Off");
-    this.uncheckedAppearance =
-      uncheckedAppearance instanceof BaseStream ? uncheckedAppearance : null;
-
-    if (this.checkedAppearance) {
-      this._streams.push(this.checkedAppearance);
-    } else {
-      this._getDefaultCheckedAppearance(params, "check");
-    }
-    if (this.uncheckedAppearance) {
-      this._streams.push(this.uncheckedAppearance);
-    }
+    // Default mark: ✓ (U+2713).
+    this.#setAppearances(
+      params,
+      normalAppearance?.get(onState),
+      normalAppearance?.get("Off"),
+      "\x33"
+    );
     this._fallbackFontDict = this.fallbackFontDict;
     if (this.data.defaultFieldValue === null) {
       this.data.defaultFieldValue = "Off";
@@ -3820,21 +3871,13 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       params.xref
     );
 
-    const checkedAppearance = normalAppearance.get(onState);
-    this.checkedAppearance =
-      checkedAppearance instanceof BaseStream ? checkedAppearance : null;
-    const uncheckedAppearance = normalAppearance.get("Off");
-    this.uncheckedAppearance =
-      uncheckedAppearance instanceof BaseStream ? uncheckedAppearance : null;
-
-    if (this.checkedAppearance) {
-      this._streams.push(this.checkedAppearance);
-    } else {
-      this._getDefaultCheckedAppearance(params, "disc");
-    }
-    if (this.uncheckedAppearance) {
-      this._streams.push(this.uncheckedAppearance);
-    }
+    // Default mark: ● (U+25CF).
+    this.#setAppearances(
+      params,
+      normalAppearance.get(onState),
+      normalAppearance.get("Off"),
+      "\x6C"
+    );
     this._fallbackFontDict = this.fallbackFontDict;
     if (this.data.defaultFieldValue === null) {
       this.data.defaultFieldValue = "Off";

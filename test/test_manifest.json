@@ -15288,5 +15288,21 @@
     "md5": "37890067694c7d2aa1a458f2150e4aac",
     "type": "other",
     "talos": true
+  },
+  {
+    "id": "bug2084610-print",
+    "file": "pdfs/bug2084610.pdf",
+    "md5": "90f809cf6e03992880d045e1e33c94cb",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "69R": {
+        "value": true
+      }
+    },
+    "about": "Print the /MK /CA star with NeedAppearances."
   }
 ]
