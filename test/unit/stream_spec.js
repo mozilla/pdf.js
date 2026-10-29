@@ -135,6 +135,46 @@ describe("stream", function () {
         expect(await flate.asyncGetBytes()).toEqual(new Uint8Array(0));
         expect(flate.isAsync).toEqual(true);
       });
+
+      it("should decode a small stream in JS and return its bytes", async function () {
+        const small = data.subarray(0, 300);
+        const flate = new FlateStream(new Stream(await deflate(small)));
+        const spy = spyOn(
+          flate,
+          "asyncGetBytesFromDecompressionStream"
+        ).and.callThrough();
+
+        expect(flate.isAsync).toEqual(true);
+        expect(await flate.asyncGetBytes()).toEqual(small);
+        expect(await flate.asyncGetBytes()).toEqual(small);
+        expect(spy).not.toHaveBeenCalled();
+      });
+
+      it("should choose a decoder for a small image stream and reuse it", async function () {
+        const zeros = new Uint8Array(100000);
+        const compressedZeros = await deflate(zeros);
+        expect(compressedZeros.length).toBeLessThan(1024);
+
+        for (const lengths of [
+          [zeros.length, 1000],
+          [1000, zeros.length],
+        ]) {
+          const flate = new FlateStream(new Stream(compressedZeros));
+          const spy = spyOn(
+            flate,
+            "asyncGetBytesFromDecompressionStream"
+          ).and.callThrough();
+          for (const length of lengths) {
+            flate.reset();
+            expect(await flate.getImageData(length)).toEqual(
+              zeros.subarray(0, length)
+            );
+          }
+          expect(spy).toHaveBeenCalledTimes(
+            lengths[0] === zeros.length ? lengths.length : 0
+          );
+        }
+      });
     });
   });
 
