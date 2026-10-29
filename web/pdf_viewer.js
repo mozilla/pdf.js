@@ -155,6 +155,12 @@ function isValidAnnotationEditorMode(mode) {
  *   text that look like URLs. The default value is `true`.
  * @property {number} [minDurationToUpdateCanvas] - Minimum duration to wait
  *   before updating the canvas. The default value is `500`.
+ * @property {ViewerAlert} [viewerAlert] - The viewer alert component.
+ * @property {AltTextManager} [altTextManager] - The alt text manager component.
+ * @property {SignatureManager} [signatureManager] - The signature manager component.
+ * @property {CommentManager} [commentManager] - The comment manager component.
+ * @property {boolean} [enableHighlightFloatingButton] - Enables the
+ *   highlight floating button. The default value is `false`.
  */
 
 class PDFPageViewBuffer {
