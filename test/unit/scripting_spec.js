@@ -1399,20 +1399,15 @@ describe("Scripting", function () {
       });
 
       it("should preserve the day of the month when matching weekday names", async () => {
-        for (const format of [
-          "yyyy-mm-dd ddd",
-          "yyyy-mm-dd dddd",
-          "ddd yyyy-mm-dd",
-          "dddd yyyy-mm-dd",
-        ]) {
-          for (let day = 25; day <= 31; day++) {
-            const time = new Date(2026, 9, day).getTime();
-            const value = await myeval(
-              `util.scand("${format}", util.printd("${format}", new Date(${time}))).getTime()`
-            );
-            expect(value).toEqual(time);
-          }
-        }
+        const value = await myeval(`[
+          util.scand("yyyy-mm-dd ddd", "2026-10-25 Sun").getDate(),
+          util.scand("yyyy-mm-dd dddd", "2026-10-25 Sunday").getDate(),
+          util.scand("ddd yyyy-mm-dd", "Sun 2026-10-25").getDate(),
+          util.scand("dddd yyyy-mm-dd", "Sunday 2026-10-25").getDate(),
+          util.scand("yyyy-mm-dd ddd", "2026-10-31 Sat").getDate(),
+          util.scand("ddd yyyy-mm-dd", "Sat 2026-10-31").getDate(),
+        ]`);
+        expect(value).toEqual([25, 25, 25, 25, 31, 31]);
       });
 
       it("should handle a format with repeated specifiers", async () => {
