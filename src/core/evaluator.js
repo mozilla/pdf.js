@@ -2982,8 +2982,8 @@ class PartialEvaluator {
         currentTextState !== textState &&
         (currentTextState.fontSize !== textState.fontSize ||
           (currentTextState.fontName !== textState.fontName &&
-            (currentTextState.font.name !== textState.font.name ||
-              currentTextState.font.vertical !== textState.font.vertical)))
+            (currentTextState.font?.name !== textState.font?.name ||
+              currentTextState.font?.vertical !== textState.font?.vertical)))
       ) {
         flushTextContentItem();
         currentTextState = textState.clone();

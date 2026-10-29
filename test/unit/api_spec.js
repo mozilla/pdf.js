@@ -5600,6 +5600,21 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("gets text content when the first text has a zero font size (issue 22381)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue22381.pdf", { stopAtErrors: true })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+      expect(text).toEqual("hiddenVisible text");
+
+      await loadingTask.destroy();
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 
