@@ -141,7 +141,9 @@ class PDFFunction {
         codeSize += 8;
       }
       codeSize -= bps;
-      array[i] = (codeBuf >> codeSize) * sampleMul;
+      // Use an unsigned shift, since `codeBuf` can have the high bit set for
+      // 32 bits-per-sample data.
+      array[i] = (codeBuf >>> codeSize) * sampleMul;
       codeBuf &= (1 << codeSize) - 1;
     }
     return array;
