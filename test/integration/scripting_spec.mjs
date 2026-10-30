@@ -3032,4 +3032,51 @@ describe("Interaction", () => {
       );
     });
   });
+
+  describe("in issue22393.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("issue22393.pdf", getSelector("32R"));
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check the radio button selected by a script before its page is rendered", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+
+          // The radio buttons are on page 5, which isn't rendered yet: the
+          // value set by the script goes in the annotation storage.
+          expect(await page.$(getSelector("21R")))
+            .withContext(`In ${browserName}`)
+            .toBeNull();
+          await page.click(getSelector("32R"));
+          await waitForEntryInStorage(page, "21R", { value: "B" });
+
+          await scrollIntoView(page, `.page[data-page-number="5"]`);
+          for (const [id, checked] of [
+            ["16R", false],
+            ["21R", true],
+            ["26R", false],
+          ]) {
+            await page.waitForSelector(getSelector(id));
+            expect(await page.$eval(getSelector(id), el => el.checked))
+              .withContext(`In ${browserName}, ${id}`)
+              .toEqual(checked);
+          }
+          expect(await getAnnotationStorage(page))
+            .withContext(`In ${browserName}`)
+            .toEqual({
+              "16R": { value: false },
+              "21R": { value: true },
+              "26R": { value: false },
+            });
+        })
+      );
+    });
+  });
 });
