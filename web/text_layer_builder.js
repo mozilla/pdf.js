@@ -61,6 +61,8 @@ class TextLayerBuilder {
 
   static #textLayers = new Map();
 
+  static #textLayerSignals = new Map();
+
   static #selectionChangeAC = null;
 
   /**
@@ -196,11 +198,13 @@ class TextLayerBuilder {
     );
 
     TextLayerBuilder.#textLayers.set(div, end);
+    TextLayerBuilder.#textLayerSignals.set(div, abortSignal);
     TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
   }
 
   static #removeGlobalSelectionListener(textLayerDiv) {
     this.#textLayers.delete(textLayerDiv);
+    this.#textLayerSignals.delete(textLayerDiv);
 
     if (this.#textLayers.size === 0) {
       this.#selectionChangeAC?.abort();
@@ -209,14 +213,51 @@ class TextLayerBuilder {
   }
 
   static #enableGlobalSelectionListener(globalAbortSignal) {
-    if (this.#selectionChangeAC) {
+    if (this.#selectionChangeAC && !globalAbortSignal?.aborted) {
       // document-level event listeners already installed
       return;
+    }
+    // If the previous controller's global signal was aborted (e.g. its viewer
+    // was torn down), reset it so listeners can be re-bound for remaining
+    // text layers.
+    if (this.#selectionChangeAC && globalAbortSignal?.aborted) {
+      this.#selectionChangeAC?.abort();
+      this.#selectionChangeAC = null;
     }
     this.#selectionChangeAC = new AbortController();
     const signal = globalAbortSignal
       ? AbortSignal.any([this.#selectionChangeAC.signal, globalAbortSignal])
       : this.#selectionChangeAC.signal;
+
+    // When the viewer's signal aborts, re-bind listeners for any remaining
+    // text layers so selection keeps working.
+    if (globalAbortSignal) {
+      globalAbortSignal.addEventListener(
+        "abort",
+        () => {
+          // Remove text layers belonging to the aborted viewer.
+          for (const [div, signal] of this.#textLayerSignals) {
+            if (signal?.aborted) {
+              this.#textLayers.delete(div);
+              this.#textLayerSignals.delete(div);
+            }
+          }
+          // Re-bind if text layers remain.
+          if (this.#textLayers.size > 0) {
+            this.#selectionChangeAC?.abort();
+            this.#selectionChangeAC = null;
+            // Re-bind with a remaining layer's signal.
+            const remainingDiv = this.#textLayers.keys().next().value;
+            const remainingSignal = this.#textLayerSignals.get(remainingDiv);
+            this.#enableGlobalSelectionListener(remainingSignal);
+          } else {
+            this.#selectionChangeAC?.abort();
+            this.#selectionChangeAC = null;
+          }
+        },
+        { once: true }
+      );
+    }
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
