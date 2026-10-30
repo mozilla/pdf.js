@@ -197,7 +197,7 @@ class TextLayer {
           this.#capability.resolve();
           return;
         }
-        this.#lang ??= value.lang;
+        this.#lang ??= value.lang ?? document.documentElement.lang ?? "";
         Object.assign(this.#styleCache, value.styles);
         this.#processItems(value.items);
         pump();
