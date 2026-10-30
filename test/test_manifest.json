@@ -1181,8 +1181,7 @@
     "md5": "521cf7c408de56b08c58d9e6bdd92791",
     "rounds": 1,
     "link": true,
-    "type": "eq",
-    "talos": false
+    "type": "eq"
   },
   {
     "id": "issue7847_radial",
@@ -1595,6 +1594,7 @@
     "id": "issue8022",
     "file": "pdfs/issue8022.pdf",
     "md5": "a1a028a5d44433a965dd1e778f321c14",
+    "talos": true,
     "link": true,
     "rounds": 1,
     "lastPage": 1,
@@ -2527,6 +2527,7 @@
     "id": "issue13794",
     "file": "pdfs/issue13794.pdf",
     "md5": "6b4c099e04c9df145198740f2bf75c48",
+    "talos": true,
     "link": true,
     "rounds": 1,
     "firstPage": 3,
@@ -2606,6 +2607,7 @@
     "id": "issue17981",
     "file": "pdfs/issue17981.pdf",
     "md5": "3fd6d2bdcad8ff7cc5c0575da0b70266",
+    "talos": true,
     "rounds": 1,
     "link": true,
     "lastPage": 1,
@@ -3774,7 +3776,6 @@
     "file": "pdfs/issue18765.pdf",
     "md5": "7763ead2aa69db3a5263f92bb1922e31",
     "link": true,
-    "talos": false,
     "rounds": 1,
     "lastPage": 1,
     "type": "eq"
@@ -8002,6 +8003,7 @@
     "id": "bug766138",
     "file": "pdfs/bug766138.pdf",
     "md5": "b171f5cf8d9834348112fba60ee54f8c",
+    "talos": true,
     "link": true,
     "rounds": 1,
     "type": "eq"
@@ -9213,6 +9215,7 @@
     "id": "issue14562",
     "file": "pdfs/issue14562.pdf",
     "md5": "565b0a1e46a32e907837506a10d25277",
+    "talos": true,
     "rounds": 1,
     "link": true,
     "type": "other"
@@ -9391,6 +9394,7 @@
     "id": "bug1737260",
     "file": "pdfs/bug1737260.pdf",
     "md5": "8bd4f810d30972764b07ae141a4afbc4",
+    "talos": true,
     "rounds": 1,
     "link": true,
     "type": "eq",
@@ -9785,6 +9789,7 @@
     "id": "bug1791583",
     "file": "pdfs/bug1791583.pdf",
     "md5": "1ff6badc865c9a5e9a0dc0b7131ffe28",
+    "talos": true,
     "link": true,
     "rounds": 1,
     "type": "eq"
@@ -11510,7 +11515,6 @@
     "id": "issue17779",
     "file": "pdfs/issue17779.pdf",
     "md5": "764b72e8e56e22662b321b308254fd2b",
-    "talos": false,
     "rounds": 1,
     "link": true,
     "type": "eq"
@@ -11519,7 +11523,6 @@
     "id": "issue17779-partial",
     "file": "pdfs/issue17779.pdf",
     "md5": "764b72e8e56e22662b321b308254fd2b",
-    "talos": false,
     "rounds": 1,
     "link": true,
     "type": "eq",
@@ -11939,7 +11942,6 @@
     "file": "pdfs/bug1919513.pdf",
     "md5": "83d1a7fab2c81e632910c334879e7334",
     "rounds": 1,
-    "talos": false,
     "type": "eq"
   },
   {
@@ -12130,8 +12132,7 @@
     "file": "pdfs/issue18894.pdf",
     "md5": "5cd744bf8c0800e93c22ed92d1c162f4",
     "rounds": 1,
-    "type": "eq",
-    "talos": false
+    "type": "eq"
   },
   {
     "id": "issue18896",
@@ -12139,8 +12140,7 @@
     "md5": "4acb4df0f38c976dce5e841e6de1f875",
     "rounds": 1,
     "type": "eq",
-    "link": true,
-    "talos": false
+    "link": true
   },
   {
     "id": "issue18956",
@@ -12163,7 +12163,6 @@
     "md5": "2e2aa6c1904c1e6a89a5a6ec95d5ce7e",
     "rounds": 1,
     "forms": true,
-    "talos": false,
     "type": "eq"
   },
   {
@@ -12171,7 +12170,6 @@
     "file": "pdfs/issue17190.pdf",
     "md5": "06e3ce6492dc0b5815a63965b5d7144c",
     "rounds": 1,
-    "talos": false,
     "type": "eq",
     "link": true
   },
@@ -12180,7 +12178,6 @@
     "file": "pdfs/issue17190_1.pdf",
     "md5": "63bbc71a6c2cdec11bb20c5744232c47",
     "rounds": 1,
-    "talos": false,
     "type": "eq",
     "link": true
   },
@@ -14857,5 +14854,439 @@
     "rounds": 1,
     "type": "eq",
     "about": "Pattern fill and stroke on rotated fallback glyphs."
+  },
+  {
+    "id": "perf-paths-operators",
+    "file": "pdfs/perf_paths_operators.pdf",
+    "md5": "6a9fe57f7559758ad041f20c28026fc3",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-paths-polygons",
+    "file": "pdfs/perf_paths_polygons.pdf",
+    "md5": "2b07cf4da0882c986e871ab10d7a8033",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-paths-curves",
+    "file": "pdfs/perf_paths_curves.pdf",
+    "md5": "b900b69f21dd3a19ec08a6ae2ef861f3",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-paths-map",
+    "file": "pdfs/perf_paths_map.pdf",
+    "md5": "7d1a479529ce156952753c819dc9cfa5",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-paths-hairlines",
+    "file": "pdfs/perf_paths_hairlines.pdf",
+    "md5": "848fbd9aff616163f47a92dd4b5d744f",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-paths-clips",
+    "file": "pdfs/perf_paths_clips.pdf",
+    "md5": "bf1169a060f029b84343804af3e1d27e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-truetype",
+    "file": "pdfs/perf_text_truetype.pdf",
+    "md5": "2dc8025b01ee357df09d34342a99681f",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-cid-truetype",
+    "file": "pdfs/perf_text_cid_truetype.pdf",
+    "md5": "e001309b12188f6e2c7a25d6eee3f755",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-cff",
+    "file": "pdfs/perf_text_cff.pdf",
+    "md5": "ca142913fdf34cbff9d195b43c8a89b1",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-type1",
+    "file": "pdfs/perf_text_type1.pdf",
+    "md5": "5185a7310674b02cfcda87ba6e516e90",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-cff-embedded-variants",
+    "file": "pdfs/perf_text_cff_embedded_variants.pdf",
+    "md5": "e1a13843767b718b23e09df053410e74",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-office-nonembedded",
+    "file": "pdfs/perf_text_office_nonembedded.pdf",
+    "md5": "15254d4b67b6f038b1ec12d3cf7a1c42",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-cmap-mixed",
+    "file": "pdfs/perf_text_cmap_mixed.pdf",
+    "md5": "30104ad46f77d4a9388c7723bb63df3c",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-labels",
+    "file": "pdfs/perf_text_labels.pdf",
+    "md5": "1e9cfe3c752c97696908290d263be896",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-cjk-nonembedded",
+    "file": "pdfs/perf_text_cjk_nonembedded.pdf",
+    "md5": "cf97201b7473ba2a1068b6f75184f6fc",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-standard14",
+    "file": "pdfs/perf_text_standard14.pdf",
+    "md5": "4e3d7cc2a617863591218b46efb2214e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-type3-vector",
+    "file": "pdfs/perf_text_type3_vector.pdf",
+    "md5": "451826d8a069dd982c4a866bc06ee46c",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-type3-bitmap",
+    "file": "pdfs/perf_text_type3_bitmap.pdf",
+    "md5": "960677fb805cebc0d5388daecfec7639",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-render-modes",
+    "file": "pdfs/perf_text_render_modes.pdf",
+    "md5": "e0df3c75b219d3b52e11bd488edd96c8",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-text-transformed",
+    "file": "pdfs/perf_text_transformed.pdf",
+    "md5": "3fc20fb274877f487712e00380752bcc",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-masks",
+    "file": "pdfs/perf_images_masks.pdf",
+    "md5": "54e16c4b4418b641e841c199ae357482",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-repeated",
+    "file": "pdfs/perf_images_repeated.pdf",
+    "md5": "7dd4b6d454850c4ad0c8d44c7992bc8f",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-inline-raw",
+    "file": "pdfs/perf_images_inline_raw.pdf",
+    "md5": "ad8f2814ab716543f354d54ba4ab201e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-jpeg-large",
+    "file": "pdfs/perf_images_jpeg_large.pdf",
+    "md5": "e713bd8a0245fae9806bc1aa08837ffd",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-jpeg-thumbnails",
+    "file": "pdfs/perf_images_jpeg_thumbnails.pdf",
+    "md5": "5c97a1952565ab0cc4b4df87f265b858",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-flate-predictor",
+    "file": "pdfs/perf_images_flate_predictor.pdf",
+    "md5": "2bf817e716175bdda8576c82cc6fa92d",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-scan-gray",
+    "file": "pdfs/perf_images_scan_gray.pdf",
+    "md5": "631c4962ed81da13607e2aea6d93b551",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-scan-bilevel",
+    "file": "pdfs/perf_images_scan_bilevel.pdf",
+    "md5": "0fb0fb4ddf430d1812118750fb7a5f86",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-stencil-masks",
+    "file": "pdfs/perf_images_stencil_masks.pdf",
+    "md5": "7a2adf63f6794adc5dff96776d6e8ff9",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-smask",
+    "file": "pdfs/perf_images_smask.pdf",
+    "md5": "4beb5e62bac3ae651454ed2fbd06149b",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-indexed",
+    "file": "pdfs/perf_images_indexed.pdf",
+    "md5": "eaeb645b426eb643a4fcb8ed648d439b",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-cmyk",
+    "file": "pdfs/perf_images_cmyk.pdf",
+    "md5": "13daa9c98d757ad1b1d3fc5cf52ccda3",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-16bit",
+    "file": "pdfs/perf_images_16bit.pdf",
+    "md5": "e50838580e645bae7ed5347bdcbba230",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-images-inline",
+    "file": "pdfs/perf_images_inline.pdf",
+    "md5": "246804fdf05fdb95a926048d12702303",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-codecs-ccitt",
+    "file": "pdfs/perf_codecs_ccitt.pdf",
+    "md5": "472d56faccc2d060618b433b63ba6821",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-codecs-jbig2",
+    "file": "pdfs/perf_codecs_jbig2.pdf",
+    "md5": "c503261f917dffe9a57fd375ce95a0e1",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-codecs-jpx",
+    "file": "pdfs/perf_codecs_jpx.pdf",
+    "md5": "35b5661644f51270c7af857936bbef25",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-codecs-jpeg-cmyk",
+    "file": "pdfs/perf_codecs_jpeg_cmyk.pdf",
+    "md5": "63f771f148138b4ea5084325088efc1e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-codecs-jpeg-gray-progressive",
+    "file": "pdfs/perf_codecs_jpeg_gray_progressive.pdf",
+    "md5": "00859ab9e09faa4e1b44a57334f5bb7f",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-codecs-legacy-filters",
+    "file": "pdfs/perf_codecs_legacy_filters.pdf",
+    "md5": "e8aba00d48b9f1dcfd9f6026a23a35f0",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-transfer-functions",
+    "file": "pdfs/perf_structure_transfer_functions.pdf",
+    "md5": "415bdf7c4675aeaf710b46a713addbaf",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-shared-resources",
+    "file": "pdfs/perf_structure_shared_resources.pdf",
+    "md5": "afe22aeeba3655e15f56b3ec5ee28d35",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-forms",
+    "file": "pdfs/perf_structure_forms.pdf",
+    "md5": "7cbdd1e5c899507c9b247efa1e30722a",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-graphics-states",
+    "file": "pdfs/perf_structure_graphics_states.pdf",
+    "md5": "0ab4c737de7f345317e3c1e04937e79e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-colorspace-fills",
+    "file": "pdfs/perf_structure_colorspace_fills.pdf",
+    "md5": "011df95174945f0ba56722069f8877ca",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-colorspace-images",
+    "file": "pdfs/perf_structure_colorspace_images.pdf",
+    "md5": "3d5ed796c061c5728c4601c5507802bf",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-content-array",
+    "file": "pdfs/perf_structure_content_array.pdf",
+    "md5": "9bf03e69072a2564cb34a3c6410c8151",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-annotations",
+    "file": "pdfs/perf_structure_annotations.pdf",
+    "md5": "75369e6db4d8cc192e8f24cd8560e29e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-structure-optional-content",
+    "file": "pdfs/perf_structure_optional_content.pdf",
+    "md5": "8efb736ffdc129c2bf3a2c2aa4f331b0",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-shadings-colorspaces",
+    "file": "pdfs/perf_shadings_colorspaces.pdf",
+    "md5": "87da391eafc203b614336a3210593e49",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-shadings-axial-radial",
+    "file": "pdfs/perf_shadings_axial_radial.pdf",
+    "md5": "86932d21db67982e14962639215bdf74",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-shadings-function-based",
+    "file": "pdfs/perf_shadings_function_based.pdf",
+    "md5": "90f7b9466e8e588b3680e5d639ee78f6",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-shadings-mesh-triangles",
+    "file": "pdfs/perf_shadings_mesh_triangles.pdf",
+    "md5": "f99fd1972638cdfcd126e60dacab40f2",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-shadings-mesh-patches",
+    "file": "pdfs/perf_shadings_mesh_patches.pdf",
+    "md5": "5bc5cef57de791dee3b8fa70a54f1db6",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-patterns-tiling-colored",
+    "file": "pdfs/perf_patterns_tiling_colored.pdf",
+    "md5": "4fa7cf34cd46964e737a2f804d94c0fb",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-patterns-tiling-uncolored",
+    "file": "pdfs/perf_patterns_tiling_uncolored.pdf",
+    "md5": "4335731b46964119fcf62e010d969ba9",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-patterns-tiling-images",
+    "file": "pdfs/perf_patterns_tiling_images.pdf",
+    "md5": "95eee9732b4636939cd4bc4cd82e8ce6",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-transparency-group-stacks",
+    "file": "pdfs/perf_transparency_group_stacks.pdf",
+    "md5": "a84130187bb1980671ec042c9bc9f9d6",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-transparency-alpha",
+    "file": "pdfs/perf_transparency_alpha.pdf",
+    "md5": "13f99608d48f9e7258480b41f7da813e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-transparency-blend-modes",
+    "file": "pdfs/perf_transparency_blend_modes.pdf",
+    "md5": "763e547e79df2a0ae670acd37604ad3e",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-transparency-soft-masks",
+    "file": "pdfs/perf_transparency_soft_masks.pdf",
+    "md5": "f068e45e7046887625b99685796450fd",
+    "type": "other",
+    "talos": true
+  },
+  {
+    "id": "perf-transparency-groups",
+    "file": "pdfs/perf_transparency_groups.pdf",
+    "md5": "37890067694c7d2aa1a458f2150e4aac",
+    "type": "other",
+    "talos": true
   }
 ]

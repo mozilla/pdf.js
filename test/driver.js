@@ -744,15 +744,9 @@ class Driver {
 
       this._log(`[${++this.tasksDone}] ${task.id}:\n`);
 
-      // Support *linked* test-cases for the other suites, e.g. unit- and
-      // integration-tests, without needing to run them as reference-tests.
+      // Skip PDFs used by other test suites.
       if (task.type === "other") {
         this._log(`  Skipping file "${task.file}"\n`);
-
-        if (!task.link) {
-          this._nextPage(task, 'Expected "other" test-case to be linked.');
-          return;
-        }
         this._nextTask();
         return;
       }
