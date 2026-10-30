@@ -435,7 +435,7 @@ class AnnotationElement {
     const { width, height } = this;
 
     if (!ignoreBorder && data.borderStyle.width > 0) {
-      style.borderWidth = `${data.borderStyle.width}px`;
+      style.borderWidth = `calc(${data.borderStyle.width}px * var(--total-scale-factor))`;
 
       const horizontalRadius = data.borderStyle.horizontalCornerRadius;
       const verticalRadius = data.borderStyle.verticalCornerRadius;
