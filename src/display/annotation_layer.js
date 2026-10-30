@@ -72,7 +72,6 @@ const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
- * @property {object} svgFactory
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
  * @property {Map} [fieldObjects]
@@ -194,7 +193,6 @@ class AnnotationElement {
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
     this.renderForms = parameters.renderForms;
-    this.svgFactory = parameters.svgFactory;
     this.annotationStorage = parameters.annotationStorage;
     this.enableComment = parameters.enableComment;
     this.enableAnnotationEditing = parameters.enableAnnotationEditing !== false;
@@ -215,6 +213,10 @@ class AnnotationElement {
 
   static _hasPopupData({ contentsObj, richText }) {
     return !!(contentsObj?.str || richText?.str);
+  }
+
+  static get _svgFactory() {
+    return shadow(this, "_svgFactory", new DOMSVGFactory());
   }
 
   get _isEditable() {
@@ -685,7 +687,7 @@ class AnnotationElement {
     const width = rectTrX - rectBlX;
     const height = rectTrY - rectBlY;
 
-    const { svgFactory } = this;
+    const svgFactory = AnnotationElement._svgFactory;
     const svg = svgFactory.createElement("svg");
     svg.classList.add("quadrilateralsContainer");
     svg.setAttribute("width", 0);
@@ -3180,15 +3182,12 @@ class LineAnnotationElement extends AnnotationElement {
     // that acts as the trigger for the popup. Only the line itself should
     // trigger the popup, not the entire container.
     const { data, width, height } = this;
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    const line = (this.#line = this.svgFactory.createElement("svg:line"));
+    const line = (this.#line = svgFactory.createElement("svg:line"));
     line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
     line.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
     line.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
@@ -3235,17 +3234,14 @@ class SquareAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the square itself should trigger the
     // popup, not the entire container.
     const { data, width, height } = this;
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // The browser draws half of the borders inside the square and half of
     // the borders outside the square by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     const borderWidth = data.borderStyle.width;
-    const square = (this.#square = this.svgFactory.createElement("svg:rect"));
+    const square = (this.#square = svgFactory.createElement("svg:rect"));
     square.setAttribute("x", borderWidth / 2);
     square.setAttribute("y", borderWidth / 2);
     square.setAttribute("width", width - borderWidth);
@@ -3292,18 +3288,14 @@ class CircleAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the circle itself should trigger the
     // popup, not the entire container.
     const { data, width, height } = this;
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // The browser draws half of the borders inside the circle and half of
     // the borders outside the circle by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     const borderWidth = data.borderStyle.width;
-    const circle = (this.#circle =
-      this.svgFactory.createElement("svg:ellipse"));
+    const circle = (this.#circle = svgFactory.createElement("svg:ellipse"));
     circle.setAttribute("cx", width / 2);
     circle.setAttribute("cy", height / 2);
     circle.setAttribute("rx", width / 2 - borderWidth / 2);
@@ -3360,11 +3352,8 @@ class PolylineAnnotationElement extends AnnotationElement {
     if (!vertices) {
       return this.container;
     }
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // Convert the vertices array to a single points string that the SVG
     // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
@@ -3378,7 +3367,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     }
     points = points.join(" ");
 
-    const polyline = (this.#polyline = this.svgFactory.createElement(
+    const polyline = (this.#polyline = svgFactory.createElement(
       this.svgElementName
     ));
     polyline.setAttribute("points", points);
@@ -3498,13 +3487,9 @@ class InkAnnotationElement extends AnnotationElement {
     } = this;
     const { transform, width, height } = this.#getTransform(rotation, rect);
 
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
-    const g = (this.#polylinesGroupElement =
-      this.svgFactory.createElement("svg:g"));
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
+    const g = (this.#polylinesGroupElement = svgFactory.createElement("svg:g"));
     svg.append(g);
     // Ensure that the 'stroke-width' is always non-zero, since otherwise it
     // won't be possible to open/close the popup (note e.g. issue 11122).
@@ -3517,7 +3502,7 @@ class InkAnnotationElement extends AnnotationElement {
     g.setAttribute("transform", transform);
 
     for (const inkList of inkLists) {
-      const polyline = this.svgFactory.createElement(this.svgElementName);
+      const polyline = svgFactory.createElement(this.svgElementName);
       this.#polylines.push(polyline);
       polyline.setAttribute("points", inkList.join(","));
       g.append(polyline);
@@ -4045,7 +4030,6 @@ class AnnotationLayer {
       downloadManager: params.downloadManager,
       imageResourcesPath: params.imageResourcesPath || "",
       renderForms: params.renderForms !== false,
-      svgFactory: new DOMSVGFactory(),
       annotationStorage: this.#annotationStorage,
       enableComment: params.enableComment === true,
       enableAnnotationEditing: params.enableAnnotationEditing !== false,
@@ -4245,7 +4229,6 @@ class AnnotationLayer {
       data: null,
       layer: this.div,
       linkService: this.#linkService,
-      svgFactory: new DOMSVGFactory(),
       parent: this,
     };
     for (const data of annotations) {
