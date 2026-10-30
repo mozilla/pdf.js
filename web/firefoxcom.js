@@ -205,7 +205,12 @@ class Preferences extends BasePreferences {
     if (!viewerApp.initialized) {
       return;
     }
-    viewerApp.eventBus.dispatch("download", { source: window });
+    viewerApp.eventBus.dispatch("download", {
+      source: window,
+      // Support renderers that omit annotations.
+      flatten: detail?.flatten ?? false,
+      intent: detail?.intent ?? "print",
+    });
   };
 
   window.addEventListener("save", handleEvent);

@@ -148,6 +148,9 @@ class PDFEditor {
 
   #primaryDocument = null;
 
+  // Reference mappings for each copy of the primary document.
+  #primaryRefMappings = [];
+
   // Deduplicates resource streams (fonts/images) shared across the merged
   // documents. Maps a cheap content key to a bucket of { ref, dictStr, stream }
   // candidates; the key only groups possible matches, an exact byte comparison
@@ -1066,6 +1069,9 @@ class PDFEditor {
       }
       const documentData = new DocumentData(document);
       allDocumentData.push(documentData);
+      if (document === primaryDocument) {
+        this.#primaryRefMappings.push(documentData.oldRefMapping);
+      }
       promises.push(this.#collectDocumentData(documentData));
       let pageIndex = 0;
       for (const i of filteredPageIndices) {
@@ -3063,16 +3069,49 @@ class PDFEditor {
     return infoMap;
   }
 
+  /** Return the sole source of retained PDF pages, or null. */
+  #getSingleDocumentData() {
+    return this.isSingleFile ? this.oldPages.find(p => !!p).documentData : null;
+  }
+
+  /**
+   * @type {string|null} Password of the sole retained PDF source.
+   */
+  get password() {
+    return this.#getSingleDocumentData()?.document.pdfManager.password ?? null;
+  }
+
+  /**
+   * Remap the primary document's annotation storage to copied annotation ids.
+   * @param {Map<string, object> | null} annotationStorage
+   * @returns {Map<string, object> | null}
+   */
+  getCopiedAnnotationStorage(annotationStorage) {
+    const storage = new Map();
+    for (const [key, value] of annotationStorage ?? []) {
+      const ref = Ref.fromString(key);
+      if (!ref) {
+        continue;
+      }
+      for (const oldRefMapping of this.#primaryRefMappings) {
+        const newRef = oldRefMapping.get(ref);
+        if (newRef) {
+          storage.set(newRef.toString(), value);
+        }
+      }
+    }
+    return storage.size > 0 ? storage : null;
+  }
+
   /**
    * Create the encryption dictionary if required.
    * @returns {Promise<[Dict|null, CipherTransformFactory|null, Array|null]>}
    */
   async #makeEncrypt() {
-    if (!this.isSingleFile) {
+    const documentData = this.#getSingleDocumentData();
+    if (!documentData) {
       return [null, null, null];
     }
-    const firstRealPage = this.oldPages.find(p => !!p);
-    const { documentData } = firstRealPage;
     const {
       document: {
         xref: { trailer, encrypt },

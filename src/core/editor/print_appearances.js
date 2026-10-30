@@ -16,6 +16,7 @@
 import { Cmd, Dict, EOF, Ref, RefMap } from "../primitives.js";
 import { stringToBytes, warn } from "../../shared/util.js";
 import { BaseStream } from "../base_stream.js";
+import { ChangesXRefWrapper } from "../core_utils.js";
 import { EvaluatorPreprocessor } from "../evaluator.js";
 import { Lexer } from "../parser.js";
 import { LocalPdfManager } from "../pdf_manager.js";
@@ -23,40 +24,6 @@ import { Stream } from "../stream.js";
 
 // Drop marked-content operators; their metadata belongs to the generated PDF.
 const MARKED_CONTENT_OPS = new Set(["BDC", "BMC", "DP", "EMC", "MP"]);
-
-/** Resolve copied temporary references from `changes`. */
-class ChangesXRefWrapper {
-  #changes;
-
-  #xref;
-
-  constructor(changes, xref) {
-    this.#changes = changes;
-    this.#xref = xref;
-  }
-
-  getNewTemporaryRef() {
-    return this.#xref.getNewTemporaryRef();
-  }
-
-  fetch(ref) {
-    return this.#changes.has(ref)
-      ? this.#changes.get(ref).data
-      : this.#xref.fetch(ref);
-  }
-
-  fetchIfRef(obj) {
-    return obj instanceof Ref ? this.fetch(obj) : obj;
-  }
-
-  async fetchAsync(ref) {
-    return this.fetch(ref);
-  }
-
-  async fetchIfRefAsync(obj) {
-    return this.fetchIfRef(obj);
-  }
-}
 
 /**
  * Copy `obj` and its indirect dependencies into the target document.

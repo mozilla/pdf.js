@@ -692,6 +692,25 @@ class PDFDataRangeTransport {
 }
 
 /**
+ * @typedef {object} SaveDocumentParameters
+ * @property {function(Array<object>): Promise<Uint8Array | null>} [printToPDF]
+ *   Firefox-only callback receiving ordered `{ data }` entries. Returns a PDF
+ *   with one page per entry, or `null`. Place each appearance within
+ *   `[0, 0, data.width, data.height]` in points.
+ * @property {boolean | "non-forms"} [flatten] - Draw visible annotation
+ *   appearances into page content where possible. Keep links, file attachments
+ *   and media annotations interactive. With `true`, also flatten widgets
+ *   and remove widgets hidden for `intent`, except barcodes. Keep visible
+ *   widgets without drawable appearances. Remove AcroForm if this removes all
+ *   page widgets, unless SigFlags declares signatures. With `"non-forms"`, keep
+ *   widgets and AcroForm. Ignored for pure XFA documents. Defaults to `false`.
+ * @property {"display" | "print"} [intent] - Visibility to use when flattening
+ *   annotations. The default value is `"print"`. Ignored unless `flatten` is
+ *   enabled. Document scripts are not executed. Callers handle WillPrint
+ *   before saving and DidPrint afterward for scripted print changes.
+ */
+
+/**
  * Proxy to a `PDFDocument` in the worker thread.
  */
 class PDFDocumentProxy {
@@ -999,17 +1018,13 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @param {function(Array<object>): Promise<Uint8Array | null>} [printToPDF] -
-   *   Firefox-only platform appearance renderer. It receives ordered
-   *   `{ data }` entries and returns a PDF with one page per entry, or `null`.
-   *   Each page must place its appearance in
-   *   `[0, 0, data.width, data.height]`, with dimensions in points.
+   * @param {SaveDocumentParameters} [params] - Save parameters.
    * @returns {Promise<Uint8Array<ArrayBuffer>>} A promise that is
    *   resolved with a {Uint8Array<ArrayBuffer>} containing the
    *   full data of the saved document.
    */
-  saveDocument(printToPDF) {
-    return this._transport.saveDocument(printToPDF);
+  saveDocument(params) {
+    return this._transport.saveDocument(params);
   }
 
   /**
@@ -1048,11 +1063,18 @@ class PDFDocumentProxy {
    *  extracted pages sharing the same source page, or -1 if it isn't extracted.
    *  This routes editor annotations when the viewer contains multiple copies
    *  of a source page.
-   * @returns {Promise<Uint8Array>} A promise that is resolved with a
-   *   {Uint8Array} containing the full data of the saved document.
+   * @param {object} [options]
+   * @param {boolean | "non-forms"} [options.flatten] - Flatten extracted
+   *   annotations; see {@link SaveDocumentParameters}. The default value is
+   *   `false`.
+   * @param {"display" | "print"} [options.intent] - Visibility to use when
+   *   flattening; see {@link SaveDocumentParameters}. The default value is
+   *   `"print"`.
+   * @returns {Promise<Uint8Array|null>} The extracted PDF bytes, or `null`
+   *   if extraction fails.
    */
-  extractPages(pageInfos, copyLevels = null) {
-    return this._transport.extractPages(pageInfos, copyLevels);
+  extractPages(pageInfos, copyLevels = null, options = {}) {
+    return this._transport.extractPages(pageInfos, copyLevels, options);
   }
 
   /**
@@ -2476,6 +2498,15 @@ class WorkerTransport {
     return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
+  #getFlattenIntent(intent) {
+    if (intent !== "display" && intent !== "print") {
+      warn(`Invalid flattening intent: ${intent}, using "print".`);
+    }
+    return intent === "display"
+      ? RenderingIntentFlag.DISPLAY
+      : RenderingIntentFlag.PRINT;
+  }
+
   getRenderingIntent(
     intent,
     annotationMode = AnnotationMode.ENABLE,
@@ -2863,8 +2894,8 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
-  saveDocument(printToPDF = null) {
-    if (this.annotationStorage.size <= 0) {
+  saveDocument({ printToPDF = null, flatten = false, intent = "print" } = {}) {
+    if (this.annotationStorage.size <= 0 && !flatten) {
       warn(
         "saveDocument called while `annotationStorage` is empty, " +
           "please use the getData-method instead."
@@ -2887,6 +2918,8 @@ class WorkerTransport {
           annotationStorage: map,
           supportsPrintToPDF: this.#printToPDF !== null,
           filename: this.#fullReader?.filename ?? null,
+          flatten,
+          intent: this.#getFlattenIntent(intent),
         },
         transfer
       )
@@ -2896,9 +2929,15 @@ class WorkerTransport {
       });
   }
 
-  extractPages(pageInfos, copyLevels = null) {
+  extractPages(
+    pageInfos,
+    copyLevels = null,
+    { flatten = false, intent = "print" } = {}
+  ) {
     const params = {
       pageInfos,
+      flatten,
+      intent: this.#getFlattenIntent(intent),
     };
     let transfer;
     const ImageBitmapCtor = globalThis.ImageBitmap;
