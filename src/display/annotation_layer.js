@@ -2040,7 +2040,7 @@ class RadioButtonWidgetAnnotationElement extends WidgetAnnotationElement {
     }).value;
     if (typeof value === "string") {
       // The value has been changed through js and set in annotationStorage.
-      value = value !== data.buttonValue;
+      value = value === data.buttonValue;
       storage.setValue(id, { value });
     }
 
