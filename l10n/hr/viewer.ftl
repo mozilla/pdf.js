@@ -153,6 +153,7 @@ pdfjs-document-properties-linearized = Brzi web pregled:
 pdfjs-document-properties-linearized-yes = Da
 pdfjs-document-properties-linearized-no = Ne
 pdfjs-document-properties-close-button = Zatvori
+pdfjs-digital-signature-properties-view-certificate = Pogledaj certifikat
 
 ## Print
 
