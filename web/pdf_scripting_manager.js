@@ -425,7 +425,7 @@ class PDFScriptingManager {
         element.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
       } else {
         // The element hasn't been rendered yet, use the AnnotationStorage.
-        this.#pdfDocument?.annotationStorage.setValue(elementId, detail);
+        this.#pdfDocument?.annotationStorage.setValue(elementId, { ...detail });
       }
     }
   }
