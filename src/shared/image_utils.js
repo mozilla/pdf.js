@@ -14,6 +14,7 @@
  */
 
 import { FeatureTest, ImageKind } from "./util.js";
+import { MathClamp } from "./math_clamp.js";
 
 function convertToRGBA(params) {
   switch (params.kind) {
@@ -85,8 +86,12 @@ function convertRGBToRGBA({
   let i = 0;
   const len = width * height * 3;
   const byteOffset = src.byteOffset + srcPos;
-  // Use 32-bit reads for aligned sources; otherwise convert pixel by pixel.
-  const len32 = byteOffset % 4 === 0 ? Math.floor(len / 4) : 0;
+  // Bound aligned 32-bit reads to the source view.
+  // The scalar loops treat missing bytes as zeros.
+  const len32 =
+    byteOffset % 4 === 0
+      ? Math.floor(MathClamp(src.length - srcPos, 0, len) / 4)
+      : 0;
   const src32 =
     len32 > 0 ? new Uint32Array(src.buffer, byteOffset, len32) : null;
   const alphaMask = FeatureTest.isLittleEndian ? 0xff000000 : 0xff;
