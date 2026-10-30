@@ -531,6 +531,23 @@ function getAnnotationStorage(page) {
   );
 }
 
+function getRawValue(page, id) {
+  return page.evaluate(
+    i =>
+      window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(i),
+    id
+  );
+}
+
+function updateFromSandbox(page, selector, detail) {
+  return page.$eval(
+    selector,
+    (el, data) =>
+      el.dispatchEvent(new CustomEvent("updatefromsandbox", { detail: data })),
+    detail
+  );
+}
+
 function waitForEntryInStorage(page, key, value, checker = (x, y) => x === y) {
   return page.waitForFunction(
     (k, v, c) => {
@@ -978,6 +995,17 @@ async function kbBigMoveDown(page) {
   }
 }
 
+async function kbOpenList(page) {
+  await page.keyboard.down("Alt");
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.up("Alt");
+}
+
+async function openList(page, id) {
+  await page.click(`[data-annotation-id="${id}"] .comboButton`);
+  await page.waitForSelector(`#pdfjs_internal_id_${id}_listbox:popover-open`);
+}
+
 async function kbDeleteLastWord(page) {
   if (isMac) {
     await page.keyboard.down("Alt");
@@ -1248,6 +1276,7 @@ export {
   getFirstSerialized,
   getNextEditorId,
   getQuerySelector,
+  getRawValue,
   getRect,
   getSelector,
   getSerialized,
@@ -1270,6 +1299,7 @@ export {
   kbGoToEnd,
   kbModifierDown,
   kbModifierUp,
+  kbOpenList,
   kbRedo,
   kbSave,
   kbSelectAll,
@@ -1277,6 +1307,7 @@ export {
   loadAndWait,
   mockClipboard,
   moveEditor,
+  openList,
   paste,
   pasteFromClipboard,
   PDI,
@@ -1289,6 +1320,7 @@ export {
   showViewsManager,
   switchToEditor,
   unselectEditor,
+  updateFromSandbox,
   waitAndClick,
   waitForAnnotationEditorLayer,
   waitForAnnotationModeChanged,
