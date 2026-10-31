@@ -30,13 +30,19 @@ describe("function", function () {
     factory = null;
   });
 
-  function createSampledStream({ domain, range, size, samples }) {
+  function createSampledStream({
+    domain,
+    range,
+    size,
+    samples,
+    bitsPerSample = 8,
+  }) {
     const dict = new Dict();
     dict.set("FunctionType", 0);
     dict.set("Domain", domain);
     dict.set("Range", range);
     dict.set("Size", size);
-    dict.set("BitsPerSample", 8);
+    dict.set("BitsPerSample", bitsPerSample);
     const bytes = new Uint8Array(samples);
     return new Stream(bytes, 0, bytes.length, dict);
   }
@@ -128,6 +134,20 @@ describe("function", function () {
       });
 
       expect(evaluate(fn, ...new Array(numInputs).fill(0.5))).toEqual([0.2]);
+    });
+
+    it("must interpret 32-bit samples as unsigned", function () {
+      const fn = createSampledFunction({
+        domain: [0, 1],
+        range: [0, 1],
+        size: [2],
+        samples: [0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff],
+        bitsPerSample: 32,
+      });
+
+      const sampleMul = 1 / (2 ** 32 - 1);
+      expect(evaluate(fn, 0)).toEqual([0x80000000 * sampleMul]);
+      expect(evaluate(fn, 1)).toEqual([1]);
     });
   });
 
