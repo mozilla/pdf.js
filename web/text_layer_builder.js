@@ -49,6 +49,8 @@ import { removeNullCharacters } from "./ui_utils.js";
  * contain text that matches the PDF text they are overlaying.
  */
 class TextLayerBuilder {
+  #abortListenerAC = null;
+
   #abortSignal = null;
 
   #enablePermissions = false;
@@ -159,6 +161,8 @@ class TextLayerBuilder {
 
     this.highlighter?.disable();
     this.accessibilityManager?.disable();
+    this.#abortListenerAC?.abort();
+    this.#abortListenerAC = null;
     TextLayerBuilder.#removeGlobalSelectionListener(this.div);
   }
 
@@ -170,6 +174,10 @@ class TextLayerBuilder {
   #bindMouse(end) {
     const { div } = this;
     const abortSignal = this.#abortSignal;
+    if (abortSignal?.aborted) {
+      // The viewer was aborted while the text layer was being rendered.
+      return;
+    }
     const opts = abortSignal ? { signal: abortSignal } : null;
 
     div.addEventListener(
@@ -196,7 +204,18 @@ class TextLayerBuilder {
     );
 
     TextLayerBuilder.#textLayers.set(div, end);
-    TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
+    TextLayerBuilder.#enableGlobalSelectionListener();
+
+    if (abortSignal) {
+      // The document listeners are shared by the text layers of all viewers,
+      // hence unregister only this one when its viewer is aborted.
+      this.#abortListenerAC = new AbortController();
+      abortSignal.addEventListener(
+        "abort",
+        () => TextLayerBuilder.#removeGlobalSelectionListener(div),
+        { once: true, signal: this.#abortListenerAC.signal }
+      );
+    }
   }
 
   static #removeGlobalSelectionListener(textLayerDiv) {
@@ -208,15 +227,13 @@ class TextLayerBuilder {
     }
   }
 
-  static #enableGlobalSelectionListener(globalAbortSignal) {
+  static #enableGlobalSelectionListener() {
     if (this.#selectionChangeAC) {
       // document-level event listeners already installed
       return;
     }
     this.#selectionChangeAC = new AbortController();
-    const signal = globalAbortSignal
-      ? AbortSignal.any([this.#selectionChangeAC.signal, globalAbortSignal])
-      : this.#selectionChangeAC.signal;
+    const { signal } = this.#selectionChangeAC;
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
