@@ -3147,6 +3147,190 @@ describe("annotation", function () {
       expect(canvasName).toEqual("checked");
     });
 
+    describe("constructed appearances", function () {
+      const buttonWidgetRef = Ref.get(124, 0);
+      let xref, task, evaluator, annotationGlobals, mkDict;
+
+      beforeEach(function () {
+        mkDict = new Dict();
+        buttonWidgetDict.set("Rect", [0, 0, 20, 20]);
+        buttonWidgetDict.set("V", Name.get("Checked"));
+        buttonWidgetDict.set("MK", mkDict);
+        xref = new XRefMock([{ ref: buttonWidgetRef, data: buttonWidgetDict }]);
+        task = new WorkerTask("test constructed button appearances");
+        evaluator = partialEvaluator.clone({ ignoreErrors: true });
+        evaluator.xref = xref;
+        annotationGlobals = { ...annotationGlobalsMock, acroForm: new Dict() };
+        annotationGlobals.acroForm.set("NeedAppearances", true);
+      });
+
+      function createButton(globals = annotationGlobals, buttonXref = xref) {
+        return AnnotationFactory.create(
+          buttonXref,
+          buttonWidgetRef,
+          globals,
+          idFactoryMock
+        );
+      }
+
+      function setAppearances(checked = "", unchecked = "") {
+        const normal = new Dict();
+        for (const [state, content] of [
+          ["Checked", checked],
+          ["Off", unchecked],
+        ]) {
+          const dict = new Dict();
+          dict.set("BBox", [0, 0, 8, 8]);
+          normal.set(state, new StringStream(content, dict));
+        }
+        const ap = new Dict();
+        ap.set("N", normal);
+        buttonWidgetDict.set("AP", ap);
+      }
+
+      async function getOpList(annotation, value) {
+        const storage = new Map();
+        if (value !== undefined) {
+          storage.set(annotation.data.id, { value });
+        }
+        const { opList } = await annotation.getOperatorList(
+          evaluator,
+          task,
+          RenderingIntentFlag.PRINT,
+          storage
+        );
+        return opList;
+      }
+
+      function getMarks(opList) {
+        const glyphs =
+          opList.argsArray[opList.fnArray.indexOf(OPS.showText)][0];
+        return glyphs.map(g => g.unicode);
+      }
+
+      it("should use the /MK /CA mark for checkboxes without an /AP", async function () {
+        mkDict.set("CA", "8");
+        const annotation = await createButton(annotationGlobalsMock);
+        expect(getMarks(await getOpList(annotation))).toEqual(["8"]);
+      });
+
+      it("should construct the appearances when NeedAppearances is set (bug 2084610)", async function () {
+        // The existing streams draw #1a334c (checked) and #4c331a (unchecked).
+        setAppearances("0.1 0.2 0.3 rg", "0.3 0.2 0.1 rg");
+        mkDict.set("CA", "H");
+        mkDict.set("BG", [1, 1, 0]);
+        buttonWidgetDict.set("DA", "/ZaDb 0 Tf 1 0 0 rg");
+        buttonWidgetDict.set("AS", Name.get("Checked"));
+
+        for (const flags of [0, AnnotationFieldFlag.RADIO]) {
+          buttonWidgetDict.set("Ff", flags);
+          const annotation = await createButton();
+          const opList = await getOpList(annotation);
+          expect(opList.argsArray).not.toContain(["#1a334c"]);
+          // /MK /BG supplies the background; /DA supplies the mark color.
+          expect(opList.argsArray).toContain(["#ffff00"]);
+          expect(opList.argsArray).toContain(["#ff0000"]);
+          expect(getMarks(opList)).toEqual(["H"]);
+
+          const uncheckedOpList = await getOpList(annotation, false);
+          expect(uncheckedOpList.argsArray).not.toContain(["#4c331a"]);
+          expect(uncheckedOpList.argsArray).toContain(["#ffff00"]);
+          expect(uncheckedOpList.fnArray).not.toContain(OPS.showText);
+        }
+
+        // Keep the existing appearance without /NeedAppearances.
+        const annotation = await createButton(annotationGlobalsMock);
+        const opList = await getOpList(annotation);
+        expect(opList.fnArray).not.toContain(OPS.showText);
+        expect(opList.argsArray).toContain(["#1a334c"]);
+      });
+
+      it("should not draw a zero width border in a constructed appearance", async function () {
+        mkDict.set("BC", [1, 0, 0]);
+
+        // /MK /BC without border entries still draws a border.
+        const defaultOpList = await getOpList(
+          await createButton(annotationGlobalsMock)
+        );
+        expect(defaultOpList.argsArray).toContain(["#ff0000"]);
+
+        const bsDict = new Dict();
+        bsDict.set("W", 0);
+        buttonWidgetDict.set("BS", bsDict);
+        const opList = await getOpList(
+          await createButton(annotationGlobalsMock)
+        );
+        expect(opList.argsArray).not.toContain(["#ff0000"]);
+        // Only the border is dropped: the appearance is still built.
+        expect(opList.fnArray).toContain(OPS.showText);
+      });
+
+      it("should construct round radio buttons with the circle style", async function () {
+        setAppearances();
+        mkDict.set("BG", [0, 0, 1]);
+        buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+
+        // Argument counts indexed by DrawOPS.
+        const ARGS_COUNT = [2, 2, 6, 4, 0];
+        const getBackgroundPathOps = opList => {
+          const index = opList.fnArray.indexOf(OPS.constructPath);
+          const [[path]] = opList.argsArray[index].slice(1);
+          const ops = [];
+          for (let i = 0; i < path.length; i += 1 + ARGS_COUNT[path[i]]) {
+            ops.push(path[i]);
+          }
+          return ops;
+        };
+
+        // Both states have a round background for the default disc mark.
+        const annotation = await createButton();
+        for (const value of [true, false]) {
+          expect(
+            getBackgroundPathOps(await getOpList(annotation, value))
+          ).toContain(DrawOPS.curveTo);
+        }
+        mkDict.set("CA", "H");
+        const starAnnotation = await createButton();
+        for (const value of [true, false]) {
+          expect(
+            getBackgroundPathOps(await getOpList(starAnnotation, value))
+          ).not.toContain(DrawOPS.curveTo);
+        }
+      });
+
+      it("should keep the /MK /CA mark when saving and reloading checkboxes", async function () {
+        const normal = new Dict();
+        normal.set("Checked", Ref.get(314, 0));
+        normal.set("Off", Ref.get(271, 0));
+        const ap = new Dict();
+        ap.set("N", normal);
+        buttonWidgetDict.set("AP", ap);
+        buttonWidgetDict.set("V", Name.get("Off"));
+        mkDict.set("CA", "H");
+        mkDict.set("BG", [1]);
+
+        const annotation = await createButton();
+        const changes = new RefMap();
+        await annotation.save(
+          evaluator,
+          task,
+          new Map([[annotation.data.id, { value: true }]]),
+          changes
+        );
+        const [{ data }] = await writeChanges(changes, xref);
+        expect(data).toContain("/MK << /CA (H) /BG [1 1 1]>>");
+
+        const savedXref = new XRefMock([
+          { ref: buttonWidgetRef, data: changes.get(buttonWidgetRef).data },
+        ]);
+        const savedAnnotation = await createButton(
+          annotationGlobals,
+          savedXref
+        );
+        expect(getMarks(await getOpList(savedAnnotation))).toEqual(["H"]);
+      });
+    });
+
     it("should render checkboxes for printing", async function () {
       const appearanceStatesDict = new Dict();
       const normalAppearanceDict = new Dict();
