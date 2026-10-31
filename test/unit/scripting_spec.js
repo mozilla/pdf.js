@@ -1868,12 +1868,12 @@ describe("Scripting", function () {
       expect(round(value)).toEqual(["T"]);
 
       value = await myeval(`color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "G")`);
-      expect(round(value)).toEqual(["G", 0.371]);
+      expect(round(value)).toEqual(["G", 0.419]);
 
       value = await myeval(
         `color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "RGB")`
       );
-      expect(round(value)).toEqual(["RGB", 0.5, 0.3, 0.4]);
+      expect(round(value)).toEqual(["RGB", 0.5, 0.4, 0.3]);
 
       value = await myeval(
         `color.convert(["CMYK", 0.1, 0.2, 0.3, 0.4], "CMYK")`
