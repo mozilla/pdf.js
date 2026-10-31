@@ -6927,6 +6927,23 @@
     "about": "Sparse non-isolated knockout group under a blend mode."
   },
   {
+    "id": "knockout_element_bounds",
+    "file": "pdfs/knockout_element_bounds.pdf",
+    "md5": "c2546c6efe6d6a3cc434dc41f5f0f8bb",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Knockout group elements that overlap, have an alpha, are clipped, or leave the group's bounding box."
+  },
+  {
+    "id": "knockout_element_bounds-main-thread",
+    "file": "pdfs/knockout_element_bounds.pdf",
+    "md5": "c2546c6efe6d6a3cc434dc41f5f0f8bb",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Knockout group elements with partial bounds, on the main thread.",
+    "disableWorkerRendering": true
+  },
+  {
     "id": "knockout_isolated_overlap",
     "file": "pdfs/knockout_isolated_overlap.pdf",
     "md5": "b9c5dda6b8c7eb51a904766171290dc0",
