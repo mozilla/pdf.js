@@ -2733,6 +2733,23 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("gets the unencrypted signature value of an encrypted PDF", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue17069.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const [signature] = await pdfDoc.getSignatures();
+      // The other strings of the signature dictionary are decrypted.
+      expect(signature.signerName).toEqual("OneSpan");
+
+      const { pkcs7 } = await pdfDoc.getSignatureData(signature.id);
+      expect(pkcs7.length).toEqual(33680);
+      // The DER encoding of a CMS object.
+      expect(pkcs7.subarray(0, 4)).toEqual(
+        new Uint8Array([0x30, 0x82, 0x83, 0x57])
+      );
+
+      await loadingTask.destroy();
+    });
+
     it("gets signature metadata without fetching later revisions", async function () {
       const baseData = await DefaultFileReaderFactory.fetch({
         path: TEST_PDFS_PATH + "signed_verified.pdf",
