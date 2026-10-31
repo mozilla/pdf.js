@@ -2261,7 +2261,7 @@ class WidgetAnnotation extends Annotation {
 
   amendSavedDict(annotationStorage, dict) {}
 
-  setValue(dict, value, xref, changes) {
+  setValue(dict, value, xref, changes, overwrite = false) {
     const { dict: parentDict, ref: parentRef } = getParentToUpdate(
       dict,
       this.ref,
@@ -2269,7 +2269,7 @@ class WidgetAnnotation extends Annotation {
     );
     if (!parentDict) {
       dict.set("V", value);
-    } else if (!changes.has(parentRef)) {
+    } else if (overwrite || !changes.has(parentRef)) {
       const newParentDict = parentDict.clone();
       newParentDict.set("V", value);
       changes.put(parentRef, { data: newParentDict });
@@ -3476,7 +3476,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     };
 
     const name = Name.get(value ? this._onStateName : "Off");
-    this.setValue(dict, name, evaluator.xref, changes);
+    this.setValue(dict, name, evaluator.xref, changes, /* overwrite = */ value);
 
     dict.set("AS", name);
     dict.set("M", `D:${getModificationDate()}`);
