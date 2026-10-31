@@ -42,6 +42,7 @@ async function runTests(results) {
       "highlight_editor_spec.mjs",
       "ink_editor_spec.mjs",
       "presentation_mode_spec.mjs",
+      "pushbutton_icon_spec.mjs",
       "reorganize_pages_spec.mjs",
       "scripting_spec.mjs",
       "signature_editor_spec.mjs",
