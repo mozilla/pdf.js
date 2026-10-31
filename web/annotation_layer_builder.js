@@ -162,7 +162,19 @@ class AnnotationLayerBuilder {
     const div = (this.div = document.createElement("div"));
     div.className = "annotationLayer";
     this.#onAppend?.(div);
-    this.#initAnnotationLayer(viewport, structTreeLayer);
+
+    this.annotationLayer = new AnnotationLayer({
+      div,
+      accessibilityManager: this._accessibilityManager,
+      annotationCanvasMap: this._annotationCanvasMap,
+      annotationEditorUIManager: this._annotationEditorUIManager,
+      annotationStorage: this.annotationStorage,
+      page: this.pdfPage,
+      viewport: viewport.clone({ dontFlip: true }),
+      structTreeLayer,
+      commentManager: this.#commentManager,
+      linkService: this.linkService,
+    });
 
     if (annotations.length === 0) {
       this.#annotations = annotations;
@@ -205,21 +217,6 @@ class AnnotationLayerBuilder {
         { signal: this.#eventAC.signal, ...internalOpt }
       );
     }
-  }
-
-  #initAnnotationLayer(viewport, structTreeLayer) {
-    this.annotationLayer = new AnnotationLayer({
-      div: this.div,
-      accessibilityManager: this._accessibilityManager,
-      annotationCanvasMap: this._annotationCanvasMap,
-      annotationEditorUIManager: this._annotationEditorUIManager,
-      annotationStorage: this.annotationStorage,
-      page: this.pdfPage,
-      viewport: viewport.clone({ dontFlip: true }),
-      structTreeLayer,
-      commentManager: this.#commentManager,
-      linkService: this.linkService,
-    });
   }
 
   cancel() {
