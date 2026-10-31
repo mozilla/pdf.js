@@ -102,10 +102,7 @@ class CFFFont {
       return charCodeToGlyphId;
     }
 
-    let encoding = cff.encoding ? cff.encoding.encoding : null;
-    if (properties.isInternalFont) {
-      encoding = properties.defaultEncoding;
-    }
+    const encoding = cff.encoding ? cff.encoding.encoding : null;
     return type1FontGlyphMapping(properties, encoding, charsets);
   }
 

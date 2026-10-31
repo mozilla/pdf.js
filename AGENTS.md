@@ -142,7 +142,7 @@ PDF.js uses a Web Worker architecture:
 
 Located in `external/`:
 - **bcmaps**: Binary CMaps for CJK fonts
-- **standard_fonts**: Core 14 PDF fonts metrics
+- **hellbox**: Font generator for the non-embedded standard fonts (WASM) and its glyph data
 - **cmapscompress**: Tools for compressing CMaps
 - **openjpeg**: JPEG2000 decoder (WASM)
 - **quickjs**: JavaScript engine for sandboxed execution

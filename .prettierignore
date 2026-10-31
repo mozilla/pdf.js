@@ -5,6 +5,7 @@ node_modules/
 external/bcmaps/
 external/builder/fixtures/
 external/builder/fixtures_babel/
+external/hellbox/
 external/openjpeg/
 external/qcms/
 external/quickjs/

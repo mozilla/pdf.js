@@ -69,14 +69,14 @@ import { normalizeFontName } from "./fonts_utils.js";
 
 const getXFAFontMap = getLookupTableFactory(function (t) {
   t["MyriadPro-Regular"] = t["PdfJS-Fallback-Regular"] = {
-    name: "LiberationSans-Regular",
+    name: "Helvetica",
     factors: MyriadProRegularFactors,
     baseWidths: LiberationSansRegularWidths,
     baseMapping: LiberationSansRegularMapping,
     metrics: MyriadProRegularMetrics,
   };
   t["MyriadPro-Bold"] = t["PdfJS-Fallback-Bold"] = {
-    name: "LiberationSans-Bold",
+    name: "Helvetica-Bold",
     factors: MyriadProBoldFactors,
     baseWidths: LiberationSansBoldWidths,
     baseMapping: LiberationSansBoldMapping,
@@ -86,7 +86,7 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     t["MyriadPro-Italic"] =
     t["PdfJS-Fallback-Italic"] =
       {
-        name: "LiberationSans-Italic",
+        name: "Helvetica-Oblique",
         factors: MyriadProItalicFactors,
         baseWidths: LiberationSansItalicWidths,
         baseMapping: LiberationSansItalicMapping,
@@ -96,7 +96,7 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     t["MyriadPro-BoldItalic"] =
     t["PdfJS-Fallback-BoldItalic"] =
       {
-        name: "LiberationSans-BoldItalic",
+        name: "Helvetica-BoldOblique",
         factors: MyriadProBoldItalicFactors,
         baseWidths: LiberationSansBoldItalicWidths,
         baseMapping: LiberationSansBoldItalicMapping,
@@ -106,104 +106,104 @@ const getXFAFontMap = getLookupTableFactory(function (t) {
     t.Arial =
     t["Arial-Regular"] =
       {
-        name: "LiberationSans-Regular",
+        name: "Helvetica",
         baseWidths: LiberationSansRegularWidths,
         baseMapping: LiberationSansRegularMapping,
       };
   t["Arial-BoldMT"] = t["Arial-Bold"] = {
-    name: "LiberationSans-Bold",
+    name: "Helvetica-Bold",
     baseWidths: LiberationSansBoldWidths,
     baseMapping: LiberationSansBoldMapping,
   };
   t["Arial-ItalicMT"] = t["Arial-Italic"] = {
-    name: "LiberationSans-Italic",
+    name: "Helvetica-Oblique",
     baseWidths: LiberationSansItalicWidths,
     baseMapping: LiberationSansItalicMapping,
   };
   t["Arial-BoldItalicMT"] = t["Arial-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
+    name: "Helvetica-BoldOblique",
     baseWidths: LiberationSansBoldItalicWidths,
     baseMapping: LiberationSansBoldItalicMapping,
   };
   t["Calibri-Regular"] = {
-    name: "LiberationSans-Regular",
+    name: "Helvetica",
     factors: CalibriRegularFactors,
     baseWidths: LiberationSansRegularWidths,
     baseMapping: LiberationSansRegularMapping,
     metrics: CalibriRegularMetrics,
   };
   t["Calibri-Bold"] = {
-    name: "LiberationSans-Bold",
+    name: "Helvetica-Bold",
     factors: CalibriBoldFactors,
     baseWidths: LiberationSansBoldWidths,
     baseMapping: LiberationSansBoldMapping,
     metrics: CalibriBoldMetrics,
   };
   t["Calibri-Italic"] = {
-    name: "LiberationSans-Italic",
+    name: "Helvetica-Oblique",
     factors: CalibriItalicFactors,
     baseWidths: LiberationSansItalicWidths,
     baseMapping: LiberationSansItalicMapping,
     metrics: CalibriItalicMetrics,
   };
   t["Calibri-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
+    name: "Helvetica-BoldOblique",
     factors: CalibriBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
     baseMapping: LiberationSansBoldItalicMapping,
     metrics: CalibriBoldItalicMetrics,
   };
   t["Segoeui-Regular"] = {
-    name: "LiberationSans-Regular",
+    name: "Helvetica",
     factors: SegoeuiRegularFactors,
     baseWidths: LiberationSansRegularWidths,
     baseMapping: LiberationSansRegularMapping,
     metrics: SegoeuiRegularMetrics,
   };
   t["Segoeui-Bold"] = {
-    name: "LiberationSans-Bold",
+    name: "Helvetica-Bold",
     factors: SegoeuiBoldFactors,
     baseWidths: LiberationSansBoldWidths,
     baseMapping: LiberationSansBoldMapping,
     metrics: SegoeuiBoldMetrics,
   };
   t["Segoeui-Italic"] = {
-    name: "LiberationSans-Italic",
+    name: "Helvetica-Oblique",
     factors: SegoeuiItalicFactors,
     baseWidths: LiberationSansItalicWidths,
     baseMapping: LiberationSansItalicMapping,
     metrics: SegoeuiItalicMetrics,
   };
   t["Segoeui-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
+    name: "Helvetica-BoldOblique",
     factors: SegoeuiBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
     baseMapping: LiberationSansBoldItalicMapping,
     metrics: SegoeuiBoldItalicMetrics,
   };
   t["Helvetica-Regular"] = t.Helvetica = {
-    name: "LiberationSans-Regular",
+    name: "Helvetica",
     factors: HelveticaRegularFactors,
     baseWidths: LiberationSansRegularWidths,
     baseMapping: LiberationSansRegularMapping,
     metrics: HelveticaRegularMetrics,
   };
   t["Helvetica-Bold"] = {
-    name: "LiberationSans-Bold",
+    name: "Helvetica-Bold",
     factors: HelveticaBoldFactors,
     baseWidths: LiberationSansBoldWidths,
     baseMapping: LiberationSansBoldMapping,
     metrics: HelveticaBoldMetrics,
   };
   t["Helvetica-Italic"] = {
-    name: "LiberationSans-Italic",
+    name: "Helvetica-Oblique",
     factors: HelveticaItalicFactors,
     baseWidths: LiberationSansItalicWidths,
     baseMapping: LiberationSansItalicMapping,
     metrics: HelveticaItalicMetrics,
   };
   t["Helvetica-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
+    name: "Helvetica-BoldOblique",
     factors: HelveticaBoldItalicFactors,
     baseWidths: LiberationSansBoldItalicWidths,
     baseMapping: LiberationSansBoldItalicMapping,

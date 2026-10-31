@@ -121,9 +121,7 @@ function buildMapping(baseEncoding, glyphNames) {
 function type1FontGlyphMapping(properties, builtInEncoding, glyphNames) {
   let charCodeToGlyphId, glyphsUnicodeMap;
 
-  if (properties.isInternalFont) {
-    charCodeToGlyphId = buildMapping(builtInEncoding, glyphNames);
-  } else if (properties.baseEncodingName) {
+  if (properties.baseEncodingName) {
     // If a valid base encoding name was used, the mapping is initialized with
     // that.
     charCodeToGlyphId = buildMapping(

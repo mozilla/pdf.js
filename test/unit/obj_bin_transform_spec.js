@@ -67,6 +67,7 @@ describe("obj_bin_transform", function () {
       bbox: [1, 1, 1, 1],
       fontMatrix: [1, 1, 1, 1, 1, 1],
       fallbackName: "string",
+      generatedFontName: "string",
       loadedName: "string",
       data: new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]),
       uselessProp: "something",
@@ -120,9 +121,9 @@ describe("obj_bin_transform", function () {
 
       describe("FontInfo", function () {
         it("must roundtrip correctly for FontInfo", function () {
-          let sizeEstimate = 41; // fixed offset until the strings
+          let sizeEstimate = 61; // fixed offset until the strings
           const { encoder } = InfoUtils;
-          sizeEstimate += 4 + 4 * (4 + encoder.encode("string").length);
+          sizeEstimate += 4 + 3 * (4 + encoder.encode("string").length);
           sizeEstimate += 4 + 4; // cssFontInfo and systemFontInfo
           sizeEstimate += 4 + fontInfo.data.length;
           const buffer = compileFontInfo(fontInfo);
@@ -141,6 +142,7 @@ describe("obj_bin_transform", function () {
           expect(deserialized.bbox).toEqual([1, 1, 1, 1]);
           expect(deserialized.fontMatrix).toEqual([1, 1, 1, 1, 1, 1]);
           expect(deserialized.fallbackName).toEqual("string");
+          expect(deserialized.generatedFontName).toEqual("string");
           expect(deserialized.loadedName).toEqual("string");
           expect(Array.from(deserialized.data)).toEqual([
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
