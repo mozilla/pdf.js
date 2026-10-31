@@ -224,7 +224,7 @@ class TextLayerBuilder {
         end.style.width = "";
         end.style.height = "";
       }
-      textLayer.classList.remove("selecting");
+      textLayer.classList.remove("selecting", "beforeSelection");
     };
 
     let isPointerDown = false;
@@ -280,8 +280,16 @@ class TextLayerBuilder {
         // Make sure to collect all the .textLayer elements where the selection
         // is happening.
         const activeTextLayers = new Set();
+        let selectionStart = null;
         for (let i = 0; i < selection.rangeCount; i++) {
           const range = selection.getRangeAt(i);
+          if (
+            !selectionStart ||
+            range.compareBoundaryPoints(Range.START_TO_START, selectionStart) <
+              0
+          ) {
+            selectionStart = range;
+          }
           if (range.collapsed && !isPointerDown) {
             // A click's selectionchange can arrive after pointerup and restore
             // the selecting class. Ignore its collapsed range.
@@ -302,6 +310,18 @@ class TextLayerBuilder {
         for (const [textLayerDiv, endDiv] of this.#textLayers) {
           if (activeTextLayers.has(textLayerDiv)) {
             textLayerDiv.classList.add("selecting");
+          } else if (
+            isPointerDown &&
+            selectionStart.comparePoint(
+              textLayerDiv,
+              textLayerDiv.childNodes.length
+            ) < 0
+          ) {
+            // A drag can enter a page above the selection through the empty
+            // area below its text, where Firefox and Safari would extend the
+            // selection to the start of the text layer: let that area select
+            // up to the end of the text layer instead.
+            textLayerDiv.classList.add("selecting", "beforeSelection");
           } else {
             reset(endDiv, textLayerDiv);
           }

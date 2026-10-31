@@ -740,6 +740,50 @@ describe("Text layer", () => {
             })
           );
         });
+
+        it("when dragging up into the page above", async () => {
+          await Promise.all(
+            pages.map(async ([browserName, page]) => {
+              const scrollTarget = await getSpanRectFromText(
+                page,
+                1,
+                "Unlike method-based dynamic compilers, our dynamic com-"
+              );
+              await page.evaluate(top => {
+                document.getElementById("viewerContainer").scrollTop = top;
+              }, scrollTarget.y - 50);
+
+              const [positionStart, positionEnd] = await Promise.all([
+                getSpanRectFromText(page, 2, "iterations of the loop.").then(
+                  rect => ({
+                    x: Math.round(rect.x + rect.width - 1),
+                    y: Math.round(rect.y + rect.height / 2),
+                  })
+                ),
+                // The empty area below the last line of page 1.
+                getSpanRectFromText(
+                  page,
+                  1,
+                  "or that the same types will occur in subsequent loop iterations."
+                ).then(rect => ({
+                  x: Math.round(rect.x + rect.width / 2),
+                  y: Math.round(rect.y + rect.height * 2),
+                })),
+              ]);
+
+              await page.mouse.move(positionStart.x, positionStart.y);
+              await page.mouse.down();
+              await moveInSteps(page, positionStart, positionEnd, 20);
+              await page.mouse.up();
+
+              await expectAsync(page)
+                .withContext(`In ${browserName}`)
+                .toHaveRoughlySelected(
+                  /Hence, recording and compiling.*iterations of the loop/s
+                );
+            })
+          );
+        });
       });
 
       describe("doesn't jump when hovering on an empty area, with .markedContent", () => {
