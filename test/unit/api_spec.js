@@ -802,6 +802,19 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("creates pdf doc from PDF file where an invalid XRef stream precedes a valid one", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue22370.pdf"));
+      expect(loadingTask).toBeInstanceOf(PDFDocumentLoadingTask);
+
+      const pdfDocument = await loadingTask.promise;
+      expect(pdfDocument.numPages).toEqual(1);
+
+      const page = await pdfDocument.getPage(1);
+      expect(page).toBeInstanceOf(PDFPageProxy);
+
+      await loadingTask.destroy();
+    });
+
     it("creates pdf doc from PDF file with inaccessible /Pages tree", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("poppler-395-0-fuzzed.pdf")
