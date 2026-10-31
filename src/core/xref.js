@@ -808,6 +808,12 @@ class XRef {
         if (e instanceof MissingDataException) {
           throw e;
         }
+        // Don't let the state of a corrupt XRef table/stream, which is only
+        // kept to be able to resume parsing after a `MissingDataException`,
+        // be used when parsing the next one.
+        delete this._tableState;
+        delete this.streamState;
+
         this.#xrefSectionsComplete = false;
         info("(while reading XRef): " + e);
       }
