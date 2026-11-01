@@ -371,12 +371,8 @@ class A extends XhtmlObject {
 class B extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "b");
-  }
-
-  [$pushGlyphs](measure) {
-    measure.pushFont({ weight: "bold" });
-    super[$pushGlyphs](measure);
-    measure.popFont();
+    // Prepend so explicit styles like font-weight:normal still win.
+    this.style = `font-weight:bold;${this.style}`;
   }
 }
 
@@ -461,12 +457,8 @@ class Html extends XhtmlObject {
 class I extends XhtmlObject {
   constructor(attributes) {
     super(attributes, "i");
-  }
-
-  [$pushGlyphs](measure) {
-    measure.pushFont({ posture: "italic" });
-    super[$pushGlyphs](measure);
-    measure.popFont();
+    // Prepend so explicit styles like font-style:normal still win.
+    this.style = `font-style:italic;${this.style}`;
   }
 }
 
