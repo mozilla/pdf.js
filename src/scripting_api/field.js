@@ -68,6 +68,8 @@ class Field {
 
   #hasDateOrTime;
 
+  #hasTextEntry;
+
   #hasValue;
 
   #id;
@@ -155,6 +157,8 @@ class Field {
     this.#getTerminalChildren = data.getTerminalChildren;
     this.#globalEval = data.globalEval;
     this.#hasDateOrTime = !!data.hasDatetimeHTML;
+    // Changing editable later cannot replace a <select> with a text input.
+    this.#hasTextEntry = !!data.editable;
     this.#hasValue = Object.hasOwn(data, "value");
     this.#id = data.id;
     this.#isChoice = Array.isArray(data.items);
@@ -584,13 +588,20 @@ class Field {
       if (Array.isArray(value)) {
         value = value[0];
       }
-      const index = this.#items.findIndex(
+      const isEditable = this.#hasTextEntry && this.#viewProps.editable;
+      let index = this.#items.findIndex(
         ({ exportValue }) => value === exportValue
       );
-      if (index !== -1) {
-        this.#currentValueIndices = index;
-        this.#value = this.#items[index].exportValue;
+      if (index === -1 && isEditable) {
+        index = this.#items.findIndex(
+          ({ displayValue }) => value === displayValue
+        );
       }
+      if (index === -1 && !isEditable) {
+        return;
+      }
+      this.#currentValueIndices = index;
+      this.#value = index === -1 ? value : this.#items[index].exportValue;
     }
   }
 

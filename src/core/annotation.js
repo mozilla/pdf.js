@@ -4016,6 +4016,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
 
     // Process field flags for the display layer.
     this.data.combo = this.hasFieldFlag(AnnotationFieldFlag.COMBO);
+    this.data.edit = this.hasFieldFlag(AnnotationFieldFlag.EDIT);
     this.data.multiSelect = this.hasFieldFlag(AnnotationFieldFlag.MULTISELECT);
     this._hasText = true;
   }
@@ -4028,7 +4029,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       id: this.data.id,
       value,
       defaultValue: this.data.defaultFieldValue,
-      editable: !this.data.readOnly,
+      editable: this.data.combo && this.data.edit,
       name: this.data.fieldName,
       rect: this.data.rect,
       numItems: this.data.fieldValue.length,
