@@ -5258,9 +5258,9 @@ page 1 / 3`);
 Open Sans was designed with an upright stress, open forms and a neu-
 tral, yet friendly appearance. It was optimized for print, web, and mobile
 interfaces, and has excellent legibility characteristics in its letterforms (see
-ﬁgure \x81 on the following page). This font is available from the Google Font
-Directory [\x81] as TrueType ﬁles licensed under the Apache License version \x82.\x80.
-This package provides support for this font in LATEX. It includes Type \x81
+ﬁgure 1 on the following page). This font is available from the Google Font
+Directory [1] as TrueType ﬁles licensed under the Apache License version 2.0.
+This package provides support for this font in LATEX. It includes Type 1
 versions of the fonts, converted for this package using FontForge from its
 sources, for full support with Dvips.`;
 
@@ -5274,9 +5274,9 @@ sources, for full support with Dvips.`;
 Open Sans was designed with an upright stress, open forms and a neu-
 tral, yet friendly appearance. It was optimized for print, web, and mobile
 interfaces, and has excellent legibility characteristics in its letterforms (see
-figure \x81 on the following page). This font is available from the Google Font
-Directory [\x81] as TrueType files licensed under the Apache License version \x82.\x80.
-This package provides support for this font in LATEX. It includes Type \x81
+figure 1 on the following page). This font is available from the Google Font
+Directory [1] as TrueType files licensed under the Apache License version 2.0.
+This package provides support for this font in LATEX. It includes Type 1
 versions of the fonts, converted for this package using FontForge from its
 sources, for full support with Dvips.`;
       expect(text.includes(expected)).toBeTrue();
@@ -5622,6 +5622,21 @@ have written that much by now. So, here’s to squashing bugs.`);
       });
       const text = mergeText(items);
       expect(text).toEqual("hiddenVisible text");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content for glyph names with a suffix (issue 22410)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue22410.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+      // The `c.sc`, `T_h.alt` and `uni00E9.sc` glyphs, from the /Differences
+      // array, are the characters of the glyph names without the suffix.
+      expect(text).toEqual("nicht The caf\u00e9");
 
       await loadingTask.destroy();
     });

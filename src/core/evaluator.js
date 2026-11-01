@@ -3887,6 +3887,18 @@ class PartialEvaluator {
         toUnicode.set(+charcode, String.fromCharCode(unicode));
         continue;
       }
+      // The Adobe Glyph List Specification says that everything from the first
+      // period onwards is a suffix (e.g. `c.sc` or `T_h.alt`), which doesn't
+      // change the character(s) of the glyph, so look up the name without it.
+      const periodIndex = glyphName.indexOf(".");
+      if (periodIndex > 0) {
+        glyphName = glyphName.substring(0, periodIndex);
+        unicode = glyphsUnicodeMap[glyphName];
+        if (unicode !== undefined) {
+          toUnicode.set(+charcode, String.fromCharCode(unicode));
+          continue;
+        }
+      }
       // (undocumented) c) Few heuristics to recognize unknown glyphs
       // NOTE: Adobe Reader does not do this step, but OSX Preview does
       let code = 0;
