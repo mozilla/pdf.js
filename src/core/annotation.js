@@ -3276,6 +3276,7 @@ class TextWidgetAnnotation extends WidgetAnnotation {
       datetimeFormat: this.data.datetimeFormat,
       hasDatetimeHTML: !!this.data.datetimeType,
       type: "text",
+      alternativeText: this.data.alternativeText,
     };
   }
 }
@@ -3927,6 +3928,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       fillColor: this.data.backgroundColor,
       rotation: this.rotation,
       type,
+      alternativeText: this.data.alternativeText,
     };
   }
 
@@ -4041,6 +4043,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       fillColor: this.data.backgroundColor,
       rotation: this.rotation,
       type,
+      alternativeText: this.data.alternativeText,
     };
   }
 
@@ -4228,6 +4231,7 @@ class SignatureWidgetAnnotation extends WidgetAnnotation {
       value: null,
       page: this.data.pageIndex,
       type: "signature",
+      alternativeText: this.data.alternativeText,
     };
   }
 }
