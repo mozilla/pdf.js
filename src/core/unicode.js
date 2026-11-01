@@ -93,6 +93,44 @@ function getUnicodeForGlyph(name, glyphsUnicodeMap) {
   return -1;
 }
 
+// Map a glyph name to a string as described in section 2 of the Adobe Glyph
+// List Specification: drop any suffix starting with a period, split the rest
+// into components at underscores and map each of them. Unlike the
+// specification, `null` is returned unless every component can be mapped.
+function getUnicodeForGlyphComponents(name, glyphsUnicodeMap) {
+  const baseName = name.split(".", 1)[0];
+  if (!baseName) {
+    return null;
+  }
+  let str = "";
+  for (const component of baseName.split("_")) {
+    const unicode = glyphsUnicodeMap[component];
+    if (unicode !== undefined) {
+      str += String.fromCharCode(unicode);
+      continue;
+    }
+    let match;
+    if ((match = /^uni((?:[0-9A-F]{4})+)$/.exec(component))) {
+      for (let i = 0, ii = match[1].length; i < ii; i += 4) {
+        const code = parseInt(match[1].substring(i, i + 4), 16);
+        if (code >= 0xd800 && code <= 0xdfff) {
+          return null;
+        }
+        str += String.fromCharCode(code);
+      }
+    } else if ((match = /^u([0-9A-F]{4,6})$/.exec(component))) {
+      const code = parseInt(match[1], 16);
+      if (code > 0x10ffff || (code >= 0xd800 && code <= 0xdfff)) {
+        return null;
+      }
+      str += String.fromCodePoint(code);
+    } else {
+      return null;
+    }
+  }
+  return str;
+}
+
 // See https://learn.microsoft.com/en-us/typography/opentype/spec/os2#ulunicoderange1-bits-031ulunicoderange2-bits-3263ulunicoderange3-bits-6495ulunicoderange4-bits-96127
 const UnicodeRanges = [
   [0x0000, 0x007f], // 0 - Basic Latin
@@ -271,6 +309,7 @@ export {
   clearUnicodeCaches,
   getCharUnicodeCategory,
   getUnicodeForGlyph,
+  getUnicodeForGlyphComponents,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
 };

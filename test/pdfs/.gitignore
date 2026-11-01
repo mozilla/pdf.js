@@ -991,6 +991,7 @@
 !pattern_text_non_embedded_font.pdf
 !pattern_text_rotated_fallback_glyphs.pdf
 !issue22370.pdf
+!issue22410.pdf
 !perf_paths_operators.pdf
 !perf_paths_polygons.pdf
 !perf_paths_curves.pdf

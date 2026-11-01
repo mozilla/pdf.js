@@ -16,6 +16,7 @@
 import {
   getCharUnicodeCategory,
   getUnicodeForGlyph,
+  getUnicodeForGlyphComponents,
   getUnicodeRangeFor,
   mapSpecialUnicodeValues,
 } from "../../src/core/unicode.js";
@@ -183,6 +184,40 @@ describe("unicode", function () {
     it("should not get Unicode values for invalid glyph names", function () {
       expect(getUnicodeForGlyph("Qwerty", standardMap)).toEqual(-1);
       expect(getUnicodeForGlyph("Qwerty", dingbatsMap)).toEqual(-1);
+    });
+  });
+
+  describe("getUnicodeForGlyphComponents", function () {
+    let standardMap;
+
+    beforeAll(function () {
+      standardMap = getGlyphsUnicode();
+    });
+
+    afterAll(function () {
+      standardMap = null;
+    });
+
+    it("should map glyph names with suffixes and ligature components", function () {
+      expect(getUnicodeForGlyphComponents("c.sc", standardMap)).toEqual("c");
+      expect(getUnicodeForGlyphComponents("T_h.alt", standardMap)).toEqual(
+        "Th"
+      );
+      expect(getUnicodeForGlyphComponents("uni00E9.sc", standardMap)).toEqual(
+        "\u00e9"
+      );
+      expect(
+        getUnicodeForGlyphComponents("uni00410042_u1F600", standardMap)
+      ).toEqual("AB\u{1F600}");
+    });
+
+    it("should not map glyph names with unknown components", function () {
+      expect(getUnicodeForGlyphComponents(".notdef", standardMap)).toBeNull();
+      expect(getUnicodeForGlyphComponents("cid_12", standardMap)).toBeNull();
+      expect(getUnicodeForGlyphComponents("a__b", standardMap)).toBeNull();
+      expect(getUnicodeForGlyphComponents("uni00e9", standardMap)).toBeNull();
+      expect(getUnicodeForGlyphComponents("uniD800", standardMap)).toBeNull();
+      expect(getUnicodeForGlyphComponents("u110000", standardMap)).toBeNull();
     });
   });
 

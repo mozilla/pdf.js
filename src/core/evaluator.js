@@ -65,6 +65,7 @@ import {
   isKnownFontName,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
+import { getUnicodeForGlyph, getUnicodeForGlyphComponents } from "./unicode.js";
 import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
@@ -86,7 +87,6 @@ import { compilePatternInfo } from "./obj_bin_transform_core.js";
 import { getFontSubstitution } from "./font_substitutions.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
-import { getUnicodeForGlyph } from "./unicode.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { PDFImage } from "./image.js";
 import { Stream } from "./stream.js";
@@ -3958,6 +3958,13 @@ class PartialEvaluator {
           }
         }
         toUnicode.set(+charcode, String.fromCodePoint(code));
+        continue;
+      }
+      // d) Map the components of the glyph name, as described in the Adobe
+      //    Glyph List Specification, e.g. "c.sc" or "T_h.alt" (issue 22410).
+      const str = getUnicodeForGlyphComponents(glyphName, glyphsUnicodeMap);
+      if (str) {
+        toUnicode.set(+charcode, str);
       }
     }
     return toUnicode;
