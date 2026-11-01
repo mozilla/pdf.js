@@ -57,6 +57,7 @@ import {
 import { AnnotationStorage } from "./annotation_storage.js";
 import { ColorConverters } from "../shared/scripting_utils.js";
 import { DOMSVGFactory } from "./svg_factory.js";
+import { MathClamp } from "../shared/math_clamp.js";
 
 const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
@@ -106,6 +107,13 @@ class AnnotationElementFactory {
             }
             return new PushButtonWidgetAnnotationElement(parameters);
           case "Ch":
+            if (
+              parameters.renderForms &&
+              parameters.data.combo &&
+              parameters.data.edit
+            ) {
+              return new EditableComboWidgetAnnotationElement(parameters);
+            }
             return new ChoiceWidgetAnnotationElement(parameters);
           case "Sig":
             return new SignatureWidgetAnnotationElement(parameters);
@@ -1241,20 +1249,17 @@ class LinkAnnotationElement extends AnnotationElement {
         const { id } = field;
         allIds.push(id);
         switch (field.type) {
-          case "text": {
+          case "text":
+          case "combobox":
+          case "listbox": {
             const value = field.defaultValue || "";
-            storage.setValue(id, { value });
+            // Clear formatting when resetting the value.
+            storage.setValue(id, { value, formattedValue: null });
             break;
           }
           case "checkbox":
           case "radiobutton": {
             const value = field.defaultValue === field.exportValues;
-            storage.setValue(id, { value });
-            break;
-          }
-          case "combobox":
-          case "listbox": {
-            const value = field.defaultValue || "";
             storage.setValue(id, { value });
             break;
           }
@@ -1473,17 +1478,16 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
     super(parameters, { isRenderable });
   }
 
-  setPropertyOnSiblings(base, key, value, keyInStorage) {
-    const storage = this.annotationStorage;
-    for (const element of this._getElementsByName(
-      base.name,
-      /* skipId = */ base.id
-    )) {
-      if (element.domElement) {
-        element.domElement[key] = value;
-      }
-      storage.setValue(element.id, { [keyInStorage]: value });
-    }
+  _toDisplayValue(value) {
+    return value ?? "";
+  }
+
+  _toStorageValue(value) {
+    return value;
+  }
+
+  _getSandboxActions(actions) {
+    return actions;
   }
 
   render() {
@@ -1500,7 +1504,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       const storedData = storage.getValue(id, {
         value: this.data.fieldValue,
       });
-      let textContent = storedData.value || "";
+      let textContent = this._toDisplayValue(storedData.value);
       const maxLen = storage.getValue(id, {
         charLimit: this.data.maxLen,
       }).charLimit;
@@ -1566,18 +1570,20 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
       }
 
       element.addEventListener("input", event => {
-        storage.setValue(id, { value: event.target.value });
-        this.setPropertyOnSiblings(
-          element,
-          "value",
-          event.target.value,
-          "value"
-        );
+        const displayValue = event.target.value;
+        const value = this._toStorageValue(displayValue);
+        storage.setValue(id, { value });
+        for (const sibling of this._getElementsByName(element.name, id)) {
+          if (sibling.domElement) {
+            sibling.domElement.value = displayValue;
+          }
+          storage.setValue(sibling.id, { value });
+        }
         elementData.formattedValue = null;
       });
 
       element.addEventListener("resetform", event => {
-        const defaultValue = this.data.defaultFieldValue ?? "";
+        const defaultValue = this._toDisplayValue(this.data.defaultFieldValue);
         element.value = elementData.userValue = defaultValue;
         elementData.formattedValue = null;
       });
@@ -1626,82 +1632,97 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               target.value = value;
             }
           }
-          elementData.lastCommittedValue = target.value;
+          // Equal labels can have different export values.
+          elementData.lastCommittedValue = this._toStorageValue(target.value);
           elementData.commitKey = 1;
           if (!this.data.actions?.has("Focus")) {
             elementData.focused = true;
           }
         });
 
-        element.addEventListener("updatefromsandbox", jsEvent => {
-          this.container.classList.add("sandboxModified");
-          const actions = {
-            value(event) {
-              elementData.userValue = event.detail.value ?? "";
-              if (!hasDateOrTime) {
-                storage.setValue(id, {
-                  value: elementData.userValue.toString(),
-                });
-              }
-              event.target.value = elementData.userValue;
-            },
-            formattedValue(event) {
-              const { formattedValue } = event.detail;
-              elementData.formattedValue = formattedValue;
-              if (
-                formattedValue !== null &&
-                formattedValue !== undefined &&
-                event.target !== document.activeElement
-              ) {
-                // Input hasn't the focus so display formatted string
-                event.target.value = formattedValue;
-              }
+        const sandboxActions = this._getSandboxActions({
+          value: event => {
+            const { detail } = event;
+            const value = detail.value ?? "";
+            // Keep typed labels unchanged so selRange offsets stay valid.
+            const isTyped = !!detail.selRange;
+            elementData.userValue = isTyped
+              ? value
+              : this._toDisplayValue(value);
+            // Preserve formatting for edit replies and explicit format updates.
+            const isFormatOutdated =
+              !isTyped && !detail.selection && !("formattedValue" in detail);
+            if (isFormatOutdated) {
+              elementData.formattedValue = null;
+            }
+            if (!hasDateOrTime) {
+              const storedValue = isTyped ? this._toStorageValue(value) : value;
               const data = {
-                formattedValue,
+                value: storedValue.toString(),
               };
-              if (hasDateOrTime) {
-                // If the field is a date or time, we store the formatted value
-                // in the `value` property, so that it can be used by the
-                // `Keystroke` action.
-                data.value = formattedValue;
+              if (isFormatOutdated) {
+                data.formattedValue = null;
               }
               storage.setValue(id, data);
-            },
-            selRange(event) {
-              event.target.setSelectionRange(...event.detail.selRange);
-            },
-            charLimit: event => {
-              const { charLimit } = event.detail;
-              const { target } = event;
-              if (charLimit === 0) {
-                target.removeAttribute("maxLength");
-                return;
-              }
+            }
+            event.target.value = elementData.userValue;
+          },
+          formattedValue(event) {
+            const { formattedValue } = event.detail;
+            elementData.formattedValue = formattedValue;
+            if (
+              formattedValue !== null &&
+              formattedValue !== undefined &&
+              event.target !== document.activeElement
+            ) {
+              event.target.value = formattedValue;
+            }
+            const data = {
+              formattedValue,
+            };
+            if (hasDateOrTime) {
+              // Date/time fields store formatted text for Keystroke actions.
+              data.value = formattedValue;
+            }
+            storage.setValue(id, data);
+          },
+          selRange(event) {
+            event.target.setSelectionRange(...event.detail.selRange);
+          },
+          charLimit: event => {
+            const { charLimit } = event.detail;
+            const { target } = event;
+            if (charLimit === 0) {
+              target.removeAttribute("maxLength");
+              return;
+            }
 
-              target.setAttribute("maxLength", charLimit);
-              let value = elementData.userValue;
-              if (!value || value.length <= charLimit) {
-                return;
-              }
-              value = value.slice(0, charLimit);
-              target.value = elementData.userValue = value;
-              storage.setValue(id, { value });
+            target.setAttribute("maxLength", charLimit);
+            let value = elementData.userValue;
+            if (!value || value.length <= charLimit) {
+              return;
+            }
+            value = value.slice(0, charLimit);
+            target.value = elementData.userValue = value;
+            storage.setValue(id, { value });
 
-              this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-                source: this,
-                detail: {
-                  id,
-                  name: "Keystroke",
-                  value,
-                  willCommit: true,
-                  commitKey: 1,
-                  selStart: target.selectionStart,
-                  selEnd: target.selectionEnd,
-                },
-              });
-            },
-          };
-          this._dispatchEventFromSandbox(actions, jsEvent);
+            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+              source: this,
+              detail: {
+                id,
+                name: "Keystroke",
+                value,
+                willCommit: true,
+                commitKey: 1,
+                selStart: target.selectionStart,
+                selEnd: target.selectionEnd,
+              },
+            });
+          },
+        });
+        element.addEventListener("updatefromsandbox", jsEvent => {
+          this.container.classList.add("sandboxModified");
+          this._dispatchEventFromSandbox(sandboxActions, jsEvent);
         });
 
         // Even if the field hasn't any actions
@@ -1725,10 +1746,11 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             return;
           }
           const { value } = event.target;
-          if (elementData.lastCommittedValue === value) {
+          const committedValue = this._toStorageValue(value);
+          if (elementData.lastCommittedValue === committedValue) {
             return;
           }
-          elementData.lastCommittedValue = value;
+          elementData.lastCommittedValue = committedValue;
           // Save the entered value
           elementData.userValue = value;
           this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
@@ -1736,7 +1758,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             detail: {
               id,
               name: "Keystroke",
-              value,
+              value: committedValue,
               willCommit: true,
               commitKey,
               selStart: event.target.selectionStart,
@@ -1781,13 +1803,14 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             target.type = "text";
           }
           elementData.userValue = value;
-          if (elementData.lastCommittedValue !== value) {
+          const committedValue = this._toStorageValue(value);
+          if (elementData.lastCommittedValue !== committedValue) {
             this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
               source: this,
               detail: {
                 id,
                 name: "Keystroke",
-                value,
+                value: committedValue,
                 willCommit: true,
                 commitKey: elementData.commitKey,
                 selStart: event.target.selectionStart,
@@ -1875,7 +1898,7 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
             ["mouseleave", "Mouse Exit"],
             ["mouseup", "Mouse Up"],
           ],
-          event => event.target.value
+          event => this._toStorageValue(event.target.value)
         );
       }
 
@@ -1930,6 +1953,378 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
     this.container.append(element);
     return this.container;
+  }
+}
+
+class EditableComboWidgetAnnotationElement extends TextWidgetAnnotationElement {
+  #items;
+
+  #copyStyle;
+
+  #rebuild;
+
+  #pendingCommit = null;
+
+  constructor(parameters) {
+    super(parameters);
+    this.#items = this.annotationStorage.getValue(this.data.id, {
+      items: this.data.options,
+    }).items;
+  }
+
+  _toDisplayValue(value) {
+    if (Array.isArray(value)) {
+      value = value[0];
+    }
+    return this.#getOption(value)?.displayValue ?? value ?? "";
+  }
+
+  #getOption(value) {
+    return this.#items.find(({ exportValue }) => exportValue === value);
+  }
+
+  // Prefer the current field value when labels are shared.
+  #getItem(label) {
+    const item = this.#getOption(this.#value);
+    return item?.displayValue === label
+      ? item
+      : this.#items.find(({ displayValue }) => displayValue === label);
+  }
+
+  _toStorageValue(value) {
+    return this.#getItem(value)?.exportValue ?? value;
+  }
+
+  get #value() {
+    const { value } = this.annotationStorage.getValue(this.data.id, {
+      value: this.data.fieldValue,
+    });
+    return Array.isArray(value) ? value[0] : value;
+  }
+
+  #dispatchEvent(detail) {
+    this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+      source: this,
+      detail: { id: this.data.id, name: "Keystroke", ...detail },
+    });
+  }
+
+  _getSandboxActions(actions) {
+    const target = this.contentElement;
+    // Update the text widget's cached editing value too.
+    const setValue = value => actions.value({ detail: { value }, target });
+    const setItems = items => {
+      const previous = this.#getOption(this.#value);
+      this.#items = items;
+      this.annotationStorage.setValue(this.data.id, { items });
+      this.#rebuild();
+      // Refresh the label without discarding existing formatting.
+      const current = this.#getOption(this.#value);
+      if (
+        previous &&
+        current &&
+        previous.displayValue !== current.displayValue
+      ) {
+        const { formattedValue = null } = this.annotationStorage.getRawValue(
+          this.data.id
+        );
+        const detail = { value: current.exportValue, formattedValue };
+        actions.value({ detail, target });
+        actions.formattedValue({ detail, target });
+      }
+    };
+    // Apply script color changes to the arrow and list too.
+    const setColor = name => event => {
+      this._commonActions[name](event);
+      this.#copyStyle();
+    };
+    return {
+      ...actions,
+      bgColor: setColor("bgColor"),
+      fgColor: setColor("fgColor"),
+      fillColor: setColor("fillColor"),
+      textColor: setColor("textColor"),
+      selection: event => {
+        const value = this.#pendingCommit;
+        this.#pendingCommit = null;
+        if (value === null || value !== event.detail.value) {
+          return;
+        }
+        // Commit after Action, even when the selection reply is synchronous.
+        queueMicrotask(() =>
+          this.#dispatchEvent({ value, willCommit: true, commitKey: 1 })
+        );
+      },
+      editable: event => {
+        const { editable } = event.detail;
+        event.target.readOnly = !editable;
+        this.annotationStorage.setValue(this.data.id, { editable });
+      },
+      items: event => setItems(event.detail.items),
+      insert: event => {
+        const { index, displayValue, exportValue } = event.detail.insert;
+        setItems(
+          this.#items.toSpliced(index, 0, { displayValue, exportValue })
+        );
+      },
+      remove: event => setItems(this.#items.toSpliced(event.detail.remove, 1)),
+      clear: () => {
+        setItems([]);
+        setValue("");
+      },
+      indices: event => {
+        const item = this.#items[event.detail.indices[0]];
+        setValue(item?.exportValue ?? "");
+      },
+    };
+  }
+
+  render() {
+    const container = super.render();
+    container.classList.add("comboBox");
+    const input = this.contentElement;
+    const list = document.createElement("div");
+    list.id = `${AnnotationPrefix}${this.data.id}_listbox`;
+    list.className = "comboList";
+    list.role = "listbox";
+    list.popover = "auto";
+    list.setAttribute(
+      "aria-label",
+      this.data.alternativeText || this.data.fieldName
+    );
+    const anchor = `--pdfjs-combo-${this.data.id}`;
+    input.style.setProperty("anchor-name", anchor);
+    list.style.setProperty("position-anchor", anchor);
+    input.role = "combobox";
+    input.setAttribute("aria-expanded", "false");
+    input.setAttribute("aria-controls", list.id);
+    // Restore the scripted editable state.
+    if (this.annotationStorage.getRawValue(this.data.id)?.editable === false) {
+      input.readOnly = true;
+    }
+
+    const button = document.createElement("button");
+    button.className = "comboButton";
+    button.type = "button";
+    button.tabIndex = -1;
+    button.dataset.l10nId = "pdfjs-annotation-combo-box-button";
+    button.popoverTargetElement = list;
+    this.#copyStyle = () => {
+      const { backgroundColor, color, fontSize } = input.style;
+      Object.assign(button.style, { color, fontSize });
+      Object.assign(list.style, {
+        color,
+        fontSize,
+        backgroundImage:
+          backgroundColor === "transparent"
+            ? ""
+            : `linear-gradient(${backgroundColor}, ${backgroundColor})`,
+      });
+    };
+    this.#copyStyle();
+    button.addEventListener("mousedown", event => {
+      event.preventDefault();
+      // Blur other form fields before picking an option.
+      const { activeElement } = document;
+      if (activeElement !== input && GetElementsByNameSet.has(activeElement)) {
+        input.focus({ preventScroll: true });
+      }
+    });
+    if (this.enableScripting && this.hasJSActions) {
+      this._setEventListeners(
+        button,
+        null,
+        [
+          ["mousedown", "Mouse Down"],
+          ["mouseup", "Mouse Up"],
+        ],
+        () => this._toStorageValue(input.value)
+      );
+    }
+    list.addEventListener("mousedown", event => event.preventDefault());
+
+    let active = -1;
+    const isOpen = () => list.matches(":popover-open");
+    const currentIndex = () => this.#items.indexOf(this.#getItem(input.value));
+    const scrollToOption = option => {
+      // Scroll the list without scrolling the page.
+      const top = option.offsetTop;
+      const bottom = top + option.offsetHeight;
+      if (top < list.scrollTop) {
+        list.scrollTop = top;
+      } else if (bottom > list.scrollTop + list.clientHeight) {
+        list.scrollTop = bottom - list.clientHeight;
+      }
+    };
+    const activate = (index, scroll = true) => {
+      list.children[active]?.setAttribute("aria-selected", "false");
+      active = index;
+      const option = list.children[index];
+      if (!option) {
+        input.removeAttribute("aria-activedescendant");
+        return;
+      }
+      option.setAttribute("aria-selected", "true");
+      input.setAttribute("aria-activedescendant", option.id);
+      if (scroll) {
+        scrollToOption(option);
+      }
+    };
+    const show = () => {
+      list.showPopover();
+      activate(currentIndex());
+      input.select();
+    };
+    const close = () => {
+      list.hidePopover();
+      activate(-1);
+    };
+    const pick = (index, keepOpen = false) => {
+      const { displayValue, exportValue } = this.#items[index];
+      const oldValue = input.value;
+      // Store the export value before resolving a shared label.
+      this.annotationStorage.setValue(this.data.id, { value: exportValue });
+      input.value = displayValue;
+      input.dispatchEvent(new Event("input"));
+      if (this.enableScripting && this.hasJSActions) {
+        // Unfocused picks commit after the sandbox accepts the selection.
+        this.#pendingCommit =
+          document.activeElement === input ? null : exportValue;
+        this.#dispatchEvent({
+          value: oldValue,
+          change: displayValue,
+          changeEx: exportValue,
+          willCommit: false,
+        });
+        this.#dispatchEvent({ name: "Action", value: exportValue });
+      }
+      if (keepOpen) {
+        activate(index);
+      } else {
+        close();
+      }
+    };
+    const createOptions = () => {
+      const fragment = new DocumentFragment();
+      for (const [index, { displayValue }] of this.#items.entries()) {
+        const option = document.createElement("div");
+        option.role = "option";
+        option.id = `${list.id}_${index}`;
+        option.textContent = displayValue;
+        option.setAttribute("aria-selected", "false");
+        fragment.append(option);
+      }
+      list.replaceChildren(fragment);
+    };
+    this.#rebuild = () => {
+      activate(-1);
+      list.replaceChildren();
+      button.hidden = this.#items.length === 0;
+      if (isOpen()) {
+        if (button.hidden) {
+          close();
+        } else {
+          createOptions();
+        }
+      }
+    };
+    this.#rebuild();
+    // Populate options before keyboard navigation activates one.
+    list.addEventListener("beforetoggle", event => {
+      if (event.newState === "open" && !list.hasChildNodes()) {
+        createOptions();
+      }
+    });
+    const getIndex = target =>
+      Array.prototype.indexOf.call(list.children, target);
+    list.addEventListener("click", ({ target }) => {
+      const index = getIndex(target);
+      if (index !== -1) {
+        pick(index);
+      }
+    });
+    list.addEventListener("mousemove", event => {
+      if (event.movementX || event.movementY) {
+        const index = getIndex(event.target);
+        if (index !== -1) {
+          activate(index, /* scroll = */ false);
+        }
+      }
+    });
+    list.addEventListener("toggle", () => {
+      const open = isOpen();
+      input.setAttribute("aria-expanded", open);
+      if (!open) {
+        activate(-1);
+      } else if (active === -1) {
+        list.scrollTop = 0;
+        activate(currentIndex());
+      }
+    });
+    input.addEventListener("blur", close);
+    input.addEventListener("beforeinput", () => activate(-1));
+    container.addEventListener(
+      "keydown",
+      event => {
+        // Without items, the keys are the text field ones.
+        if (event.isComposing || !this.#items.length) {
+          return;
+        }
+        const open = isOpen();
+        switch (event.key) {
+          case "ArrowDown":
+          case "ArrowUp": {
+            const down = event.key === "ArrowDown";
+            // Alt+Down opens the list and Alt+Up closes it.
+            if (event.altKey) {
+              if (down && !open) {
+                show();
+              } else if (!down && open) {
+                close();
+              } else if (!open) {
+                return;
+              }
+              break;
+            }
+            // Select adjacent options without wrapping.
+            const index = active === -1 ? currentIndex() : active;
+            const last = this.#items.length - 1;
+            let next = down ? 0 : last;
+            if (index !== -1) {
+              next = MathClamp(index + (down ? 1 : -1), 0, last);
+            }
+            if (next !== index) {
+              pick(next, /* keepOpen = */ open);
+            }
+            input.select();
+            break;
+          }
+          case "Enter":
+            // Enter toggles the list; commit on blur.
+            if (!open) {
+              show();
+            } else if (active === -1 || active === currentIndex()) {
+              close();
+            } else {
+              pick(active);
+            }
+            break;
+          case "Escape":
+            if (!open) {
+              return;
+            }
+            close();
+            break;
+          default:
+            return;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      },
+      true
+    );
+    container.append(button, list);
+    return container;
   }
 }
 
@@ -2350,9 +2745,6 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
               value: getValue(/* isExport */ true),
             });
             selectedValues = getValue(/* isExport */ false);
-          },
-          editable(event) {
-            event.target.disabled = !event.detail.editable;
           },
         };
         this._dispatchEventFromSandbox(actions, jsEvent);

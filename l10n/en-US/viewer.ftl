@@ -271,6 +271,10 @@ pdfjs-rendering-error = An error occurred while rendering the page.
 
 ## Annotations
 
+# .aria-label for the button that opens an editable combo box's choices.
+pdfjs-annotation-combo-box-button =
+    .aria-label = Show choices
+
 # Variables:
 #   $dateObj (Date) - the modification date and time of the annotation
 pdfjs-annotation-date-time-string = { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }

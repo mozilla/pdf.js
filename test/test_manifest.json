@@ -15304,5 +15304,26 @@
       }
     },
     "about": "Print the /MK /CA star with NeedAppearances."
+  },
+  {
+    "id": "bug1876540-forms",
+    "file": "pdfs/bug1876540.pdf",
+    "md5": "91ed9bc2aaf1286510d9e61a4bf85291",
+    "rounds": 1,
+    "type": "eq",
+    "forms": true
+  },
+  {
+    "id": "bug1876540-print",
+    "file": "pdfs/bug1876540.pdf",
+    "md5": "91ed9bc2aaf1286510d9e61a4bf85291",
+    "rounds": 1,
+    "type": "eq",
+    "print": true,
+    "annotationStorage": {
+      "6R": {
+        "value": "Custom country"
+      }
+    }
   }
 ]

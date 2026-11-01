@@ -4561,17 +4561,19 @@ describe("annotation", function () {
         { ref: choiceWidgetRef, data: choiceWidgetDict },
       ]);
 
-      const { data } = await AnnotationFactory.create(
+      const annotation = await AnnotationFactory.create(
         xref,
         choiceWidgetRef,
         annotationGlobalsMock,
         idFactoryMock
       );
+      const { data } = annotation;
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.readOnly).toBeFalse();
       expect(data.hidden).toBeFalse();
       expect(data.combo).toBeFalse();
       expect(data.multiSelect).toBeFalse();
+      expect(annotation.getFieldObject().editable).toBeFalse();
     });
 
     it("should set valid flags", async function () {
@@ -4579,6 +4581,7 @@ describe("annotation", function () {
         "Ff",
         AnnotationFieldFlag.READONLY +
           AnnotationFieldFlag.COMBO +
+          AnnotationFieldFlag.EDIT +
           AnnotationFieldFlag.MULTISELECT
       );
 
@@ -4587,17 +4590,55 @@ describe("annotation", function () {
         { ref: choiceWidgetRef, data: choiceWidgetDict },
       ]);
 
-      const { data } = await AnnotationFactory.create(
+      const annotation = await AnnotationFactory.create(
         xref,
         choiceWidgetRef,
         annotationGlobalsMock,
         idFactoryMock
       );
+      const { data } = annotation;
       expect(data.annotationType).toEqual(AnnotationType.WIDGET);
       expect(data.readOnly).toBeTrue();
       expect(data.hidden).toBeFalse();
       expect(data.combo).toBeTrue();
+      expect(data.edit).toBeTrue();
       expect(data.multiSelect).toBeTrue();
+      // Read-only and editable represent independent field flags.
+      expect(annotation.getFieldObject().editable).toBeTrue();
+    });
+
+    it("should save and print a combo with a custom value", async function () {
+      choiceWidgetDict.set(
+        "Ff",
+        AnnotationFieldFlag.COMBO + AnnotationFieldFlag.EDIT
+      );
+      choiceWidgetDict.set("Opt", [["FR", "France"]]);
+      choiceWidgetDict.set("V", "FR");
+      const ref = Ref.get(123, 0);
+      const xref = new XRefMock([{ ref, data: choiceWidgetDict }, fontRefObj]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("custom combo");
+      const annotation = await AnnotationFactory.create(
+        xref,
+        ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const storage = new Map([[annotation.data.id, { value: "Custom" }]]);
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        storage
+      );
+      expect(appearance).toContain("(Custom) Tj");
+      const changes = new RefMap();
+      await annotation.save(partialEvaluator, task, storage, changes);
+      const saved = (await writeChanges(changes, xref)).find(
+        item => item.ref === ref
+      ).data;
+      expect(saved).toContain("/V (Custom)");
+      expect(saved).not.toContain("/I ");
     });
 
     it("should render choice for printing", async function () {
