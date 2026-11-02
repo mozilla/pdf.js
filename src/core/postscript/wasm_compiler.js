@@ -842,9 +842,62 @@ class PsWasmCompiler {
     return true;
   }
 
+  /**
+   * Compute the shared nodes used in `node`, which haven't been compiled yet,
+   * and store them in their locals.
+   * A shared node is stored in a local where it's compiled for the first time,
+   * so this mustn't happen in a branch of a ternary node: the local wouldn't
+   * be set when the other branch is taken. Since the operators don't have any
+   * side effect, computing these nodes unconditionally is fine.
+   */
+  _hoistSharedNodes(node) {
+    if (this._sharedLocals.has(node)) {
+      return true;
+    }
+    switch (node.type) {
+      case PS_NODE.unary:
+        if (!this._hoistSharedNodes(node.operand)) {
+          return false;
+        }
+        break;
+      case PS_NODE.binary:
+        if (
+          !this._hoistSharedNodes(node.second) ||
+          !this._hoistSharedNodes(node.first)
+        ) {
+          return false;
+        }
+        break;
+      case PS_NODE.ternary:
+        if (
+          !this._hoistSharedNodes(node.cond) ||
+          !this._hoistSharedNodes(node.then) ||
+          !this._hoistSharedNodes(node.otherwise)
+        ) {
+          return false;
+        }
+        break;
+    }
+    if (!node.shared) {
+      return true;
+    }
+    if (!this._compileNodeImpl(node)) {
+      return false;
+    }
+    const local = this._allocLocal();
+    // None of the uses of the node has been compiled yet.
+    this._sharedLocals.set(node, { local, remaining: node.sharedCount });
+    this._emitLocalSet(local);
+    return true;
+  }
+
   // Value-returning if/else/end; both branches leave one f64.
   _compileTernaryNode(node) {
-    if (!this._compileNodeAsBoolI32(node.cond)) {
+    if (
+      !this._hoistSharedNodes(node.then) ||
+      !this._hoistSharedNodes(node.otherwise) ||
+      !this._compileNodeAsBoolI32(node.cond)
+    ) {
       return false;
     }
     this._code.push(OP.if, F64);

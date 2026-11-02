@@ -1088,6 +1088,16 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(25, 9);
     });
 
+    it("CSE: shared subexpression first used in a branch of an if", function () {
+      // `in0 sin` is used in both branches, but not in the condition.
+      const src = "{ dup sin exch 0 gt { 1 add } if }";
+      const domain = [-360, 360];
+      const range = [-2, 2];
+      expect(compileAndRun(src, domain, range, [90])).toBeCloseTo(2, 9);
+      expect(compileAndRun(src, domain, range, [-90])).toBeCloseTo(-1, 9);
+      expect(compileAndRun(src, domain, range, [-30])).toBeCloseTo(-0.5, 9);
+    });
+
     it("reuses temporary locals across sequential shared-subexpression codegen", function () {
       const bytes = compilePostScriptToWasm(
         "{ dup 1 add dup mul exch 2 add dup mul add }",
