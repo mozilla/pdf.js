@@ -775,6 +775,40 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r[1]).toBeCloseTo(0.7, 9);
     });
 
+    it("compiles stack-growing if — paths with different stack depths", function () {
+      // The tint transform from issue5470.pdf: the guard only fires when
+      // in0 ≈ 1, and the two paths reach the last `if` with a different stack
+      // depth.
+      const src =
+        "{ dup 0 ge { dup 1 sub abs 0.005 lt { pop 0.934 0.1935 0.1406 -5 } if } if" +
+        "  0 ge { 1 0 0 } if }";
+      const domain = [0, 1];
+      const range = [0, 1, 0, 1, 0, 1];
+      expect(compileAndRun(src, domain, range, [0.5])).toEqual([1, 0, 0]);
+      const r = compileAndRun(src, domain, range, [1]);
+      expect(r[0]).toBeCloseTo(0.934, 9);
+      expect(r[1]).toBeCloseTo(0.1935, 9);
+      expect(r[2]).toBeCloseTo(0.1406, 9);
+    });
+
+    it("compiles ifelse — branches with different stack depths", function () {
+      // The then-branch pushes a sentinel on top of its outputs, which is
+      // checked by the second ifelse.
+      const src =
+        "{ dup 0.5 gt { pop 1 0 0 -1 } { } ifelse" +
+        "  dup 0 lt { pop } { 0 1 } ifelse }";
+      const domain = [0, 1];
+      const range = [0, 1, 0, 1, 0, 1];
+      expect(compileAndRun(src, domain, range, [0.25])).toEqual([0.25, 0, 1]);
+      expect(compileAndRun(src, domain, range, [0.75])).toEqual([1, 0, 0]);
+    });
+
+    it("uses the values at the top of the stack as outputs", function () {
+      // The function leaves more values on the stack than its outputs.
+      const r = compileAndRun("{ 1 2 3 }", [0, 1], [0, 10, 0, 10], [0.5]);
+      expect(r).toEqual([2, 3]);
+    });
+
     // Range clamping.
 
     it("clamps output to declared range", async function () {
