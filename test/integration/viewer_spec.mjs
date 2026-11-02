@@ -1611,6 +1611,49 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Keyboard tab order (issue 20674)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not stop on the viewer container when tabbing out of the toolbar", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // With its menu closed, the "Tools" button is the last focusable
+          // toolbar control before the viewer container.
+          await page.focus("#secondaryToolbarToggleButton");
+          await page.keyboard.press("Tab");
+
+          const activeId = await page.evaluate(
+            () => document.activeElement?.id
+          );
+          expect(activeId)
+            .withContext(`In ${browserName}`)
+            .not.toBe("viewerContainer");
+        })
+      );
+    });
+
+    it("must still allow focusing the viewer container programmatically", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const hasFocus = await page.evaluate(() => {
+            const container = document.getElementById("viewerContainer");
+            container.focus();
+            return document.activeElement === container;
+          });
+          expect(hasFocus).withContext(`In ${browserName}`).toBeTrue();
+        })
+      );
+    });
+  });
+
   describe("Printing can be disallowed for some pdfs (bug 1978985)", () => {
     let pages;
 
