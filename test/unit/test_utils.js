@@ -33,7 +33,7 @@ const STANDARD_FONT_DATA_URL = isNodeJS
   : "../../external/standard_fonts/";
 
 const WASM_URL = isNodeJS
-  ? "../../generic-legacy/web/wasm/"
+  ? "./build/generic-legacy/web/wasm/"
   : "../../build/generic/web/wasm/";
 
 class DefaultFileReaderFactory {
@@ -320,5 +320,6 @@ export {
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   TestPdfsServer,
+  WASM_URL,
   XRefMock,
 };

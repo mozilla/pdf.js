@@ -71,6 +71,7 @@
     "ui_utils_spec.js",
     "unicode_spec.js",
     "util_spec.js",
+    "wasm_loader_spec.js",
     "writer_spec.js",
     "xfa_formcalc_spec.js",
     "xfa_parser_spec.js",
