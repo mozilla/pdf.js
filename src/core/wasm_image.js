@@ -57,12 +57,11 @@ class WasmImage {
   }
 
   async #instantiateWasm(failureCallback, imports, successCallback) {
-    const context = {
-      handler: WasmImage.#options.getHandler?.(),
-      options: WasmImage.#options,
-    };
     const loaded = await WasmLoader.load(
-      context,
+      {
+        handler: WasmImage.#options.getHandler?.(),
+        options: WasmImage.#options,
+      },
       this._filename,
       this._noWasmFilename,
       instantiate => successCallback({ exports: instantiate(imports) })
