@@ -329,7 +329,7 @@ class PDFThumbnailView extends RenderableView {
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
       : null;
 
-    return { canvas, transform };
+    return { canvas, transform, outputScale };
   }
 
   async #convertCanvasToImage(canvas) {
@@ -366,7 +366,8 @@ class PDFThumbnailView extends RenderableView {
     // the `draw` and `setImage` methods (fixes issue 8233).
     // NOTE: To primarily avoid increasing memory usage too much, but also to
     //   reduce downsizing overhead, we purposely limit the up-scaling factor.
-    const { canvas, transform } = this.#getPageDrawContext(DRAW_UPSCALE_FACTOR);
+    const { canvas, transform, outputScale } =
+      this.#getPageDrawContext(DRAW_UPSCALE_FACTOR);
     const drawViewport = this.viewport.clone({
       scale: DRAW_UPSCALE_FACTOR * this.scale,
     });
@@ -388,6 +389,7 @@ class PDFThumbnailView extends RenderableView {
       viewport: drawViewport,
       optionalContentConfigPromise: this._optionalContentConfigPromise,
       pageColors,
+      imageOutputScale: outputScale.sx,
     };
     const renderTask = (this.renderTask = pdfPage.render(renderContext));
     renderTask.onContinue = renderContinueCallback;
