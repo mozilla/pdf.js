@@ -781,7 +781,10 @@ class PsWasmCompiler {
    * f64/i32 round-trips for comparisons, boolean and/or/xor, and boolean `not`.
    */
   _compileNodeAsBoolI32(node) {
-    if (node.type === PS_NODE.binary) {
+    // The fast paths below compile the operands directly, hence a shared node,
+    // which must be computed only once, goes through `_compileNode` instead
+    // (see the fallback at the end).
+    if (node.type === PS_NODE.binary && !node.shared) {
       // Comparison: leaves i32 directly.
       const wasmOp = PsWasmCompiler.#comparisonToOp.get(node.op);
       if (wasmOp !== undefined) {
@@ -819,6 +822,7 @@ class PsWasmCompiler {
     // Boolean not: i32.eqz.
     if (
       node.type === PS_NODE.unary &&
+      !node.shared &&
       node.op === TOKEN.not &&
       node.valueType === PS_VALUE_TYPE.boolean
     ) {
