@@ -424,6 +424,9 @@ class PartialEvaluator {
   ) {
     const { dict } = xobj;
     const matrix = lookupMatrix(dict.getArray("Matrix"), null);
+    if (matrix) {
+      initialState.ctm &&= Util.transform(initialState.ctm, matrix);
+    }
     const bbox = lookupNormalRect(dict.getArray("BBox"), null);
     let f32bbox = bbox && new Float32Array(bbox);
     if (f32bbox?.some(x => !isFinite(x))) {
@@ -1624,6 +1627,7 @@ class PartialEvaluator {
     initialState = null,
     fallbackFontDict = null,
     prevRefs = null,
+    initialCtm = null,
   }) {
     if (stream.isAsync) {
       const bytes = await stream.asyncGetBytes();
@@ -1647,6 +1651,7 @@ class PartialEvaluator {
     // even if the provided parameter is e.g. `null`.
     resources ||= Dict.empty;
     initialState ||= new EvalState();
+    initialState.ctm ??= initialCtm;
 
     if (!operatorList) {
       throw new Error('getOperatorList: missing "operatorList" parameter');
@@ -5231,7 +5236,7 @@ class StateManager {
   }
 
   transform(args) {
-    this.state.ctm = Util.transform(this.state.ctm, args);
+    this.state.ctm &&= Util.transform(this.state.ctm, args);
   }
 }
 
@@ -5309,7 +5314,9 @@ class TextState {
 }
 
 class EvalState {
-  ctm = new Float32Array(IDENTITY_MATRIX);
+  // The transform from this stream's coordinates to the page, when known;
+  // used to decode images at the resolution they're drawn at.
+  ctm = null;
 
   font = null;
 
@@ -5638,4 +5645,4 @@ class EvaluatorPreprocessor {
   }
 }
 
-export { EvaluatorPreprocessor, PartialEvaluator };
+export { EvaluatorPreprocessor, PartialEvaluator, StateManager, TextState };
