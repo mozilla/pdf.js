@@ -70,10 +70,67 @@ describe("display_utils", function () {
   });
 
   describe("findContrastColor", function () {
+    // A WCAG 2.1 reference kept independent from the code under test, so that
+    // a mistake in the linearization step can't cancel itself out here.
+    function relativeLuminance([r, g, b]) {
+      const [rs, gs, bs] = [r, g, b].map(c => {
+        c /= 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    }
+
+    function wcagContrastRatio(color1, color2) {
+      const luminance1 = relativeLuminance(color1);
+      const luminance2 = relativeLuminance(color2);
+      return (
+        (Math.max(luminance1, luminance2) + 0.05) /
+        (Math.min(luminance1, luminance2) + 0.05)
+      );
+    }
+
+    function toRgb(hex) {
+      return [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+    }
+
+    function checkContrast(baseColor, fixedColor) {
+      const contrast = wcagContrastRatio(
+        toRgb(findContrastColor(baseColor, fixedColor)),
+        fixedColor
+      );
+      const minContrast =
+        (Math.max(...fixedColor) + Math.min(...fixedColor)) / 2 < 127.5
+          ? 12
+          : 4.5;
+      // The result is rounded to 8 bits, which can loose one contrast step.
+      expect(contrast).toBeGreaterThan(minContrast - 0.05);
+    }
+
     it("Check that the lightness is changed correctly", function () {
       expect(findContrastColor([210, 98, 76], [197, 113, 89])).toEqual(
-        "#260e09"
+        "#3a160f"
       );
+    });
+
+    it("Should reach the contrast ratio promised against a dark color", function () {
+      for (const baseColor of [
+        [0, 0, 0],
+        [51, 51, 153],
+        [204, 102, 0],
+        [102, 51, 153],
+      ]) {
+        checkContrast(baseColor, [0, 0, 0]);
+      }
+    });
+
+    it("Should reach the contrast ratio promised against a light color", function () {
+      for (const baseColor of [
+        [255, 255, 255],
+        [204, 204, 153],
+        [153, 204, 255],
+      ]) {
+        checkContrast(baseColor, [255, 255, 255]);
+      }
     });
   });
 
