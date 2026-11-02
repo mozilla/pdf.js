@@ -50,6 +50,9 @@ import {
   warn,
 } from "../shared/util.js";
 import {
+  clientRectToLayerLeftBottom,
+  getUnrotatedSize,
+  layerFractionToClientPoint,
   PDFDateString,
   renderRichText,
   setLayerDimensions,
@@ -2761,6 +2764,10 @@ class PopupElement {
     return this.#firstElement.layer.getBoundingClientRect();
   }
 
+  get parentRotation() {
+    return parseInt(this.#firstElement.layer.dataset.mainRotation || 0, 10);
+  }
+
   setCommentButtonStates({ selected, hasPopup }) {
     if (!this.#commentButton) {
       return;
@@ -2777,14 +2784,12 @@ class PopupElement {
     if (this.#popupPosition) {
       return this.#popupPosition;
     }
-    const { x, y, height } = this.#commentButton.getBoundingClientRect();
-    const {
-      x: parentX,
-      y: parentY,
-      width: parentWidth,
-      height: parentHeight,
-    } = this.#firstElement.layer.getBoundingClientRect();
-    return [(x - parentX) / parentWidth, (y + height - parentY) / parentHeight];
+    // The position is relative to the layer, which can be rotated.
+    return clientRectToLayerLeftBottom(
+      this.#commentButton.getBoundingClientRect(),
+      this.parentBoundingClientRect,
+      this.parentRotation
+    );
   }
 
   set commentPopupPosition(pos) {
@@ -2800,29 +2805,38 @@ class PopupElement {
   }
 
   get commentButtonWidth() {
-    return (
-      this.#commentButton.getBoundingClientRect().width /
-      this.parentBoundingClientRect.width
+    const rotation = this.parentRotation;
+    const [buttonWidth] = getUnrotatedSize(
+      this.#commentButton.getBoundingClientRect(),
+      rotation
     );
+    const [parentWidth] = getUnrotatedSize(
+      this.parentBoundingClientRect,
+      rotation
+    );
+    return buttonWidth / parentWidth;
   }
 
   editComment(options) {
-    const [posX, posY] =
-      this.#popupPosition || this.commentButtonPosition.map(x => x / 100);
     const parentDimensions = this.parentBoundingClientRect;
-    const {
-      x: parentX,
-      y: parentY,
-      width: parentWidth,
-      height: parentHeight,
-    } = parentDimensions;
-    this.#commentManager.showDialog(
-      null,
-      this,
-      parentX + posX * parentWidth,
-      parentY + posY * parentHeight,
-      { ...options, parentDimensions }
-    );
+    let posX, posY;
+    if (this.#popupPosition) {
+      [posX, posY] = layerFractionToClientPoint(
+        ...this.#popupPosition,
+        parentDimensions,
+        this.parentRotation
+      );
+    } else {
+      // The dialog isn't rotated, hence it's anchored to the bottom-left corner
+      // of the button as it's displayed.
+      const { x, y, height } = this.#commentButton.getBoundingClientRect();
+      posX = x;
+      posY = y + height;
+    }
+    this.#commentManager.showDialog(null, this, posX, posY, {
+      ...options,
+      parentDimensions,
+    });
   }
 
   render() {

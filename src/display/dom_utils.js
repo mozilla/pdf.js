@@ -347,6 +347,71 @@ function setLayerDimensions(
   }
 }
 
+/**
+ * A layer is rotated with CSS: `getBoundingClientRect()` gives its rotated
+ * rectangle, whereas the `left`/`top` of its children are relative to its
+ * unrotated one. The functions below convert between the two.
+ * @param {DOMRect} rect - A rectangle in client coordinates.
+ * @param {DOMRect} layerRect - The client rectangle of the layer.
+ * @param {number} rotation - The rotation of the layer.
+ * @returns {Array<number>} The left-bottom corner of `rect`, as fractions of
+ *   the unrotated layer.
+ */
+function clientRectToLayerLeftBottom(rect, layerRect, rotation) {
+  // The edges of `rect` as fractions of `layerRect`.
+  const left = (rect.x - layerRect.x) / layerRect.width;
+  const right = (rect.x + rect.width - layerRect.x) / layerRect.width;
+  const top = (rect.y - layerRect.y) / layerRect.height;
+  const bottom = (rect.y + rect.height - layerRect.y) / layerRect.height;
+  switch (rotation) {
+    case 90:
+      return [top, 1 - left];
+    case 180:
+      return [1 - right, 1 - top];
+    case 270:
+      return [1 - bottom, right];
+    default:
+      return [left, bottom];
+  }
+}
+
+/**
+ * @param {number} x - A fraction of the unrotated width of the layer.
+ * @param {number} y - A fraction of the unrotated height of the layer.
+ * @param {DOMRect} layerRect - The client rectangle of the layer.
+ * @param {number} rotation - The rotation of the layer.
+ * @returns {Array<number>} The point in client coordinates.
+ */
+function layerFractionToClientPoint(x, y, layerRect, rotation) {
+  // The point as fractions of `layerRect`.
+  let rectX = x;
+  let rectY = y;
+  switch (rotation) {
+    case 90:
+      [rectX, rectY] = [1 - y, x];
+      break;
+    case 180:
+      [rectX, rectY] = [1 - x, 1 - y];
+      break;
+    case 270:
+      [rectX, rectY] = [y, 1 - x];
+      break;
+  }
+  return [
+    layerRect.x + rectX * layerRect.width,
+    layerRect.y + rectY * layerRect.height,
+  ];
+}
+
+/**
+ * @param {DOMRect} rect - The client rectangle of an element of the layer.
+ * @param {number} rotation - The rotation of the layer.
+ * @returns {Array<number>} The width and the height of `rect` once unrotated.
+ */
+function getUnrotatedSize({ width, height }, rotation) {
+  return rotation % 180 === 0 ? [width, height] : [height, width];
+}
+
 // See https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Image_types
 // to know which types are supported by the browser.
 const SupportedImageMimeTypes = new Set([
@@ -412,15 +477,18 @@ function renderRichText({ html, dir, className }, container) {
 }
 
 export {
+  clientRectToLayerLeftBottom,
   ColorScheme,
   CSSConstants,
   fetchData,
   getColorValues,
   getFilenameFromUrl,
   getPdfFilenameFromUrl,
+  getUnrotatedSize,
   isDataScheme,
   isPdfFile,
   isValidFetchUrl,
+  layerFractionToClientPoint,
   noContextMenu,
   PDFDateString,
   renderRichText,
