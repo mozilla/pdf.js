@@ -16,16 +16,13 @@
 import { isNodeJS, warn } from "../shared/util.js";
 import { fetchBinaryData } from "./core_utils.js";
 
-/**
- * Loads Wasm modules, or their JS fallbacks.
- */
 class WasmLoader {
   static #modules = new Map();
 
   /**
-   * Fetch a binary file in the worker-thread or through the main-thread.
+   * Fetch a binary file in the worker or via the main thread.
    * @param {object} context - Document handler and options.
-   * @param {string} kind - Name of the option holding the base URL.
+   * @param {string} kind - Base URL option name.
    * @param {string} filename
    * @returns {Promise<Uint8Array>}
    */
@@ -41,16 +38,21 @@ class WasmLoader {
   }
 
   static #compile(context, filename) {
-    // Cache the promise, so that concurrent calls share a single compilation.
-    return this.#modules.getOrInsertComputed(filename, () =>
-      this.fetch(context, "wasmUrl", filename)
-        .then(bytes => WebAssembly.compile(bytes))
-        .catch(ex => {
-          // Allow a later call to retry.
-          this.#modules.delete(filename);
-          throw ex;
-        })
-    );
+    const cached = this.#modules.get(filename);
+    if (cached) {
+      // Retry with this context if the shared attempt fails.
+      return cached.catch(() => this.#compile(context, filename));
+    }
+    const promise = this.fetch(context, "wasmUrl", filename)
+      .then(bytes => WebAssembly.compile(bytes))
+      .catch(ex => {
+        // Don't cache failures.
+        this.#modules.delete(filename);
+        throw ex;
+      });
+    // Share compilation between concurrent callers.
+    this.#modules.set(filename, promise);
+    return promise;
   }
 
   static #importFallback(wasmUrl, filename) {
@@ -70,13 +72,12 @@ class WasmLoader {
   }
 
   /**
-   * Initialize a module with its Wasm file, or with its JS fallback.
+   * Initialize a Wasm module or its JS fallback.
    * @param {object} context - Document handler and options.
    * @param {string} filename - Wasm file.
    * @param {string} noWasmFilename - JS fallback file.
-   * @param {Function} init - Called with `instantiate(imports)`, which
-   *   returns the exports.
-   * @returns {Promise<boolean>} Whether `init` succeeded.
+   * @param {Function} init - Receives `instantiate(imports) => exports`.
+   * @returns {Promise<boolean>} Whether `init` was called without throwing.
    */
   static async load(context, filename, noWasmFilename, init) {
     const { useWasm, wasmUrl } = context.options;
