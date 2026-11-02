@@ -30,6 +30,7 @@
 /** @typedef {import("./l10n.js").L10n} L10n */
 
 import {
+  AbortException,
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
@@ -914,6 +915,10 @@ class PDFViewer {
   setDocument(pdfDocument) {
     if (this.pdfDocument) {
       this.eventBus.dispatch("pagesdestroy", { source: this });
+
+      // Ensure that `pagesPromise` doesn't remain pending forever, if the
+      // document was closed before all pages were loaded.
+      this._pagesCapability.reject(new AbortException("Document was closed."));
 
       this._cancelRendering();
       this._resetView();
