@@ -977,43 +977,6 @@ function _makeWrapper(exports, nIn, nOut) {
   const { fn, mem } = exports;
   const outView = new Float64Array(mem.buffer, 0, nOut);
 
-  // Unrolled for common arities (1-4) to avoid loop overhead.
-  let writeOut;
-  switch (nOut) {
-    case 1:
-      writeOut = (dest, destOffset) => {
-        dest[destOffset] = outView[0];
-      };
-      break;
-    case 2:
-      writeOut = (dest, destOffset) => {
-        dest[destOffset] = outView[0];
-        dest[destOffset + 1] = outView[1];
-      };
-      break;
-    case 3:
-      writeOut = (dest, destOffset) => {
-        dest[destOffset] = outView[0];
-        dest[destOffset + 1] = outView[1];
-        dest[destOffset + 2] = outView[2];
-      };
-      break;
-    case 4:
-      writeOut = (dest, destOffset) => {
-        dest[destOffset] = outView[0];
-        dest[destOffset + 1] = outView[1];
-        dest[destOffset + 2] = outView[2];
-        dest[destOffset + 3] = outView[3];
-      };
-      break;
-    default:
-      writeOut = (dest, destOffset) => {
-        for (let i = 0; i < nOut; i++) {
-          dest[destOffset + i] = outView[i];
-        }
-      };
-  }
-
   // Specialize the call site for each arity so that the engine sees a
   // fixed-argument call rather than a spread — avoiding the per-call
   // argument-array allocation that `fn(...inBuf)` would cause.
@@ -1021,17 +984,17 @@ function _makeWrapper(exports, nIn, nOut) {
     case 1:
       return (src, srcOffset, dest, destOffset) => {
         fn(src[srcOffset]);
-        writeOut(dest, destOffset);
+        dest.set(outView, destOffset);
       };
     case 2:
       return (src, srcOffset, dest, destOffset) => {
         fn(src[srcOffset], src[srcOffset + 1]);
-        writeOut(dest, destOffset);
+        dest.set(outView, destOffset);
       };
     case 3:
       return (src, srcOffset, dest, destOffset) => {
         fn(src[srcOffset], src[srcOffset + 1], src[srcOffset + 2]);
-        writeOut(dest, destOffset);
+        dest.set(outView, destOffset);
       };
     case 4:
       return (src, srcOffset, dest, destOffset) => {
@@ -1041,7 +1004,7 @@ function _makeWrapper(exports, nIn, nOut) {
           src[srcOffset + 2],
           src[srcOffset + 3]
         );
-        writeOut(dest, destOffset);
+        dest.set(outView, destOffset);
       };
     default: {
       // Fallback for unusual arities: pre-allocate once, copy per call.
@@ -1051,7 +1014,7 @@ function _makeWrapper(exports, nIn, nOut) {
           inBuf[i] = src[srcOffset + i];
         }
         fn(...inBuf);
-        writeOut(dest, destOffset);
+        dest.set(outView, destOffset);
       };
     }
   }
