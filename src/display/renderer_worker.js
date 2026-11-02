@@ -349,6 +349,14 @@ class RendererMessageHandler {
       this.#cleanupPage(pageProxyId);
     });
 
+    handler.on("releaseObj", ({ pageProxyId, objId }) => {
+      this.#objsMap.get(pageProxyId)?.delete(objId);
+    });
+
+    handler.on("releaseOperatorList", ({ pageProxyId, operatorListId }) => {
+      this.#operatorLists.get(pageProxyId)?.delete(operatorListId);
+    });
+
     // Mirrors the document-level cleanup the main thread performs in
     // `WorkerTransport.startCleanup`; without this the worker's copies of
     // `commonObjs`/`fontLoader` would outlive their main-thread counterparts.

@@ -80,6 +80,7 @@ class PDFObjects {
       // Only allow removing the object *after* it's been resolved.
       return false;
     }
+    obj.data?.bitmap?.close();
     this.#objs.delete(objId);
     return true;
   }

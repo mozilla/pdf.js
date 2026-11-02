@@ -639,6 +639,22 @@ class RendererWorker {
     this.#send("cleanupPage", { pageProxyId });
   }
 
+  releaseObj(pageProxyId, objId) {
+    this.#send("releaseObj", { pageProxyId, objId });
+  }
+
+  releaseOperatorList(pageProxyId, operatorList) {
+    const operatorListState = this.#operatorLists.get(operatorList);
+    if (!operatorListState) {
+      return;
+    }
+    this.#operatorLists.delete(operatorList);
+    this.#send("releaseOperatorList", {
+      pageProxyId,
+      operatorListId: operatorListState.id,
+    });
+  }
+
   /**
    * @returns {WorkerRenderTask | null} Null to use main-thread rendering.
    */
