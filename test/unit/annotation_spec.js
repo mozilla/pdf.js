@@ -4342,6 +4342,147 @@ describe("annotation", function () {
       );
       expect(data.url).toEqual("https://developer.mozilla.org/en-US/");
     });
+
+    it("should detect Acrobat's 'Select Icon' JavaScript action on push buttons", async function () {
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+
+      const actionDict = new Dict();
+      actionDict.set("S", Name.get("JavaScript"));
+      actionDict.set(
+        "JS",
+        "// Prompt user to select file to display in this button\n" +
+          "event.target.buttonImportIcon();"
+      );
+      buttonWidgetDict.set("A", actionDict);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+
+      const { data } = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(data.annotationType).toEqual(AnnotationType.WIDGET);
+      expect(data.pushButton).toBeTrue();
+      expect(data.isTooltipOnly).toBeFalse();
+      expect(data.canSetIcon).toBeTrue();
+    });
+
+    it("should not throw nor write an icon when OffscreenCanvas isn't supported", async function () {
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+
+      const actionDict = new Dict();
+      actionDict.set("S", Name.get("JavaScript"));
+      actionDict.set("JS", "event.target.buttonImportIcon();");
+      buttonWidgetDict.set("A", actionDict);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      partialEvaluator.xref = xref;
+      const task = new WorkerTask("test save icon");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.canSetIcon).toBeTrue();
+
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, {
+        bitmap: { width: 10, height: 10 },
+      });
+      const changes = new RefMap();
+
+      // `PDFManagerMock` reports `isOffscreenCanvasSupported: false`, so the
+      // icon can't be embedded, but saving must still be a no-op rather than
+      // throwing.
+      await annotation.save(partialEvaluator, task, annotationStorage, changes);
+      expect(changes.size).toEqual(0);
+    });
+
+    it("should embed a new icon into the push button's appearance stream", async function () {
+      if (typeof OffscreenCanvas === "undefined") {
+        pending("OffscreenCanvas is not supported in Node.js.");
+        return;
+      }
+
+      const buttonWidgetRef = Ref.get(124, 0);
+      buttonWidgetDict.set("Ff", AnnotationFieldFlag.PUSHBUTTON);
+      buttonWidgetDict.set("Rect", [0, 0, 20, 10]);
+
+      const actionDict = new Dict();
+      actionDict.set("S", Name.get("JavaScript"));
+      actionDict.set("JS", "event.target.buttonImportIcon();");
+      buttonWidgetDict.set("A", actionDict);
+
+      const xref = new XRefMock([
+        { ref: buttonWidgetRef, data: buttonWidgetDict },
+      ]);
+      const task = new WorkerTask("test save icon");
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        buttonWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.canSetIcon).toBeTrue();
+
+      // A fully opaque bitmap, so that `#saveIcon` takes the plain-image
+      // path rather than creating an `/SMask`.
+      const canvas = new OffscreenCanvas(4, 2);
+      canvas.getContext("2d").fillRect(0, 0, 4, 2);
+      const bitmap = await createImageBitmap(canvas);
+
+      const annotationStorage = new Map();
+      annotationStorage.set(annotation.data.id, { bitmap });
+      const changes = new RefMap();
+      const localEvaluator = new PartialEvaluator({
+        xref,
+        handler: partialEvaluator.handler,
+        pageIndex: 0,
+        idFactory: idFactoryMock,
+        fontCache: new RefMap(),
+        builtInCMapCache: new Map(),
+        standardFontDataCache: new Map(),
+        systemFontCache: new Map(),
+        options: { isOffscreenCanvasSupported: true },
+      });
+
+      await annotation.save(localEvaluator, task, annotationStorage, changes);
+
+      // One change each for the image XObject, its appearance (Form
+      // XObject), and the annotation dictionary itself.
+      expect(changes.size).toEqual(3);
+
+      const { data: dict } = changes.get(buttonWidgetRef);
+      expect(dict.get("A")).toBe(actionDict);
+
+      const imageRef = dict.get("MK").get("I");
+      const apRef = dict.get("AP").get("N");
+      expect(imageRef).toBeInstanceOf(Ref);
+      expect(apRef).toBeInstanceOf(Ref);
+
+      const { data: imageStream } = changes.get(imageRef);
+      expect(imageStream.dict.get("Width")).toEqual(4);
+      expect(imageStream.dict.get("Height")).toEqual(2);
+
+      const { data: apStream } = changes.get(apRef);
+      expect(apStream.dict.get("BBox")).toEqual([0, 0, 20, 10]);
+      // The 4x2 bitmap is scaled by 5 to fill the 20x10 rect exactly, with
+      // no further centering needed.
+      expect(bytesToString(apStream.bytes)).toEqual(
+        "q 20 0 0 10 0 0 cm /Img0 Do Q"
+      );
+    });
   });
 
   describe("ChoiceWidgetAnnotation", function () {

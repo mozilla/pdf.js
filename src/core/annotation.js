@@ -3294,6 +3294,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
     this.data.radioButton = isRadio && !isPushButton;
     this.data.pushButton = isPushButton;
     this.data.isTooltipOnly = false;
+    this.data.canSetIcon = false;
     this.data.hasOwnCanvas = true;
     this.data.noHTML = false;
 
@@ -3310,6 +3311,84 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
   get _ownCanvasRequiresForms() {
     return this.data.checkBox || this.data.radioButton;
+  }
+
+  async #saveIcon(evaluator, storageEntry, changes) {
+    const { xref, options } = evaluator;
+    if (!options.isOffscreenCanvasSupported) {
+      warn(
+        "ButtonWidgetAnnotation#save: cannot embed the icon since " +
+          "OffscreenCanvas isn't supported."
+      );
+      return;
+    }
+
+    const image = await createImage(storageEntry.bitmap, xref, {
+      closeBitmap: true,
+    });
+    if (!image?.imageStream) {
+      return;
+    }
+
+    const { imageStream, smaskStream, width, height } = image;
+    if (smaskStream) {
+      const smaskRef = xref.getNewTemporaryRef();
+      changes.put(smaskRef, { data: smaskStream });
+      imageStream.dict.set("SMask", smaskRef);
+    }
+    const imageRef = xref.getNewTemporaryRef();
+    changes.put(imageRef, { data: imageStream });
+
+    // Scale and center the image within the widget's rectangle, preserving
+    // its aspect ratio, the same way Acrobat's "Select Icon" feature does.
+    const { width: rectWidth, height: rectHeight } = this;
+    const scale = Math.min(rectWidth / width, rectHeight / height);
+    const w = width * scale,
+      h = height * scale;
+    const tx = (rectWidth - w) / 2,
+      ty = (rectHeight - h) / 2;
+
+    const resources = new Dict(xref);
+    const xobject = new Dict(xref);
+    resources.set("XObject", xobject);
+    xobject.set("Img0", imageRef);
+
+    const appearanceDict = new Dict(xref);
+    appearanceDict.set("Type", Name.get("XObject"));
+    appearanceDict.set("Subtype", Name.get("Form"));
+    appearanceDict.set("FormType", 1);
+    appearanceDict.set("BBox", [0, 0, rectWidth, rectHeight]);
+    appearanceDict.set("Resources", resources);
+
+    const appearanceStream = new StringStream(
+      `q ${w} 0 0 ${h} ${tx} ${ty} cm /Img0 Do Q`,
+      appearanceDict
+    );
+    const apRef = xref.getNewTemporaryRef();
+    changes.put(apRef, { data: appearanceStream });
+
+    const originalDict = xref.fetchIfRef(this.ref);
+    if (!(originalDict instanceof Dict)) {
+      return;
+    }
+    const dict = new Dict(xref);
+    for (const [key, rawVal] of originalDict.getRawEntries()) {
+      if (key !== "AP" && key !== "MK") {
+        dict.set(key, rawVal);
+      }
+    }
+
+    const AP = new Dict(xref);
+    AP.set("N", apRef);
+    dict.set("AP", AP);
+
+    const originalMK = originalDict.get("MK");
+    const mk = originalMK instanceof Dict ? originalMK.clone() : new Dict(xref);
+    mk.set("I", imageRef);
+    dict.set("MK", mk);
+    dict.set("M", `D:${getModificationDate()}`);
+
+    changes.put(this.ref, { data: dict });
   }
 
   #getOperatorListForAppearance(
@@ -3434,6 +3513,14 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     if (this.data.radioButton) {
       this._saveRadioButton(evaluator, task, annotationStorage, changes);
+      return;
+    }
+
+    if (this.data.pushButton) {
+      const storageEntry = annotationStorage?.get(this.data.id);
+      if (storageEntry?.bitmap) {
+        await this.#saveIcon(evaluator, storageEntry, changes);
+      }
     }
   }
 
@@ -3894,12 +3981,25 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     this.data.isTooltipOnly = !dict.has("A") && !dict.has("AA");
 
+    // Acrobat's own "Select Icon" field-properties feature binds a push
+    // button's action to `event.target.buttonImportIcon()`, an Acrobat-only
+    // scripting method that isn't implemented anywhere (hence it's otherwise
+    // a dead action); such buttons are icon placeholders, e.g. a photo field
+    // in a fillable character sheet, so let the user pick a replacement
+    // image for them.
+    this.data.canSetIcon = !dict.has("AA") && this.#hasIconImportAction();
+
     Catalog.parseDestDictionary({
       destDict: dict,
       resultObj: this.data,
       docBaseUrl: annotationGlobals.baseUrl,
       docAttachments: annotationGlobals.attachments,
     });
+  }
+
+  #hasIconImportAction() {
+    const action = this.data.actions?.get("Action");
+    return !!action?.some(js => /\bbuttonImportIcon\s*\(/.test(js));
   }
 
   getFieldObject() {
