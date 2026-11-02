@@ -14,20 +14,12 @@
  */
 
 import { unreachable, warn } from "../shared/util.js";
-import { fetchBinaryData } from "./core_utils.js";
+import { WasmLoader } from "./wasm_loader.js";
 
 class WasmImage {
-  static #getHandler = null;
-
   static #instances = new Set();
 
-  static #useWasm = true;
-
-  static #useWorkerFetch = true;
-
-  static #wasmUrl = null;
-
-  #buffer = null;
+  static #options = { useWasm: true, useWorkerFetch: true, wasmUrl: null };
 
   #modulePromise = null;
 
@@ -36,13 +28,7 @@ class WasmImage {
   _noWasmFilename = null;
 
   static setOptions({ getHandler, useWasm, useWorkerFetch, wasmUrl }) {
-    WasmImage.#useWasm = useWasm;
-    WasmImage.#useWorkerFetch = useWorkerFetch;
-    WasmImage.#wasmUrl = wasmUrl;
-
-    if (!useWorkerFetch) {
-      WasmImage.#getHandler = getHandler;
-    }
+    WasmImage.#options = { getHandler, useWasm, useWorkerFetch, wasmUrl };
   }
 
   // eslint-disable-next-line getter-return
@@ -70,49 +56,20 @@ class WasmImage {
     }
   }
 
-  async #getJsInstance(imports) {
-    const { default: instantiate } = await (typeof PDFJSDev === "undefined"
-      ? // eslint-disable-next-line no-unsanitized/method
-        import(`../${WasmImage.#wasmUrl}${this._noWasmFilename}`)
-      : __raw_import__(`${WasmImage.#wasmUrl}${this._noWasmFilename}`));
-    return { exports: instantiate(imports) };
-  }
-
-  async #getWasmInstance(imports) {
-    if (!this.#buffer) {
-      if (WasmImage.#useWorkerFetch) {
-        this.#buffer = await fetchBinaryData(
-          `${WasmImage.#wasmUrl}${this._filename}`
-        );
-      } else {
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          throw new Error("Only worker-thread fetching supported.");
-        }
-        this.#buffer = await WasmImage.#getHandler().sendWithPromise(
-          "FetchBinaryData",
-          { kind: "wasmUrl", filename: this._filename }
-        );
-      }
-    }
-    const results = await WebAssembly.instantiate(this.#buffer, imports);
-    return results.instance;
-  }
-
   async #instantiateWasm(failureCallback, imports, successCallback) {
-    if (WasmImage.#useWasm) {
-      try {
-        return successCallback(await this.#getWasmInstance(imports));
-      } catch (ex) {
-        warn(`#getWasmInstance: ${ex}`);
-      }
+    const context = {
+      handler: WasmImage.#options.getHandler?.(),
+      options: WasmImage.#options,
+    };
+    const loaded = await WasmLoader.load(
+      context,
+      this._filename,
+      this._noWasmFilename,
+      instantiate => successCallback({ exports: instantiate(imports) })
+    );
+    if (!loaded) {
+      failureCallback(null);
     }
-    try {
-      return successCallback(await this.#getJsInstance(imports));
-    } catch (ex) {
-      warn(`#getJsInstance: ${ex}`);
-    }
-    failureCallback(null);
-    return null;
   }
 
   _getModule(ImageDecoder) {

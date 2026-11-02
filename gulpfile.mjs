@@ -759,50 +759,26 @@ function createStandardFontBundle() {
 }
 
 function createWasmBundle({ includeQuickJS = true } = {}) {
-  const sources = [
-    gulp.src(
-      [
-        "external/openjpeg/*.wasm",
-        "external/openjpeg/openjpeg_nowasm_fallback.js",
-        "external/openjpeg/LICENSE_*",
-      ],
-      {
-        base: "external/openjpeg",
-        encoding: false,
-      }
-    ),
-    gulp.src(["external/qcms/*.wasm", "external/qcms/LICENSE_*"], {
-      base: "external/qcms",
-      encoding: false,
-    }),
-    gulp.src(
-      [
-        "external/jbig2/*.wasm",
-        "external/jbig2/jbig2_nowasm_fallback.js",
-        "external/jbig2/LICENSE_*",
-      ],
-      {
-        base: "external/jbig2",
-        encoding: false,
-      }
-    ),
+  const modules = [
+    ["openjpeg", ["*.wasm", "openjpeg_nowasm_fallback.js", "LICENSE_*"]],
+    ["qcms", ["*.wasm", "LICENSE_*"]],
+    ["jbig2", ["*.wasm", "jbig2_nowasm_fallback.js", "LICENSE_*"]],
   ];
   if (includeQuickJS) {
-    sources.push(
-      gulp.src(
-        [
-          "external/quickjs/quickjs-eval.js",
-          "external/quickjs/quickjs-eval.wasm",
-          "external/quickjs/LICENSE_*",
-        ],
-        {
-          base: "external/quickjs",
-          encoding: false,
-        }
-      )
-    );
+    modules.push([
+      "quickjs",
+      ["quickjs-eval.js", "quickjs-eval.wasm", "LICENSE_*"],
+    ]);
   }
-  return ordered(sources);
+  return ordered(
+    modules.map(([name, files]) => {
+      const base = `external/${name}`;
+      return gulp.src(
+        files.map(file => `${base}/${file}`),
+        { base, encoding: false }
+      );
+    })
+  );
 }
 
 function checkFile(filePath) {
@@ -2426,26 +2402,13 @@ function buildLib(defines, dir) {
       encoding: false,
       sourcemaps: enableSourceMaps,
     }),
-    gulp.src("external/openjpeg/*.js", {
-      base: "openjpeg/",
-      encoding: false,
-      sourcemaps: enableSourceMaps,
-    }),
-    gulp.src("external/qcms/*.js", {
-      base: "qcms/",
-      encoding: false,
-      sourcemaps: enableSourceMaps,
-    }),
-    gulp.src("external/jbig2/*.js", {
-      base: "jbig2/",
-      encoding: false,
-      sourcemaps: enableSourceMaps,
-    }),
-    gulp.src("external/brotli/*.js", {
-      base: "brotli/",
-      encoding: false,
-      sourcemaps: enableSourceMaps,
-    }),
+    ...["openjpeg", "qcms", "jbig2", "brotli"].map(name =>
+      gulp.src(`external/${name}/*.js`, {
+        base: `${name}/`,
+        encoding: false,
+        sourcemaps: enableSourceMaps,
+      })
+    ),
   ]);
 
   return buildLibHelper(bundleDefines, inputStream, dir);

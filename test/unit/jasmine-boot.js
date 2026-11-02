@@ -118,6 +118,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/unit/ui_utils_spec.js",
       "pdfjs-test/unit/unicode_spec.js",
       "pdfjs-test/unit/util_spec.js",
+      "pdfjs-test/unit/wasm_loader_spec.js",
       "pdfjs-test/unit/writer_spec.js",
       "pdfjs-test/unit/xfa_formcalc_spec.js",
       "pdfjs-test/unit/xfa_parser_spec.js",
