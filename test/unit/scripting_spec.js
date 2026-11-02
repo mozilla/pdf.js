@@ -1398,6 +1398,18 @@ describe("Scripting", function () {
         expect(value).toEqual([15, 16, 21]);
       });
 
+      it("should preserve the day of the month when matching weekday names", async () => {
+        const value = await myeval(`[
+          util.scand("yyyy-mm-dd ddd", "2026-10-25 Sun").getDate(),
+          util.scand("yyyy-mm-dd dddd", "2026-10-25 Sunday").getDate(),
+          util.scand("ddd yyyy-mm-dd", "Sun 2026-10-25").getDate(),
+          util.scand("dddd yyyy-mm-dd", "Sunday 2026-10-25").getDate(),
+          util.scand("yyyy-mm-dd ddd", "2026-10-31 Sat").getDate(),
+          util.scand("ddd yyyy-mm-dd", "Sat 2026-10-31").getDate(),
+        ]`);
+        expect(value).toEqual([25, 25, 25, 25, 31, 31]);
+      });
+
       it("should handle a format with repeated specifiers", async () => {
         const cFormat = "Hm".repeat(40);
         const cDate = `${"1".repeat(84)}x`;
