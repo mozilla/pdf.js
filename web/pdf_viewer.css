@@ -220,17 +220,6 @@
 }
 /*#endif*/
 
-/*#if COMPONENTS*/
-.pdfViewer.singlePageView {
-  display: inline-block;
-}
-
-.pdfViewer.singlePageView .page {
-  margin: 0;
-  border: none;
-}
-/*#endif*/
-
 .pdfViewer:is(.scrollHorizontal, .scrollWrapped),
 .spread {
   margin-inline: 3.5px;
