@@ -42,18 +42,15 @@ class WasmImage {
     }
   }
 
-  constructor(trackInstance = false) {
+  constructor() {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === WasmImage
     ) {
       unreachable("Cannot initialize WasmImage.");
     }
-
-    if (trackInstance) {
-      // Keep track of the instances for `cleanup` purposes.
-      WasmImage.#instances.add(this);
-    }
+    // Keep track of the instances for `cleanup` purposes.
+    WasmImage.#instances.add(this);
   }
 
   async #instantiateWasm(failureCallback, imports, successCallback) {

@@ -49,7 +49,7 @@ const RAW_DATA = (() => {
 })();
 const DEFLATED_DATA = new Uint8Array(deflateSync(RAW_DATA));
 
-const JPEG_DATA = readFile("examples/image_decoders/fish.jpg");
+const JPEG_DATA = readFile("test/images/fish.jpg");
 
 describe("core", () => {
   benchmark("Lexer: tokenize content stream", () => {
