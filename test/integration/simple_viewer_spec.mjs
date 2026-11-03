@@ -64,6 +64,75 @@ describe("Simple viewer", () => {
     });
   });
 
+  describe("Two viewers with separate abortSignals", () => {
+    let pages;
+
+    beforeEach(async () => {
+      const origin = new URL(global.integrationBaseUrl).origin;
+      pages = await Promise.all(
+        global.integrationSessions.map(async session => {
+          const page = await session.browser.newPage();
+          await page.goto(`${origin}/test/components/two-viewers.html`);
+          await page.bringToFront();
+          return [session.name, page];
+        })
+      );
+    });
+
+    afterEach(async () => {
+      await Promise.all(pages.map(([, page]) => page.close()));
+    });
+
+    // Returns a handle to the function that destroys the viewer.
+    function initializeViewer(page, index) {
+      return page.evaluateHandle(i => window.initializeViewer(i), index);
+    }
+
+    async function checkSelection(browserName, page, index) {
+      const textLayerSelector = `#viewerContainer${index} [data-page-number='1'] .textLayer`;
+      await page.click(`${textLayerSelector} span`);
+
+      // The .selecting class is removed on pointerup by the global listener
+      const count = await page.evaluate(
+        () => document.querySelectorAll(".textLayer.selecting").length
+      );
+      expect(count).withContext(`In ${browserName}`).toEqual(0);
+    }
+
+    it("must keep handling text selection in the second viewer after the first one is destroyed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const destroyHandle = await initializeViewer(page, 0);
+          await initializeViewer(page, 1);
+          await destroyHandle.evaluate(destroy => destroy());
+          await checkSelection(browserName, page, 1);
+        })
+      );
+    });
+
+    it("must keep handling text selection in the first viewer after the second one is destroyed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await initializeViewer(page, 0);
+          const destroyHandle = await initializeViewer(page, 1);
+          await destroyHandle.evaluate(destroy => destroy());
+          await checkSelection(browserName, page, 0);
+        })
+      );
+    });
+
+    it("must handle text selection in a viewer created after another one was destroyed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const destroyHandle = await initializeViewer(page, 0);
+          await destroyHandle.evaluate(destroy => destroy());
+          await initializeViewer(page, 1);
+          await checkSelection(browserName, page, 1);
+        })
+      );
+    });
+  });
+
   describe("Scripting support with evaljs.pdf", () => {
     let pages;
 

@@ -55,6 +55,8 @@ class TextLayerBuilder {
 
   #onAppend = null;
 
+  #removeOwnSelectionListener = null;
+
   #renderingDone = false;
 
   #textLayer = null;
@@ -159,7 +161,7 @@ class TextLayerBuilder {
 
     this.highlighter?.disable();
     this.accessibilityManager?.disable();
-    TextLayerBuilder.#removeGlobalSelectionListener(this.div);
+    this.#removeOwnSelectionListener?.();
   }
 
   /**
@@ -168,8 +170,12 @@ class TextLayerBuilder {
    * dragged up or down.
    */
   #bindMouse(end) {
-    const { div } = this;
     const abortSignal = this.#abortSignal;
+    if (abortSignal?.aborted) {
+      return;
+    }
+
+    const { div } = this;
     const opts = abortSignal ? { signal: abortSignal } : null;
 
     div.addEventListener(
@@ -196,7 +202,17 @@ class TextLayerBuilder {
     );
 
     TextLayerBuilder.#textLayers.set(div, end);
-    TextLayerBuilder.#enableGlobalSelectionListener(abortSignal);
+    TextLayerBuilder.#enableGlobalSelectionListener();
+
+    if (!this.#removeOwnSelectionListener) {
+      const onAbort = () => {
+        this.#removeOwnSelectionListener = null;
+        abortSignal?.removeEventListener("abort", onAbort);
+        TextLayerBuilder.#removeGlobalSelectionListener(div);
+      };
+      abortSignal?.addEventListener("abort", onAbort);
+      this.#removeOwnSelectionListener = onAbort;
+    }
   }
 
   static #removeGlobalSelectionListener(textLayerDiv) {
@@ -208,15 +224,13 @@ class TextLayerBuilder {
     }
   }
 
-  static #enableGlobalSelectionListener(globalAbortSignal) {
+  static #enableGlobalSelectionListener() {
     if (this.#selectionChangeAC) {
       // document-level event listeners already installed
       return;
     }
     this.#selectionChangeAC = new AbortController();
-    const signal = globalAbortSignal
-      ? AbortSignal.any([this.#selectionChangeAC.signal, globalAbortSignal])
-      : this.#selectionChangeAC.signal;
+    const { signal } = this.#selectionChangeAC;
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
