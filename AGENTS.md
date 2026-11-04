@@ -170,7 +170,7 @@ if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC")) {
 }
 ```
 
-Common flags: `GENERIC`, `MOZCENTRAL`, `CHROME`, `MINIFIED`, `TESTING`, `LIB`, `SKIP_BABEL`, `IMAGE_DECODERS`
+Common flags: `GENERIC`, `MOZCENTRAL`, `CHROME`, `MINIFIED`, `TESTING`, `LIB`, `SKIP_BABEL`
 
 ### Testing
 

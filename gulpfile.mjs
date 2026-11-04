@@ -60,8 +60,6 @@ const GENERIC_DIR = BUILD_DIR + "generic/";
 const GENERIC_LEGACY_DIR = BUILD_DIR + "generic-legacy/";
 const COMPONENTS_DIR = BUILD_DIR + "components/";
 const COMPONENTS_LEGACY_DIR = BUILD_DIR + "components-legacy/";
-const IMAGE_DECODERS_DIR = BUILD_DIR + "image_decoders/";
-const IMAGE_DECODERS_LEGACY_DIR = BUILD_DIR + "image_decoders-legacy/";
 const DEFAULT_PREFERENCES_DIR = BUILD_DIR + "default_preferences/";
 const MINIFIED_DIR = BUILD_DIR + "minified/";
 const MINIFIED_LEGACY_DIR = BUILD_DIR + "minified-legacy/";
@@ -125,7 +123,6 @@ const DEFINES = Object.freeze({
   MINIFIED: false,
   COMPONENTS: false,
   LIB: false,
-  IMAGE_DECODERS: false,
   INTERNAL_VIEWER: false,
 });
 
@@ -711,21 +708,6 @@ function createComponentsBundle(defines) {
   });
   return createWebpackStream(
     "./web/pdf_viewer.component.js",
-    componentsFileConfig
-  );
-}
-
-function createImageDecodersBundle(defines) {
-  const componentsFileConfig = createWebpackConfig(defines, {
-    filename: defines.MINIFIED
-      ? "pdf.image_decoders.min.mjs"
-      : "pdf.image_decoders.mjs",
-    library: {
-      type: "module",
-    },
-  });
-  return createWebpackStream(
-    "./src/pdf.image_decoders.js",
     componentsFileConfig
   );
 }
@@ -1582,35 +1564,6 @@ gulp.task(
   })
 );
 
-gulp.task(
-  "image_decoders",
-  gulp.series(createBuildNumber, function createImageDecoders() {
-    console.log("\n### Creating image decoders");
-    const defines = { ...DEFINES, GENERIC: true, IMAGE_DECODERS: true };
-
-    return createImageDecodersBundle(defines).pipe(
-      gulp.dest(IMAGE_DECODERS_DIR)
-    );
-  })
-);
-
-gulp.task(
-  "image_decoders-legacy",
-  gulp.series(createBuildNumber, function createImageDecodersLegacy() {
-    console.log("\n### Creating (legacy) image decoders");
-    const defines = {
-      ...DEFINES,
-      GENERIC: true,
-      IMAGE_DECODERS: true,
-      SKIP_BABEL: false,
-    };
-
-    return createImageDecodersBundle(defines).pipe(
-      gulp.dest(IMAGE_DECODERS_LEGACY_DIR)
-    );
-  })
-);
-
 function buildMinified(defines, dir) {
   fs.rmSync(dir, { recursive: true, force: true });
 
@@ -1619,9 +1572,6 @@ function buildMinified(defines, dir) {
     createWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createRendererWorkerBundle(defines).pipe(gulp.dest(dir + "build")),
     createSandboxBundle(defines).pipe(gulp.dest(dir + "build")),
-    createImageDecodersBundle({ ...defines, IMAGE_DECODERS: true }).pipe(
-      gulp.dest(dir + "image_decoders")
-    ),
   ]);
 }
 
@@ -2391,7 +2341,7 @@ function buildLib(defines, dir) {
     gulp.src(
       [
         "src/{core,display,shared}/**/*.js",
-        "src/{pdf,pdf.image_decoders,pdf.worker,pdf.renderer}.js",
+        "src/{pdf,pdf.worker,pdf.renderer}.js",
       ],
       { base: "src/", encoding: false, sourcemaps: enableSourceMaps }
     ),
@@ -3536,8 +3486,6 @@ gulp.task(
     "generic-legacy",
     "components",
     "components-legacy",
-    "image_decoders",
-    "image_decoders-legacy",
     "minified",
     "minified-legacy",
     "types",
@@ -3618,23 +3566,12 @@ gulp.task(
           )
           .pipe(gulp.dest(DIST_DIR + "build/")),
         gulp
-          .src(MINIFIED_DIR + "image_decoders/pdf.image_decoders.min.mjs", {
-            encoding: false,
-          })
-          .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
-        gulp
           .src(
             MINIFIED_LEGACY_DIR +
               "build/{pdf,pdf.worker,pdf.sandbox,pdf.renderer}.min.mjs",
             { encoding: false }
           )
           .pipe(gulp.dest(DIST_DIR + "legacy/build/")),
-        gulp
-          .src(
-            MINIFIED_LEGACY_DIR + "image_decoders/pdf.image_decoders.min.mjs",
-            { encoding: false }
-          )
-          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(COMPONENTS_DIR + "**/*", {
             base: COMPONENTS_DIR,
@@ -3647,18 +3584,6 @@ gulp.task(
             encoding: false,
           })
           .pipe(gulp.dest(DIST_DIR + "legacy/web/")),
-        gulp
-          .src(IMAGE_DECODERS_DIR + "**/*", {
-            base: IMAGE_DECODERS_DIR,
-            encoding: false,
-          })
-          .pipe(gulp.dest(DIST_DIR + "image_decoders/")),
-        gulp
-          .src(IMAGE_DECODERS_LEGACY_DIR + "**/*", {
-            base: IMAGE_DECODERS_LEGACY_DIR,
-            encoding: false,
-          })
-          .pipe(gulp.dest(DIST_DIR + "legacy/image_decoders/")),
         gulp
           .src(TYPES_DIR + "**/*", { base: TYPES_DIR, encoding: false })
           .pipe(gulp.dest(DIST_DIR + "types/")),

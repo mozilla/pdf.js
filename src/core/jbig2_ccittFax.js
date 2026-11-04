@@ -29,11 +29,7 @@ class JBig2CCITTFaxImage extends WasmImage {
   _noWasmFilename = "jbig2_nowasm_fallback.js";
 
   static get instance() {
-    return shadow(
-      this,
-      "instance",
-      new JBig2CCITTFaxImage(/* trackInstance = */ true)
-    );
+    return shadow(this, "instance", new JBig2CCITTFaxImage());
   }
 
   async decode(bytes, width, height, globals, CCITTOptions) {
