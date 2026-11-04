@@ -6290,6 +6290,35 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("keeps the operation bounds after cleaning up the page", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams(basicApiFileName));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const viewport = pdfPage.getViewport({ scale: 1 });
+
+      const { canvasFactory } = pdfDoc;
+      const canvasAndCtx = canvasFactory.create(
+        viewport.width,
+        viewport.height
+      );
+      expect(pdfPage._getOperatorBBoxes()).toBeNull();
+
+      const renderTask = pdfPage.render({
+        canvas: canvasAndCtx.canvas,
+        viewport,
+      });
+      await renderTask.promise;
+      const { bboxes } = renderTask.getOperatorList();
+      expect(pdfPage._getOperatorBBoxes()).toBe(bboxes);
+
+      expect(pdfPage.cleanup()).toBeTrue();
+      expect(pdfPage._getOperatorBBoxes()).toBe(bboxes);
+      expect(pdfPage._getOperatorBBoxes({ intent: "print" })).toBeNull();
+
+      canvasFactory.destroy(canvasAndCtx);
+      await loadingTask.destroy();
+    });
+
     it("cancels rendering of page", async function () {
       const viewport = page.getViewport({ scale: 1 });
       expect(viewport).toBeInstanceOf(PageViewport);

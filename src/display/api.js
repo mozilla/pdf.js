@@ -1353,6 +1353,9 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
+  // Operation bounds by rendering intent, kept after clean-up.
+  #operatorBBoxes = new Map();
+
   #pendingCleanup = false;
 
   #pagesMapper = null;
@@ -1692,9 +1695,8 @@ class PDFPageProxy {
       printAnnotationStorage,
       isEditing
     );
-    return !(renderingIntent & RenderingIntentFlag.DISPLAY)
-      ? null
-      : (this._intentStates.get(cacheKey)?.operatorList?.bboxes ?? null);
+    const kept = this.#operatorBBoxes.get(renderingIntent);
+    return kept?.cacheKey === cacheKey ? kept.bboxes : null;
   }
 
   /**
@@ -1847,6 +1849,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
+    this.#operatorBBoxes.clear();
     this._transport.cleanupPage(this._id);
     this.#pendingCleanup = false;
 
@@ -1981,6 +1984,12 @@ class PDFPageProxy {
             return; // Ignore any pending requests if the worker was terminated.
           }
           this._renderPageChunk(value, intentState);
+          if (value.bboxes) {
+            this.#operatorBBoxes.set(renderingIntent, {
+              cacheKey,
+              bboxes: intentState.operatorList.bboxes,
+            });
+          }
           pump();
         },
         reason => {
