@@ -1127,16 +1127,16 @@ class PSStackToTree {
           break;
         case TOKEN.idiv:
           if (b === 1) {
-            return second; // x idiv 1 → x
+            // x idiv 1 → truncate(x): x isn't necessarily an integer.
+            return this._makeUnary(TOKEN.truncate, second);
           }
           break;
         case TOKEN.exp:
           if (b === 1) {
             return second; // x ^ 1 → x
           }
-          if (b === -1) {
-            return this._makeBinary(TOKEN.div, second, new PsConstNode(1));
-          }
+          // x ^ -1 isn't replaced by 1 / x, since `div` returns 0 for x = 0
+          // whereas `exp` returns Infinity.
           if (b === 0.5) {
             return this._makeUnary(TOKEN.sqrt, second); // x ^ 0.5 → sqrt(x)
           }

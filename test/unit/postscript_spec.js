@@ -350,6 +350,12 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBe(0);
     });
 
+    it("compiles idiv by 1 with a non-integer operand", async function () {
+      const src = "{ 1 idiv }";
+      expect(compileAndRun(src, [-10, 10], [-10, 10], [7.5])).toBe(7);
+      expect(compileAndRun(src, [-10, 10], [-10, 10], [-2.5])).toBe(-2);
+    });
+
     it("compiles mod", async function () {
       const r = compileAndRun("{ mod }", [0, 10, 1, 10], [0, 10], [7, 3]);
       expect(r).toBeCloseTo(1, 9);
@@ -472,9 +478,15 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(1024, 6);
     });
 
-    it("compiles x ^ -1 → 1/x (strength reduction)", async function () {
+    it("compiles x ^ -1", async function () {
       const r = compileAndRun("{ -1 exp }", [0.1, 10], [0.1, 10], [2]);
       expect(r).toBeCloseTo(0.5, 9); // 1/2 = 0.5
+    });
+
+    it("compiles x ^ -1 with x = 0", async function () {
+      // 0 ^ -1 = Infinity, which is clipped to the upper bound of the range.
+      const r = compileAndRun("{ -1 exp }", [0, 10], [0, 10], [0]);
+      expect(r).toBe(10);
     });
 
     it("compiles x ^ 3 → (x*x)*x (strength reduction)", async function () {
@@ -1752,10 +1764,11 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].operand).toBeInstanceOf(PsArgNode);
     });
 
-    it("x idiv 1 → x", function () {
+    it("x idiv 1 → truncate(x)", function () {
       const out = toTree("{ 1 idiv }", 1);
-      expect(out[0]).toBeInstanceOf(PsArgNode);
-      expect(out[0].index).toBe(0);
+      expect(out[0]).toBeInstanceOf(PsUnaryNode);
+      expect(out[0].op).toBe(TOKEN.truncate);
+      expect(out[0].operand).toBeInstanceOf(PsArgNode);
     });
 
     it("x ^ 0.5 → sqrt(x)", function () {
@@ -1764,12 +1777,10 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(out[0].op).toBe(TOKEN.sqrt);
     });
 
-    it("x ^ -1 → 1 / x", function () {
+    it("x ^ -1 isn't rewritten as 1 / x", function () {
       const out = toTree("{ -1 exp }", 1);
       expect(out[0]).toBeInstanceOf(PsBinaryNode);
-      expect(out[0].op).toBe(TOKEN.div);
-      expect(out[0].second).toBeInstanceOf(PsConstNode);
-      expect(out[0].second.value).toBe(1);
+      expect(out[0].op).toBe(TOKEN.exp);
     });
 
     it("x ^ 3 → (x * x) * x", function () {
@@ -1851,7 +1862,7 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(toTree("{ 0 div }", 1)[0]).toBeInstanceOf(PsBinaryNode);
       // idiv: b=2≠1 → break (line 938)
       expect(toTree("{ 2 idiv }", 1)[0]).toBeInstanceOf(PsBinaryNode);
-      // exp: b=5 (not 0, 0.5, 0.25, -1, 1, 2, 3, or 4) → break
+      // exp: b=5 (not 0, 0.5, 0.25, 1, 2, 3, or 4) → break
       expect(toTree("{ 5 exp }", 1)[0]).toBeInstanceOf(PsBinaryNode);
       // and: b=2 (not boolean) → break (line 961)
       expect(toTree("{ 2 and }", 1)[0]).toBeInstanceOf(PsBinaryNode);
