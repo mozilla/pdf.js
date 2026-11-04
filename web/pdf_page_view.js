@@ -45,10 +45,8 @@ import { AppOptions } from "./app_options.js";
 import { Autolinker } from "./autolinker.js";
 import { BasePDFPageView } from "./base_pdf_page_view.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
-import { GenericL10n } from "web-null_l10n";
 import { PDFPageDetailView } from "./pdf_page_detail_view.js";
 import { RenderingStates } from "./renderable_view.js";
-import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
 import { TextHighlighter } from "./text_highlighter.js";
@@ -104,8 +102,8 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
- * @property {L10n} [l10n] - Localization service.
- * @property {object} [layerProperties] - The object that is used to lookup
+ * @property {L10n} l10n - Localization service.
+ * @property {object} layerProperties - The object that is used to lookup
  *   the necessary layer-properties.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
  *   text that look like URLs. The default value is `true`.
@@ -113,22 +111,6 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   to.
  * @property {AbortSignal} [abortSignal]
  */
-
-const DEFAULT_LAYER_PROPERTIES =
-  typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")
-    ? null
-    : {
-        annotationEditorUIManager: null,
-        annotationStorage: null,
-        downloadManager: null,
-        enableScripting: false,
-        fieldObjectsPromise: null,
-        findController: null,
-        hasJSActionsPromise: null,
-        get linkService() {
-          return new SimpleLinkService();
-        },
-      };
 
 const LAYERS_ORDER = new Map([
   ["canvasWrapper", 0],
@@ -186,7 +168,7 @@ class PDFPageView extends BasePDFPageView {
     const { container, defaultViewport } = options;
 
     this.renderingId = "page" + this.id;
-    this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
+    this.#layerProperties = options.layerProperties;
     this.#abortSignal = options.abortSignal || null;
 
     this.pdfPage = null;
@@ -211,15 +193,6 @@ class PDFPageView extends BasePDFPageView {
     this.#commentManager = options.commentManager || null;
 
     this.l10n = options.l10n;
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this.l10n ||= new GenericL10n();
-    }
-
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this._isStandalone = !this.renderingQueue?.hasViewer();
-      this._container = container;
-    }
-
     this._annotationCanvasMap = null;
 
     this.annotationLayer = null;
@@ -240,45 +213,6 @@ class PDFPageView extends BasePDFPageView {
     this.div = div;
     this.#setDimensions();
     container?.append(div);
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._isStandalone
-    ) {
-      // Ensure that the various layers always get the correct initial size,
-      // see issue 15795.
-      container?.style.setProperty(
-        "--scale-factor",
-        this.scale * PixelsPerInch.PDF_TO_CSS_UNITS
-      );
-
-      if (this.pageColors?.background) {
-        container?.style.setProperty(
-          "--page-bg-color",
-          this.pageColors.background
-        );
-      }
-
-      const { optionalContentConfigPromise } = options;
-      if (optionalContentConfigPromise) {
-        // Ensure that the thumbnails always display the *initial* document
-        // state, for documents with optional content.
-        optionalContentConfigPromise.then(optionalContentConfig => {
-          if (
-            optionalContentConfigPromise !== this._optionalContentConfigPromise
-          ) {
-            return;
-          }
-          this.#useThumbnailCanvas.initialOptionalContent =
-            optionalContentConfig.hasInitialVisibility;
-        });
-      }
-
-      // Ensure that Fluent is connected in e.g. the COMPONENTS build.
-      if (!options.l10n) {
-        this.l10n.translate(this.div);
-      }
-    }
   }
 
   clone(id) {
@@ -384,33 +318,6 @@ class PDFPageView extends BasePDFPageView {
   }
 
   setPdfPage(pdfPage) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._isStandalone &&
-      (this.pageColors?.foreground === "CanvasText" ||
-        this.pageColors?.background === "Canvas")
-    ) {
-      this._container?.style.setProperty(
-        "--hcm-highlight-filter",
-        pdfPage.filterFactory.addHighlightHCMFilter(
-          "highlight",
-          "CanvasText",
-          "Canvas",
-          "HighlightText",
-          "Highlight"
-        )
-      );
-      this._container?.style.setProperty(
-        "--hcm-highlight-selected-filter",
-        pdfPage.filterFactory.addHighlightHCMFilter(
-          "highlight_selected",
-          "CanvasText",
-          "Canvas",
-          "HighlightText",
-          "Highlight"
-        )
-      );
-    }
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
 
@@ -822,13 +729,6 @@ class PDFPageView extends BasePDFPageView {
       rotation: totalRotation,
     });
     this.#setDimensions();
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._isStandalone
-    ) {
-      this._container?.style.setProperty("--scale-factor", this.viewport.scale);
-    }
 
     this.#computeScale();
 
