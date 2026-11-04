@@ -601,6 +601,31 @@ describe("evaluator", function () {
       expectBBox(chunk.bboxes, 0, [10, 20, 20, 32]);
     });
 
+    it("should only send the dependency graph when requested", function () {
+      for (const recordDependencies of [false, true]) {
+        const sink = new StreamSinkMock();
+        const operatorList = new OperatorList(0, sink);
+        operatorList.enableBBoxes([0, 0, 100, 100], recordDependencies);
+
+        operatorList.addOp(OPS.save);
+        operatorList.addOp(OPS.setFillRGBColor, [new Uint8ClampedArray(3)]);
+        addFill(operatorList, [10, 10, 20, 20]);
+        operatorList.addOp(OPS.restore);
+        operatorList.flush(/* lastChunk = */ true);
+
+        const { bboxDependencies } = sink.chunks[0];
+        if (!recordDependencies) {
+          expect(bboxDependencies).toBeNull();
+          continue;
+        }
+        expect(bboxDependencies).toEqual({
+          offsets: new Int32Array([0, 0, 1, 3, 4]),
+          dependencies: new Int32Array([0, 0, 1, 0]),
+          renderingOps: new Uint8Array([0, 0, 1, 0]),
+        });
+      }
+    });
+
     it("should keep group bounding boxes across chunks", function () {
       const sink = new StreamSinkMock();
       const operatorList = new OperatorList(0, sink);

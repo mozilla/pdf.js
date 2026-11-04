@@ -693,8 +693,12 @@ class OperatorList {
     return this._resolved || this._streamSink.ready;
   }
 
-  enableBBoxes(pageBBox) {
-    this._bboxTracker = new OperatorListBBoxTracker(pageBBox, this._bboxFonts);
+  enableBBoxes(pageBBox, recordDependencies = false) {
+    this._bboxTracker = new OperatorListBBoxTracker(
+      pageBBox,
+      this._bboxFonts,
+      recordDependencies
+    );
   }
 
   addFont(loadedName, font) {
@@ -816,11 +820,18 @@ class OperatorList {
     this.optimizer.flush();
     const transfers = this._transfers;
     let bboxes = null;
+    let bboxDependencies = null;
     if (this._bboxTracker) {
       this._bboxTracker.process(this.fnArray, this.argsArray);
       if (lastChunk) {
         bboxes = this._bboxTracker.finish();
         transfers.push(bboxes.buffer);
+        bboxDependencies = this._bboxTracker.getDependencies();
+        if (bboxDependencies) {
+          for (const array of Object.values(bboxDependencies)) {
+            transfers.push(array.buffer);
+          }
+        }
       }
     }
 
@@ -832,6 +843,7 @@ class OperatorList {
         separateAnnots,
         length: this.length,
         bboxes,
+        bboxDependencies,
       },
       1,
       transfers

@@ -1918,7 +1918,8 @@ class PDFPageProxy {
     if (operatorListChunk.bboxes) {
       intentState.operatorList.bboxes = new OperatorBBoxes(
         operatorListChunk.bboxes,
-        this.view
+        this.view,
+        operatorListChunk.bboxDependencies
       );
     }
 
@@ -1959,6 +1960,7 @@ class PDFPageProxy {
         cacheKey,
         annotationStorage: map,
         modifiedIds,
+        recordDependencies: this._pdfBug,
       },
       /* queueingStrategy = */ undefined,
       transfer

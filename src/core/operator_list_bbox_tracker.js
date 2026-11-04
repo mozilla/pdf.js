@@ -222,6 +222,8 @@ class OperatorListBBoxTracker {
 
   #pendingClip = -1;
 
+  #renderingOps = null;
+
   #scaleX;
 
   #scaleY;
@@ -245,10 +247,15 @@ class OperatorListBBoxTracker {
   /**
    * @param {Array<number>} pageBBox
    * @param {Map<string, object>} fonts - Fonts by loaded name.
+   * @param {boolean} [recordDependencies] - Keep the dependency graph for the
+   *   debugger.
    */
-  constructor(pageBBox, fonts) {
+  constructor(pageBBox, fonts, recordDependencies = false) {
     this.#pageBBox = isValidBBox(pageBBox) ? pageBBox.slice() : null;
     this.#fonts = fonts;
+    if (recordDependencies) {
+      this.#renderingOps = new Uint8Array(0);
+    }
     this.#state = new BoundingBoxState(this.#pageBBox);
     const [x0, y0, x1, y1] = this.#pageBBox || [0, 0, 1, 1];
     this.#x0 = x0;
@@ -269,6 +276,11 @@ class OperatorListBBoxTracker {
     const edgeStart = new Int32Array(capacity + 1);
     edgeStart.set(this.#edgeStart);
     this.#edgeStart = edgeStart;
+    if (this.#renderingOps) {
+      const renderingOps = new Uint8Array(capacity);
+      renderingOps.set(this.#renderingOps);
+      this.#renderingOps = renderingOps;
+    }
   }
 
   #expandIndex(index, minX, minY, maxX, maxY) {
@@ -322,6 +334,9 @@ class OperatorListBBoxTracker {
       this.#addDependency(state.sameLineText);
     }
     this.#addDependency(state.clipDependency);
+    if (this.#renderingOps) {
+      this.#renderingOps[index] = 1;
+    }
 
     if (!isValidBBox(bbox)) {
       return;
@@ -1169,6 +1184,23 @@ class OperatorListBBoxTracker {
       boxes[offset + 2] = boxes[offset + 3] = 255;
     }
     return boxes;
+  }
+
+  /**
+   * @returns {object | null} Direct dependencies of operation `i`, stored in
+   *   `dependencies[offsets[i]]` to `dependencies[offsets[i + 1] - 1]`, and
+   *   the operations that draw, or null when not recorded.
+   */
+  getDependencies() {
+    if (!this.#renderingOps) {
+      return null;
+    }
+    const length = this.#length;
+    return {
+      offsets: this.#edgeStart.slice(0, length + 1),
+      dependencies: this.#edges.slice(0, this.#edgeCount),
+      renderingOps: this.#renderingOps.slice(0, length),
+    };
   }
 }
 

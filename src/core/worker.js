@@ -947,6 +947,7 @@ class WorkerMessageHandler {
           cacheKey,
           annotationStorage,
           modifiedIds,
+          recordDependencies,
         },
         sink
       ) {
@@ -965,6 +966,7 @@ class WorkerMessageHandler {
               modifiedIds,
               pageIndex,
               pageProxyId,
+              recordDependencies,
             })
             .then(
               () => {

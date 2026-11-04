@@ -29,12 +29,20 @@ class OperatorBBoxes {
   #view;
 
   /**
+   * Dependency graph for the debugger, only recorded with `pdfBug`.
+   * @type {object | null}
+   */
+  dependencies;
+
+  /**
    * @param {Uint8ClampedArray} data
    * @param {Array<number>} view
+   * @param {object | null} [dependencies]
    */
-  constructor(data, view) {
+  constructor(data, view, dependencies = null) {
     this.#data = data;
     this.#view = view;
+    this.dependencies = dependencies;
   }
 
   get length() {
