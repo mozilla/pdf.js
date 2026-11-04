@@ -829,7 +829,8 @@ class OperatorListBBoxTracker {
       /* isText = */ true
     );
 
-    if (isClip && bbox) {
+    // Glyphs without ink still clip.
+    if (isClip) {
       if (isValidBBox(bbox)) {
         this.#textClipBBox ??= BBOX_INIT.slice();
         Util.rectBoundingBox(
@@ -845,6 +846,7 @@ class OperatorListBBoxTracker {
         this.#textClipOptional = true;
       }
       if (
+        fontSize !== 0 &&
         glyphs?.some(
           glyph =>
             typeof glyph !== "number" && (glyph.isInFont || font?.missingFile)
@@ -858,13 +860,14 @@ class OperatorListBBoxTracker {
 
   #endText(index) {
     const state = this.#state;
-    if (isValidBBox(this.#textClipBBox)) {
+    if (this.#textClipOperations) {
       for (const dependency of this.#textClipOperations) {
         this.#addDependency(dependency);
       }
       this.#addDependency(state.clipDependency);
       state.clipDependency = index;
       if (this.#textClipPainted && !this.#textClipOptional) {
+        // An empty box clips everything.
         this.#updateClip(this.#textClipBBox);
       }
     }

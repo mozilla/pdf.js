@@ -15478,5 +15478,20 @@
       "minY": 0.3,
       "maxY": 0.45
     }
+  },
+  {
+    "id": "text-clip-empty-glyph-partial",
+    "file": "pdfs/text_clip_empty_glyph.pdf",
+    "md5": "ee672098e2544e851ab00731c39fdc2f",
+    "rounds": 1,
+    "type": "eq",
+    "useSystemFonts": false,
+    "about": "Text clip with a glyph without ink, which clips everything.",
+    "partial": {
+      "minX": 0.39,
+      "maxX": 0.47,
+      "minY": 0.58,
+      "maxY": 0.66
+    }
   }
 ]

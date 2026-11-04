@@ -991,6 +991,29 @@ describe("evaluator", function () {
       expectBBox(bboxes, fnArray.indexOf(OPS.showText), [20, 29, 24, 37]);
     });
 
+    it("should clip everything with text without ink", function () {
+      const { operatorList, sink } = createTextOperatorList({
+        data: new Uint8Array(1),
+        isOpenType: false,
+        missingFile: false,
+        renderer: { getGlyphBBox: () => null },
+      });
+
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      operatorList.addOp(OPS.setTextRenderingMode, [7]);
+      operatorList.addOp(OPS.showText, [
+        [{ fontChar: " ", isInFont: true, isSpace: true, width: 250 }],
+      ]);
+      operatorList.addOp(OPS.endText);
+      addFill(operatorList, [0, 0, 100, 100]);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      const fill = 4 * fnArray.indexOf(OPS.constructPath);
+      expect(bboxes[fill]).toBeGreaterThan(bboxes[fill + 2]);
+    });
+
     it("should keep the whole soft-mask group alive for a masked draw", function () {
       const sink = new StreamSinkMock();
       const operatorList = new OperatorList(0, sink);
