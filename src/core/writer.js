@@ -566,4 +566,11 @@ async function incrementalUpdate({
   return array;
 }
 
-export { incrementalUpdate, writeChanges, writeDict, writeObject, writeValue };
+export {
+  incrementalUpdate,
+  numberToPDFString,
+  writeChanges,
+  writeDict,
+  writeObject,
+  writeValue,
+};

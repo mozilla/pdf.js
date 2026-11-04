@@ -739,8 +739,45 @@ function getSizeInBytes(x) {
   return Math.ceil(Math.ceil(Math.log2(1 + x)) / 8);
 }
 
+/** Resolve references from `changes` before falling back to the XRef. */
+class ChangesXRefWrapper {
+  #changes;
+
+  #xref;
+
+  constructor(changes, xref) {
+    this.#changes = changes;
+    this.#xref = xref;
+  }
+
+  getNewTemporaryRef() {
+    return this.#xref.getNewTemporaryRef();
+  }
+
+  fetch(ref) {
+    return this.#changes.has(ref)
+      ? this.#changes.get(ref).data
+      : this.#xref.fetch(ref);
+  }
+
+  fetchIfRef(obj) {
+    return obj instanceof Ref ? this.fetch(obj) : obj;
+  }
+
+  async fetchAsync(ref) {
+    return this.#changes.has(ref)
+      ? this.#changes.get(ref).data
+      : this.#xref.fetchAsync(ref);
+  }
+
+  async fetchIfRefAsync(obj) {
+    return obj instanceof Ref ? this.fetchAsync(obj) : obj;
+  }
+}
+
 export {
   arrayBuffersToBytes,
+  ChangesXRefWrapper,
   codePointIter,
   collectActions,
   deepCompare,
