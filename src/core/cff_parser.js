@@ -288,7 +288,11 @@ class CFFParser {
     this.seacAnalysisEnabled = !!seacAnalysisEnabled;
   }
 
-  parse() {
+  /**
+   * @param {boolean} [validate] - Check the charstrings, which is useless for
+   *   a font compiled by PDF.js.
+   */
+  parse(validate = true) {
     const properties = this.properties;
     const cff = new CFF(this.bytes.length);
     this.cff = cff;
@@ -411,6 +415,10 @@ class CFFParser {
     cff.charset = charset;
     cff.encoding = encoding;
 
+    if (!validate) {
+      cff.charStrings = charStringIndex;
+      return cff;
+    }
     const charStringsAndSeacs = this.parseCharStrings({
       charStrings: charStringIndex,
       localSubrIndex: topDict.privateDict.subrsIndex,

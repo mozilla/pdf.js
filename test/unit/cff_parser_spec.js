@@ -124,6 +124,26 @@ describe("CFFParser", function () {
     expect(properties.ascentScaled).toBeUndefined();
   });
 
+  it("doesn't validate the charstrings when not asked to", function () {
+    const compiled = new CFFCompiler(cff).compile();
+    const parse = validate =>
+      new CFFParser(new Stream(compiled), {}, SEAC_ANALYSIS_ENABLED).parse(
+        validate
+      );
+
+    const validated = parse(true);
+    const notValidated = parse(false);
+    expect(validated.widths).toBeDefined();
+    expect(notValidated.widths).toBeUndefined();
+    expect(notValidated.seacs).toBeUndefined();
+    expect(notValidated.charStrings.count).toEqual(validated.charStrings.count);
+    for (let i = 0; i < validated.charStrings.count; i++) {
+      expect(notValidated.charStrings.get(i)).toEqual(
+        validated.charStrings.get(i)
+      );
+    }
+  });
+
   it("repairs an empty FontBBox from font descriptor data", function () {
     cff.topDict.setByName("FontBBox", [0, 0, 0, 0]);
     const fontDataWithEmptyBBox = new CFFCompiler(cff).compile();
