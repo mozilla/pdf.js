@@ -19,6 +19,7 @@ import {
   OPS,
   TextRenderingMode,
   Util,
+  warn,
 } from "../shared/util.js";
 import { IDENTITY_MATRIX } from "./core_utils.js";
 
@@ -542,6 +543,7 @@ class OperatorListBBoxTracker {
           ? transformBBox(fontBBox, fontMatrix)
           : null,
       type3BBoxes: font?.isType3Font ? new Map() : null,
+      renderer: undefined,
       ascent:
         Number.isFinite(font?.ascent) && font.ascent > 0
           ? Math.max(font.ascent, 1)
@@ -575,10 +577,33 @@ class OperatorListBBoxTracker {
     return bbox;
   }
 
+  #getRenderer(font, info) {
+    if (info.renderer === undefined) {
+      info.renderer = null;
+      // Only use the TrueType outlines for now.
+      if (font && !font.missingFile && font.isOpenType === false && font.data) {
+        try {
+          info.renderer = font.renderer;
+        } catch (ex) {
+          warn(`Cannot compile the outlines of "${font.loadedName}": "${ex}".`);
+        }
+      }
+    }
+    return info.renderer;
+  }
+
   /**
-   * @returns {boolean} Whether glyph bounds are available.
+   * @returns {Array<number> | null | false} Bounds in text space, null for a
+   *   glyph without ink, or false when unknown. The box must not be modified.
    */
-  #getGlyphBBox(font, info, glyph, output) {
+  #getGlyphBBox(font, info, glyph, fontChar) {
+    const renderer = fontChar && this.#getRenderer(font, info);
+    if (renderer) {
+      const outlineBBox = renderer.getGlyphBBox(fontChar);
+      if (outlineBBox !== false) {
+        return outlineBBox;
+      }
+    }
     let bbox = info.bbox;
     if (info.type3BBoxes) {
       const type3BBox = this.#getType3GlyphBBox(
@@ -590,26 +615,19 @@ class OperatorListBBoxTracker {
         bbox = type3BBox;
       }
     }
-    if (bbox) {
-      output[0] = bbox[0];
-      output[1] = bbox[1];
-      output[2] = bbox[2];
-      output[3] = bbox[3];
-    } else if (font?.missingFile) {
-      // The substitute font is unknown, so only use the padded advance box.
-      output[0] = output[1] = Infinity;
-      output[2] = output[3] = -Infinity;
-    } else {
+    if (!bbox && !font?.missingFile) {
       return false;
     }
+    // The substitute font is unknown, so only use the padded advance box.
+    bbox = bbox?.slice() || BBOX_INIT.slice();
     const right =
       (Math.abs(
         (glyph.width || font?.defaultWidth || 0) * info.fontMatrix[0]
       ) || 0) + 1;
     if (right < Infinity) {
-      Util.rectBoundingBox(-1, info.descent, right, info.ascent, output);
+      Util.rectBoundingBox(-1, info.descent, right, info.ascent, bbox);
     }
-    return output[0] <= output[2];
+    return bbox[0] <= bbox[2] ? bbox : false;
   }
 
   #showText(index, glyphs) {
@@ -657,7 +675,6 @@ class OperatorListBBoxTracker {
       const axisAligned = baseTransform[1] === 0 && baseTransform[2] === 0;
 
       const widthAdvanceScale = fontSize * info.fontMatrix[0];
-      const glyphBBox = [0, 0, 0, 0];
       const glyphTransform = [
         fontSize,
         0,
@@ -690,46 +707,51 @@ class OperatorListBBoxTracker {
           glyphWidth = -(vmetric ? vmetric[0] : glyphWidth);
         }
 
-        if (this.#getGlyphBBox(font, info, glyph, glyphBBox)) {
-          hasGlyphBBox = true;
-          for (let i = 0, ii = glyph.accent ? 2 : 1; i < ii; i++) {
-            if (i === 0) {
-              glyphTransform[4] = x;
-              glyphTransform[5] = y;
-            } else {
-              glyphTransform[4] = x + fontSize * glyph.accent.offset.x;
-              glyphTransform[5] = y - fontSize * glyph.accent.offset.y;
-            }
-            if (axisAligned) {
-              Util.transformedRectBoundingBox(
-                glyphBBox[0],
-                glyphBBox[1],
-                glyphBBox[2],
-                glyphBBox[3],
-                glyphTransform,
-                runBBox
-              );
-            } else {
-              transformRect(
-                glyphBBox[0],
-                glyphBBox[1],
-                glyphBBox[2],
-                glyphBBox[3],
-                glyphTransform,
-                box
-              );
-              Util.transformedRectBoundingBox(
-                box[0],
-                box[1],
-                box[2],
-                box[3],
-                baseTransform,
-                runBBox
-              );
-            }
+        for (let i = 0, ii = glyph.accent ? 2 : 1; i < ii; i++) {
+          const fontChar = i === 0 ? glyph.fontChar : glyph.accent.fontChar;
+          const glyphBBox = this.#getGlyphBBox(font, info, glyph, fontChar);
+          if (glyphBBox === false) {
+            untrusted = true;
+            continue;
           }
-        } else {
-          untrusted = true;
+          if (!glyphBBox) {
+            continue;
+          }
+          hasGlyphBBox = true;
+          if (i === 0) {
+            glyphTransform[4] = x;
+            glyphTransform[5] = y;
+          } else {
+            glyphTransform[4] = x + fontSize * glyph.accent.offset.x;
+            glyphTransform[5] = y - fontSize * glyph.accent.offset.y;
+          }
+          if (axisAligned) {
+            Util.transformedRectBoundingBox(
+              glyphBBox[0],
+              glyphBBox[1],
+              glyphBBox[2],
+              glyphBBox[3],
+              glyphTransform,
+              runBBox
+            );
+          } else {
+            transformRect(
+              glyphBBox[0],
+              glyphBBox[1],
+              glyphBBox[2],
+              glyphBBox[3],
+              glyphTransform,
+              box
+            );
+            Util.transformedRectBoundingBox(
+              box[0],
+              box[1],
+              box[2],
+              box[3],
+              baseTransform,
+              runBBox
+            );
+          }
         }
 
         advance += vertical

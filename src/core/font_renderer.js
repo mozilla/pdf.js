@@ -15,6 +15,7 @@
 
 import {
   assert,
+  BBOX_INIT,
   bytesToString,
   DrawOPS,
   FeatureTest,
@@ -763,7 +764,7 @@ class Commands {
   }
 
   save() {
-    this.transformStack.push(this.currentTransform.slice());
+    this.transformStack.push(this.currentTransform);
   }
 
   restore() {
@@ -781,10 +782,30 @@ class Commands {
   }
 }
 
+// Only keeps the bounds of the outline points.
+class BBoxCommands extends Commands {
+  bbox = BBOX_INIT.slice();
+
+  add(cmd, args) {
+    if (!args) {
+      return;
+    }
+    const { bbox, currentTransform } = this;
+    for (let i = 0, ii = args.length; i < ii; i += 2) {
+      Util.applyTransform(args, currentTransform, i);
+      Util.pointBoundingBox(args[i], args[i + 1], bbox);
+    }
+  }
+}
+
 class CompiledFont {
   #compiledCharCodes = new Set();
 
   #compiledGlyphs = new Map();
+
+  #charBBoxes = new Map();
+
+  #glyphBBoxes = new Map();
 
   constructor(fontMatrix) {
     if (
@@ -832,11 +853,48 @@ class CompiledFont {
     return compileFontPathInfo(path);
   }
 
+  /**
+   * @param {string} unicode
+   * @returns {Array<number> | null | false} Bounds of the outline points in
+   *   text space, null for an empty glyph, or false if it can't be compiled.
+   */
+  getGlyphBBox(unicode) {
+    return this.#charBBoxes.getOrInsertComputed(unicode, () =>
+      this.#getGlyphIdBBox(lookupCmap(this.cmap, unicode).glyphId)
+    );
+  }
+
+  #getGlyphIdBBox(glyphId) {
+    return this.#glyphBBoxes.getOrInsertComputed(glyphId, () => {
+      const code = this.glyphs[glyphId];
+      if (!code?.length || code[0] === 14) {
+        return null;
+      }
+      const cmds = new BBoxCommands();
+      try {
+        this.#compileCommands(code, glyphId, cmds);
+      } catch (ex) {
+        warn(`getGlyphBBox: "${ex}".`);
+        return false;
+      }
+      const { bbox } = cmds;
+      return bbox[0] <= bbox[2] ? bbox : null;
+    });
+  }
+
   compileGlyph(code, glyphId) {
     if (!code?.length || code[0] === 14) {
       return CompiledFont.NOOP;
     }
 
+    const cmds = new Commands();
+    this.#compileCommands(code, glyphId, cmds);
+    cmds.add(DrawOPS.closePath);
+
+    return cmds.getPath();
+  }
+
+  #compileCommands(code, glyphId, cmds) {
     let fontMatrix = this.fontMatrix;
     if (this.isCFFCIDFont) {
       // Top DICT's FontMatrix can be ignored because CFFCompiler always
@@ -851,12 +909,8 @@ class CompiledFont {
     }
     assert(isNumberArray(fontMatrix, 6), "Expected a valid fontMatrix.");
 
-    const cmds = new Commands();
-    cmds.transform(fontMatrix.slice());
+    cmds.transform(fontMatrix);
     this.compileGlyphImpl(code, cmds, glyphId);
-    cmds.add(DrawOPS.closePath);
-
-    return cmds.getPath();
   }
 
   compileGlyphImpl() {
@@ -902,8 +956,9 @@ class Type2Compiled extends CompiledFont {
 
 class FontRendererFactory {
   static create(font, seacAnalysisEnabled, validate = true) {
-    const data = new Uint8Array(font.data),
-      view = new DataView(data.buffer);
+    const data =
+        font.data instanceof Uint8Array ? font.data : new Uint8Array(font.data),
+      view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     let cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
     const numTables = view.getUint16(4);
     for (let i = 0, p = 12; i < numTables; i++, p += 16) {

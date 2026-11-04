@@ -446,6 +446,27 @@ describe("Font", () => {
       }
     });
 
+    it("should bound a glyph by its outline points", () => {
+      // Points (100, -50), (600, 700) and (300, 0), with an empty header box.
+      const glyph = new Uint8Array([
+        0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1, 1, 0, 100, 1, 244, 0xfe,
+        0xd4, 0xff, 0xce, 2, 0xee, 0xfd, 0x44, 0,
+      ]);
+      const font = loadFont(2, format12([[0x41, 0x41, 1]]), [
+        new Uint8Array(0),
+        glyph,
+      ]);
+
+      const bbox = font.renderer.getGlyphBBox(
+        String.fromCodePoint(font.toFontChar.get(0x41))
+      );
+      const expected = [0.1, -0.05, 0.6, 0.7];
+      expect(bbox.length).toEqual(4);
+      for (let i = 0; i < 4; i++) {
+        expect(bbox[i]).toBeCloseTo(expected[i], 6);
+      }
+    });
+
     it("does not expand a group spanning the whole 32-bit range", () => {
       const font = loadFont(4, format12([[0, 0xffffffff, 0]]));
       // The original parser would expand this group to 2^32 mappings.
