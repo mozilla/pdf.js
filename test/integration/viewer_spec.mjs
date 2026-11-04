@@ -2620,4 +2620,90 @@ describe("PDF viewer", () => {
       });
     });
   });
+
+  describe("Layout shifts", () => {
+    let pages;
+
+    // Serialized and run before the viewer loads, so it must be
+    // self-contained.
+    function recordLayoutShifts() {
+      if (!PerformanceObserver.supportedEntryTypes.includes("layout-shift")) {
+        return;
+      }
+      const shifts = (window.layoutShifts = []);
+      const record = entries => {
+        for (const { value, sources } of entries) {
+          const pageNumbers = sources
+            .map(({ node }) => {
+              const element =
+                node?.nodeType === Node.ELEMENT_NODE
+                  ? node
+                  : node?.parentElement;
+              return element
+                ?.closest(".page")
+                ?.getAttribute("data-page-number");
+            })
+            .filter(Boolean);
+          if (pageNumbers.length) {
+            shifts.push({ value, pages: pageNumbers });
+          }
+        }
+      };
+      const observer = new PerformanceObserver(list =>
+        record(list.getEntries())
+      );
+      observer.observe({ type: "layout-shift", buffered: true });
+      window.flushLayoutShifts = () => record(observer.takeRecords());
+    }
+
+    function loadAndRecord(filename, zoom) {
+      return loadAndWait(
+        filename,
+        ".textLayer .endOfContent",
+        zoom,
+        { earlySetup: recordLayoutShifts },
+        null,
+        { width: 800, height: 600 }
+      );
+    }
+
+    async function checkNoPageShifts(browserName, page) {
+      const shifts = await page.evaluate(async () => {
+        if (!window.layoutShifts) {
+          return null;
+        }
+        await window.PDFViewerApplication.pdfViewer.pagesPromise;
+        await new Promise(resolve => {
+          requestAnimationFrame(() => requestAnimationFrame(resolve));
+        });
+        window.flushLayoutShifts();
+        return window.layoutShifts;
+      });
+      if (!shifts) {
+        pending("The Layout Instability API isn't supported.");
+      }
+      const score = shifts.reduce((sum, { value }) => sum + value, 0);
+      expect(score)
+        .withContext(`In ${browserName}: ${JSON.stringify(shifts)}`)
+        .toEqual(0);
+    }
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not move visible pages when their size becomes known", async () => {
+      pages = await loadAndRecord("sizes.pdf", "20");
+      await Promise.all(
+        pages.map(([browserName, page]) => checkNoPageShifts(browserName, page))
+      );
+    });
+
+    it("must not move the destination page of a mixed-size document", async () => {
+      pages = await loadAndRecord("issue1350.pdf", "page-fit&page=3");
+      await Promise.all(
+        pages.map(([browserName, page]) => checkNoPageShifts(browserName, page))
+      );
+    });
+  });
 });
