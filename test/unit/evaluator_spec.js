@@ -973,6 +973,28 @@ describe("evaluator", function () {
       expectBBox(bboxes, endGroupIndex, [20, 30, 80, 90]);
     });
 
+    it("should keep the soft mask used to composite a group", function () {
+      const sink = new StreamSinkMock();
+      const operatorList = new OperatorList(0, sink);
+      operatorList.enableBBoxes([0, 0, 100, 100]);
+
+      operatorList.addOp(OPS.beginGroup, [
+        { smask: { subtype: "Luminosity" }, bbox: [0, 0, 100, 100] },
+      ]);
+      addFill(operatorList, [0, 0, 50, 100]);
+      operatorList.addOp(OPS.endGroup, [{ smask: { subtype: "Luminosity" } }]);
+      operatorList.addOp(OPS.setGState, [[["SMask", true]]]);
+      operatorList.addOp(OPS.beginGroup, [{ bbox: [0, 0, 100, 100] }]);
+      // The mask removed inside the group still applies to the whole group.
+      operatorList.addOp(OPS.setGState, [[["SMask", false]]]);
+      addFill(operatorList, [0, 0, 100, 100]);
+      operatorList.addOp(OPS.endGroup, [{}]);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      expectBBox(bboxes, fnArray.indexOf(OPS.setGState), [0, 0, 100, 100]);
+    });
+
     it("should keep an earlier same-line run's state alive for a later run", function () {
       const sink = new StreamSinkMock();
       const operatorList = new OperatorList(0, sink);

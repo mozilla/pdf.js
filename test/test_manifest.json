@@ -15435,5 +15435,19 @@
       "minY": 0.7,
       "maxY": 0.85
     }
+  },
+  {
+    "id": "smask-none-partial",
+    "file": "pdfs/smask_none.pdf",
+    "md5": "3a6aadda6846e059a96892b2d2ad07f5",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Soft mask applied to a group which removes it for its content.",
+    "partial": {
+      "minX": 0.6,
+      "maxX": 0.9,
+      "minY": 0.1,
+      "maxY": 0.9
+    }
   }
 ]
