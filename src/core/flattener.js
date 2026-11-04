@@ -23,6 +23,7 @@ import {
 } from "../shared/util.js";
 import {
   ChangesXRefWrapper,
+  getInheritableProperty,
   IDENTITY_MATRIX,
   lookupMatrix,
   lookupNormalRect,
@@ -39,11 +40,11 @@ import {
   RefMap,
   RefSet,
 } from "./primitives.js";
+import { getTransformMatrix, WidgetAnnotation } from "./annotation.js";
 import { Lexer, Parser } from "./parser.js";
 import { Stream, StringStream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
-import { getTransformMatrix } from "./annotation.js";
 import { numberToPDFString } from "./writer.js";
 
 // Keep these annotations interactive.
@@ -64,17 +65,31 @@ class PageAnnotationFlattener {
 
   #changesXref;
 
+  #evaluator;
+
+  #flattenForms;
+
   #getResources;
 
   #intent;
 
   #page;
 
-  constructor({ page, annotationStorage, changes, intent, getResources }) {
+  #task;
+
+  constructor({
+    page,
+    annotationStorage,
+    changes,
+    flattenForms,
+    intent,
+    getResources,
+  }) {
     this.#page = page;
     this.#annotationStorage = annotationStorage;
     this.#changes = changes;
     this.#changesXref = new ChangesXRefWrapper(changes, page.xref);
+    this.#flattenForms = flattenForms;
     this.#intent = intent;
     this.#getResources = getResources;
   }
@@ -90,25 +105,31 @@ class PageAnnotationFlattener {
 
   /**
    * Draw appearances visible for the intent. Call after saving annotations.
-   * @returns {Promise<object>} The removed refs (`removed`).
+   * @returns {Promise<object>} Widget presence before/after flattening
+   *   (`hadWidgets`/`hasWidgets`) and removed refs (`removed`). Presence is
+   *   conservative if flattening is skipped.
    */
-  async flatten() {
+  async flatten(handler, task) {
     const page = this.#page;
     const changes = this.#changes;
     const annotationStorage = this.#annotationStorage;
+    const flattenForms = this.#flattenForms;
     const intent = this.#intent;
     const { xref } = page;
 
     if (!(page.ref instanceof Ref)) {
       // Only indirect page dictionaries can be updated.
-      return { removed: null };
+      const hasWidgets = (await page._parsedAnnotations).some(
+        annotation => annotation instanceof WidgetAnnotation
+      );
+      return { hadWidgets: hasWidgets, hasWidgets, removed: null };
     }
     const pageDict = changes.get(page.ref)?.data || page.pageDict.clone();
     const annotations = changes.has(page.ref)
       ? pageDict.get("Annots")
       : page.annotations;
     if (!Array.isArray(annotations) || annotations.length === 0) {
-      return { removed: null };
+      return { hadWidgets: false, hasWidgets: false, removed: null };
     }
 
     // Parsed annotations supply visibility and generated appearances.
@@ -118,12 +139,16 @@ class PageAnnotationFlattener {
         parsedAnnotations.put(parsedAnnotation.ref, parsedAnnotation);
       }
     }
+    this.#evaluator = page._createPartialEvaluator(handler);
+    this.#task = task;
 
     const flattened = [];
     const kept = [];
     const removed = new RefSet();
     const removedPopups = new RefSet();
     const interactive = [];
+    let hasWidgets = false,
+      hadWidgets = false;
     for (const annotation of annotations) {
       const dict = await this.#fetch(annotation);
       if (!(dict instanceof Dict)) {
@@ -139,8 +164,11 @@ class PageAnnotationFlattener {
         kept.push({ annotation });
         continue;
       }
-      if (isName(subtype, "Widget")) {
-        // Keep the form fields.
+      const isWidget = isName(subtype, "Widget");
+      hadWidgets ||= isWidget;
+      // Preserve barcode widgets, which TextWidgetAnnotation hides.
+      if (isWidget && (!flattenForms || dict.has("PMD"))) {
+        hasWidgets = true;
         kept.push({ annotation });
         continue;
       }
@@ -148,8 +176,8 @@ class PageAnnotationFlattener {
         annotation instanceof Ref ? parsedAnnotations.get(annotation) : null;
       const isModified = annotation instanceof Ref && changes.has(annotation);
       let isVisible;
-      if (parsedAnnotation && !isModified) {
-        // Edited annotations use their saved flags.
+      if (parsedAnnotation && (!isModified || isWidget)) {
+        // Widgets use stored visibility; edited annotations use saved flags.
         isVisible =
           intent & RenderingIntentFlag.PRINT
             ? parsedAnnotation.mustBePrinted(annotationStorage)
@@ -189,7 +217,9 @@ class PageAnnotationFlattener {
         kept.push({ annotation });
         continue;
       }
-      if (!appearance) {
+      if (!appearance && (!isWidget || isVisible)) {
+        // Keep visible widgets without drawable appearances.
+        hasWidgets ||= isWidget;
         const isPopup = isName(subtype, "Popup");
         kept.push({
           annotation,
@@ -198,7 +228,7 @@ class PageAnnotationFlattener {
         });
         continue;
       }
-      // Remove the drawn annotations.
+      // Remove drawn annotations and widgets hidden for this intent.
       if (annotation instanceof Ref) {
         removed.put(annotation);
         const popup = dict.getRaw("Popup");
@@ -206,7 +236,9 @@ class PageAnnotationFlattener {
           removedPopups.put(popup);
         }
       }
-      flattened.push({ appearance, oc: dict.getRaw("OC") });
+      if (appearance) {
+        flattened.push({ appearance, oc: dict.getRaw("OC") });
+      }
     }
 
     const newAnnotations = [];
@@ -228,14 +260,14 @@ class PageAnnotationFlattener {
       newAnnotations.length === annotations.length &&
       flattened.length === 0
     ) {
-      return { removed: null };
+      return { hadWidgets, hasWidgets, removed: null };
     }
     if (
       flattened.length > 0 &&
       !(await this.#drawFlattenedAppearances(pageDict, flattened))
     ) {
       // Keep annotations if the page content cannot be isolated.
-      return { removed: null };
+      return { hadWidgets, hasWidgets: hadWidgets, removed: null };
     }
     pageDict.set("Annots", newAnnotations);
 
@@ -260,7 +292,7 @@ class PageAnnotationFlattener {
     changes.put(page.ref, {
       data: pageDict,
     });
-    return { removed };
+    return { hadWidgets, hasWidgets, removed };
   }
 
   /**
@@ -385,24 +417,39 @@ class PageAnnotationFlattener {
     let rect = lookupNormalRect(dict.getArray("Rect"), null);
     let ref = null,
       appearance = null;
-    const ap = await this.#fetch(dict.getRaw("AP"));
-    if (ap instanceof Dict) {
-      ref = ap.getRaw("N");
-      appearance = await this.#fetch(ref);
-      if (appearance instanceof Dict) {
-        // Select the normal appearance for the saved state.
-        const state = dict.get("AS");
-        ref = state instanceof Name ? appearance.getRaw(state.name) : null;
-        appearance = await this.#fetch(ref);
+    if (parsedAnnotation instanceof WidgetAnnotation) {
+      // Generate field appearances from stored edits or NeedAppearances.
+      appearance = await parsedAnnotation.getFlattenedAppearance(
+        this.#evaluator,
+        this.#task,
+        this.#annotationStorage,
+        this.#intent
+      );
+      if (appearance === false) {
+        return null;
       }
-    } else if (
-      !isModified &&
-      parsedAnnotation?.appearance &&
-      isSelfContained(parsedAnnotation.appearance)
-    ) {
-      // Use the rectangle computed for the generated appearance.
-      ({ appearance } = parsedAnnotation);
-      rect = parsedAnnotation.data.rect;
+    }
+
+    if (!appearance) {
+      const ap = await this.#fetch(dict.getRaw("AP"));
+      if (ap instanceof Dict) {
+        ref = ap.getRaw("N");
+        appearance = await this.#fetch(ref);
+        if (appearance instanceof Dict) {
+          // Select the normal appearance for the saved state.
+          const state = dict.get("AS");
+          ref = state instanceof Name ? appearance.getRaw(state.name) : null;
+          appearance = await this.#fetch(ref);
+        }
+      } else if (
+        !isModified &&
+        parsedAnnotation?.appearance &&
+        isSelfContained(parsedAnnotation.appearance)
+      ) {
+        // Use the rectangle computed for the generated appearance.
+        ({ appearance } = parsedAnnotation);
+        rect = parsedAnnotation.data.rect;
+      }
     }
     if (!(appearance instanceof BaseStream) || !rect) {
       return null;
@@ -614,20 +661,172 @@ function isSelfContained(obj) {
     : !Array.isArray(obj) || obj.every(isSelfContained);
 }
 
-/** Drop the pending writes of the removed annotations. */
-function finalizeFlattening({ results, changes, xref }) {
+/** Return the AcroForm dictionary to retain. */
+async function finalizeFlattening({
+  results,
+  manager,
+  acroForm,
+  acroFormRef,
+  catalogRef,
+  changes,
+  xref,
+  flattenForms,
+}) {
+  const changesXref = new ChangesXRefWrapper(changes, xref);
+  const getDict = obj => {
+    try {
+      const data = changesXref.fetchIfRef(obj);
+      return data instanceof Dict ? data : null;
+    } catch {
+      return null;
+    }
+  };
   const removed = new RefSet();
   for (const result of results) {
     for (const ref of result.removed ?? []) {
       removed.put(ref);
     }
   }
-  pruneChanges({ changes, removed, xref });
+  const keepAcroForm =
+    !flattenForms ||
+    !(catalogRef instanceof Ref) ||
+    // No page widgets were found.
+    !results.some(({ hadWidgets }) => hadWidgets) ||
+    results.some(({ hasWidgets }) => hasWidgets) ||
+    // SigFlags may declare signatures without page widgets.
+    (await manager.ensureDoc("formInfo")).hasSignatures;
+  if (!keepAcroForm) {
+    const catalog = getDict(catalogRef);
+    if (catalog instanceof Dict && catalog.has("AcroForm")) {
+      const newCatalog = catalog.clone();
+      newCatalog.delete("AcroForm");
+      changes.put(catalogRef, { data: newCatalog });
+    }
+    acroForm = null;
+  } else if (flattenForms && acroForm instanceof Dict) {
+    acroForm = pruneFields({
+      acroForm,
+      acroFormRef,
+      catalogRef,
+      changes,
+      removed,
+      getDict,
+    });
+  }
+  pruneChanges({
+    changes,
+    removed,
+    removeFields: !keepAcroForm,
+    xref,
+    getDict,
+  });
+  return acroForm;
 }
 
-// Drop pending writes for removed annotations and orphaned new objects.
-function pruneChanges({ changes, removed, xref }) {
-  for (const ref of removed) {
+// Prune removed widgets and empty ancestor fields from the retained form.
+function pruneFields({
+  acroForm,
+  acroFormRef,
+  catalogRef,
+  changes,
+  removed,
+  getDict,
+}) {
+  const visited = new RefSet();
+  const pruneKids = kids => {
+    const newKids = [];
+    let modified = false;
+    for (const kid of kids) {
+      const dict = getDict(kid);
+      if (kid instanceof Ref) {
+        if (
+          removed.has(kid) &&
+          // Retain signature fields even when their widgets leave the page.
+          !(dict && isName(getInheritableProperty({ dict, key: "FT" }), "Sig"))
+        ) {
+          modified = true;
+          continue;
+        }
+        if (visited.has(kid)) {
+          newKids.push(kid);
+          continue;
+        }
+        visited.put(kid);
+      }
+      const grandKids = dict?.get("Kids");
+      const newGrandKids =
+        Array.isArray(grandKids) && grandKids.length > 0
+          ? pruneKids(grandKids)
+          : grandKids;
+      if (newGrandKids === grandKids) {
+        newKids.push(kid);
+        continue;
+      }
+      modified = true;
+      if (newGrandKids.length === 0) {
+        if (kid instanceof Ref) {
+          removed.put(kid);
+        }
+        continue;
+      }
+      const newDict = dict.clone();
+      newDict.set("Kids", newGrandKids);
+      if (kid instanceof Ref) {
+        changes.put(kid, { ...changes.get(kid), data: newDict });
+        newKids.push(kid);
+      } else {
+        newKids.push(newDict);
+      }
+    }
+    return modified ? newKids : kids;
+  };
+
+  const fields = acroForm.get("Fields");
+  if (!Array.isArray(fields)) {
+    return acroForm;
+  }
+  const newFields = pruneKids(fields);
+  const co = acroForm.get("CO");
+  const newCO = Array.isArray(co)
+    ? co.filter(ref => !(ref instanceof Ref && removed.has(ref)))
+    : co;
+  if (newFields === fields && newCO?.length === co?.length) {
+    return acroForm;
+  }
+  acroForm = acroForm.clone();
+  acroForm.set("Fields", newFields);
+  if (Array.isArray(newCO)) {
+    acroForm.set("CO", newCO);
+  }
+  if (acroFormRef) {
+    changes.put(acroFormRef, { data: acroForm });
+  } else if (catalogRef instanceof Ref) {
+    // The form is directly in the catalog.
+    const catalog = getDict(catalogRef);
+    if (catalog instanceof Dict) {
+      const newCatalog = catalog.clone();
+      newCatalog.set("AcroForm", acroForm);
+      changes.put(catalogRef, { data: newCatalog });
+    }
+  }
+  return acroForm;
+}
+
+// Drop pending writes for removed annotations/fields and orphaned new objects.
+function pruneChanges({ changes, removed, removeFields, xref, getDict }) {
+  const pruned = new RefSet(removed);
+  if (removeFields) {
+    for (const refStr of removed) {
+      for (
+        let parent = getDict(Ref.fromString(refStr))?.getRaw("Parent");
+        parent instanceof Ref && !pruned.has(parent);
+        parent = getDict(parent)?.getRaw("Parent")
+      ) {
+        pruned.put(parent);
+      }
+    }
+  }
+  for (const ref of pruned) {
     changes.remove(ref);
   }
 

@@ -446,13 +446,13 @@ class Page {
     return Promise.all(promises);
   }
 
-  async flattenAnnotations(options) {
+  async flattenAnnotations(handler, task, options) {
     return new PageAnnotationFlattener({
       ...options,
       page: this,
       getResources: streamDict =>
         this.#getMergedResources(streamDict, RESOURCES_KEYS_OPERATOR_LIST),
-    }).flatten();
+    }).flatten(handler, task);
   }
 
   async loadResources(keys) {
