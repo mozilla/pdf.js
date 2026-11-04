@@ -136,7 +136,6 @@ describe("annotation", function () {
       idFactory: createIdFactory(/* pageIndex = */ 0),
       fontCache: new RefMap(),
       builtInCMapCache,
-      standardFontDataCache: new Map(),
       systemFontCache: new Map(),
     });
   });

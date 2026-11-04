@@ -35,10 +35,13 @@ import {
 import {
   buildGetDocumentParams,
   CMAP_URL,
+  DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
   getCrossOriginHostname,
+  STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   TestPdfsServer,
+  WASM_URL,
 } from "./test_utils.js";
 import {
   getDocument,
@@ -54,6 +57,7 @@ import { Lexer, Parser } from "../../src/core/parser.js";
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { CipherTransformFactory } from "../../src/core/crypto.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
+import { FontRendererFactory } from "../../src/core/font_renderer.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { MessageHandler } from "../../src/shared/message_handler.js";
@@ -5060,10 +5064,8 @@ page 1 / 3`);
       });
       expect(styles[fontName]).toEqual({
         fontFamily: "serif",
-        // `useSystemFonts` has a different value in web environments
-        // and in Node.js.
-        ascent: isNodeJS ? NaN : 0.683,
-        descent: isNodeJS ? NaN : -0.217,
+        ascent: 0.683,
+        descent: -0.217,
         vertical: false,
       });
 
@@ -8138,6 +8140,342 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
 
       expect(fetches).toEqual(6);
+    });
+  });
+
+  describe("Generated fonts", function () {
+    const loadingTasks = new Set();
+    let worker = null;
+
+    afterEach(async function () {
+      await Promise.all(Array.from(loadingTasks, task => task.destroy()));
+      loadingTasks.clear();
+      worker?.destroy();
+      worker = null;
+    });
+
+    function loadDocument(params) {
+      const loadingTask = getDocument({
+        standardFontDataUrl: STANDARD_FONT_DATA_URL,
+        wasmUrl: WASM_URL,
+        useSystemFonts: false,
+        fontExtraProperties: true,
+        ...params,
+      });
+      loadingTasks.add(loadingTask);
+      return loadingTask;
+    }
+
+    function buildFontPdf(fonts, content = "BT /F1 60 Tf 10 50 Td (A) Tj ET") {
+      return assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+          "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\n" +
+          "endobj\n",
+        `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
+          "endstream\nendobj\n",
+        ...fonts.map((font, i) => `${i + 5} 0 obj\n${font}\nendobj\n`),
+      ]);
+    }
+
+    async function getFonts(pdfPage, { fnArray, argsArray }) {
+      const ids = new Set(
+        argsArray.filter((_, i) => fnArray[i] === OPS.setFont).map(([id]) => id)
+      );
+      return new Map(
+        await Promise.all(
+          Array.from(
+            ids,
+            id =>
+              new Promise(resolve => {
+                pdfPage.commonObjs.get(id, font => resolve([id, font]));
+              })
+          )
+        )
+      );
+    }
+
+    async function getGeneratedFonts(pdfPage, opList) {
+      const fonts = await getFonts(pdfPage, opList);
+      return fonts
+        .values()
+        .filter(font => font?.generatedFontName)
+        .toArray();
+    }
+
+    function readFontTables(data) {
+      const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      const tables = new Map();
+      for (let i = 0, ii = view.getUint16(4); i < ii; i++) {
+        const tag = String.fromCharCode(
+          ...data.subarray(12 + 16 * i, 16 + 16 * i)
+        );
+        tables.set(tag, view.getUint32(20 + 16 * i));
+      }
+      return { view, tables };
+    }
+
+    function getGeneratedAdvance(data, codePoint) {
+      const { view, tables } = readFontTables(data);
+      const { cmap } = FontRendererFactory.create({ data });
+      const range = cmap.find(
+        ({ start, end }) => codePoint >= start && codePoint <= end
+      );
+      const glyphId =
+        ((range.ids?.[codePoint - range.start] ?? codePoint) + range.idDelta) &
+        0xffff;
+      const numberOfHMetrics = view.getUint16(tables.get("hhea") + 34);
+      const index = Math.min(glyphId, numberOfHMetrics - 1);
+      const advance = view.getUint16(tables.get("hmtx") + 4 * index);
+      return (advance * 1000) / view.getUint16(tables.get("head") + 18);
+    }
+
+    it("draws the char code fallbacks of a generated standard font (issue 11915)", async function () {
+      const loadingTask = loadDocument(
+        buildGetDocumentParams("issue11915.pdf")
+      );
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const { fnArray, argsArray } = await pdfPage.getOperatorList();
+      const fonts = await getFonts(pdfPage, { fnArray, argsArray });
+
+      const texts = new Map();
+      let font = null;
+      for (let i = 0, ii = fnArray.length; i < ii; i++) {
+        if (fnArray[i] === OPS.setFont) {
+          font = fonts.get(argsArray[i][0]);
+        } else if (fnArray[i] === OPS.showText && font.generatedFontName) {
+          expect(font.missingFile).toBeFalse();
+          expect(font.remeasure).toBeFalse();
+          const glyphs = argsArray[i][0].filter(g => g?.unicode);
+          expect(glyphs.every(g => g.isInFont))
+            .withContext(font.generatedFontName)
+            .toBeTrue();
+          texts.set(
+            font.generatedFontName,
+            glyphs.map(g => g.unicode).join("")
+          );
+        }
+      }
+      expect([...texts.values()]).toEqual(
+        jasmine.arrayContaining([
+          "Arial",
+          "Courier New",
+          "Times New Roman",
+          "Calibri",
+          "Arial Italic",
+        ])
+      );
+    });
+
+    it("synthesizes the weight of a non-embedded black font", async function () {
+      const loadingTask = loadDocument({
+        data: buildFontPdf(
+          [
+            "<< /Type /Font /Subtype /TrueType /BaseFont /ArialBlack /Encoding /WinAnsiEncoding >>",
+          ],
+          "BT /F1 24 Tf 20 100 Td (lHI) Tj ET"
+        ),
+      });
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const [font] = await getGeneratedFonts(
+        pdfPage,
+        await pdfPage.getOperatorList()
+      );
+      const { view, tables } = readFontTables(font.data);
+      expect(view.getUint16(tables.get("OS/2") + 4)).toEqual(900);
+    });
+
+    const buildWidthsPdf = () =>
+      buildFontPdf([
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
+          "/FirstChar 64 /LastChar 65 /Widths [100 500] /Encoding << /Differences [64 /A] >> >>",
+      ]);
+
+    it("generates a glyph for each width of a character", async function () {
+      const loadingTask = loadDocument({
+        data: buildWidthsPdf(),
+      });
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const { fnArray, argsArray } = await pdfPage.getOperatorList();
+
+      const [glyph] = argsArray[fnArray.indexOf(OPS.showText)][0];
+      expect(glyph.unicode).toEqual("A");
+      expect(glyph.width).toEqual(500);
+      expect(glyph.isInFont).toBeTrue();
+      const [font] = await getGeneratedFonts(pdfPage, { fnArray, argsArray });
+      expect(
+        getGeneratedAdvance(font.data, glyph.fontChar.codePointAt(0))
+      ).toBeCloseTo(glyph.width, 0);
+    });
+
+    it("generates the natural width of a character with several widths, after the system fonts", async function () {
+      const loadingTask = loadDocument({
+        data: buildWidthsPdf(),
+        useSystemFonts: true,
+        disableFontFace: false,
+      });
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const [font] = await getGeneratedFonts(
+        pdfPage,
+        await pdfPage.getOperatorList()
+      );
+      expect(font.missingFile).toBeTrue();
+      expect(font.systemFontInfo.css).toContain(
+        `,"${font.generatedFontName}",sans-serif`
+      );
+      expect(getGeneratedAdvance(font.data, 0x41)).toBeCloseTo(667, 0);
+    });
+
+    it("generates a glyph for each width of the fallbacks of an Identity font", async function () {
+      const loadingTask = loadDocument({
+        data: buildFontPdf(
+          [
+            "<< /Type /Font /Subtype /Type0 /BaseFont /Arial /Encoding /Identity-H /DescendantFonts [6 0 R] >>",
+            "<< /Type /Font /Subtype /CIDFontType2 /BaseFont /Arial " +
+              "/CIDSystemInfo << /Registry (Adobe) /Ordering (Identity) " +
+              "/Supplement 0 >> /DW 1000 /W [200 [600]] >>",
+          ],
+          "BT /F1 60 Tf 10 50 Td <00C800C1> Tj ET"
+        ),
+      });
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const { fnArray, argsArray } = await pdfPage.getOperatorList();
+
+      const [glyph200, glyph193] = argsArray[fnArray.indexOf(OPS.showText)][0];
+      expect([glyph200.width, glyph193.width]).toEqual([600, 1000]);
+      // The font's char code keeps U+00C1, the encoding fallback doesn't.
+      expect(glyph200.fontChar).toEqual("Á");
+      expect(glyph193.fontChar).not.toEqual(glyph200.fontChar);
+      expect(glyph193.isInFont).toBeTrue();
+      const [font] = await getGeneratedFonts(pdfPage, { fnArray, argsArray });
+      for (const glyph of [glyph200, glyph193]) {
+        expect(
+          getGeneratedAdvance(font.data, glyph.fontChar.codePointAt(0))
+        ).toBeCloseTo(glyph.width, 0);
+      }
+    });
+
+    it("generates the fonts with the resources of their document", async function () {
+      if (isNodeJS) {
+        pending("Fake workers share the Hellbox state of earlier documents.");
+      }
+      worker = new PDFWorker({ name: "GeneratedFonts" });
+      const loadingTask1 = loadDocument(
+        buildGetDocumentParams("tracemonkey.pdf", {
+          worker,
+          useWorkerFetch: false,
+          standardFontDataUrl: null,
+          wasmUrl: null,
+        })
+      );
+      await loadingTask1.promise;
+      const loadingTask2 = loadDocument(
+        buildGetDocumentParams("issue11915.pdf", {
+          worker,
+          useWorkerFetch: false,
+        })
+      );
+      const pdfPage = await (await loadingTask2.promise).getPage(1);
+      const fonts = await getGeneratedFonts(
+        pdfPage,
+        await pdfPage.getOperatorList()
+      );
+      expect(fonts.length).toEqual(5);
+    });
+
+    it("generates the fonts despite the failures of other documents", async function () {
+      if (isNodeJS) {
+        pending("Fake workers share the Hellbox state of earlier documents.");
+      }
+      worker = new PDFWorker({ name: "GeneratedFontsFailures" });
+      const tasks = [
+        { wasmUrl: "./nonexistent/" },
+        { standardFontDataUrl: "./nonexistent/" },
+        {},
+      ].map(urls =>
+        loadDocument(
+          buildGetDocumentParams("issue11915.pdf", {
+            worker,
+            useWorkerFetch: false,
+            ...urls,
+          })
+        )
+      );
+      const pdfPages = await Promise.all(
+        tasks.map(async task => (await task.promise).getPage(1))
+      );
+      const opLists = await Promise.all(
+        pdfPages.map(pdfPage => pdfPage.getOperatorList())
+      );
+
+      const fonts = await getGeneratedFonts(pdfPages[2], opLists[2]);
+      expect(fonts.length).toEqual(5);
+    });
+
+    it("generates the fonts despite the pending fetches of a closed document", async function () {
+      if (isNodeJS) {
+        pending("Fake workers share the Hellbox state of earlier documents.");
+      }
+      class PendingFactory extends DefaultBinaryDataFactory {
+        async fetch({ kind, filename }) {
+          if (kind !== "standardFontDataUrl") {
+            return super.fetch({ kind, filename });
+          }
+          if (filename === "unicode.bin") {
+            return new Promise(() => {});
+          }
+          throw new Error(`Cannot fetch ${filename}.`);
+        }
+      }
+      worker = new PDFWorker({ name: "GeneratedFontsPending" });
+      const params = { worker, useWorkerFetch: false };
+
+      const closedTask = loadDocument(
+        buildGetDocumentParams("issue11915.pdf", {
+          ...params,
+          BinaryDataFactory: PendingFactory,
+        })
+      );
+      const closedPage = await (await closedTask.promise).getPage(1);
+      await closedPage.getOperatorList();
+      await closedTask.destroy();
+      loadingTasks.delete(closedTask);
+
+      const loadingTask = loadDocument(
+        buildGetDocumentParams("issue11915.pdf", params)
+      );
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const fonts = await getGeneratedFonts(
+        pdfPage,
+        await pdfPage.getOperatorList()
+      );
+      expect(fonts.length).toEqual(5);
+    });
+
+    it("generates the fonts with the resources of a custom factory", async function () {
+      class ResourceFactory extends DefaultBinaryDataFactory {
+        constructor() {
+          super({
+            standardFontDataUrl: STANDARD_FONT_DATA_URL,
+            wasmUrl: WASM_URL,
+          });
+        }
+      }
+      const loadingTask = loadDocument(
+        buildGetDocumentParams("issue11915.pdf", {
+          BinaryDataFactory: ResourceFactory,
+          standardFontDataUrl: null,
+          wasmUrl: null,
+          useWorkerFetch: false,
+        })
+      );
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const fonts = await getGeneratedFonts(
+        pdfPage,
+        await pdfPage.getOperatorList()
+      );
+      expect(fonts.length).toEqual(5);
     });
   });
 

@@ -95,7 +95,6 @@ class Page {
     globalIdFactory,
     fontCache,
     builtInCMapCache,
-    standardFontDataCache,
     globalColorSpaceCache,
     globalImageCache,
     systemFontCache,
@@ -109,7 +108,6 @@ class Page {
     this.ref = ref;
     this.fontCache = fontCache;
     this.builtInCMapCache = builtInCMapCache;
-    this.standardFontDataCache = standardFontDataCache;
     this.globalColorSpaceCache = globalColorSpaceCache;
     this.globalImageCache = globalImageCache;
     this.systemFontCache = systemFontCache;
@@ -146,7 +144,6 @@ class Page {
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
-      standardFontDataCache: this.standardFontDataCache,
       globalColorSpaceCache: this.globalColorSpaceCache,
       globalImageCache: this.globalImageCache,
       systemFontCache: this.systemFontCache,
@@ -1076,7 +1073,6 @@ class PDFDocument {
       globalIdFactory: this._globalIdFactory,
       fontCache: catalog.fontCache,
       builtInCMapCache: catalog.builtInCMapCache,
-      standardFontDataCache: catalog.standardFontDataCache,
       globalColorSpaceCache: catalog.globalColorSpaceCache,
       globalImageCache: catalog.globalImageCache,
       systemFontCache: catalog.systemFontCache,
@@ -1390,7 +1386,7 @@ class PDFDocument {
       this.pdfManager.evaluatorOptions,
       { useSystemFonts: false }
     );
-    const { builtInCMapCache, fontCache, standardFontDataCache } = this.catalog;
+    const { builtInCMapCache, fontCache } = this.catalog;
 
     const partialEvaluator = new PartialEvaluator({
       xref: this.xref,
@@ -1399,7 +1395,6 @@ class PDFDocument {
       idFactory: this._globalIdFactory,
       fontCache,
       builtInCMapCache,
-      standardFontDataCache,
       options,
     });
     const operatorList = new OperatorList();

@@ -34,17 +34,19 @@ const ROOT_URL = new URL("../../", import.meta.url);
 
 const CMAP_URL = new URL("external/bcmaps/", ROOT_URL).pathname;
 const ICC_URL = new URL("external/iccs/", ROOT_URL).pathname;
-const STANDARD_FONT_DATA_URL = new URL("external/standard_fonts/", ROOT_URL)
-  .pathname;
+const STANDARD_FONT_DATA_URL = new URL("external/hellbox/", ROOT_URL).pathname;
 const WASM_URL = new URL("wasm/", ROOT_URL).pathname;
 
 const WASM_PATHS = new Map(
-  ["jbig2/jbig2.wasm", "openjpeg/openjpeg.wasm", "qcms/qcms_bg.wasm"].map(
-    path => [
-      `${WASM_URL}${path.split("/")[1]}`,
-      new URL(`external/${path}`, ROOT_URL).pathname,
-    ]
-  )
+  [
+    "hellbox/hellbox_bg.wasm",
+    "jbig2/jbig2.wasm",
+    "openjpeg/openjpeg.wasm",
+    "qcms/qcms_bg.wasm",
+  ].map(path => [
+    `${WASM_URL}${path.split("/")[1]}`,
+    new URL(`external/${path}`, ROOT_URL).pathname,
+  ])
 );
 
 function readFile(relativePath) {

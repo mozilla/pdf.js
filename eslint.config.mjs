@@ -38,6 +38,7 @@ export default [
       "external/brotli/",
       "external/builder/fixtures/",
       "external/builder/fixtures_babel/",
+      "external/hellbox/",
       "external/openjpeg/",
       "external/qcms/",
       "external/jbig2/",

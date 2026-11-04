@@ -887,7 +887,7 @@ const defaultOptions = new Map([
       value:
         // eslint-disable-next-line no-nested-ternary
         typeof PDFJSDev === "undefined"
-          ? "../external/standard_fonts/"
+          ? "../external/hellbox/"
           : PDFJSDev.test("MOZCENTRAL")
             ? "resource://pdf.js/web/standard_fonts/"
             : "../web/standard_fonts/",

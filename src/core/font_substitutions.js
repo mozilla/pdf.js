@@ -111,7 +111,6 @@ const substitutionMap = new Map([
         "Apple Symbols",
         "Cantarell",
       ],
-      path: "LiberationSans-Regular.ttf",
       style: NORMAL,
       ultimate: "sans-serif",
     },
@@ -120,7 +119,6 @@ const substitutionMap = new Map([
     "Helvetica-Bold",
     {
       alias: "Helvetica",
-      path: "LiberationSans-Bold.ttf",
       style: BOLD,
       ultimate: "sans-serif",
     },
@@ -129,7 +127,6 @@ const substitutionMap = new Map([
     "Helvetica-Oblique",
     {
       alias: "Helvetica",
-      path: "LiberationSans-Italic.ttf",
       style: ITALIC,
       ultimate: "sans-serif",
     },
@@ -138,7 +135,6 @@ const substitutionMap = new Map([
     "Helvetica-BoldOblique",
     {
       alias: "Helvetica",
-      path: "LiberationSans-BoldItalic.ttf",
       style: BOLDITALIC,
       ultimate: "sans-serif",
     },
@@ -627,25 +623,19 @@ function getFamilyName(str) {
  * @param {string} [substitution.alias] - Key of another substitution to
  *   inherit the src values from.
  * @param {Array<string>} [substitution.local] - Local font names.
- * @param {string} [substitution.path] - Font file name, relative to
- *   `localFontPath`.
  * @param {string} [substitution.fallback] - Key of the substitution to take
  *   the ultimate font from.
  * @param {object} [substitution.style] - CSS `font-style` and `font-weight`.
  * @param {string} [substitution.ultimate] - Ultimate (generic) font family.
- * @param {Array<string>} src - Contains src values (local(...) or url(...)).
- * @param {string} localFontPath - Path to local fonts.
+ * @param {Array<string>} src - Local font sources.
  * @param {boolean} useFallback - Whether to use fallback font.
- * @param {boolean} usePath - Whether to use path to font.
  * @param {string} append - Style (Bold, Italic, ...) to append to font name.
  * @returns {object} The resolved `style` and `ultimate` values.
  */
 function generateFont(
-  { alias, local, path, fallback, style, ultimate },
+  { alias, local, fallback, style, ultimate },
   src,
-  localFontPath,
   useFallback = true,
-  usePath = true,
   append = ""
 ) {
   const result = {
@@ -666,9 +656,7 @@ function generateFont(
       generateFont(
         substitution,
         src,
-        localFontPath,
         /* useFallback = */ useFallback && !fallback,
-        /* usePath = */ usePath && !path,
         aliasAppend
       )
     );
@@ -684,15 +672,10 @@ function generateFont(
     const { ultimate: fallbackUltimate } = generateFont(
       fallbackInfo,
       src,
-      localFontPath,
       useFallback,
-      /* usePath = */ usePath && !path,
       append
     );
     result.ultimate ||= fallbackUltimate;
-  }
-  if (usePath && path && localFontPath) {
-    src.push(`url(${localFontPath}${path})`);
   }
 
   return result;
@@ -704,15 +687,13 @@ function generateFont(
  * rule like this:
  *   {
  *    font-family: 'Times';
- *    src: local('Times New Roman'), local('Subst1'), local('Subst2'),
- *         url(.../TimesNewRoman.ttf)
+ *    src: local('Times New Roman'), local('Subst1'), local('Subst2');
  *    font-weight: normal;
  *    font-style: normal;
  *   }
  * or use the FontFace API.
  * @param {Map} systemFontCache The cache of local fonts.
  * @param {object} idFactory The ids factory.
- * @param {string} localFontPath Path to the fonts directory.
  * @param {string} baseFontName The font name to be substituted.
  * @param {string | undefined} standardFontName The standard font name to use
  *   if the base font is not available.
@@ -723,7 +704,6 @@ function generateFont(
 function getFontSubstitution(
   systemFontCache,
   idFactory,
-  localFontPath,
   baseFontName,
   standardFontName,
   type
@@ -805,7 +785,7 @@ function getFontSubstitution(
   if (mustAddBaseFont && validateFontName(baseFontName)) {
     src.push(`local(${baseFontName})`);
   }
-  const { style, ultimate } = generateFont(substitution, src, localFontPath);
+  const { style, ultimate } = generateFont(substitution, src);
   const guessFallback = ultimate === null;
   const fallback = guessFallback ? "" : `,${ultimate}`;
 

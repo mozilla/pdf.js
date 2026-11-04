@@ -36,6 +36,8 @@ describe("unicode", function () {
     it("should re-map special Unicode values", function () {
       // copyrightsans => copyright
       expect(mapSpecialUnicodeValues(0xf8e9)).toEqual(0x00a9);
+      // braceex => curly bracket extension
+      expect(mapSpecialUnicodeValues(0xf8f4)).toEqual(0x23aa);
       // Private Use Area characters
       expect(mapSpecialUnicodeValues(0xffff)).toEqual(0);
     });
