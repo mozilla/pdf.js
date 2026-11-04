@@ -2717,26 +2717,14 @@ class WidgetAnnotation extends Annotation {
   }
 
   static async _getFontData(evaluator, task, appearanceData, resources) {
-    const operatorList = new OperatorList();
-    const initialState = {
-      font: null,
-      clone() {
-        return this;
-      },
-    };
-
-    const { fontName, fontSize } = appearanceData;
-    await evaluator.handleSetFont(
+    // loadFont avoids the font transfer performed by handleSetFont.
+    const { font } = await evaluator.loadFont(
+      appearanceData.fontName || null,
+      /* font = */ null,
       resources,
-      [fontName && Name.get(fontName), fontSize],
-      /* fontRef = */ null,
-      operatorList,
-      task,
-      initialState,
-      /* fallbackFontDict = */ null
+      task
     );
-
-    return initialState.font;
+    return font;
   }
 
   _getTextWidth(text, font) {
