@@ -347,8 +347,8 @@ class TextLayer {
     const divStyle = textDiv.style;
     // Setting the style properties individually, rather than all at once,
     // should be OK since the `textDiv` isn't appended to the document yet.
-    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(2)}%`;
-    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
+    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(3)}%`;
+    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(3)}%`;
     // The text is laid out with the rounded value, hence keep it around in
     // order to measure the text with the very same size, see `#layout`.
     const roundedFontHeight = Math.round(fontHeight * 100) / 100;
