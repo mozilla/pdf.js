@@ -303,4 +303,52 @@ describe("textLayer", function () {
 
     await loadingTask.destroy();
   });
+
+  it("positions the text precisely", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+    const viewport = page.getViewport({ scale: 1 });
+    const { pageWidth, pageX } = viewport.rawDims;
+    // Badly rounded with two decimals: 10.00% instead of 10.0045%.
+    const left = (pageWidth * 10.0045) / 100;
+
+    const textLayer = new TextLayer({
+      textContentSource: {
+        items: [
+          {
+            str: "Hello",
+            dir: "ltr",
+            width: 30,
+            height: 10,
+            transform: [10, 0, 0, 10, pageX + left, 100],
+            fontName: "f1",
+            hasEOL: false,
+          },
+        ],
+        styles: {
+          f1: {
+            fontFamily: "sans-serif",
+            ascent: 0.8,
+            descent: -0.2,
+            vertical: false,
+          },
+        },
+        lang: "en",
+      },
+      container: document.createElement("div"),
+      viewport,
+    });
+    await textLayer.render();
+
+    const { style } = textLayer.textDivs[0];
+    expect(
+      Math.abs((parseFloat(style.left) * pageWidth) / 100 - left)
+    ).toBeLessThan(5e-3);
+
+    await loadingTask.destroy();
+  });
 });
