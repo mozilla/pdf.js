@@ -885,6 +885,28 @@ describe("evaluator", function () {
       expectBBox(bboxes, showTextIndex, [0, 0, 100, 100]);
     });
 
+    it("should bound non-embedded text by its advances", function () {
+      // The font box is ignored.
+      const { operatorList, sink } = createTextOperatorList({
+        bbox: [-2000, -1000, 3000, 2000],
+        missingFile: true,
+      });
+
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      operatorList.addOp(OPS.setTextMatrix, [
+        new Float32Array([1, 0, 0, 1, 20, 30]),
+      ]);
+      operatorList.addOp(OPS.showText, [[{ isSpace: false, width: 500 }]]);
+      operatorList.addOp(OPS.endText);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      const showTextIndex = fnArray.indexOf(OPS.showText);
+      // One em of padding around the advance, from -0.25 to 1 em vertically.
+      expectBBox(bboxes, showTextIndex, [10, 27.5, 35, 40]);
+    });
+
     it("should keep the whole soft-mask group alive for a masked draw", function () {
       const sink = new StreamSinkMock();
       const operatorList = new OperatorList(0, sink);

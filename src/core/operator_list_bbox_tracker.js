@@ -533,7 +533,8 @@ class OperatorListBBoxTracker {
       return info;
     }
     const fontMatrix = font?.fontMatrix || FONT_IDENTITY_MATRIX;
-    const fontBBox = font?.bbox;
+    // The box of a missing font doesn't describe its substitute.
+    const fontBBox = font?.missingFile ? null : font?.bbox;
     info = {
       fontMatrix,
       bbox:
@@ -575,7 +576,7 @@ class OperatorListBBoxTracker {
   }
 
   /**
-   * @returns {boolean} Whether font or Type3 glyph bounds are available.
+   * @returns {boolean} Whether glyph bounds are available.
    */
   #getGlyphBBox(font, info, glyph, output) {
     let bbox = info.bbox;
@@ -589,13 +590,18 @@ class OperatorListBBoxTracker {
         bbox = type3BBox;
       }
     }
-    if (!bbox) {
+    if (bbox) {
+      output[0] = bbox[0];
+      output[1] = bbox[1];
+      output[2] = bbox[2];
+      output[3] = bbox[3];
+    } else if (font?.missingFile) {
+      // The substitute font is unknown, so only use the padded advance box.
+      output[0] = output[1] = Infinity;
+      output[2] = output[3] = -Infinity;
+    } else {
       return false;
     }
-    output[0] = bbox[0];
-    output[1] = bbox[1];
-    output[2] = bbox[2];
-    output[3] = bbox[3];
     const right =
       (Math.abs(
         (glyph.width || font?.defaultWidth || 0) * info.fontMatrix[0]
@@ -603,7 +609,7 @@ class OperatorListBBoxTracker {
     if (right < Infinity) {
       Util.rectBoundingBox(-1, info.descent, right, info.ascent, output);
     }
-    return true;
+    return output[0] <= output[2];
   }
 
   #showText(index, glyphs) {
