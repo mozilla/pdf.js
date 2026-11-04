@@ -27,11 +27,11 @@ import {
   XRefParseException,
 } from "./core_utils.js";
 import { Dict, isDict, Ref, RefMap } from "./primitives.js";
+import { finalizeFlattening, StructTreeFlattener } from "./flattener.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
-import { finalizeFlattening } from "./flattener.js";
 import { importPrintedAppearances } from "./editor/print_appearances.js";
 import { incrementalUpdate } from "./writer.js";
 import { PDFEditor } from "./editor/pdf_editor.js";
@@ -696,17 +696,24 @@ class WorkerMessageHandler {
       flattenForms,
       intent,
     }) {
+      const structTree = StructTreeFlattener.create({
+        catalogRef,
+        changes,
+        xref,
+      });
       const promises = [];
       for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
         promises.push(
           runPageTask(manager, pageIndex, "Flatten", async (page, task) => {
             try {
-              return await page.flattenAnnotations(handler, task, {
+              const result = await page.flattenAnnotations(handler, task, {
                 annotationStorage,
                 changes,
                 flattenForms,
                 intent,
+                structTree,
               });
+              return { ...result, pageRef: page.ref };
             } catch (reason) {
               // Continue saving and retain the form if flattening fails.
               warn(
@@ -720,6 +727,7 @@ class WorkerMessageHandler {
       const results = await Promise.all(promises);
       return finalizeFlattening({
         results,
+        structTree,
         manager,
         acroForm,
         acroFormRef,
@@ -818,6 +826,7 @@ class WorkerMessageHandler {
       let structTreeRoot;
 
       if (newAnnotationsByPage) {
+        // Create annotation tags before flattening updates their references.
         if (!_structTreeRoot) {
           if (
             await StructTreeRoot.canCreateStructureTree({

@@ -4130,6 +4130,268 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("save a tagged pdf flattened and check that the structure element of an annotation references its drawing", async function () {
+      const content =
+        "/P <</MCID 0>> BDC BT /F1 10 Tf 10 100 Td (Text) Tj ET EMC";
+      const appearance = "0 0 10 10 re f";
+      let loadingTask = getDocument({
+        data: assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 7 0 R " +
+            "/MarkInfo << /Marked true >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+            "/StructParents 0 /Resources << /Font << /F1 4 0 R >> >> " +
+            "/Contents 5 0 R /Annots [6 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          `5 0 obj\n<< /Length ${content.length} >>\n` +
+            `stream\n${content}\nendstream\nendobj\n`,
+          "6 0 obj\n<< /Type /Annot /Subtype /Stamp /F 4 /Rect [10 10 20 20] " +
+            "/StructParent 1 /AP << /N 10 0 R >> >>\nendobj\n",
+          "7 0 obj\n<< /Type /StructTreeRoot /K [8 0 R 9 0 R] " +
+            "/ParentTree << /Nums [0 [8 0 R] 1 9 0 R] >> " +
+            "/ParentTreeNextKey 2 >>\nendobj\n",
+          "8 0 obj\n<< /Type /StructElem /S /P /P 7 0 R /Pg 3 0 R /K 0 >>\n" +
+            "endobj\n",
+          "9 0 obj\n<< /Type /StructElem /S /Figure /Alt (Stamp alt) " +
+            "/P 7 0 R /Pg 3 0 R /K << /Type /OBJR /Obj 6 0 R >> >>\nendobj\n",
+          "10 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] " +
+            `/Length ${appearance.length} >>\n` +
+            `stream\n${appearance}\nendstream\nendobj\n`,
+        ]),
+      });
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      // Assign MCID 1 to the stamp after the page's existing MCID 0.
+      expect(await page.getStructTree()).toEqual({
+        role: "Root",
+        children: [
+          { role: "P", children: [{ type: "content", id: "p3R_mc0" }] },
+          {
+            role: "Figure",
+            alt: "Stamp alt",
+            children: [{ type: "content", id: "p3R_mc1" }],
+          },
+        ],
+      });
+      const { items } = await page.getTextContent({
+        includeMarkedContent: true,
+      });
+      expect(
+        items
+          .filter(({ type }) => type === "beginMarkedContentProps")
+          .map(({ tag, id }) => [tag, id])
+      ).toEqual([
+        ["P", "p3R_mc0"],
+        ["Figure", "p3R_mc1"],
+      ]);
+
+      await loadingTask.destroy();
+    });
+
+    it("save a tagged pdf with a parent tree having kids flattened and check that the structure element doesn't reference the annotation", async function () {
+      const content =
+        "/P <</MCID 0>> BDC BT /F1 10 Tf 10 100 Td (Text) Tj ET EMC";
+      const appearance = "0 0 10 10 re f";
+      const pdfData = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 7 0 R " +
+          "/MarkInfo << /Marked true >> >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+          "/StructParents 0 /Resources << /Font << /F1 4 0 R >> >> " +
+          "/Contents 5 0 R /Annots [6 0 R] >>\nendobj\n",
+        "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+          "endobj\n",
+        `5 0 obj\n<< /Length ${content.length} >>\n` +
+          `stream\n${content}\nendstream\nendobj\n`,
+        "6 0 obj\n<< /Type /Annot /Subtype /Stamp /F 4 /Rect [10 10 20 20] " +
+          "/StructParent 1 /AP << /N 10 0 R >> >>\nendobj\n",
+        "7 0 obj\n<< /Type /StructTreeRoot /K [8 0 R 9 0 R] " +
+          "/ParentTree << /Kids [11 0 R] >> /ParentTreeNextKey 2 >>\n" +
+          "endobj\n",
+        "8 0 obj\n<< /Type /StructElem /S /P /P 7 0 R /Pg 3 0 R /K 0 >>\n" +
+          "endobj\n",
+        "9 0 obj\n<< /Type /StructElem /S /Figure /Alt (Stamp alt) " +
+          "/P 7 0 R /Pg 3 0 R /K << /Type /OBJR /Obj 6 0 R >> >>\nendobj\n",
+        "10 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] " +
+          `/Length ${appearance.length} >>\n` +
+          `stream\n${appearance}\nendstream\nendobj\n`,
+        "11 0 obj\n<< /Limits [0 1] /Nums [0 [8 0 R] 1 9 0 R] >>\nendobj\n",
+      ]);
+      let loadingTask = getDocument({ data: pdfData.slice() });
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      // Update element 9R without rewriting the parent tree.
+      const newData = bytesToString(data.subarray(pdfData.length));
+      const written = [...newData.matchAll(/^(\d+) 0 obj/gm)].map(
+        ([, num]) => +num
+      );
+      expect(written).toContain(9);
+      expect(written).not.toContain(7);
+      expect(written).not.toContain(11);
+      expect(newData).toContain(
+        "<< /Type /StructElem /S /Figure /Alt (Stamp alt) /P 7 0 R " +
+          "/Pg 3 0 R /K []>>"
+      );
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      // The stamp adds no MCID; the empty Figure is omitted from the tree.
+      expect(await page.getStructTree()).toEqual({
+        role: "Root",
+        children: [
+          { role: "P", children: [{ type: "content", id: "p3R_mc0" }] },
+        ],
+      });
+      const { items } = await page.getTextContent({
+        includeMarkedContent: true,
+      });
+      expect(
+        items
+          .filter(({ type }) => type === "beginMarkedContentProps")
+          .map(({ tag, id }) => [tag, id])
+      ).toEqual([["P", "p3R_mc0"]]);
+
+      await loadingTask.destroy();
+    });
+
+    it("save a tagged pdf flattened and check that a structure element with several kids references the drawing", async function () {
+      const content =
+        "/P <</MCID 0>> BDC BT /F1 10 Tf 10 100 Td (Text) Tj ET EMC " +
+        "/Span <</MCID 1>> BDC BT /F1 10 Tf 10 120 Td (Caption) Tj ET EMC";
+      const appearance = "0 0 10 10 re f";
+      let loadingTask = getDocument({
+        data: assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 7 0 R " +
+            "/MarkInfo << /Marked true >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+            "/StructParents 0 /Resources << /Font << /F1 4 0 R >> >> " +
+            "/Contents 5 0 R /Annots [6 0 R 11 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          `5 0 obj\n<< /Length ${content.length} >>\n` +
+            `stream\n${content}\nendstream\nendobj\n`,
+          "6 0 obj\n<< /Type /Annot /Subtype /Stamp /F 4 /Rect [10 10 20 20] " +
+            "/StructParent 1 /AP << /N 10 0 R >> >>\nendobj\n",
+          "7 0 obj\n<< /Type /StructTreeRoot /K [8 0 R 9 0 R 12 0 R] " +
+            "/ParentTree << /Nums [0 [8 0 R 9 0 R] 1 9 0 R 2 12 0 R] >> " +
+            "/ParentTreeNextKey 3 >>\nendobj\n",
+          "8 0 obj\n<< /Type /StructElem /S /P /P 7 0 R /Pg 3 0 R /K 0 >>\n" +
+            "endobj\n",
+          // MCID 1 is the caption; the OBJR references the stamp.
+          "9 0 obj\n<< /Type /StructElem /S /Figure /Alt (Stamp alt) " +
+            "/P 7 0 R /Pg 3 0 R /K [1 << /Type /OBJR /Obj 6 0 R >>] >>\n" +
+            "endobj\n",
+          "10 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 10 10] " +
+            `/Length ${appearance.length} >>\n` +
+            `stream\n${appearance}\nendstream\nendobj\n`,
+          // A link without appearance is kept.
+          "11 0 obj\n<< /Type /Annot /Subtype /Link /Rect [100 10 120 20] " +
+            "/StructParent 2 /A << /S /URI /URI (https://mozilla.org) >> >>\n" +
+            "endobj\n",
+          "12 0 obj\n<< /Type /StructElem /S /Link /P 7 0 R /Pg 3 0 R " +
+            "/K << /Type /OBJR /Obj 11 0 R >> >>\nendobj\n",
+        ]),
+      });
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      // Keep the link's parent-tree entry; remove the stamp's.
+      expect(bytesToString(data)).toContain(
+        "/Nums [0 [8 0 R 9 0 R 9 0 R] 2 12 0 R]"
+      );
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      expect(
+        (await page.getAnnotations({ intent: "any" })).map(({ id }) => id)
+      ).toEqual(["11R"]);
+
+      expect(await page.getStructTree()).toEqual({
+        role: "Root",
+        children: [
+          { role: "P", children: [{ type: "content", id: "p3R_mc0" }] },
+          {
+            role: "Figure",
+            alt: "Stamp alt",
+            children: [
+              { type: "content", id: "p3R_mc1" },
+              { type: "content", id: "p3R_mc2" },
+            ],
+          },
+          {
+            role: "Link",
+            children: [{ type: "annotation", id: "pdfjs_internal_id_11R" }],
+          },
+        ],
+      });
+      const { items } = await page.getTextContent({
+        includeMarkedContent: true,
+      });
+      expect(
+        items
+          .filter(({ type }) => type === "beginMarkedContentProps")
+          .map(({ tag, id }) => [tag, id])
+      ).toEqual([
+        ["P", "p3R_mc0"],
+        ["Span", "p3R_mc1"],
+        ["Figure", "p3R_mc2"],
+      ]);
+
+      await loadingTask.destroy();
+    });
+
+    it("write a new annotation with an alt text, save the pdf flattened and check that the alt text is kept", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      addInkEditor(pdfDoc.annotationStorage, {
+        accessibilityData: { type: "Figure", alt: "My ink alt" },
+      });
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      const { items } = await page.getTextContent({
+        includeMarkedContent: true,
+      });
+      const marks = items.filter(
+        ({ type }) => type === "beginMarkedContentProps"
+      );
+      expect(marks.map(({ tag }) => tag)).toEqual(["Figure"]);
+      expect((await page.getStructTree()).children).toEqual([
+        {
+          role: "Figure",
+          alt: "My ink alt",
+          children: [{ type: "content", id: marks[0].id }],
+        },
+      ]);
+
+      await loadingTask.destroy();
+    });
+
     it("save the pdf flattened without any modification and check that the annotations are drawn in the page content", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("issue14438.pdf"));
       let pdfDoc = await loadingTask.promise;
@@ -4520,6 +4782,61 @@ describe("api", function () {
 
         await loadingTask.destroy();
       }
+    });
+
+    it("save the pdf flattened and check that a page which can't be flattened is kept with the form", async function () {
+      const appearance = "BT /F1 10 Tf (Hello) Tj ET";
+      let loadingTask = getDocument({
+        data: assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /StructTreeRoot 9 0 R " +
+            "/AcroForm << /Fields [7 0 R] >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R 4 0 R] /Count 2 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+            "/StructParents 0 /Annots [6 0 R 7 0 R] >>\nendobj\n",
+          "4 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+            "/Annots [8 0 R] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          "6 0 obj\n<< /Type /Annot /Subtype /Stamp /F 4 " +
+            "/Rect [10 10 60 60] /AP << /N 11 0 R >> >>\nendobj\n",
+          "7 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx /T (Text) " +
+            "/V (Value) /F 4 /Rect [10 100 60 150] /AP << /N 11 0 R >> >>\n" +
+            "endobj\n",
+          "8 0 obj\n<< /Type /Annot /Subtype /Stamp /F 4 " +
+            "/Rect [10 10 60 60] /AP << /N 11 0 R >> >>\nendobj\n",
+          "9 0 obj\n<< /Type /StructTreeRoot " +
+            "/ParentTree << /Nums [0 10 0 R] >> >>\nendobj\n",
+          // Xref entry 10 points to object 99, so fetching 10R fails.
+          "99 0 obj\n[]\nendobj\n",
+          "11 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 50 50] " +
+            "/Resources << /Font << /F1 5 0 R >> >> " +
+            `/Length ${appearance.length} >>\n` +
+            `stream\n${appearance}\nendstream\nendobj\n`,
+        ]),
+      });
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      // The failing page keeps its annotations, hence the form.
+      expect([...(await pdfDoc.getFieldObjects()).keys()]).toEqual(["Text"]);
+      const [page1, page2] = await Promise.all([
+        pdfDoc.getPage(1),
+        pdfDoc.getPage(2),
+      ]);
+      expect(
+        (await page1.getAnnotations({ intent: "any" })).map(({ id }) => id)
+      ).toEqual(["6R", "7R"]);
+      expect((await page1.getTextContent()).items).toEqual([]);
+
+      expect(await page2.getAnnotations({ intent: "any" })).toEqual([]);
+      const { items } = await page2.getTextContent();
+      expect(items.map(({ str }) => str)).toEqual(["Hello"]);
+
+      await loadingTask.destroy();
     });
 
     it("save the pdf flattened and check that the resources of the content stream are kept", async function () {
