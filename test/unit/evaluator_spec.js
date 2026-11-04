@@ -967,6 +967,30 @@ describe("evaluator", function () {
       expectBBox(bboxes, showTextIndex, [20, 29, 24, 37]);
     });
 
+    it("should bound text of a generated font by its glyph outlines", function () {
+      const { operatorList, sink } = createTextOperatorList({
+        bbox: undefined,
+        data: new Uint8Array(1),
+        generatedFontName: "font1_generated",
+        missingFile: false,
+        renderer: { getGlyphBBox: () => [0, -0.1, 0.4, 0.7] },
+      });
+
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      operatorList.addOp(OPS.setTextMatrix, [
+        new Float32Array([1, 0, 0, 1, 20, 30]),
+      ]);
+      operatorList.addOp(OPS.showText, [
+        [{ fontChar: "A", isSpace: false, width: 500 }],
+      ]);
+      operatorList.addOp(OPS.endText);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [20, 29, 24, 37]);
+    });
+
     it("should keep the whole soft-mask group alive for a masked draw", function () {
       const sink = new StreamSinkMock();
       const operatorList = new OperatorList(0, sink);

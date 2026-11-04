@@ -609,8 +609,7 @@ class OperatorListBBoxTracker {
   #getRenderer(font, info) {
     if (info.renderer === undefined) {
       info.renderer = null;
-      // Only use the TrueType outlines for now.
-      if (font && !font.missingFile && font.isOpenType === false && font.data) {
+      if (font && !font.missingFile && font.data) {
         try {
           info.renderer = font.renderer;
         } catch (ex) {
