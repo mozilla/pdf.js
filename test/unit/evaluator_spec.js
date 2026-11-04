@@ -603,6 +603,7 @@ describe("evaluator", function () {
           ])
         ),
         isType3Font: true,
+        type3Dependencies: new Set(),
       };
     }
 
@@ -1429,6 +1430,31 @@ describe("evaluator", function () {
       const { bboxes, fnArray } = sink.chunks[0];
       // Half of the line width, in glyph space, around the line.
       expectBBox(bboxes, fnArray.indexOf(OPS.showText), [19.5, 33, 25.5, 34]);
+    });
+
+    it("should keep the resources used by Type3 glyphs", function () {
+      const glyph = createType3Glyph([0, 0, 500, 700]);
+      glyph.fnArray.unshift(OPS.dependency);
+      glyph.argsArray.unshift(["img1"]);
+      glyph.length++;
+      const font = createType3Font({ glyph1: glyph });
+      font.type3Dependencies.add("img1");
+      const { operatorList, sink } = createTextOperatorList(font);
+      // The evaluator adds the glyph resources before setting the font.
+      operatorList.addDependency("img1");
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      operatorList.addOp(OPS.setTextMatrix, [
+        new Float32Array([1, 0, 0, 1, 20, 30]),
+      ]);
+      operatorList.addOp(OPS.showText, [
+        [{ isSpace: false, operatorListId: "glyph1", width: 500 }],
+      ]);
+      operatorList.addOp(OPS.endText);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      expectBBox(bboxes, fnArray.indexOf(OPS.dependency), [20, 30, 25, 37]);
     });
   });
 

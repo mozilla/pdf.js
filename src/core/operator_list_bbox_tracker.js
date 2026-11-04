@@ -431,6 +431,12 @@ class OperatorListBBoxTracker {
     state.fontSize = Math.abs(size);
     state.simple[FONT] = index;
     this.#addDependency(this.#namedDependencies.get(loadedName) ?? -1);
+    if (state.font?.isType3Font) {
+      // The glyphs can use resources loaded with the font.
+      for (const name of state.font.type3Dependencies) {
+        this.#addDependency(this.#namedDependencies.get(name) ?? -1);
+      }
+    }
   }
 
   #setGState(index, entries) {
