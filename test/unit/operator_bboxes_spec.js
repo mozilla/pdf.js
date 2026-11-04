@@ -58,8 +58,9 @@ describe("operator_bboxes", function () {
       expect(filter(0)).toBeTrue();
       expect(filter(1)).toBeFalse();
       expect(filter(2)).toBeFalse();
-      expect(bboxes.getFilter(viewport, [31, 236, 50, 250])(0)).toBeTrue();
-      expect(bboxes.getFilter(viewport, [32, 0, 50, 250])(0)).toBeFalse();
+      // The area is padded by two units.
+      expect(bboxes.getFilter(viewport, [33, 238, 50, 250])(0)).toBeTrue();
+      expect(bboxes.getFilter(viewport, [34, 0, 50, 250])(0)).toBeFalse();
 
       const rotatedViewport = new PageViewport({
         viewBox: view,
@@ -67,8 +68,8 @@ describe("operator_bboxes", function () {
         scale: 1,
         rotation: 90,
       });
-      expect(bboxes.getFilter(rotatedViewport, [0, 0, 20, 10])(0)).toBeTrue();
-      expect(bboxes.getFilter(rotatedViewport, [0, 0, 19, 10])(0)).toBeFalse();
+      expect(bboxes.getFilter(rotatedViewport, [0, 0, 18, 10])(0)).toBeTrue();
+      expect(bboxes.getFilter(rotatedViewport, [0, 0, 17, 10])(0)).toBeFalse();
     });
 
     it("keeps an operation touching the area despite rounding errors", function () {

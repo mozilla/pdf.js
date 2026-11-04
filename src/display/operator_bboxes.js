@@ -19,6 +19,9 @@ import { BBOX_INIT, Util } from "../shared/util.js";
 
 const BBOX_EPSILON = 1e-6;
 
+// Anti-aliasing and hinting can draw glyphs slightly past their outlines.
+const AREA_PADDING = 2;
+
 /**
  * Operation bounds stored as `[minX, minY, maxX, maxY]` bytes in 1/256 of the
  * page view box. Decoding adds one unit to the upper bounds.
@@ -79,17 +82,17 @@ class OperatorBBoxes {
   /**
    * @param {PageViewport} viewport
    * @param {Array<number>} rect - `[minX, minY, maxX, maxY]` in viewport
-   *   coordinates.
+   *   coordinates, padded by two units.
    * @returns {function(number): boolean} Filter retaining operations whose
    *   bounds intersect `rect`, including dependencies.
    */
   getFilter(viewport, rect) {
     const bbox = BBOX_INIT.slice();
     Util.transformedRectBoundingBox(
-      rect[0],
-      rect[1],
-      rect[2],
-      rect[3],
+      rect[0] - AREA_PADDING,
+      rect[1] - AREA_PADDING,
+      rect[2] + AREA_PADDING,
+      rect[3] + AREA_PADDING,
       Util.inverseTransform(viewport.transform),
       bbox
     );
