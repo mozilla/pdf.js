@@ -5093,6 +5093,21 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
+    it("gets text content, with the descriptor metrics of a font with wrong ones (issue 16839)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue16839.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items, styles } = await pdfPage.getTextContent();
+
+      // The descent in the hhea table is positive and larger than ten ems.
+      const item = items.find(({ str }) => str.startsWith("Hybrid"));
+      const { ascent, descent } = styles[item.fontName];
+      expect(ascent).toBeCloseTo(0.765, 6);
+      expect(descent).toBeCloseTo(-0.207, 6);
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with no extra spaces (issue 13226)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue13226.pdf"));
       const pdfDoc = await loadingTask.promise;
