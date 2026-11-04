@@ -467,6 +467,91 @@ describe("Font", () => {
       }
     });
 
+    // Points (0, 0), (1000, 0) and (1000, 1000).
+    const triangle = new Uint8Array([
+      0, 1, 0, 0, 0, 0, 3, 232, 3, 232, 0, 2, 0, 0, 1, 1, 1, 0, 0, 3, 232, 0, 0,
+      0, 0, 0, 0, 3, 232, 0,
+    ]);
+
+    it("should position composite glyph components with points", () => {
+      // The triangle, then the triangle with its point 0 on the point 2 of the
+      // first one, or on a missing point.
+      const composite = point =>
+        new Uint8Array([
+          0xff,
+          0xff,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0x22,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          point,
+          0,
+        ]);
+      const font = loadFont(
+        4,
+        format12([
+          [0x41, 0x41, 2],
+          [0x42, 0x42, 3],
+        ]),
+        [new Uint8Array(0), triangle, composite(2), composite(9)]
+      );
+      const getBBox = charCode =>
+        font.renderer.getGlyphBBox(
+          String.fromCodePoint(font.toFontChar.get(charCode))
+        );
+
+      expect(getBBox(0x41)).toEqual([0, 0, 2, 2]);
+      expect(getBBox(0x42)).toBeFalse();
+    });
+
+    it("should resolve each nested composite glyph once", () => {
+      // Each glyph is the previous one, and the triangle positioned on it.
+      const depth = 30;
+      const glyphs = [triangle];
+      for (let i = 1; i <= depth; i++) {
+        const values = [
+          0xffff,
+          0,
+          0,
+          2000,
+          2000,
+          0x23,
+          i - 1,
+          0,
+          0,
+          1,
+          0,
+          2,
+          0,
+        ];
+        const glyph = new Uint8Array(values.length * 2);
+        const view = new DataView(glyph.buffer);
+        values.forEach((value, j) => view.setUint16(2 * j, value));
+        glyphs.push(glyph);
+      }
+      const font = loadFont(depth + 1, format12([[0x41, 0x41, depth]]), glyphs);
+
+      expect(
+        font.renderer.getGlyphBBox(
+          String.fromCodePoint(font.toFontChar.get(0x41))
+        )
+      ).toEqual([0, 0, 2, 2]);
+    });
+
     it("does not expand a group spanning the whole 32-bit range", () => {
       const font = loadFont(4, format12([[0, 0xffffffff, 0]]));
       // The original parser would expand this group to 2^32 mappings.

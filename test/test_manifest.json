@@ -15464,5 +15464,19 @@
       "minY": 0.625,
       "maxY": 0.75
     }
+  },
+  {
+    "id": "truetype-composite-point-matching-partial",
+    "file": "pdfs/truetype_composite_point_matching.pdf",
+    "md5": "e82928a0a26bc80cf97d22c3f6932eee",
+    "rounds": 1,
+    "type": "eq",
+    "about": "TrueType composite glyph with a component positioned by points.",
+    "partial": {
+      "minX": 0.4,
+      "maxX": 0.6,
+      "minY": 0.3,
+      "maxY": 0.45
+    }
   }
 ]
