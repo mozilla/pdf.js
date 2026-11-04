@@ -568,6 +568,44 @@ describe("evaluator", function () {
       ]);
     }
 
+    // A glyph drawing `path`, with d1 if `bounds` are given.
+    function createType3Glyph(path, { bounds = null, op = OPS.fill } = {}) {
+      const fnArray = [
+        bounds ? OPS.setCharWidthAndBounds : OPS.setCharWidth,
+        OPS.constructPath,
+      ];
+      const argsArray = [
+        bounds ? [1000, 0, ...bounds] : [1000, 0],
+        [
+          op,
+          [
+            new Float32Array([
+              DrawOPS.moveTo,
+              path[0],
+              path[1],
+              DrawOPS.lineTo,
+              path[2],
+              path[3],
+            ]),
+          ],
+          new Float32Array(path),
+        ],
+      ];
+      return { fnArray, argsArray, length: fnArray.length };
+    }
+
+    function createType3Font(glyphs = { glyph1: [0, 0, 500, 700] }) {
+      return {
+        charProcOperatorList: new Map(
+          Object.entries(glyphs).map(([id, path]) => [
+            id,
+            Array.isArray(path) ? createType3Glyph(path) : path,
+          ])
+        ),
+        isType3Font: true,
+      };
+    }
+
     it("should get correct length after flushing", function () {
       const operatorList = new OperatorList(null, new StreamSinkMock());
       operatorList.addOp(OPS.save, null);
@@ -676,16 +714,7 @@ describe("evaluator", function () {
     });
 
     it("should track stroke dependencies for Type3 text", function () {
-      const sink = new StreamSinkMock();
-      const operatorList = new OperatorList(0, sink);
-      operatorList.enableBBoxes([0, 0, 100, 100]);
-      operatorList.addFont("font1", {
-        ascent: 0.8,
-        bbox: [0, -200, 1000, 800],
-        descent: -0.2,
-        fontMatrix: [0.001, 0, 0, 0.001, 0, 0],
-        isType3Font: true,
-      });
+      const { operatorList, sink } = createTextOperatorList(createType3Font());
 
       operatorList.addOp(OPS.setStrokeRGBColor, [new Uint8ClampedArray(3)]);
       operatorList.addOp(OPS.setLineWidth, [2]);
@@ -702,8 +731,8 @@ describe("evaluator", function () {
       operatorList.flush(/* lastChunk = */ true);
 
       const { bboxes } = sink.chunks[0];
-      expectBBox(bboxes, 0, [10, 27.5, 35, 40]);
-      expectBBox(bboxes, 1, [10, 27.5, 35, 40]);
+      expectBBox(bboxes, 0, [20, 30, 25, 37]);
+      expectBBox(bboxes, 1, [20, 30, 25, 37]);
     });
 
     it("should include miter joins in stroked text bounds", function () {
@@ -1219,9 +1248,7 @@ describe("evaluator", function () {
     });
 
     it("should advance invisible Type3 text", function () {
-      const { operatorList, sink } = createTextOperatorList({
-        isType3Font: true,
-      });
+      const { operatorList, sink } = createTextOperatorList(createType3Font());
       const glyph = { isSpace: false, operatorListId: "glyph1", width: 500 };
       operatorList.addOp(OPS.beginText);
       operatorList.addOp(OPS.setFont, ["font1", 10]);
@@ -1236,13 +1263,13 @@ describe("evaluator", function () {
       operatorList.flush(/* lastChunk = */ true);
 
       const { bboxes, fnArray } = sink.chunks[0];
-      expectBBox(bboxes, fnArray.lastIndexOf(OPS.showText), [30, 27.5, 55, 40]);
+      expectBBox(bboxes, fnArray.lastIndexOf(OPS.showText), [40, 30, 45, 37]);
     });
 
     it("should not advance Type3 text by the font matrix translation", function () {
       const { operatorList, sink } = createTextOperatorList({
         fontMatrix: [0.001, 0, 0, 0.001, 0.5, 0],
-        isType3Font: true,
+        ...createType3Font(),
       });
       const glyph = { isSpace: false, operatorListId: "glyph1", width: 500 };
       operatorList.addOp(OPS.beginText);
@@ -1256,13 +1283,12 @@ describe("evaluator", function () {
       operatorList.flush(/* lastChunk = */ true);
 
       const { bboxes, fnArray } = sink.chunks[0];
-      expectBBox(bboxes, fnArray.lastIndexOf(OPS.showText), [20, 27.5, 45, 40]);
+      // The glyph, not the advance, is moved by the translation.
+      expectBBox(bboxes, fnArray.lastIndexOf(OPS.showText), [35, 30, 40, 37]);
     });
 
     it("should draw Type3 text in clipping mode without clipping", function () {
-      const { operatorList, sink } = createTextOperatorList({
-        isType3Font: true,
-      });
+      const { operatorList, sink } = createTextOperatorList(createType3Font());
       operatorList.addOp(OPS.beginText);
       operatorList.addOp(OPS.setFont, ["font1", 10]);
       operatorList.addOp(OPS.setTextMatrix, [
@@ -1277,14 +1303,12 @@ describe("evaluator", function () {
       operatorList.flush(/* lastChunk = */ true);
 
       const { bboxes, fnArray } = sink.chunks[0];
-      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [10, 27.5, 35, 40]);
+      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [20, 30, 25, 37]);
       expectBBox(bboxes, fnArray.indexOf(OPS.constructPath), [60, 70, 80, 90]);
     });
 
     it("should advance Type3 text with a negative font size", function () {
-      const { operatorList, sink } = createTextOperatorList({
-        isType3Font: true,
-      });
+      const { operatorList, sink } = createTextOperatorList(createType3Font());
       const glyph = { isSpace: false, operatorListId: "glyph1", width: 1000 };
       operatorList.addOp(OPS.beginText);
       operatorList.addOp(OPS.setFont, ["font1", -10]);
@@ -1297,7 +1321,114 @@ describe("evaluator", function () {
       operatorList.flush(/* lastChunk = */ true);
 
       const { bboxes, fnArray } = sink.chunks[0];
-      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [40, 40, 70, 52.5]);
+      // The char spacing cancels the advance, and the glyphs are flipped.
+      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [55, 43, 60, 50]);
+    });
+
+    it("should bound Type3 text by the glyph operations", function () {
+      const { operatorList, sink } = createTextOperatorList(
+        createType3Font({
+          // Larger than the font box.
+          glyph1: [0, 0, 2000, 700],
+          // Clipped by the d1 bounds.
+          glyph2: createType3Glyph([0, 0, 2000, 700], {
+            bounds: [0, 0, 500, 500],
+          }),
+        })
+      );
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      operatorList.addOp(OPS.setTextMatrix, [
+        new Float32Array([1, 0, 0, 1, 20, 30]),
+      ]);
+      operatorList.addOp(OPS.showText, [
+        [{ isSpace: false, operatorListId: "glyph1", width: 500 }],
+      ]);
+      operatorList.addOp(OPS.setTextMatrix, [
+        new Float32Array([1, 0, 0, 1, 20, 60]),
+      ]);
+      operatorList.addOp(OPS.showText, [
+        [{ isSpace: false, operatorListId: "glyph2", width: 500 }],
+      ]);
+      operatorList.addOp(OPS.endText);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [20, 30, 40, 37]);
+      expectBBox(bboxes, fnArray.lastIndexOf(OPS.showText), [20, 60, 25, 65]);
+    });
+
+    it("should not cache Type3 text bounds without the inherited text state", function () {
+      const glyph = {
+        fnArray: [
+          OPS.setCharWidthAndBounds,
+          OPS.beginText,
+          OPS.setFont,
+          OPS.setTextMatrix,
+          OPS.showText,
+          OPS.endText,
+        ],
+        argsArray: [
+          [1000, 0, 0, 0, 1000, 1000],
+          null,
+          ["nested", 1000],
+          [new Float32Array([1, 0, 0, 1, 0, 0])],
+          [[{ fontChar: "A", width: 500 }]],
+          null,
+        ],
+        length: 6,
+      };
+      const { operatorList, sink } = createTextOperatorList(
+        createType3Font({ glyph1: glyph })
+      );
+      operatorList.addFont("nested", {
+        bbox: [0, 0, 800, 700],
+        fontMatrix: [0.001, 0, 0, 0.001, 0, 0],
+      });
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      for (const scale of [100, 400]) {
+        operatorList.addOp(OPS.setHScale, [scale]);
+        operatorList.addOp(OPS.setTextMatrix, [
+          new Float32Array([1, 0, 0, 1, 20, 30]),
+        ]);
+        operatorList.addOp(OPS.showText, [
+          [{ operatorListId: "glyph1", width: 500 }],
+        ]);
+      }
+      operatorList.addOp(OPS.endText);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      for (let i = 0; i < fnArray.length; i++) {
+        if (fnArray[i] === OPS.showText) {
+          expectBBox(bboxes, i, [0, 0, 100, 100]);
+        }
+      }
+    });
+
+    it("should bound Type3 strokes with the line style of the text", function () {
+      const { operatorList, sink } = createTextOperatorList(
+        createType3Font({
+          glyph1: createType3Glyph([0, 350, 500, 350], { op: OPS.stroke }),
+        })
+      );
+      operatorList.addOp(OPS.setLineWidth, [100]);
+      operatorList.addOp(OPS.setLineJoin, [1]);
+      operatorList.addOp(OPS.beginText);
+      operatorList.addOp(OPS.setFont, ["font1", 10]);
+      operatorList.addOp(OPS.setTextMatrix, [
+        new Float32Array([1, 0, 0, 1, 20, 30]),
+      ]);
+      operatorList.addOp(OPS.showText, [
+        [{ isSpace: false, operatorListId: "glyph1", width: 500 }],
+      ]);
+      operatorList.addOp(OPS.endText);
+      operatorList.flush(/* lastChunk = */ true);
+
+      const { bboxes, fnArray } = sink.chunks[0];
+      // Half of the line width, in glyph space, around the line.
+      expectBBox(bboxes, fnArray.indexOf(OPS.showText), [19.5, 33, 25.5, 34]);
     });
   });
 

@@ -15449,5 +15449,20 @@
       "minY": 0.1,
       "maxY": 0.9
     }
+  },
+  {
+    "id": "type3-inherited-text-state-partial",
+    "file": "pdfs/type3_inherited_text_state.pdf",
+    "md5": "3557ea83a5f3c714f24b986a61833e92",
+    "rounds": 1,
+    "type": "eq",
+    "useSystemFonts": false,
+    "about": "Type3 glyph drawing text which inherits the outer horizontal text scale.",
+    "partial": {
+      "minX": 0.625,
+      "maxX": 0.75,
+      "minY": 0.625,
+      "maxY": 0.75
+    }
   }
 ]

@@ -241,6 +241,11 @@ class OperatorListBBoxTracker {
 
   #textClipPainted = false;
 
+  // Bounds of all the drawn operations, when tracking a Type3 glyph.
+  #union = null;
+
+  #unbounded = false;
+
   #x0;
 
   #y0;
@@ -348,6 +353,10 @@ class OperatorListBBoxTracker {
     const maxX = Math.min(bbox[2], clipBox[2]);
     const maxY = Math.min(bbox[3], clipBox[3]);
     if (!(minX <= maxX && minY <= maxY)) {
+      return;
+    }
+    if (this.#union) {
+      Util.rectBoundingBox(minX, minY, maxX, maxY, this.#union);
       return;
     }
     this.#expandIndex(index, minX, minY, maxX, maxY);
@@ -557,24 +566,38 @@ class OperatorListBBoxTracker {
     return info;
   }
 
+  /**
+   * Tracks the glyph operations, which the canvas clips to the d1 bounds.
+   * @returns {Array<number> | null | false} Bounds in text space, null for a
+   *   glyph without ink, or false when unknown.
+   */
   #getType3GlyphBBox(font, info, id) {
-    let bbox = info.type3BBoxes.get(id);
-    if (bbox !== undefined) {
-      return bbox;
-    }
     const operatorList = font.charProcOperatorList?.get(id);
-    const index = operatorList?.fnArray.indexOf(OPS.setCharWidthAndBounds);
-    bbox = false;
-    if (index >= 0) {
-      const bounds = operatorList.argsArray[index].slice(2, 6);
-      if (bounds[0] !== bounds[2] && bounds[1] !== bounds[3]) {
-        bbox = transformBBox(bounds, info.fontMatrix);
+    if (!operatorList) {
+      return font.charProcOperatorList ? null : false;
+    }
+    // The strokes of the glyph use the line style of the text.
+    const { lineCap, lineJoin, lineWidth, miterLimit } = this.#state;
+    const key = `${id}_${lineWidth}_${lineCap}_${lineJoin}_${miterLimit}`;
+    return info.type3BBoxes.getOrInsertComputed(key, () => {
+      if (operatorList.fnArray.includes(OPS.showText)) {
+        // Nested text inherits the outer text state, not just the line style.
+        // Use the current clip instead of caching bounds without that state.
+        return false;
       }
-    }
-    if (font.charProcOperatorList) {
-      info.type3BBoxes.set(id, bbox);
-    }
-    return bbox;
+      const tracker = new OperatorListBBoxTracker(null, this.#fonts);
+      tracker.#union = BBOX_INIT.slice();
+      Object.assign(tracker.#state, {
+        lineCap,
+        lineJoin,
+        lineWidth,
+        miterLimit,
+      });
+      tracker.process(operatorList.fnArray, operatorList.argsArray);
+      return tracker.#unbounded
+        ? false
+        : transformBBox(tracker.#union, info.fontMatrix);
+    });
   }
 
   #getRenderer(font, info) {
@@ -604,22 +627,14 @@ class OperatorListBBoxTracker {
         return outlineBBox;
       }
     }
-    let bbox = info.bbox;
     if (info.type3BBoxes) {
-      const type3BBox = this.#getType3GlyphBBox(
-        font,
-        info,
-        glyph.operatorListId
-      );
-      if (type3BBox !== false) {
-        bbox = type3BBox;
-      }
+      return this.#getType3GlyphBBox(font, info, glyph.operatorListId);
     }
-    if (!bbox && !font?.missingFile) {
+    if (!info.bbox && !font?.missingFile) {
       return false;
     }
     // The substitute font is unknown, so only use the padded advance box.
-    bbox = bbox?.slice() || BBOX_INIT.slice();
+    const bbox = info.bbox?.slice() || BBOX_INIT.slice();
     const right =
       (Math.abs(
         (glyph.width || font?.defaultWidth || 0) * info.fontMatrix[0]
@@ -776,7 +791,9 @@ class OperatorListBBoxTracker {
           untrusted = true;
         }
       }
-      if (untrusted && isValidBBox(state.clipBox)) {
+      if (untrusted && !isValidBBox(state.clipBox)) {
+        this.#unbounded = true;
+      } else if (untrusted) {
         bbox = state.clipBox.slice();
       }
 
@@ -1022,14 +1039,16 @@ class OperatorListBBoxTracker {
         simple[FILL_COLOR] = index;
         this.#recordPatternDependencies(args);
         break;
-      case OPS.shadingFill:
-        this.#recordImage(
-          index,
-          isValidBBox(state.clipBox) ? state.clipBox : this.#pageBBox,
-          FILL_DEPENDENCIES,
-          args
-        );
+      case OPS.shadingFill: {
+        const bbox = isValidBBox(state.clipBox)
+          ? state.clipBox
+          : this.#pageBBox;
+        if (!bbox) {
+          this.#unbounded = true;
+        }
+        this.#recordImage(index, bbox, FILL_DEPENDENCIES, args);
         break;
+      }
       case OPS.paintFormXObjectBegin:
         this.#save(index, "form");
         if (args?.[0]) {
