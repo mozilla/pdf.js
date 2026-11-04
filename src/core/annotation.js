@@ -2390,32 +2390,70 @@ class WidgetAnnotation extends Annotation {
       dict.set("AP", AP);
       AP.set("N", newRef);
 
-      const resources = this._getSaveFieldResources(xref),
-        appearanceDict = new Dict(xref);
-      appearanceDict.setIfName("Subtype", "Form");
-      appearanceDict.set("Resources", resources);
-      const bbox =
-        rotation % 180 === 0
-          ? [0, 0, this.width, this.height]
-          : [0, 0, this.height, this.width];
-      appearanceDict.set("BBox", bbox);
-
-      const appearanceStream = new StringStream(appearance, appearanceDict);
-
-      const rotationMatrix = this.getRotationMatrix(annotationStorage);
-      if (rotationMatrix !== IDENTITY_MATRIX) {
-        // The matrix isn't the identity one.
-        appearanceDict.set("Matrix", rotationMatrix);
-      }
-
       changes.put(newRef, {
-        data: appearanceStream,
+        data: this.#createAppearanceStream(
+          appearance,
+          xref,
+          annotationStorage,
+          rotation
+        ),
         xfa: null,
         needAppearances: false,
       });
     }
 
     dict.set("M", `D:${getModificationDate()}`);
+  }
+
+  #createAppearanceStream(appearance, xref, annotationStorage, rotation) {
+    const resources = this._getSaveFieldResources(xref),
+      appearanceDict = new Dict(xref);
+    appearanceDict.setIfName("Subtype", "Form");
+    appearanceDict.set("Resources", resources);
+    const bbox =
+      rotation % 180 === 0
+        ? [0, 0, this.width, this.height]
+        : [0, 0, this.height, this.width];
+    appearanceDict.set("BBox", bbox);
+
+    const appearanceStream = new StringStream(appearance, appearanceDict);
+
+    const rotationMatrix = this.getRotationMatrix(annotationStorage);
+    if (rotationMatrix !== IDENTITY_MATRIX) {
+      appearanceDict.set("Matrix", rotationMatrix);
+    }
+    return appearanceStream;
+  }
+
+  /**
+   * Generate a field appearance for flattening.
+   * @returns {Promise<BaseStream|null|false>} The generated appearance, `null`
+   *   to use the AP dictionary, or `false` if the font can't encode the value.
+   */
+  async getFlattenedAppearance(evaluator, task, annotationStorage, intent) {
+    if (!this._hasText) {
+      return null;
+    }
+    const appearance = await this._getAppearance(
+      evaluator,
+      task,
+      intent | RenderingIntentFlag.SAVE,
+      annotationStorage
+    );
+    if (appearance === null) {
+      return null;
+    }
+    if (typeof appearance !== "string") {
+      return false;
+    }
+    const rotation =
+      annotationStorage?.get(this.data.id)?.rotation ?? this.rotation;
+    return this.#createAppearanceStream(
+      appearance,
+      evaluator.xref,
+      annotationStorage,
+      rotation
+    );
   }
 
   async _getAppearance(evaluator, task, intent, annotationStorage) {
@@ -3274,6 +3312,9 @@ class TextWidgetAnnotation extends WidgetAnnotation {
 }
 
 class ButtonWidgetAnnotation extends WidgetAnnotation {
+  // Appearances using the in-memory fallback font.
+  #generatedAppearances = new Set();
+
   constructor(params) {
     super(params);
 
@@ -3303,6 +3344,21 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
   get _ownCanvasRequiresForms() {
     return this.data.checkBox || this.data.radioButton;
+  }
+
+  // Return null to use this.appearance, otherwise the checked state.
+  #getAppearanceValue(annotationStorage) {
+    const storageEntry = annotationStorage?.get(this.data.id);
+    const value = storageEntry ? storageEntry.value : null;
+    if (value === null && this.appearance) {
+      return null;
+    }
+    return (
+      value ??
+      (this.data.checkBox
+        ? this.data.fieldValue === this.data.exportValue
+        : this.data.fieldValue === this.data.buttonValue)
+    );
   }
 
   #getOperatorListForAppearance(
@@ -3389,34 +3445,58 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
       return checked;
     }
 
-    let value = null;
-    let rotation = null;
-    if (annotationStorage) {
-      const storageEntry = annotationStorage.get(this.data.id);
-      value = storageEntry ? storageEntry.value : null;
-      rotation = storageEntry ? storageEntry.rotation : null;
-    }
-
-    if (value === null && this.appearance) {
-      // Nothing in the annotationStorage.
-      // But we've a default appearance so use it.
+    const value = this.#getAppearanceValue(annotationStorage);
+    if (value === null) {
       return super.getOperatorList(evaluator, task, intent, annotationStorage);
     }
-
-    // There is no default appearance, `value === null || value === undefined`,
-    // so use the one derived from the field value.
-    value ??= this.data.checkBox
-      ? this.data.fieldValue === this.data.exportValue
-      : this.data.fieldValue === this.data.buttonValue;
 
     return this.#getOperatorListForAppearance(
       evaluator,
       task,
       intent,
       annotationStorage,
-      rotation,
+      annotationStorage?.get(this.data.id)?.rotation,
       value ? this.checkedAppearance : this.uncheckedAppearance
     );
+  }
+
+  async getFlattenedAppearance(evaluator, task, annotationStorage) {
+    if (this.data.pushButton) {
+      return null;
+    }
+    const value = this.#getAppearanceValue(annotationStorage);
+    if (value === null) {
+      return null;
+    }
+    const appearance = value
+      ? this.checkedAppearance
+      : this.uncheckedAppearance;
+    const { xref } = evaluator;
+    if (!appearance) {
+      const dict = new Dict(xref);
+      dict.setIfName("Subtype", "Form");
+      dict.set("BBox", [0, 0, this.width, this.height]);
+      return new StringStream("", dict);
+    }
+    if (!this.#generatedAppearances.has(appearance)) {
+      return appearance;
+    }
+    // Serialize ZapfDingbats in place of the in-memory fallback font.
+    const dict = appearance.dict.clone();
+    const font = new Dict(xref);
+    font.setIfName("Type", "Font");
+    font.setIfName("Subtype", "Type1");
+    font.setIfName("BaseFont", "ZapfDingbats");
+    const fonts = new Dict(xref);
+    fonts.set("PdfJsZaDb", font);
+    const resources = new Dict(xref);
+    resources.set("Font", fonts);
+    dict.set("Resources", resources);
+
+    appearance.reset();
+    const content = appearance.getString();
+    appearance.reset();
+    return new StringStream(content, dict);
   }
 
   async save(evaluator, task, annotationStorage, changes) {
@@ -3634,7 +3714,9 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
     appearanceStreamDict.set("Resources", resources);
 
-    return new StringStream(appearance, appearanceStreamDict);
+    const stream = new StringStream(appearance, appearanceStreamDict);
+    this.#generatedAppearances.add(stream);
+    return stream;
   }
 
   _getOnStateName(dict) {

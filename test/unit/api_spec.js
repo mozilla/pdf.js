@@ -3575,6 +3575,29 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a value in a field, save the pdf flattened and check that the form is removed", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const value = "Hello World";
+
+      pdfDoc.annotationStorage.setValue("55R", { value });
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      expect(await pdfDoc.getFieldObjects()).toBeNull();
+
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      const { items } = await page.getTextContent();
+      expect(items.map(({ str }) => str)).toContain(value);
+
+      await loadingTask.destroy();
+    });
+
     it("saveDocument preserves form fields with non-form annotations flattened (saved and pending annotations)", async function () {
       for (const saveFirst of [false, true]) {
         let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
@@ -3597,7 +3620,7 @@ describe("api", function () {
           pdfDoc = await loadingTask.promise;
         }
 
-        const options = { flatten: true };
+        const options = { flatten: "non-forms" };
         const data = await pdfDoc.saveDocument(options);
         await loadingTask.destroy();
 
@@ -3646,6 +3669,57 @@ describe("api", function () {
       }
     });
 
+    it("saveDocument flattens field visibility and appearances for the display and print intents", async function () {
+      for (const intent of ["display", "print"]) {
+        const flags = [
+          AnnotationFlag.PRINT | AnnotationFlag.NOVIEW,
+          AnnotationFlag.PRINT | AnnotationFlag.HIDDEN,
+          AnnotationFlag.PRINT,
+          AnnotationFlag.PRINT,
+        ];
+        const data = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 3 0 R /AcroForm 2 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Fields [6 0 R 7 0 R 8 0 R 9 0 R] " +
+            "/DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 5 0 R >> >> >>\nendobj\n",
+          "3 0 obj\n<< /Type /Pages /Kids [4 0 R] /Count 1 >>\nendobj\n",
+          "4 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 300 300] " +
+            "/Annots [6 0 R 7 0 R 8 0 R 9 0 R] >>\nendobj\n",
+          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+          ...flags.map(
+            (flag, i) =>
+              `${i + 6} 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx ` +
+              `/T (Field${i}) /V (Old) /F ${flag} /Rect [0 ${i * 40} 200 ${i * 40 + 30}] >>\nendobj\n`
+          ),
+        ]);
+        let loadingTask = getDocument({ data });
+        let pdfDoc = await loadingTask.promise;
+        const values = ["Both", "Screen", "Paper", "Hidden"];
+        for (let i = 0; i < values.length; i++) {
+          pdfDoc.annotationStorage.setValue(`${i + 6}R`, {
+            value: `Raw${i}`,
+            formattedValue: values[i],
+            noView: i >= 2,
+            noPrint: i % 2 === 1,
+          });
+        }
+        const options = { flatten: true, intent };
+        const saved = await pdfDoc.saveDocument(options);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data: saved });
+        pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        expect(await pdfDoc.getFieldObjects()).toBeNull();
+        expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+        const { items } = await page.getTextContent();
+        expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
+          "Both",
+          intent === "print" ? "Paper" : "Screen",
+        ]);
+        await loadingTask.destroy();
+      }
+    });
+
     it("saveDocument flattens non-form annotations for the display and print intents", async function () {
       for (const intent of ["display", "print"]) {
         const flags = [
@@ -3669,7 +3743,7 @@ describe("api", function () {
         ]);
         let loadingTask = getDocument({ data });
         let pdfDoc = await loadingTask.promise;
-        const options = { flatten: true, intent };
+        const options = { flatten: "non-forms", intent };
         const saved = await pdfDoc.saveDocument(options);
         await loadingTask.destroy();
 
@@ -3690,10 +3764,30 @@ describe("api", function () {
       }
     });
 
+    it("saveDocument flattens without sending fonts to the main thread", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("55R", { value: "Hello World" });
+
+      const options = { flatten: true };
+      const data = await pdfDoc.saveDocument(options);
+      expect(data).not.toBeNull();
+
+      // Saving must not transfer field fonts to commonObjs.
+      const page = await pdfDoc.getPage(1);
+      expect([...page.commonObjs]).toEqual([]);
+
+      await loadingTask.destroy();
+    });
+
     it("saveDocument flattens without writing the data of the removed annotations", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
       const pdfDoc = await loadingTask.promise;
-      // A new annotation with a comment.
+      // A field hidden when printing, and a new annotation with a comment.
+      pdfDoc.annotationStorage.setValue("56R", {
+        value: "Secret",
+        noPrint: true,
+      });
       addInkEditor(pdfDoc.annotationStorage, {
         popup: { contents: "Private note", deleted: false },
       });
@@ -3703,6 +3797,7 @@ describe("api", function () {
       await loadingTask.destroy();
 
       const savedString = bytesToString(data);
+      expect(savedString).not.toContain("Secret");
       expect(savedString).not.toContain("Private note");
     });
 
@@ -3811,6 +3906,226 @@ describe("api", function () {
       expect(items.map(({ str }) => str)).toEqual(["Link"]);
       const { fnArray } = await page.getOperatorList();
       expect(fnArray.filter(fn => fn === OPS.showText).length).toEqual(1);
+
+      await loadingTask.destroy();
+    });
+
+    it("preserves an AcroForm without page widgets when only non-form annotations are flattened", async function () {
+      const originalData = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+          "/AcroForm << /Fields [4 0 R] >> >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
+          "/MediaBox [0 0 100 100] >>\nendobj\n",
+        "4 0 obj\n<< /FT /Tx /T (Calculation) /V (42) >>\nendobj\n",
+      ]);
+      const loadingTask = getDocument({ data: originalData.slice() });
+      const pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: "non-forms" });
+      expect(data).toEqual(originalData);
+
+      await loadingTask.destroy();
+    });
+
+    it("save the pdf flattened and check that a field value requiring a generated appearance is drawn in the page content", async function () {
+      // NeedAppearances must replace the stale appearance.
+      let loadingTask = getDocument(buildGetDocumentParams("bug1844583.pdf"));
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      expect(await pdfDoc.getFieldObjects()).toBeNull();
+
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      const { items } = await page.getTextContent();
+      expect(items.map(({ str }) => str)).toContain("Hello World");
+
+      await loadingTask.destroy();
+    });
+
+    it("write a value the field font can't encode, save the pdf flattened and check that the field is kept", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      let pdfDoc = await loadingTask.promise;
+      const value = "你好";
+
+      pdfDoc.annotationStorage.setValue("55R", { value });
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      // The flattened fields are removed from the form.
+      expect([...(await pdfDoc.getFieldObjects()).keys()]).toEqual(["Text1"]);
+
+      const page = await pdfDoc.getPage(1);
+      const annotations = await page.getAnnotations({ intent: "any" });
+      expect(
+        annotations.map(({ id, fieldValue }) => ({ id, fieldValue }))
+      ).toEqual([{ id: "55R", fieldValue: value }]);
+
+      await loadingTask.destroy();
+    });
+
+    it("save the pdf flattened and check that the removed widgets and fields are removed from the kept form", async function () {
+      let loadingTask = getDocument({
+        data: assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 3 0 R /AcroForm 2 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Fields [5 0 R 8 0 R] /CO [5 0 R 8 0 R] " +
+            "/DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 4 0 R >> >> >>\n" +
+            "endobj\n",
+          "3 0 obj\n<< /Type /Pages /Kids [9 0 R] /Count 1 >>\nendobj\n",
+          "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          "5 0 obj\n<< /FT /Tx /T (P) /V (Old) /Kids [6 0 R 7 0 R] >>\nendobj\n",
+          // An unencodable widget and a nonprinting widget.
+          "6 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R /F 4 " +
+            "/Rect [0 0 100 20] >>\nendobj\n",
+          "7 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R /F 0 " +
+            "/Rect [0 30 100 50] >>\nendobj\n",
+          "8 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx /T (Q) /V (Old) " +
+            "/F 4 /Rect [0 60 100 80] >>\nendobj\n",
+          "9 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 200 200] " +
+            "/Annots [6 0 R 7 0 R 8 0 R] >>\nendobj\n",
+        ]),
+      });
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("6R", { value: "你好" });
+      pdfDoc.annotationStorage.setValue("8R", { value: "New" });
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const fields = await pdfDoc.getFieldObjects();
+      expect(
+        Object.fromEntries(
+          [...fields].map(([name, objects]) => [
+            name,
+            objects.map(({ id }) => id),
+          ])
+        )
+      ).toEqual({ P: ["5R", "6R"] });
+      expect(await pdfDoc.getCalculationOrderIds()).toEqual(["5R"]);
+
+      await loadingTask.destroy();
+    });
+
+    it("save the pdf flattened and check that a field without remaining widgets is removed from the kept form, indirect or direct", async function () {
+      for (const isDirect of [false, true]) {
+        const acroForm =
+          "<< /Fields [5 0 R 8 0 R] /CO [5 0 R] /DA (/Helv 12 Tf 0 g) " +
+          "/DR << /Font << /Helv 4 0 R >> >> >>";
+        const pdfData = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 3 0 R " +
+            `/AcroForm ${isDirect ? acroForm : "2 0 R"} >>\nendobj\n`,
+          `2 0 obj\n${isDirect ? "<< >>" : acroForm}\nendobj\n`,
+          "3 0 obj\n<< /Type /Pages /Kids [9 0 R] /Count 1 >>\nendobj\n",
+          "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          "5 0 obj\n<< /FT /Tx /T (P) /V (Old) /Kids [6 0 R 7 0 R] >>\nendobj\n",
+          "6 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R /F 4 " +
+            "/Rect [0 0 100 20] >>\nendobj\n",
+          "7 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R /F 4 " +
+            "/Rect [0 30 100 50] >>\nendobj\n",
+          // An unencodable value keeps this widget, hence the form.
+          "8 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Tx /T (Q) /V (Old) " +
+            "/F 4 /Rect [0 60 100 80] >>\nendobj\n",
+          "9 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 200 200] " +
+            "/Annots [6 0 R 7 0 R 8 0 R] >>\nendobj\n",
+        ]);
+        let loadingTask = getDocument({ data: pdfData.slice() });
+        let pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("6R", { value: "New" });
+        pdfDoc.annotationStorage.setValue("7R", { value: "New" });
+        pdfDoc.annotationStorage.setValue("8R", { value: "你好" });
+
+        const data = await pdfDoc.saveDocument({ flatten: true });
+        await loadingTask.destroy();
+
+        // Don't rewrite the removed field or its widgets in the new revision.
+        const written = [
+          ...bytesToString(data.subarray(pdfData.length)).matchAll(
+            /^(\d+) 0 obj/gm
+          ),
+        ].map(([, num]) => +num);
+        expect(written).toContain(isDirect ? 1 : 2);
+        for (const num of [5, 6, 7]) {
+          expect(written).not.toContain(num);
+        }
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const fields = await pdfDoc.getFieldObjects();
+        expect([...fields.keys()]).toEqual(["Q"]);
+        expect(await pdfDoc.getCalculationOrderIds()).toBeNull();
+
+        const page = await pdfDoc.getPage(1);
+        expect(
+          (await page.getAnnotations({ intent: "any" })).map(({ id }) => id)
+        ).toEqual(["8R"]);
+        const { items } = await page.getTextContent();
+        expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
+          "New",
+          "New",
+        ]);
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("save the pdf flattened and check that the parent fields of the removed form aren't rewritten", async function () {
+      const pdfData = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 3 0 R /AcroForm 2 0 R >>\nendobj\n",
+        "2 0 obj\n<< /Fields [5 0 R] /DA (/Helv 12 Tf 0 g) " +
+          "/DR << /Font << /Helv 4 0 R >> >> >>\nendobj\n",
+        "3 0 obj\n<< /Type /Pages /Kids [8 0 R] /Count 1 >>\nendobj\n",
+        "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+          "endobj\n",
+        // Saving a widget value updates its parent field.
+        "5 0 obj\n<< /FT /Tx /T (P) /V (Old) /Kids [6 0 R 7 0 R] >>\nendobj\n",
+        "6 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R /F 4 " +
+          "/Rect [0 0 100 20] >>\nendobj\n",
+        "7 0 obj\n<< /Type /Annot /Subtype /Widget /Parent 5 0 R /F 4 " +
+          "/Rect [0 30 100 50] >>\nendobj\n",
+        "8 0 obj\n<< /Type /Page /Parent 3 0 R /MediaBox [0 0 200 200] " +
+          "/Annots [6 0 R 7 0 R] >>\nendobj\n",
+      ]);
+      let loadingTask = getDocument({ data: pdfData.slice() });
+      let pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("6R", { value: "New" });
+      pdfDoc.annotationStorage.setValue("7R", { value: "New" });
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      const written = [
+        ...bytesToString(data.subarray(pdfData.length)).matchAll(
+          /^(\d+) 0 obj/gm
+        ),
+      ].map(([, num]) => +num);
+      expect(written).toContain(1);
+      for (const num of [5, 6, 7]) {
+        expect(written).not.toContain(num);
+      }
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      expect(await pdfDoc.getFieldObjects()).toBeNull();
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+      const { items } = await page.getTextContent();
+      expect(items.map(({ str }) => str).filter(Boolean)).toEqual([
+        "New",
+        "New",
+      ]);
 
       await loadingTask.destroy();
     });
@@ -4245,6 +4560,36 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("save the pdf flattened without anything to flatten and check that the form is kept", async function () {
+      for (const filename of ["signed_verified.pdf", "xfa_issue14315.pdf"]) {
+        const loadingTask = getDocument(buildGetDocumentParams(filename));
+        const pdfDoc = await loadingTask.promise;
+        const originalData = await pdfDoc.getData();
+
+        const data = await pdfDoc.saveDocument({ flatten: true });
+        expect(data).toEqual(originalData);
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("save a signed pdf flattened and check that the signature is kept", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("issue16553.pdf"));
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      // Remove the page widget, retaining the signature field.
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+      expect((await pdfDoc.getSignatures()).length).toEqual(1);
+
+      await loadingTask.destroy();
+    });
+
     it("saveDocument uses edited annotation flags when flattening", async function () {
       let loadingTask = getDocument({
         data: buildAnnotatedPagePdf([
@@ -4288,8 +4633,199 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("save the pdf flattened and check that a widget without field type is drawn with its appearance", async function () {
+      const appearance = "BT /F1 10 Tf 2 5 Td (Square) Tj ET";
+      let loadingTask = getDocument({
+        data: assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /AcroForm << " +
+            "/Fields [4 0 R] /NeedAppearances true /DA (/F1 12 Tf 0 g) " +
+            "/DR << /Font << /F1 5 0 R >> >> >> >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+            "/Annots [4 0 R] >>\nendobj\n",
+          // Without /FT, use the existing appearance instead of /V.
+          "4 0 obj\n<< /Type /Annot /Subtype /Widget /T (NoType) /V (Value) " +
+            "/F 4 /Rect [0 0 100 20] /AP << /N 6 0 R >> >>\nendobj\n",
+          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+            "endobj\n",
+          "6 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 100 20] " +
+            "/Resources << /Font << /F1 5 0 R >> >> " +
+            `/Length ${appearance.length} >>\n` +
+            `stream\n${appearance}\nendstream\nendobj\n`,
+        ]),
+      });
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+      const { items } = await page.getTextContent();
+      expect(items.map(({ str }) => str)).toEqual(["Square"]);
+
+      await loadingTask.destroy();
+    });
+
+    it("save the pdf flattened and check that an unchecked checkbox leaves the expected text", async function () {
+      for (const [state, entries, value, expected] of [
+        [
+          "unchecked by its value",
+          "/V /Off /AP << /N << /Yes 6 0 R /Off 7 0 R >> >>",
+          undefined,
+          ["Off"],
+        ],
+        [
+          "unchecked in the storage",
+          "/V /Yes /AS /Yes /AP << /N << /Yes 6 0 R /Off 7 0 R >> >>",
+          false,
+          ["Off"],
+        ],
+        [
+          "unchecked without an off appearance",
+          "/V /Off /AP << /N << /Yes 6 0 R >> >>",
+          undefined,
+          [],
+        ],
+      ]) {
+        const appearance = text => {
+          const content = `BT /F1 10 Tf 2 5 Td (${text}) Tj ET`;
+          return (
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 20 20] " +
+            "/Resources << /Font << /F1 5 0 R >> >> " +
+            `/Length ${content.length} >>\nstream\n${content}\nendstream`
+          );
+        };
+        let loadingTask = getDocument({
+          data: assemblePdf([
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+              "/AcroForm << /Fields [4 0 R] >> >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+              "/Annots [4 0 R] >>\nendobj\n",
+            "4 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Btn /T (Check) " +
+              `/F 4 /Rect [0 0 20 20] ${entries} >>\nendobj\n`,
+            "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+              "endobj\n",
+            `6 0 obj\n${appearance("Yes")}\nendobj\n`,
+            `7 0 obj\n${appearance("Off")}\nendobj\n`,
+          ]),
+        });
+        let pdfDoc = await loadingTask.promise;
+        if (value !== undefined) {
+          pdfDoc.annotationStorage.setValue("4R", { value });
+        }
+
+        const data = await pdfDoc.saveDocument({ flatten: true });
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        expect(await pdfDoc.getFieldObjects()).toBeNull();
+        const page = await pdfDoc.getPage(1);
+        expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+        const { items } = await page.getTextContent();
+        expect(items.map(({ str }) => str))
+          .withContext(state)
+          .toEqual(expected);
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("save the pdf flattened and check that a checked checkbox without appearance state or without appearance is drawn", async function () {
+      for (const hasAppearance of [true, false]) {
+        const appearance = text => {
+          const content = `BT /F1 10 Tf 2 5 Td (${text}) Tj ET`;
+          return (
+            "<< /Type /XObject /Subtype /Form /BBox [0 0 20 20] " +
+            "/Resources << /Font << /F1 5 0 R >> >> " +
+            `/Length ${content.length} >>\nstream\n${content}\nendstream`
+          );
+        };
+        let loadingTask = getDocument({
+          data: assemblePdf([
+            "1 0 obj\n<< /Type /Catalog /Pages 2 0 R " +
+              "/AcroForm << /Fields [4 0 R] >> >>\nendobj\n",
+            "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] " +
+              "/Annots [4 0 R] >>\nendobj\n",
+            // /V selects the checked state; /AS is absent.
+            "4 0 obj\n<< /Type /Annot /Subtype /Widget /FT /Btn /T (Check) " +
+              "/V /Yes /F 4 /Rect [0 0 20 20]" +
+              `${hasAppearance ? " /AP << /N << /Yes 6 0 R /Off 7 0 R >> >>" : ""} >>\nendobj\n`,
+            "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\n" +
+              "endobj\n",
+            `6 0 obj\n${appearance("Yes")}\nendobj\n`,
+            `7 0 obj\n${appearance("Off")}\nendobj\n`,
+          ]),
+        });
+        let pdfDoc = await loadingTask.promise;
+
+        const data = await pdfDoc.saveDocument({ flatten: true });
+        await loadingTask.destroy();
+
+        const savedString = bytesToString(data);
+        if (!hasAppearance) {
+          // Serialize ZapfDingbats rather than the in-memory fallback font.
+          expect(savedString).toContain(
+            "<< /Type /Font /Subtype /Type1 /BaseFont /ZapfDingbats>>"
+          );
+          expect(savedString).not.toContain("FallbackType");
+        }
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+        const { fnArray } = await page.getOperatorList({
+          annotationMode: AnnotationMode.DISABLE,
+        });
+        expect(fnArray).toContain(OPS.paintFormXObjectBegin);
+        if (hasAppearance) {
+          const { items } = await page.getTextContent();
+          expect(items.map(({ str }) => str)).toEqual(["Yes"]);
+        }
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("saveDocument flattens a push button shown or hidden by a script", async function () {
+      for (const hidden of [false, true]) {
+        let loadingTask = getDocument({
+          data: buildAnnotatedPagePdf([
+            ["Print", "/Subtype /Widget /FT /Btn /Ff 65536 /T (Print) /F 4"],
+          ]),
+        });
+        let pdfDoc = await loadingTask.promise;
+        pdfDoc.annotationStorage.setValue("5R", {
+          noView: hidden,
+          noPrint: hidden,
+        });
+
+        const options = { flatten: true };
+        const data = await pdfDoc.saveDocument(options);
+        await loadingTask.destroy();
+
+        loadingTask = getDocument({ data });
+        pdfDoc = await loadingTask.promise;
+        const page = await pdfDoc.getPage(1);
+        expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+        const { items } = await page.getTextContent();
+        expect(items.map(({ str }) => str)).toEqual(hidden ? [] : ["Print"]);
+
+        await loadingTask.destroy();
+      }
+    });
+
     it("save the pdf flattened and check that the annotations which aren't rendered are kept", async function () {
       const originalData = buildAnnotatedPagePdf([
+        // Unsupported barcode widget.
+        ["123", "/Subtype /Widget /FT /Tx /T (Code) /V (123) /PMD << >> /F 4"],
         // A highlight without QuadPoints.
         ["Highlight", "/Subtype /Highlight /F 4"],
         // An unknown annotation type with the Invisible flag.

@@ -689,10 +689,13 @@ class PDFDataRangeTransport {
  *   Firefox-only callback receiving ordered `{ data }` entries. Returns a PDF
  *   with one page per entry, or `null`. Place each appearance within
  *   `[0, 0, data.width, data.height]` in points.
- * @property {boolean} [flatten] - Draw visible annotation appearances into
- *   page content where possible. Keep widgets, links, file attachments and
- *   media annotations interactive. Ignored for pure XFA documents. Defaults to
- *   `false`.
+ * @property {boolean | "non-forms"} [flatten] - Draw visible annotation
+ *   appearances into page content where possible. Keep links, file attachments
+ *   and media annotations interactive. With `true`, also flatten widgets
+ *   and remove widgets hidden for `intent`, except barcodes. Keep visible
+ *   widgets without drawable appearances. Remove AcroForm if this removes all
+ *   page widgets, unless SigFlags declares signatures. With `"non-forms"`, keep
+ *   widgets and AcroForm. Ignored for pure XFA documents. Defaults to `false`.
  * @property {"display" | "print"} [intent] - Visibility to use when flattening
  *   annotations. The default value is `"print"`. Ignored unless `flatten` is
  *   enabled. Document scripts are not executed. Callers handle WillPrint
