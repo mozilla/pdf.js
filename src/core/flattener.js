@@ -23,6 +23,7 @@ import {
 } from "../shared/util.js";
 import {
   ChangesXRefWrapper,
+  escapePDFName,
   getInheritableProperty,
   IDENTITY_MATRIX,
   lookupMatrix,
@@ -35,6 +36,7 @@ import {
   EOF,
   isCmd,
   isName,
+  isRefsEqual,
   Name,
   Ref,
   RefMap,
@@ -46,6 +48,7 @@ import { Stream, StringStream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
 import { numberToPDFString } from "./writer.js";
+import { NumberTree } from "./name_number_tree.js";
 
 // Keep these annotations interactive.
 const INTERACTIVE_ANNOTATION_TYPES = new Set([
@@ -75,6 +78,8 @@ class PageAnnotationFlattener {
 
   #page;
 
+  #structTree;
+
   #task;
 
   constructor({
@@ -83,6 +88,7 @@ class PageAnnotationFlattener {
     changes,
     flattenForms,
     intent,
+    structTree,
     getResources,
   }) {
     this.#page = page;
@@ -91,6 +97,7 @@ class PageAnnotationFlattener {
     this.#changesXref = new ChangesXRefWrapper(changes, page.xref);
     this.#flattenForms = flattenForms;
     this.#intent = intent;
+    this.#structTree = structTree;
     this.#getResources = getResources;
   }
 
@@ -106,8 +113,8 @@ class PageAnnotationFlattener {
   /**
    * Draw appearances visible for the intent. Call after saving annotations.
    * @returns {Promise<object>} Widget presence before/after flattening
-   *   (`hadWidgets`/`hasWidgets`) and removed refs (`removed`). Presence is
-   *   conservative if flattening is skipped.
+   *   (`hadWidgets`/`hasWidgets`), removed refs (`removed`), and structure
+   *   tags (`tags`). Presence is conservative if flattening is skipped.
    */
   async flatten(handler, task) {
     const page = this.#page;
@@ -115,6 +122,7 @@ class PageAnnotationFlattener {
     const annotationStorage = this.#annotationStorage;
     const flattenForms = this.#flattenForms;
     const intent = this.#intent;
+    const structTree = this.#structTree;
     const { xref } = page;
 
     if (!(page.ref instanceof Ref)) {
@@ -122,14 +130,19 @@ class PageAnnotationFlattener {
       const hasWidgets = (await page._parsedAnnotations).some(
         annotation => annotation instanceof WidgetAnnotation
       );
-      return { hadWidgets: hasWidgets, hasWidgets, removed: null };
+      return { hadWidgets: hasWidgets, hasWidgets, removed: null, tags: null };
     }
     const pageDict = changes.get(page.ref)?.data || page.pageDict.clone();
     const annotations = changes.has(page.ref)
       ? pageDict.get("Annots")
       : page.annotations;
     if (!Array.isArray(annotations) || annotations.length === 0) {
-      return { hadWidgets: false, hasWidgets: false, removed: null };
+      return {
+        hadWidgets: false,
+        hasWidgets: false,
+        removed: null,
+        tags: null,
+      };
     }
 
     // Parsed annotations supply visibility and generated appearances.
@@ -146,6 +159,7 @@ class PageAnnotationFlattener {
     const kept = [];
     const removed = new RefSet();
     const removedPopups = new RefSet();
+    const tags = [];
     const interactive = [];
     let hasWidgets = false,
       hadWidgets = false;
@@ -211,7 +225,7 @@ class PageAnnotationFlattener {
       ) {
         // Clear retained appearances after drawing them in page content.
         if (appearance && annotation instanceof Ref) {
-          flattened.push({ appearance, oc: dict.getRaw("OC") });
+          flattened.push({ appearance, oc: dict.getRaw("OC"), tag: null });
           interactive.push({ annotation, dict });
         }
         kept.push({ annotation });
@@ -229,15 +243,21 @@ class PageAnnotationFlattener {
         continue;
       }
       // Remove drawn annotations and widgets hidden for this intent.
+      let tag = null;
       if (annotation instanceof Ref) {
         removed.put(annotation);
         const popup = dict.getRaw("Popup");
         if (popup instanceof Ref) {
           removedPopups.put(popup);
         }
+        tag = structTree?.getTag(dict) ?? null;
+        if (tag) {
+          tag.annotation = annotation;
+          tags.push(tag);
+        }
       }
       if (appearance) {
-        flattened.push({ appearance, oc: dict.getRaw("OC") });
+        flattened.push({ appearance, oc: dict.getRaw("OC"), tag });
       }
     }
 
@@ -260,14 +280,14 @@ class PageAnnotationFlattener {
       newAnnotations.length === annotations.length &&
       flattened.length === 0
     ) {
-      return { hadWidgets, hasWidgets, removed: null };
+      return { hadWidgets, hasWidgets, removed: null, tags: null };
     }
     if (
       flattened.length > 0 &&
       !(await this.#drawFlattenedAppearances(pageDict, flattened))
     ) {
       // Keep annotations if the page content cannot be isolated.
-      return { hadWidgets, hasWidgets: hadWidgets, removed: null };
+      return { hadWidgets, hasWidgets: hadWidgets, removed: null, tags: null };
     }
     pageDict.set("Annots", newAnnotations);
 
@@ -292,7 +312,7 @@ class PageAnnotationFlattener {
     changes.put(page.ref, {
       data: pageDict,
     });
-    return { hadWidgets, hasWidgets, removed };
+    return { hadWidgets, hasWidgets, removed, tags };
   }
 
   /**
@@ -302,6 +322,7 @@ class PageAnnotationFlattener {
   async #drawFlattenedAppearances(pageDict, flattened) {
     const { xref } = this.#page;
     const changes = this.#changes;
+    const structTree = this.#structTree;
     let contentStream, unbalanced, resources;
     try {
       contentStream = await this.#page.getContentStream();
@@ -312,7 +333,8 @@ class PageAnnotationFlattener {
       warn(`flattenAnnotations - cannot parse the page content: "${ex}".`);
       return false;
     }
-    const { saves, unmatchedRestores, markedContent, inText } = unbalanced;
+    const { saves, unmatchedRestores, markedContent, inText, lastMCID } =
+      unbalanced;
     let contents;
     if (unmatchedRestores > 0) {
       // Unmatched Qs would consume the wrapper's save instead of being ignored.
@@ -375,16 +397,25 @@ class PageAnnotationFlattener {
     };
 
     const buffer = [];
-    for (const { appearance, oc } of flattened) {
+    let mcid = structTree?.getNextMCID(pageDict, lastMCID);
+    for (const { appearance, oc, tag } of flattened) {
       const transform = appearance.transform.map(numberToPDFString).join(" ");
       const name = addResource("XObject", "FlatAnnot", appearance.ref);
       const ocName = oc ? addResource("Properties", "FlatOC", oc) : null;
 
+      // Link the structure element to this marked content.
+      if (tag?.type) {
+        tag.mcid = mcid++;
+        buffer.push(`/${escapePDFName(tag.type)} <</MCID ${tag.mcid}>> BDC`);
+      }
       if (ocName) {
         buffer.push(`/OC /${ocName} BDC`);
       }
       buffer.push(`q ${transform} cm /${name} Do Q`);
       if (ocName) {
+        buffer.push("EMC");
+      }
+      if (tag?.type) {
         buffer.push("EMC");
       }
     }
@@ -538,13 +569,17 @@ class PageAnnotationFlattener {
   }
 }
 
-/** Track unbalanced graphics/text/marked-content state. */
+/**
+ * Track unbalanced graphics/text/marked-content state and the largest inline
+ * MCID.
+ */
 function getUnbalancedOperators(stream, xref) {
   const result = {
     saves: 0,
     unmatchedRestores: 0,
     markedContent: 0,
     inText: false,
+    lastMCID: -1,
   };
   const preprocessor = new EvaluatorPreprocessor(stream, xref);
   const operation = {
@@ -574,8 +609,16 @@ function getUnbalancedOperators(stream, xref) {
       case OPS.endText:
         result.inText = false;
         break;
+      case OPS.beginMarkedContentProps: {
+        const props = operation.args[1];
+        const mcid = props instanceof Dict ? props.get("MCID") : null;
+        if (Number.isInteger(mcid) && mcid > result.lastMCID) {
+          result.lastMCID = mcid;
+        }
+        result.markedContent++;
+        break;
+      }
       case OPS.beginMarkedContent:
-      case OPS.beginMarkedContentProps:
         result.markedContent++;
         break;
       case OPS.endMarkedContent:
@@ -661,9 +704,10 @@ function isSelfContained(obj) {
     : !Array.isArray(obj) || obj.every(isSelfContained);
 }
 
-/** Return the AcroForm dictionary to retain. */
+/** Update structure tags and return the AcroForm dictionary to retain. */
 async function finalizeFlattening({
   results,
+  structTree,
   manager,
   acroForm,
   acroFormRef,
@@ -681,6 +725,14 @@ async function finalizeFlattening({
       return null;
     }
   };
+  if (structTree) {
+    for (const { pageRef, tags } of results) {
+      if (tags?.length > 0 && pageRef instanceof Ref) {
+        structTree.update({ pageRef, tags });
+      }
+    }
+    structTree.save();
+  }
   const removed = new RefSet();
   for (const result of results) {
     for (const ref of result.removed ?? []) {
@@ -863,4 +915,228 @@ function pruneChanges({ changes, removed, removeFields, xref, getDict }) {
   }
 }
 
-export { finalizeFlattening, PageAnnotationFlattener };
+/**
+ * Replace annotation OBJRs with marked-content references in flat parent trees.
+ * For other readable parent trees, remove the OBJRs without adding references.
+ */
+class StructTreeFlattener {
+  #changes;
+
+  #changesXref;
+
+  // The entries of a flat parent tree.
+  #entries = null;
+
+  #isModified = false;
+
+  #numberTree = null;
+
+  #parentTree = null;
+
+  #parentTreeRef = null;
+
+  #root;
+
+  #rootRef;
+
+  #xref;
+
+  constructor({ changes, root, rootRef, xref }) {
+    this.#changes = changes;
+    this.#changesXref = new ChangesXRefWrapper(changes, xref);
+    this.#root = root;
+    this.#rootRef = rootRef;
+    this.#xref = xref;
+
+    const parentTreeRef = root.getRaw("ParentTree");
+    const parentTree = this.#fetch(parentTreeRef);
+    if (!(parentTree instanceof Dict)) {
+      return;
+    }
+    const nums = this.#fetch(parentTree.getRaw("Nums"));
+    if (!parentTree.has("Kids") && Array.isArray(nums)) {
+      this.#entries = new Map();
+      for (let i = 0, ii = nums.length - 1; i < ii; i += 2) {
+        if (Number.isInteger(nums[i])) {
+          this.#entries.set(nums[i], nums[i + 1]);
+        }
+      }
+      this.#parentTree = parentTree;
+      this.#parentTreeRef = parentTreeRef;
+    } else if (!this.#changes.has(parentTreeRef)) {
+      // Read other parent trees through the original xref.
+      this.#numberTree = new NumberTree(parentTreeRef, xref);
+    }
+  }
+
+  static create({ catalogRef, changes, xref }) {
+    try {
+      const changesXref = new ChangesXRefWrapper(changes, xref);
+      const rootRef = changesXref
+        .fetchIfRef(catalogRef)
+        ?.getRaw("StructTreeRoot");
+      const root = changesXref.fetchIfRef(rootRef);
+      return rootRef instanceof Ref && root instanceof Dict
+        ? new StructTreeFlattener({ changes, root, rootRef, xref })
+        : null;
+    } catch (ex) {
+      warn(`StructTreeFlattener: "${ex}".`);
+      return null;
+    }
+  }
+
+  #fetch(obj) {
+    return this.#changesXref.fetchIfRef(obj);
+  }
+
+  /**
+   * @returns {object | null} The structure element of the annotation (`ref`),
+   *   and its type (`type`) when its marked content can be referenced.
+   */
+  getTag(annotationDict) {
+    try {
+      const structParent = annotationDict.get("StructParent");
+      if (!Number.isInteger(structParent)) {
+        return null;
+      }
+      const ref = this.#entries
+        ? this.#entries.get(structParent)
+        : this.#numberTree?.getRaw(structParent);
+      const element = this.#fetch(ref);
+      if (!(ref instanceof Ref) || !(element instanceof Dict)) {
+        return null;
+      }
+      const type = element.get("S");
+      return {
+        ref,
+        structParent,
+        type: this.#entries && type instanceof Name ? type.name : null,
+      };
+    } catch (ex) {
+      warn(`StructTreeFlattener.getTag: "${ex}".`);
+      return null;
+    }
+  }
+
+  /**
+   * @returns {number} The first marked content id to use in the page content.
+   */
+  getNextMCID(pageDict, lastMCID) {
+    const parents = this.#fetch(
+      this.#entries?.get(pageDict.get("StructParents"))
+    );
+    return Math.max(lastMCID + 1, Array.isArray(parents) ? parents.length : 0);
+  }
+
+  /**
+   * @param {object} params
+   * @param {Ref} params.pageRef
+   * @param {Array<object>} params.tags - The tags of the removed annotations,
+   *   with the marked content id (`mcid`) of the ones drawn in the page.
+   */
+  update({ pageRef, tags }) {
+    const xref = this.#xref;
+    let parents = null;
+    for (const { annotation, mcid, ref, structParent } of tags) {
+      let mcr = null;
+      if (this.#entries && Number.isInteger(mcid)) {
+        mcr = new Dict(xref);
+        mcr.set("Type", Name.get("MCR"));
+        mcr.set("Pg", pageRef);
+        mcr.set("MCID", mcid);
+        parents ??= this.#getParents(pageRef);
+        while (parents.length < mcid) {
+          parents.push(null);
+        }
+        parents[mcid] = ref;
+      }
+      this.#replaceObjectReference(ref, annotation, mcr);
+      if (this.#entries?.delete(structParent)) {
+        this.#isModified = true;
+      }
+    }
+  }
+
+  // Copy or create the page's parent-tree entry.
+  #getParents(pageRef) {
+    const pageDict = this.#changes.get(pageRef).data;
+    let key = pageDict.get("StructParents");
+    let parents = this.#fetch(this.#entries.get(key));
+    if (Number.isInteger(key) && Array.isArray(parents)) {
+      parents = parents.slice();
+    } else {
+      key = this.#root.get("ParentTreeNextKey");
+      if (!Number.isInteger(key) || key < 0) {
+        key = 0;
+      }
+      for (const entryKey of this.#entries.keys()) {
+        key = Math.max(key, entryKey + 1);
+      }
+      this.#root = this.#root.clone();
+      this.#root.set("ParentTreeNextKey", key + 1);
+      pageDict.set("StructParents", key);
+      parents = [];
+    }
+    this.#entries.set(key, parents);
+    this.#isModified = true;
+    return parents;
+  }
+
+  #replaceObjectReference(ref, annotation, replacement) {
+    const element = this.#fetch(ref);
+    if (!(element instanceof Dict)) {
+      return;
+    }
+    const rawKids = element.getRaw("K");
+    const kids = this.#fetch(rawKids);
+    const newKids = [];
+    let found = false;
+    for (const kid of Array.isArray(kids) ? kids : [rawKids]) {
+      const obj = this.#fetch(kid);
+      const objRef =
+        obj instanceof Dict && isName(obj.get("Type"), "OBJR")
+          ? obj.getRaw("Obj")
+          : null;
+      if (
+        objRef instanceof Ref &&
+        annotation instanceof Ref &&
+        isRefsEqual(objRef, annotation)
+      ) {
+        found = true;
+        if (replacement) {
+          newKids.push(replacement);
+        }
+        continue;
+      }
+      newKids.push(kid);
+    }
+    if (found) {
+      const newElement = element.clone();
+      newElement.set("K", newKids);
+      this.#changes.put(ref, { data: newElement });
+    }
+  }
+
+  save() {
+    if (!this.#isModified) {
+      return;
+    }
+    const xref = this.#xref;
+    const nums = [];
+    for (const key of [...this.#entries.keys()].sort((a, b) => a - b)) {
+      nums.push(key, this.#entries.get(key));
+    }
+    const parentTree = this.#parentTree.clone();
+    parentTree.set("Nums", nums);
+    let parentTreeRef = this.#parentTreeRef;
+    if (!(parentTreeRef instanceof Ref)) {
+      parentTreeRef = xref.getNewTemporaryRef();
+      this.#root = this.#root.clone();
+      this.#root.set("ParentTree", parentTreeRef);
+    }
+    this.#changes.put(parentTreeRef, { data: parentTree });
+    this.#changes.put(this.#rootRef, { data: this.#root });
+  }
+}
+
+export { finalizeFlattening, PageAnnotationFlattener, StructTreeFlattener };
