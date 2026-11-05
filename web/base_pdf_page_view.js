@@ -184,22 +184,6 @@ class BasePDFPageView extends RenderableView {
     return { canvas, prevCanvas };
   }
 
-  #renderContinueCallback = cont => {
-    // In the worker path the canvas only gains pixels in `onFrame`.
-    if (!this.renderTask?.isWorkerRendering) {
-      this.#showCanvas?.(false);
-    }
-    if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
-      this.renderingState = RenderingStates.PAUSED;
-      this.resume = () => {
-        this.renderingState = RenderingStates.RUNNING;
-        cont();
-      };
-      return;
-    }
-    cont();
-  };
-
   _resetCanvas() {
     const { canvas } = this;
     if (!canvas) {
@@ -220,8 +204,27 @@ class BasePDFPageView extends RenderableView {
 
   async _drawCanvas(options, onCancel, onFinish) {
     const renderTask = (this.renderTask = this.pdfPage.render(options));
-    renderTask.onContinue = this.#renderContinueCallback;
-    renderTask.onFrame = () => this.#showCanvas?.(false);
+    let hasCanvasPixels = false;
+    const showCanvas = () => {
+      hasCanvasPixels = true;
+      this.#showCanvas?.(false);
+    };
+    renderTask.onFrame = showCanvas;
+    renderTask.onContinue = cont => {
+      // Wait for a worker frame before showing the canvas.
+      if (!this.renderTask?.isWorkerRendering) {
+        showCanvas();
+      }
+      if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
+        this.renderingState = RenderingStates.PAUSED;
+        this.resume = () => {
+          this.renderingState = RenderingStates.RUNNING;
+          cont();
+        };
+        return;
+      }
+      cont();
+    };
     renderTask.onError = error => {
       if (error instanceof RenderingCancelledException) {
         onCancel();
@@ -242,7 +245,12 @@ class BasePDFPageView extends RenderableView {
       }
       error = e;
 
-      this.#showCanvas?.(true);
+      if (hasCanvasPixels) {
+        this.#showCanvas?.(true);
+      } else {
+        // Don't cover the page background with an empty canvas.
+        onCancel();
+      }
     } finally {
       this.#renderError = error;
 

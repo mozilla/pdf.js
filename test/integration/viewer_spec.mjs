@@ -600,6 +600,47 @@ describe("PDF viewer", () => {
         })
       );
     });
+
+    function checkBackgroundOnRenderFailure(keepCanvas) {
+      return Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const result = await page.evaluate(async keep => {
+            const pageView =
+              window.PDFViewerApplication.pdfViewer.getPageView(0);
+            if (keep) {
+              // Keep the canvas from the previous render.
+              pageView.update({});
+            } else {
+              pageView.reset();
+            }
+            // Fail before graphics initialization.
+            pageView._optionalContentConfigPromise = Promise.reject(
+              new Error("Rendering failure")
+            );
+            await pageView.draw().catch(() => {});
+
+            return {
+              canvasCount: pageView.div.querySelectorAll(
+                ".canvasWrapper > canvas"
+              ).length,
+              backgroundColor: getComputedStyle(pageView.div).backgroundColor,
+            };
+          }, keepCanvas);
+          expect(result).withContext(`In ${browserName}`).toEqual({
+            canvasCount: 0,
+            backgroundColor: "rgb(255, 255, 255)",
+          });
+        })
+      );
+    }
+
+    it("must paint the page background when rendering fails before drawing with a kept canvas (issue 22437)", async () => {
+      await checkBackgroundOnRenderFailure(/* keepCanvas = */ true);
+    });
+
+    it("must paint the page background when rendering fails before drawing with a reset canvas (issue 22437)", async () => {
+      await checkBackgroundOnRenderFailure(/* keepCanvas = */ false);
+    });
   });
 
   describe("Detail view on zoom", () => {
