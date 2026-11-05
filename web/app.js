@@ -201,6 +201,8 @@ const PDFViewerApplication = {
   _isScrolling: false,
   editorUndoBar: null,
   _printPermissionPromise: null,
+  // Only used to keep the preloaded icons alive, see `load`.
+  _preloadedIcons: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -1909,6 +1911,63 @@ const PDFViewerApplication = {
             return; // The document was closed while the layers resolved.
           }
           this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+        });
+      }
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("MOZCENTRAL && !GECKOVIEW") &&
+        !this._preloadedIcons
+      ) {
+        // The CSS only fetches an icon once its element is rendered, hence the
+        // UI hidden on load would first be displayed without its icons. Warm
+        // the image cache up, once the first page is rendered in order to not
+        // delay it, with the icons that aren't already preloaded in
+        // viewer.html (where only the ones visible on load are).
+        // NOTE: When modifying the icons used in the toolbars or in the views
+        // manager, please keep this list and the viewer.html one in sync.
+        this._preloadedIcons = [];
+        window.requestIdleCallback(() => {
+          const path = AppOptions.get("imageResourcesPath");
+          for (const name of [
+            // Secondary toolbar, which also contains the print and download
+            // buttons when the window is narrow (see the `hiddenMediumView`
+            // class in viewer.css).
+            "toolbarButton-print.svg",
+            "toolbarButton-download.svg",
+            "toolbarButton-presentationMode.svg",
+            "toolbarButton-bookmark.svg",
+            "secondaryToolbarButton-firstPage.svg",
+            "secondaryToolbarButton-lastPage.svg",
+            "secondaryToolbarButton-rotateCw.svg",
+            "secondaryToolbarButton-rotateCcw.svg",
+            "secondaryToolbarButton-selectTool.svg",
+            "secondaryToolbarButton-handTool.svg",
+            "secondaryToolbarButton-scrollPage.svg",
+            "secondaryToolbarButton-scrollVertical.svg",
+            "secondaryToolbarButton-scrollHorizontal.svg",
+            "secondaryToolbarButton-scrollWrapped.svg",
+            "secondaryToolbarButton-spreadNone.svg",
+            "secondaryToolbarButton-spreadOdd.svg",
+            "secondaryToolbarButton-spreadEven.svg",
+            "secondaryToolbarButton-documentProperties.svg",
+            // Views manager (see views_manager.css) and its menu.
+            "pages_viewButton.svg",
+            "pages_viewArrow.svg",
+            "checkmark.svg",
+            "toolbarButton-viewOutline.svg",
+            "toolbarButton-viewAttachments.svg",
+            "toolbarButton-viewLayers.svg",
+            "pages_closeButton.svg",
+            "altText_spinner.svg",
+            "altText_done.svg",
+          ]) {
+            const image = new Image();
+            image.src = path + name;
+            // The images are never read: keeping a reference to them prevents
+            // their entries, which expire when unused, from being evicted from
+            // the image cache before the icons are displayed.
+            this._preloadedIcons.push(image);
+          }
         });
       }
     });

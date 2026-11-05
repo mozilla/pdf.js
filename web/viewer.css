@@ -1867,7 +1867,8 @@ dialog :link {
   }
 }
 
-/* Account for Nova's larger toolbar buttons. */
+/* Account for Nova's larger toolbar buttons. The icon preloads in viewer.html
+   use these breakpoints. */
 /*#if MOZCENTRAL*/
 @media -moz-pref("pdfjs.enableNova") and -moz-pref("browser.nova.enabled") {
   @media (max-width: 880px) {
