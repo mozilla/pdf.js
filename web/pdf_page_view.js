@@ -143,9 +143,9 @@ class PDFPageView extends BasePDFPageView {
 
   #previousRotation = null;
 
-  #scaleRoundX = 1;
+  #sfx = [1, 1];
 
-  #scaleRoundY = 1;
+  #sfy = [1, 1];
 
   #textLayerMode = TextLayerMode.ENABLE;
 
@@ -212,6 +212,7 @@ class PDFPageView extends BasePDFPageView {
     div.setAttribute("data-l10n-args", JSON.stringify({ page: this.id }));
     this.div = div;
     this.#setDimensions();
+    this.#computeScale();
     container?.append(div);
   }
 
@@ -327,6 +328,7 @@ class PDFPageView extends BasePDFPageView {
       rotation: totalRotation,
     });
     this.#setDimensions();
+    this.#computeScale();
     this.reset();
   }
 
@@ -729,7 +731,6 @@ class PDFPageView extends BasePDFPageView {
       rotation: totalRotation,
     });
     this.#setDimensions();
-
     this.#computeScale();
 
     if (this.canvas) {
@@ -799,7 +800,7 @@ class PDFPageView extends BasePDFPageView {
   }
 
   #computeScale() {
-    const { width, height } = this.viewport;
+    const { div, viewport } = this;
     const outputScale = (this.outputScale = new OutputScale());
 
     if (
@@ -814,8 +815,8 @@ class PDFPageView extends BasePDFPageView {
       this.#needsRestrictedScaling = true;
     } else {
       this.#needsRestrictedScaling = outputScale.limitCanvas(
-        width,
-        height,
+        viewport.width,
+        viewport.height,
         this.maxCanvasPixels,
         this.maxCanvasDim,
         this.capCanvasAreaFactor
@@ -831,6 +832,25 @@ class PDFPageView extends BasePDFPageView {
         outputScale.sy /= factor;
       }
     }
+
+    const sfx = approximateFraction(outputScale.sx),
+      sfy = approximateFraction(outputScale.sy);
+    if (this.#sfx[1] !== sfx[1]) {
+      if (sfx[1] !== 1) {
+        div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
+      } else {
+        div.style.removeProperty("--scale-round-x");
+      }
+    }
+    if (this.#sfy[1] !== sfy[1]) {
+      if (sfy[1] !== 1) {
+        div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
+      } else {
+        div.style.removeProperty("--scale-round-y");
+      }
+    }
+    this.#sfx = sfx;
+    this.#sfy = sfy;
   }
 
   /**
@@ -985,7 +1005,7 @@ class PDFPageView extends BasePDFPageView {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
     }
-    const { div, l10n, pdfPage, viewport } = this;
+    const { div, l10n, outputScale, pdfPage, viewport } = this;
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
@@ -1068,14 +1088,9 @@ class PDFPageView extends BasePDFPageView {
     });
     canvas.setAttribute("role", "presentation");
 
-    if (!this.outputScale) {
-      this.#computeScale();
-    }
-    const { outputScale } = this;
     this.#hasRestrictedScaling = this.#needsRestrictedScaling;
-
-    const sfx = approximateFraction(outputScale.sx);
-    const sfy = approximateFraction(outputScale.sy);
+    const sfx = this.#sfx;
+    const sfy = this.#sfy;
 
     const canvasWidth = (canvas.width = floorToDivide(
       calcRound(width * outputScale.sx),
@@ -1089,15 +1104,6 @@ class PDFPageView extends BasePDFPageView {
     const pageHeight = floorToDivide(calcRound(height), sfy[1]);
     outputScale.sx = canvasWidth / pageWidth;
     outputScale.sy = canvasHeight / pageHeight;
-
-    if (this.#scaleRoundX !== sfx[1]) {
-      div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
-      this.#scaleRoundX = sfx[1];
-    }
-    if (this.#scaleRoundY !== sfy[1]) {
-      div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
-      this.#scaleRoundY = sfy[1];
-    }
 
     const recordBBoxes =
       this.enableOptimizedPartialRendering &&
