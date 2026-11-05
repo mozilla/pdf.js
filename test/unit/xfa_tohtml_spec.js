@@ -689,4 +689,47 @@ describe("XFAFactory", function () {
     const p = searchHtmlNode(pages, "name", "p");
     expect(p.attributes.style.fontSize).toEqual("13.86px");
   });
+
+  it("should layout rich text containing bold and italic elements", async () => {
+    const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <draw y="1pt" w="200pt" x="2pt">
+            <value>
+              <exData contentType="text/html">
+                <body xmlns="http://www.w3.org/1999/xhtml">
+                  <p><b>Important:</b> some <i>italic</i> text</p>
+                </body>
+              </exData>
+            </value>
+          </draw>
+        </pageArea>
+      </pageSet>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+    `;
+    const factory = new XFAFactory(new Map([["xdp:xdp", xml]]));
+    factory.setFonts([]);
+
+    expect(await factory.getNumPages()).toEqual(1);
+
+    const pages = await factory.getPages();
+    const b = searchHtmlNode(pages, "name", "b");
+    expect(b.value).toEqual("Important:");
+    expect(b.attributes.style.fontWeight).toEqual("bold");
+    const i = searchHtmlNode(pages, "name", "i");
+    expect(i.value).toEqual("italic");
+    expect(i.attributes.style.fontStyle).toEqual("italic");
+  });
 });
