@@ -3466,6 +3466,20 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("write a value in an annotation, save the pdf and check that no font is sent to the main thread", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      pdfDoc.annotationStorage.setValue("55R", { value: "Hello World" });
+
+      const data = await pdfDoc.saveDocument();
+      expect(data).not.toBeNull();
+
+      const page = await pdfDoc.getPage(1);
+      expect([...page.commonObjs]).toEqual([]);
+
+      await loadingTask.destroy();
+    });
+
     it("embeds an externally generated FreeText appearance", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("empty.pdf"));
       let pdfDoc = await loadingTask.promise;
