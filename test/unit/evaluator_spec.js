@@ -14,7 +14,7 @@
  */
 
 import { createIdFactory, XRefMock } from "./test_utils.js";
-import { Dict, Name } from "../../src/core/primitives.js";
+import { Dict, Name, Ref, RefMap } from "../../src/core/primitives.js";
 import { FormatError, OPS } from "../../src/shared/util.js";
 import { Stream, StringStream } from "../../src/core/stream.js";
 import { GlobalColorSpaceCache } from "../../src/core/image_utils.js";
@@ -523,6 +523,27 @@ describe("evaluator", function () {
       operatorList.flush();
 
       expect(operatorList.length).toEqual(0);
+    });
+  });
+
+  describe("fonts", function () {
+    it("should use distinct names for concurrently loaded fallback fonts", async function () {
+      const evaluator = new PartialEvaluator({
+        xref: new XRefMock(),
+        idFactory: createIdFactory(/* pageIndex = */ 0),
+        fontCache: new RefMap(),
+        systemFontCache: new Map(),
+      }).clone({ ignoreErrors: true });
+
+      // Missing refs share the fallback dictionary.
+      const [font1, font2] = await Promise.all(
+        [10, 11].map(num =>
+          evaluator.loadFont(null, Ref.get(num, 0), Dict.empty)
+        )
+      );
+
+      expect(font1.dict).toBe(font2.dict);
+      expect(font1.loadedName).not.toEqual(font2.loadedName);
     });
   });
 
