@@ -471,7 +471,7 @@ describe("Font", () => {
     });
   });
 
-  describe("head table", () => {
+  describe("CFF fonts", () => {
     // Example font from Appendix D of the CFF spec:
     // https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf
     const exampleFont = Uint8Array.fromHex(
@@ -495,9 +495,13 @@ describe("Font", () => {
       ).parse();
       cff.topDict.setByName("FontBBox", fontBBox);
 
+      return loadFont(new CFFCompiler(cff).compile());
+    }
+
+    function loadFont(data) {
       return new Font(
         "TestFont",
-        new Stream(new CFFCompiler(cff).compile()),
+        new Stream(data),
         {
           type: "Type1",
           subtype: "Type1C",
@@ -529,6 +533,40 @@ describe("Font", () => {
       }
       return null;
     }
+
+    it("should skip charstring validation when rendering compiled CFF data", () => {
+      const font = createFont([-168, -218, 1000, 898]);
+      const validate = spyOn(
+        CFFParser.prototype,
+        "parseCharStrings"
+      ).and.callThrough();
+
+      expect(font.renderer.glyphs.length).toBeGreaterThan(0);
+      expect(validate).not.toHaveBeenCalled();
+    });
+
+    it("should validate original CFF data after compilation fails", () => {
+      const cff = new CFFParser(
+        new Stream(exampleFont),
+        {},
+        SEAC_ANALYSIS_ENABLED
+      ).parse();
+      // A global subroutine that calls itself. Validation replaces the glyph,
+      // but that replacement isn't written back to the original font bytes.
+      cff.globalSubrIndex.add(new Uint8Array([32, 29, 11]));
+      cff.charStrings.set(1, new Uint8Array([32, 29, 14]));
+      const data = new CFFCompiler(cff).compile();
+      const compile = spyOn(CFFCompiler.prototype, "compile").and.throwError(
+        "CFF compilation failed"
+      );
+
+      const font = loadFont(data);
+      expect(compile).toHaveBeenCalledTimes(1);
+      expect(font.missingFile).toBeFalse();
+      const renderer = font.renderer;
+      expect(renderer.glyphs[1]).toEqual(new Uint8Array([14]));
+      expect(renderer.compileGlyph(renderer.glyphs[1], 1).length).toEqual(0);
+    });
 
     it("should extend the horizontal extents with the font bbox", () => {
       // FontDescriptor bbox from bug 1888084.

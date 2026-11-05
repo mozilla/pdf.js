@@ -20,6 +20,8 @@ import { warn } from "../shared/util.js";
 class CFFFont {
   #replacedGlyphId = -1;
 
+  isCompiled = false;
+
   constructor(file, properties) {
     this.properties = properties;
 
@@ -37,6 +39,7 @@ class CFFFont {
     this.seacs = this.cff.seacs;
     try {
       this.data = compiler.compile();
+      this.isCompiled = true;
     } catch (ex) {
       warn(`Failed to compile font "${properties.loadedName}": "${ex}".`);
       // There may have just been an issue with the compiler, set the data

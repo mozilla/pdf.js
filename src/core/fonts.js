@@ -1050,6 +1050,8 @@ class Font {
 
   #id = null;
 
+  #isCFFCompiled = false;
+
   // Unlike `missingFile`, still set when a generated font replaces this one.
   #withoutFile = false;
 
@@ -1224,7 +1226,12 @@ class Font {
   }
 
   get renderer() {
-    const renderer = FontRendererFactory.create(this, SEAC_ANALYSIS_ENABLED);
+    // Compilation can fail and leave the original CFF data in the font.
+    const renderer = FontRendererFactory.create(
+      this,
+      SEAC_ANALYSIS_ENABLED,
+      /* validate = */ !this.#isCFFCompiled
+    );
     return shadow(this, "renderer", renderer);
   }
 
@@ -2913,6 +2920,7 @@ class Font {
       try {
         parsedCff.duplicateFirstGlyph();
         tables["CFF "].data = new CFFCompiler(parsedCff).compile();
+        this.#isCFFCompiled = true;
         numGlyphsFromCFF = parsedCff.charStringCount;
       } catch {
         warn("Failed to compile font " + properties.loadedName);
@@ -3346,6 +3354,8 @@ class Font {
   }
 
   convert(fontName, font, properties) {
+    this.#isCFFCompiled = font.isCompiled;
+
     // TODO: Check the charstring widths to determine this.
     properties.fixedPitch = false;
 
