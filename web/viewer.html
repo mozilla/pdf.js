@@ -307,6 +307,9 @@ See https://github.com/adobe-type-tools/cmap-resources
 
                 <div class="toolbarButtonSpacer"></div>
                 <div class="toolbarButtonWithContainer">
+                  <!--#if MOZCENTRAL-->
+                  <!--<button id="viewFindButton" class="toolbarButton hidden" type="button" tabindex="0" data-l10n-id="pdfjs-findbar-button" aria-expanded="false" aria-controls="findbar">-->
+                  <!--#else-->
                   <button
                     id="viewFindButton"
                     class="toolbarButton"
@@ -316,6 +319,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                     aria-expanded="false"
                     aria-controls="findbar"
                   >
+                    <!--#endif-->
                     <span data-l10n-id="pdfjs-findbar-button-label"></span>
                   </button>
                   <div class="hidden doorHanger toolbarHorizontalGroup" id="findbar">

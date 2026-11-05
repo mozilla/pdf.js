@@ -1040,9 +1040,12 @@ const PDFViewerApplication = {
       );
     }
 
-    if (this.supportsIntegratedFind) {
-      appConfig.findBar?.toggleButton?.classList.add("hidden");
-    }
+    // The button is hidden by default in Firefox, where integrated find is
+    // only unsupported when the viewer is in a frame.
+    appConfig.findBar?.toggleButton?.classList.toggle(
+      "hidden",
+      this.supportsIntegratedFind
+    );
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
