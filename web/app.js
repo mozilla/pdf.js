@@ -201,6 +201,7 @@ const PDFViewerApplication = {
   _isScrolling: false,
   editorUndoBar: null,
   _printPermissionPromise: null,
+  _preloadedIcons: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -1912,6 +1913,52 @@ const PDFViewerApplication = {
             return; // The document was closed while the layers resolved.
           }
           this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+        });
+      }
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("MOZCENTRAL && !GECKOVIEW") &&
+        !this._preloadedIcons
+      ) {
+        // The icons of the UI hidden on load are only fetched once it's shown,
+        // hence warm the image cache up to avoid displaying it without icons.
+        // The images are kept alive since unused cache entries expire.
+        this._preloadedIcons = [];
+        window.requestIdleCallback(() => {
+          const path = AppOptions.get("imageResourcesPath");
+          for (const name of [
+            "toolbarButton-print.svg",
+            "toolbarButton-download.svg",
+            "toolbarButton-presentationMode.svg",
+            "toolbarButton-bookmark.svg",
+            "secondaryToolbarButton-firstPage.svg",
+            "secondaryToolbarButton-lastPage.svg",
+            "secondaryToolbarButton-rotateCw.svg",
+            "secondaryToolbarButton-rotateCcw.svg",
+            "secondaryToolbarButton-selectTool.svg",
+            "secondaryToolbarButton-handTool.svg",
+            "secondaryToolbarButton-scrollPage.svg",
+            "secondaryToolbarButton-scrollVertical.svg",
+            "secondaryToolbarButton-scrollHorizontal.svg",
+            "secondaryToolbarButton-scrollWrapped.svg",
+            "secondaryToolbarButton-spreadNone.svg",
+            "secondaryToolbarButton-spreadOdd.svg",
+            "secondaryToolbarButton-spreadEven.svg",
+            "secondaryToolbarButton-documentProperties.svg",
+            "pages_viewButton.svg",
+            "pages_viewArrow.svg",
+            "checkmark.svg",
+            "toolbarButton-viewOutline.svg",
+            "toolbarButton-viewAttachments.svg",
+            "toolbarButton-viewLayers.svg",
+            "pages_closeButton.svg",
+            "altText_spinner.svg",
+            "altText_done.svg",
+          ]) {
+            const image = new Image();
+            image.src = path + name;
+            this._preloadedIcons.push(image);
+          }
         });
       }
     });
