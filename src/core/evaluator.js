@@ -1345,14 +1345,13 @@ class PartialEvaluator {
       this.fontCache.put(font.cacheKey, promise);
     }
 
-    // Keep track of each font we translated so the caller can
-    // load them asynchronously before calling display on a page.
-    font.loadedName = `${this.idFactory.getDocId()}_${fontID}`;
+    // Keep names local: fallback loads share a dictionary.
+    const loadedName = `${this.idFactory.getDocId()}_${fontID}`;
 
-    this.translateFont(preEvaluatedFont)
+    this.translateFont(preEvaluatedFont, loadedName)
       .then(async translatedFont => {
         const translated = new TranslatedFont({
-          loadedName: font.loadedName,
+          loadedName,
           font: translatedFont,
           dict: font,
         });
@@ -1372,7 +1371,7 @@ class PartialEvaluator {
 
         resolve(
           new TranslatedFont({
-            loadedName: font.loadedName,
+            loadedName,
             font: new ErrorFont(reason?.message),
             dict: font,
           })
@@ -4444,17 +4443,20 @@ class PartialEvaluator {
     };
   }
 
-  async translateFont({
-    descriptor,
-    dict,
-    baseDict,
-    composite,
-    type,
-    firstChar,
-    lastChar,
-    toUnicode,
-    cssFontInfo,
-  }) {
+  async translateFont(
+    {
+      descriptor,
+      dict,
+      baseDict,
+      composite,
+      type,
+      firstChar,
+      lastChar,
+      toUnicode,
+      cssFontInfo,
+    },
+    loadedName
+  ) {
     const isType3Font = type === "Type3";
 
     if (!descriptor) {
@@ -4494,7 +4496,7 @@ class PartialEvaluator {
         const properties = {
           type,
           name: baseFontName,
-          loadedName: baseDict.loadedName,
+          loadedName,
           systemFontInfo: null,
           widths: metrics.widths,
           defaultWidth: metrics.defaultWidth,
@@ -4708,7 +4710,7 @@ class PartialEvaluator {
       length1,
       length2,
       length3,
-      loadedName: baseDict.loadedName,
+      loadedName,
       composite,
       fixedPitch: false,
       fontMatrix,
