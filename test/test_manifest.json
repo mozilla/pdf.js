@@ -14772,6 +14772,32 @@
     "about": "Single-tile pattern fills after setting the line width, the dash and the stroke alpha."
   },
   {
+    "id": "tiling_pattern_cell_state-partial",
+    "file": "pdfs/tiling_pattern_cell_state.pdf",
+    "md5": "90b0372ae9280cb46a723ad549f01bfc",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.25,
+      "maxX": 0.375,
+      "minY": 0.2375,
+      "maxY": 0.7625
+    }
+  },
+  {
+    "id": "22060_A1_01_Plans-partial",
+    "file": "pdfs/22060_A1_01_Plans.pdf",
+    "md5": "e09e7be98a45d2b6742cc7ad9c68f9fb",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.55,
+      "maxX": 0.85,
+      "minY": 0.1,
+      "maxY": 0.25
+    }
+  },
+  {
     "id": "issue_cmap12",
     "file": "pdfs/issue_cmap12.pdf",
     "md5": "5132041f6b20cc46d87e3776c61e56fe",
@@ -15304,5 +15330,182 @@
       }
     },
     "about": "Print the /MK /CA star with NeedAppearances."
+  },
+  {
+    "id": "type3_advance-invisible-partial",
+    "file": "pdfs/type3_advance.pdf",
+    "md5": "700b0da25aeb1b5d22e5c139d80e86db",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.43,
+      "maxX": 0.48,
+      "minY": 0.18,
+      "maxY": 0.23
+    }
+  },
+  {
+    "id": "type3_advance-negative-size-partial",
+    "file": "pdfs/type3_advance.pdf",
+    "md5": "700b0da25aeb1b5d22e5c139d80e86db",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.41,
+      "maxX": 0.425,
+      "minY": 0.47,
+      "maxY": 0.4833
+    }
+  },
+  {
+    "id": "type3_advance-font-matrix-partial",
+    "file": "pdfs/type3_advance.pdf",
+    "md5": "700b0da25aeb1b5d22e5c139d80e86db",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.44,
+      "maxX": 0.46,
+      "minY": 0.725,
+      "maxY": 0.74
+    }
+  },
+  {
+    "id": "bbox-stroke-text-matrix-partial",
+    "file": "pdfs/bbox_stroke_text_matrix.pdf",
+    "md5": "b87862404c163cf395a8b01a1123ae48",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.15,
+      "maxX": 0.2,
+      "minY": 0.47,
+      "maxY": 0.55
+    }
+  },
+  {
+    "id": "bbox-hidden-text-clip-partial",
+    "file": "pdfs/bbox_hidden_text_clip.pdf",
+    "md5": "76fad3b74ec6e08397486dab80abc2a0",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.55,
+      "maxX": 0.8,
+      "minY": 0.55,
+      "maxY": 0.8
+    }
+  },
+  {
+    "id": "bbox-type3-text-clip-partial",
+    "file": "pdfs/bbox_type3_text_clip.pdf",
+    "md5": "80782b62a4db649bf9fccbd1c6d33148",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.55,
+      "maxX": 0.8,
+      "minY": 0.55,
+      "maxY": 0.8
+    }
+  },
+  {
+    "id": "bbox-type3-text-clip-glyph-partial",
+    "file": "pdfs/bbox_type3_text_clip.pdf",
+    "md5": "80782b62a4db649bf9fccbd1c6d33148",
+    "rounds": 1,
+    "type": "eq",
+    "partial": {
+      "minX": 0.09,
+      "maxX": 0.16,
+      "minY": 0.09,
+      "maxY": 0.16
+    }
+  },
+  {
+    "id": "bbox-text-clip-save-partial",
+    "file": "pdfs/bbox_text_clip_save.pdf",
+    "md5": "6d369f1d28bac63728f00228640b5cae",
+    "rounds": 1,
+    "type": "eq",
+    "useSystemFonts": false,
+    "partial": {
+      "minX": 0.2,
+      "maxX": 0.33,
+      "minY": 0.7,
+      "maxY": 0.85
+    }
+  },
+  {
+    "id": "smask-none-partial",
+    "file": "pdfs/smask_none.pdf",
+    "md5": "3a6aadda6846e059a96892b2d2ad07f5",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Soft mask applied to a group which removes it for its content.",
+    "partial": {
+      "minX": 0.6,
+      "maxX": 0.9,
+      "minY": 0.1,
+      "maxY": 0.9
+    }
+  },
+  {
+    "id": "type3-inherited-text-state-partial",
+    "file": "pdfs/type3_inherited_text_state.pdf",
+    "md5": "3557ea83a5f3c714f24b986a61833e92",
+    "rounds": 1,
+    "type": "eq",
+    "useSystemFonts": false,
+    "about": "Type3 glyph drawing text which inherits the outer horizontal text scale.",
+    "partial": {
+      "minX": 0.625,
+      "maxX": 0.75,
+      "minY": 0.625,
+      "maxY": 0.75
+    }
+  },
+  {
+    "id": "truetype-composite-point-matching-partial",
+    "file": "pdfs/truetype_composite_point_matching.pdf",
+    "md5": "e82928a0a26bc80cf97d22c3f6932eee",
+    "rounds": 1,
+    "type": "eq",
+    "about": "TrueType composite glyph with a component positioned by points.",
+    "partial": {
+      "minX": 0.4,
+      "maxX": 0.6,
+      "minY": 0.3,
+      "maxY": 0.45
+    }
+  },
+  {
+    "id": "text-clip-empty-glyph-partial",
+    "file": "pdfs/text_clip_empty_glyph.pdf",
+    "md5": "ee672098e2544e851ab00731c39fdc2f",
+    "rounds": 1,
+    "type": "eq",
+    "useSystemFonts": false,
+    "about": "Text clip with a glyph without ink, which clips everything.",
+    "partial": {
+      "minX": 0.39,
+      "maxX": 0.47,
+      "minY": 0.58,
+      "maxY": 0.66
+    }
+  },
+  {
+    "id": "cff-bbox-outline-fallback-partial",
+    "file": "pdfs/cff_bbox_outline_fallback.pdf",
+    "md5": "b8d7026fbf8a01d75c0c17e5493946f9",
+    "rounds": 1,
+    "type": "eq",
+    "about": "CFF glyph with an undersized font box and arithmetic unsupported by the outline renderer.",
+    "partial": {
+      "minX": 0.390625,
+      "maxX": 0.6640625,
+      "minY": 0.7421875,
+      "maxY": 0.78125
+    }
   }
 ]

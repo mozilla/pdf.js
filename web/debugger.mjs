@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const { makeSet, OPS } = globalThis.pdfjsLib || (await import("pdfjs-lib"));
+const { OPS } = globalThis.pdfjsLib || (await import("pdfjs-lib"));
 
 const opMap = Object.create(null);
 for (const key in OPS) {
@@ -245,8 +245,50 @@ const StepperManager = (function StepperManagerClosure() {
   };
 })();
 
+// Sorted operations reachable from `index` in a CSR graph.
+function collectReachable(index, offsets, edges, filter = null) {
+  const reached = new Set();
+  const stack = [index];
+  while (stack.length > 0) {
+    const idx = stack.pop();
+    for (let i = offsets[idx], ii = offsets[idx + 1]; i < ii; i++) {
+      const next = edges[i];
+      if (!reached.has(next)) {
+        reached.add(next);
+        stack.push(next);
+      }
+    }
+  }
+  reached.delete(index);
+  const result = Array.from(reached);
+  return (filter ? result.filter(filter) : result).sort((a, b) => a - b);
+}
+
+function invertGraph({ offsets, dependencies }) {
+  const length = offsets.length - 1;
+  const reverseOffsets = new Int32Array(length + 1);
+  for (const dependency of dependencies) {
+    reverseOffsets[dependency + 1]++;
+  }
+  for (let i = 0; i < length; i++) {
+    reverseOffsets[i + 1] += reverseOffsets[i];
+  }
+  const positions = reverseOffsets.slice(0, length);
+  const dependents = new Int32Array(dependencies.length);
+  for (let i = 0; i < length; i++) {
+    for (let j = offsets[i], jj = offsets[i + 1]; j < jj; j++) {
+      dependents[positions[dependencies[j]]++] = i;
+    }
+  }
+  return { offsets: reverseOffsets, dependents };
+}
+
 // The stepper for each page's operatorList.
 class Stepper {
+  #graph = null;
+
+  #reverseGraph = null;
+
   // Shorter way to create element and optionally set textContent.
   #c(tag, textContent) {
     const d = document.createElement(tag);
@@ -438,7 +480,7 @@ class Stepper {
     this.table.append(chunk);
   }
 
-  setOperatorBBoxes(bboxes, metadata) {
+  setOperatorBBoxes(bboxes, viewport) {
     let boxesContainer = this.pageContainer.querySelector(".pdfBugGroupsLayer");
     if (!boxesContainer) {
       boxesContainer = this.#c("div");
@@ -456,35 +498,23 @@ class Stepper {
     }
     boxesContainer.innerHTML = "";
 
-    const dependents = new Map();
-    for (const [dependentIdx, { dependencies: ownDependencies }] of metadata) {
-      for (const dependencyIdx of ownDependencies) {
-        dependents
-          .getOrInsertComputed(dependencyIdx, makeSet)
-          .add(dependentIdx);
-      }
-    }
+    const graph = bboxes.dependencies;
+    this.#graph = graph;
+    this.#reverseGraph = graph && invertGraph(graph);
 
     const groups = Array.from({ length: bboxes.length }, (_, i) => {
-      let minX = null;
-      let minY = null;
-      let maxX = null;
-      let maxY = null;
-      if (!bboxes.isEmpty(i)) {
-        minX = bboxes.minX(i);
-        minY = bboxes.minY(i);
-        maxX = bboxes.maxX(i);
-        maxY = bboxes.maxY(i);
-      }
-
+      const bbox = bboxes.getViewportBBox(i, viewport);
       return {
-        minX,
-        minY,
-        maxX,
-        maxY,
-        dependencies: Array.from(metadata.get(i)?.dependencies ?? []).sort(),
-        dependents: Array.from(dependents.get(i) ?? []).sort(),
-        isRenderingOperation: metadata.get(i)?.isRenderingOperation ?? false,
+        minX: bbox && bbox[0] / viewport.width,
+        minY: bbox && bbox[1] / viewport.height,
+        maxX: bbox && bbox[2] / viewport.width,
+        maxY: bbox && bbox[3] / viewport.height,
+        // Computed on hover.
+        dependencies: graph ? null : [],
+        dependents: graph ? null : [],
+        isRenderingOperation: graph
+          ? graph.renderingOps[i] === 1
+          : bbox !== null,
         idx: i,
       };
     });
@@ -564,6 +594,18 @@ class Stepper {
     if (!group) {
       return;
     }
+    group.dependencies ??= collectReachable(
+      index,
+      this.#graph.offsets,
+      this.#graph.dependencies
+    );
+    // Only list the dependents that draw, as the canvas tracker used to.
+    group.dependents ??= collectReachable(
+      index,
+      this.#reverseGraph.offsets,
+      this.#reverseGraph.dependents,
+      idx => this.#graph.renderingOps[idx] === 1
+    );
 
     const renderingColor = `rgba(0, 0, 0, 0.1)`;
     const dependencyColor = `rgba(0, 255, 255, 0.1)`;

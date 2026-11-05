@@ -17,9 +17,8 @@ import { benchmark } from "./bench_utils.js";
 import { describe } from "vitest";
 import { openPage } from "./render_utils.js";
 
-const TEXT_PAGE = { kind: "text", filename: "tracemonkey.pdf" };
 const PAGES = [
-  TEXT_PAGE,
+  { kind: "text", filename: "tracemonkey.pdf" },
   { kind: "paths", filename: "bug1743245.pdf" },
   { kind: "luminosity soft mask", filename: "issue18956.pdf" },
   { kind: "tensor-product patch meshes", filename: "personwithdog.pdf" },
@@ -39,22 +38,4 @@ describe("render", () => {
       canvasFactory.destroy(canvasAndContext);
     });
   }
-
-  benchmark(
-    "PDFPageProxy.render: text, recording the operations (tracemonkey.pdf)",
-    async () => {
-      const { page, viewport, canvasFactory } = TEXT_PAGE;
-      const canvasAndContext = canvasFactory.create(
-        viewport.width,
-        viewport.height
-      );
-      page.recordedBBoxes = null;
-      await page.render({
-        canvas: canvasAndContext.canvas,
-        viewport,
-        recordOperations: true,
-      }).promise;
-      canvasFactory.destroy(canvasAndContext);
-    }
-  );
 });

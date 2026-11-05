@@ -15,6 +15,7 @@
 
 import {
   assert,
+  BBOX_INIT,
   bytesToString,
   DrawOPS,
   FeatureTest,
@@ -28,13 +29,10 @@ import {
 import { CFFParser } from "./cff_parser.js";
 import { compileFontPathInfo } from "./obj_bin_transform_core.js";
 import { getGlyphsUnicode } from "./glyphlist.js";
+import { GlyfTable } from "./glyf.js";
 import { isNumberArray } from "./core_utils.js";
 import { StandardEncoding } from "./encodings.js";
 import { Stream } from "./stream.js";
-
-function getFloat214(view, offset) {
-  return view.getInt16(offset) / 16384;
-}
 
 function getSubroutineBias(subrs) {
   const numSubrs = subrs.length;
@@ -160,7 +158,7 @@ function lookupCmap(ranges, unicode) {
   };
 }
 
-function compileGlyf(code, cmds, font, visitedGlyphs = new Set()) {
+function compileGlyf(code, cmds, glyfTable, visitedGlyphs = new Set()) {
   if (!code?.length) {
     return;
   }
@@ -170,6 +168,21 @@ function compileGlyf(code, cmds, font, visitedGlyphs = new Set()) {
   }
   visitedGlyphs.add(code);
 
+  const { contours, components } = glyfTable.getGlyph(code, visitedGlyphs);
+  if (components) {
+    for (const { glyph, transform } of components) {
+      if (glyph) {
+        cmds.save();
+        cmds.transform(transform);
+        compileGlyf(glyph, cmds, glyfTable, visitedGlyphs);
+        cmds.restore();
+      }
+    }
+    visitedGlyphs.delete(code);
+    return;
+  }
+
+  let firstPoint = null;
   function moveTo(x, y) {
     if (firstPoint) {
       // Close the current subpath in adding a straight line to the first point.
@@ -185,173 +198,50 @@ function compileGlyf(code, cmds, font, visitedGlyphs = new Set()) {
     cmds.add(DrawOPS.quadraticCurveTo, [xa, ya, x, y]);
   }
 
-  const view = new DataView(code.buffer, code.byteOffset, code.byteLength);
-  let i = 0;
-  const numberOfContours = view.getInt16(i);
-  let flags;
-  let firstPoint = null;
-  let x = 0,
-    y = 0;
-  i += 10;
-  if (numberOfContours < 0) {
-    // composite glyph
-    do {
-      flags = view.getUint16(i);
-      const glyphIndex = view.getUint16(i + 2);
-      i += 4;
-      let arg1, arg2;
-      if (flags & 0x01) {
-        if (flags & 0x02) {
-          arg1 = view.getInt16(i);
-          arg2 = view.getInt16(i + 2);
-        } else {
-          arg1 = view.getUint16(i);
-          arg2 = view.getUint16(i + 2);
-        }
-        i += 4;
-      } else if (flags & 0x02) {
-        arg1 = view.getInt8(i++);
-        arg2 = view.getInt8(i++);
+  // simple glyph
+  for (const { flags, xCoordinates, yCoordinates } of contours) {
+    // contours might have implicit points, which is located in the middle
+    // between two neighboring off-curve points
+    const contour = xCoordinates.map((x, i) => ({
+      flags: flags[i],
+      x,
+      y: yCoordinates[i],
+    }));
+    if (contour[0].flags & 1) {
+      contour.push(contour[0]); // using start point at the contour end
+    } else if (contour.at(-1).flags & 1) {
+      // first is off-curve point, trying to use one from the end
+      contour.unshift(contour.at(-1));
+    } else {
+      // start and end are off-curve points, creating implicit one
+      const p = {
+        flags: 1,
+        x: (contour[0].x + contour.at(-1).x) / 2,
+        y: (contour[0].y + contour.at(-1).y) / 2,
+      };
+      contour.unshift(p);
+      contour.push(p);
+    }
+    moveTo(contour[0].x, contour[0].y);
+    for (let j = 1, jj = contour.length; j < jj; j++) {
+      if (contour[j].flags & 1) {
+        lineTo(contour[j].x, contour[j].y);
+      } else if (contour[j + 1].flags & 1) {
+        quadraticCurveTo(
+          contour[j].x,
+          contour[j].y,
+          contour[j + 1].x,
+          contour[j + 1].y
+        );
+        j++;
       } else {
-        arg1 = code[i++];
-        arg2 = code[i++];
+        quadraticCurveTo(
+          contour[j].x,
+          contour[j].y,
+          (contour[j].x + contour[j + 1].x) / 2,
+          (contour[j].y + contour[j + 1].y) / 2
+        );
       }
-      if (flags & 0x02) {
-        x = arg1;
-        y = arg2;
-      } else {
-        x = 0;
-        y = 0;
-      }
-      let scaleX = 1,
-        scaleY = 1,
-        scale01 = 0,
-        scale10 = 0;
-      if (flags & 0x08) {
-        scaleX = scaleY = getFloat214(view, i);
-        i += 2;
-      } else if (flags & 0x40) {
-        scaleX = getFloat214(view, i);
-        scaleY = getFloat214(view, i + 2);
-        i += 4;
-      } else if (flags & 0x80) {
-        scaleX = getFloat214(view, i);
-        scale01 = getFloat214(view, i + 2);
-        scale10 = getFloat214(view, i + 4);
-        scaleY = getFloat214(view, i + 6);
-        i += 8;
-      }
-      const subglyph = font.glyphs[glyphIndex];
-      if (subglyph) {
-        // TODO: the transform should be applied only if there is a scale:
-        // https://github.com/freetype/freetype/blob/edd4fedc5427cf1cf1f4b045e53ff91eb282e9d4/src/truetype/ttgload.c#L1205
-        cmds.save();
-        cmds.transform([scaleX, scale01, scale10, scaleY, x, y]);
-
-        if (!(flags & 0x02)) {
-          // TODO: we must use arg1 and arg2 to make something similar to:
-          // https://github.com/freetype/freetype/blob/edd4fedc5427cf1cf1f4b045e53ff91eb282e9d4/src/truetype/ttgload.c#L1209
-        }
-        compileGlyf(subglyph, cmds, font, visitedGlyphs);
-        cmds.restore();
-      }
-    } while (flags & 0x20);
-  } else {
-    // simple glyph
-    const endPtsOfContours = [];
-    let j, jj;
-    for (j = 0; j < numberOfContours; j++) {
-      endPtsOfContours.push(view.getUint16(i));
-      i += 2;
-    }
-    const instructionLength = view.getUint16(i);
-    i += 2 + instructionLength; // skipping the instructions
-    const numberOfPoints = endPtsOfContours.at(-1) + 1;
-    const points = [];
-    while (points.length < numberOfPoints) {
-      flags = code[i++];
-      let repeat = 1;
-      if (flags & 0x08) {
-        repeat += code[i++];
-      }
-      while (repeat-- > 0) {
-        points.push({ flags });
-      }
-    }
-    for (j = 0; j < numberOfPoints; j++) {
-      switch (points[j].flags & 0x12) {
-        case 0x00:
-          x += view.getInt16(i);
-          i += 2;
-          break;
-        case 0x02:
-          x -= code[i++];
-          break;
-        case 0x12:
-          x += code[i++];
-          break;
-      }
-      points[j].x = x;
-    }
-    for (j = 0; j < numberOfPoints; j++) {
-      switch (points[j].flags & 0x24) {
-        case 0x00:
-          y += view.getInt16(i);
-          i += 2;
-          break;
-        case 0x04:
-          y -= code[i++];
-          break;
-        case 0x24:
-          y += code[i++];
-          break;
-      }
-      points[j].y = y;
-    }
-
-    let startPoint = 0;
-    for (i = 0; i < numberOfContours; i++) {
-      const endPoint = endPtsOfContours[i];
-      // contours might have implicit points, which is located in the middle
-      // between two neighboring off-curve points
-      const contour = points.slice(startPoint, endPoint + 1);
-      if (contour[0].flags & 1) {
-        contour.push(contour[0]); // using start point at the contour end
-      } else if (contour.at(-1).flags & 1) {
-        // first is off-curve point, trying to use one from the end
-        contour.unshift(contour.at(-1));
-      } else {
-        // start and end are off-curve points, creating implicit one
-        const p = {
-          flags: 1,
-          x: (contour[0].x + contour.at(-1).x) / 2,
-          y: (contour[0].y + contour.at(-1).y) / 2,
-        };
-        contour.unshift(p);
-        contour.push(p);
-      }
-      moveTo(contour[0].x, contour[0].y);
-      for (j = 1, jj = contour.length; j < jj; j++) {
-        if (contour[j].flags & 1) {
-          lineTo(contour[j].x, contour[j].y);
-        } else if (contour[j + 1].flags & 1) {
-          quadraticCurveTo(
-            contour[j].x,
-            contour[j].y,
-            contour[j + 1].x,
-            contour[j + 1].y
-          );
-          j++;
-        } else {
-          quadraticCurveTo(
-            contour[j].x,
-            contour[j].y,
-            (contour[j].x + contour[j + 1].x) / 2,
-            (contour[j].y + contour[j + 1].y) / 2
-          );
-        }
-      }
-      startPoint = endPoint + 1;
     }
   }
   visitedGlyphs.delete(code);
@@ -763,7 +653,7 @@ class Commands {
   }
 
   save() {
-    this.transformStack.push(this.currentTransform.slice());
+    this.transformStack.push(this.currentTransform);
   }
 
   restore() {
@@ -781,10 +671,30 @@ class Commands {
   }
 }
 
+// Only keeps the bounds of the outline points.
+class BBoxCommands extends Commands {
+  bbox = BBOX_INIT.slice();
+
+  add(cmd, args) {
+    if (!args) {
+      return;
+    }
+    const { bbox, currentTransform } = this;
+    for (let i = 0, ii = args.length; i < ii; i += 2) {
+      Util.applyTransform(args, currentTransform, i);
+      Util.pointBoundingBox(args[i], args[i + 1], bbox);
+    }
+  }
+}
+
 class CompiledFont {
   #compiledCharCodes = new Set();
 
   #compiledGlyphs = new Map();
+
+  #charBBoxes = new Map();
+
+  #glyphBBoxes = new Map();
 
   constructor(fontMatrix) {
     if (
@@ -832,11 +742,48 @@ class CompiledFont {
     return compileFontPathInfo(path);
   }
 
+  /**
+   * @param {string} unicode
+   * @returns {Array<number> | null | false} Bounds of the outline points in
+   *   text space, null for an empty glyph, or false if it can't be compiled.
+   */
+  getGlyphBBox(unicode) {
+    return this.#charBBoxes.getOrInsertComputed(unicode, () =>
+      this.#getGlyphIdBBox(lookupCmap(this.cmap, unicode).glyphId)
+    );
+  }
+
+  #getGlyphIdBBox(glyphId) {
+    return this.#glyphBBoxes.getOrInsertComputed(glyphId, () => {
+      const code = this.glyphs[glyphId];
+      if (!code?.length || code[0] === 14) {
+        return null;
+      }
+      const cmds = new BBoxCommands();
+      try {
+        this.#compileCommands(code, glyphId, cmds);
+      } catch (ex) {
+        warn(`getGlyphBBox: "${ex}".`);
+        return false;
+      }
+      const { bbox } = cmds;
+      return bbox[0] <= bbox[2] ? bbox : null;
+    });
+  }
+
   compileGlyph(code, glyphId) {
     if (!code?.length || code[0] === 14) {
       return CompiledFont.NOOP;
     }
 
+    const cmds = new Commands();
+    this.#compileCommands(code, glyphId, cmds);
+    cmds.add(DrawOPS.closePath);
+
+    return cmds.getPath();
+  }
+
+  #compileCommands(code, glyphId, cmds) {
     let fontMatrix = this.fontMatrix;
     if (this.isCFFCIDFont) {
       // Top DICT's FontMatrix can be ignored because CFFCompiler always
@@ -851,12 +798,8 @@ class CompiledFont {
     }
     assert(isNumberArray(fontMatrix, 6), "Expected a valid fontMatrix.");
 
-    const cmds = new Commands();
-    cmds.transform(fontMatrix.slice());
+    cmds.transform(fontMatrix);
     this.compileGlyphImpl(code, cmds, glyphId);
-    cmds.add(DrawOPS.closePath);
-
-    return cmds.getPath();
   }
 
   compileGlyphImpl() {
@@ -870,10 +813,11 @@ class TrueTypeCompiled extends CompiledFont {
 
     this.glyphs = glyphs;
     this.cmap = cmap;
+    this.glyfTable = new GlyfTable(glyphs);
   }
 
   compileGlyphImpl(code, cmds) {
-    compileGlyf(code, cmds, this);
+    compileGlyf(code, cmds, this.glyfTable);
   }
 }
 
@@ -902,8 +846,9 @@ class Type2Compiled extends CompiledFont {
 
 class FontRendererFactory {
   static create(font, seacAnalysisEnabled, validate = true) {
-    const data = new Uint8Array(font.data),
-      view = new DataView(data.buffer);
+    const data =
+        font.data instanceof Uint8Array ? font.data : new Uint8Array(font.data),
+      view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     let cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
     const numTables = view.getUint16(4);
     for (let i = 0, p = 12; i < numTables; i++, p += 16) {

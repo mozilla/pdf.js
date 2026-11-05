@@ -1069,6 +1069,7 @@ class Font {
 
     this.loadedName = this.#id = properties.loadedName;
     this.isType3Font = properties.isType3Font;
+    this.type3Dependencies = this.isType3Font ? new Set() : null;
     this.missingFile = false;
     this.cssFontInfo = properties.cssFontInfo;
 

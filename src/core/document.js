@@ -483,6 +483,7 @@ class Page {
     pageProxyId = null,
     annotationStorage = null,
     modifiedIds = null,
+    recordDependencies = false,
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
@@ -570,6 +571,12 @@ class Page {
         RESOURCES_KEYS_OPERATOR_LIST
       );
       const opList = new OperatorList(intent, sink);
+      if (
+        intent & RenderingIntentFlag.DISPLAY &&
+        !(intent & RenderingIntentFlag.OPLIST)
+      ) {
+        opList.enableBBoxes(this.view, recordDependencies);
+      }
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(
           resources,

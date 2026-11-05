@@ -1033,10 +1033,11 @@ class PartialEvaluator {
     if (translated.font.isType3Font) {
       // Add the dependencies to the parent operatorList so they are
       // resolved before Type3 operatorLists are executed synchronously.
-      operatorList.addDependencies(translated.type3Dependencies);
+      operatorList.addDependencies(translated.font.type3Dependencies);
     }
 
     state.font = translated.font;
+    operatorList.addFont(translated.loadedName, translated.font);
     translated.send(this.handler);
     return translated.loadedName;
   }
@@ -4827,7 +4828,6 @@ class TranslatedFont {
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
-    this.type3Dependencies = font.isType3Font ? new Set() : null;
   }
 
   send(handler) {
@@ -4871,7 +4871,7 @@ class TranslatedFont {
     if (this.#type3Loaded) {
       return this.#type3Loaded;
     }
-    const { dict, font, type3Dependencies } = this;
+    const { dict, font } = this;
     assert(font.isType3Font, "Must be a Type3 font.");
 
     const { promise, resolve } = Promise.withResolvers();
@@ -4933,7 +4933,7 @@ class TranslatedFont {
         charProcOperatorList.set(key, operatorList.getIR());
 
         for (const dependency of operatorList.dependencies) {
-          type3Dependencies.add(dependency);
+          font.type3Dependencies.add(dependency);
         }
       } catch {
         warn(`Type3 font resource "${key}" is not available.`);

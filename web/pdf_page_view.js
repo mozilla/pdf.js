@@ -98,7 +98,7 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   rendering will keep track of which areas of the page each PDF operation
  *   affects. Then, when rendering a partial page (if `enableDetailCanvas` is
  *   enabled), it will only run through the operations that affect that portion.
- *   The default value is `false`.
+ *   The default value is `true`.
  * @property {object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
@@ -964,7 +964,7 @@ class PDFPageView extends BasePDFPageView {
     return canvasWrapper;
   }
 
-  _getRenderingContext(canvas, transform, recordOperations, recordImages) {
+  _getRenderingContext(canvas, transform, recordImages) {
     return {
       canvas,
       transform,
@@ -974,7 +974,6 @@ class PDFPageView extends BasePDFPageView {
       annotationCanvasMap: this._annotationCanvasMap,
       pageColors: this.pageColors,
       isEditing: this.#isEditing,
-      recordOperations,
       recordImages,
       partialFrames: true,
     };
@@ -1099,11 +1098,6 @@ class PDFPageView extends BasePDFPageView {
       this.#scaleRoundY = sfy[1];
     }
 
-    const recordBBoxes =
-      this.enableOptimizedPartialRendering &&
-      this.#hasRestrictedScaling &&
-      !this.recordedBBoxes;
-
     const recordImages =
       this.imagesRightClickMinSize !== -1 && !this.imageCoordinates;
 
@@ -1112,7 +1106,7 @@ class PDFPageView extends BasePDFPageView {
       ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
       : null;
     const resultPromise = this._drawCanvas(
-      this._getRenderingContext(canvas, transform, recordBBoxes, recordImages),
+      this._getRenderingContext(canvas, transform, recordImages),
       () => {
         if (prevCanvas) {
           prevCanvas.remove();

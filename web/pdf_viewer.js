@@ -143,6 +143,7 @@ function isValidAnnotationEditorMode(mode) {
  *   rendering will keep track of which areas of the page each PDF operation
  *   affects. Then, when rendering a partial page (if `enableDetailCanvas` is
  *   enabled), it will only run through the operations that affect that portion.
+ *   The default value is `true`.
  * @property {L10n} [l10n] - Localization service.
  * @property {boolean} [enablePermissions] - Enables PDF document permissions,
  *   when they exist. The default value is `false`.
@@ -370,7 +371,7 @@ class PDFViewer {
     this.capCanvasAreaFactor = options.capCanvasAreaFactor;
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.enableOptimizedPartialRendering =
-      options.enableOptimizedPartialRendering ?? false;
+      options.enableOptimizedPartialRendering ?? true;
     this.enableSelectionRendering = options.enableSelectionRendering !== false;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
     this.l10n = options.l10n;

@@ -54,7 +54,7 @@ import {
   NodeFilterFactory,
 } from "display-node_utils";
 import { CanvasGraphics } from "./canvas.js";
-import { createCanvasTrackers } from "./canvas_dependency_tracker.js";
+import { CanvasImagesTracker } from "./canvas_images_tracker.js";
 import { DOMBinaryDataFactory } from "display-binary_data_factory";
 import { DOMCanvasFactory } from "./dom_canvas_factory.js";
 import { DOMFilterFactory } from "./dom_filter_factory.js";
@@ -64,6 +64,7 @@ import { GlobalWorkerOptions } from "./worker_options.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { ObjectHandler } from "./object_handler.js";
+import { OperatorBBoxes } from "./operator_bboxes.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
 import { PagesMapper } from "./pages_mapper.js";
 import { PageViewport } from "./page_viewport.js";
@@ -1276,8 +1277,6 @@ class PDFDocumentProxy {
  * @property {PrintAnnotationStorage} [printAnnotationStorage]
  * @property {boolean} [isEditing] - Render the page in editing mode.
  * @property {boolean} [recordImages] - Record the location of images in the PDF
- * @property {boolean} [recordOperations] - Record the dependencies and bounding
- *   boxes of all PDF operations that render onto the canvas.
  * @property {boolean} [partialFrames] - Emit partial renderings of the page
  *   through `RenderTask.onFrame` while it is being drawn. Only has an effect
  *   when the page is rendered in a renderer worker.
@@ -1354,6 +1353,9 @@ class PDFDocumentProxy {
  * Proxy to a `PDFPage` in the worker thread.
  */
 class PDFPageProxy {
+  // Operation bounds by rendering intent, kept after clean-up.
+  #operatorBBoxes = new Map();
+
   #pendingCleanup = false;
 
   #pagesMapper = null;
@@ -1374,7 +1376,6 @@ class PDFPageProxy {
 
     this._intentStates = new Map();
     this.destroyed = false;
-    this.recordedBBoxes = null;
     this.#pagesMapper = pagesMapper;
     this.imageCoordinates = null;
   }
@@ -1522,7 +1523,6 @@ class PDFPageProxy {
     printAnnotationStorage = null,
     isEditing = false,
     recordImages = false,
-    recordOperations = false,
     partialFrames = false,
     operationsFilter = null,
   }) {
@@ -1561,6 +1561,7 @@ class PDFPageProxy {
       intentState.operatorList = {
         fnArray: [],
         argsArray: [],
+        bboxes: null,
         lastChunk: false,
         separateAnnots: null,
       };
@@ -1572,28 +1573,18 @@ class PDFPageProxy {
     const recordForDebugger = !!(
       this._pdfBug && globalThis.StepperManager?.enabled
     );
-    const shouldRecordOperations =
-      !!canvas &&
-      !this.recordedBBoxes &&
-      (recordOperations || recordForDebugger);
     const shouldRecordImages =
       !!canvas && !this.imageCoordinates && recordImages;
 
     const complete = error => {
       intentState.renderTasks.delete(internalRenderTask);
 
-      if (shouldRecordOperations) {
-        const { recordedBBoxes } = internalRenderTask;
-        if (recordedBBoxes) {
-          internalRenderTask.stepper?.setOperatorBBoxes(
-            recordedBBoxes,
-            internalRenderTask.debugMetadata
-          );
-
-          if (recordOperations) {
-            this.recordedBBoxes = recordedBBoxes;
-          }
-        }
+      const { bboxes } = internalRenderTask.operatorList;
+      if (internalRenderTask.stepper && bboxes) {
+        internalRenderTask.stepper.setOperatorBBoxes(
+          bboxes,
+          internalRenderTask.params.viewport
+        );
       }
 
       if (shouldRecordImages && !error) {
@@ -1637,7 +1628,6 @@ class PDFPageProxy {
         viewport,
         transform,
         background,
-        recordOperations: shouldRecordOperations,
         recordImages: shouldRecordImages,
         partialFrames,
         recordForDebugger,
@@ -1687,6 +1677,26 @@ class PDFPageProxy {
       .catch(complete);
 
     return renderTask;
+  }
+
+  /**
+   * Returns cached display-operation bounds, or null if unavailable.
+   * @private
+   */
+  _getOperatorBBoxes({
+    intent = "display",
+    annotationMode = AnnotationMode.ENABLE,
+    printAnnotationStorage = null,
+    isEditing = false,
+  } = {}) {
+    const { renderingIntent, cacheKey } = this._transport.getRenderingIntent(
+      intent,
+      annotationMode,
+      printAnnotationStorage,
+      isEditing
+    );
+    const kept = this.#operatorBBoxes.get(renderingIntent);
+    return kept?.cacheKey === cacheKey ? kept.bboxes : null;
   }
 
   /**
@@ -1839,6 +1849,7 @@ class PDFPageProxy {
       }
     }
     this.objs.clear();
+    this.#operatorBBoxes.clear();
     this._transport.cleanupPage(this._id);
     this.#pendingCleanup = false;
 
@@ -1907,6 +1918,13 @@ class PDFPageProxy {
     }
     intentState.operatorList.lastChunk = operatorListChunk.lastChunk;
     intentState.operatorList.separateAnnots = operatorListChunk.separateAnnots;
+    if (operatorListChunk.bboxes) {
+      intentState.operatorList.bboxes = new OperatorBBoxes(
+        operatorListChunk.bboxes,
+        this.view,
+        operatorListChunk.bboxDependencies
+      );
+    }
 
     // Notify all the rendering tasks there are more operators to be consumed.
     for (const internalRenderTask of intentState.renderTasks) {
@@ -1945,6 +1963,7 @@ class PDFPageProxy {
         cacheKey,
         annotationStorage: map,
         modifiedIds,
+        recordDependencies: this._pdfBug,
       },
       /* queueingStrategy = */ undefined,
       transfer
@@ -1965,6 +1984,12 @@ class PDFPageProxy {
             return; // Ignore any pending requests if the worker was terminated.
           }
           this._renderPageChunk(value, intentState);
+          if (value.bboxes) {
+            this.#operatorBBoxes.set(renderingIntent, {
+              cacheKey,
+              bboxes: intentState.operatorList.bboxes,
+            });
+          }
           pump();
         },
         reason => {
@@ -3309,8 +3334,6 @@ class RenderTask {
  * @ignore
  */
 class InternalRenderTask {
-  #dependencyTracker = null;
-
   #imagesTracker = null;
 
   #rAF = null;
@@ -3400,16 +3423,6 @@ class InternalRenderTask {
       : this.#imagesTracker?.take();
   }
 
-  get recordedBBoxes() {
-    return this.#rendererTask
-      ? this.#rendererTask.recordedBBoxes
-      : this.#dependencyTracker?.take();
-  }
-
-  get debugMetadata() {
-    return this.#dependencyTracker?.takeDebugMetadata() ?? null;
-  }
-
   async initializeGraphics({ transparency = false, optionalContentConfig }) {
     if (this.cancelled) {
       return;
@@ -3445,31 +3458,16 @@ class InternalRenderTask {
     }
 
     if (!this.#rendererTask) {
-      const {
-        viewport,
-        transform,
-        background,
-        recordOperations,
-        recordImages,
-        recordForDebugger,
-      } = this.params;
+      const { viewport, transform, background, recordImages } = this.params;
 
       // When printing in Firefox, we get a specific context in mozPrintCallback
       // which cannot be created from the canvas itself.
       const canvasContext =
         this._canvasContext ||
         this.canvasFactory.getNoAlphaContext(this._canvas);
-      const { dependencyTracker, imagesTracker } = createCanvasTrackers(
-        this._canvas,
-        this.operatorList.fnArray.length,
-        {
-          recordOperations,
-          recordImages,
-          recordDebugMetadata: recordForDebugger,
-        }
-      );
-      // Only root trackers support take().
-      this.#dependencyTracker = dependencyTracker;
+      const imagesTracker = recordImages
+        ? new CanvasImagesTracker(this._canvas)
+        : null;
       this.#imagesTracker = imagesTracker;
 
       this.gfx = new CanvasGraphics(
@@ -3481,7 +3479,6 @@ class InternalRenderTask {
         { optionalContentConfig },
         this.annotationCanvasMap,
         this.pageColors,
-        dependencyTracker,
         imagesTracker
       );
       this.gfx.beginDrawing({
@@ -3521,9 +3518,6 @@ class InternalRenderTask {
       this.graphicsReadyCallback ||= this._continueBound;
       return;
     }
-    this.#dependencyTracker?.growOperationsCount(
-      this.operatorList.fnArray.length
-    );
     this.stepper?.updateOperatorList(this.operatorList);
 
     if (this.running) {

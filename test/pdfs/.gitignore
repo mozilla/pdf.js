@@ -1053,3 +1053,12 @@
 !perf_transparency_blend_modes.pdf
 !perf_transparency_soft_masks.pdf
 !perf_transparency_groups.pdf
+!bbox_stroke_text_matrix.pdf
+!bbox_hidden_text_clip.pdf
+!bbox_type3_text_clip.pdf
+!bbox_text_clip_save.pdf
+!smask_none.pdf
+!type3_inherited_text_state.pdf
+!truetype_composite_point_matching.pdf
+!text_clip_empty_glyph.pdf
+!cff_bbox_outline_fallback.pdf
