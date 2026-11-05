@@ -2460,7 +2460,4 @@ let makeBrotliDecode = () => {
   return decode;
 };
 
-/**
- * @type {function(!Int8Array, ?Options=):!Int8Array}
- */
-export let BrotliDecode = makeBrotliDecode();
+export { makeBrotliDecode };

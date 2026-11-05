@@ -26,7 +26,6 @@ import {
   parseCoverageFormats,
 } from "./external/ccov/coverage_format.mjs";
 import { exec, execSync, spawn, spawnSync } from "child_process";
-import { finished, pipeline as runPipeline } from "stream/promises";
 import { Marked, TextRenderer } from "marked";
 import autoprefixer from "autoprefixer";
 import { buildPrefsSchema } from "./external/chromium/prefs.mjs";
@@ -44,6 +43,7 @@ import postcss from "gulp-postcss";
 import postcssDiscardComments from "postcss-discard-comments";
 import { preprocess } from "./external/builder/builder.mjs";
 import rename from "gulp-rename";
+import { pipeline as runPipeline } from "stream/promises";
 import stream from "stream";
 import TerserPlugin from "terser-webpack-plugin";
 import Vinyl from "vinyl";
@@ -1205,7 +1205,7 @@ gulp.task("default", function (done) {
   done();
 });
 
-gulp.task("release-brotli", async function (done) {
+gulp.task("release-brotli", async function () {
   const hashIndex = process.argv.indexOf("--hash");
   if (hashIndex === -1 || hashIndex + 1 >= process.argv.length) {
     throw new Error('Missing "--hash <commit-hash>" argument.');
@@ -1213,18 +1213,25 @@ gulp.task("release-brotli", async function (done) {
   console.log();
   console.log("### Getting Brotli js file for release");
 
-  const OUTPUT_DIR = "./external/brotli/";
   const hash = process.argv[hashIndex + 1];
   const url = `https://raw.githubusercontent.com/google/brotli/${hash}/js/decode.js`;
-  const outputPath = OUTPUT_DIR + "decode.js";
+  const outputPath = "./external/brotli/decode.js";
   const res = await fetch(url);
-  const fileStream = fs.createWriteStream(outputPath, { flags: "w" });
-  await finished(stream.Readable.fromWeb(res.body).pipe(fileStream));
-  fileStream.end();
+  if (!res.ok) {
+    throw new Error(`Failed to fetch ${url}: ${res.status}`);
+  }
+  // Export the factory so that decoder tables can be initialized lazily.
+  const source = await res.text();
+  const patchedSource = source.replace(
+    /\/\*\*\n \* @type \{[^}]+\}\n \*\/\nexport let BrotliDecode = makeBrotliDecode\(\);/,
+    "export { makeBrotliDecode };"
+  );
+  if (patchedSource === source) {
+    throw new Error("Unexpected `BrotliDecode` export in decode.js.");
+  }
+  fs.writeFileSync(outputPath, patchedSource);
 
   console.log(`Brotli js file saved to: ${outputPath}`);
-
-  done();
 });
 
 function createBuildNumber(done) {
