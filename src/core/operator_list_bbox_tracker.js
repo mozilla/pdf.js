@@ -627,13 +627,15 @@ class OperatorListBBoxTracker {
   #getGlyphBBox(font, info, glyph, fontChar) {
     const renderer = fontChar && this.#getRenderer(font, info);
     if (renderer) {
-      const outlineBBox = renderer.getGlyphBBox(fontChar);
-      if (outlineBBox !== false) {
-        return outlineBBox;
-      }
+      return renderer.getGlyphBBox(fontChar);
     }
     if (info.type3BBoxes) {
       return this.#getType3GlyphBBox(font, info, glyph.operatorListId);
+    }
+    if (font?.data && !font.missingFile) {
+      // A native font can draw outlines unsupported by the font renderer.
+      // Its declared box and advances need not bound the actual glyphs.
+      return false;
     }
     if (!info.bbox && !font?.missingFile) {
       return false;

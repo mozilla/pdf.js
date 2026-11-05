@@ -991,6 +991,26 @@ describe("evaluator", function () {
       expectBBox(bboxes, fnArray.indexOf(OPS.showText), [20, 29, 24, 37]);
     });
 
+    it("should not trust the font box when glyph outlines are unavailable", function () {
+      for (const renderer of [null, { getGlyphBBox: () => false }]) {
+        const { operatorList, sink } = createTextOperatorList({
+          data: new Uint8Array(1),
+          renderer,
+        });
+        operatorList.addOp(OPS.beginText);
+        operatorList.addOp(OPS.setFont, ["font1", 10]);
+        operatorList.addOp(OPS.setTextMatrix, [
+          new Float32Array([1, 0, 0, 1, 20, 30]),
+        ]);
+        operatorList.addOp(OPS.showText, [[{ fontChar: "A", width: 500 }]]);
+        operatorList.addOp(OPS.endText);
+        operatorList.flush(/* lastChunk = */ true);
+
+        const { bboxes, fnArray } = sink.chunks[0];
+        expectBBox(bboxes, fnArray.indexOf(OPS.showText), [0, 0, 100, 100]);
+      }
+    });
+
     it("should clip everything with text without ink", function () {
       const { operatorList, sink } = createTextOperatorList({
         data: new Uint8Array(1),

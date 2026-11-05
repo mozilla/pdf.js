@@ -15493,5 +15493,19 @@
       "minY": 0.58,
       "maxY": 0.66
     }
+  },
+  {
+    "id": "cff-bbox-outline-fallback-partial",
+    "file": "pdfs/cff_bbox_outline_fallback.pdf",
+    "md5": "b8d7026fbf8a01d75c0c17e5493946f9",
+    "rounds": 1,
+    "type": "eq",
+    "about": "CFF glyph with an undersized font box and arithmetic unsupported by the outline renderer.",
+    "partial": {
+      "minX": 0.390625,
+      "maxX": 0.6640625,
+      "minY": 0.7421875,
+      "maxY": 0.78125
+    }
   }
 ]
