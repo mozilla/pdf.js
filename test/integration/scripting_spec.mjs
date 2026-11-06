@@ -22,11 +22,15 @@ import {
   getComputedStyleSelector,
   getFirstSerialized,
   getQuerySelector,
+  getRawValue,
   getSelector,
   kbDeleteLastWord,
+  kbOpenList,
   kbSelectAll,
   loadAndWait,
+  openList,
   scrollIntoView,
+  updateFromSandbox,
   waitForEntryInStorage,
   waitForSandboxTrip,
   waitForTimeout,
@@ -54,6 +58,18 @@ async function typeAndWaitForSandbox(page, selector, value) {
     await page.type(selector, character);
     await waitForSandboxTrip(page);
   }
+}
+
+function getComboState(page, id) {
+  return page.$eval(
+    getSelector(id),
+    (el, i) => [
+      el.value,
+      window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(i)
+        .value,
+    ],
+    id
+  );
 }
 
 describe("Interaction", () => {
@@ -3031,5 +3047,430 @@ describe("Interaction", () => {
         })
       );
     });
+  });
+});
+
+describe("Editable combo scripting", () => {
+  let pages;
+  const selector = '[name="combo4"]';
+  const getFormattedState = page =>
+    page.$eval(selector, el => {
+      const { value, formattedValue } =
+        window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(
+          "9R"
+        );
+      return [el.value, value, formattedValue];
+    });
+  async function typeAndCommit(page, value, formattedValue) {
+    await clearInput(page, selector);
+    await typeAndWaitForSandbox(page, selector, value);
+    await page.click('[name="combo1"]');
+    await page.waitForFunction(
+      (sel, expected) => document.querySelector(sel).value === expected,
+      {},
+      selector,
+      formattedValue
+    );
+  }
+
+  beforeEach(async () => {
+    pages = await loadAndWait("bug1876540.pdf", selector);
+    await Promise.all(pages.map(([, page]) => waitForScripting(page)));
+  });
+  afterEach(async () => closePages(pages));
+
+  it("must format custom text and reject invalid values", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await typeAndCommit(page, "custom", "CUSTOM");
+        expect(await page.$eval(selector, el => el.value))
+          .withContext(browserName)
+          .toEqual("CUSTOM");
+        await clearInput(page, selector);
+        await typeAndWaitForSandbox(page, selector, "bad");
+        await page.click('[name="combo2"]');
+        await page.waitForFunction(
+          sel => document.querySelector(sel).value === "",
+          {},
+          selector
+        );
+      })
+    );
+  });
+
+  it("must keep typed text matching an export value", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await clearInput(page, selector);
+        await typeAndWaitForSandbox(page, selector, "DE");
+        expect(
+          await page.$eval(selector, el => [
+            el.value,
+            el.selectionStart,
+            window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(
+              "9R"
+            ).value,
+          ])
+        )
+          .withContext(browserName)
+          .toEqual(["DE", 2, "DE"]);
+        await clearInput(page, selector);
+        await typeAndWaitForSandbox(page, selector, "France");
+        expect(await getComboState(page, "9R"))
+          .withContext(browserName)
+          .toEqual(["France", "FR"]);
+      })
+    );
+  });
+
+  it("must keep the values set by a script when focusing and leaving the field", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        for (const [detail, displayed, stored] of [
+          [{ indices: [2] }, "Germany", "DE"],
+          [{ clear: null }, "", ""],
+          [{ value: "" }, "", ""],
+        ]) {
+          // Start with formatting that the update must clear.
+          await typeAndCommit(page, "custom", "CUSTOM");
+
+          await updateFromSandbox(page, selector, detail);
+          const context = `In ${browserName}, ${JSON.stringify(detail)}`;
+          await page.click(selector);
+          expect(await getFormattedState(page))
+            .withContext(`${context}, focused`)
+            .toEqual([displayed, stored, null]);
+          await page.click('[name="combo2"]');
+          await waitForSandboxTrip(page);
+          expect(await getFormattedState(page))
+            .withContext(`${context}, blurred`)
+            .toEqual([displayed, stored, null]);
+        }
+      })
+    );
+  });
+
+  it("must keep the picked option when its label is ambiguous", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        // combo5: A and B are both labeled "Same"; combo6: A is labeled "B"
+        // and B is labeled "Other".
+        for (const [sel, id, index, expected] of [
+          ['[name="combo5"]', "11R", 1, ["Same", "B"]],
+          ['[name="combo6"]', "12R", 0, ["B", "A"]],
+        ]) {
+          const context = `In ${browserName}, ${sel}`;
+          await page.click(sel);
+          await openList(page, id);
+          // Read storage before asynchronous sandbox replies.
+          expect(
+            await page.evaluate(
+              (i, n) => {
+                document
+                  .getElementById(`pdfjs_internal_id_${i}_listbox_${n}`)
+                  .click();
+                return window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(
+                  i
+                ).value;
+              },
+              id,
+              index
+            )
+          )
+            .withContext(`${context}, picked`)
+            .toEqual(expected[1]);
+          await page.click('[name="combo2"]');
+          await waitForSandboxTrip(page);
+          expect(await getComboState(page, id))
+            .withContext(`${context}, committed`)
+            .toEqual(expected);
+
+          await page.click(sel);
+          await kbOpenList(page);
+          expect(
+            await page.$eval(sel, el =>
+              el.getAttribute("aria-activedescendant")
+            )
+          )
+            .withContext(`${context}, reopened`)
+            .toEqual(`pdfjs_internal_id_${id}_listbox_${index}`);
+          await page.click('[name="combo2"]');
+          await waitForSandboxTrip(page);
+        }
+      })
+    );
+  });
+
+  it("must close the list with Enter or Escape and commit only on blur", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const listbox = "#pdfjs_internal_id_11R_listbox";
+        // combo5 reports its Validate and Blur values in combo2 and combo3.
+        const getReports = () =>
+          page.evaluate(() =>
+            ["combo2", "combo3"].map(
+              name => document.querySelector(`[name="${name}"]`).value
+            )
+          );
+        // A and B share "Same": pick B.
+        await page.click('[name="combo5"]');
+        await page.keyboard.press("ArrowDown");
+        for (const key of ["Enter", "Escape"]) {
+          await page.keyboard.press("Enter");
+          await page.waitForSelector(`${listbox}:popover-open`);
+          await page.keyboard.press(key);
+          await page.waitForSelector(`${listbox}:not(:popover-open)`);
+          await waitForSandboxTrip(page);
+          expect(await getReports())
+            .withContext(`In ${browserName}, after ${key}`)
+            .toEqual(["Something else", "France"]);
+        }
+        await page.click('[name="combo1"]');
+        await waitForSandboxTrip(page);
+        expect(await getReports())
+          .withContext(`In ${browserName}, after blur`)
+          .toEqual(["Validate: B", "Blur: B"]);
+      })
+    );
+  });
+
+  it("must keep the text typed in the open list", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await page.click(selector);
+        await page.keyboard.press("Enter");
+        await page.waitForSelector(
+          "#pdfjs_internal_id_9R_listbox:popover-open"
+        );
+        await typeAndWaitForSandbox(page, selector, "x");
+        await page.keyboard.press("Enter");
+        expect(await page.$eval(selector, el => el.value))
+          .withContext(browserName)
+          .toEqual("x");
+      })
+    );
+  });
+
+  it("must keep the stored formatting when going back to the committed option", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await typeAndCommit(page, "France", "FR");
+        await page.click(selector);
+        await page.keyboard.press("ArrowDown");
+        await waitForSandboxTrip(page);
+        await page.keyboard.press("ArrowUp");
+        await waitForSandboxTrip(page);
+        await page.click('[name="combo1"]');
+        await waitForSandboxTrip(page);
+        // Printing and saving read this stored formatting.
+        const { value, formattedValue } = await getRawValue(page, "9R");
+        expect([value, formattedValue])
+          .withContext(browserName)
+          .toEqual(["FR", "FR"]);
+      })
+    );
+  });
+
+  it("must run the mouse actions of the arrow button", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        // combo6's Mouse Down action writes to combo3.
+        await openList(page, "12R");
+        await waitForSandboxTrip(page);
+        expect(await page.$eval('[name="combo3"]', el => el.value))
+          .withContext(browserName)
+          .toEqual("Mouse Down");
+      })
+    );
+  });
+
+  it("must keep the previous option when a selection is rejected", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const combo7 = '[name="combo7"]';
+        // combo7 rejects B, which shares A's label.
+        await page.click(combo7);
+        await openList(page, "13R");
+        await page.$eval("#pdfjs_internal_id_13R_listbox_1", el => el.click());
+        await waitForSandboxTrip(page);
+        expect(await getComboState(page, "13R"))
+          .withContext(`In ${browserName}, rejected`)
+          .toEqual(["Same", "A"]);
+        await page.keyboard.press("ArrowDown");
+        await waitForSandboxTrip(page);
+        expect(await getComboState(page, "13R"))
+          .withContext(`In ${browserName}, rejected with the arrows`)
+          .toEqual(["Same", "A"]);
+        await kbOpenList(page);
+        expect(
+          await page.$eval(combo7, el =>
+            el.getAttribute("aria-activedescendant")
+          )
+        )
+          .withContext(`In ${browserName}, reopened`)
+          .toEqual("pdfjs_internal_id_13R_listbox_0");
+        await page.keyboard.press("Escape");
+        await page.click('[name="combo1"]');
+        await waitForSandboxTrip(page);
+        expect(await getComboState(page, "13R"))
+          .withContext(`In ${browserName}, left`)
+          .toEqual(["Same", "A"]);
+      })
+    );
+  });
+
+  it("must commit an option picked with the arrow button only once accepted", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        // combo7 rejects B; combo5 reports its validated value in combo2.
+        for (const id of ["13R", "11R"]) {
+          await openList(page, id);
+          await page.click(`#pdfjs_internal_id_${id}_listbox_1`);
+        }
+        await page.waitForFunction(
+          () =>
+            document.querySelector('[name="combo2"]').value === "Validate: B"
+        );
+        await waitForSandboxTrip(page);
+        expect([
+          await page.$eval('[name="combo7"]', el => el.value),
+          (await getRawValue(page, "13R")).value,
+          (await getRawValue(page, "11R")).value,
+        ])
+          .withContext(browserName)
+          .toEqual(["Same", "A", "B"]);
+      })
+    );
+  });
+
+  it("must forget the formatted value when resetting the form", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await typeAndCommit(page, "custom", "CUSTOM");
+        await page.click('[data-annotation-id="10R"] a');
+        await waitForSandboxTrip(page);
+        expect(await getFormattedState(page))
+          .withContext(browserName)
+          .toEqual(["France", "FR", null]);
+      })
+    );
+  });
+
+  it("must show the new label of the selected option, keeping its formatting", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        // Relabel FR in both a formatted and an unformatted field.
+        await typeAndCommit(page, "France", "FR");
+        for (const sel of ['[name="combo1"]', selector]) {
+          await updateFromSandbox(page, sel, {
+            items: [
+              { displayValue: "United States", exportValue: "US" },
+              { displayValue: "French", exportValue: "FR" },
+              { displayValue: "Germany", exportValue: "DE" },
+            ],
+          });
+        }
+        expect(await getFormattedState(page))
+          .withContext(`In ${browserName}, relabeled`)
+          .toEqual(["FR", "FR", "FR"]);
+        await page.click(selector);
+        expect(await getFormattedState(page))
+          .withContext(`In ${browserName}, focused`)
+          .toEqual(["French", "FR", "FR"]);
+        expect(await getComboState(page, "6R"))
+          .withContext(`In ${browserName}, unformatted`)
+          .toEqual(["French", "FR"]);
+      })
+    );
+  });
+
+  it("must run the field action when picking an option", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await openList(page, "9R");
+        await page.click("#pdfjs_internal_id_9R_listbox_0");
+        // combo4's Action writes its value and combo1's value to combo2.
+        await page.waitForFunction(
+          () => document.querySelector('[name="combo2"]').value === "US FR"
+        );
+        expect((await getRawValue(page, "9R")).value)
+          .withContext(browserName)
+          .toEqual("US");
+      })
+    );
+  });
+
+  it("must commit the field being edited before picking with the arrow button", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        // combo4's Action must see combo1's committed value.
+        await clearInput(page, '[name="combo1"]');
+        await page.type('[name="combo1"]', "new text");
+        await openList(page, "9R");
+        await page.click("#pdfjs_internal_id_9R_listbox_0");
+        await waitForSandboxTrip(page);
+        expect(await page.$eval('[name="combo2"]', el => el.value))
+          .withContext(browserName)
+          .toEqual("US new text");
+      })
+    );
+  });
+});
+
+describe("Editable combo scripting with a synchronous sandbox", () => {
+  let pages;
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "bug1876540.pdf",
+      '[name="combo8"]',
+      null /* zoom = */,
+      {
+        appSetup: app => {
+          // Deliver replies synchronously to test event ordering.
+          const { externalServices } = app;
+          const createScripting =
+            externalServices.createScripting.bind(externalServices);
+          externalServices.createScripting = () => {
+            const scripting = createScripting();
+            const dispatch = scripting.dispatchEventInSandbox.bind(scripting);
+            let sandbox = null;
+            scripting._ready.then(s => {
+              sandbox = s;
+            });
+            scripting.dispatchEventInSandbox = event =>
+              sandbox ? sandbox.dispatchEvent(event) : dispatch(event);
+            return scripting;
+          };
+        },
+      }
+    );
+    await Promise.all(pages.map(([, page]) => waitForScripting(page)));
+  });
+  afterEach(async () => closePages(pages));
+
+  it("must commit an option picked with the arrow button only once accepted", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        // combo7 rejects B; combo8 must validate after running Action.
+        for (const [id, index] of [
+          ["13R", 1],
+          ["14R", 0],
+        ]) {
+          await openList(page, id);
+          await page.click(`#pdfjs_internal_id_${id}_listbox_${index}`);
+          await waitForSandboxTrip(page);
+        }
+        expect(
+          await page.evaluate(() => [
+            window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(
+              "13R"
+            ).value,
+            document.querySelector('[name="combo2"]').value,
+          ])
+        )
+          .withContext(browserName)
+          .toEqual(["A", "Checked: US"]);
+      })
+    );
   });
 });

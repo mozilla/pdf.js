@@ -1053,3 +1053,5 @@
 !perf_transparency_blend_modes.pdf
 !perf_transparency_soft_masks.pdf
 !perf_transparency_groups.pdf
+!bug1876540.pdf
+!bug1876540_siblings.pdf

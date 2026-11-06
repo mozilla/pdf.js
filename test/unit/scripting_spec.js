@@ -77,6 +77,159 @@ describe("Scripting", function () {
   });
 
   describe("Sandbox", function () {
+    function createCombos(editables, properties) {
+      const combos = editables.map(editable => ({
+        name: editable ? "editable" : "select",
+        id: getId(),
+        editable,
+      }));
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: Object.fromEntries(
+          combos.map(({ name, id, editable }) => [
+            name,
+            [{ id, type: "combobox", editable, actions: {}, ...properties }],
+          ])
+        ),
+        calculationOrder: [],
+      });
+      return combos;
+    }
+
+    it("should not accept custom values in a combo made editable", async () => {
+      const [{ id }] = createCombos([false], {
+        value: "US",
+        items: [{ displayValue: "United States", exportValue: "US" }],
+      });
+      // Changing editable must not enable custom values in a <select>.
+      expect(
+        await myeval(
+          '(getField("select").editable = true, getField("select").value = "custom", getField("select").value)'
+        )
+      ).toEqual("US");
+      expect(send_queue.get(id).value).toEqual("US");
+    });
+
+    it("should select an option with an empty export value", async () => {
+      const combos = createCombos([true, false], {
+        value: "FR",
+        items: [
+          { displayValue: "France", exportValue: "FR" },
+          { displayValue: "None", exportValue: "" },
+        ],
+      });
+      for (const { name, id } of combos) {
+        await sandbox.dispatchEventInSandbox({
+          id,
+          name: "Keystroke",
+          value: "France",
+          change: "None",
+          changeEx: "",
+          willCommit: false,
+        });
+        expect(send_queue.get(id))
+          .withContext(name)
+          .toEqual({ id, value: "", selection: true });
+        expect(await myeval(`getField("${name}").currentValueIndices`))
+          .withContext(name)
+          .toEqual(1);
+      }
+    });
+
+    it("should keep the value of a combo when a selection is rejected", async () => {
+      const combos = createCombos([true, false], {
+        value: "A",
+        items: [
+          { displayValue: "Same", exportValue: "A" },
+          { displayValue: "Same", exportValue: "B" },
+        ],
+        actions: {
+          Keystroke: [
+            `if (!event.willCommit && event.changeEx === "B") event.rc = false;`,
+          ],
+        },
+      });
+      for (const { name, id } of combos) {
+        await sandbox.dispatchEventInSandbox({
+          id,
+          name: "Keystroke",
+          value: "Same",
+          change: "Same",
+          changeEx: "B",
+          willCommit: false,
+        });
+        expect(send_queue.get(id))
+          .withContext(name)
+          .toEqual({ id, value: "A", selection: true });
+        expect(await myeval(`getField("${name}").value`))
+          .withContext(name)
+          .toEqual("A");
+      }
+    });
+
+    it("should accept custom values and labels only for editable combos", async () => {
+      const [{ id }] = createCombos([true], {
+        value: "FR",
+        items: [{ displayValue: "France", exportValue: "FR" }],
+      });
+      expect(
+        await myeval(
+          '(getField("editable").value = "Custom", [getField("editable").value, getField("editable").currentValueIndices])'
+        )
+      ).toEqual(["Custom", -1]);
+      expect(
+        await myeval(
+          '(getField("editable").value = "France", [getField("editable").value, getField("editable").currentValueIndices])'
+        )
+      ).toEqual(["FR", 0]);
+      await sandbox.dispatchEventInSandbox({
+        id,
+        name: "Keystroke",
+        value: "C",
+        change: "ustom",
+        selStart: 1,
+        selEnd: 1,
+        willCommit: false,
+      });
+      expect(await myeval('getField("editable").value')).toEqual("Custom");
+      await sandbox.dispatchEventInSandbox({
+        id,
+        name: "Keystroke",
+        value: "Franc",
+        change: "e",
+        selStart: 5,
+        selEnd: 5,
+        willCommit: false,
+      });
+      // Echo the typed label while storing its export value.
+      expect(send_queue.get(id)).toEqual({
+        id,
+        value: "France",
+        selRange: [6, 6],
+      });
+      expect(await myeval('getField("editable").value')).toEqual("FR");
+      await sandbox.dispatchEventInSandbox({
+        id,
+        name: "Keystroke",
+        value: "F",
+        change: "R",
+        selStart: 1,
+        selEnd: 1,
+        willCommit: false,
+      });
+      expect(send_queue.get(id)).toEqual({ id, value: "FR", selRange: [2, 2] });
+      expect(
+        await myeval(
+          '[getField("editable").value, getField("editable").currentValueIndices]'
+        )
+      ).toEqual(["FR", 0]);
+      expect(
+        await myeval(
+          '(getField("editable").editable = false, getField("editable").value = "Ignored", getField("editable").value)'
+        )
+      ).toEqual("FR");
+    });
+
     it("should send a value, execute an action and get back a new value", async () => {
       function compute(n) {
         let s = 0;

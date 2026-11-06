@@ -14,12 +14,18 @@
  */
 
 import {
+  clearInput,
   closePages,
   getAnnotationSelector,
   getQuerySelector,
+  getRawValue,
   getRect,
   getSelector,
+  kbOpenList,
   loadAndWait,
+  openList,
+  updateFromSandbox,
+  waitForSandboxTrip,
   waitForTextToBe,
   waitForTooltipToBe,
 } from "./test_utils.mjs";
@@ -1182,5 +1188,406 @@ describe("Sound annotation", () => {
         })
       );
     });
+  });
+});
+
+describe("Editable combo box", () => {
+  let pages;
+  const input = '[name="combo1"]';
+  const isOpen = page =>
+    page.$eval("#pdfjs_internal_id_6R_listbox", el =>
+      el.matches(":popover-open")
+    );
+  beforeEach(async () => {
+    pages = await loadAndWait("bug1876540.pdf", input);
+  });
+  afterEach(async () => closePages(pages));
+
+  it("must anchor the list after rotating the page", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await page.evaluate(() => {
+          window.PDFViewerApplication.pdfViewer.pagesRotation = 90;
+        });
+        await page.waitForFunction(() => {
+          const rect = document.querySelector(".page").getBoundingClientRect();
+          return rect.width > rect.height;
+        });
+        await openList(page, "6R");
+        const rects = await page.evaluate(() => {
+          const field = document
+            .querySelector('[name="combo1"]')
+            .getBoundingClientRect();
+          const list = document.querySelector("#pdfjs_internal_id_6R_listbox");
+          const rect = list.getBoundingClientRect();
+          return {
+            gap: Math.min(
+              Math.abs(rect.top - field.bottom),
+              Math.abs(rect.bottom - field.top)
+            ),
+            transform: getComputedStyle(list).transform,
+          };
+        });
+        expect(rects.gap).withContext(browserName).toBeLessThan(2);
+        expect(rects.transform).toEqual("none");
+      })
+    );
+  });
+
+  it("must update items and switch to choose-only mode from the sandbox", async () => {
+    await Promise.all(
+      pages.map(async ([, page]) => {
+        await page.waitForFunction(
+          () => window.PDFViewerApplication.scriptingReady
+        );
+        await page.$eval(input, el => {
+          const update = detail =>
+            el.dispatchEvent(new CustomEvent("updatefromsandbox", { detail }));
+          update({
+            items: [
+              { displayValue: "Spain", exportValue: "ES" },
+              { displayValue: "Germany", exportValue: "DE" },
+            ],
+          });
+          update({
+            insert: { index: 1, displayValue: "Italy", exportValue: "IT" },
+          });
+          update({ indices: [1], editable: false });
+        });
+        expect(
+          await page.$eval(input, el => [el.value, el.readOnly, el.disabled])
+        ).toEqual(["Italy", true, false]);
+        await openList(page, "6R");
+        await page.click("#pdfjs_internal_id_6R_listbox_0");
+        expect(await page.$eval(input, el => el.value)).toEqual("Spain");
+      })
+    );
+  });
+
+  it("must use the field colors for the arrow and the list", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await page.waitForFunction(
+          () => window.PDFViewerApplication.scriptingReady
+        );
+        await updateFromSandbox(page, input, {
+          textColor: ["RGB", 1, 0, 0],
+          bgColor: ["RGB", 0, 0, 1],
+        });
+        expect(
+          await page.evaluate(() => {
+            const button = document.querySelector(
+              '[data-annotation-id="6R"] .comboButton'
+            );
+            const list = document.getElementById(
+              "pdfjs_internal_id_6R_listbox"
+            );
+            return [
+              button.style.color,
+              list.style.color,
+              list.style.backgroundImage,
+            ];
+          })
+        )
+          .withContext(browserName)
+          .toEqual([
+            "rgb(255, 0, 0)",
+            "rgb(255, 0, 0)",
+            "linear-gradient(rgb(0, 0, 255), rgb(0, 0, 255))",
+          ]);
+      })
+    );
+  });
+
+  it("must preserve sandbox editable changes when recreating the page", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await page.waitForFunction(
+          () => window.PDFViewerApplication.scriptingReady
+        );
+        for (const editable of [false, true, false]) {
+          await updateFromSandbox(page, input, { editable });
+          await page.evaluate(async () => {
+            const view = window.PDFViewerApplication.pdfViewer.getPageView(0);
+            view.reset();
+            await view.draw();
+          });
+          await page.waitForSelector(input);
+          expect(await page.$eval(input, el => el.readOnly))
+            .withContext(`In ${browserName}, editable=${editable}`)
+            .toEqual(!editable);
+        }
+      })
+    );
+  });
+
+  it("must map choices, accept custom text, and reset to the default", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        expect(
+          await page.$eval(input, el => [
+            el.role,
+            el.value,
+            el.getAttribute("aria-expanded"),
+          ])
+        )
+          .withContext(browserName)
+          .toEqual(["combobox", "France", "false"]);
+        expect(await page.$eval('[name="combo2"]', el => el.value)).toEqual(
+          "Something else"
+        );
+        await clearInput(page, input);
+        await page.type(input, "Custom country");
+        await page.click('[name="combo2"]');
+        expect((await getRawValue(page, "6R")).value).toEqual("Custom country");
+        await openList(page, "6R");
+        await page.click("#pdfjs_internal_id_6R_listbox_0");
+        expect(await page.$eval(input, el => el.value)).toEqual(
+          "United States"
+        );
+        expect((await getRawValue(page, "6R")).value).toEqual("US");
+        // Commit first, else the commit reply could come after the reset.
+        await page.click('[name="combo2"]');
+        await waitForSandboxTrip(page);
+        await page.click('[data-annotation-id="10R"] a');
+        expect(await page.$eval(input, el => el.value)).toEqual("France");
+      })
+    );
+  });
+
+  it("must show the current value when opening the list with the mouse", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const combo2 = '[name="combo2"]';
+        await clearInput(page, combo2);
+        await page.type(combo2, "Option 25");
+        await openList(page, "7R");
+        await page.waitForFunction(() => {
+          const list = document.querySelector("#pdfjs_internal_id_7R_listbox");
+          const option = list.children[24].getBoundingClientRect();
+          const rect = list.getBoundingClientRect();
+          return option.top >= rect.top && option.bottom <= rect.bottom;
+        });
+        const getHighlighted = () =>
+          page.$$eval("#pdfjs_internal_id_7R_listbox > *", els =>
+            els.filter(el => el.ariaSelected === "true").map(el => el.id)
+          );
+        expect(
+          await page.$eval("#pdfjs_internal_id_7R_listbox", el =>
+            el.getAttribute("aria-label")
+          )
+        )
+          .withContext(browserName)
+          .toEqual("combo2");
+        expect(await getHighlighted())
+          .withContext(browserName)
+          .toEqual(["pdfjs_internal_id_7R_listbox_24"]);
+        await page.hover("#pdfjs_internal_id_7R_listbox_23");
+        expect(await getHighlighted())
+          .withContext(browserName)
+          .toEqual(["pdfjs_internal_id_7R_listbox_23"]);
+      })
+    );
+  });
+
+  it("must toggle the list with Enter", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const getState = () =>
+          page.$eval(input, el => [
+            el.value,
+            el.getAttribute("aria-activedescendant"),
+          ]);
+        const listbox = "#pdfjs_internal_id_6R_listbox";
+        await page.click(input);
+        await page.keyboard.press("Enter");
+        await page.waitForSelector(`${listbox}:popover-open`);
+        expect(await getState())
+          .withContext(`In ${browserName}, opened`)
+          .toEqual(["France", "pdfjs_internal_id_6R_listbox_1"]);
+        await page.keyboard.press("Enter");
+        expect(await isOpen(page))
+          .withContext(browserName)
+          .toBeFalse();
+
+        await page.keyboard.press("ArrowDown");
+        await page.keyboard.press("Enter");
+        await page.waitForSelector(`${listbox}:popover-open`);
+        expect(await getState())
+          .withContext(`In ${browserName}, reopened`)
+          .toEqual(["Germany", "pdfjs_internal_id_6R_listbox_2"]);
+        // Accept an option highlighted with the mouse.
+        await page.hover("#pdfjs_internal_id_6R_listbox_0");
+        await page.keyboard.press("Enter");
+        expect(await isOpen(page))
+          .withContext(browserName)
+          .toBeFalse();
+        expect(await getState())
+          .withContext(`In ${browserName}, accepted`)
+          .toEqual(["United States", null]);
+        expect(await page.$eval(input, el => el === document.activeElement))
+          .withContext(browserName)
+          .toBeTrue();
+
+        // The arrows start from the option whose label is typed.
+        await page.keyboard.press("Enter");
+        await page.waitForSelector(`${listbox}:popover-open`);
+        await page.keyboard.type("Germany");
+        await page.keyboard.press("ArrowUp");
+        expect(await getState())
+          .withContext(`In ${browserName}, typed`)
+          .toEqual(["France", "pdfjs_internal_id_6R_listbox_1"]);
+      })
+    );
+  });
+
+  it("must highlight the field when hovering its arrow", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const arrow = '[data-annotation-id="6R"] .comboButton';
+        const getBorder = () =>
+          page.$eval(input, el => getComputedStyle(el).borderTopColor);
+        await page.mouse.move(0, 0);
+        const idle = await getBorder();
+        await page.hover(input);
+        const hovered = await getBorder();
+        expect(hovered).withContext(browserName).not.toEqual(idle);
+        await page.mouse.move(0, 0);
+        await page.hover(arrow);
+        expect(await getBorder())
+          .withContext(browserName)
+          .toEqual(hovered);
+
+        await page.focus(input);
+        const focused = await getBorder();
+        expect(focused).withContext(browserName).not.toEqual(hovered);
+        await page.mouse.move(0, 0);
+        expect(await getBorder())
+          .withContext(browserName)
+          .toEqual(focused);
+      })
+    );
+  });
+
+  it("must change the value with the arrows and close the list when leaving the field", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const getState = () =>
+          page.$eval(input, el => [
+            el.value,
+            el.getAttribute("aria-activedescendant"),
+            window.PDFViewerApplication.pdfDocument.annotationStorage.getRawValue(
+              "6R"
+            ).value,
+          ]);
+        await page.click(input);
+        // Arrow keys select adjacent options without wrapping.
+        await page.keyboard.press("ArrowDown");
+        expect(await getState())
+          .withContext(`In ${browserName}, down`)
+          .toEqual(["Germany", null, "DE"]);
+        expect(
+          await page.$eval(
+            input,
+            el => el.selectionStart === 0 && el.selectionEnd === el.value.length
+          )
+        )
+          .withContext(`In ${browserName}, selected`)
+          .toBeTrue();
+        await page.keyboard.press("ArrowDown");
+        expect(await getState())
+          .withContext(`In ${browserName}, last`)
+          .toEqual(["Germany", null, "DE"]);
+        await page.keyboard.press("ArrowUp");
+        await page.keyboard.press("ArrowUp");
+        await page.keyboard.press("ArrowUp");
+        expect(await getState())
+          .withContext(`In ${browserName}, first`)
+          .toEqual(["United States", null, "US"]);
+        expect(await isOpen(page))
+          .withContext(browserName)
+          .toBeFalse();
+
+        await clearInput(page, input);
+        await page.type(input, "Custom");
+        await page.keyboard.press("ArrowUp");
+        expect(await getState())
+          .withContext(`In ${browserName}, from a custom value`)
+          .toEqual(["Germany", null, "DE"]);
+
+        // With the list open, they also change the value.
+        await kbOpenList(page);
+        expect(await getState())
+          .withContext(`In ${browserName}, opened`)
+          .toEqual(["Germany", "pdfjs_internal_id_6R_listbox_2", "DE"]);
+        await page.keyboard.press("ArrowUp");
+        expect(await getState())
+          .withContext(`In ${browserName}, open, up`)
+          .toEqual(["France", "pdfjs_internal_id_6R_listbox_1", "FR"]);
+        await page.keyboard.press("Enter");
+        expect(await isOpen(page))
+          .withContext(browserName)
+          .toBeFalse();
+        expect(await getState())
+          .withContext(`In ${browserName}, accepted`)
+          .toEqual(["France", null, "FR"]);
+
+        await kbOpenList(page);
+        await page.keyboard.press("Tab");
+        expect(await isOpen(page))
+          .withContext(browserName)
+          .toBeFalse();
+      })
+    );
+  });
+
+  it("must hide the arrow of read-only combos", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        expect(
+          await page.$eval('[data-annotation-id="8R"]', el => [
+            el.querySelector("input").disabled,
+            getComputedStyle(el.querySelector(".comboButton")).display,
+          ])
+        )
+          .withContext(browserName)
+          .toEqual([true, "none"]);
+      })
+    );
+  });
+});
+
+describe("Editable combo box with several widgets", () => {
+  let pages;
+  beforeEach(async () => {
+    pages = await loadAndWait("bug1876540_siblings.pdf", getSelector("7R"));
+  });
+  afterEach(async () => closePages(pages));
+
+  it("must keep the picked option in all the widgets", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const getStorage = () =>
+          Promise.all(
+            ["6R", "7R"].map(async id => (await getRawValue(page, id))?.value)
+          );
+        // A and B are both labeled "Same": pick B in the first widget.
+        await openList(page, "6R");
+        await page.click("#pdfjs_internal_id_6R_listbox_1");
+        expect(await getStorage())
+          .withContext(`In ${browserName}, picked`)
+          .toEqual(["B", "B"]);
+        // The sibling highlights B too.
+        await page.click(getSelector("7R"));
+        await kbOpenList(page);
+        expect(
+          await page.$eval(getSelector("7R"), el =>
+            el.getAttribute("aria-activedescendant")
+          )
+        )
+          .withContext(`In ${browserName}, reopened`)
+          .toEqual("pdfjs_internal_id_7R_listbox_1");
+      })
+    );
   });
 });

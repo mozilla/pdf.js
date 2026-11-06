@@ -221,6 +221,128 @@
     padding: 0;
   }
 
+  .comboBox {
+    > input {
+      padding-inline: 4px 18px;
+    }
+
+    > .comboButton {
+      position: absolute;
+      inset-block: 0;
+      inset-inline-end: 2px;
+      width: 18px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      font-family: sans-serif;
+      line-height: normal;
+
+      /* Use system FieldText instead of the scripted color. */
+      @media (forced-colors: active) {
+        color: FieldText !important;
+      }
+
+      &::before {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        top: 50%;
+        height: 1lh;
+        translate: 0 -50%;
+        background-color: currentColor;
+        mask: url("data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-9 -9 18 18'><path d='M-4 -1L-0.5 3H0.5L4 -1V-2H3L0 1.5L-3 -2H-4Z'/></svg>")
+          center / contain no-repeat;
+      }
+    }
+
+    > input:disabled ~ .comboButton {
+      display: none;
+    }
+
+    > .comboList {
+      --combo-list-border-color: var(
+        --panel-border-color,
+        light-dark(rgb(240 240 244), rgb(82 82 94))
+      );
+      --combo-list-border-radius: 6px;
+      --combo-list-box-shadow: var(
+        --panel-box-shadow,
+        0 0 4px rgb(0 0 0 / 0.2)
+      );
+      /*#if MOZCENTRAL*/
+      --combo-option-active-bg: -moz-menuhover;
+      --combo-option-active-fg: -moz-menuhovertext;
+      /*#else*/
+      --combo-option-active-bg: color-mix(
+        in srgb,
+        currentColor 12%,
+        transparent
+      );
+      --combo-option-active-fg: currentColor;
+      /*#endif*/
+
+      /*#if MOZCENTRAL*/
+      @media (-moz-windows-mica-popups) {
+        --combo-list-border-color: color-mix(
+          in srgb,
+          CanvasText 30%,
+          transparent
+        );
+        --combo-list-border-radius: 8px;
+        --combo-list-box-shadow: 0 14px 40px rgb(0 0 0 / 0.26);
+      }
+      /*#endif*/
+
+      @media (forced-colors: active) {
+        --combo-list-border-color: Canvas;
+        --combo-list-box-shadow: none;
+        --combo-option-active-bg: SelectedItem;
+        --combo-option-active-fg: SelectedItemText;
+        /* Override the inline text color. */
+        color: CanvasText !important;
+      }
+
+      padding: 4px;
+      box-sizing: border-box;
+      border: 1px solid var(--combo-list-border-color);
+      border-radius: var(--combo-list-border-radius);
+      box-shadow: var(--combo-list-box-shadow);
+      background: Canvas;
+      font-family: sans-serif;
+      max-block-size: min(50vh, 20em);
+
+      @supports (position-area: block-end) {
+        margin: 0;
+        inset: auto;
+        position-area: block-end span-inline-end;
+        position-try-fallbacks: flip-block;
+        min-inline-size: anchor-size(width);
+      }
+
+      > [role="option"] {
+        padding: 0.3333em 6px;
+        border-radius: var(--border-radius-xsmall, 2px);
+        white-space: pre;
+        cursor: default;
+
+        /*#if MOZCENTRAL*/
+        @media (-moz-platform: linux) {
+          padding: 0.25em 0.5em;
+        }
+        /*#endif*/
+
+        &[aria-selected="true"] {
+          background-color: var(--combo-option-active-bg);
+          color: var(--combo-option-active-fg);
+        }
+
+        @media (pointer: coarse) {
+          padding-block: 0.9167em;
+        }
+      }
+    }
+  }
+
   .textWidgetAnnotation textarea {
     resize: none;
   }
@@ -233,12 +355,15 @@
     cursor: not-allowed;
   }
 
+  /* Match input hover specificity so :focus still wins. */
   .textWidgetAnnotation :is(input, textarea):hover,
+  .textWidgetAnnotation:has(> :where(.comboButton):hover) > input,
   .choiceWidgetAnnotation select:hover,
   .buttonWidgetAnnotation:is(.checkBox, .radioButton) input:hover {
     border: 2px solid var(--input-hover-border-color);
   }
   .textWidgetAnnotation :is(input, textarea):hover,
+  .textWidgetAnnotation:has(> :where(.comboButton):hover) > input,
   .choiceWidgetAnnotation select:hover,
   .buttonWidgetAnnotation.checkBox input:hover {
     border-radius: 2px;

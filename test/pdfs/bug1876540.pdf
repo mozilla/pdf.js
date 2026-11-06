@@ -1,0 +1,65 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm 4 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /Helv 5 0 R >> >> /Annots [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R] >>
+endobj
+4 0 obj
+<< /Fields [6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R] /DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 5 0 R >> >> >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo1) /F 4 /Ff 393216 /Rect [60 720 300 744] /Opt [[(US)(United States)] [(FR)(France)] [(DE)(Germany)]] /V (FR) /DV (FR) >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo2) /F 4 /Ff 393216 /Rect [60 665 300 689] /Opt [(Option 1) (Option 2) (Option 3) (Option 4) (Option 5) (Option 6) (Option 7) (Option 8) (Option 9) (Option 10) (Option 11) (Option 12) (Option 13) (Option 14) (Option 15) (Option 16) (Option 17) (Option 18) (Option 19) (Option 20) (Option 21) (Option 22) (Option 23) (Option 24) (Option 25) (Option 26) (Option 27) (Option 28) (Option 29) (Option 30)] /V (Something else) /DV (Something else) >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo3) /F 4 /Ff 393217 /Rect [60 610 300 634] /Opt [[(US)(United States)] [(FR)(France)] [(DE)(Germany)]] /V (FR) /DV (FR) >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo4) /F 4 /Ff 393216 /Rect [60 555 300 579] /Opt [[(US)(United States)] [(FR)(France)] [(DE)(Germany)]] /V (FR) /DV (FR) /A << /S /JavaScript /JS (this.getField("combo2").value = event.value + " " + this.getField("combo1").value;) >> /AA << /F << /S /JavaScript /JS (event.value = event.value.toUpperCase();) >> /V << /S /JavaScript /JS (event.rc = event.value !== "bad";) >> /K << /S /JavaScript /JS (event.change = event.change;) >> >> >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /T (reset) /F 4 /Ff 65536 /Rect [60 470 160 494] /MK << /CA (Reset) >> /A << /S /ResetForm >> >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo5) /F 4 /Ff 393216 /Rect [60 415 300 439] /Opt [[(A)(Same)] [(B)(Same)]] /AA << /V << /S /JavaScript /JS (this.getField("combo2").value = "Validate: " + event.value;) >> /Bl << /S /JavaScript /JS (this.getField("combo3").value = "Blur: " + event.value;) >> >> /V (A) /DV (A) >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo6) /F 4 /Ff 393216 /Rect [60 360 300 384] /Opt [[(A)(B)] [(B)(Other)]] /AA << /D << /S /JavaScript /JS (this.getField("combo3").value = "Mouse Down";) >> >> /V (B) /DV (B) >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo7) /F 4 /Ff 393216 /Rect [60 305 300 329] /Opt [[(A)(Same)] [(B)(Same)]] /AA << /K << /S /JavaScript /JS (if (!event.willCommit && event.changeEx === "B") event.rc = false;) >> >> /V (A) /DV (A) >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Ch /T (combo8) /F 4 /Ff 393216 /Rect [60 250 300 274] /Opt [[(US)(United States)] [(FR)(France)] [()(None)]] /A << /S /JavaScript /JS (this.getField("combo2").value = "Action";) >> /AA << /K << /S /JavaScript /JS (event.target.value = event.target.value.toUpperCase();) >> /V << /S /JavaScript /JS (this.getField("combo2").value = "Checked: " + event.value;) >> >> /V (FR) /DV (FR) >>
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000009 00000 n 
+0000000074 00000 n 
+0000000131 00000 n 
+0000000312 00000 n 
+0000000458 00000 n 
+0000000528 00000 n 
+0000000715 00000 n 
+0000001224 00000 n 
+0000001411 00000 n 
+0000001915 00000 n 
+0000002070 00000 n 
+0000002414 00000 n 
+0000002655 00000 n 
+0000002919 00000 n 
+trailer
+<< /Size 15 /Root 1 0 R >>
+startxref
+3358
+%%EOF

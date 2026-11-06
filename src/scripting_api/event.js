@@ -32,7 +32,7 @@ function createEvent(data) {
   return {
     __proto__: EVENT_PROTOTYPE,
     change: data.change || "",
-    changeEx: data.changeEx || null,
+    changeEx: data.changeEx ?? null,
     commitKey: data.commitKey || 0,
     fieldFull: data.fieldFull || false,
     keyDown: data.keyDown || false,
@@ -203,47 +203,55 @@ class EventDispatcher {
       return;
     }
 
-    if (event.rc) {
-      if (event.willCommit) {
+    if (event.willCommit) {
+      if (event.rc) {
         this.#runValidation(source, event);
       } else {
-        if (FieldInternals.getIsChoice(source)) {
-          FieldInternals.setValue(source, savedChange.changeEx);
-          FieldInternals.send(source, {
-            value: FieldInternals.getValue(source),
-          });
-          return;
-        }
-
-        const value = mergeChange(event);
-        FieldInternals.setValue(source, value);
-        let selStart, selEnd;
-        if (
-          event.selStart !== savedChange.selStart ||
-          event.selEnd !== savedChange.selEnd
-        ) {
-          // Selection has been changed by the script so apply the changes.
-          selStart = event.selStart;
-          selEnd = event.selEnd;
-        } else {
-          selEnd = selStart = savedChange.selStart + event.change.length;
-        }
-        FieldInternals.send(source, { value, selRange: [selStart, selEnd] });
+        FieldInternals.send(source, {
+          value: "",
+          formattedValue: null,
+          selRange: [0, 0],
+        });
       }
-    } else if (!event.willCommit) {
+      return;
+    }
+
+    if (
+      FieldInternals.getIsChoice(source) &&
+      (savedChange.changeEx !== null || !source.editable)
+    ) {
+      if (event.rc) {
+        FieldInternals.setValue(source, savedChange.changeEx);
+      }
+      // Distinguish selection replies from script assignments.
+      FieldInternals.send(source, {
+        value: FieldInternals.getValue(source),
+        selection: true,
+      });
+      return;
+    }
+
+    if (!event.rc) {
       FieldInternals.send(source, {
         value: savedChange.value,
         selRange: [savedChange.selStart, savedChange.selEnd],
       });
-    } else {
-      // Entry is not valid (rc == false) and it's a commit
-      // so just clear the field.
-      FieldInternals.send(source, {
-        value: "",
-        formattedValue: null,
-        selRange: [0, 0],
-      });
+      return;
     }
+
+    const value = mergeChange(event);
+    FieldInternals.setValue(source, value);
+    let selStart, selEnd;
+    if (
+      event.selStart !== savedChange.selStart ||
+      event.selEnd !== savedChange.selEnd
+    ) {
+      selStart = event.selStart;
+      selEnd = event.selEnd;
+    } else {
+      selEnd = selStart = savedChange.selStart + event.change.length;
+    }
+    FieldInternals.send(source, { value, selRange: [selStart, selEnd] });
   }
 
   #formatAll() {
