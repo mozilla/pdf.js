@@ -30,6 +30,7 @@
 /** @typedef {import("./l10n.js").L10n} L10n */
 
 import {
+  AbortException,
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
@@ -915,6 +916,10 @@ class PDFViewer {
     if (this.pdfDocument) {
       this.eventBus.dispatch("pagesdestroy", { source: this });
 
+      // Ensure that `pagesPromise` doesn't remain pending forever, if the
+      // document was closed before all pages were loaded.
+      this._pagesCapability.reject(new AbortException("Document was closed."));
+
       this._cancelRendering();
       this._resetView();
 
@@ -1196,6 +1201,10 @@ class PDFViewer {
                 }
               },
               reason => {
+                if (pdfDocument !== this.pdfDocument) {
+                  return; // The document was closed while loading the page.
+                }
+
                 console.error(
                   `Unable to get page ${pageNum} to initialize viewer`,
                   reason
@@ -1208,6 +1217,10 @@ class PDFViewer {
 
             if (pageNum % PagesCountLimit.PAUSE_EAGER_PAGE_INIT === 0) {
               await promise;
+
+              if (pdfDocument !== this.pdfDocument) {
+                break; // The document was closed, stop fetching more pages.
+              }
             }
           }
         });
@@ -1228,6 +1241,10 @@ class PDFViewer {
         }
       })
       .catch(reason => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the first page loaded.
+        }
+
         console.error("Unable to initialize viewer", reason);
 
         this._pagesCapability.reject(reason);
@@ -2139,13 +2156,17 @@ class PDFViewer {
     if (pageView.pdfPage) {
       return pageView.pdfPage;
     }
+    const { pdfDocument } = this;
     try {
-      const pdfPage = await this.pdfDocument.getPage(pageView.id);
+      const pdfPage = await pdfDocument.getPage(pageView.id);
       if (!pageView.pdfPage) {
         pageView.setPdfPage(pdfPage);
       }
       return pdfPage;
     } catch (reason) {
+      if (pdfDocument !== this.pdfDocument) {
+        return null; // The document was closed while the page was loading.
+      }
       console.error("Unable to get page for page view", reason);
       return null; // Page error -- there is nothing that can be done.
     }
@@ -2195,8 +2216,10 @@ class PDFViewer {
     );
 
     if (pageView) {
-      this.#ensurePdfPageLoaded(pageView).then(() => {
-        this.renderingQueue.renderView(pageView);
+      this.#ensurePdfPageLoaded(pageView).then(pdfPage => {
+        if (pdfPage !== null) {
+          this.renderingQueue.renderView(pageView);
+        }
       });
       return true;
     }
