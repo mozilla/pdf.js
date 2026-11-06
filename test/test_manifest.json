@@ -15328,5 +15328,13 @@
     "rounds": 1,
     "link": true,
     "type": "other"
+  },
+  {
+    "id": "issue22462",
+    "file": "pdfs/issue22462.pdf",
+    "md5": "912171b8508889cc36b7002ad2876467",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Short loca offsets overflow after duplicating glyph 0."
   }
 ]
