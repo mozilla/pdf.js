@@ -433,6 +433,9 @@ pdfjs-views-manager-pages-status-undo-delete-label =
         [one] 1 страница е изтрита
        *[other] { $count } страници са изтрити
     }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = НОВО
 pdfjs-toggle-views-manager-button1 =
     .title = Управление на страници
 
