@@ -2281,46 +2281,23 @@ class Font {
     function sanitizeGlyphLocations(
       loca,
       glyf,
+      head,
       numGlyphs,
       isGlyphLocationsLong,
       hintsValid,
       dupFirstEntry,
       maxSizeOfInstructions
     ) {
-      let itemSize, itemDecode, itemEncode;
-      if (isGlyphLocationsLong) {
-        itemSize = 4;
-        itemDecode = function fontItemDecodeLong(data, offset) {
-          return (
+      const itemSize = isGlyphLocationsLong ? 4 : 2;
+      const itemDecode = isGlyphLocationsLong
+        ? (data, offset) =>
             (data[offset] << 24) |
             (data[offset + 1] << 16) |
             (data[offset + 2] << 8) |
             data[offset + 3]
-          );
-        };
-        itemEncode = function fontItemEncodeLong(data, offset, value) {
-          data[offset] = (value >>> 24) & 0xff;
-          data[offset + 1] = (value >> 16) & 0xff;
-          data[offset + 2] = (value >> 8) & 0xff;
-          data[offset + 3] = value & 0xff;
-        };
-      } else {
-        itemSize = 2;
-        itemDecode = function fontItemDecode(data, offset) {
-          return (data[offset] << 9) | (data[offset + 1] << 1);
-        };
-        itemEncode = function fontItemEncode(data, offset, value) {
-          data[offset] = (value >> 9) & 0xff;
-          data[offset + 1] = (value >> 1) & 0xff;
-        };
-      }
-      // The first glyph is duplicated.
+        : (data, offset) => (data[offset] << 9) | (data[offset + 1] << 1);
       const numGlyphsOut = dupFirstEntry ? numGlyphs + 1 : numGlyphs;
-      const locaDataSize = itemSize * (1 + numGlyphsOut);
-      // Resize loca table to account for duplicated glyph.
-      const locaData = new Uint8Array(locaDataSize);
-      locaData.set(loca.data.subarray(0, locaDataSize));
-      loca.data = locaData;
+      const locaData = loca.data;
       // removing the invalid glyphs
       const oldGlyfData = glyf.data;
       const oldGlyfDataLength = oldGlyfData.length;
@@ -2384,9 +2361,10 @@ class Font {
       );
       // Glyph IDs are in [0, numGlyphs), so use one byte per glyph.
       const missingGlyphs = new Uint8Array(numGlyphs);
+      // Compute all offsets before choosing the loca format.
+      const newOffsets = new Uint32Array(numGlyphsOut + 1);
       let writeOffset = 0;
-      itemEncode(locaData, 0, writeOffset);
-      for (i = 0, j = itemSize; i < numGlyphs; i++, j += itemSize) {
+      for (i = 0; i < numGlyphs; i++) {
         const glyphProfile = droppedGlyphs.has(i)
           ? { length: 0, sizeOfInstructions: 0 }
           : sanitizeGlyph(
@@ -2405,7 +2383,7 @@ class Font {
           maxSizeOfInstructions = glyphProfile.sizeOfInstructions;
         }
         writeOffset += newLength;
-        itemEncode(locaData, j, writeOffset);
+        newOffsets[i + 1] = writeOffset;
       }
 
       if (writeOffset === 0) {
@@ -2414,15 +2392,11 @@ class Font {
         const simpleGlyph = new Uint8Array([
           0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 0,
         ]);
-        for (i = 0, j = itemSize; i < numGlyphsOut; i++, j += itemSize) {
-          itemEncode(locaData, j, simpleGlyph.length);
-        }
+        newOffsets.fill(simpleGlyph.length, 1);
         glyf.data = simpleGlyph;
       } else if (dupFirstEntry) {
-        // Browsers will not display a glyph at position 0. Typically glyph 0
-        // is notdef, but a number of fonts put a valid glyph there so it must
-        // be duplicated and appended.
-        const firstEntryLength = itemDecode(locaData, itemSize);
+        // Append a copy of glyph 0 for the remapped character codes.
+        const firstEntryLength = newOffsets[1];
         if (newGlyfData.length > firstEntryLength + writeOffset) {
           glyf.data = newGlyfData.subarray(0, firstEntryLength + writeOffset);
         } else {
@@ -2430,14 +2404,31 @@ class Font {
           glyf.data.set(newGlyfData.subarray(0, writeOffset));
         }
         glyf.data.set(newGlyfData.subarray(0, firstEntryLength), writeOffset);
-        itemEncode(
-          loca.data,
-          locaData.length - itemSize,
-          writeOffset + firstEntryLength
-        );
+        newOffsets[numGlyphsOut] = writeOffset + firstEntryLength;
       } else {
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
+
+      // Short loca offsets must be even and at most 0x1fffe.
+      const isLong =
+        isGlyphLocationsLong ||
+        newOffsets.some(offset => offset > 0x1fffe || offset & 1);
+      // indexToLocFormat: 0 = short, 1 = long.
+      head.data[50] = 0;
+      head.data[51] = isLong ? 1 : 0;
+
+      const locaBuilder = new DataBuilder({
+        exactLength: (isLong ? 4 : 2) * newOffsets.length,
+      });
+      for (const offset of newOffsets) {
+        if (isLong) {
+          locaBuilder.setInt32(offset);
+        } else {
+          locaBuilder.setInt16(offset / 2);
+        }
+      }
+      loca.data = locaBuilder.data;
+
       return {
         missingGlyphs,
         maxSizeOfInstructions,
@@ -3050,6 +3041,7 @@ class Font {
       const glyphsInfo = sanitizeGlyphLocations(
         tables.loca,
         tables.glyf,
+        tables.head,
         numGlyphs,
         isGlyphLocationsLong,
         hintsValid,
