@@ -5245,6 +5245,223 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
+    it("gets text content, with no spaces between letters of words (issue 18768)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_1.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text.includes("Robert Thorogood")).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with no spaces between letters of words (issue 18768, second example)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_2.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text.includes("THamesjoen murhat")).toEqual(true);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without spurious spaces in letter-spaced text (issue 16752)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue16752_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("REASONS AND");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without spurious spaces after an initial narrow gap", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_initial_narrow_gap.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("ABCD");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without leaking letter spacing across text state changes", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_stateful_spacing.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual(`FOTBOLL.
+ABCD E`);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without leaking letter spacing across text matrix changes", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_text_matrix_spacing.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("ABCD E");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without spurious spaces in a Type3 font (issue 18768)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_type3.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      const text = mergeText(items);
+
+      expect(text).toEqual("AB CD");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without dropping Type3 word spaces before wide glyphs", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_type3_wide_glyph.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("A B C");
+
+      await loadingTask.destroy();
+    });
+
+    for (const [pageNumber, description, expected] of [
+      [1, "explicit spaces with horizontal scaling", "A B C"],
+      [2, "explicit spaces with negative word spacing", "A B C"],
+      [3, "an inferred space following an explicit space", "A B C"],
+      [4, "an inferred space preceding an explicit space", "A B C"],
+      [5, "a Type3 word space before a wide glyph", "A B C"],
+      [6, "a Type3 word space after a wide glyph", "C B A"],
+      [7, "Type3 tracking at a negative font size", "ABC"],
+    ]) {
+      it(`gets text content, preserving ${description}`, async function () {
+        const loadingTask = getDocument(
+          buildGetDocumentParams("issue18768_word_spaces.pdf")
+        );
+        const pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(pageNumber);
+        const { items } = await pdfPage.getTextContent({
+          disableNormalization: true,
+        });
+
+        expect(mergeText(items)).toEqual(expected);
+
+        const [annotation] = await pdfPage.getAnnotations();
+        expect(annotation.overlaidText).toEqual(expected);
+
+        await loadingTask.destroy();
+      });
+    }
+
+    it("gets text content, without splitting a word in a narrow-space font (issue 18768)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_narrow_space_font.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("UTR 50");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without dropping word spaces in a Type3 font (issue 19954)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue19954_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("AB C DE");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without dropping word spaces in uniformly spaced text (issue 1936)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue1936_reduced.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("AAA BBB CCC");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, without splitting a line into extra chunks at its word spaces (issue 18768)", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("chrome-text-selection-markedContent.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      const strings = items.map(item => item.str);
+
+      expect(strings).toContain(
+        "strengthen in the coming quarters as the railway projects under"
+      );
+      expect(strings).toContain(
+        "development enter the construction phase (estimated at around"
+      );
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, with merged spaces (issue 10900)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("issue10900.pdf"));
       const pdfDoc = await loadingTask.promise;
@@ -8537,6 +8754,19 @@ a dynamic compiler for JavaScript based on our`);
 ular since they are expressive, accessible to non-experts, and make
 deployment as easy as distributing a source ﬁle. They are used for
 small scripts as well as for`);
+
+      await loadingTask.destroy();
+    });
+
+    it("should avoid spurious spaces in overlaid text", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_stateful_spacing.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const page = await pdfDoc.getPage(1);
+      const [annot] = await page.getAnnotations();
+
+      expect(annot.overlaidText).toEqual("FOTBOLL.");
 
       await loadingTask.destroy();
     });
