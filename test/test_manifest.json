@@ -1790,6 +1790,13 @@
     "type": "eq"
   },
   {
+    "id": "postscript-type4-stack-depth",
+    "file": "pdfs/postscript_type4_stack_depth.pdf",
+    "md5": "e7ea6f3875e1a977e6a9012e776a64af",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "xref_command_missing",
     "file": "pdfs/xref_command_missing.pdf",
     "md5": "06cdb0f13cfeff41d6bfb24b7bbe1268",

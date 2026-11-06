@@ -437,8 +437,8 @@ const InternalViewerUtils = {
     const program = parsePostScriptFunction(source);
     const nIn = domain.length >> 1;
     const nOut = range.length >> 1;
-    const outputs = new PSStackToTree().evaluate(program, nIn);
-    if (!outputs || outputs.length < nOut) {
+    const outputs = new PSStackToTree().evaluate(program, nIn, nOut);
+    if (!outputs) {
       return null;
     }
 

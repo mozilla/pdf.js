@@ -867,8 +867,12 @@ class PsWasmCompiler {
    * @returns {Uint8Array|null}  Wasm binary, or null if compilation failed.
    */
   compile(program) {
-    const outputs = new PSStackToTree().evaluate(program, this._nIn);
-    if (!outputs || outputs.length < this._nOut) {
+    const outputs = new PSStackToTree().evaluate(
+      program,
+      this._nIn,
+      this._nOut
+    );
+    if (!outputs) {
       return null;
     }
 
