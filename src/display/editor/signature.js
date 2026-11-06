@@ -81,7 +81,7 @@ class SignatureEditor extends DrawingEditor {
     this._willKeepAspectRatio = true;
     this.#signatureData = params.signatureData || null;
     this.#description = null;
-    this.defaultL10nId = "pdfjs-editor-signature-editor1";
+    this.defaultL10nId = "pdfjs-editor-signature-editor2";
   }
 
   /** @inheritdoc */
