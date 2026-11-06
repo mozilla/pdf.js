@@ -1045,6 +1045,12 @@ class AnnotationEditorLayer {
     const oldRotation = this.viewport.rotation;
     const rotation = viewport.rotation;
 
+    if (oldRotation !== rotation) {
+      // The points of a drawing in progress are in the coordinate system of
+      // the current viewport, hence it must be finished before the rotation.
+      this.commitOrRemove();
+    }
+
     this.viewport = viewport;
     setLayerDimensions(this.div, { rotation });
     if (oldRotation !== rotation) {

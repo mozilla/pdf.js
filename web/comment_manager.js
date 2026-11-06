@@ -29,6 +29,32 @@ import {
 import { binarySearchFirstItem } from "./ui_utils.js";
 import { Sidebar } from "./sidebar.js";
 
+/**
+ * @param {DOMRect} layerRect - the visual rectangle of the layer.
+ * @param {number} rotation - the rotation of the layer.
+ * @returns {Array<number>} the dimensions of the layer in its own (i.e.
+ *   unrotated) coordinate system, which is the one used by the popup.
+ */
+function getLayerSize({ width, height }, rotation) {
+  return rotation % 180 === 0 ? [width, height] : [height, width];
+}
+
+/**
+ * Convert a move in the window into a move in a rotated layer.
+ */
+function toLayerVector(dx, dy, rotation) {
+  switch (rotation) {
+    case 90:
+      return [dy, -dx];
+    case 180:
+      return [-dx, -dy];
+    case 270:
+      return [-dy, dx];
+    default:
+      return [dx, dy];
+  }
+}
+
 class CommentManager {
   #dialog;
 
@@ -768,16 +794,20 @@ class CommentDialog {
     if (editor.hasDefaultPopupPosition()) {
       const { dialogWidth, dialogHeight } = this._dialogDimensions;
       if (parentDimensions) {
+        // `commentButtonWidth` is a fraction of the width of the layer in its
+        // own (i.e. unrotated) coordinate system.
+        const [layerWidth] = getLayerSize(
+          parentDimensions,
+          this.#editor.parentRotation
+        );
+        const buttonWidth = this.#editor.commentButtonWidth * layerWidth;
         if (
           this.#isLTR &&
           posX + dialogWidth >
             Math.min(parentDimensions.x + parentDimensions.width, innerWidth)
         ) {
-          const buttonWidth = this.#editor.commentButtonWidth;
-          posX -= dialogWidth - buttonWidth * parentDimensions.width;
+          posX -= dialogWidth - buttonWidth;
         } else if (!this.#isLTR) {
-          const buttonWidth =
-            this.#editor.commentButtonWidth * parentDimensions.width;
           if (posX - dialogWidth < Math.max(0, parentDimensions.x)) {
             posX = Math.max(0, posX);
           } else {
@@ -1024,8 +1054,12 @@ class CommentPopup {
         return;
       }
       stopEvent(e);
-      const { width: parentWidth, height: parentHeight } =
-        this.#editor.parentBoundingClientRect;
+      // The popup lives in the layer, which can be rotated.
+      const rotation = this.#editor.parentRotation;
+      const [parentWidth, parentHeight] = getLayerSize(
+        this.#editor.parentBoundingClientRect,
+        rotation
+      );
       this.#prevDragX = clientX;
       this.#prevDragY = clientY;
       pointerMoveAC = new AbortController();
@@ -1038,9 +1072,14 @@ class CommentPopup {
             return; // Not dragging.
           }
           const { clientX: x, clientY: y } = ev;
+          const [dx, dy] = toLayerVector(
+            x - this.#prevDragX,
+            y - this.#prevDragY,
+            rotation
+          );
           this.#setPosition(
-            this.#posX + (x - this.#prevDragX) / parentWidth,
-            this.#posY + (y - this.#prevDragY) / parentHeight,
+            this.#posX + dx / parentWidth,
+            this.#posY + dy / parentHeight,
             /* correctPosition = */ false
           );
           this.#prevDragX = x;
@@ -1181,7 +1220,9 @@ class CommentPopup {
       this.#editor.commentPopupPosition = [x, y];
     } else {
       const parentRect = this.#editor.parentBoundingClientRect;
-      const widthRatio = this._popupWidth / parentRect.width;
+      const rotation = this.#editor.parentRotation;
+      const [parentWidth] = getLayerSize(parentRect, rotation);
+      const widthRatio = this._popupWidth / parentWidth;
       if (
         (this.#isLTR && x + widthRatio > 1) ||
         (!this.#isLTR && x - widthRatio >= 0)
@@ -1189,17 +1230,23 @@ class CommentPopup {
         const buttonWidth = this.#editor.commentButtonWidth;
         x -= widthRatio - buttonWidth;
       }
+      // Keep the popup inside the window: the x-axis of the layer is the
+      // horizontal one of the window for 0° and 180° and the vertical one for
+      // 90° and 270°, and it's reversed for 180° and 270°.
+      const [start, length, windowLength] =
+        rotation % 180 === 0
+          ? [parentRect.x, parentRect.width, window.innerWidth]
+          : [parentRect.y, parentRect.height, window.innerHeight];
+      const windowStart = -start / length;
+      const windowEnd = (windowLength - start) / length;
+      const [min, max] =
+        rotation < 180
+          ? [windowStart, windowEnd]
+          : [1 - windowEnd, 1 - windowStart];
       const margin = 0.01;
-      if (this.#isLTR) {
-        x = Math.max(x, -parentRect.x / parentRect.width + margin);
-      } else {
-        x = Math.min(
-          x,
-          (window.innerWidth - parentRect.x) / parentRect.width -
-            widthRatio -
-            margin
-        );
-      }
+      x = this.#isLTR
+        ? Math.max(x, min + margin)
+        : Math.min(x, max - widthRatio - margin);
     }
     this.#posX = x;
     this.#posY = y;
