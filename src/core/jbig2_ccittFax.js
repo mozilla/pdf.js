@@ -24,12 +24,12 @@ class Jbig2Error extends BaseException {
 }
 
 class JBig2CCITTFaxImage extends WasmImage {
-  _filename = "jbig2.wasm";
-
-  _noWasmFilename = "jbig2_nowasm_fallback.js";
-
   static get instance() {
-    return shadow(this, "instance", new JBig2CCITTFaxImage());
+    return shadow(
+      this,
+      "instance",
+      new JBig2CCITTFaxImage("jbig2.wasm", "jbig2_nowasm_fallback.js")
+    );
   }
 
   async decode(bytes, width, height, globals, CCITTOptions) {
@@ -70,8 +70,6 @@ class JBig2CCITTFaxImage extends WasmImage {
         throw new Jbig2Error("Unknown error");
       }
       const { imageData } = module;
-      module.imageData = null;
-
       return imageData;
     } finally {
       if (ptr) {
@@ -80,6 +78,7 @@ class JBig2CCITTFaxImage extends WasmImage {
       if (globalsPtr) {
         module._free(globalsPtr);
       }
+      module.imageData = null;
     }
   }
 }
