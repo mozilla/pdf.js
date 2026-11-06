@@ -474,17 +474,14 @@ class Util {
           data.month = parseInt(value) - 1;
         },
       },
+      // Weekday names are matched but must not set the day of the month.
       dddd: {
         pattern: `(${days.join("|")})`,
-        action: (value, data) => {
-          data.day = days.indexOf(value);
-        },
+        action: () => {},
       },
       ddd: {
         pattern: `(${days.map(day => day.substring(0, 3)).join("|")})`,
-        action: (value, data) => {
-          data.day = days.findIndex(day => day.substring(0, 3) === value);
-        },
+        action: () => {},
       },
       dd: {
         pattern: "(\\d{2})",
