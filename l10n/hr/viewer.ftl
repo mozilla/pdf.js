@@ -154,6 +154,18 @@ pdfjs-document-properties-linearized-yes = Da
 pdfjs-document-properties-linearized-no = Ne
 pdfjs-document-properties-close-button = Zatvori
 pdfjs-digital-signature-properties-view-certificate = Pogledaj certifikat
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Razlog: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Vremenska oznaka: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
 
 ## Print
 
@@ -630,6 +642,8 @@ pdfjs-editor-add-comment-button =
 pdfjs-toggle-views-manager-button1-label = Upravljaj stranicama
 pdfjs-views-manager-sidebar =
     .aria-label = Bočna traka
+pdfjs-views-manager-sidebar-resizer =
+    .aria-label = Promjena veličine bočne trake
 pdfjs-views-manager-view-selector-button =
     .title = Prikazi
 pdfjs-views-manager-view-selector-button-label = Prikazi
@@ -659,6 +673,33 @@ pdfjs-views-manager-pages-status-action-button-label = Upravljaj
 pdfjs-views-manager-pages-status-copy-button-label = Kopiraj
 pdfjs-views-manager-pages-status-cut-button-label = Izreži
 pdfjs-views-manager-pages-status-delete-button-label = Izbriši
+pdfjs-views-manager-pages-status-export-selected-button-label = Izvezi odabrano…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] { $count } stranica je izrezana
+        [few] { $count } stranice su izrezane
+       *[other] { $count } stranica je izrezano
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] { $count } stranica je kopirana
+        [few] { $count } stranice su kopirane
+       *[other] { $count } stranica je kopirano
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] { $count } stranica je izbrisana
+        [few] { $count } stranice su izbrisane
+       *[other] { $count } stranica je izbrisano
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = Pripremamo tvoju datoteku…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Prijenos datoteke…
 pdfjs-views-manager-status-warning-cut-label = Nije moguće izrezati. Osvježi stranicu i pokušaj ponovo.
 pdfjs-views-manager-status-warning-copy-label = Nije moguće kopirati. Osvježi stranicu i pokušaj ponovo.
 pdfjs-views-manager-status-warning-delete-label = Nije moguće izbrisati. Osvježi stranicu i pokušaj ponovo.
@@ -678,8 +719,52 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = NOVO
+pdfjs-views-manager-waiting-for-file = Prijenos datoteke…
 pdfjs-toggle-views-manager-button1 =
     .title = Upravljaj stranicama
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Svojstva digitalnog potpisa
+    .title = Svojstva digitalnog potpisa
+pdfjs-digital-signature-properties-button-label = Svojstva digitalnog potpisa
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Dokument je potpisan važećim digitalnim potpisom
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Status: potpis je potvrđen
+pdfjs-digital-signature-properties-status-invalid = Status: potpis je nevažeći
+pdfjs-digital-signature-properties-status-unknown = Status: nije moguće potvrditi (nepodržano)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Certifikat: pouzdan ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Certifikat: nedostupan
+pdfjs-digital-signature-properties-certificate-untrusted = Certifikat: nepouzdan
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Certifikat: nepoznati izdavač ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Certifikat: samopotpisano ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Certifikat: nepouzdani izdavač ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Certifikat: istekao
+pdfjs-digital-signature-properties-certificate-expired-with-date = Certifikat: istekao ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Certifikat: opozvan
 
 ## Main menu for adding/removing signatures
 

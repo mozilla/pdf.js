@@ -391,7 +391,7 @@ pdfjs-free-text2 =
 #   $count (Number) - the number of comments.
 pdfjs-editor-comments-sidebar-title =
     { $count ->
-        [one] Komentarz
+        [1] Komentarz
        *[other] Komentarze
     }
 pdfjs-editor-comments-sidebar-close-button =
