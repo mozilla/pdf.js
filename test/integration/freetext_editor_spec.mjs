@@ -486,6 +486,51 @@ describe("FreeText Editor", () => {
     });
   });
 
+  describe("FreeText (clone)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep the same rect when a FreeText editor is cloned", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          await createFreeTextEditor({
+            page,
+            x: rect.x + 100,
+            y: rect.y + 100,
+            data: "Clone me",
+          });
+
+          // Same path as AnnotationEditorUIManager.findClonesForPage(), used
+          // when a page is copied with enableSplitMerge.
+          const rects = await page.evaluate(async () => {
+            const ui =
+              window.PDFViewerApplication.pdfViewer._layerProperties
+                .annotationEditorUIManager;
+            const [editor] = ui.getEditors(0);
+            const data = editor.serialize(true);
+            const layer = ui.getLayer(0);
+            const clone = await layer.deserialize(data);
+            clone.isClone = true;
+            layer.addOrRebuild(clone);
+            return [data.rect, clone.serialize(true).rect];
+          });
+
+          expect(rects[1]).withContext(`In ${browserName}`).toEqual(rects[0]);
+        })
+      );
+    });
+  });
+
   describe("FreeText (multiselection)", () => {
     let pages;
 
