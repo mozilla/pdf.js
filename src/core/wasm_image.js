@@ -23,10 +23,6 @@ class WasmImage {
 
   #modulePromise = null;
 
-  _filename = null;
-
-  _noWasmFilename = null;
-
   static setOptions({ getHandler, useWasm, useWorkerFetch, wasmUrl }) {
     WasmImage.#options = { getHandler, useWasm, useWorkerFetch, wasmUrl };
   }
@@ -42,13 +38,15 @@ class WasmImage {
     }
   }
 
-  constructor() {
+  constructor(filename, noWasmFilename) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === WasmImage
     ) {
       unreachable("Cannot initialize WasmImage.");
     }
+    this._filename = filename;
+    this._noWasmFilename = noWasmFilename;
     // Keep track of the instances for `cleanup` purposes.
     WasmImage.#instances.add(this);
   }

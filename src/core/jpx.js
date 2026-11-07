@@ -24,12 +24,12 @@ class JpxError extends BaseException {
 }
 
 class JpxImage extends WasmImage {
-  _filename = "openjpeg.wasm";
-
-  _noWasmFilename = "openjpeg_nowasm_fallback.js";
-
   static get instance() {
-    return shadow(this, "instance", new JpxImage());
+    return shadow(
+      this,
+      "instance",
+      new JpxImage("openjpeg.wasm", "openjpeg_nowasm_fallback.js")
+    );
   }
 
   async decode(
@@ -72,13 +72,12 @@ class JpxImage extends WasmImage {
         throw new JpxError("Unknown error");
       }
       const { imageData } = module;
-      module.imageData = null;
-
       return imageData;
     } finally {
       if (ptr) {
         module._free(ptr);
       }
+      module.imageData = null;
     }
   }
 
