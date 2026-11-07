@@ -199,6 +199,101 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Zoom while scrolling (bug 1915803)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        "page-width"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("allows pinching during scrolling while blocking Ctrl+wheel", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const { scrolling, ctrlKeyDown, zoomed } of [
+            { scrolling: true, ctrlKeyDown: true, zoomed: false },
+            { scrolling: true, ctrlKeyDown: false, zoomed: true },
+            { scrolling: false, ctrlKeyDown: true, zoomed: true },
+          ]) {
+            // Check in an animation frame: a zoom moves the scroll position
+            // synchronously but the `scroll` event only comes with the next
+            // frame, before the rAF callbacks.
+            await page.waitForFunction(
+              () =>
+                new Promise(resolve => {
+                  requestAnimationFrame(() =>
+                    resolve(!window.PDFViewerApplication._isScrolling)
+                  );
+                })
+            );
+            const result = await page.evaluate(
+              (shouldScroll, withCtrlKey) => {
+                const app = window.PDFViewerApplication;
+                const zoom = () => {
+                  if (withCtrlKey) {
+                    // Don't use `page.keyboard.down/up`: the key must be
+                    // pressed in the same task as the wheel event.
+                    window.dispatchEvent(
+                      new KeyboardEvent("keydown", { key: "Control" })
+                    );
+                  }
+                  const { currentScale } = app.pdfViewer;
+                  const isScrolling = app._isScrolling;
+                  window.dispatchEvent(
+                    new WheelEvent("wheel", {
+                      // Use a full tick for Ctrl+wheel, less for pinching.
+                      deltaY: withCtrlKey ? -30 : -3,
+                      deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+                      ctrlKey: true,
+                      cancelable: true,
+                    })
+                  );
+                  if (withCtrlKey) {
+                    window.dispatchEvent(
+                      new KeyboardEvent("keyup", { key: "Control" })
+                    );
+                  }
+                  return {
+                    isScrolling,
+                    zoomed: app.pdfViewer.currentScale !== currentScale,
+                  };
+                };
+                if (!shouldScroll) {
+                  return zoom();
+                }
+
+                const container = document.getElementById("viewerContainer");
+                return new Promise(resolve => {
+                  // Dispatch within the scroll listener, after the viewer sets
+                  // `_isScrolling`, so scrollend or its timeout can't reset it
+                  // before the wheel event is handled.
+                  container.addEventListener("scroll", () => resolve(zoom()), {
+                    once: true,
+                  });
+                  container.scrollBy({ top: 1000 });
+                });
+              },
+              scrolling,
+              ctrlKeyDown
+            );
+            expect(result)
+              .withContext(
+                `In ${browserName}: scrolling=${scrolling}, ctrlKeyDown=${ctrlKeyDown}`
+              )
+              .toEqual({ isScrolling: scrolling, zoomed });
+          }
+        })
+      );
+    });
+  });
+
   describe("Zoom commands", () => {
     let pages;
 

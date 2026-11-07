@@ -3156,7 +3156,9 @@ function onWheel(evt) {
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
     if (
-      this._isScrolling ||
+      // Allow trackpad pinching during scrolling (bug 1915803), but block
+      // physical Ctrl+wheel to avoid zooming on momentum events (issue #7022).
+      (this._isScrolling && !isPinchToZoom) ||
       document.visibilityState === "hidden" ||
       this.overlayManager.active
     ) {
