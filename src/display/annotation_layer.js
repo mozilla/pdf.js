@@ -755,6 +755,7 @@ class AnnotationElement {
       data: {
         color: data.color,
         titleObj: data.titleObj,
+        subjectObj: data.subjectObj,
         modificationDate,
         contentsObj,
         richText: data.richText,
@@ -2438,6 +2439,7 @@ class PopupAnnotationElement extends AnnotationElement {
       container: this.container,
       color: this.data.color,
       titleObj: this.data.titleObj,
+      subjectObj: this.data.subjectObj,
       modificationDate: this.data.modificationDate || this.data.creationDate,
       contentsObj: this.data.contentsObj,
       richText: this.data.richText,
@@ -2519,6 +2521,8 @@ class PopupElement {
 
   #titleObj = null;
 
+  #subjectObj = null;
+
   #updates = null;
 
   #wasVisible = false;
@@ -2532,6 +2536,7 @@ class PopupElement {
     color,
     elements,
     titleObj,
+    subjectObj,
     modificationDate,
     contentsObj,
     richText,
@@ -2543,6 +2548,7 @@ class PopupElement {
   }) {
     this.#container = container;
     this.#titleObj = titleObj;
+    this.#subjectObj = subjectObj;
     this.#contentsObj = contentsObj;
     this.#richText = richText;
     this.#parent = parent;
@@ -2734,6 +2740,8 @@ class PopupElement {
       opacity,
       creationDate,
       modificationDate,
+      titleObj: this.#titleObj,
+      subjectObj: this.#subjectObj,
     };
   }
 
@@ -2846,7 +2854,12 @@ class PopupElement {
       const title = document.createElement("span");
       title.className = "title";
       header.append(title);
-      ({ dir: title.dir, str: title.textContent } = this.#titleObj);
+      if (this.#subjectObj?.str) {
+        title.textContent = `${this.#subjectObj.str} \u2014 ${this.#titleObj.str}`;
+        title.dir = this.#subjectObj.dir;
+      } else {
+        ({ dir: title.dir, str: title.textContent } = this.#titleObj);
+      }
     }
     popup.append(header);
 
