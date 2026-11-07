@@ -75,8 +75,8 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
- *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ *   total pixels, i.e. width * height. Use `-1` for no limit.
+ *   The default value is 4096 * 8192 (32 mega-pixels).
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
@@ -185,7 +185,7 @@ class PDFPageView extends BasePDFPageView {
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.maxCanvasPixels =
-      options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
+      options.maxCanvasPixels || AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = options.maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.capCanvasAreaFactor =
       options.capCanvasAreaFactor ?? AppOptions.get("capCanvasAreaFactor");
@@ -666,11 +666,7 @@ class PDFPageView extends BasePDFPageView {
 
   updateVisibleArea(visibleArea) {
     if (this.enableDetailCanvas) {
-      if (
-        this.#needsRestrictedScaling &&
-        this.maxCanvasPixels > 0 &&
-        visibleArea
-      ) {
+      if (this.#needsRestrictedScaling && visibleArea) {
         this.detailView ??= new PDFPageDetailView({
           pageView: this,
           enableOptimizedPartialRendering: this.enableOptimizedPartialRendering,
@@ -803,34 +799,22 @@ class PDFPageView extends BasePDFPageView {
     const { div, viewport } = this;
     const outputScale = (this.outputScale = new OutputScale());
 
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.maxCanvasPixels === 0
-    ) {
-      const invScale = 1 / this.scale;
-      // Use a scale that makes the canvas have the originally intended size
-      // of the page.
-      outputScale.sx *= invScale;
-      outputScale.sy *= invScale;
-      this.#needsRestrictedScaling = true;
-    } else {
-      this.#needsRestrictedScaling = outputScale.limitCanvas(
-        viewport.width,
-        viewport.height,
-        this.maxCanvasPixels,
-        this.maxCanvasDim,
-        this.capCanvasAreaFactor
-      );
-      if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
-        // If we are going to have a high-res detail view, further reduce
-        // the canvas resolution to improve rendering performance.
-        // When enableOptimizedPartialRendering is enabled the factor can be
-        // higher since less data will be rendered and it's more acceptable to
-        // have a lower quality (the canvas is exposed less time to the user).
-        const factor = this.enableOptimizedPartialRendering ? 4 : 2;
-        outputScale.sx /= factor;
-        outputScale.sy /= factor;
-      }
+    this.#needsRestrictedScaling = outputScale.limitCanvas(
+      viewport.width,
+      viewport.height,
+      this.maxCanvasPixels,
+      this.maxCanvasDim,
+      this.capCanvasAreaFactor
+    );
+    if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
+      // If we are going to have a high-res detail view, further reduce
+      // the canvas resolution to improve rendering performance.
+      // When enableOptimizedPartialRendering is enabled the factor can be
+      // higher since less data will be rendered and it's more acceptable to
+      // have a lower quality (the canvas is exposed less time to the user).
+      const factor = this.enableOptimizedPartialRendering ? 4 : 2;
+      outputScale.sx /= factor;
+      outputScale.sy /= factor;
     }
 
     const sfx = approximateFraction(outputScale.sx),

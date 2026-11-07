@@ -149,7 +149,7 @@ class OutputScale {
     if (maxPixels > 0) {
       maxAreaScale = Math.sqrt(maxPixels / (width * height));
     }
-    if (maxDim !== -1) {
+    if (maxDim > 0) {
       maxWidthScale = maxDim / width;
       maxHeightScale = maxDim / height;
     }
