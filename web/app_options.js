@@ -865,14 +865,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "maxImageSize",
-    {
-      /** @type {number} */
-      value: -1,
-      kind: OptionKind.API,
-    },
-  ],
-  [
     "pdfBug",
     {
       /** @type {boolean} */

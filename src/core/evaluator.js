@@ -93,7 +93,6 @@ import { Stream } from "./stream.js";
 import { stringToPDFString } from "./string_utils.js";
 
 const DefaultPartialEvaluatorOptions = Object.freeze({
-  maxImageSize: -1,
   disableFontFace: false,
   ignoreErrors: false,
   isOffscreenCanvasSupported: false,
@@ -570,8 +569,7 @@ class PartialEvaluator {
     localImageCache,
     localColorSpaceCache,
   }) {
-    const { maxImageSize, ignoreErrors, isOffscreenCanvasSupported } =
-      this.options;
+    const { ignoreErrors, isOffscreenCanvasSupported } = this.options;
 
     const { dict } = image;
     const imageRef = dict.objId;
@@ -580,15 +578,6 @@ class PartialEvaluator {
 
     if (!(w && typeof w === "number") || !(h && typeof h === "number")) {
       warn("Image dimensions are missing, or not numbers.");
-      return;
-    }
-    if (maxImageSize !== -1 && w * h > maxImageSize) {
-      const msg = "Image exceeded maximum allowed size and was removed.";
-
-      if (!ignoreErrors) {
-        throw new Error(msg);
-      }
-      warn(msg);
       return;
     }
 
