@@ -351,23 +351,26 @@ class XRef {
     const [typeFieldWidth, offsetFieldWidth, generationFieldWidth] =
       streamState.byteWidths;
 
+    if (
+      ![typeFieldWidth, offsetFieldWidth, generationFieldWidth].every(
+        width => Number.isInteger(width) && width >= 0
+      )
+    ) {
+      throw new FormatError(
+        `Invalid XRef entry fields length: ${streamState.byteWidths}`
+      );
+    }
+    // Zero-width entries carry no data, so skip the entire stream.
+    if (typeFieldWidth + offsetFieldWidth + generationFieldWidth === 0) {
+      return;
+    }
+
     const entryRanges = streamState.entryRanges;
     while (entryRanges.length > 0) {
       const [first, n] = entryRanges;
 
       if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(`Invalid XRef range fields: ${first}, ${n}`);
-      }
-      // Each entry must consume a byte to bound the loop by the stream length.
-      if (
-        ![typeFieldWidth, offsetFieldWidth, generationFieldWidth].every(
-          width => Number.isInteger(width) && width >= 0
-        ) ||
-        typeFieldWidth + offsetFieldWidth + generationFieldWidth === 0
-      ) {
-        throw new FormatError(
-          `Invalid XRef entry fields length: ${first}, ${n}`
-        );
       }
       for (let i = streamState.entryNum; i < n; ++i) {
         streamState.entryNum = i;
