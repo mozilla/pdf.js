@@ -76,6 +76,29 @@ const arabicTypes = [
   "EN", "EN", "EN", "EN", "EN", "EN", "AL", "AL", "AL", "AL", "AL", "AL"
 ];
 
+// The remaining BMP nonspacing and enclosing marks have bidi class NSM,
+// except these five vowel signs, whose bidi class is L.
+// https://www.unicode.org/Public/18.0.0/ucd/UnicodeData.txt
+const nonspacingMark = /[\p{Mn}\p{Me}]/u;
+const ltrMarks = new Set(["\u0cbf", "\u0cc6", "\u1b3a", "\u1b3c", "\u1b42"]);
+
+// Cache fallback classification by UTF-16 code unit: 0 unknown, 1 L, 2 NSM.
+let fallbackTypes;
+
+function isFallbackNonspacingMark(char) {
+  const code = char.charCodeAt(0);
+  if (code < 0x0300) {
+    return false;
+  }
+  fallbackTypes ||= new Uint8Array(0x10000);
+  let type = fallbackTypes[code];
+  if (type === 0) {
+    type = nonspacingMark.test(char) && !ltrMarks.has(char) ? 2 : 1;
+    fallbackTypes[code] = type;
+  }
+  return type === 2;
+}
+
 function isOdd(i) {
   return (i & 1) !== 0;
 }
@@ -192,7 +215,10 @@ function bidi(str, startLevel = -1, vertical = false) {
    */
   let lastType = sor;
   for (i = 0; i < strLength; ++i) {
-    if (types[i] === "NSM") {
+    if (
+      types[i] === "NSM" ||
+      (types[i] === "L" && isFallbackNonspacingMark(chars[i]))
+    ) {
       types[i] = lastType;
     } else {
       lastType = types[i];

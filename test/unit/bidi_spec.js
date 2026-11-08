@@ -80,6 +80,27 @@ const UNSUPPORTED_BIDI_CLASSES = new Set([
 ]);
 
 describe("bidi", function () {
+  it("should reorder a combining grapheme joiner with Arabic marks", function () {
+    const text = bidi("\u064b\u0627\u0628\u0652\u0631\u034f\u064e\u0645");
+
+    expect(text).toEqual({
+      str: "\u0645\u064e\u034f\u0631\u0652\u0628\u0627\u064b",
+      dir: "rtl",
+    });
+  });
+
+  it("should reorder enclosing marks and variation selectors in RTL text", function () {
+    const text = bidi("\u05d1\u20dd\ufe00\u05d0");
+
+    expect(text).toEqual({ str: "\u05d0\ufe00\u20dd\u05d1", dir: "rtl" });
+  });
+
+  it("should keep left-to-right vowel signs and their combining marks together", function () {
+    const text = bidi("\u05d1\u0cbf\u0301\u05d0");
+
+    expect(text).toEqual({ str: "\u05d0\u0cbf\u0301\u05d1", dir: "rtl" });
+  });
+
   it(
     "should mark text as LTR if there's only LTR-characters, " +
       "when the string is very short",
