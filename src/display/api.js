@@ -1210,6 +1210,9 @@ class PDFDocumentProxy {
  *   'beginMarkedContentProps', or 'endMarkedContent'.
  * @property {string} id - The marked content identifier. Only used for type
  *   'beginMarkedContentProps'.
+ * @property {string} [actualText] - The replacement text (/ActualText) of the
+ *   marked content, when its property list has one. Only used for type
+ *   'beginMarkedContentProps'.
  */
 
 /**

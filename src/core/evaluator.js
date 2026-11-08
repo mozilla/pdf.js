@@ -3726,14 +3726,22 @@ class PartialEvaluator {
             if (includeMarkedContent) {
               markedContentLevel++;
 
-              const mcid = args[1] instanceof Dict ? args[1].get("MCID") : null;
-              textContent.items.push({
+              const props = args[1] instanceof Dict ? args[1] : null;
+              const mcid = props?.get("MCID");
+              const item = {
                 type: "beginMarkedContentProps",
                 id: Number.isInteger(mcid)
                   ? `${self.idFactory.getPageObjId()}_mc${mcid}`
                   : null,
                 tag: args[0] instanceof Name ? args[0].name : null,
-              });
+              };
+              // The replacement text for the content in the span, if any
+              // (see section 14.9.4 Replacement Text).
+              const actualText = props?.get("ActualText");
+              if (typeof actualText === "string") {
+                item.actualText = stringToPDFString(actualText);
+              }
+              textContent.items.push(item);
             }
             break;
           case OPS.endMarkedContent:

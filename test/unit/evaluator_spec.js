@@ -495,6 +495,36 @@ describe("evaluator", function () {
       ]);
     });
 
+    it("should include the ActualText of marked content", async function () {
+      const stream = new StringStream(
+        "/Span <</ActualText (Word)>> BDC EMC " +
+          "/Span <</ActualText <FEFF00E9>>> BDC EMC " +
+          "/Span <</ActualText 5>> BDC EMC /Span <<>> BDC EMC"
+      );
+      const items = await runTextContentCheck(partialEvaluator, stream);
+
+      expect(items).toEqual([
+        {
+          type: "beginMarkedContentProps",
+          id: null,
+          tag: "Span",
+          actualText: "Word",
+        },
+        { type: "endMarkedContent" },
+        {
+          type: "beginMarkedContentProps",
+          id: null,
+          tag: "Span",
+          actualText: "\u00e9",
+        },
+        { type: "endMarkedContent" },
+        { type: "beginMarkedContentProps", id: null, tag: "Span" },
+        { type: "endMarkedContent" },
+        { type: "beginMarkedContentProps", id: null, tag: "Span" },
+        { type: "endMarkedContent" },
+      ]);
+    });
+
     it("should not close marked content on an unmatched endText", async function () {
       const stream = new StringStream("/Outer BMC ET /Inner BMC EMC EMC");
       const items = await runTextContentCheck(partialEvaluator, stream);
