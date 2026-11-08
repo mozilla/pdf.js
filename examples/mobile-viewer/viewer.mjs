@@ -19,7 +19,6 @@ if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
 }
 
 const TEXT_LAYER_MODE = 0; // DISABLE
-const MAX_IMAGE_SIZE = 1024 * 1024;
 const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
 const CMAP_PACKED = true;
 
@@ -57,7 +56,6 @@ const PDFViewerApplication = {
     // Loading document.
     const loadingTask = pdfjsLib.getDocument({
       url,
-      maxImageSize: MAX_IMAGE_SIZE,
       cMapUrl: CMAP_URL,
       cMapPacked: CMAP_PACKED,
     });
