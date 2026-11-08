@@ -379,16 +379,15 @@ class PDFViewer {
     this.#enableAutoLinking = options.enableAutoLinking !== false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
-    this.defaultRenderingQueue = !options.renderingQueue;
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.defaultRenderingQueue
-    ) {
-      // Custom rendering queue is not specified, using default one
-      this.renderingQueue = new PDFRenderingQueue();
-      this.renderingQueue.setViewer(this);
-    } else {
-      this.renderingQueue = options.renderingQueue;
+    this.renderingQueue = options.renderingQueue;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      this.defaultRenderingQueue = !this.renderingQueue;
+
+      if (this.defaultRenderingQueue) {
+        // Custom rendering queue is not specified, using default one
+        this.renderingQueue = new PDFRenderingQueue();
+        this.renderingQueue.setViewer(this);
+      }
     }
 
     const { abortSignal } = options;
@@ -664,7 +663,10 @@ class PDFViewer {
       pageNumber,
     });
 
-    if (this.defaultRenderingQueue) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.defaultRenderingQueue
+    ) {
       this.update();
     }
   }
@@ -1211,7 +1213,10 @@ class PDFViewer {
           }
         });
 
-        if (this.defaultRenderingQueue) {
+        if (
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+          this.defaultRenderingQueue
+        ) {
           this.update();
         }
       })
@@ -1665,7 +1670,10 @@ class PDFViewer {
       presetValue: preset ? newValue : undefined,
     });
 
-    if (this.defaultRenderingQueue) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.defaultRenderingQueue
+    ) {
       this.update();
     }
   }
