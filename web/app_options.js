@@ -483,7 +483,7 @@ const defaultOptions = new Map([
     "enableSplitMerge",
     {
       /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+      value: true,
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
