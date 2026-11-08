@@ -1926,6 +1926,34 @@ class CanvasGraphics {
     }
 
     const preparedEntry = this.smaskPreparedEntry;
+    if (this.smaskPreparedOOBAlpha === null) {
+      const mask = preparedEntry?.canvas ?? smask.canvas;
+      const maskX = preparedEntry ? this.smaskPreparedOffsetX : smask.offsetX;
+      const maskY = preparedEntry ? this.smaskPreparedOffsetY : smask.offsetY;
+      if (
+        layerBox[2] <= maskX ||
+        layerOffsetX >= maskX + mask.width ||
+        layerBox[3] <= maskY ||
+        layerOffsetY >= maskY + mask.height
+      ) {
+        // drawImage is a no-op when the source rectangle misses the mask.
+        // A separate layer can be skipped and cleared by compose(), but
+        // for in-place masking we need to clear the dirty rectangle here.
+        if (!ctx) {
+          layerCtx.save();
+          layerCtx.setTransform(1, 0, 0, 1, 0, 0);
+          layerCtx.clearRect(
+            layerOffsetX,
+            layerOffsetY,
+            layerWidth,
+            layerHeight
+          );
+          layerCtx.restore();
+        }
+        return;
+      }
+    }
+
     if (preparedEntry) {
       // Fast path: prepared-mask destination-in drawImage. See
       // smaskPreparedOOBAlpha field doc for the OOB handling table.

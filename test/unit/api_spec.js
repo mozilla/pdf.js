@@ -7320,6 +7320,51 @@ have written that much by now. So, here’s to squashing bugs.`);
       }
     });
 
+    it("applies soft mask alpha outside the mask bounds (issue 22470)", async function () {
+      const mask = "1 g 0 0 100 100 re f\n";
+      const contents =
+        "q /SM gs 1 0 0 rg 200 200 100 100 re f 50 50 100 50 re f Q\n";
+      for (const [subtype, backdrop, outsideColor] of [
+        ["Luminosity", "/BC [0]", [255, 255, 255, 255]],
+        ["Luminosity", "/BC [1]", [255, 0, 0, 255]],
+        ["Alpha", "", [255, 255, 255, 255]],
+      ]) {
+        const data = assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 400 400] " +
+            "/Resources << /ExtGState << /SM 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
+          `4 0 obj\n<< /Type /ExtGState /SMask << /S /${subtype} /G 6 0 R ${backdrop} >> >>\nendobj\n`,
+          `5 0 obj\n<< /Length ${contents.length} >>\nstream\n${contents}endstream\nendobj\n`,
+          "6 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 100 100] " +
+            "/Group << /S /Transparency /CS /DeviceGray >> " +
+            `/Length ${mask.length} >>\nstream\n${mask}endstream\nendobj\n`,
+        ]);
+        const loadingTask = getDocument({ data, disableWorkerRendering: true });
+        const pdfDoc = await loadingTask.promise;
+        const { canvasFactory } = pdfDoc;
+        const { canvas, context } = canvasFactory.create(400, 400);
+        try {
+          const pdfPage = await pdfDoc.getPage(1);
+          const viewport = pdfPage.getViewport({ scale: 1 });
+          await pdfPage.render({ canvas, viewport }).promise;
+
+          for (const [x, y, expected] of [
+            [250, 150, outsideColor], // Completely outside the mask.
+            [75, 325, [255, 0, 0, 255]], // Inside the mask.
+            [125, 325, outsideColor], // Outside a partially overlapping fill.
+          ]) {
+            expect(Array.from(context.getImageData(x, y, 1, 1).data))
+              .withContext(`${subtype} ${backdrop} at (${x}, ${y})`)
+              .toEqual(expected);
+          }
+        } finally {
+          canvasFactory.destroy({ canvas, context });
+          await loadingTask.destroy();
+        }
+      }
+    });
+
     it("keeps a paused page's images usable after another page re-uses them", async function () {
       if (isNodeJS) {
         pending("This test checks browser bitmap ownership.");
