@@ -5370,33 +5370,34 @@ ABCD E`);
       await loadingTask.destroy();
     });
 
-    for (const [pageNumber, description, expected] of [
-      [1, "explicit spaces with horizontal scaling", "A B C"],
-      [2, "explicit spaces with negative word spacing", "A B C"],
-      [3, "an inferred space following an explicit space", "A B C"],
-      [4, "an inferred space preceding an explicit space", "A B C"],
-      [5, "a Type3 word space before a wide glyph", "A B C"],
-      [6, "a Type3 word space after a wide glyph", "C B A"],
-      [7, "Type3 tracking at a negative font size", "ABC"],
-    ]) {
-      it(`gets text content, preserving ${description}`, async function () {
-        const loadingTask = getDocument(
-          buildGetDocumentParams("issue18768_word_spaces.pdf")
-        );
-        const pdfDoc = await loadingTask.promise;
+    it("gets text content, preserving various word spaces", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("issue18768_word_spaces.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+
+      for (const [pageNumber, context, expected] of [
+        [1, "explicit spaces with horizontal scaling", "A B C"],
+        [2, "explicit spaces with negative word spacing", "A B C"],
+        [3, "an inferred space following an explicit space", "A B C"],
+        [4, "an inferred space preceding an explicit space", "A B C"],
+        [5, "a Type3 word space before a wide glyph", "A B C"],
+        [6, "a Type3 word space after a wide glyph", "C B A"],
+        [7, "Type3 tracking at a negative font size", "ABC"],
+      ]) {
         const pdfPage = await pdfDoc.getPage(pageNumber);
         const { items } = await pdfPage.getTextContent({
           disableNormalization: true,
         });
 
-        expect(mergeText(items)).toEqual(expected);
+        expect(mergeText(items)).withContext(context).toEqual(expected);
 
         const [annotation] = await pdfPage.getAnnotations();
-        expect(annotation.overlaidText).toEqual(expected);
+        expect(annotation.overlaidText).withContext(context).toEqual(expected);
+      }
 
-        await loadingTask.destroy();
-      });
-    }
+      await loadingTask.destroy();
+    });
 
     it("gets text content, without splitting a word in a narrow-space font (issue 18768)", async function () {
       const loadingTask = getDocument(
