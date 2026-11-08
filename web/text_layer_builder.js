@@ -234,7 +234,9 @@ class TextLayerBuilder {
 
     const reset = (end, textLayer) => {
       if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-        textLayer.append(end);
+        if (textLayer.lastChild !== end) {
+          textLayer.append(end);
+        }
         end.style.width = "";
         end.style.height = "";
       }

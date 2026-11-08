@@ -88,6 +88,66 @@ async function closeDedicatedBrowser(browser, page) {
 }
 
 describe("Text layer", () => {
+  describe("Idle selection reset", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".textLayer .endOfContent");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must not move an idle marker when typing outside the text layer", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const result = await page.evaluate(() => {
+            const textLayer = document.querySelector(".textLayer");
+            const end = textLayer.querySelector(".endOfContent");
+            const input = document.createElement("textarea");
+            document.body.append(input);
+
+            const observer = new MutationObserver(() => {});
+            observer.observe(textLayer, { childList: true });
+            input.dispatchEvent(new KeyboardEvent("keyup", { bubbles: true }));
+            const idleMutations = observer.takeRecords().length;
+            observer.disconnect();
+
+            // Older browsers can resize the marker, with or without moving it.
+            const cleanups = [false, true].map(moveMarker => {
+              if (moveMarker) {
+                textLayer.prepend(end);
+              }
+              textLayer.classList.add("selecting");
+              end.style.width = end.style.height = "10px";
+              input.dispatchEvent(
+                new KeyboardEvent("keyup", { bubbles: true })
+              );
+              return {
+                restored: end === textLayer.lastChild,
+                width: end.style.width,
+                height: end.style.height,
+                selecting: textLayer.classList.contains("selecting"),
+              };
+            });
+
+            return { idleMutations, cleanups };
+          });
+          const resetState = {
+            restored: true,
+            width: "",
+            height: "",
+            selecting: false,
+          };
+          expect(result)
+            .withContext(`In ${browserName}`)
+            .toEqual({ idleMutations: 0, cleanups: [resetState, resetState] });
+        })
+      );
+    });
+  });
+
   describe("Text layout", () => {
     let pages;
 
