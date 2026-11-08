@@ -3461,7 +3461,7 @@ function packageJson() {
     bugs: DIST_BUGS_URL,
     license: DIST_LICENSE,
     optionalDependencies: {
-      "@napi-rs/canvas": "^1.0.13",
+      "@napi-rs/canvas": "^1.1.0",
     },
     browser: {
       canvas: false,
