@@ -3602,8 +3602,11 @@ class Font {
         }
       }
       // ... via toUnicode map
-      if (!charcode && this.toUnicode) {
-        charcode = this.toUnicode.charCodeOf(glyphUnicode);
+      if (!charcode && this.toUnicode && glyphUnicode !== undefined) {
+        charcode =
+          this.toUnicode instanceof IdentityToUnicodeMap
+            ? this.toUnicode.charCodeOf(glyphUnicode)
+            : this.toUnicode.charCodeOf(String.fromCodePoint(glyphUnicode));
       }
       // setting it to unicode if negative or undefined
       if (charcode <= 0) {
