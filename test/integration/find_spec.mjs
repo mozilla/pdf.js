@@ -96,6 +96,20 @@ describe("find bar", () => {
           const glyphWidth = 15.98; // From the PDF.
           fuzzyMatch(firstA.x, pageBox.x + expectedFirstAX, browserName);
           fuzzyMatch(secondA.x, firstA.x + glyphWidth * 4, browserName);
+
+          // The highlight must still occupy space in the parent span's text
+          // flow. Otherwise the following B overlaps it (issue 13491).
+          const followingTextOffset = await highlights[0].evaluate(
+            highlight => {
+              const range = new Range();
+              range.selectNodeContents(highlight.nextSibling);
+              return (
+                range.getBoundingClientRect().left -
+                highlight.parentElement.getBoundingClientRect().left
+              );
+            }
+          );
+          fuzzyMatch(followingTextOffset, glyphWidth, browserName);
         })
       );
     });
