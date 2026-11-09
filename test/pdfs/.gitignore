@@ -1013,6 +1013,7 @@
 !perf_text_render_modes.pdf
 !perf_text_transformed.pdf
 !perf_images_masks.pdf
+!issue22486.pdf
 !perf_images_repeated.pdf
 !perf_images_inline_raw.pdf
 !perf_images_jpeg_large.pdf
