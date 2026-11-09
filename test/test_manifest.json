@@ -15350,5 +15350,14 @@
     "rounds": 1,
     "type": "eq",
     "about": "Short loca offsets overflow after duplicating glyph 0."
+  },
+  {
+    "id": "xfa_issue22023",
+    "file": "pdfs/xfa_issue22023.pdf",
+    "md5": "44b75da68e9ccc5c24dc4f9ea05399bf",
+    "rounds": 1,
+    "enableXfa": true,
+    "type": "eq",
+    "about": "XFA rich text with b and i elements."
   }
 ]
