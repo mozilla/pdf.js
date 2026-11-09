@@ -62,5 +62,10 @@
   "engines": {
     "node": ">=22.22.3 || >=24.15.0 || >=26.0"
   },
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "allowScripts": {
+    "core-js": false,
+    "puppeteer": false,
+    "unrs-resolver": false
+  }
 }
