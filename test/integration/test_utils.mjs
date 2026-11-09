@@ -181,6 +181,12 @@ async function closeSinglePage(page) {
   await page.close({ runBeforeUnload: false });
 }
 
+async function waitForScripting(page) {
+  await page.waitForFunction(
+    "window.PDFViewerApplication.scriptingReady === true"
+  );
+}
+
 async function waitForSandboxTrip(page) {
   const handle = await page.evaluateHandle(() => [
     new Promise(resolve => {
@@ -1301,6 +1307,7 @@ export {
   waitForPageRendered,
   waitForPointerUp,
   waitForSandboxTrip,
+  waitForScripting,
   waitForSelectedEditor,
   waitForSelectionChange,
   waitForSerialized,
