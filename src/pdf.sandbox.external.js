@@ -18,8 +18,9 @@
 
 // eslint-disable-next-line no-restricted-syntax
 export class SandboxSupportBase {
-  // Viewer-supplied state for the current synchronous dispatch. Dialog
-  // permission can be consumed once per dispatch.
+  // Viewer-supplied state for the current synchronous dispatch. The activation
+  // token is removed from the event sent to the sandbox and attached to its
+  // document commands. Dialog permission can be consumed once per dispatch.
   #dispatch = null;
 
   /**
@@ -71,10 +72,15 @@ export class SandboxSupportBase {
       return;
     }
     const dispatch = this.#dispatch;
-    this.#dispatch =
-      name === "dispatchEvent" && args
-        ? { canShowDialog: args.allowDialog === true }
-        : null;
+    this.#dispatch = null;
+    if (name === "dispatchEvent" && args) {
+      const { activation = null, ...event } = args;
+      args = event;
+      this.#dispatch = {
+        activation,
+        canShowDialog: event.allowDialog === true,
+      };
+    }
     try {
       args = this.exportValueToSandbox(args);
       this.commFun(name, args);
@@ -186,6 +192,10 @@ export class SandboxSupportBase {
       send: data => {
         if (!data) {
           return;
+        }
+        const activation = this.#dispatch?.activation ?? null;
+        if (!data.id && (activation || "activation" in data)) {
+          data = { ...data, activation };
         }
         const event = new this.win.CustomEvent("updatefromsandbox", {
           detail: this.importValueFromSandbox(data),
