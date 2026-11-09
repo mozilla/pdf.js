@@ -1,0 +1,463 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R] /DA (/Helv 12 Tf 0 g) /DR << /Font << /Helv 28 0 R >> >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Annots [4 0 R 5 0 R 6 0 R 7 0 R 8 0 R 9 0 R 10 0 R 11 0 R 12 0 R 13 0 R 14 0 R 15 0 R 16 0 R 17 0 R 18 0 R 19 0 R 20 0 R 21 0 R 22 0 R 23 0 R 24 0 R 25 0 R 26 0 R 27 0 R] >>
+endobj
+4 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (log) /Rect [50 740 300 770] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] >> >>
+endobj
+5 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (f1) /Rect [50 700 250 730] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] >> /AA << /Fo << /S /JavaScript /JS (print\(\);) >> >> >>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (f2) /Rect [300 700 500 730] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] >> /AA << /Fo << /S /JavaScript /JS (print\(\);) >> >> >>
+endobj
+7 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (print) /Rect [50 640 200 670] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (print) >> /A << /S /JavaScript /JS (getField\("log"\).value = "print"; print\(\);) >> /AP << /N 29 0 R >> >>
+endobj
+8 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (save) /Rect [250 640 400 670] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (save) >> /A << /S /JavaScript /JS (getField\("log"\).value = "save"; app.execMenuItem\("SaveAs"\);) >> /AP << /N 30 0 R >> >>
+endobj
+9 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (bounce) /Rect [50 580 200 610] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (bounce) >> /A << /S /JavaScript /JS (if \(!global.timer\) { global.timer = app.setInterval\("global.n = \(global.n || 0\) + 1; getField\(global.n % 2 ? 'f1' : 'f2'\).setFocus\(\);", 100\); }) >> /AP << /N 31 0 R >> >>
+endobj
+10 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (focusPrint) /Rect [250 580 400 610] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (focusPrint) >> /A << /S /JavaScript /JS (getField\("print"\).setFocus\(\);) >> /AP << /N 32 0 R >> >>
+endobj
+11 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (cover) /Rect [50 500 200 540] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (cover) >> /AA << /D << /S /JavaScript /JS (getField\("coverPrint"\).display = display.visible;) >> >> /AP << /N 33 0 R >> >>
+endobj
+12 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (coverPrint) /Rect [50 500 200 540] /P 3 0 R /F 6 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (coverPrint) >> /AA << /U << /S /JavaScript /JS (getField\("log"\).value = "coverPrint"; print\(\);) >> >> /AP << /N 34 0 R >> >>
+endobj
+13 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (both) /Rect [250 500 400 540] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (both) >> /AA << /D << /S /JavaScript /JS (print\(\);) >> >> /A << /S /JavaScript /JS (app.execMenuItem\("SaveAs"\);) >> /AP << /N 35 0 R >> >>
+endobj
+14 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (namedPrint) /Rect [50 440 200 470] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (namedPrint) >> /A << /S /Named /N /Print >> /AP << /N 36 0 R >> >>
+endobj
+15 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (namedSave) /Rect [250 440 400 470] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (namedSave) >> /A << /S /Named /N /SaveAs >> /AP << /N 37 0 R >> >>
+endobj
+16 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (focusNamed) /Rect [450 440 570 470] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (focusNamed) >> /A << /S /JavaScript /JS (getField\("namedPrint"\).setFocus\(\);) >> /AP << /N 38 0 R >> >>
+endobj
+17 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (hiddenNamedPrint) /Rect [50 390 200 420] /P 3 0 R /F 6 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (hiddenNamedPrint) >> /A << /S /Named /N /Print >> /AP << /N 39 0 R >> >>
+endobj
+18 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (showNamed) /Rect [250 390 400 420] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (showNamed) >> /A << /S /JavaScript /JS (getField\("hiddenNamedPrint"\).display = display.visible;) >> /AP << /N 40 0 R >> >>
+endobj
+19 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (busyFocus) /Rect [450 390 570 420] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (busyFocus) >> /A << /S /JavaScript /JS (getField\("print"\).setFocus\(\); var t = Date.now\(\); while \(Date.now\(\) - t < 700\) {}) >> /AP << /N 41 0 R >> >>
+endobj
+20 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (validateAlert) /Rect [50 340 250 370] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] >> /AA << /V << /S /JavaScript /JS (app.alert\("validate"\);) >> >> >>
+endobj
+21 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (hoverAlert) /Rect [300 340 500 370] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] >> /AA << /E << /S /JavaScript /JS (app.alert\("enter"\);) >> >> >>
+endobj
+22 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (timerAlert) /Rect [50 290 200 320] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (timerAlert) >> /A << /S /JavaScript /JS (app.setTimeOut\("app.alert\('timer'\)", 0\);) >> /AP << /N 42 0 R >> >>
+endobj
+23 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (timerThenFocus) /Rect [250 290 400 320] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (timerThenFocus) >> /A << /S /JavaScript /JS (app.setTimeOut\("var t = Date.now\(\); while \(Date.now\(\) - t < 700\) {}", 0\); var t = Date.now\(\); while \(Date.now\(\) - t < 200\) {} getField\("print"\).setFocus\(\);) >> /AP << /N 43 0 R >> >>
+endobj
+24 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (uriButton) /Rect [50 240 200 270] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (uriButton) >> /A << /S /URI /URI (https://example.com/) >> /AP << /N 44 0 R >> >>
+endobj
+25 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (focusUri) /Rect [250 240 400 270] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (focusUri) >> /A << /S /JavaScript /JS (getField\("uriButton"\).setFocus\(\);) >> /AP << /N 45 0 R >> >>
+endobj
+26 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Tx /T (resetTarget) /Rect [450 240 570 270] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] >> >>
+endobj
+27 0 obj
+<< /Type /Annot /Subtype /Widget /FT /Btn /Ff 65536 /T (resetJs) /Rect [50 190 200 220] /P 3 0 R /F 4 /DA (/Helv 12 Tf 0 g) /MK << /BC [0 0 0] /BG [0.9 0.9 0.9] /CA (resetJs) >> /A << /S /ResetForm /Fields [26 0 R] /Flags 0 /Next << /S /JavaScript /JS (getField\("log"\).value = "resetJs";) >> >> /AP << /N 46 0 R >> >>
+endobj
+28 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+29 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 116 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+65.28 11.41 Td
+(print) Tj
+ET
+Q
+endstream
+endobj
+30 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 115 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+64.44 11.41 Td
+(save) Tj
+ET
+Q
+endstream
+endobj
+31 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 117 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+58.60 11.41 Td
+(bounce) Tj
+ET
+Q
+endstream
+endobj
+32 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 121 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+52.77 11.41 Td
+(focusPrint) Tj
+ET
+Q
+endstream
+endobj
+33 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 40] /Resources << /Font << /Helv 28 0 R >> >> /Length 116 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 40 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 39 re S
+BT
+/Helv 10 Tf
+0 g
+62.78 16.41 Td
+(cover) Tj
+ET
+Q
+endstream
+endobj
+34 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 40] /Resources << /Font << /Helv 28 0 R >> >> /Length 121 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 40 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 39 re S
+BT
+/Helv 10 Tf
+0 g
+52.50 16.41 Td
+(coverPrint) Tj
+ET
+Q
+endstream
+endobj
+35 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 40] /Resources << /Font << /Helv 28 0 R >> >> /Length 115 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 40 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 39 re S
+BT
+/Helv 10 Tf
+0 g
+65.27 16.41 Td
+(both) Tj
+ET
+Q
+endstream
+endobj
+36 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 121 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+49.44 11.41 Td
+(namedPrint) Tj
+ET
+Q
+endstream
+endobj
+37 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 120 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+48.32 11.41 Td
+(namedSave) Tj
+ET
+Q
+endstream
+endobj
+38 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 120 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 121 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 120 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 119 29 re S
+BT
+/Helv 10 Tf
+0 g
+31.93 11.41 Td
+(focusNamed) Tj
+ET
+Q
+endstream
+endobj
+39 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 127 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+33.59 11.41 Td
+(hiddenNamedPrint) Tj
+ET
+Q
+endstream
+endobj
+40 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 120 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+47.22 11.41 Td
+(showNamed) Tj
+ET
+Q
+endstream
+endobj
+41 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 120 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 120 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 120 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 119 29 re S
+BT
+/Helv 10 Tf
+0 g
+35.83 11.41 Td
+(busyFocus) Tj
+ET
+Q
+endstream
+endobj
+42 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 121 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+53.61 11.41 Td
+(timerAlert) Tj
+ET
+Q
+endstream
+endobj
+43 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 125 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+38.88 11.41 Td
+(timerThenFocus) Tj
+ET
+Q
+endstream
+endobj
+44 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 120 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+54.99 11.41 Td
+(uriButton) Tj
+ET
+Q
+endstream
+endobj
+45 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 119 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+56.67 11.41 Td
+(focusUri) Tj
+ET
+Q
+endstream
+endobj
+46 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 150 30] /Resources << /Font << /Helv 28 0 R >> >> /Length 118 >>
+stream
+q
+0.9 0.9 0.9 rg
+0 0 150 30 re f
+0 0 0 RG
+1 w
+0.5 0.5 149 29 re S
+BT
+/Helv 10 Tf
+0 g
+58.88 11.41 Td
+(resetJs) Tj
+ET
+Q
+endstream
+endobj
+xref
+0 47
+0000000000 65535 f 
+0000000009 00000 n 
+0000000303 00000 n 
+0000000360 00000 n 
+0000000603 00000 n 
+0000000752 00000 n 
+0000000952 00000 n 
+0000001153 00000 n 
+0000001441 00000 n 
+0000001746 00000 n 
+0000002144 00000 n 
+0000002432 00000 n 
+0000002737 00000 n 
+0000003051 00000 n 
+0000003374 00000 n 
+0000003626 00000 n 
+0000003878 00000 n 
+0000004171 00000 n 
+0000004435 00000 n 
+0000004745 00000 n 
+0000005089 00000 n 
+0000005314 00000 n 
+0000005534 00000 n 
+0000005832 00000 n 
+0000006268 00000 n 
+0000006534 00000 n 
+0000006822 00000 n 
+0000006981 00000 n 
+0000007317 00000 n 
+0000007415 00000 n 
+0000007673 00000 n 
+0000007930 00000 n 
+0000008189 00000 n 
+0000008452 00000 n 
+0000008710 00000 n 
+0000008973 00000 n 
+0000009230 00000 n 
+0000009493 00000 n 
+0000009755 00000 n 
+0000010018 00000 n 
+0000010287 00000 n 
+0000010549 00000 n 
+0000010811 00000 n 
+0000011074 00000 n 
+0000011341 00000 n 
+0000011603 00000 n 
+0000011864 00000 n 
+trailer
+<< /Size 47 /Root 1 0 R >>
+startxref
+12124
+%%EOF

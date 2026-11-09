@@ -20,6 +20,17 @@ import { apiPageLayoutToViewerModes } from "./ui_utils.js";
 import { internalOpt } from "./internal_evt.js";
 import { RenderingStates } from "./renderable_view.js";
 
+// Events eligible for a dialog when triggered by a trusted, non-scripted event.
+const DIALOG_EVENTS = new Set([
+  "Action",
+  "Blur",
+  "Focus",
+  "Keystroke",
+  "Mouse Down",
+  "Mouse Up",
+  "Validate",
+]);
+
 /**
  * @typedef {object} PDFScriptingManagerOptions
  * @property {EventBus} eventBus - The application event bus.
@@ -164,8 +175,15 @@ class PDFScriptingManager {
     );
     eventBus.on(
       "dispatcheventinsandbox",
-      event => {
-        this.#scripting?.dispatchEventInSandbox(event.detail);
+      ({ detail, originalEvent, scripted }) => {
+        this.#scripting?.dispatchEventInSandbox({
+          ...detail,
+          scripted: !!scripted,
+          allowDialog:
+            !!originalEvent?.isTrusted &&
+            !scripted &&
+            DIALOG_EVENTS.has(detail?.name),
+        });
       },
       evtOpts
     );
@@ -242,6 +260,7 @@ class PDFScriptingManager {
     await this.#scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "Open",
+      allowDialog: true,
     });
     await this.#dispatchPageOpen(
       this.#pdfViewer.currentPageNumber,
@@ -264,6 +283,7 @@ class PDFScriptingManager {
     return this.#scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "DidSave",
+      allowDialog: true,
     });
   }
 
@@ -284,7 +304,11 @@ class PDFScriptingManager {
     );
     pendingEvents.push(capability);
     try {
-      await this.#scripting.dispatchEventInSandbox({ id: "doc", name });
+      await this.#scripting.dispatchEventInSandbox({
+        id: "doc",
+        name,
+        allowDialog: true,
+      });
     } catch (ex) {
       const index = pendingEvents.indexOf(capability);
       if (index >= 0) {
@@ -300,6 +324,7 @@ class PDFScriptingManager {
     return this.#scripting?.dispatchEventInSandbox({
       id: "doc",
       name: "DidPrint",
+      allowDialog: true,
     });
   }
 

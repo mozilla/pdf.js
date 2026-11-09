@@ -21,6 +21,11 @@ import {
   waitForScripting,
 } from "./test_utils.mjs";
 
+async function clickAndWait(page, id, options) {
+  await page.click(getSelector(id), options);
+  await waitForSandboxTrip(page);
+}
+
 describe("Scripting commands", () => {
   describe("in doc_actions.pdf", () => {
     let pages;
@@ -65,6 +70,51 @@ describe("Scripting commands", () => {
             sharedPromise: true,
             downloads: 2,
           });
+        })
+      );
+    });
+  });
+
+  describe("in scripting_user_activation.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "scripting_user_activation.pdf",
+        getSelector("7R")
+      );
+      await Promise.all(pages.map(([, page]) => waitForScripting(page)));
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("only shows a dialog for events allowed by the viewer", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(() => {
+            window.alerts = [];
+            window.alert = msg => window.alerts.push(msg);
+          });
+
+          // Mouse Enter.
+          await page.hover(getSelector("21R"));
+          await waitForSandboxTrip(page);
+          // A timer.
+          await clickAndWait(page, "22R");
+          await waitForSandboxTrip(page);
+          expect(await page.evaluate(() => window.alerts))
+            .withContext(`In ${browserName}`)
+            .toEqual([]);
+
+          // Validate, when committing a value.
+          await page.type(getSelector("20R"), "abc");
+          await page.keyboard.press("Tab");
+          await waitForSandboxTrip(page);
+          expect(await page.evaluate(() => window.alerts))
+            .withContext(`In ${browserName}`)
+            .toEqual(["validate"]);
         })
       );
     });
