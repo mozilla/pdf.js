@@ -187,6 +187,7 @@ const PDFViewerApplication = {
   _contentDispositionFilename: null,
   _contentLength: null,
   _saveInProgress: false,
+  _downloadOrSavePromise: null,
   _wheelUnusedTicks: 0,
   _wheelUnusedFactor: 1,
   _touchManager: null,
@@ -1546,7 +1547,23 @@ const PDFViewerApplication = {
     }
   },
 
-  async downloadOrSave() {
+  /**
+   * Download or save the document, coalescing the concurrent requests into a
+   * single one.
+   * @returns {Promise<void>}
+   */
+  downloadOrSave() {
+    this._downloadOrSavePromise ??= this._downloadOrSave().finally(() => {
+      this._downloadOrSavePromise = null;
+    });
+    return this._downloadOrSavePromise;
+  },
+
+  /**
+   * @private
+   * @returns {Promise<void>}
+   */
+  async _downloadOrSave() {
     if (!this.downloadManager) {
       if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
         this.eventBus.dispatch("downloadskipped", { source: this });
