@@ -1229,7 +1229,15 @@ gulp.task("release-brotli", async function () {
   if (patchedSource === source) {
     throw new Error("Unexpected `BrotliDecode` export in decode.js.");
   }
-  fs.writeFileSync(outputPath, patchedSource);
+  // Forcibly invoke `enableLargeWindow` until the option is exposed upstream.
+  const enableLargeWindowSource = patchedSource.replace(
+    /(\sinitState\(s\);)\n(\s*if \(options\) \{)/,
+    "$1\n    enableLargeWindow(s);\n$2"
+  );
+  if (enableLargeWindowSource === patchedSource) {
+    throw new Error("Cannot patch `enableLargeWindow` into decode.js.");
+  }
+  fs.writeFileSync(outputPath, enableLargeWindowSource);
 
   console.log(`Brotli js file saved to: ${outputPath}`);
 });
