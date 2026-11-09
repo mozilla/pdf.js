@@ -1954,6 +1954,116 @@ describe("Tap after a two-finger gesture", () => {
   });
 });
 
+describe("Undo the last edit after the page is rendered again", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  async function drawOnFirstPage(page) {
+    await switchToInk(page);
+    const { x, y, width, height } = await getRect(
+      page,
+      `.page[data-page-number="1"] .annotationEditorLayer`
+    );
+    await drawLine(
+      page,
+      x + 0.15 * width,
+      y + 0.1 * height,
+      x + 0.75 * width,
+      y + 0.35 * height
+    );
+    await commit(page);
+    await waitForSerialized(page, 1);
+    return { x, y, width, height };
+  }
+
+  async function addFreeText(page, layer) {
+    await switchToEditor("FreeText", page);
+    const editorSelector = ".freeTextEditor .internal";
+    await page.mouse.click(
+      layer.x + 0.5 * layer.width,
+      layer.y + 0.85 * layer.height
+    );
+    await page.waitForSelector(editorSelector, { visible: true });
+    await page.type(editorSelector, "Last step");
+    await page.keyboard.press("Escape");
+    await page.waitForSelector(
+      ".freeTextEditor.selectedEditor .overlay.enabled"
+    );
+    await switchToEditor("FreeText", page, /* disable = */ true);
+    await waitForSerialized(page, 2);
+  }
+
+  async function annotationTypes(page) {
+    return (await getSerialized(page))
+      .map(serialized => serialized.annotationType)
+      .sort((a, b) => a - b);
+  }
+
+  async function scrollFirstPageOutAndBack(page) {
+    for (const pageNumber of Array.from(new Array(13).keys(), n => n + 2)) {
+      await scrollIntoView(page, `.page[data-page-number = "${pageNumber}"]`);
+    }
+    await page.waitForFunction(
+      () =>
+        !document.querySelector(
+          '.page[data-page-number="1"] .annotationEditorLayer'
+        )
+    );
+
+    for (const pageNumber of Array.from(new Array(13).keys(), n => 13 - n)) {
+      await scrollIntoView(page, `.page[data-page-number = "${pageNumber}"]`);
+    }
+    await page.waitForSelector(`.page[data-page-number="1"] .inkEditor`, {
+      visible: true,
+    });
+  }
+
+  it("must remove the FreeText and keep the drawing", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const layer = await drawOnFirstPage(page);
+        await addFreeText(page, layer);
+        expect(await annotationTypes(page))
+          .withContext(`In ${browserName}`)
+          .toEqual([AnnotationEditorType.FREETEXT, AnnotationEditorType.INK]);
+
+        await scrollFirstPageOutAndBack(page);
+        await switchToInk(page);
+        await kbUndo(page);
+        await waitForSerialized(page, 1);
+
+        expect(await annotationTypes(page))
+          .withContext(`In ${browserName}`)
+          .toEqual([AnnotationEditorType.INK]);
+      })
+    );
+  }, 120000);
+
+  it("must remove the FreeText when the page is not rendered again", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const layer = await drawOnFirstPage(page);
+        await addFreeText(page, layer);
+
+        await switchToInk(page);
+        await kbUndo(page);
+        await waitForSerialized(page, 1);
+
+        expect(await annotationTypes(page))
+          .withContext(`In ${browserName}`)
+          .toEqual([AnnotationEditorType.INK]);
+      })
+    );
+  }, 60000);
+});
+
 describe("Removal during a pinch-resize", () => {
   let pages;
 

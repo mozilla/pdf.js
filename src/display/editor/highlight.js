@@ -322,7 +322,7 @@ class HighlightEditor extends DrawingEditor {
   /** @inheritdoc */
   onceAdded(focus) {
     if (!this.annotationElementId) {
-      this.parent.addUndoableEditor(this);
+      this._addToUndoStack();
     }
     if (focus) {
       this.div.focus();
