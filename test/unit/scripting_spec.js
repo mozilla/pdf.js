@@ -2088,6 +2088,44 @@ describe("Scripting", function () {
     beforeEach(clearCommands);
     afterEach(clearCommands);
 
+    it("should give the activation of an event to the commands it sends", async () => {
+      const refId = createSandboxWithField({
+        Action: [`print();`],
+        "Mouse Up": [`app.execMenuItem("SaveAs");`],
+      });
+
+      await sandbox.dispatchEventInSandbox({ id: refId, name: "Action" });
+      expect(send_queue.get("print").activation).toBeUndefined();
+      send_queue.delete("print");
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Action",
+        activation: "abc",
+      });
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Mouse Up",
+        activation: "def",
+      });
+      expect(send_queue.get("print")).toEqual(
+        jasmine.objectContaining({ command: "print", activation: "abc" })
+      );
+      expect(send_queue.get("SaveAs")).toEqual({
+        command: "SaveAs",
+        activation: "def",
+      });
+
+      // Replace an activation sent by the sandbox outside a dispatch with null.
+      await myeval(
+        `sendResultForTesting([{ command: "SaveAs", activation: "ghi" }])`
+      );
+      expect(send_queue.get("SaveAs")).toEqual({
+        command: "SaveAs",
+        activation: null,
+      });
+    });
+
     it("shouldn't consider a focus change made by a script as a user activation", async () => {
       const refId = createSandboxWithField({ Focus: [`app.alert("focus");`] });
 

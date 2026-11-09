@@ -62,8 +62,49 @@ const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
 
+// Properties which can't change what is under the pointer: applying any other
+// one is reported as a possible layout change.
+const STATIC_SANDBOX_PROPERTIES = new Set([
+  "bgColor",
+  "borderColor",
+  "charLimit",
+  "clear",
+  "editable",
+  "fgColor",
+  "fillColor",
+  "formattedValue",
+  "indices",
+  "insert",
+  "items",
+  "multipleSelection",
+  "print",
+  "readonly",
+  "remove",
+  "required",
+  "selRange",
+  "strokeColor",
+  "textColor",
+  "userName",
+  "value",
+]);
+
+// Named actions which neither print nor save, hence don't need a user gesture.
+const SAFE_NAMED_ACTIONS = new Set([
+  "FirstPage",
+  "Find",
+  "GoBack",
+  "GoForward",
+  "GoToPage",
+  "LastPage",
+  "NextPage",
+  "PrevPage",
+]);
+
 // True during a focus() call requested by the sandbox.
 let isScriptFocusing = false;
+
+// Element marked as script-focused; cleared by its blur listener.
+let scriptFocusedElement = null;
 
 /**
  * Collect what the viewer needs to tell whether a DOM event is from the user.
@@ -75,6 +116,8 @@ function getUserEventInfo(event) {
     originalEvent: event,
     // The event fired during a script-requested focus() call.
     scripted: isScriptFocusing,
+    // The target is still marked as script-focused.
+    scriptFocused: event.target === scriptFocusedElement,
   };
 }
 
@@ -583,6 +626,23 @@ class AnnotationElement {
           } finally {
             isScriptFocusing = false;
           }
+          // The focus, and any scrolling it causes, only happen now.
+          this._notifyLayoutChange();
+          if (
+            target.ownerDocument.activeElement === target &&
+            scriptFocusedElement !== target
+          ) {
+            scriptFocusedElement = target;
+            target.addEventListener(
+              "blur",
+              () => {
+                if (scriptFocusedElement === target) {
+                  scriptFocusedElement = null;
+                }
+              },
+              { once: true }
+            );
+          }
         }, 0);
       },
       userName: event => {
@@ -636,11 +696,53 @@ class AnnotationElement {
     });
   }
 
+  /**
+   * Whether a DOM event can trigger an action with an effect outside of the
+   * document: printing, saving, downloading or navigating.
+   * @param {Event} event
+   * @returns {boolean}
+   */
+  _isUserActivation(event) {
+    const { eventBus } = this.linkService;
+    if (!this.enableScripting || !eventBus) {
+      // Without a scripting manager, which requires an event bus, no script can
+      // have changed what the user interacts with.
+      return true;
+    }
+    const request = {
+      source: this,
+      ...getUserEventInfo(event),
+      allowed: false,
+    };
+    eventBus.dispatch("useractivationrequest", request);
+    return request.allowed;
+  }
+
+  /**
+   * Notify the viewer of a possible layout change from a sandbox update.
+   */
+  _notifyLayoutChange() {
+    this.linkService.eventBus?.dispatch("sandboxlayoutchange", {
+      source: this,
+    });
+  }
+
+  /**
+   * Apply the properties set by a script, reporting a possible layout change
+   * for the ones not in STATIC_SANDBOX_PROPERTIES.
+   * @param {object} actions - The actions specific to the element.
+   * @param {object} jsEvent - The event, with the properties in its detail.
+   */
   _dispatchEventFromSandbox(actions, jsEvent) {
     const commonActions = this._commonActions;
     for (const name of Object.keys(jsEvent.detail)) {
       const action = actions[name] || commonActions[name];
-      action?.(jsEvent);
+      if (action) {
+        action(jsEvent);
+        if (!STATIC_SANDBOX_PROPERTIES.has(name)) {
+          this._notifyLayoutChange();
+        }
+      }
     }
   }
 
@@ -657,15 +759,11 @@ class AnnotationElement {
 
     const commonActions = this._commonActions;
     for (const [actionName, detail] of Object.entries(storedData)) {
-      const action = commonActions[actionName];
-      if (action) {
-        const eventProxy = {
-          detail: {
-            [actionName]: detail,
-          },
+      if (commonActions[actionName]) {
+        this._dispatchEventFromSandbox(commonActions, {
+          detail: { [actionName]: detail },
           target: element,
-        };
-        action(eventProxy);
+        });
         // The action has been consumed: no need to keep it.
         delete storedData[actionName];
       }
@@ -1012,6 +1110,14 @@ class LinkAnnotationElement extends AnnotationElement {
 
     if (data.url) {
       linkService.addLinkAttributes(link, data.url, data.newWindow);
+      // Guard both primary and auxiliary clicks (e.g. middle-clicking a link).
+      for (const type of ["click", "auxclick"]) {
+        link.addEventListener(type, event => {
+          if (!this._isUserActivation(event)) {
+            event.preventDefault();
+          }
+        });
+      }
       isBound = true;
     } else if (data.action) {
       this._bindNamedAction(link, data.action, data.overlaidText);
@@ -1100,8 +1206,10 @@ class LinkAnnotationElement extends AnnotationElement {
    */
   _bindNamedAction(link, action, overlaidText = "") {
     link.href = this.linkService.getAnchorUrl("");
-    link.onclick = () => {
-      this.linkService.executeNamedAction(action);
+    link.onclick = event => {
+      if (SAFE_NAMED_ACTIONS.has(action) || this._isUserActivation(event)) {
+        this.linkService.executeNamedAction(action);
+      }
       return false;
     };
     if (overlaidText) {
@@ -1145,8 +1253,10 @@ class LinkAnnotationElement extends AnnotationElement {
       }
     };
 
-    link.onclick = () => {
-      openAttachment();
+    link.onclick = event => {
+      if (this._isUserActivation(event)) {
+        openAttachment();
+      }
       return false;
     };
     this.#setInternalLink();
@@ -3783,7 +3893,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     const { isMac } = FeatureTest.platform;
     container.addEventListener("keydown", evt => {
       if (evt.key === "Enter" && (isMac ? evt.metaKey : evt.ctrlKey)) {
-        this.#download();
+        this.#download(evt);
       }
     });
 
@@ -3808,8 +3918,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
 
   /**
    * Download the file attachment associated with this annotation.
+   * @param {Event} event - The DOM event which triggered the download.
    */
-  async #download() {
+  async #download(event) {
+    if (!this._isUserActivation(event)) {
+      return;
+    }
     const { fileId, filename, content: fallbackContent } = this;
     /** @type {CatalogAttachmentContent} */
     const content =
