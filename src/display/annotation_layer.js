@@ -62,6 +62,22 @@ const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
 
+// True during a focus() call requested by the sandbox.
+let isScriptFocusing = false;
+
+/**
+ * Collect what the viewer needs to tell whether a DOM event is from the user.
+ * @param {Event} event
+ * @returns {object}
+ */
+function getUserEventInfo(event) {
+  return {
+    originalEvent: event,
+    // The event fired during a script-requested focus() call.
+    scripted: isScriptFocusing,
+  };
+}
+
 /**
  * @typedef {object} AnnotationElementParameters
  * @property {object} data
@@ -559,7 +575,15 @@ class AnnotationElement {
         });
       },
       focus: event => {
-        setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+        setTimeout(() => {
+          const { target } = event;
+          isScriptFocusing = true;
+          try {
+            target.focus({ preventScroll: false });
+          } finally {
+            isScriptFocusing = false;
+          }
+        }, 0);
       },
       userName: event => {
         // tooltip
@@ -596,6 +620,19 @@ class AnnotationElement {
           rotation: angle,
         });
       },
+    });
+  }
+
+  /**
+   * Dispatch in the sandbox an event triggered by a DOM event.
+   * @param {object} detail
+   * @param {Event} event
+   */
+  _dispatchDOMEventInSandbox(detail, event) {
+    this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+      source: this,
+      detail,
+      ...getUserEventInfo(event),
     });
   }
 
@@ -1155,11 +1192,8 @@ class LinkAnnotationElement extends AnnotationElement {
       if (!jsName) {
         continue;
       }
-      link[jsName] = () => {
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: { id, name },
-        });
+      link[jsName] = event => {
+        this._dispatchDOMEventInSandbox({ id, name }, event);
         return false;
       };
     }
@@ -1189,8 +1223,8 @@ class LinkAnnotationElement extends AnnotationElement {
       return;
     }
 
-    link.onclick = () => {
-      otherClickAction?.();
+    link.onclick = event => {
+      otherClickAction?.(event);
 
       const {
         fields: resetFormFields,
@@ -1333,16 +1367,16 @@ class WidgetAnnotationElement extends AnnotationElement {
     if (baseName.includes("mouse")) {
       // Mouse events
       element.addEventListener(baseName, event => {
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: {
+        this._dispatchDOMEventInSandbox(
+          {
             id: this.data.id,
             name: eventName,
             value: valueGetter(event),
             shift: event.shiftKey,
             modifier: this._getKeyModifier(event),
           },
-        });
+          event
+        );
       });
     } else {
       // Non-mouse events
@@ -1363,14 +1397,14 @@ class WidgetAnnotationElement extends AnnotationElement {
           return;
         }
 
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: {
+        this._dispatchDOMEventInSandbox(
+          {
             id: this.data.id,
             name: eventName,
             value: valueGetter(event),
           },
-        });
+          event
+        );
       });
     }
   }
@@ -1731,9 +1765,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           elementData.lastCommittedValue = value;
           // Save the entered value
           elementData.userValue = value;
-          this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-            source: this,
-            detail: {
+          this._dispatchDOMEventInSandbox(
+            {
               id,
               name: "Keystroke",
               value,
@@ -1742,7 +1775,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               selStart: event.target.selectionStart,
               selEnd: event.target.selectionEnd,
             },
-          });
+            event
+          );
         });
         const _blurListener = blurListener;
         blurListener = null;
@@ -1782,9 +1816,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
           elementData.userValue = value;
           if (elementData.lastCommittedValue !== value) {
-            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-              source: this,
-              detail: {
+            this._dispatchDOMEventInSandbox(
+              {
                 id,
                 name: "Keystroke",
                 value,
@@ -1793,7 +1826,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 selStart: event.target.selectionStart,
                 selEnd: event.target.selectionEnd,
               },
-            });
+              event
+            );
           }
           _blurListener(event);
         });
@@ -1849,9 +1883,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
             // We handle the event ourselves.
             event.preventDefault();
-            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-              source: this,
-              detail: {
+            this._dispatchDOMEventInSandbox(
+              {
                 id,
                 name: "Keystroke",
                 value,
@@ -1860,7 +1893,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 selStart,
                 selEnd,
               },
-            });
+              event
+            );
           });
         }
 
@@ -2365,9 +2399,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
         event.preventDefault();
 
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: {
+        this._dispatchDOMEventInSandbox(
+          {
             id,
             name: "Keystroke",
             value: selectedValues,
@@ -2377,7 +2410,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             commitKey: 1,
             keyDown: false,
           },
-        });
+          event
+        );
       });
 
       this._setEventListeners(

@@ -1996,6 +1996,7 @@ describe("Scripting", function () {
         value: "hello",
         name: "Keystroke",
         willCommit: true,
+        allowDialog: true,
       });
       expect(send_queue.has("alert")).toBeTrue();
       expect(send_queue.get("alert")).toEqual({
@@ -2010,6 +2011,7 @@ describe("Scripting", function () {
         value: "",
         name: "Keystroke",
         willCommit: true,
+        allowDialog: true,
       });
       expect(send_queue.has("alert")).toBeFalse();
       send_queue.delete(refId);
@@ -2061,6 +2063,76 @@ describe("Scripting", function () {
         });
       }
       expect(run).toEqual(["kept"]);
+    });
+  });
+
+  describe("User activation", function () {
+    function createSandboxWithField(actions) {
+      const refId = getId();
+      sandbox.createSandbox({
+        appInfo: { language: "en-US", platform: "Linux x86_64" },
+        objects: {
+          field: [{ id: refId, value: "", actions, type: "text" }],
+        },
+        calculationOrder: [],
+      });
+      return refId;
+    }
+
+    // Other tests may leave these commands in the queue.
+    const clearCommands = () => {
+      for (const command of ["alert", "print", "SaveAs"]) {
+        send_queue.delete(command);
+      }
+    };
+    beforeEach(clearCommands);
+    afterEach(clearCommands);
+
+    it("shouldn't consider a focus change made by a script as a user activation", async () => {
+      const refId = createSandboxWithField({ Focus: [`app.alert("focus");`] });
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Focus",
+        scripted: true,
+      });
+      expect(send_queue.has("alert")).toBeFalse();
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Focus",
+        allowDialog: true,
+      });
+      expect(send_queue.get("alert")).toEqual({
+        command: "alert",
+        value: "focus",
+      });
+    });
+
+    it("should only show a dialog while handling an event allowed by the viewer", async () => {
+      const refId = createSandboxWithField({
+        Action: [`app.alert("action");`],
+      });
+
+      await sandbox.dispatchEventInSandbox({ id: refId, name: "Action" });
+      expect(send_queue.has("alert")).toBeFalse();
+
+      await sandbox.dispatchEventInSandbox({
+        id: refId,
+        name: "Action",
+        allowDialog: true,
+      });
+      expect(send_queue.get("alert")).toEqual({
+        command: "alert",
+        value: "action",
+      });
+      send_queue.delete("alert");
+
+      // Focus sets the sandbox's activation flag, but its dispatch returns
+      // before this alert is evaluated.
+      await sandbox.dispatchEventInSandbox({ id: refId, name: "Focus" });
+      await myeval(`app.alert("later")`);
+      expect(send_queue.has("alert")).toBeFalse();
     });
   });
 
@@ -2350,6 +2422,7 @@ describe("Scripting", function () {
           value: "123s456.789",
           name: "Keystroke",
           willCommit: true,
+          allowDialog: true,
         });
         expect(send_queue.has("alert")).toBeTrue();
         expect(send_queue.get("alert")).toEqual({
@@ -2607,6 +2680,7 @@ describe("Scripting", function () {
           value: "12",
           name: "Keystroke",
           willCommit: true,
+          allowDialog: true,
         });
         expect(send_queue.has("alert")).toBeTrue();
         expect(send_queue.get("alert")).toEqual({
