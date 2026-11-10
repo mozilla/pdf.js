@@ -28,19 +28,23 @@ class WasmLoader {
   static async fetch(context, kind, filename) {
     const { handler, options } = context;
     if (options.useWorkerFetch) {
-      const url = `${options[kind]}${filename}`,
-        response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch file "${url}" with "${response.statusText}".`
-        );
-      }
-      return response.bytes();
+      return (await this.#workerFetch(options[kind], filename)).bytes();
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Only worker-thread fetching supported.");
     }
     return handler.sendWithPromise("FetchBinaryData", { kind, filename });
+  }
+
+  static async #workerFetch(baseUrl, filename) {
+    const url = `${baseUrl}${filename}`,
+      response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch file "${url}" with "${response.statusText}".`
+      );
+    }
+    return response;
   }
 
   static #compile(context, filename) {
@@ -61,7 +65,20 @@ class WasmLoader {
     return promise;
   }
 
-  static #importFallback(wasmUrl, filename) {
+  static async #importFallback(wasmUrl, filename) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      const { body } = await this.#workerFetch(wasmUrl, `${filename}.br`);
+      const stream = body.pipeThrough(new DecompressionStream("brotli"));
+      const blob = await new Response(stream, {
+        headers: { "Content-Type": "text/javascript" },
+      }).blob();
+      const url = URL.createObjectURL(blob);
+      try {
+        return await __raw_import__(url);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
     if (typeof PDFJSDev === "undefined") {
       // eslint-disable-next-line no-unsanitized/method
       return import(`../${wasmUrl}${filename}`);

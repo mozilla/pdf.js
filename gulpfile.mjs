@@ -20,6 +20,7 @@ import {
   babelPluginStripSrcPath,
   preprocessPDFJSCode,
 } from "./external/builder/babel-plugin-pdfjs-preprocessor.mjs";
+import { brotliCompressSync, constants } from "zlib";
 import { colorize, COLORS_ENABLED } from "./external/color_utils.mjs";
 import {
   COVERAGE_FORMAT_TO_REPORTER,
@@ -739,6 +740,26 @@ function createStandardFontBundle() {
       encoding: false,
     }
   );
+}
+
+function brotliCompressFallbacks() {
+  return new stream.Transform({
+    objectMode: true,
+    transform(file, enc, done) {
+      if (file.basename.endsWith("_nowasm_fallback.js")) {
+        file.contents = brotliCompressSync(file.contents, {
+          params: {
+            [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_TEXT,
+            [constants.BROTLI_PARAM_QUALITY]: constants.BROTLI_MAX_QUALITY,
+            [constants.BROTLI_PARAM_LGWIN]: constants.BROTLI_MAX_WINDOW_BITS,
+            [constants.BROTLI_PARAM_SIZE_HINT]: file.contents.length,
+          },
+        });
+        file.extname += ".br";
+      }
+      done(null, file);
+    },
+  });
 }
 
 function createWasmBundle({ includeQuickJS = true } = {}) {
@@ -1756,7 +1777,10 @@ async function buildMozcentral(changedFiles = null) {
     {
       files: /^external\/(hellbox|jbig2|openjpeg|qcms)\//,
       dest: MOZCENTRAL_WEB_DIR + "/wasm",
-      create: () => createWasmBundle({ includeQuickJS: false }),
+      create: () =>
+        createWasmBundle({ includeQuickJS: false }).pipe(
+          brotliCompressFallbacks()
+        ),
     },
     // HTML includes and CSS imports aren't tracked individually; a top-level
     // HTML or CSS change rebuilds both corresponding variants.
