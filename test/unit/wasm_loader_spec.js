@@ -32,6 +32,10 @@ describe("WasmLoader", function () {
 
   let sendWithPromise, context, init;
 
+  function loadWasm(filename, loadContext = context) {
+    return WasmLoader.load(loadContext, filename, "unused.js", init);
+  }
+
   beforeEach(function () {
     sendWithPromise = jasmine
       .createSpy("sendWithPromise")
@@ -42,8 +46,8 @@ describe("WasmLoader", function () {
 
   it("shares a Wasm fetch between concurrent calls", async function () {
     const loaded = await Promise.all([
-      WasmLoader.load(context, "back_to_back.wasm", "unused.js", init),
-      WasmLoader.load(context, "back_to_back.wasm", "unused.js", init),
+      loadWasm("back_to_back.wasm"),
+      loadWasm("back_to_back.wasm"),
     ]);
     expect(loaded).toEqual([true, true]);
     expect(sendWithPromise).toHaveBeenCalledOnceWith("FetchBinaryData", {
@@ -57,15 +61,11 @@ describe("WasmLoader", function () {
   it("retries a failed fetch", async function () {
     sendWithPromise.and.rejectWith(new Error("Fetch failed."));
 
-    expect(
-      await WasmLoader.load(context, "retry.wasm", "unused.js", init)
-    ).toBeFalse();
+    expect(await loadWasm("retry.wasm")).toBeFalse();
     expect(init).not.toHaveBeenCalled();
 
     sendWithPromise.and.resolveTo(EMPTY_WASM);
-    expect(
-      await WasmLoader.load(context, "retry.wasm", "unused.js", init)
-    ).toBeTrue();
+    expect(await loadWasm("retry.wasm")).toBeTrue();
     expect(sendWithPromise).toHaveBeenCalledTimes(2);
     expect(init).toHaveBeenCalledOnceWith(jasmine.any(Function));
   });
@@ -75,8 +75,8 @@ describe("WasmLoader", function () {
       jasmine.createSpy("failing").and.rejectWith(new Error("Fetch failed."))
     );
     const loaded = await Promise.all([
-      WasmLoader.load(failingContext, "concurrent.wasm", "unused.js", init),
-      WasmLoader.load(context, "concurrent.wasm", "unused.js", init),
+      loadWasm("concurrent.wasm", failingContext),
+      loadWasm("concurrent.wasm"),
     ]);
     expect(loaded).toEqual([false, true]);
     expect(sendWithPromise).toHaveBeenCalledOnceWith("FetchBinaryData", {
@@ -90,26 +90,66 @@ describe("WasmLoader", function () {
     sendWithPromise.and.rejectWith(new Error("Fetch failed."));
 
     const loaded = await Promise.all(
-      Array.from({ length: 3 }, () =>
-        WasmLoader.load(context, "failures.wasm", "unused.js", init)
-      )
+      Array.from({ length: 3 }, () => loadWasm("failures.wasm"))
     );
     expect(loaded).toEqual([false, false, false]);
     expect(sendWithPromise).toHaveBeenCalledTimes(3);
     expect(init).not.toHaveBeenCalled();
   });
 
+  describe("worker compilation", function () {
+    let fetchSpy, compile, compileStreaming;
+
+    beforeEach(function () {
+      context.options.useWorkerFetch = true;
+      context.options.wasmUrl = "https://example.com/";
+      fetchSpy = spyOn(globalThis, "fetch");
+      compile = spyOn(WebAssembly, "compile").and.callThrough();
+      compileStreaming = spyOn(
+        WebAssembly,
+        "compileStreaming"
+      ).and.callThrough();
+    });
+
+    async function expectStreamingCompilation(contentType) {
+      const filename = `${contentType}.wasm`;
+      fetchSpy.and.resolveTo(
+        new Response(EMPTY_WASM, {
+          headers: { "Content-Type": contentType },
+        })
+      );
+
+      expect(await loadWasm(filename)).toBeTrue();
+      expect(fetchSpy).toHaveBeenCalledOnceWith(
+        `${context.options.wasmUrl}${filename}`
+      );
+      expect(sendWithPromise).not.toHaveBeenCalled();
+      expect(init).toHaveBeenCalledOnceWith(jasmine.any(Function));
+      expect(compileStreaming).toHaveBeenCalledTimes(1);
+      expect(compile).not.toHaveBeenCalled();
+    }
+
+    it("streams the Wasm MIME type", async function () {
+      await expectStreamingCompilation("application/wasm");
+    });
+
+    it("streams a generic binary MIME type", async function () {
+      await expectStreamingCompilation("application/octet-stream");
+    });
+
+    it("streams a Wasm MIME type with parameters", async function () {
+      await expectStreamingCompilation("application/wasm;charset=UTF-8");
+    });
+  });
+
   it("resolves Node.js fallback paths from the working directory", async function () {
     if (!isNodeJS) {
       pending("Only for Node.js.");
     }
+    context.options.useWasm = false;
+    context.options.wasmUrl = WASM_URL;
     const loaded = await WasmLoader.load(
-      {
-        options: {
-          useWasm: false,
-          wasmUrl: WASM_URL,
-        },
-      },
+      context,
       "openjpeg.wasm",
       "openjpeg_nowasm_fallback.js",
       init

@@ -28,19 +28,41 @@ class WasmLoader {
   static async fetch(context, kind, filename) {
     const { handler, options } = context;
     if (options.useWorkerFetch) {
-      const url = `${options[kind]}${filename}`,
-        response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch file "${url}" with "${response.statusText}".`
-        );
-      }
-      return response.bytes();
+      return (await this.#workerFetch(options[kind], filename)).bytes();
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Only worker-thread fetching supported.");
     }
     return handler.sendWithPromise("FetchBinaryData", { kind, filename });
+  }
+
+  static async #workerFetch(baseUrl, filename) {
+    const url = `${baseUrl}${filename}`,
+      response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch file "${url}" with "${response.statusText}".`
+      );
+    }
+    return response;
+  }
+
+  static async #fetchAndCompile(context, filename) {
+    const { options } = context;
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      !options.useWorkerFetch
+    ) {
+      return WebAssembly.compile(
+        await this.fetch(context, "wasmUrl", filename)
+      );
+    }
+    const { body } = await this.#workerFetch(options.wasmUrl, filename);
+    // Streaming compilation requires the exact MIME type, without parameters
+    // (e.g. Firefox adds a charset to resource:// responses).
+    return WebAssembly.compileStreaming(
+      new Response(body, { headers: { "Content-Type": "application/wasm" } })
+    );
   }
 
   static #compile(context, filename) {
@@ -49,19 +71,30 @@ class WasmLoader {
       // Retry with this context if the shared attempt fails.
       return cached.catch(() => this.#compile(context, filename));
     }
-    const promise = this.fetch(context, "wasmUrl", filename)
-      .then(bytes => WebAssembly.compile(bytes))
-      .catch(ex => {
-        // Don't cache failures.
-        this.#modules.delete(filename);
-        throw ex;
-      });
+    const promise = this.#fetchAndCompile(context, filename).catch(ex => {
+      // Don't cache failures.
+      this.#modules.delete(filename);
+      throw ex;
+    });
     // Share compilation between concurrent callers.
     this.#modules.set(filename, promise);
     return promise;
   }
 
-  static #importFallback(wasmUrl, filename) {
+  static async #importFallback(wasmUrl, filename) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
+      const { body } = await this.#workerFetch(wasmUrl, `${filename}.br`);
+      const stream = body.pipeThrough(new DecompressionStream("brotli"));
+      const blob = await new Response(stream, {
+        headers: { "Content-Type": "text/javascript" },
+      }).blob();
+      const url = URL.createObjectURL(blob);
+      try {
+        return await __raw_import__(url);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
     if (typeof PDFJSDev === "undefined") {
       // eslint-disable-next-line no-unsanitized/method
       return import(`../${wasmUrl}${filename}`);
