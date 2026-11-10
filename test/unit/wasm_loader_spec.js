@@ -97,6 +97,51 @@ describe("WasmLoader", function () {
     expect(init).not.toHaveBeenCalled();
   });
 
+  describe("worker compilation", function () {
+    let fetchSpy, compile, compileStreaming;
+
+    beforeEach(function () {
+      context.options.useWorkerFetch = true;
+      context.options.wasmUrl = "https://example.com/";
+      fetchSpy = spyOn(globalThis, "fetch");
+      compile = spyOn(WebAssembly, "compile").and.callThrough();
+      compileStreaming = spyOn(
+        WebAssembly,
+        "compileStreaming"
+      ).and.callThrough();
+    });
+
+    async function expectStreamingCompilation(contentType) {
+      const filename = `${contentType}.wasm`;
+      fetchSpy.and.resolveTo(
+        new Response(EMPTY_WASM, {
+          headers: { "Content-Type": contentType },
+        })
+      );
+
+      expect(await loadWasm(filename)).toBeTrue();
+      expect(fetchSpy).toHaveBeenCalledOnceWith(
+        `${context.options.wasmUrl}${filename}`
+      );
+      expect(sendWithPromise).not.toHaveBeenCalled();
+      expect(init).toHaveBeenCalledOnceWith(jasmine.any(Function));
+      expect(compileStreaming).toHaveBeenCalledTimes(1);
+      expect(compile).not.toHaveBeenCalled();
+    }
+
+    it("streams the Wasm MIME type", async function () {
+      await expectStreamingCompilation("application/wasm");
+    });
+
+    it("streams a generic binary MIME type", async function () {
+      await expectStreamingCompilation("application/octet-stream");
+    });
+
+    it("streams a Wasm MIME type with parameters", async function () {
+      await expectStreamingCompilation("application/wasm;charset=UTF-8");
+    });
+  });
+
   it("resolves Node.js fallback paths from the working directory", async function () {
     if (!isNodeJS) {
       pending("Only for Node.js.");

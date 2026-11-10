@@ -47,19 +47,35 @@ class WasmLoader {
     return response;
   }
 
+  static async #fetchAndCompile(context, filename) {
+    const { options } = context;
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      !options.useWorkerFetch
+    ) {
+      return WebAssembly.compile(
+        await this.fetch(context, "wasmUrl", filename)
+      );
+    }
+    const { body } = await this.#workerFetch(options.wasmUrl, filename);
+    // Streaming compilation requires the exact MIME type, without parameters
+    // (e.g. Firefox adds a charset to resource:// responses).
+    return WebAssembly.compileStreaming(
+      new Response(body, { headers: { "Content-Type": "application/wasm" } })
+    );
+  }
+
   static #compile(context, filename) {
     const cached = this.#modules.get(filename);
     if (cached) {
       // Retry with this context if the shared attempt fails.
       return cached.catch(() => this.#compile(context, filename));
     }
-    const promise = this.fetch(context, "wasmUrl", filename)
-      .then(bytes => WebAssembly.compile(bytes))
-      .catch(ex => {
-        // Don't cache failures.
-        this.#modules.delete(filename);
-        throw ex;
-      });
+    const promise = this.#fetchAndCompile(context, filename).catch(ex => {
+      // Don't cache failures.
+      this.#modules.delete(filename);
+      throw ex;
+    });
     // Share compilation between concurrent callers.
     this.#modules.set(filename, promise);
     return promise;
