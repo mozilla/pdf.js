@@ -55,7 +55,7 @@ async function fetchBuiltInCMapHelper(binaryDataFactory, cMapPacked, name) {
       kind: "cMapUrl",
       filename: `${name}${cMapPacked ? ".bcmap" : ""}`,
     }),
-    isCompressed: cMapPacked,
+    cMapPacked,
   };
 }
 
