@@ -39,6 +39,10 @@ const MAX_GLYPHS = 65534;
 
 const PRIVATE_USE_START = 0xf0000;
 
+function getCodePoints(glyphs) {
+  return Uint32Array.from(glyphs, glyph => glyph.codePoint);
+}
+
 /**
  * Generates substitutes for non-embedded standard and XFA fonts.
  */
@@ -49,15 +53,15 @@ class Hellbox {
 
   static #pendingData = new WeakMap();
 
+  static #hasRequiredUrls({ useWorkerFetch, wasmUrl, standardFontDataUrl }) {
+    return !useWorkerFetch || !!(wasmUrl && standardFontDataUrl);
+  }
+
   /**
    * @param {object} context - Document handler and evaluator options.
    * @returns {Promise<boolean>} Whether the generator is available.
    */
   static async #load(context) {
-    const { standardFontDataUrl, useWorkerFetch, wasmUrl } = context.options;
-    if (useWorkerFetch && (!wasmUrl || !standardFontDataUrl)) {
-      return false;
-    }
     return (
       this.#isLoaded ||
       this.#loadPromises.getOrInsertComputed(context.handler, () =>
@@ -103,32 +107,67 @@ class Hellbox {
   }
 
   /**
-   * Generate a replacement or fallback for a non-embedded standard font.
+   * Prepare a replacement or defer the optional fallback until rendering.
    * @param {object} context - Document handler and evaluator options.
    * @param {Font} font
+   * @returns {Promise<Function|null>} Optional fallback preparation.
    */
-  static async generate(context, font) {
+  static async prepare(context, font) {
+    const { options } = context;
     const { standardFontName } = font;
-    if (!standardFontName || font.vertical || font.cssFontInfo) {
-      return;
+    if (
+      !standardFontName ||
+      font.vertical ||
+      font.cssFontInfo ||
+      !this.#hasRequiredUrls(options)
+    ) {
+      return null;
     }
     const replacesFont =
       !font.systemFontInfo ||
       standardFontName === "Symbol" ||
       standardFontName === "ZapfDingbats";
-    if (context.options.disableFontFace && !replacesFont) {
-      return;
+    if (!replacesFont && options.disableFontFace) {
+      return null;
     }
+    if (replacesFont || !options.isOffscreenCanvasSupported) {
+      await this.#generate(context, font, replacesFont);
+    } else if (font.fontExtraProperties) {
+      // Only the font inspector needs the substitution during text extraction.
+      await this.#prepareFallback(context, font);
+    } else {
+      return () => this.#prepareFallback(context, font);
+    }
+    return null;
+  }
+
+  static async #prepareFallback(context, font) {
+    const glyphs = font.getMissingFileGlyphs(false);
+    const codePoints = getCodePoints(glyphs);
+    const covered = await context.handler
+      .sendWithPromise(
+        "LoadSystemFont",
+        { systemFontInfo: font.systemFontInfo, codePoints },
+        [codePoints.buffer]
+      )
+      .catch(() => false);
+    if (!covered) {
+      await this.#generate(context, font, false, glyphs);
+    }
+  }
+
+  static async #generate(context, font, replacesFont, glyphs) {
     if (!(await this.#load(context))) {
       return;
     }
+    glyphs ??= font.getMissingFileGlyphs(replacesFont);
+    const { standardFontName } = font;
     const weight = font.black ? 900 : 0;
     const family = weight
       ? FAMILIES.get(standardFontName.split("-", 1)[0])
       : undefined;
     const italic = /Oblique|Italic/.test(standardFontName);
-    const glyphs = font.getMissingFileGlyphs(replacesFont);
-    const codePoints = Uint32Array.from(glyphs, glyph => glyph.codePoint);
+    const codePoints = getCodePoints(glyphs);
     const lengths = new Uint32Array(codePoints.length).fill(1);
     try {
       const files =
@@ -167,7 +206,7 @@ class Hellbox {
         }
       );
       const args = [
-        Uint32Array.from(available, glyph => glyph.codePoint),
+        getCodePoints(available),
         lengths.subarray(0, available.length),
         Float64Array.from(available, glyph => glyph.width ?? NaN),
         fontCharCodes,
@@ -193,7 +232,10 @@ class Hellbox {
    * @returns {Promise<Uint8Array | null>}
    */
   static async generateXfaFont(context, standardFontName, widths) {
-    if (!(await this.#load(context))) {
+    if (
+      !this.#hasRequiredUrls(context.options) ||
+      !(await this.#load(context))
+    ) {
       return null;
     }
     try {

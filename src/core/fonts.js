@@ -1567,6 +1567,7 @@ class Font {
       this.toFontChar.set(charCode, fontCharCode);
     }
     this.#glyphCache.clear();
+    this.#charsCache.clear();
     if (replacesFont) {
       this.systemFontInfo = null;
       this.loadedName = name;

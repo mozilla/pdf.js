@@ -19,7 +19,6 @@ import {
   FeatureTest,
   isNodeJS,
   shadow,
-  unreachable,
   warn,
 } from "../shared/util.js";
 import { makePathFromDrawOPS } from "./display_utils.js";
@@ -28,7 +27,7 @@ import { serializeFontFamily } from "../shared/css_utils.js";
 class FontLoader {
   #nativeFontFaces = new Set();
 
-  #systemFonts = new Set();
+  #systemFonts = new Map();
 
   #styleSheet = null;
 
@@ -139,46 +138,97 @@ class FontLoader {
     this.styleElement = null;
   }
 
-  async loadSystemFont({
+  #systemFont(info, probe = false) {
+    const family = probe ? `${info.loadedName}_probe` : info.loadedName;
+    return this.#systemFonts.getOrInsertComputed(family, () => {
+      const face = new FontFace(
+        family,
+        info.src,
+        probe ? { ...info.style, sizeAdjust: "0%" } : info.style
+      );
+      if (!probe) {
+        this.addNativeFontFace(face);
+      }
+      const entry = {
+        loaded: face.load().catch(() => {
+          if (this.#systemFonts.get(family) === entry) {
+            this.#systemFonts.delete(family);
+            if (!probe) {
+              this.removeNativeFontFace(face);
+              warn(
+                `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
+              );
+            }
+          }
+          return null;
+        }),
+      };
+      return entry;
+    });
+  }
+
+  async #loadSystemFont({
     systemFontInfo: info,
     disableFontFace,
     _inspectFont,
   }) {
-    if (!info || this.#systemFonts.has(info.loadedName)) {
-      return;
+    assert(!disableFontFace, "Cannot load a disabled system font.");
+    const entry = this.#systemFont(info);
+    if ((await entry.loaded) && _inspectFont && !entry.inspected) {
+      entry.inspected = true;
+      _inspectFont(info);
     }
-    assert(
-      !disableFontFace,
-      "loadSystemFont shouldn't be called when `disableFontFace` is set."
-    );
+  }
 
-    if (this.isFontLoadingAPISupported) {
-      const { loadedName, src, style } = info;
-      const fontFace = new FontFace(loadedName, src, style);
-      this.addNativeFontFace(fontFace);
-      try {
-        await fontFace.load();
-        this.#systemFonts.add(loadedName);
-        _inspectFont?.(info);
-      } catch {
-        warn(
-          `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
-        );
+  async hasSystemFontGlyphs({ systemFontInfo: info, codePoints }) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: hasSystemFontGlyphs");
+    }
 
-        this.removeNativeFontFace(fontFace);
+    if (!this.isFontLoadingAPISupported) {
+      return false;
+    }
+    try {
+      // Start the rendering face and its zero-size probe together. Setting
+      // sizeAdjust after loading a face doesn't update its metrics everywhere.
+      const rendering = this.#systemFont(info);
+      const probe = this.#systemFont(info, true);
+      const [face, probeFace] = await Promise.all([
+        rendering.loaded,
+        probe.loaded,
+      ]);
+      if (!face || probeFace?.sizeAdjust !== "0%") {
+        return false;
       }
-      return;
+      const coverage = (probe.coverage ??= new Map());
+      const ctx = this._document.createElement("canvas").getContext("2d");
+      const fallback = this._document.createElement("canvas").getContext("2d");
+      fallback.font = "16px sans-serif";
+      function measure(cp) {
+        const char = String.fromCodePoint(cp);
+        // Controls aren't drawn, and Hellbox has no glyph for the Apple logo.
+        return (
+          /\p{Cc}/u.test(char) ||
+          cp === 0xf8ff ||
+          (ctx.measureText(char).width === 0 &&
+            fallback.measureText(char).width > 0)
+        );
+      }
+      this._document.fonts.add(probeFace);
+      try {
+        ctx.font = `16px "${probeFace.family}", sans-serif`;
+        return codePoints.every(cp =>
+          coverage.getOrInsertComputed(cp, measure)
+        );
+      } finally {
+        this._document.fonts.delete(probeFace);
+      }
+    } catch {
+      return false;
     }
-
-    unreachable(
-      "Not implemented: loadSystemFont without the Font Loading API."
-    );
   }
 
   async #loadFontFace(font) {
-    if (!this.isFontLoadingAPISupported) {
-      return;
-    }
     const fontFace = font.createNativeFontFace();
     if (!fontFace) {
       return;
@@ -207,15 +257,17 @@ class FontLoader {
     }
     font.attached = true;
 
-    if (font.systemFontInfo) {
-      // A generated font can be the fallback of the system font.
-      await Promise.all([this.loadSystemFont(font), this.#loadFontFace(font)]);
-      return;
-    }
-
     if (this.isFontLoadingAPISupported) {
-      await this.#loadFontFace(font);
-      return; // The font was, asynchronously, loaded.
+      if (font.systemFontInfo) {
+        // Load a system font and its generated fallback in parallel.
+        await Promise.all([
+          this.#loadSystemFont(font),
+          this.#loadFontFace(font),
+        ]);
+      } else {
+        await this.#loadFontFace(font);
+      }
+      return;
     }
 
     // !this.isFontLoadingAPISupported

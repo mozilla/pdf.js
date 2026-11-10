@@ -2813,6 +2813,11 @@ class WorkerTransport {
       page._startRenderPage(data.transparency, data.cacheKey);
     });
 
+    messageHandler.on(
+      "LoadSystemFont",
+      data => !this.destroyed && this.fontLoader.hasSystemFontGlyphs(data)
+    );
+
     const objectHandler = new ObjectHandler({
       messageHandler,
       commonObjs: this.commonObjs,

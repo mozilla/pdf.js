@@ -14,6 +14,7 @@
  */
 
 import { FontFaceObject, FontLoader } from "../../src/display/font_loader.js";
+import { buildTextLayerFont } from "../../src/core/text_layer_font.js";
 import { isNodeJS } from "../../src/shared/util.js";
 
 describe("font_loader", function () {
@@ -52,6 +53,7 @@ describe("font_loader", function () {
         generatedFontName: "g_d0_f1_generated",
         loadedName,
         missingFile,
+        systemFontInfo: missingFile ? { loadedName: "g_d0_sf1" } : null,
       });
       await loader.bind(font);
       await loader.bind(font);
@@ -88,6 +90,63 @@ describe("font_loader", function () {
       expect(ownerDocument.fonts.size).toEqual(0);
       loader.clear();
     }
+  });
+
+  describe("system font coverage", function () {
+    let loader, substitute;
+
+    beforeAll(function () {
+      const data = buildTextLayerFont(
+        new Map([
+          [0x41, 500],
+          [0x3b1, 500],
+        ]),
+        0.8
+      );
+      substitute = {
+        loadedName: "pdfjs_test_system_font",
+        src: `url(data:font/ttf;base64,${data.toBase64()})`,
+      };
+    });
+
+    beforeEach(function () {
+      if (isNodeJS) {
+        pending("Requires browser font loading.");
+      }
+      loader = new FontLoader({});
+    });
+
+    afterEach(function () {
+      loader?.clear();
+    });
+
+    function covers(text, systemFontInfo = substitute) {
+      return loader.hasSystemFontGlyphs({
+        systemFontInfo,
+        codePoints: Array.from(text, char => char.codePointAt(0)),
+      });
+    }
+
+    it("preserves the rendering face's advance when checking coverage", async function () {
+      expect(await covers("Aα")).toBeTrue();
+      const ctx = document.createElement("canvas").getContext("2d");
+      ctx.font = `16px "${substitute.loadedName}"`;
+      expect(ctx.measureText("A").width).toBeCloseTo(8);
+    });
+
+    it("checks new glyphs when PDF fonts share a substitute", async function () {
+      expect(await covers("A")).toBeTrue();
+      expect(await covers("AŁ")).toBeFalse();
+    });
+
+    it("reports missing coverage when the substitute cannot load", async function () {
+      expect(
+        await covers("A", {
+          loadedName: "pdfjs_test_missing_font",
+          src: "local(pdfjs-nonexistent-test-font)",
+        })
+      ).toBeFalse();
+    });
   });
 
   describe("FontFaceObject", function () {
