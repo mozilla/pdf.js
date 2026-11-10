@@ -175,6 +175,24 @@
     height: 100%;
   }
 
+  .buttonWidgetAnnotation.pushButton.iconPicker > a {
+    cursor: pointer;
+  }
+
+  .buttonWidgetAnnotation.pushButton .pushButtonIconPreview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  .buttonWidgetAnnotation.pushButton .pushButtonIconInput {
+    display: none;
+  }
+
   :is(.linkAnnotation, .buttonWidgetAnnotation.pushButton):not(.hasBorder)
     > a:hover {
     opacity: 0.2;
