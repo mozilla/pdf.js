@@ -14,7 +14,6 @@
  */
 
 import { isNodeJS, warn } from "../shared/util.js";
-import { fetchBinaryData } from "./core_utils.js";
 
 class WasmLoader {
   static #modules = new Map();
@@ -29,7 +28,14 @@ class WasmLoader {
   static async fetch(context, kind, filename) {
     const { handler, options } = context;
     if (options.useWorkerFetch) {
-      return fetchBinaryData(`${options[kind]}${filename}`);
+      const url = `${options[kind]}${filename}`,
+        response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch file "${url}" with "${response.statusText}".`
+        );
+      }
+      return response.bytes();
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       throw new Error("Only worker-thread fetching supported.");
