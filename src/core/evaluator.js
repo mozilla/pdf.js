@@ -753,7 +753,8 @@ class PartialEvaluator {
     } else if (cacheKey && imageRef) {
       cacheGlobally = this.globalImageCache.shouldCache(
         imageRef,
-        this.pageIndex
+        this.pageIndex,
+        targetSize
       );
 
       if (cacheGlobally) {
@@ -761,7 +762,6 @@ class PartialEvaluator {
 
         objId = `${this.idFactory.getDocId()}_${objId}`;
       } else if (this.pageProxyId !== null) {
-        this.globalImageCache.startDecodedImage(imageRef, this.pageProxyId);
         keepDecodedImage = true;
       }
     }
@@ -826,11 +826,22 @@ class PartialEvaluator {
       cacheImage(/* jpx = */ null);
       return;
     }
+    const jpxReduce = getJpxReduceLevels(jpx);
+    if (keepDecodedImage) {
+      this.globalImageCache.startDecodedImage(
+        imageRef,
+        this.pageProxyId,
+        jpxReduce
+      );
+    }
 
     if (cacheGlobally) {
       globalCacheData.jpx = jpx;
 
-      const decodedImgData = this.globalImageCache.takeDecodedImage(imageRef);
+      const decodedImgData = this.globalImageCache.takeDecodedImage(
+        imageRef,
+        jpxReduce
+      );
       if (decodedImgData) {
         if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
           decodedImgData.reusedDecodedImage = true;
@@ -857,7 +868,7 @@ class PartialEvaluator {
         const localLength = await this.handler.sendWithPromise("commonobj", [
           objId,
           "CopyLocalImage",
-          { imageRef },
+          { imageRef, jpxReduce },
         ]);
 
         if (localLength) {
@@ -1796,7 +1807,7 @@ class PartialEvaluator {
 
             const targetSize = self._getImageTargetSize(stateManager.state.ctm);
             if (isValidName) {
-              const localImage = localImageCache.getByName(name);
+              const localImage = localImageCache.getByName(name, targetSize);
               if (localImage) {
                 addCachedImageOps(operatorList, localImage);
                 args = null;
@@ -1813,9 +1824,13 @@ class PartialEvaluator {
                 let xobj = xobjs.getRaw(name);
                 if (xobj instanceof Ref) {
                   const cachedImage =
-                    localImageCache.getByRef(xobj) ||
-                    self._regionalImageCache.getByRef(xobj) ||
-                    self.globalImageCache.getData(xobj, self.pageIndex);
+                    localImageCache.getByRef(xobj, targetSize) ||
+                    self._regionalImageCache.getByRef(xobj, targetSize) ||
+                    self.globalImageCache.getData(
+                      xobj,
+                      self.pageIndex,
+                      targetSize
+                    );
                   if (cachedImage) {
                     addCachedImageOps(operatorList, cachedImage);
                     resolveXObject();
