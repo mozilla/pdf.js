@@ -139,7 +139,34 @@ function sumPreblendedRow(
   }
 }
 
+function getFilterName(xref, dict) {
+  const filter = dict.get("F", "Filter");
+  if (filter instanceof Name) {
+    return filter.name;
+  }
+  if (Array.isArray(filter)) {
+    const lastFilter = xref.fetchIfRef(filter.at(-1));
+    if (lastFilter instanceof Name) {
+      return lastFilter.name;
+    }
+  }
+  return null;
+}
+
 class PDFImage {
+  static getJpxReduceInfo(image) {
+    const props = JpxImage.parseImageProperties(image.stream);
+    image.stream.reset();
+    return {
+      ...props,
+      minReduce: ImageResizer.getReducePowerForJPX(
+        props.width,
+        props.height,
+        props.componentsCount
+      ),
+    };
+  }
+
   constructor({
     xref,
     res,
@@ -155,30 +182,14 @@ class PDFImage {
     this.image = image;
     const dict = image.dict;
 
-    const filter = dict.get("F", "Filter");
-    let filterName;
-    if (filter instanceof Name) {
-      filterName = filter.name;
-    } else if (Array.isArray(filter)) {
-      const lastFilter = xref.fetchIfRef(filter.at(-1));
-      if (lastFilter instanceof Name) {
-        filterName = lastFilter.name;
-      }
-    }
-    switch (filterName) {
+    switch (getFilterName(xref, dict)) {
       case "JPXDecode":
-        ({
-          width: image.width,
-          height: image.height,
-          componentsCount: image.numComps,
-          bitsPerComponent: image.bitsPerComponent,
-        } = JpxImage.parseImageProperties(image.stream));
-        image.stream.reset();
-        const reducePower = ImageResizer.getReducePowerForJPX(
-          image.width,
-          image.height,
-          image.numComps
-        );
+        const jpxInfo = PDFImage.getJpxReduceInfo(image);
+        image.width = jpxInfo.width;
+        image.height = jpxInfo.height;
+        image.numComps = jpxInfo.componentsCount;
+        image.bitsPerComponent = jpxInfo.bitsPerComponent;
+        const reducePower = jpxInfo.minReduce;
         this.jpxDecoderOptions = {
           numComponents: 0,
           isIndexedColormap: false,
