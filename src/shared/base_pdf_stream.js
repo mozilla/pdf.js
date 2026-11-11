@@ -125,6 +125,10 @@ class BasePDFStreamReader {
       unreachable("Cannot initialize BasePDFStreamReader.");
     }
     this._stream = stream;
+
+    // Prevent "uncaught exception: Object"-messages in the console, if the
+    // document is destroyed before the `headersReady` getter is accessed.
+    this._headersCapability.promise.catch(() => {});
   }
 
   _callOnProgress() {
