@@ -668,6 +668,7 @@ class OperatorList {
         : new NullOptimizer(this);
     this.dependencies = new Set();
     this.weight = 0;
+    this.hasReducedImages = false;
     this._resolved = streamSink ? null : Promise.resolve();
   }
 
@@ -740,6 +741,7 @@ class OperatorList {
     for (const dependency of opList.dependencies) {
       this.dependencies.add(dependency);
     }
+    this.hasReducedImages ||= opList.hasReducedImages;
     for (let i = 0, ii = opList.length; i < ii; i++) {
       this.addOp(opList.fnArray[i], opList.argsArray[i]);
     }
@@ -800,6 +802,7 @@ class OperatorList {
         argsArray: this.argsArray,
         lastChunk,
         separateAnnots,
+        hasReducedImages: this.hasReducedImages,
         length: this.length,
       },
       1,

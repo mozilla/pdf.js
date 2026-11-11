@@ -133,7 +133,8 @@ class Page {
   _createPartialEvaluator(
     handler,
     pageIndex = this.pageIndex,
-    pageProxyId = null
+    pageProxyId = null,
+    imageScale = 0
   ) {
     // Used to route page-local objects to the main-thread PDFPageProxy.
 
@@ -142,6 +143,7 @@ class Page {
       handler,
       pageIndex,
       pageProxyId,
+      imageScale,
       idFactory: this._localIdFactory,
       fontCache: this.fontCache,
       builtInCMapCache: this.builtInCMapCache,
@@ -484,6 +486,7 @@ class Page {
     pageProxyId = null,
     annotationStorage = null,
     modifiedIds = null,
+    imageScale = 0,
   }) {
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
@@ -491,7 +494,8 @@ class Page {
     const partialEvaluator = this._createPartialEvaluator(
       handler,
       pageIndex,
-      pageProxyId
+      pageProxyId,
+      imageScale
     );
 
     const newAnnotsByPage = !this.xfaFactory

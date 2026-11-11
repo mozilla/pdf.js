@@ -22,6 +22,17 @@ import {
 } from "../shared/util.js";
 import { RefMap, RefSet } from "./primitives.js";
 
+function getJpxReduceLevels(jpx) {
+  return jpx && { image: jpx.image.reduce, alpha: jpx.alpha?.reduce ?? null };
+}
+
+function setJpxReduceLevels(jpx, { image, alpha }) {
+  jpx.image.reduce = image;
+  if (jpx.alpha) {
+    jpx.alpha.reduce = alpha;
+  }
+}
+
 class BaseLocalCache {
   constructor(options) {
     if (
@@ -375,6 +386,7 @@ class GlobalImageCache {
 }
 
 export {
+  getJpxReduceLevels,
   GlobalColorSpaceCache,
   GlobalImageCache,
   LocalColorSpaceCache,
@@ -383,4 +395,5 @@ export {
   LocalImageCache,
   LocalTilingPatternCache,
   RegionalImageCache,
+  setJpxReduceLevels,
 };
