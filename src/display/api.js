@@ -234,7 +234,9 @@ function getDocument(src = {}) {
   const rangeTransport =
     src.range instanceof PDFDataRangeTransport ? src.range : null;
   const rangeChunkSize =
-    Number.isInteger(src.rangeChunkSize) && src.rangeChunkSize > 0
+    (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+    Number.isInteger(src.rangeChunkSize) &&
+    src.rangeChunkSize > 0
       ? src.rangeChunkSize
       : 2 ** 16;
   let worker = src.worker instanceof PDFWorker ? src.worker : null;
