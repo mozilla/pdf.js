@@ -26,6 +26,7 @@
  */
 
 import { BaseTreeViewer } from "./base_tree_viewer.js";
+import { createPromiseCapability } from "pdfjs-lib";
 import { internalOpt } from "./internal_evt.js";
 import { waitOnEventOrTimeout } from "./event_utils.js";
 
@@ -67,7 +68,7 @@ class PDFAttachmentViewer extends BaseTreeViewer {
     if (!keepRenderedCapability) {
       // The only situation in which the `_renderedCapability` should *not* be
       // replaced is when appending FileAttachment annotations.
-      this._renderedCapability = Promise.withResolvers();
+      this._renderedCapability = createPromiseCapability();
     }
     this._pendingDispatchEvent = false;
   }

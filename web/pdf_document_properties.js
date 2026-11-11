@@ -18,9 +18,9 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("../src/display/api.js").PDFDocumentProxy} PDFDocumentProxy */
 
+import { createPromiseCapability, PDFDateString } from "pdfjs-lib";
 import { getPageSizeInches, isPortraitOrientation } from "./ui_utils.js";
 import { internalOpt } from "./internal_evt.js";
-import { PDFDateString } from "pdfjs-lib";
 
 // See https://en.wikibooks.org/wiki/Lentis/Conversion_to_the_Metric_Standard_in_the_United_States
 const NON_METRIC_LOCALES = ["en-us", "en-lr", "my"];
@@ -211,7 +211,7 @@ class PDFDocumentProperties {
     this.pdfDocument = null;
 
     this.#fieldData = null;
-    this._dataAvailableCapability = Promise.withResolvers();
+    this._dataAvailableCapability = createPromiseCapability();
     this._currentPageNumber = 1;
     this._pagesRotation = 0;
   }

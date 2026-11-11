@@ -17,6 +17,7 @@ import {
   AbortException,
   assert,
   BBOX_INIT,
+  createPromiseCapability,
   DEFAULT_VERTICAL_ADVANCE,
   DEFAULT_VERTICAL_ORIGIN_Y,
   DrawOPS,
@@ -1258,7 +1259,7 @@ class PartialEvaluator {
       return this.fontCache.get(font.cacheKey);
     }
 
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
 
     let preEvaluatedFont;
     try {
@@ -5032,7 +5033,7 @@ class TranslatedFont {
     const { dict, font, type3Dependencies } = this;
     assert(font.isType3Font, "Must be a Type3 font.");
 
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     this.#type3Loaded = promise;
 
     // When parsing Type3 glyphs, always ignore them if there are errors.

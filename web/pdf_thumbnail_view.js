@@ -21,7 +21,11 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
-import { OutputScale, RenderingCancelledException } from "pdfjs-lib";
+import {
+  createPromiseCapability,
+  OutputScale,
+  RenderingCancelledException,
+} from "pdfjs-lib";
 import { RenderableView, RenderingStates } from "./renderable_view.js";
 import { AppOptions } from "./app_options.js";
 
@@ -338,7 +342,7 @@ class PDFThumbnailView extends RenderableView {
     }
     const reducedCanvas = this.#reduceImage(canvas);
     const { imageContainer, image } = this;
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     reducedCanvas.toBlob(resolve);
     const blob = await promise;
     image.src = URL.createObjectURL(blob);

@@ -16,6 +16,7 @@
 import {
   AnnotationEditorPrefix,
   assert,
+  createPromiseCapability,
   FormatError,
   info,
   InvalidPDFException,
@@ -1815,17 +1816,14 @@ class PDFDocument {
       }
 
       for (const [pageIndex, [pageDict, ref]] of pagesTree) {
-        let promise;
+        const capability = createPromiseCapability();
+        this.#pagePromises.set(pageIndex, capability.promise);
+
         if (pageDict instanceof Error) {
-          promise = Promise.reject(pageDict);
-
-          // Prevent "uncaught exception: Object"-messages in the console.
-          promise.catch(() => {});
+          capability.reject(pageDict);
         } else {
-          promise = Promise.resolve(this.#createPage(pageIndex, pageDict, ref));
+          capability.resolve(this.#createPage(pageIndex, pageDict, ref));
         }
-
-        this.#pagePromises.set(pageIndex, promise);
       }
       catalog.setActualNumPages(pagesTree.size);
     }

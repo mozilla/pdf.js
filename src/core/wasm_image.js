@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { unreachable, warn } from "../shared/util.js";
+import { createPromiseCapability, unreachable, warn } from "../shared/util.js";
 import { WasmLoader } from "./wasm_loader.js";
 
 class WasmImage {
@@ -68,7 +68,7 @@ class WasmImage {
 
   _getModule(ImageDecoder) {
     if (!this.#modulePromise) {
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = createPromiseCapability();
       this.#modulePromise = Promise.race([
         promise,
         ImageDecoder({

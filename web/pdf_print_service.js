@@ -15,6 +15,7 @@
 
 import {
   AnnotationMode,
+  createPromiseCapability,
   PixelsPerInch,
   RenderingCancelledException,
   shadow,
@@ -211,13 +212,10 @@ class PDFPrintService {
     wrapper.append(img);
     this.printContainer.append(wrapper);
 
-    const { promise, resolve, reject } = Promise.withResolvers();
+    const { promise, resolve, reject } = createPromiseCapability();
     img.onload = resolve;
     img.onerror = reject;
 
-    promise.catch(() => {
-      // Avoid "Uncaught promise" messages in the console.
-    });
     return promise;
   }
 

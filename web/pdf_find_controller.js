@@ -19,6 +19,7 @@
 
 import { getNormalizeWithNFKC, isEntireWord } from "./pdf_find_utils.js";
 import { binarySearchFirstItem } from "./ui_utils.js";
+import { createPromiseCapability } from "pdfjs-lib";
 import { internalOpt } from "./internal_evt.js";
 
 const FindState = {
@@ -611,7 +612,7 @@ class PDFFindController {
     this._findTimeout = null;
     this.#copiedPageData = null;
 
-    this._firstPageCapability = Promise.withResolvers();
+    this._firstPageCapability = createPromiseCapability();
   }
 
   /**
@@ -886,7 +887,7 @@ class PDFFindController {
     const textOptions = { disableNormalization: true };
     const pdfDoc = this._pdfDocument;
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = createPromiseCapability();
       this._extractTextPromises[i] = promise;
 
       deferred = deferred.then(async () => {

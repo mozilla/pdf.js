@@ -21,6 +21,7 @@ import {
   AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
+  createPromiseCapability,
   FeatureTest,
   getUuid,
   makeArr,
@@ -1275,7 +1276,7 @@ class AnnotationEditorUIManager {
     if (this.#allLayers.has(pageNumber - 1)) {
       return;
     }
-    const { resolve, promise } = Promise.withResolvers();
+    const { resolve, promise } = createPromiseCapability();
     const onEditorsRendered = evt => {
       if (evt.pageNumber === pageNumber) {
         this._eventBus.off("editorsrendered", onEditorsRendered);
@@ -2130,7 +2131,7 @@ class AnnotationEditorUIManager {
       }
     }
 
-    this.#updateModeCapability = Promise.withResolvers();
+    this.#updateModeCapability = createPromiseCapability();
     this.#currentDrawingSession?.commitOrRemove();
 
     if (this.#mode === AnnotationEditorType.POPUP) {

@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { FeatureTest, getVerbosityLevel, warn } from "../shared/util.js";
+import {
+  createPromiseCapability,
+  FeatureTest,
+  getVerbosityLevel,
+  warn,
+} from "../shared/util.js";
 import { BBoxReader } from "./canvas_dependency_tracker.js";
 import { getWorkerSrc } from "./api_utils.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
@@ -257,7 +262,7 @@ class WorkerRenderTask {
  * @param {RendererWorkerParameters} params
  */
 class RendererWorker {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #enableHWA;
 
@@ -583,7 +588,7 @@ class RendererWorker {
     if (!handler) {
       return Promise.reject(new Error("Renderer worker was destroyed."));
     }
-    const { promise, resolve, reject } = Promise.withResolvers();
+    const { promise, resolve, reject } = createPromiseCapability();
     this.#pendingRequests.add(reject);
     handler.sendWithPromise(action, data).then(resolve, reject);
     return promise.finally(() => {
