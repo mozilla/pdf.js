@@ -14,8 +14,14 @@
  */
 
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
+import {
+  createPromiseCapability,
+  isNodeJS,
+  makeMap,
+  setVerbosityLevel,
+  warn,
+} from "../shared/util.js";
 import { initGPU, isGPUReady } from "./webgpu.js";
-import { isNodeJS, makeMap, setVerbosityLevel, warn } from "../shared/util.js";
 import { createCanvasTrackers } from "./canvas_dependency_tracker.js";
 import { FontLoader } from "./font_loader.js";
 import { MessageHandler } from "../shared/message_handler.js";
@@ -243,7 +249,7 @@ class RendererMessageHandler {
       ? i => operationsFilterMask[i]
       : null;
     while (!renderTaskState.aborted) {
-      const { promise, resolve, reject } = Promise.withResolvers();
+      const { promise, resolve, reject } = createPromiseCapability();
       renderTaskState.continueResolve = resolve;
 
       renderTaskState.operatorListIdx = gfx.executeOperatorList(
@@ -280,7 +286,7 @@ class RendererMessageHandler {
         this.#yieldResolvers.shift()();
       };
     }
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     this.#yieldResolvers.push(resolve);
     this.#yieldChannel.port2.postMessage(null);
     return promise;

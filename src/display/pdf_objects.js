@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability } from "../shared/util.js";
+
 const INITIAL_DATA = Symbol("INITIAL_DATA");
 
 const dataObj = () => ({
-  ...Promise.withResolvers(),
+  ...createPromiseCapability(),
   data: INITIAL_DATA,
 });
 
@@ -108,9 +110,6 @@ class PDFObjects {
     if (obj.data !== INITIAL_DATA) {
       return;
     }
-    // Make sure a rejection that lands before a consumer calls
-    // `get` doesn't surface as an unhandled rejection
-    obj.promise.catch(() => {});
     obj.reject(reason);
   }
 

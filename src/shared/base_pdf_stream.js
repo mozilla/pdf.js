@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, unreachable } from "./util.js";
+import { assert, createPromiseCapability, unreachable } from "./util.js";
 
 /**
  * Interface that represents PDF data transport. If possible, it allows
@@ -107,7 +107,7 @@ class BasePDFStreamReader {
 
   _filename = null;
 
-  _headersCapability = Promise.withResolvers();
+  _headersCapability = createPromiseCapability();
 
   _isRangeSupported = false;
 
@@ -125,10 +125,6 @@ class BasePDFStreamReader {
       unreachable("Cannot initialize BasePDFStreamReader.");
     }
     this._stream = stream;
-
-    // Prevent "uncaught exception: Object"-messages in the console, if the
-    // document is destroyed before the `headersReady` getter is accessed.
-    this._headersCapability.promise.catch(() => {});
   }
 
   _callOnProgress() {

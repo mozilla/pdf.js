@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { MathClamp, PDFDataRangeTransport } from "pdfjs-lib";
+import {
+  createPromiseCapability,
+  MathClamp,
+  PDFDataRangeTransport,
+} from "pdfjs-lib";
 import { AppOptions } from "./app_options.js";
 import { BaseDownloadManager } from "./base_download_manager.js";
 import { BaseExternalServices } from "./external_services.js";
@@ -402,7 +406,7 @@ class MLManager {
       return null;
     }
     const resolvers = (this.#requestResolvers ||= new Set());
-    const resolver = Promise.withResolvers();
+    const resolver = createPromiseCapability();
     resolvers.add(resolver);
 
     data.service = MLManager.#AI_ALT_TEXT_MODEL_NAME;

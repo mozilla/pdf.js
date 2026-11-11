@@ -15,6 +15,7 @@
 
 import {
   assert,
+  createPromiseCapability,
   FeatureTest,
   isNodeJS,
   shadow,
@@ -267,7 +268,7 @@ class FontLoader {
     }
 
     const { loadingRequests } = this;
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     const request = {
       done: false,
       resolve,

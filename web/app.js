@@ -43,6 +43,7 @@ import {
 import {
   AnnotationEditorType,
   build,
+  createPromiseCapability,
   FeatureTest,
   getDocument,
   getFilenameFromUrl,
@@ -113,7 +114,7 @@ const ViewOnLoad = {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: {
-    ...Promise.withResolvers(),
+    ...createPromiseCapability(),
     settled: false,
   },
   appConfig: null,

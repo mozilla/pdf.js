@@ -19,6 +19,7 @@
 
 import {
   AbortException,
+  createPromiseCapability,
   FeatureTest,
   shadow,
   Util,
@@ -50,7 +51,7 @@ const MAX_TEXT_DIVS_TO_RENDER = 100000;
 const DEFAULT_FONT_SIZE = 30;
 
 class TextLayer {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #container = null;
 

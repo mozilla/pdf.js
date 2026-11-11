@@ -16,6 +16,7 @@
 import {
   AbortException,
   assert,
+  createPromiseCapability,
   isNodeJS,
   PasswordException,
   setVerbosityLevel,
@@ -39,7 +40,7 @@ import { stringToPDFString } from "./string_utils.js";
 import { StructTreeRoot } from "./struct_tree.js";
 
 class WorkerTask {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   terminated = false;
 
@@ -216,7 +217,7 @@ class WorkerMessageHandler {
       const pdfStream = new PDFWorkerStream({ msgHandler: handler }),
         fullReader = pdfStream.getFullReader();
 
-      const { promise, resolve, reject } = Promise.withResolvers();
+      const { promise, resolve, reject } = createPromiseCapability();
       let newPdfManager,
         cachedChunks = [];
       cancelXHRs = reason => pdfStream.cancelAllRequests(reason);

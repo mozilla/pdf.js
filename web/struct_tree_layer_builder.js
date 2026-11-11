@@ -15,7 +15,13 @@
 
 /** @typedef {import("../src/display/api").PDFPageProxy} PDFPageProxy */
 
-import { FeatureTest, getUuid, makeMap, shadow } from "pdfjs-lib";
+import {
+  createPromiseCapability,
+  FeatureTest,
+  getUuid,
+  makeMap,
+  shadow,
+} from "pdfjs-lib";
 import { removeNullCharacters } from "./ui_utils.js";
 
 const PDF_ROLE_TO_HTML_ROLE = {
@@ -231,7 +237,7 @@ class StructTreeLayerBuilder {
     if (this.#treePromise) {
       return this.#treePromise;
     }
-    const { promise, resolve, reject } = Promise.withResolvers();
+    const { promise, resolve, reject } = createPromiseCapability();
     this.#treePromise = promise;
 
     try {
