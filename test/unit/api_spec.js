@@ -196,6 +196,39 @@ describe("api", function () {
     ]);
   }
 
+  function buildActualTextPdf(
+    content,
+    { resources = "", page = "", objects = [] } = {}
+  ) {
+    const streamObject = (num, data) =>
+      `${num} 0 obj\n<< /Length ${data.length} >>\n` +
+      `stream\n${data}\nendstream\nendobj\n`;
+    // The /F2 Type3 font maps its glyph to U+0000, as Chrome does for the
+    // digits of variable fonts (issue 12237).
+    const toUnicode =
+      "/CIDInit /ProcSet findresource begin 12 dict begin begincmap " +
+      "/CMapName /Adobe-Identity-UCS def /CMapType 2 def " +
+      "1 begincodespacerange <00> <FF> endcodespacerange " +
+      "1 beginbfchar <01> <0000> endbfchar " +
+      "endcmap CMapName currentdict /CMap defineresource pop end end";
+    return assemblePdf([
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+        `/Resources << /Font << /F1 4 0 R /F2 5 0 R >> ${resources} >> ` +
+        `/Contents 6 0 R ${page} >>\nendobj\n`,
+      "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+      "5 0 obj\n<< /Type /Font /Subtype /Type3 /FontBBox [0 0 600 700] " +
+        "/FontMatrix [0.001 0 0 0.001 0 0] /CharProcs << /g1 7 0 R >> " +
+        "/Encoding << /Differences [1 /g1] >> /FirstChar 1 /LastChar 1 " +
+        "/Widths [600] /ToUnicode 8 0 R >>\nendobj\n",
+      streamObject(6, content),
+      streamObject(7, "600 0 0 0 600 700 d1 0 0 600 700 re f"),
+      streamObject(8, toUnicode),
+      ...objects,
+    ]);
+  }
+
   function getNamedNodeInXML(node, path) {
     for (const component of path.split(".")) {
       if (!node.childNodes) {
@@ -5684,6 +5717,162 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         "PDF/UA is not a separate file-format but simply a way to use the " +
           "familiar PDF format invented by Adobe",
         "Systems and now standardized as ISO 32000.[5]",
+      ]);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content with ActualText (issue 12237)", async function () {
+      const total = "BT /F1 20 Tf 10 100 Td (Total: ) Tj";
+      const span = (props, glyphs = "<01> Tj") =>
+        `${total} /Span ${props} BDC /F2 20 Tf ${glyphs} EMC ` +
+        "/F1 20 Tf ( EUR) Tj ET";
+      const form = "BT /F2 20 Tf 10 100 Td <01> Tj ET";
+
+      for (const [context, content, expected, options] of [
+        [
+          "a glyph mapped to U+0000",
+          span("<</ActualText (7)>>"),
+          "Total: 7 EUR",
+        ],
+        [
+          "a UTF-16BE string",
+          span("<</ActualText <FEFF00E9>>>"),
+          "Total: é EUR",
+        ],
+        [
+          "surrounding whitespace",
+          span("<</ActualText (\\t7 )>>"),
+          "Total: 7 EUR",
+        ],
+        ["a non-string value", span("<</ActualText 7>>"), "Total: \u0000 EUR"],
+        ["no ActualText", span("<<>>"), "Total: \u0000 EUR"],
+        [
+          "nested spans",
+          span(
+            "<</ActualText (78)>>",
+            "<01> Tj /Span <</ActualText (9)>> BDC <01> Tj EMC"
+          ),
+          "Total: 78 EUR",
+        ],
+        [
+          "a named property list",
+          span("/P0"),
+          "Total: 7 EUR",
+          { resources: "/Properties << /P0 << /ActualText (7) >> >>" },
+        ],
+        [
+          "a span without glyphs",
+          span("<</ActualText (7)>>", ""),
+          "Total: EUR",
+        ],
+        [
+          "a span over two lines",
+          span("<</ActualText (77)>>", "<01> Tj 0 -24 Td <01> Tj"),
+          "Total: 77\n EUR",
+        ],
+        [
+          "a span left open in a text object",
+          `${total} /Span <</ActualText (7)>> BDC /F2 20 Tf <01> Tj ET ` +
+            "BT /F1 20 Tf 10 70 Td (EUR) Tj ET",
+          "Total: 7\nEUR",
+        ],
+        [
+          "a Form XObject in a span",
+          "/Span <</ActualText (78)>> BDC /X0 Do " +
+            "BT /F2 20 Tf 22 100 Td <01> Tj ET EMC",
+          "78",
+          {
+            resources: "/XObject << /X0 9 0 R >>",
+            objects: [
+              "9 0 obj\n<< /Type /XObject /Subtype /Form /BBox [0 0 200 200] " +
+                "/Resources << /Font << /F2 5 0 R >> >> " +
+                `/Length ${form.length} >>\nstream\n${form}\nendstream\nendobj\n`,
+            ],
+          },
+        ],
+        [
+          "a whitespace ActualText",
+          "BT /F1 20 Tf 10 100 Td (Total:) Tj /Span <</ActualText ( )>> BDC " +
+            "/F2 20 Tf <01> Tj EMC /F1 20 Tf (7) Tj ET",
+          "Total: 7",
+        ],
+        [
+          "a tab around a space",
+          "BT /F1 20 Tf 10 100 Td (Total:) Tj " +
+            "/Span <</ActualText <FEFF0009>>> BDC ( ) Tj EMC (7) Tj ET",
+          "Total: 7",
+        ],
+        [
+          "a soft hyphen",
+          "BT /F1 20 Tf 10 100 Td (Mitarbei) Tj " +
+            "/Span <</ActualText <FEFF00AD>>> BDC (-) Tj EMC ET",
+          "Mitarbei-",
+        ],
+      ]) {
+        const loadingTask = getDocument({
+          data: buildActualTextPdf(content, options),
+        });
+        const pdfDoc = await loadingTask.promise;
+        const pdfPage = await pdfDoc.getPage(1);
+
+        for (const includeMarkedContent of [false, true]) {
+          const { items } = await pdfPage.getTextContent({
+            includeMarkedContent,
+            disableNormalization: true,
+          });
+          expect(mergeText(items))
+            .withContext(
+              `${context}, includeMarkedContent ${includeMarkedContent}`
+            )
+            .toEqual(expected);
+        }
+
+        await loadingTask.destroy();
+      }
+    });
+
+    it("gets the highlighted text with ActualText (issue 12237)", async function () {
+      const loadingTask = getDocument({
+        data: buildActualTextPdf(
+          "BT /F1 20 Tf 10 100 Td (Total: ) Tj /Span <</ActualText (7)>> BDC " +
+            "/F2 20 Tf <01> Tj EMC /F1 20 Tf ( EUR) Tj ET",
+          {
+            page: "/Annots [9 0 R]",
+            objects: [
+              "9 0 obj\n<< /Type /Annot /Subtype /Highlight " +
+                "/Rect [0 90 200 130] /QuadPoints [0 130 200 130 0 90 200 90] " +
+                ">>\nendobj\n",
+            ],
+          }
+        ),
+      });
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const [annotation] = await pdfPage.getAnnotations();
+
+      expect(annotation.overlaidText).toEqual("Total: 7 EUR");
+
+      await loadingTask.destroy();
+    });
+
+    it("gets the marked content id from a named property list", async function () {
+      const loadingTask = getDocument({
+        data: buildActualTextPdf(
+          "BT /F1 20 Tf 10 100 Td /Span /P0 BDC (Total) Tj EMC ET",
+          { resources: "/Properties << /P0 << /MCID 0 >> >>" }
+        ),
+      });
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        includeMarkedContent: true,
+      });
+
+      expect(items.map(item => item.id ?? item.type ?? item.str)).toEqual([
+        "p3R_mc0",
+        "Total",
+        "endMarkedContent",
       ]);
 
       await loadingTask.destroy();

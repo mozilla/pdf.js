@@ -75,7 +75,11 @@ import {
   LocalTilingPatternCache,
   RegionalImageCache,
 } from "./image_utils.js";
-import { parseMarkedContentProps, textSinkWrapper } from "./evaluator_utils.js";
+import {
+  lookupMarkedContentProps,
+  parseMarkedContentProps,
+  textSinkWrapper,
+} from "./evaluator_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { BrotliStream } from "./brotli_stream.js";
@@ -2366,6 +2370,7 @@ class PartialEvaluator {
     prevRefs = null,
     intersector = null,
     markedContentScope = "",
+    actualText = null,
   }) {
     if (stream.isAsync) {
       const bytes = await stream.asyncGetBytes();
@@ -2393,6 +2398,9 @@ class PartialEvaluator {
 
     let markedContentLevel = 0;
     let textMarkedContentLevel = null;
+    // The level of the marked content providing `actualText`, an inherited one
+    // (in a Form XObject) is never closed here.
+    let actualTextLevel = 0;
 
     const textContent = {
       items: [],
@@ -3124,7 +3132,10 @@ class PartialEvaluator {
           charSpacing += textState.wordSpacing;
         }
 
-        if (!keepWhiteSpace && category.isWhitespace) {
+        if (
+          !keepWhiteSpace &&
+          (category.isWhitespace || actualText?.isWhitespace)
+        ) {
           // Don't push a " " in the textContentItem
           // (except when it's between two non-spaces chars),
           // it will be done (if required) in next call to
@@ -3164,23 +3175,21 @@ class PartialEvaluator {
           scaledDim = 0;
         }
 
+        let text = glyph.unicode;
+        if (actualText) {
+          // The ActualText replaces the text of all the glyphs in the marked
+          // content (see section 14.9.4), hence only the first one gets it.
+          text = actualText.emitted ? "" : actualText.str;
+          actualText.emitted = true;
+        }
+
         if (!font.vertical) {
           scaledDim *= textState.textHScale;
-          intersector?.addGlyph(
-            getCurrentTextTransform(),
-            scaledDim,
-            0,
-            glyph.unicode
-          );
+          intersector?.addGlyph(getCurrentTextTransform(), scaledDim, 0, text);
           textState.translateTextMatrix(scaledDim, 0);
           textChunk.width += scaledDim;
         } else {
-          intersector?.addGlyph(
-            getCurrentTextTransform(),
-            0,
-            scaledDim,
-            glyph.unicode
-          );
+          intersector?.addGlyph(getCurrentTextTransform(), 0, scaledDim, text);
           textState.translateTextMatrix(0, scaledDim);
           scaledDim = Math.abs(scaledDim);
           textChunk.height += scaledDim;
@@ -3205,7 +3214,7 @@ class PartialEvaluator {
         }
 
         if (!intersector) {
-          textChunk.str.push(glyphUnicode);
+          textChunk.str.push(text);
         }
 
         if (charSpacing) {
@@ -3295,16 +3304,40 @@ class PartialEvaluator {
     }
 
     function closePendingMarkedContentItems(level = 0) {
-      if (!includeMarkedContent || markedContentLevel <= level) {
+      if (markedContentLevel <= level) {
         return;
       }
       flushTextContentItem();
 
       for (; markedContentLevel > level; markedContentLevel--) {
-        textContent.items.push({
-          type: "endMarkedContent",
-        });
+        if (includeMarkedContent) {
+          textContent.items.push({
+            type: "endMarkedContent",
+          });
+        }
       }
+      if (markedContentLevel < actualTextLevel) {
+        actualText = null;
+      }
+    }
+
+    function getActualText(props) {
+      const value = props?.get("ActualText");
+      if (typeof value !== "string") {
+        return null;
+      }
+      const str = stringToPDFString(value);
+      // Spaces are derived from the glyph positions, hence whitespace alone
+      // turns the glyphs into spaces and is otherwise trimmed and collapsed
+      // (see issue6612.pdf); text without a visible char, e.g. a soft hyphen,
+      // is ignored.
+      if (/^\s+$/.test(str)) {
+        return { str: " ", isWhitespace: true, emitted: false };
+      }
+      const text = str.trim().replaceAll(/\s+/g, " ");
+      return /[^\s\p{Cc}\p{Cf}]/u.test(text)
+        ? { str: text, isWhitespace: false, emitted: false }
+        : null;
     }
 
     function enqueueChunk(batch = false) {
@@ -3623,6 +3656,7 @@ class PartialEvaluator {
                     keepWhiteSpace,
                     prevRefs: seenRefs,
                     markedContentScope: xObjMarkedContentScope,
+                    actualText,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
@@ -3702,9 +3736,9 @@ class PartialEvaluator {
             return;
           case OPS.beginMarkedContent:
             flushTextContentItem();
-            if (includeMarkedContent) {
-              markedContentLevel++;
+            markedContentLevel++;
 
+            if (includeMarkedContent) {
               textContent.items.push({
                 type: "beginMarkedContent",
                 tag: args[0] instanceof Name ? args[0].name : null,
@@ -3713,10 +3747,16 @@ class PartialEvaluator {
             break;
           case OPS.beginMarkedContentProps:
             flushTextContentItem();
-            if (includeMarkedContent) {
-              markedContentLevel++;
+            markedContentLevel++;
 
-              const mcid = args[1] instanceof Dict ? args[1].get("MCID") : null;
+            const props = lookupMarkedContentProps(args[1], resources);
+            // The outermost ActualText applies to all the nested content.
+            if (!actualText) {
+              actualText = getActualText(props);
+              actualTextLevel = markedContentLevel;
+            }
+            if (includeMarkedContent) {
+              const mcid = props?.get("MCID");
               textContent.items.push({
                 type: "beginMarkedContentProps",
                 id: Number.isInteger(mcid)
@@ -3728,16 +3768,9 @@ class PartialEvaluator {
             break;
           case OPS.endMarkedContent:
             flushTextContentItem();
-            if (includeMarkedContent) {
-              if (markedContentLevel === 0) {
-                // Ignore unmatched EMC operators (issue 15629).
-                break;
-              }
-              markedContentLevel--;
-
-              textContent.items.push({
-                type: "endMarkedContent",
-              });
+            // Ignore unmatched EMC operators (issue 15629).
+            if (markedContentLevel > 0) {
+              closePendingMarkedContentItems(markedContentLevel - 1);
             }
             break;
         } // switch
