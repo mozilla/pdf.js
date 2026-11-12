@@ -741,7 +741,7 @@ class Page {
    */
   _parseStructTree(structTreeRoot) {
     const tree = new StructTreePage(structTreeRoot, this.pageDict);
-    tree.parse(this.ref);
+    tree.parse(this.ref, this.resources);
     return tree;
   }
 
