@@ -276,10 +276,15 @@ class FreeTextEditor extends AnnotationEditor {
   getInitialTranslation() {
     // The start of the base line is where the user clicked.
     const scale = this.parentScale;
-    return [
-      -FreeTextEditor._internalPadding * scale,
-      -(FreeTextEditor._internalPadding + this.#fontSize) * scale,
-    ];
+    const padding = FreeTextEditor._internalPadding * scale;
+    let fontSize = this.#fontSize;
+    if (this.isClone) {
+      // The serialized rect already includes this baseline shift. Applying it
+      // again moves the clone up by its font size. The padding must stay so
+      // that `getPDFRect()` round-trips (issue 22271).
+      fontSize = 0;
+    }
+    return [-padding, -(padding + fontSize * scale)];
   }
 
   /** @inheritdoc */
