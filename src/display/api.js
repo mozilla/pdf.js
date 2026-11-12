@@ -311,10 +311,10 @@ function getDocument(src = {}) {
       ? src.useSystemFonts
       : !isNodeJS && !disableFontFace;
   const useWorkerFetch =
-    typeof src.useWorkerFetch === "boolean"
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+    (typeof src.useWorkerFetch === "boolean"
       ? src.useWorkerFetch
-      : (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-        !!(
+      : !!(
           BinaryDataFactory === DOMBinaryDataFactory &&
           cMapUrl &&
           cMapPacked &&
@@ -323,7 +323,7 @@ function getDocument(src = {}) {
           isValidFetchUrl(cMapUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
-        );
+        ));
   const disableWorkerRendering =
     src.disableWorkerRendering === true ||
     !isOffscreenCanvasSupported ||
