@@ -505,6 +505,39 @@ describe("Stamp Editor", () => {
           `${editorSelector} .resizer.topLeft[tabindex="-1"]`
         );
 
+        // Resizers must be labeled before entering keyboard resize mode.
+        await page.waitForFunction(
+          sel =>
+            Array.from(document.querySelectorAll(`${sel} .resizer`)).every(el =>
+              el.hasAttribute("aria-label")
+            ),
+          {},
+          editorSelector
+        );
+        const resizers = await page.$$eval(
+          `${editorSelector} .resizer`,
+          elements =>
+            elements.map(el => ({
+              role: el.getAttribute("role"),
+              label: el.getAttribute("aria-label"),
+            }))
+        );
+        expect(resizers.every(({ role }) => role === "spinbutton"))
+          .withContext(`In ${browserName}`)
+          .toBeTrue();
+        expect(resizers.map(({ label }) => label))
+          .withContext(`In ${browserName}`)
+          .toEqual([
+            "Top left corner — resize",
+            "Top middle — resize",
+            "Top right corner — resize",
+            "Middle right — resize",
+            "Bottom right corner — resize",
+            "Bottom middle — resize",
+            "Bottom left corner — resize",
+            "Middle left — resize",
+          ]);
+
         const getDims = async () => {
           const [blX, blY, trX, trY] = await getFirstSerialized(
             page,
