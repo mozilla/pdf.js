@@ -21,6 +21,7 @@ import {
   AbortException,
   createPromiseCapability,
   FeatureTest,
+  noopFn,
   shadow,
   Util,
   warn,
@@ -146,9 +147,7 @@ class TextLayer {
         this.#layoutTextParams = null;
         this.#styleCache = null;
       })
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      });
+      .catch(noopFn);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
@@ -237,9 +236,7 @@ class TextLayer {
   cancel() {
     const abortEx = new AbortException("TextLayer task cancelled.");
 
-    this.#reader?.cancel(abortEx).catch(() => {
-      // Avoid "Uncaught promise" messages in the console.
-    });
+    this.#reader?.cancel(abortEx).catch(noopFn);
     this.#reader = null;
 
     this.#capability.reject(abortEx);

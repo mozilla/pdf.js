@@ -1138,11 +1138,14 @@ function _isValidExplicitDest(validRef, validName, dest) {
   return true;
 }
 
+// A no-op function, useful e.g. with `catch` handlers that ignore errors.
+function noopFn() {}
+
 // A wrapper around the `Promise.withResolvers()` function, that prevents
 // "uncaught exception: Object"-messages in the console for unhandled promises.
 function createPromiseCapability() {
   const pc = Promise.withResolvers();
-  pc.promise.catch(() => {});
+  pc.promise.catch(noopFn);
   return pc;
 }
 
@@ -1227,6 +1230,7 @@ export {
   makeObj,
   makeSet,
   MeshFigureType,
+  noopFn,
   normalizeUnicode,
   OPS,
   PageActionEventType,

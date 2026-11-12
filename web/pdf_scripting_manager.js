@@ -15,7 +15,7 @@
 
 /** @typedef {import("./event_utils").EventBus} EventBus */
 
-import { createPromiseCapability, makeArr, shadow } from "pdfjs-lib";
+import { createPromiseCapability, makeArr, noopFn, shadow } from "pdfjs-lib";
 import { apiPageLayoutToViewerModes } from "./ui_utils.js";
 import { internalOpt } from "./internal_evt.js";
 import { RenderingStates } from "./renderable_view.js";
@@ -522,9 +522,8 @@ class PDFScriptingManager {
           // Avoid the scripting/sandbox-destruction hanging indefinitely.
           setTimeout(resolve, 1000);
         }),
-      ]).catch(() => {
-        // Ignore any errors, to ensure that the sandbox is always destroyed.
-      });
+      ]).catch(noopFn); // Ignore any errors, to ensure that the sandbox is always destroyed.
+
       this.#closeCapability = null;
     }
     this.#pdfDocument = null;

@@ -36,6 +36,7 @@ import {
   createPromiseCapability,
   makeArr,
   MathClamp,
+  noopFn,
   PermissionFlag,
   PixelsPerInch,
   shadow,
@@ -953,14 +954,9 @@ class PDFViewer {
       eventBus.dispatch("scrollmodechanged", { source: this, mode });
     }
 
-    this._pagesCapability.promise.then(
-      () => {
-        eventBus.dispatch("pagesloaded", { source: this, pagesCount });
-      },
-      () => {
-        /* Prevent "Uncaught (in promise)"-messages in the console. */
-      }
-    );
+    this._pagesCapability.promise.then(() => {
+      eventBus.dispatch("pagesloaded", { source: this, pagesCount });
+    }, noopFn);
 
     const onBeforeDraw = evt => {
       const pageView = this._pages[evt.pageNumber - 1];

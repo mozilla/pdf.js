@@ -18,6 +18,7 @@ import {
   assert,
   createPromiseCapability,
   InvalidPDFException,
+  noopFn,
   PasswordException,
   ResponseException,
   UnknownErrorException,
@@ -38,8 +39,6 @@ const StreamKind = {
   PULL_COMPLETE: 7,
   START_COMPLETE: 8,
 };
-
-function onFn() {}
 
 function wrapReason(ex) {
   if (
@@ -449,7 +448,7 @@ class MessageHandler {
         // Reset desiredSize property of sink on every pull.
         streamSink.desiredSize = data.desiredSize;
 
-        Promise.try(streamSink.onPull || onFn).then(
+        Promise.try(streamSink.onPull || noopFn).then(
           () => {
             comObj.postMessage({
               sourceName,
@@ -505,7 +504,7 @@ class MessageHandler {
         }
         const dataReason = wrapReason(data.reason);
 
-        Promise.try(streamSink.onCancel || onFn, dataReason).then(
+        Promise.try(streamSink.onCancel || noopFn, dataReason).then(
           () => {
             comObj.postMessage({
               sourceName,

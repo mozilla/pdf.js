@@ -18,6 +18,7 @@ import {
   bytesToString,
   FormatError,
   info,
+  noopFn,
   warn,
 } from "../shared/util.js";
 import { Cmd, Dict, EOF, isCmd, isName, Name, Ref } from "./primitives.js";
@@ -273,7 +274,7 @@ class Parser {
             knownCommands
           );
           // Reduce the number of (potential) warning messages.
-          tmpLexer._hexStringWarn = () => {};
+          tmpLexer._hexStringWarn = noopFn;
           let numArgs = 0;
 
           while (true) {

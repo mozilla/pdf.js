@@ -43,6 +43,7 @@ import {
   FeatureTest,
   LINE_FACTOR,
   makeArr,
+  noopFn,
   shadow,
   SVG_NS,
   unreachable,
@@ -3900,7 +3901,7 @@ class MediaAnnotationElement extends AnnotationElement {
     });
 
     button.replaceWith(media);
-    media.play().catch(() => {});
+    media.play().catch(noopFn);
   }
 
   #revokeContentUrl(url = this.#contentUrl) {

@@ -18,6 +18,7 @@ import {
   assert,
   createPromiseCapability,
   isNodeJS,
+  noopFn,
   PasswordException,
   setVerbosityLevel,
   warn,
@@ -378,14 +379,9 @@ class WorkerMessageHandler {
           }
           pdfManager = newPdfManager;
 
-          pdfManager.requestLoadedStream(/* noFetch = */ true).then(
-            stream => {
-              handler.send("DataLoaded", { length: stream.bytes.byteLength });
-            },
-            () => {
-              // Avoid errors if document loading was terminated.
-            }
-          );
+          pdfManager.requestLoadedStream(/* noFetch = */ true).then(stream => {
+            handler.send("DataLoaded", { length: stream.bytes.byteLength });
+          }, noopFn); // Avoid errors if document loading was terminated.
         })
         .then(pdfManagerReady, onFailure);
     }

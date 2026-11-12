@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { bytesToString, info, warn } from "../shared/util.js";
+import { bytesToString, info, noopFn, warn } from "../shared/util.js";
 import { Dict, isDict, isName, Name, Ref } from "./primitives.js";
 import {
   escapePDFName,
@@ -131,7 +131,7 @@ async function writeStream(stream, buffer, transform) {
           await writer.ready;
           await writer.close();
         })
-        .catch(() => {});
+        .catch(noopFn);
 
       // Response::text doesn't return the correct data.
       bytes = await new Response(cs.readable).bytes();

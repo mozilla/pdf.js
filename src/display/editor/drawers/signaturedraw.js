@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { noopFn, warn } from "../../../shared/util.js";
 import { ContourDrawOutline } from "./contour.js";
 import { InkDrawOutline } from "./inkdraw.js";
 import { Outline } from "./outline.js";
-import { warn } from "../../../shared/util.js";
 
 const BASE_HEADER_LENGTH = 8;
 const POINTS_PROPERTIES_NUMBER = 3;
@@ -761,7 +761,7 @@ class SignatureExtractor {
           await writer.ready;
           await writer.close();
         })
-        .catch(() => {});
+        .catch(noopFn);
 
       let data = null;
       let offset = 0;
