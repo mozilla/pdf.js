@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { noopFn, unreachable } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { Stream } from "./stream.js";
-import { unreachable } from "../shared/util.js";
 
 // Lots of DecodeStreams are created whose buffers are never used.  For these
 // we share a single empty buffer. This is (a) space-efficient and (b) avoids
@@ -128,24 +128,29 @@ class DecodeStream extends BaseStream {
     try {
       const { readable, writable } = new DecompressionStream(name);
       const writer = writable.getWriter();
-      await writer.ready;
-
-      // We can't await writer.write() because it'll block until the reader
-      // starts which happens few lines below.
-      writer
-        .write(bytes)
-        .then(async () => {
-          await writer.ready;
-          await writer.close();
-        })
-        .catch(() => {});
+      // Don't await the writer: it only makes progress once the reader pulls.
+      // close() is queued behind write(), so the stream is only closed once
+      // all the bytes have been written.
+      // Handle decompression errors through reader.read() below.
+      writer.write(bytes).catch(noopFn);
+      writer.close().catch(noopFn);
 
       const chunks = [];
       let totalLength = 0;
 
-      for await (const chunk of readable) {
+      // Faster than `for await`.
+      const reader = readable.getReader();
+      while (true) {
+        const { value: chunk, done } = await reader.read();
+        if (done) {
+          break;
+        }
         chunks.push(chunk);
         totalLength += chunk.byteLength;
+      }
+      // Avoid copying single-chunk output.
+      if (chunks.length === 1) {
+        return { decompressed: chunks[0], compressed: bytes };
       }
       const data = new Uint8Array(totalLength);
       let offset = 0;

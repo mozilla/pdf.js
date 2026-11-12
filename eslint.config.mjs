@@ -38,6 +38,7 @@ export default [
       "external/brotli/",
       "external/builder/fixtures/",
       "external/builder/fixtures_babel/",
+      "external/hellbox/",
       "external/openjpeg/",
       "external/qcms/",
       "external/jbig2/",
@@ -368,6 +369,12 @@ export default [
           selector: "CallExpression[callee.name='isName'][arguments.length<2]",
           message:
             "Use `instanceof Name` rather than `isName()` with one argument.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='Math'][callee.property.name=/^(max|min)$/][arguments.length>4]",
+          message:
+            "Avoid calling `Math.max`/`Math.min` with more than four arguments, since SpiderMonkey doesn't optimize those (nest the calls instead).",
         },
         {
           selector: "NewExpression[callee.name='Cmd']",

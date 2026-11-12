@@ -21,10 +21,12 @@ import {
   AbortException,
   AnnotationMode,
   assert,
+  createPromiseCapability,
   getVerbosityLevel,
   info,
   isNodeJS,
   makeObj,
+  noopFn,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -45,6 +47,7 @@ import {
   LoopbackPort,
   StatTimer,
 } from "./api_utils.js";
+import { initGPU, isGPUReady } from "./webgpu.js";
 import { isDataScheme, isValidFetchUrl } from "./dom_utils.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import {
@@ -60,7 +63,6 @@ import { DOMFilterFactory } from "./dom_filter_factory.js";
 import { FontLoader } from "./font_loader.js";
 import { getNetworkStream } from "display-network_stream";
 import { GlobalWorkerOptions } from "./worker_options.js";
-import { initGPU } from "./webgpu.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { ObjectHandler } from "./object_handler.js";
@@ -151,9 +153,6 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
  *   whatever possible of the data. The default value is `false`.
- * @property {number} [maxImageSize] - The maximum allowed image size in total
- *   pixels, i.e. width * height. Images above this value will not be rendered.
- *   Use -1 for no limit, which is also the default value.
  * @property {boolean} [isOffscreenCanvasSupported] - Determines if we can use
  *   `OffscreenCanvas` in the worker. Primarily used to improve performance of
  *   image conversion/rendering.
@@ -255,10 +254,6 @@ function getDocument(src = {}) {
   const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
   const wasmUrl = getFactoryUrlProp(src.wasmUrl);
   const ignoreErrors = src.stopAtErrors !== true;
-  const maxImageSize =
-    Number.isInteger(src.maxImageSize) && src.maxImageSize > -1
-      ? src.maxImageSize
-      : -1;
   const isOffscreenCanvasSupported =
     typeof src.isOffscreenCanvasSupported === "boolean"
       ? src.isOffscreenCanvasSupported
@@ -296,9 +291,9 @@ function getDocument(src = {}) {
       : DOMBinaryDataFactory);
   const enableHWA = src.enableHWA === true;
   const enableWebGPU = src.enableWebGPU === true;
-  // Start GPU initialisation immediately so it runs in parallel with the
-  // worker bootstrap; the resolved boolean is forwarded to the worker.
-  const gpuPromise = enableWebGPU ? initGPU() : Promise.resolve(false);
+  if (enableWebGPU) {
+    initGPU(); // Initialize without delaying document loading.
+  }
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
@@ -388,7 +383,6 @@ function getDocument(src = {}) {
     docBaseUrl,
     enableXfa,
     evaluatorOptions: {
-      maxImageSize,
       disableFontFace,
       ignoreErrors,
       isOffscreenCanvasSupported,
@@ -403,7 +397,6 @@ function getDocument(src = {}) {
       iccUrl,
       standardFontDataUrl,
       wasmUrl,
-      hasGPU: false, // Set below.
     },
   };
   const transportParams = {
@@ -411,19 +404,18 @@ function getDocument(src = {}) {
     pdfBug,
     styleElement,
     rendererWorker: task._rendererWorker,
+    enableWebGPU,
     loadingParams: {
       disableAutoFetch,
       enableXfa,
     },
   };
 
-  Promise.all([worker.promise, gpuPromise])
-    .then(function ([, hasGPU]) {
+  worker.promise
+    .then(function () {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
       }
-      docParams.evaluatorOptions.hasGPU = hasGPU;
-
       const workerIdPromise = worker.messageHandler.sendWithPromise(
         "GetDocRequest",
         docParams,
@@ -509,7 +501,7 @@ class PDFDocumentLoadingTask {
   /**
    * @private
    */
-  _capability = Promise.withResolvers();
+  _capability = createPromiseCapability();
 
   /**
    * Resolves once the load-time setup chain has settled, regardless of
@@ -517,7 +509,7 @@ class PDFDocumentLoadingTask {
    * or definitely never going to be.
    * @private
    */
-  _setupCapability = Promise.withResolvers();
+  _setupCapability = createPromiseCapability();
 
   /**
    * @private
@@ -577,11 +569,6 @@ class PDFDocumentLoadingTask {
    */
   async destroy() {
     this.destroyed = true;
-    // The setup chain rejects `_capability` with "Loading aborted" once the
-    // load-time chain unwinds (see `getDocument`). Claim that rejection
-    // here so it isn't reported as unhandled during the awaits below;
-    // callers awaiting `task.promise` still see it.
-    this._capability.promise.catch(() => {});
 
     try {
       // `_pendingDestroy` must be set synchronously, before any `await`,
@@ -632,7 +619,7 @@ class PDFDocumentLoadingTask {
  * main-thread memory usage, however it will take ownership of the TypedArrays.
  */
 class PDFDataRangeTransport {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #listener = null;
 
@@ -692,6 +679,14 @@ class PDFDataRangeTransport {
 
   abort() {}
 }
+
+/**
+ * @typedef {object} SaveDocumentParameters
+ * @property {function(Array<object>): Promise<Uint8Array | null>} [printToPDF]
+ *   Firefox-only callback receiving ordered `{ data }` entries. Returns a PDF
+ *   with one page per entry, or `null`. Place each appearance within
+ *   `[0, 0, data.width, data.height]` in points.
+ */
 
 /**
  * Proxy to a `PDFDocument` in the worker thread.
@@ -1001,17 +996,13 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @param {function(Array<object>): Promise<Uint8Array | null>} [printToPDF] -
-   *   Firefox-only platform appearance renderer. It receives ordered
-   *   `{ data }` entries and returns a PDF with one page per entry, or `null`.
-   *   Each page must place its appearance in
-   *   `[0, 0, data.width, data.height]`, with dimensions in points.
+   * @param {SaveDocumentParameters} [params] - Save parameters.
    * @returns {Promise<Uint8Array<ArrayBuffer>>} A promise that is
    *   resolved with a {Uint8Array<ArrayBuffer>} containing the
    *   full data of the saved document.
    */
-  saveDocument(printToPDF) {
-    return this._transport.saveDocument(printToPDF);
+  saveDocument(params) {
+    return this._transport.saveDocument(params);
   }
 
   /**
@@ -1559,7 +1550,7 @@ class PDFPageProxy {
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
     if (!intentState.displayReadyCapability) {
-      intentState.displayReadyCapability = Promise.withResolvers();
+      intentState.displayReadyCapability = createPromiseCapability();
       intentState.operatorList = {
         fnArray: [],
         argsArray: [],
@@ -1657,6 +1648,7 @@ class PDFPageProxy {
       pageColors,
       operationsFilter,
       rendererWorker: this._transport.rendererWorker,
+      waitForGPU: () => this._transport.waitForGPU(),
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -1729,7 +1721,7 @@ class PDFPageProxy {
     if (!intentState.opListReadCapability) {
       opListTask = Object.create(null);
       opListTask.operatorListChanged = operatorListChanged;
-      intentState.opListReadCapability = Promise.withResolvers();
+      intentState.opListReadCapability = createPromiseCapability();
       (intentState.renderTasks ||= new Set()).add(opListTask);
       intentState.operatorList = {
         fnArray: [],
@@ -1785,6 +1777,8 @@ class PDFPageProxy {
       return this.getXfa().then(xfa => XfaText.textContent(xfa));
     }
     const readableStream = this.streamTextContent(params);
+    // Faster than `for await`.
+    const reader = readableStream.getReader();
 
     const textContent = {
       items: [],
@@ -1792,7 +1786,11 @@ class PDFPageProxy {
       lang: null,
     };
 
-    for await (const value of readableStream) {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
       textContent.lang ??= value.lang;
       Object.assign(textContent.styles, value.styles);
       textContent.items.push(...value.items);
@@ -2036,9 +2034,7 @@ class PDFPageProxy {
     }
     intentState.streamReader
       .cancel(new AbortException(reason.message))
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      });
+      .catch(noopFn);
     intentState.streamReader = null;
 
     if (this._transport.destroyed) {
@@ -2081,7 +2077,7 @@ class PDFPageProxy {
  * @param {PDFWorkerParameters} params - The worker initialization parameters.
  */
 class PDFWorker {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #messageHandler = null;
 
@@ -2179,10 +2175,9 @@ class PDFWorker {
   #initializeFromPort(port) {
     this.#port = port;
     this.#messageHandler = new MessageHandler("main", "worker", port);
-    this.#messageHandler.on("ready", () => {
-      // Ignoring "ready" event -- MessageHandler should already be initialized
-      // and ready to accept messages.
-    });
+    // Ignoring "ready" event -- MessageHandler should already be initialized
+    // and ready to accept messages.
+    this.#messageHandler.on("ready", noopFn);
     this.#resolve();
   }
 
@@ -2358,9 +2353,11 @@ class PDFWorker {
  * @ignore
  */
 class WorkerTransport {
-  downloadInfoCapability = Promise.withResolvers();
+  downloadInfoCapability = createPromiseCapability();
 
   #fullReader = null;
+
+  #hasMeshPattern = false;
 
   #methodPromises = new Map();
 
@@ -2546,7 +2543,7 @@ class WorkerTransport {
     }
 
     this.destroyed = true;
-    this.destroyCapability = Promise.withResolvers();
+    this.destroyCapability = createPromiseCapability();
 
     this.#passwordCapability?.reject(
       new Error("Worker was destroyed during onPassword callback")
@@ -2716,7 +2713,7 @@ class WorkerTransport {
     });
 
     messageHandler.on("PasswordRequest", ex => {
-      this.#passwordCapability = Promise.withResolvers();
+      this.#passwordCapability = createPromiseCapability();
 
       try {
         if (!loadingTask.onPassword) {
@@ -2763,16 +2760,13 @@ class WorkerTransport {
     });
 
     // TODO: Connect the core and renderer workers directly.
-    this.rendererWorker?.promise.then(
-      () => {
-        this.rendererWorker?.messageHandler?.on("FontFallback", data =>
-          this.destroyed
-            ? null
-            : messageHandler.sendWithPromise("FontFallback", data)
-        );
-      },
-      () => {} // Rendering handles startup failure.
-    );
+    this.rendererWorker?.promise.then(() => {
+      this.rendererWorker?.messageHandler?.on("FontFallback", data =>
+        this.destroyed
+          ? null
+          : messageHandler.sendWithPromise("FontFallback", data)
+      );
+    }, noopFn); // Rendering handles startup failure.
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
@@ -2801,6 +2795,10 @@ class WorkerTransport {
 
       if (!this.commonObjs.has(id)) {
         objectHandler.resolveCommonObject(id, type, exportedData);
+        // Patterns in Type 3 fonts use common objects.
+        if (type === "Pattern" && this.commonObjs.get(id)[0] === "Mesh") {
+          this.#hasMeshPattern = true;
+        }
       }
       return null;
     });
@@ -2809,6 +2807,9 @@ class WorkerTransport {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return;
+      }
+      if (type === "Pattern" && imageData[0] === "Mesh") {
+        this.#hasMeshPattern = true;
       }
 
       if (objectHandler.resolveObject(id, pageProxyId, type, imageData)) {
@@ -2849,7 +2850,7 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
-  saveDocument(printToPDF = null) {
+  saveDocument({ printToPDF = null } = {}) {
     if (this.annotationStorage.size <= 0) {
       warn(
         "saveDocument called while `annotationStorage` is empty, " +
@@ -2941,6 +2942,16 @@ class WorkerTransport {
       .finally(() => {
         this.annotationStorage.resetModified();
       });
+  }
+
+  /**
+   * @returns {Promise<boolean> | null} GPU initialization result, or null if
+   *   no wait is needed.
+   */
+  waitForGPU() {
+    return this._params.enableWebGPU && this.#hasMeshPattern && !isGPUReady()
+      ? initGPU()
+      : null;
   }
 
   getPage(pageNumber) {
@@ -3293,6 +3304,10 @@ class InternalRenderTask {
 
   #rendererTask = null;
 
+  #waitForGPU = null;
+
+  capability = createPromiseCapability();
+
   static #canvasInUse = new WeakSet();
 
   constructor({
@@ -3311,6 +3326,7 @@ class InternalRenderTask {
     pageColors = null,
     operationsFilter = null,
     rendererWorker = null,
+    waitForGPU = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3331,7 +3347,6 @@ class InternalRenderTask {
     this._useRequestAnimationFrame =
       useRequestAnimationFrame === true && typeof window !== "undefined";
     this.cancelled = false;
-    this.capability = Promise.withResolvers();
     this.task = new RenderTask(this);
     // caching this-bound methods
     this._cancelBound = this.cancel.bind(this);
@@ -3341,6 +3356,7 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._operationsFilter = operationsFilter;
+    this.#waitForGPU = waitForGPU;
 
     this.#rendererTask =
       rendererWorker?.createRenderTask({
@@ -3356,10 +3372,9 @@ class InternalRenderTask {
   }
 
   get completed() {
-    return this.capability.promise.catch(() => {
-      // Ignoring errors, since we only want to know when rendering is
-      // no longer pending.
-    });
+    // Ignoring errors, since we only want to know when rendering is
+    // no longer pending.
+    return this.capability.promise.catch(noopFn);
   }
 
   get isWorkerRendering() {
@@ -3530,6 +3545,16 @@ class InternalRenderTask {
   async _next() {
     if (this.cancelled) {
       return;
+    }
+    if (!this.#rendererTask) {
+      // Pattern messages precede their operators.
+      const gpuPromise = this.#waitForGPU?.();
+      if (gpuPromise) {
+        await gpuPromise;
+        if (this.cancelled) {
+          return;
+        }
+      }
     }
     const { operatorList } = this;
     const { lastChunk } = operatorList;

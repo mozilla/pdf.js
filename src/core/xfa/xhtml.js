@@ -236,8 +236,7 @@ class XhtmlObject extends XmlObject {
     }
   }
 
-  [$pushGlyphs](measure, mustPop = true) {
-    const xfaFont = Object.create(null);
+  [$pushGlyphs](measure, mustPop = true, xfaFont = Object.create(null)) {
     const margin = {
       top: NaN,
       bottom: NaN,
@@ -374,9 +373,7 @@ class B extends XhtmlObject {
   }
 
   [$pushGlyphs](measure) {
-    measure.pushFont({ weight: "bold" });
-    super[$pushGlyphs](measure);
-    measure.popFont();
+    super[$pushGlyphs](measure, /* mustPop = */ true, { weight: "bold" });
   }
 }
 
@@ -464,9 +461,7 @@ class I extends XhtmlObject {
   }
 
   [$pushGlyphs](measure) {
-    measure.pushFont({ posture: "italic" });
-    super[$pushGlyphs](measure);
-    measure.popFont();
+    super[$pushGlyphs](measure, /* mustPop = */ true, { posture: "italic" });
   }
 }
 

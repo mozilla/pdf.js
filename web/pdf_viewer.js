@@ -33,8 +33,10 @@ import {
   AnnotationEditorType,
   AnnotationEditorUIManager,
   AnnotationMode,
+  createPromiseCapability,
   makeArr,
   MathClamp,
+  noopFn,
   PermissionFlag,
   PixelsPerInch,
   shadow,
@@ -100,8 +102,6 @@ function isValidAnnotationEditorMode(mode) {
  * @property {PDFScriptingManager} [scriptingManager] - The scripting manager
  *   component.
  * @property {PDFRenderingQueue} [renderingQueue] - The rendering queue object.
- * @property {boolean} [removePageBorders] - Removes the border shadow around
- *   the pages. The default value is `false`.
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
@@ -120,8 +120,8 @@ function isValidAnnotationEditorMode(mode) {
  * @property {boolean} [enablePrintAutoRotate] - Enables automatic rotation of
  *   landscape pages upon printing. The default is `false`.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
- *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ *   total pixels, i.e. width * height. Use `-1` for no limit.
+ *   The default value is 4096 * 8192 (32 mega-pixels).
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
@@ -362,9 +362,6 @@ class PDFViewer {
       options.enableNewAltTextWhenAddingImage === true;
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enablePrintAutoRotate = options.enablePrintAutoRotate || false;
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this.removePageBorders = options.removePageBorders || false;
-    }
     this.maxCanvasPixels = options.maxCanvasPixels;
     this.maxCanvasDim = options.maxCanvasDim;
     this.capCanvasAreaFactor = options.capCanvasAreaFactor;
@@ -384,16 +381,15 @@ class PDFViewer {
     this.#enableAutoLinking = options.enableAutoLinking !== false;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
-    this.defaultRenderingQueue = !options.renderingQueue;
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.defaultRenderingQueue
-    ) {
-      // Custom rendering queue is not specified, using default one
-      this.renderingQueue = new PDFRenderingQueue();
-      this.renderingQueue.setViewer(this);
-    } else {
-      this.renderingQueue = options.renderingQueue;
+    this.renderingQueue = options.renderingQueue;
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+      this.defaultRenderingQueue = !this.renderingQueue;
+
+      if (this.defaultRenderingQueue) {
+        // Custom rendering queue is not specified, using default one
+        this.renderingQueue = new PDFRenderingQueue();
+        this.renderingQueue.setViewer(this);
+      }
     }
 
     const { abortSignal } = options;
@@ -414,13 +410,6 @@ class PDFViewer {
     );
     this.presentationModeState = PresentationModeState.UNKNOWN;
     this._resetView();
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.removePageBorders
-    ) {
-      this.viewer.classList.add("removePageBorders");
-    }
 
     this.#updateContainerHeightCss();
 
@@ -676,7 +665,10 @@ class PDFViewer {
       pageNumber,
     });
 
-    if (this.defaultRenderingQueue) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.defaultRenderingQueue
+    ) {
       this.update();
     }
   }
@@ -794,7 +786,7 @@ class PDFViewer {
 
     // Handle the window/tab becoming inactive *after* rendering has started;
     // fixes (another part of) bug 1746213.
-    const hiddenCapability = Promise.withResolvers(),
+    const hiddenCapability = createPromiseCapability(),
       ac = new AbortController();
     document.addEventListener(
       "visibilitychange",
@@ -962,14 +954,9 @@ class PDFViewer {
       eventBus.dispatch("scrollmodechanged", { source: this, mode });
     }
 
-    this._pagesCapability.promise.then(
-      () => {
-        eventBus.dispatch("pagesloaded", { source: this, pagesCount });
-      },
-      () => {
-        /* Prevent "Uncaught (in promise)"-messages in the console. */
-      }
-    );
+    this._pagesCapability.promise.then(() => {
+      eventBus.dispatch("pagesloaded", { source: this, pagesCount });
+    }, noopFn);
 
     const onBeforeDraw = evt => {
       const pageView = this._pages[evt.pageNumber - 1];
@@ -1036,7 +1023,11 @@ class PDFViewer {
               this.#enableNewAltTextWhenAddingImage,
               this.#mlManager,
               this.#editorUndoBar,
-              this.#supportsPinchToZoom
+              this.#supportsPinchToZoom,
+              // GeckoView's toolbar sticks out of the editor.
+              typeof PDFJSDev === "undefined"
+                ? window.isGECKOVIEW
+                : PDFJSDev.test("GECKOVIEW")
             );
             eventBus.dispatch("annotationeditoruimanager", {
               source: this,
@@ -1219,7 +1210,10 @@ class PDFViewer {
           }
         });
 
-        if (this.defaultRenderingQueue) {
+        if (
+          (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+          this.defaultRenderingQueue
+        ) {
           this.update();
         }
       })
@@ -1367,9 +1361,9 @@ class PDFViewer {
     this._location = null;
     this._pagesRotation = 0;
     this._optionalContentConfigPromise = null;
-    this._firstPageCapability = Promise.withResolvers();
-    this._onePageRenderedCapability = Promise.withResolvers();
-    this._pagesCapability = Promise.withResolvers();
+    this._firstPageCapability = createPromiseCapability();
+    this._onePageRenderedCapability = createPromiseCapability();
+    this._pagesCapability = createPromiseCapability();
     this._scrollMode = ScrollMode.VERTICAL;
     this._previousScrollMode = ScrollMode.UNKNOWN;
     this._spreadMode = SpreadMode.NONE;
@@ -1405,6 +1399,8 @@ class PDFViewer {
       state = this.#scrollModePageState,
       viewer = this.viewer;
 
+    // Pause translation when inserting the new page in the DOM.
+    this.l10n.pause();
     // Temporarily remove all the pages from the DOM...
     viewer.textContent = "";
     // ... and clear out the active ones.
@@ -1455,6 +1451,7 @@ class PDFViewer {
       }
       viewer.append(spread);
     }
+    this.l10n.resume();
 
     state.scrollDown = pageNumber >= state.previousPageNumber;
     state.previousPageNumber = pageNumber;
@@ -1670,7 +1667,10 @@ class PDFViewer {
       presetValue: preset ? newValue : undefined,
     });
 
-    if (this.defaultRenderingQueue) {
+    if (
+      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
+      this.defaultRenderingQueue
+    ) {
       this.update();
     }
   }
@@ -1705,11 +1705,6 @@ class PDFViewer {
           // "doubling" the total border width.
           hPadding *= 2;
         }
-      } else if (
-        (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-        this.removePageBorders
-      ) {
-        hPadding = vPadding = 0;
       } else if (this._scrollMode === ScrollMode.HORIZONTAL) {
         [hPadding, vPadding] = [vPadding, hPadding]; // Swap the padding values.
       }
@@ -1876,15 +1871,9 @@ class PDFViewer {
         y = destArray[3];
         width = destArray[4] - x;
         height = destArray[5] - y;
-        let hPadding = SCROLLBAR_PADDING,
+        const hPadding = SCROLLBAR_PADDING,
           vPadding = VERTICAL_PADDING;
 
-        if (
-          (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-          this.removePageBorders
-        ) {
-          hPadding = vPadding = 0;
-        }
         widthScale =
           (this.container.clientWidth - hPadding) /
           width /
@@ -2402,6 +2391,8 @@ class PDFViewer {
     if (this._scrollMode === ScrollMode.PAGE) {
       this.#ensurePageViewVisible();
     } else {
+      // Pause translation when updating the spread mode in the DOM.
+      this.l10n.pause();
       // Temporarily remove all the pages from the DOM.
       viewer.textContent = "";
 
@@ -2424,6 +2415,7 @@ class PDFViewer {
           spread.append(pages[i].div);
         }
       }
+      this.l10n.resume();
     }
 
     if (!pageNumber) {

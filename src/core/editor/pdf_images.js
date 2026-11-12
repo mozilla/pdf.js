@@ -14,7 +14,7 @@
  */
 
 import { Dict, Name } from "../primitives.js";
-import { FeatureTest } from "../../shared/util.js";
+import { FeatureTest, noopFn } from "../../shared/util.js";
 import { Stream } from "../stream.js";
 
 // Below this many distinct RGB triples, Flate+Predictor 15 (PNG-style) is
@@ -111,7 +111,7 @@ async function deflate(bytes) {
       await writer.ready;
       await writer.close();
     } catch (reason) {
-      await writer.abort(reason).catch(() => {});
+      await writer.abort(reason).catch(noopFn);
       throw reason;
     }
   })();

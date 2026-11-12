@@ -16,6 +16,7 @@
 import { AppOptions } from "./app_options.js";
 import { BaseExternalServices } from "./external_services.js";
 import { BasePreferences } from "./preferences.js";
+import { createPromiseCapability } from "pdfjs-lib";
 import { GenericL10n } from "./genericl10n.js";
 import { GenericScripting } from "./generic_scripting.js";
 import { SignatureStorage } from "./generic_signature_storage.js";
@@ -130,7 +131,7 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // The progress can be seen in the new alt-text dialog.
       this.hasProgress = true;
 
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = createPromiseCapability();
       const total = 1e8;
       const end = 1.5 * total;
       const increment = 5e6;

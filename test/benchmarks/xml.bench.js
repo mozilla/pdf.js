@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import {
   captureMetadata,
   captureRichTexts,
   captureXfaDocument,
 } from "./xml_utils.js";
+import { benchmark } from "./bench_utils.js";
+import { describe } from "vitest";
 import { MetadataParser } from "../../src/core/metadata_parser.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
@@ -34,22 +35,22 @@ const XFA_DOCUMENTS = [
 ];
 
 describe("xml", () => {
-  bench("MetadataParser: XMP (issue11144_reduced.pdf)", () =>
+  benchmark("MetadataParser: XMP (issue11144_reduced.pdf)", () =>
     METADATA.map(data => new MetadataParser(data).serializable)
   );
 
-  bench("XFAFactory.getRichTextAsHtml (issue13447.pdf)", () =>
+  benchmark("XFAFactory.getRichTextAsHtml (issue13447.pdf)", () =>
     RICH_TEXTS.map(rc => XFAFactory.getRichTextAsHtml(rc))
   );
 
   for (const { filename, input } of XFA_DOCUMENTS) {
-    bench(
+    benchmark(
       `XFAFactory: parse and bind (${filename})`,
       () => new XFAFactory(input.data)
     );
   }
 
-  bench("XFAFactory: parse, bind and layout (xfa_issue14315.pdf)", () =>
+  benchmark("XFAFactory: parse, bind and layout (xfa_issue14315.pdf)", () =>
     XFA_FORM.layout(new XFAFactory(XFA_FORM.data))
   );
 });

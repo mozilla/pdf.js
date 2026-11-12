@@ -19,14 +19,15 @@ import {
   ARCFourCipher,
   PDF20,
 } from "../../src/core/crypto.js";
-import { bench, describe } from "vitest";
 import {
   capturePasswordHashes,
   createRandomBytes,
   encryptAES,
 } from "./crypto_utils.js";
+import { benchmark } from "./bench_utils.js";
 import { calculateSHA512 } from "../../src/core/calculate_sha_other.js";
 import { DecryptStream } from "../../src/core/decrypt_stream.js";
+import { describe } from "vitest";
 import { Stream } from "../../src/core/stream.js";
 
 const DATA = createRandomBytes(2 ** 16);
@@ -56,7 +57,7 @@ const PASSWORD_HASHES = await capturePasswordHashes("issue6010_1.pdf", "abc");
 
 describe("crypto", () => {
   for (const { kind, createCipher, bytes } of STREAMS) {
-    bench(`DecryptStream: ${kind} (64 KiB)`, () => {
+    benchmark(`DecryptStream: ${kind} (64 KiB)`, () => {
       const cipher = createCipher();
       return new DecryptStream(
         new Stream(bytes),
@@ -66,15 +67,15 @@ describe("crypto", () => {
     });
   }
 
-  bench("AES256Cipher.encrypt (64 KiB)", () =>
+  benchmark("AES256Cipher.encrypt (64 KiB)", () =>
     new AES256Cipher(KEY_256).encrypt(DATA, IV)
   );
 
-  bench("calculateSHA512 (64 KiB)", () =>
+  benchmark("calculateSHA512 (64 KiB)", () =>
     calculateSHA512(DATA, 0, DATA.length)
   );
 
-  bench("PDF20._hash (issue6010_1.pdf)", () => {
+  benchmark("PDF20._hash (issue6010_1.pdf)", () => {
     const pdf20 = new PDF20();
     return PASSWORD_HASHES.map(args => pdf20._hash(...args));
   });

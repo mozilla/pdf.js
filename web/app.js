@@ -43,6 +43,7 @@ import {
 import {
   AnnotationEditorType,
   build,
+  createPromiseCapability,
   FeatureTest,
   getDocument,
   getFilenameFromUrl,
@@ -52,6 +53,7 @@ import {
   isDataScheme,
   isPdfFile,
   MathClamp,
+  noopFn,
   OutputScale,
   PDFWorker,
   ResponseException,
@@ -113,7 +115,7 @@ const ViewOnLoad = {
 const PDFViewerApplication = {
   initialBookmark: document.location.hash.substring(1),
   _initializedCapability: {
-    ...Promise.withResolvers(),
+    ...createPromiseCapability(),
     settled: false,
   },
   appConfig: null,
@@ -201,6 +203,8 @@ const PDFViewerApplication = {
   _isScrolling: false,
   editorUndoBar: null,
   _printPermissionPromise: null,
+  // Only used to keep the preloaded icons alive, see `load`.
+  _preloadedIcons: null,
 
   // Called once when the document is loaded.
   async initialize(appConfig) {
@@ -384,7 +388,6 @@ const PDFViewerApplication = {
         enableGuessAltText: x => x === "true",
         enableNewBadge: x => x === "true",
         enablePermissions: x => x === "true",
-        enableMerge: x => x === "true",
         enableSelectionRendering: x => x === "true",
         enableSplitMerge: x => x === "true",
         enableUpdatedAddImage: x => x === "true",
@@ -482,7 +485,6 @@ const PDFViewerApplication = {
           foreground: AppOptions.get("pageColorsForeground"),
         }
       : null;
-    const enableMerge = AppOptions.get("enableMerge");
     const enableSplitMerge = AppOptions.get("enableSplitMerge");
 
     let altTextManager;
@@ -746,7 +748,6 @@ const PDFViewerApplication = {
         pageColors,
         abortSignal,
         enableSplitMerge,
-        enableMerge,
         enableNewBadge: AppOptions.get("enableNewBadge"),
         statusBar: viewsManager.viewsManagerStatusBar,
         undoBar: viewsManager.viewsManagerUndoBar,
@@ -913,7 +914,6 @@ const PDFViewerApplication = {
         elements: appConfig.viewsManager,
         eventBus,
         l10n,
-        enableMerge,
         enableSplitMerge,
         globalAbortSignal: abortSignal,
       });
@@ -1040,9 +1040,12 @@ const PDFViewerApplication = {
       );
     }
 
-    if (this.supportsIntegratedFind) {
-      appConfig.findBar?.toggleButton?.classList.add("hidden");
-    }
+    // The button is hidden by default in Firefox, where integrated find is
+    // only unsupported when the viewer is in a frame.
+    appConfig.findBar?.toggleButton?.classList.toggle(
+      "hidden",
+      this.supportsIntegratedFind
+    );
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       if (file) {
@@ -1510,9 +1513,9 @@ const PDFViewerApplication = {
 
     try {
       await this.pdfScriptingManager.dispatchWillSave();
-      const data = await pdfDocument.saveDocument(
-        this.externalServices.printToPDF
-      );
+      const data = await pdfDocument.saveDocument({
+        printToPDF: this.externalServices.printToPDF,
+      });
       this.downloadManager.download(
         data,
         this._downloadUrl,
@@ -1690,17 +1693,12 @@ const PDFViewerApplication = {
       });
     });
 
-    // Since the `setInitialView` call below depends on this being resolved,
-    // fetch it early to avoid delaying initial rendering of the PDF document.
-    const pageLayoutPromise = pdfDocument.getPageLayout().catch(() => {
-      /* Avoid breaking initial rendering; ignoring errors. */
-    });
-    const pageModePromise = pdfDocument.getPageMode().catch(() => {
-      /* Avoid breaking initial rendering; ignoring errors. */
-    });
-    const openActionPromise = pdfDocument.getOpenAction().catch(() => {
-      /* Avoid breaking initial rendering; ignoring errors. */
-    });
+    // Since the `setInitialView` call below depends on these being resolved,
+    // fetch them early to avoid delaying initial rendering of the document.
+    // Note: To avoid breaking initial rendering, ignore any errors.
+    const pageLayoutPromise = pdfDocument.getPageLayout().catch(noopFn);
+    const pageModePromise = pdfDocument.getPageMode().catch(noopFn);
+    const openActionPromise = pdfDocument.getOpenAction().catch(noopFn);
 
     this.toolbar?.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar?.setPagesCount(pdfDocument.numPages);
@@ -1737,9 +1735,7 @@ const PDFViewerApplication = {
         scrollMode: ScrollMode.UNKNOWN,
         spreadMode: SpreadMode.UNKNOWN,
       })
-      .catch(() => {
-        /* Unable to read from storage; ignoring errors. */
-      });
+      .catch(noopFn);
 
     firstPagePromise.then(pdfPage => {
       this.loadingBar?.setWidth(this.appConfig.viewerContainer);
@@ -1841,7 +1837,7 @@ const PDFViewerApplication = {
           // even if there are any errors thrown above.
           this.setInitialView();
         })
-        .then(function () {
+        .then(() => {
           // At this point, rendering of the initial page(s) should always have
           // started (and may even have completed).
           // To prevent any future issues, e.g. the document being completely
@@ -1909,6 +1905,63 @@ const PDFViewerApplication = {
             return; // The document was closed while the layers resolved.
           }
           this.pdfLayerViewer.render({ optionalContentConfig, pdfDocument });
+        });
+      }
+      if (
+        typeof PDFJSDev !== "undefined" &&
+        PDFJSDev.test("MOZCENTRAL && !GECKOVIEW") &&
+        !this._preloadedIcons
+      ) {
+        // The CSS only fetches an icon once its element is rendered, hence the
+        // UI hidden on load would first be displayed without its icons. Warm
+        // the image cache up, once the first page is rendered in order to not
+        // delay it, with the icons that aren't already preloaded in
+        // viewer.html (where only the ones visible on load are).
+        // NOTE: When modifying the icons used in the toolbars or in the views
+        // manager, please keep this list and the viewer.html one in sync.
+        this._preloadedIcons = [];
+        window.requestIdleCallback(() => {
+          const path = AppOptions.get("imageResourcesPath");
+          for (const name of [
+            // Secondary toolbar, which also contains the print and download
+            // buttons when the window is narrow (see the `hiddenMediumView`
+            // class in viewer.css).
+            "toolbarButton-print.svg",
+            "toolbarButton-download.svg",
+            "toolbarButton-presentationMode.svg",
+            "toolbarButton-bookmark.svg",
+            "secondaryToolbarButton-firstPage.svg",
+            "secondaryToolbarButton-lastPage.svg",
+            "secondaryToolbarButton-rotateCw.svg",
+            "secondaryToolbarButton-rotateCcw.svg",
+            "secondaryToolbarButton-selectTool.svg",
+            "secondaryToolbarButton-handTool.svg",
+            "secondaryToolbarButton-scrollPage.svg",
+            "secondaryToolbarButton-scrollVertical.svg",
+            "secondaryToolbarButton-scrollHorizontal.svg",
+            "secondaryToolbarButton-scrollWrapped.svg",
+            "secondaryToolbarButton-spreadNone.svg",
+            "secondaryToolbarButton-spreadOdd.svg",
+            "secondaryToolbarButton-spreadEven.svg",
+            "secondaryToolbarButton-documentProperties.svg",
+            // Views manager (see views_manager.css) and its menu.
+            "pages_viewButton.svg",
+            "pages_viewArrow.svg",
+            "checkmark.svg",
+            "toolbarButton-viewOutline.svg",
+            "toolbarButton-viewAttachments.svg",
+            "toolbarButton-viewLayers.svg",
+            "pages_closeButton.svg",
+            "altText_spinner.svg",
+            "altText_done.svg",
+          ]) {
+            const image = new Image();
+            image.src = path + name;
+            // The images are never read: keeping a reference to them prevents
+            // their entries, which expire when unused, from being evicted from
+            // the image cache before the icons are displayed.
+            this._preloadedIcons.push(image);
+          }
         });
       }
     });
@@ -2286,9 +2339,7 @@ const PDFViewerApplication = {
   beforePrint() {
     this._printAnnotationStoragePromise = this.pdfScriptingManager
       .dispatchWillPrint()
-      .catch(() => {
-        /* Avoid breaking printing; ignoring errors. */
-      })
+      .catch(noopFn) // Avoid breaking printing; ignoring errors.
       .then(() => this.pdfDocument?.annotationStorage.print);
 
     if (this.printService) {
@@ -2777,7 +2828,7 @@ const PDFViewerApplication = {
     document.blockUnblockOnload?.(false);
 
     // Ensure that this method is only ever run once.
-    this._unblockDocumentLoadEvent = () => {};
+    this._unblockDocumentLoadEvent = noopFn;
   },
 
   /**
@@ -2929,9 +2980,7 @@ function onSidebarViewChanged({ view }) {
 
   if (this.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.setMultiple({ sidebarView: view }).catch(() => {
-      // Unable to write to storage.
-    });
+    this.store?.setMultiple({ sidebarView: view }).catch(noopFn);
   }
 }
 
@@ -2946,9 +2995,7 @@ function onUpdateViewarea({ location }) {
         scrollTop: location.top,
         rotation: location.rotation,
       })
-      .catch(() => {
-        // Unable to write to storage.
-      });
+      .catch(noopFn);
   }
   if (this.appConfig.secondaryToolbar) {
     this.appConfig.secondaryToolbar.viewBookmarkButton.href =
@@ -2959,9 +3006,7 @@ function onUpdateViewarea({ location }) {
 function onViewerModesChanged(name, evt) {
   if (this.isInitialViewSet && !this.pdfViewer.isInPresentationMode) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.setMultiple({ [name]: evt.mode }).catch(() => {
-      // Unable to write to storage.
-    });
+    this.store?.setMultiple({ [name]: evt.mode }).catch(noopFn);
   }
 }
 
@@ -3153,7 +3198,9 @@ function onWheel(evt) {
     evt.preventDefault();
     // NOTE: this check must be placed *after* preventDefault.
     if (
-      this._isScrolling ||
+      // Allow trackpad pinching during scrolling (bug 1915803), but block
+      // physical Ctrl+wheel to avoid zooming on momentum events (issue #7022).
+      (this._isScrolling && !isPinchToZoom) ||
       document.visibilityState === "hidden" ||
       this.overlayManager.active
     ) {

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { App, AppInternals } from "./app.js";
 import {
   Border,
   Cursor,
@@ -27,23 +28,24 @@ import {
   Trans,
   ZoomType,
 } from "./constants.js";
-import { CheckboxField, Field, RadioButtonField } from "./field.js";
+import { Doc, DocInternals } from "./doc.js";
+import {
+  exposeObject,
+  serializeError,
+  useNativeToStringForPublicFunctions,
+} from "./app_utils.js";
 import { AForm } from "./aform.js";
-import { App } from "./app.js";
 import { Color } from "./color.js";
 import { Console } from "./console.js";
 import { createMap } from "./common.js";
-import { Doc } from "./doc.js";
-import { ProxyHandler } from "./proxy.js";
-import { serializeError } from "./app_utils.js";
+import { EventDispatcher } from "./event.js";
+import { Field } from "./field.js";
 import { Util } from "./util.js";
 
 function initSandbox(params) {
   delete globalThis.pdfjsScripting;
 
-  // externalCall is a function to call a function defined
-  // outside the sandbox.
-  // (see src/pdf.sandbox.external.js).
+  // Host callbacks are defined in src/pdf.sandbox.external.js.
   const externalCall = globalThis.callExternalFunction;
   delete globalThis.callExternalFunction;
 
@@ -51,26 +53,42 @@ function initSandbox(params) {
   // eslint-disable-next-line no-eval
   const globalEval = globalThis.eval.bind(globalThis);
   const send = data => externalCall("send", [data]);
-  const proxyHandler = new ProxyHandler();
   const { data } = params;
+  // Map widget and container IDs to fields.
+  const appObjects = Object.create(null);
+  const userActivationData = {
+    userActivation: false,
+    disablePrinting: false,
+    disableSaving: false,
+  };
+
+  let eventDispatcher = null;
   const doc = new Doc({
+    ...data.docInfo,
     send,
     globalEval,
-    ...data.docInfo,
+    appObjects,
+    userActivationData,
+    calculateNow: () => eventDispatcher.calculateNow(),
   });
-  const _document = { obj: doc, wrapped: new Proxy(doc, proxyHandler) };
+  eventDispatcher = new EventDispatcher(
+    doc,
+    data.calculationOrder,
+    appObjects,
+    externalCall,
+    userActivationData
+  );
   const app = new App({
+    ...data.appInfo,
     send,
     globalEval,
     externalCall,
-    _document,
-    calculationOrder: data.calculationOrder,
-    proxyHandler,
-    ...data.appInfo,
+    doc,
+    userActivationData,
   });
-
-  const util = new Util({ externalCall });
-  const appObjects = app._objects;
+  const util = new Util();
+  const getTerminalChildren = fieldName =>
+    DocInternals.getTerminalChildren(doc, fieldName);
 
   for (const [name, objs] of createMap(data.objects)) {
     const annotations = [];
@@ -91,49 +109,33 @@ function initSandbox(params) {
     }
 
     obj.globalEval = globalEval;
-    obj.doc = _document;
+    obj.sendError = send;
     obj.fieldPath = name;
     obj.appObjects = appObjects;
     obj.util = util;
+    obj.getTerminalChildren = getTerminalChildren;
 
-    const otherFields = annotations.slice(1);
-
-    let field;
-    switch (obj.type) {
-      case "radiobutton": {
-        field = new RadioButtonField(otherFields, obj);
-        break;
-      }
-      case "checkbox": {
-        field = new CheckboxField(otherFields, obj);
-        break;
-      }
-      default:
-        if (otherFields.length > 0) {
-          obj.siblings = otherFields.map(x => x.id);
-        }
-        field = new Field(obj);
-    }
-
-    const wrapped = new Proxy(field, proxyHandler);
-    const _object = { obj: field, wrapped };
-    doc._addField(name, _object);
+    const field = exposeObject(new Field(obj, annotations.slice(1)));
+    DocInternals.addField(doc, name, field);
     for (const object of objs) {
-      appObjects[object.id] = _object;
+      appObjects[object.id] = field;
     }
     if (container) {
-      appObjects[container.id] = _object;
+      appObjects[container.id] = field;
     }
   }
 
-  const color = new Color();
+  const color = exposeObject(new Color(), /* bindMethods = */ true);
 
   globalThis.event = null;
   globalThis.global = Object.create(null);
-  globalThis.app = new Proxy(app, proxyHandler);
-  globalThis.color = new Proxy(color, proxyHandler);
-  globalThis.console = new Proxy(new Console({ send }), proxyHandler);
-  globalThis.util = new Proxy(util, proxyHandler);
+  globalThis.app = exposeObject(app, /* bindMethods = */ true);
+  globalThis.color = color;
+  globalThis.console = exposeObject(
+    new Console({ send }),
+    /* bindMethods = */ true
+  );
+  globalThis.util = exposeObject(util, /* bindMethods = */ true);
   globalThis.border = Border;
   globalThis.cursor = Cursor;
   globalThis.display = Display;
@@ -152,10 +154,10 @@ function initSandbox(params) {
     Viewer_Value_Asked: true,
   };
 
-  // AF... functions
+  // Global form helpers.
   const aform = new AForm(doc, app, util, color);
   for (const name of Object.getOwnPropertyNames(AForm.prototype)) {
-    if (name !== "constructor" && !name.startsWith("_")) {
+    if (name !== "constructor") {
       globalThis[name] = aform[name].bind(aform);
     }
   }
@@ -183,7 +185,7 @@ function initSandbox(params) {
   // The doc properties must live in the global scope too
   const properties = Object.create(null);
   for (const name of Object.getOwnPropertyNames(Doc.prototype)) {
-    if (name === "constructor" || name.startsWith("_")) {
+    if (name === "constructor") {
       continue;
     }
     const descriptor = Object.getOwnPropertyDescriptor(Doc.prototype, name);
@@ -200,9 +202,11 @@ function initSandbox(params) {
   }
   Object.defineProperties(globalThis, properties);
 
+  useNativeToStringForPublicFunctions();
+
   const functions = {
-    dispatchEvent: app._dispatchEvent.bind(app),
-    timeoutCb: app._evalCallback.bind(app),
+    dispatchEvent: event => eventDispatcher.dispatch(event),
+    timeoutCb: timeout => AppInternals.evalCallback(app, timeout),
   };
 
   return (name, args) => {

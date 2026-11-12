@@ -21,7 +21,11 @@
 // eslint-disable-next-line max-len
 /** @typedef {import("./pdf_rendering_queue").PDFRenderingQueue} PDFRenderingQueue */
 
-import { OutputScale, RenderingCancelledException } from "pdfjs-lib";
+import {
+  createPromiseCapability,
+  OutputScale,
+  RenderingCancelledException,
+} from "pdfjs-lib";
 import { RenderableView, RenderingStates } from "./renderable_view.js";
 import { AppOptions } from "./app_options.js";
 
@@ -41,8 +45,8 @@ const THUMBNAIL_WIDTH = 126; // px
  * @property {PDFLinkService} linkService - The navigation/linking service.
  * @property {PDFRenderingQueue} renderingQueue - The rendering queue object.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
- *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ *   total pixels, i.e. width * height. Use `-1` for no limit.
+ *   The default value is 4096 * 8192 (32 mega-pixels).
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
@@ -92,7 +96,7 @@ class PDFThumbnailView extends RenderableView {
     this.viewport = defaultViewport;
     this.pdfPageRotate = defaultViewport.rotation;
     this._optionalContentConfigPromise = optionalContentConfigPromise || null;
-    this.maxCanvasPixels = maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
+    this.maxCanvasPixels = maxCanvasPixels || AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.pageColors = pageColors || null;
 
@@ -338,7 +342,7 @@ class PDFThumbnailView extends RenderableView {
     }
     const reducedCanvas = this.#reduceImage(canvas);
     const { imageContainer, image } = this;
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     reducedCanvas.toBlob(resolve);
     const blob = await promise;
     image.src = URL.createObjectURL(blob);

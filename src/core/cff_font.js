@@ -18,16 +18,28 @@ import { SEAC_ANALYSIS_ENABLED, type1FontGlyphMapping } from "./fonts_utils.js";
 import { warn } from "../shared/util.js";
 
 class CFFFont {
+  #replacedGlyphId = -1;
+
+  isCompiled = false;
+
   constructor(file, properties) {
     this.properties = properties;
 
     const parser = new CFFParser(file, properties, SEAC_ANALYSIS_ENABLED);
     this.cff = parser.parse();
-    this.cff.duplicateFirstGlyph();
+    const { charStringCount } = this.cff;
+    this.glyphZeroId = this.cff.duplicateFirstGlyph(
+      /* replaceEmptyGlyph = */ true
+    );
+    if (this.glyphZeroId > 0 && this.glyphZeroId < charStringCount) {
+      // Glyph 0 replaced an existing empty glyph.
+      this.#replacedGlyphId = this.glyphZeroId;
+    }
     const compiler = new CFFCompiler(this.cff);
     this.seacs = this.cff.seacs;
     try {
       this.data = compiler.compile();
+      this.isCompiled = true;
     } catch (ex) {
       warn(`Failed to compile font "${properties.loadedName}": "${ex}".`);
       // There may have just been an issue with the compiler, set the data
@@ -93,15 +105,13 @@ class CFFFont {
       return charCodeToGlyphId;
     }
 
-    let encoding = cff.encoding ? cff.encoding.encoding : null;
-    if (properties.isInternalFont) {
-      encoding = properties.defaultEncoding;
-    }
+    const encoding = cff.encoding ? cff.encoding.encoding : null;
     return type1FontGlyphMapping(properties, encoding, charsets);
   }
 
   hasGlyphId(id) {
-    return this.cff.hasGlyphId(id);
+    // Keep the replaced glyph's original characters invisible.
+    return id !== this.#replacedGlyphId && this.cff.hasGlyphId(id);
   }
 
   /**

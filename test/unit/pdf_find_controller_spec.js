@@ -360,6 +360,27 @@ describe("pdf_find_controller", function () {
     await loadingTask.destroy();
   });
 
+  it("performs a multiple term (no phrase) search with a stripped term", async function () {
+    const { eventBus, loadingTask, pdfFindController } =
+      await initPdfFindController();
+
+    await testSearch({
+      eventBus,
+      pdfFindController,
+      state: {
+        query: ["alternate", "\u0301", "solution"],
+      },
+      matchesPerPage: [0, 0, 0, 0, 0, 1, 0, 0, 4, 0, 0, 0, 0, 0],
+      selectedMatch: {
+        pageIndex: 5,
+        matchIndex: 0,
+      },
+    });
+
+    pdfFindController.setDocument(null);
+    await loadingTask.destroy();
+  });
+
   it("performs a multiple term (phrase) search", async function () {
     // Page 9 contains 'alternate solution' and pages 6 and 9 contain
     // 'solution'. Both should be found for multiple term (phrase) search.
@@ -810,14 +831,14 @@ describe("pdf_find_controller", function () {
       },
       pageMatches: [
         [
-          302, 340, 418, 481, 628, 802, 983, 989, 1015, 1063, 1084, 1149, 1157,
-          1278, 1346, 1394, 1402, 1424, 1500, 1524, 1530, 1686, 1776, 1788,
-          1859, 1881, 1911, 1948, 2066, 2076, 2163, 2180, 2215, 2229, 2274,
-          2324, 2360, 2402, 2413, 2424, 2463, 2532, 2538, 2553, 2562, 2576,
-          2602, 2613, 2638, 2668, 2792, 2805, 2836, 2847, 2858, 2895, 2901,
-          2915, 2939, 2959, 3089, 3236, 3246, 3336, 3384, 3391, 3465, 3474,
-          3482, 3499, 3687, 3693, 3708, 3755, 3786, 3862, 3974, 4049, 4055,
-          4068,
+          302, 340, 418, 481, 628, 802, 983, 989, 1015, 1057, 1078, 1143, 1151,
+          1272, 1340, 1388, 1396, 1418, 1494, 1518, 1524, 1680, 1770, 1782,
+          1853, 1875, 1905, 1942, 2060, 2070, 2157, 2174, 2209, 2223, 2268,
+          2318, 2354, 2396, 2407, 2418, 2457, 2526, 2532, 2547, 2556, 2570,
+          2596, 2607, 2632, 2662, 2786, 2799, 2830, 2841, 2852, 2889, 2895,
+          2909, 2933, 2953, 3083, 3230, 3240, 3330, 3378, 3385, 3459, 3468,
+          3476, 3493, 3681, 3687, 3702, 3749, 3780, 3856, 3968, 4043, 4049,
+          4062,
         ],
       ],
       pageMatchesLength: [
@@ -1286,6 +1307,77 @@ describe("pdf_find_controller", function () {
       pageMatches: [[6]],
       pageMatchesLength: [[10]],
     });
+
+    pdfFindController.setDocument(null);
+    await loadingTask.destroy();
+  });
+
+  it("performs a search with whitespaces around punctuation signs", async () => {
+    const { eventBus, loadingTask, pdfFindController } =
+      await initPdfFindController();
+
+    await testEmptySearch({
+      eventBus,
+      pdfFindController,
+      state: { query: ". ," },
+    });
+
+    expect(pdfFindController.match(". ,", "a.   ,b", 0)).toEqual([
+      { index: 1, length: 5 },
+    ]);
+    expect(pdfFindController.match("a . b", "a.b a  .  b", 0)).toEqual([
+      { index: 4, length: 7 },
+    ]);
+    expect(pdfFindController.match(" \u0301 b", "a  b a b", 0)).toEqual([
+      { index: 1, length: 3 },
+    ]);
+    expect(pdfFindController.match(" y", "a   y y  y", 0)).toEqual([
+      { index: 1, length: 4 },
+      { index: 5, length: 2 },
+      { index: 7, length: 3 },
+    ]);
+    expect(pdfFindController.match("\u0301, y", "a, y  , y,  y", 0)).toEqual([
+      { index: 1, length: 3 },
+      { index: 4, length: 5 },
+      { index: 9, length: 4 },
+    ]);
+
+    const startTime = performance.now();
+    for (const [query, pageContent] of [
+      [". ,", `.${" ".repeat(3000)}x`],
+      ["a .", `a${" ".repeat(3000)}x`],
+      [", .", `,${" ".repeat(3000)}x`],
+      [" y", `.${" ".repeat(100000)}x`],
+      ["\u0301, y", `.${" ".repeat(100000)}x`],
+    ]) {
+      expect(pdfFindController.match(query, pageContent, 0)).toEqual([]);
+    }
+    expect(performance.now() - startTime).toBeLessThan(1000);
+
+    pdfFindController.setDocument(null);
+    await loadingTask.destroy();
+  });
+
+  it("performs a search with whitespaces around a diacritic", async () => {
+    const { eventBus, loadingTask, pdfFindController } =
+      await initPdfFindController("issue12909.pdf");
+
+    await testEmptySearch({
+      eventBus,
+      pdfFindController,
+      state: { query: "\u00b4 ", matchDiacritics: true },
+    });
+
+    expect(pdfFindController.match(" \u0301 ", " \u0301  \u0301 ", 1)).toEqual([
+      { index: 0, length: 3 },
+      { index: 3, length: 3 },
+    ]);
+
+    const startTime = performance.now();
+    expect(
+      pdfFindController.match(" \u0301 ", `.${" ".repeat(100000)}x`, 1)
+    ).toEqual([]);
+    expect(performance.now() - startTime).toBeLessThan(1000);
 
     pdfFindController.setDocument(null);
     await loadingTask.destroy();

@@ -113,6 +113,14 @@
   color: blue;
 }
 
+.xfaLayer b {
+  font-weight: bold;
+}
+
+.xfaLayer i {
+  font-style: italic;
+}
+
 .xfaRich li {
   margin-left: 3em;
 }

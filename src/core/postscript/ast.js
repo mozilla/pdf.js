@@ -518,7 +518,11 @@ function _binaryValueType(op, firstType, secondType) {
  * expressions — one per function output channel.
  *
  * Usage:
- *   const outputs = new PSStackToTree().evaluate(program, numInputs);
+ *   const outputs = new PSStackToTree().evaluate(
+ *     program,
+ *     numInputs,
+ *     numOutputs
+ *   );
  */
 class PSStackToTree {
   static #binaryOps = null;
@@ -595,9 +599,11 @@ class PSStackToTree {
    * @param {PsProgram} program
    * @param {number} numInputs — number of domain values placed on the stack
    *   before the program runs (i.e. the length of the domain array / 2).
+   * @param {number} [numOutputs] — when defined, only the values at the top
+   *   of the stack are kept as outputs, like the interpreter does.
    * @returns {Array<PsNode>} — one tree node per output value.
    */
-  evaluate(program, numInputs) {
+  evaluate(program, numInputs, numOutputs) {
     if (!PSStackToTree.#binaryOps) {
       PSStackToTree.#init();
     }
@@ -614,6 +620,12 @@ class PSStackToTree {
     this._evalBlock(program.body, stack);
     if (this._failed) {
       return null;
+    }
+    if (numOutputs !== undefined) {
+      if (stack.length < numOutputs) {
+        return null;
+      }
+      stack.splice(0, stack.length - numOutputs);
     }
     PSStackToTree.#markShared(stack);
     return stack;
@@ -751,15 +763,17 @@ class PSStackToTree {
               // well-formed PostScript functions this happens when the
               // remaining code still has a "default value" guard that fires
               // unconditionally for one path but not the other.  Pad the
-              // shorter result with PsConstNode(0) so both have the same
-              // length; the padding zeros end up in ternary branches that
-              // are never selected at runtime.
+              // bottom of the shorter result with PsConstNode(0) so both have
+              // the same length while staying aligned on their top, which is
+              // where the operators and the outputs take their values from;
+              // the padding zeros then end up in ternary branches that are
+              // never selected at runtime.
               const zero = new PsConstNode(0);
               while (trueStack.length < falseStack.length) {
-                trueStack.push(zero);
+                trueStack.unshift(zero);
               }
               while (falseStack.length < trueStack.length) {
-                falseStack.push(zero);
+                falseStack.unshift(zero);
               }
             }
             stack.length = 0;
@@ -798,15 +812,16 @@ class PSStackToTree {
           }
 
           if (thenStack.length !== elseStack.length) {
-            // Pad the shorter branch with zeros so both have the same depth.
+            // Pad the bottom of the shorter branch with zeros so both have the
+            // same depth while staying aligned on their top.
             // For well-formed functions the extra zeros land in branches that
             // are never selected at runtime.
             const zero = new PsConstNode(0);
             while (thenStack.length < elseStack.length) {
-              thenStack.push(zero);
+              thenStack.unshift(zero);
             }
             while (elseStack.length < thenStack.length) {
-              elseStack.push(zero);
+              elseStack.unshift(zero);
             }
           }
           stack.length = 0;
@@ -1127,16 +1142,16 @@ class PSStackToTree {
           break;
         case TOKEN.idiv:
           if (b === 1) {
-            return second; // x idiv 1 → x
+            // x idiv 1 → truncate(x): x isn't necessarily an integer.
+            return this._makeUnary(TOKEN.truncate, second);
           }
           break;
         case TOKEN.exp:
           if (b === 1) {
             return second; // x ^ 1 → x
           }
-          if (b === -1) {
-            return this._makeBinary(TOKEN.div, second, new PsConstNode(1));
-          }
+          // x ^ -1 isn't replaced by 1 / x, since `div` returns 0 for x = 0
+          // whereas `exp` returns Infinity.
           if (b === 0.5) {
             return this._makeUnary(TOKEN.sqrt, second); // x ^ 0.5 → sqrt(x)
           }

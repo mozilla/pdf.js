@@ -14,13 +14,9 @@
  */
 
 import { AnnotationEditorType, AnnotationPrefix } from "../../shared/util.js";
-import {
-  OutputScale,
-  PixelsPerInch,
-  SupportedImageMimeTypes,
-} from "../display_utils.js";
+import { ColorScheme, SupportedImageMimeTypes } from "../dom_utils.js";
+import { OutputScale, PixelsPerInch } from "../display_utils.js";
 import { AnnotationEditor } from "./editor.js";
-import { ColorScheme } from "../dom_utils.js";
 import { StampAnnotationElement } from "../annotation_layer.js";
 
 /**

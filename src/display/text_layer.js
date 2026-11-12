@@ -19,7 +19,9 @@
 
 import {
   AbortException,
+  createPromiseCapability,
   FeatureTest,
+  noopFn,
   shadow,
   Util,
   warn,
@@ -50,7 +52,7 @@ const MAX_TEXT_DIVS_TO_RENDER = 100000;
 const DEFAULT_FONT_SIZE = 30;
 
 class TextLayer {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #container = null;
 
@@ -145,9 +147,7 @@ class TextLayer {
         this.#layoutTextParams = null;
         this.#styleCache = null;
       })
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      });
+      .catch(noopFn);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
@@ -236,9 +236,7 @@ class TextLayer {
   cancel() {
     const abortEx = new AbortException("TextLayer task cancelled.");
 
-    this.#reader?.cancel(abortEx).catch(() => {
-      // Avoid "Uncaught promise" messages in the console.
-    });
+    this.#reader?.cancel(abortEx).catch(noopFn);
     this.#reader = null;
 
     this.#capability.reject(abortEx);
@@ -347,8 +345,8 @@ class TextLayer {
     const divStyle = textDiv.style;
     // Setting the style properties individually, rather than all at once,
     // should be OK since the `textDiv` isn't appended to the document yet.
-    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(2)}%`;
-    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
+    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(3)}%`;
+    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(3)}%`;
     // The text is laid out with the rounded value, hence keep it around in
     // order to measure the text with the very same size, see `#layout`.
     const roundedFontHeight = Math.round(fontHeight * 100) / 100;

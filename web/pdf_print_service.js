@@ -15,6 +15,8 @@
 
 import {
   AnnotationMode,
+  createPromiseCapability,
+  noopFn,
   PixelsPerInch,
   RenderingCancelledException,
   shadow,
@@ -211,13 +213,10 @@ class PDFPrintService {
     wrapper.append(img);
     this.printContainer.append(wrapper);
 
-    const { promise, resolve, reject } = Promise.withResolvers();
+    const { promise, resolve, reject } = createPromiseCapability();
     img.onload = resolve;
     img.onerror = reject;
 
-    promise.catch(() => {
-      // Avoid "Uncaught promise" messages in the console.
-    });
     return promise;
   }
 
@@ -279,9 +278,7 @@ window.print = function () {
       activeService
         .renderPages()
         .then(() => activeServiceOnEntry.performPrint())
-        .catch(() => {
-          // Ignore any error messages.
-        })
+        .catch(noopFn)
         .then(() => {
           // aborts acts on the "active" print request, so we need to check
           // whether the print request (activeServiceOnEntry) is still active.

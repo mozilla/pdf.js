@@ -15,6 +15,7 @@
 
 import { setVerbosityLevel, VerbosityLevel } from "../../src/shared/util.js";
 import fs from "fs";
+import { test } from "vitest";
 import { WorkerMessageHandler } from "../../src/core/worker.js";
 
 // Avoid flooding the benchmark output with `info`/`warn` messages.
@@ -33,17 +34,19 @@ const ROOT_URL = new URL("../../", import.meta.url);
 
 const CMAP_URL = new URL("external/bcmaps/", ROOT_URL).pathname;
 const ICC_URL = new URL("external/iccs/", ROOT_URL).pathname;
-const STANDARD_FONT_DATA_URL = new URL("external/standard_fonts/", ROOT_URL)
-  .pathname;
+const STANDARD_FONT_DATA_URL = new URL("external/hellbox/", ROOT_URL).pathname;
 const WASM_URL = new URL("wasm/", ROOT_URL).pathname;
 
 const WASM_PATHS = new Map(
-  ["jbig2/jbig2.wasm", "openjpeg/openjpeg.wasm", "qcms/qcms_bg.wasm"].map(
-    path => [
-      `${WASM_URL}${path.split("/")[1]}`,
-      new URL(`external/${path}`, ROOT_URL).pathname,
-    ]
-  )
+  [
+    "hellbox/hellbox_bg.wasm",
+    "jbig2/jbig2.wasm",
+    "openjpeg/openjpeg.wasm",
+    "qcms/qcms_bg.wasm",
+  ].map(path => [
+    `${WASM_URL}${path.split("/")[1]}`,
+    new URL(`external/${path}`, ROOT_URL).pathname,
+  ])
 );
 
 function readFile(relativePath) {
@@ -101,4 +104,11 @@ function buildGetDocumentParams(data) {
   };
 }
 
-export { buildGetDocumentParams, readFile, readTestPdf };
+function benchmark(name, fn) {
+  // Wrapper function to reduce boilerplate for the individual benchmarks.
+  test(name, async ({ bench }) => {
+    await bench(name, fn).run();
+  });
+}
+
+export { benchmark, buildGetDocumentParams, readFile, readTestPdf };

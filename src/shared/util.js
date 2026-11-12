@@ -30,6 +30,11 @@ const F32_BBOX_INIT = new Float32Array(BBOX_INIT);
 
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+// Default CIDFont /DW2: [vertical origin y, vertical displacement y].
+// PDF 1.7, Table 5.14 specifies [880 -1000].
+const DEFAULT_VERTICAL_ORIGIN_Y = 880;
+const DEFAULT_VERTICAL_ADVANCE = 1000;
+
 // Represent the percentage of the height of a single-line field over
 // the font size. Acrobat seems to use this value.
 const LINE_FACTOR = 1.35;
@@ -736,6 +741,14 @@ class Util {
     return `#${this.hexNums[r]}${this.hexNums[g]}${this.hexNums[b]}`;
   }
 
+  static get identity0to256Map() {
+    return shadow(
+      this,
+      "identity0to256Map",
+      Uint8Array.from({ length: 256 }, (_, i) => i)
+    );
+  }
+
   // Concatenates two transformation matrices together and returns the result.
   static transform(m1, m2) {
     return [
@@ -830,10 +843,10 @@ class Util {
       b2 += m1r2;
     }
 
-    output[0] = Math.min(output[0], a0, a1, a2, a3);
-    output[1] = Math.min(output[1], b0, b1, b2, b3);
-    output[2] = Math.max(output[2], a0, a1, a2, a3);
-    output[3] = Math.max(output[3], b0, b1, b2, b3);
+    output[0] = Math.min(output[0], a0, a1, Math.min(a2, a3));
+    output[1] = Math.min(output[1], b0, b1, Math.min(b2, b3));
+    output[2] = Math.max(output[2], a0, a1, Math.max(a2, a3));
+    output[3] = Math.max(output[3], b0, b1, Math.max(b2, b3));
   }
 
   static inverseTransform(m) {
@@ -1125,6 +1138,17 @@ function _isValidExplicitDest(validRef, validName, dest) {
   return true;
 }
 
+// A no-op function, useful e.g. with `catch` handlers that ignore errors.
+function noopFn() {}
+
+// A wrapper around the `Promise.withResolvers()` function, that prevents
+// "uncaught exception: Object"-messages in the console for unhandled promises.
+function createPromiseCapability() {
+  const pc = Promise.withResolvers();
+  pc.promise.catch(noopFn);
+  return pc;
+}
+
 // Helpers for simple `Map.prototype.getOrInsertComputed()` invocations,
 // to avoid duplicate function creation.
 const makeArr = () => [];
@@ -1182,7 +1206,10 @@ export {
   BASELINE_FACTOR,
   BBOX_INIT,
   bytesToString,
+  createPromiseCapability,
   createValidAbsoluteUrl,
+  DEFAULT_VERTICAL_ADVANCE,
+  DEFAULT_VERTICAL_ORIGIN_Y,
   DocumentActionEventType,
   DrawOPS,
   F32_BBOX_INIT,
@@ -1203,6 +1230,7 @@ export {
   makeObj,
   makeSet,
   MeshFigureType,
+  noopFn,
   normalizeUnicode,
   OPS,
   PageActionEventType,

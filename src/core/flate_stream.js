@@ -19,7 +19,7 @@
  * license.
  */
 
-import { FormatError, info } from "../shared/util.js";
+import { assert, FormatError, info } from "../shared/util.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Stream } from "./stream.js";
 
@@ -122,13 +122,29 @@ const fixedDistCodeTab = [
 ];
 
 class FlateStream extends DecodeStream {
+  // Use JS for streams with a small compressed size.
+  static #MIN_NATIVE_COMPRESSED_LENGTH = 1024;
+
+  // Prefer native decoding for larger expected outputs.
+  static #MAX_JS_DECODED_LENGTH = 16384;
+
   #isAsync = true;
+
+  #decodeInJS = false;
 
   constructor(str, maybeLength) {
     super(maybeLength);
 
     this.stream = str;
     this.dict = str.dict;
+
+    if (
+      str instanceof Stream &&
+      str.length < FlateStream.#MIN_NATIVE_COMPRESSED_LENGTH
+    ) {
+      assert(!str.isAsync, "Stream sub-classes are never asynchronous");
+      this.#decodeInJS = true;
+    }
 
     const cmf = str.getByte();
     const flg = str.getByte();
@@ -152,17 +168,32 @@ class FlateStream extends DecodeStream {
   }
 
   async getImageData(length, _decoderOptions) {
-    const data = await this.asyncGetBytes();
+    const data = await this.asyncGetBytes(length);
     if (!data) {
       return this.getBytes(length);
     }
     return data.length <= length ? data : data.subarray(0, length);
   }
 
-  async asyncGetBytes() {
+  /**
+   * @param {number} [decodedLength] - Expected output length, or 0 if unknown.
+   */
+  async asyncGetBytes(decodedLength = 0) {
     if (!this.#isAsync) {
       return null;
     }
+    if (
+      this.#decodeInJS &&
+      (decodedLength <= FlateStream.#MAX_JS_DECODED_LENGTH ||
+        this.bufferLength > 0 ||
+        this.eof)
+    ) {
+      // Returning bytes lets callers wrap them in a plain `Stream`.
+      this.reset();
+      return this.getBytes(decodedLength);
+    }
+    // After native decoding succeeds, the JS decoder cannot reuse the input.
+    this.#decodeInJS = false;
     const { decompressed, compressed } =
       await this.asyncGetBytesFromDecompressionStream("deflate");
     if (decompressed) {

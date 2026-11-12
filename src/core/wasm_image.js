@@ -13,36 +13,18 @@
  * limitations under the License.
  */
 
-import { unreachable, warn } from "../shared/util.js";
-import { fetchBinaryData } from "./core_utils.js";
+import { createPromiseCapability, unreachable, warn } from "../shared/util.js";
+import { WasmLoader } from "./wasm_loader.js";
 
 class WasmImage {
-  static #getHandler = null;
-
   static #instances = new Set();
 
-  static #useWasm = true;
-
-  static #useWorkerFetch = true;
-
-  static #wasmUrl = null;
-
-  #buffer = null;
+  static #options = { useWasm: true, useWorkerFetch: true, wasmUrl: null };
 
   #modulePromise = null;
 
-  _filename = null;
-
-  _noWasmFilename = null;
-
   static setOptions({ getHandler, useWasm, useWorkerFetch, wasmUrl }) {
-    WasmImage.#useWasm = useWasm;
-    WasmImage.#useWorkerFetch = useWorkerFetch;
-    WasmImage.#wasmUrl = wasmUrl;
-
-    if (!useWorkerFetch) {
-      WasmImage.#getHandler = getHandler;
-    }
+    WasmImage.#options = { getHandler, useWasm, useWorkerFetch, wasmUrl };
   }
 
   // eslint-disable-next-line getter-return
@@ -56,68 +38,37 @@ class WasmImage {
     }
   }
 
-  constructor(trackInstance = false) {
+  constructor(filename, noWasmFilename) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === WasmImage
     ) {
       unreachable("Cannot initialize WasmImage.");
     }
-
-    if (trackInstance) {
-      // Keep track of the instances for `cleanup` purposes.
-      WasmImage.#instances.add(this);
-    }
-  }
-
-  async #getJsInstance(imports) {
-    const { default: instantiate } = await (typeof PDFJSDev === "undefined"
-      ? // eslint-disable-next-line no-unsanitized/method
-        import(`../${WasmImage.#wasmUrl}${this._noWasmFilename}`)
-      : __raw_import__(`${WasmImage.#wasmUrl}${this._noWasmFilename}`));
-    return { exports: instantiate(imports) };
-  }
-
-  async #getWasmInstance(imports) {
-    if (!this.#buffer) {
-      if (WasmImage.#useWorkerFetch) {
-        this.#buffer = await fetchBinaryData(
-          `${WasmImage.#wasmUrl}${this._filename}`
-        );
-      } else {
-        if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-          throw new Error("Only worker-thread fetching supported.");
-        }
-        this.#buffer = await WasmImage.#getHandler().sendWithPromise(
-          "FetchBinaryData",
-          { kind: "wasmUrl", filename: this._filename }
-        );
-      }
-    }
-    const results = await WebAssembly.instantiate(this.#buffer, imports);
-    return results.instance;
+    this._filename = filename;
+    this._noWasmFilename = noWasmFilename;
+    // Keep track of the instances for `cleanup` purposes.
+    WasmImage.#instances.add(this);
   }
 
   async #instantiateWasm(failureCallback, imports, successCallback) {
-    if (WasmImage.#useWasm) {
-      try {
-        return successCallback(await this.#getWasmInstance(imports));
-      } catch (ex) {
-        warn(`#getWasmInstance: ${ex}`);
-      }
+    const loaded = await WasmLoader.load(
+      {
+        handler: WasmImage.#options.getHandler?.(),
+        options: WasmImage.#options,
+      },
+      this._filename,
+      this._noWasmFilename,
+      instantiate => successCallback({ exports: instantiate(imports) })
+    );
+    if (!loaded) {
+      failureCallback(null);
     }
-    try {
-      return successCallback(await this.#getJsInstance(imports));
-    } catch (ex) {
-      warn(`#getJsInstance: ${ex}`);
-    }
-    failureCallback(null);
-    return null;
   }
 
   _getModule(ImageDecoder) {
     if (!this.#modulePromise) {
-      const { promise, resolve } = Promise.withResolvers();
+      const { promise, resolve } = createPromiseCapability();
       this.#modulePromise = Promise.race([
         promise,
         ImageDecoder({

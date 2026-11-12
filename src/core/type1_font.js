@@ -167,6 +167,9 @@ function isCidKeyedType1File(file) {
 class Type1Font {
   #rawFileLength;
 
+  // `wrap` always compiles the CFF data.
+  isCompiled = true;
+
   constructor(name, file, properties) {
     let data;
     if (properties.composite && isCidKeyedType1File(file)) {

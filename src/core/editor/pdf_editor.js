@@ -2493,27 +2493,67 @@ class PDFEditor {
       await this.#collectDependencies(resources, true, xref)
     );
 
-    let newAnnots = null;
-
-    if (annotations) {
-      const newAnnotations = await this.#collectDependencies(
-        annotations,
-        true,
-        xref
-      );
-      this.#fixNamedDestinations(newAnnotations, dedupNamedDestinations);
-      if (Array.isArray(newAnnotations) && newAnnotations.length > 0) {
-        newAnnots = newAnnotations;
-      }
-    }
-
     const newAnnotations =
       documentData.document === this.#primaryDocument
         ? this.#newAnnotationsParams?.newAnnotationsByPage
             ?.get(page.pageIndex)
             ?.filter(({ copyLevel: level }) => (level ?? 0) === copyLevel)
         : null;
+    const deletedAnnotations = new RefSet();
+    for (const { id, deleted, popup, popupRef } of newAnnotations || []) {
+      if (!Ref.fromString(id)) {
+        continue;
+      }
+      if (deleted) {
+        deletedAnnotations.put(id);
+      }
+      if (popupRef && (deleted || popup?.deleted)) {
+        deletedAnnotations.put(popupRef);
+      }
+    }
+
+    let newAnnots = null;
+
+    if (annotations) {
+      const keptAnnotations = await this.#collectDependencies(
+        annotations.filter(
+          annotation =>
+            !(annotation instanceof Ref && deletedAnnotations.has(annotation))
+        ),
+        true,
+        xref
+      );
+      this.#fixNamedDestinations(keptAnnotations, dedupNamedDestinations);
+      if (Array.isArray(keptAnnotations) && keptAnnotations.length > 0) {
+        newAnnots = keptAnnotations;
+      }
+    }
+
     if (newAnnotations?.length) {
+      // Update edited annotations and popups in place.
+      const editedAnnotations = new RefSet();
+      const updateInPlace = (data, id) => {
+        const ref = id && oldRefMapping.get(id);
+        const dict = ref && this.xref[ref.num];
+        if (!(dict instanceof Dict)) {
+          return false;
+        }
+        data.ref = ref;
+        data.oldAnnotation = dict;
+        editedAnnotations.put(ref);
+        return true;
+      };
+      for (const annotation of newAnnotations) {
+        if (annotation.deleted || !updateInPlace(annotation, annotation.id)) {
+          continue;
+        }
+        delete annotation.id;
+        const { popup } = annotation;
+        if (popup && !popup.deleted) {
+          updateInPlace(popup, annotation.popupRef);
+        }
+      }
+
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
       const changes = new RefMap();
       const newData = await AnnotationFactory.saveNewAnnotations(
@@ -2529,7 +2569,9 @@ class PDFEditor {
       }
       newAnnots ||= [];
       for (const { ref } of newData.annotations) {
-        newAnnots.push(ref);
+        if (!editedAnnotations.has(ref)) {
+          newAnnots.push(ref);
+        }
       }
     }
 

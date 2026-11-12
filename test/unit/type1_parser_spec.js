@@ -65,6 +65,31 @@ describe("Type1Parser", function () {
     return out;
   }
 
+  function createFontProgramStream(subrs, charstrings) {
+    let program = `/lenIV -1 def\n/Subrs ${subrs.length} array\n`;
+    for (let i = 0; i < subrs.length; i++) {
+      const subr = bytesToString(new Uint8Array(subrs[i]));
+      program += `dup ${i} ${subrs[i].length} RD ${subr} NP\n`;
+    }
+    program += `end\n/CharStrings ${charstrings.length} dict dup begin\n`;
+    for (let i = 0; i < charstrings.length; i++) {
+      const charstring = bytesToString(new Uint8Array(charstrings[i]));
+      program += `/g${i} ${charstrings[i].length} RD ${charstring} ND\n`;
+    }
+    return new StringStream(program + "end");
+  }
+
+  function convertCharstrings(subrs, charstrings) {
+    const stream = createFontProgramStream(subrs, charstrings);
+    const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
+    return parser.extractFontProgram({}).charstrings.map(c => c.charstring);
+  }
+
+  const repeat = (ops, count) => new Array(count).fill(ops).flat();
+
+  // 0 50 hsbw
+  const hsbw = [139, 189, 13];
+
   it("splits tokens", function () {
     const stream = new StringStream("/BlueValues[-17 0]noaccess def");
     const parser = new Type1Parser(stream, false, SEAC_ANALYSIS_ENABLED);
@@ -142,6 +167,65 @@ describe("Type1Parser", function () {
     const program = parser.extractFontProgram({});
     expect(program.charstrings.length).toEqual(1);
     expect(program.properties.privateData.get("ExpansionFactor")).toEqual(99);
+  });
+
+  it("rejects charstrings with too deeply nested subrs", function () {
+    const subrs = [];
+    for (let i = 0; i < 16; i++) {
+      subrs.push([/* i + 1 */ 140 + i, /* callsubr */ 10, /* return */ 11]);
+    }
+    subrs.push([11]);
+    const [deep, tooDeep] = convertCharstrings(subrs, [
+      [...hsbw, /* 1 */ 140, 10, 14],
+      [...hsbw, /* 0 */ 139, 10, 14],
+    ]);
+    expect(deep).not.toEqual([14]);
+    expect(tooDeep).toEqual([14]);
+  });
+
+  it("rejects charstrings executing too many operators and operands", function () {
+    const [tooLong, short] = convertCharstrings(
+      [
+        [...repeat([/* 1 */ 140, /* callsubr */ 10], 256), 11],
+        [...repeat([/* 0 0 */ 139, 139, /* hstem */ 1], 1024), 11],
+      ],
+      [
+        [...hsbw, ...repeat([/* 0 */ 139, 10], 512), 14],
+        [...hsbw, 139, 10, 14],
+      ]
+    );
+    expect(tooLong).toEqual([14]);
+    expect(short).not.toEqual([14]);
+  });
+
+  it("rejects charstrings overflowing the operand stack", function () {
+    const [overflow, full] = convertCharstrings(
+      [],
+      [
+        [...hsbw, ...repeat([139], 49), /* rlineto */ 5, 14],
+        [...hsbw, ...repeat([139], 48), 5, 14],
+      ]
+    );
+    expect(overflow).toEqual([14]);
+    expect(full).not.toEqual([14]);
+  });
+
+  it("rejects charstrings exceeding the maximum length", function () {
+    // Here, hsbw/rlineto emit 7 bytes and hlineto emits 4.
+    const [tooLong, longest] = convertCharstrings(
+      [],
+      [
+        [
+          ...hsbw,
+          ...repeat([139, 139, /* rlineto */ 5], 9360),
+          ...repeat([139, /* hlineto */ 6], 2),
+          14,
+        ],
+        [...hsbw, ...repeat([139, 139, 5], 9361), 14],
+      ]
+    );
+    expect(tooLong).toEqual([14]);
+    expect(longest.length).toEqual(65535);
   });
 
   it("parses a CID-keyed Type 1 font program", function () {

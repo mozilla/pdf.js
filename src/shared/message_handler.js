@@ -16,7 +16,9 @@
 import {
   AbortException,
   assert,
+  createPromiseCapability,
   InvalidPDFException,
+  noopFn,
   PasswordException,
   ResponseException,
   UnknownErrorException,
@@ -37,8 +39,6 @@ const StreamKind = {
   PULL_COMPLETE: 7,
   START_COMPLETE: 8,
 };
-
-function onFn() {}
 
 function wrapReason(ex) {
   if (
@@ -213,7 +213,7 @@ class MessageHandler {
    */
   sendWithPromise(actionName, data, transfers) {
     const callbackId = this.#callbackId++,
-      capability = Promise.withResolvers();
+      capability = createPromiseCapability();
     this.#callbackCapabilities.set(callbackId, capability);
     try {
       this.#comObj.postMessage(
@@ -251,7 +251,7 @@ class MessageHandler {
     return new ReadableStream(
       {
         start: controller => {
-          const startCapability = Promise.withResolvers();
+          const startCapability = createPromiseCapability();
           this.#streamControllers.set(streamId, {
             controller,
             startCall: startCapability,
@@ -275,7 +275,7 @@ class MessageHandler {
         },
 
         pull: controller => {
-          const pullCapability = Promise.withResolvers();
+          const pullCapability = createPromiseCapability();
           this.#streamControllers.get(streamId).pullCall = pullCapability;
           comObj.postMessage({
             sourceName,
@@ -291,7 +291,7 @@ class MessageHandler {
 
         cancel: reason => {
           assert(reason instanceof Error, "cancel must have a valid reason");
-          const cancelCapability = Promise.withResolvers();
+          const cancelCapability = createPromiseCapability();
           this.#streamControllers.get(streamId).cancelCall = cancelCapability;
           this.#streamControllers.get(streamId).isClosed = true;
           comObj.postMessage({
@@ -328,7 +328,7 @@ class MessageHandler {
         // so when it changes from positive to negative,
         // set ready as unresolved promise.
         if (lastDesiredSize > 0 && this.desiredSize <= 0) {
-          this.sinkCapability = Promise.withResolvers();
+          this.sinkCapability = createPromiseCapability();
           this.ready = this.sinkCapability.promise;
         }
         comObj.postMessage(
@@ -371,7 +371,7 @@ class MessageHandler {
         });
       },
 
-      sinkCapability: Promise.withResolvers(),
+      sinkCapability: createPromiseCapability(),
       onPull: null,
       onCancel: null,
       isCancelled: false,
@@ -448,7 +448,7 @@ class MessageHandler {
         // Reset desiredSize property of sink on every pull.
         streamSink.desiredSize = data.desiredSize;
 
-        Promise.try(streamSink.onPull || onFn).then(
+        Promise.try(streamSink.onPull || noopFn).then(
           () => {
             comObj.postMessage({
               sourceName,
@@ -504,7 +504,7 @@ class MessageHandler {
         }
         const dataReason = wrapReason(data.reason);
 
-        Promise.try(streamSink.onCancel || onFn, dataReason).then(
+        Promise.try(streamSink.onCancel || noopFn, dataReason).then(
           () => {
             comObj.postMessage({
               sourceName,

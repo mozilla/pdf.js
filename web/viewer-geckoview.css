@@ -14,6 +14,7 @@
  */
 
 @import url(pdf_viewer.css);
+@import url(annotation_editor_layer_builder-geckoview.css);
 
 :root {
   --main-color: light-dark(rgb(12 12 13), rgb(249 249 250));

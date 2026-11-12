@@ -13,7 +13,12 @@
  * limitations under the License.
  */
 
-import { assert, stringToBytes, warn } from "../shared/util.js";
+import {
+  assert,
+  createPromiseCapability,
+  stringToBytes,
+  warn,
+} from "../shared/util.js";
 import {
   BasePDFStream,
   BasePDFStreamRangeReader,
@@ -284,7 +289,7 @@ class PDFNetworkStreamReader extends BasePDFStreamReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const capability = Promise.withResolvers();
+    const capability = createPromiseCapability();
     this._requests.push(capability);
     return capability.promise;
   }
@@ -368,7 +373,7 @@ class PDFNetworkStreamRangeReader extends BasePDFStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const capability = Promise.withResolvers();
+    const capability = createPromiseCapability();
     this._requests.push(capability);
     return capability.promise;
   }

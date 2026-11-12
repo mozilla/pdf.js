@@ -16,11 +16,24 @@
 import { getEncoding } from "./encodings.js";
 import { isWhiteSpace } from "./core_utils.js";
 import { Stream } from "./stream.js";
+import { toHexDigit } from "./parser.js";
 import { warn } from "../shared/util.js";
 
 // Hinting is currently disabled due to unknown problems on windows
 // in tracemonkey and various other pdfs with type1 fonts.
 const HINTING_ENABLED = false;
+
+// Subroutine nesting limit (FreeType).
+const MAX_SUBR_NESTING = 16;
+
+// Per-glyph token limit, including subroutines.
+const MAX_CHARSTRING_TOKENS = 64 * 1024 * 1024;
+
+// Operand stack limit (FreeType's Adobe engine).
+const MAX_STACK_SIZE = 48;
+
+// Converted Type 2 charstring limit in bytes (OTS).
+const MAX_CHARSTRING_LENGTH = 65535;
 
 const COMMAND_MAP = {
   hstem: [1],
@@ -89,11 +102,22 @@ class Type1CharString {
 
   stack = [];
 
-  convert(encoded, subrs, seacAnalysisEnabled) {
+  tokens = 0;
+
+  convert(encoded, subrs, seacAnalysisEnabled, depth = 0) {
+    if (depth > MAX_SUBR_NESTING) {
+      return true;
+    }
     const count = encoded.length;
     let error = false;
     let wx, sbx, subrNumber;
     for (let i = 0; i < count; i++) {
+      if (
+        ++this.tokens > MAX_CHARSTRING_TOKENS ||
+        this.stack.length > MAX_STACK_SIZE
+      ) {
+        return true;
+      }
       let value = encoded[i];
       if (value < 32) {
         if (value === 12) {
@@ -155,7 +179,12 @@ class Type1CharString {
               error = true;
               break;
             }
-            error = this.convert(subrs[subrNumber], subrs, seacAnalysisEnabled);
+            error = this.convert(
+              subrs[subrNumber],
+              subrs,
+              seacAnalysisEnabled,
+              depth + 1
+            );
             break;
           case 11: // return
             return error;
@@ -175,6 +204,7 @@ class Type1CharString {
             break;
           case 14: // endchar
             this.output.push(COMMAND_MAP.endchar[0]);
+            error = this.output.length > MAX_CHARSTRING_LENGTH;
             break;
           case 21: // rmoveto
             if (this.flexing) {
@@ -353,7 +383,7 @@ class Type1CharString {
     } else {
       this.stack.length = 0;
     }
-    return false;
+    return this.output.length > MAX_CHARSTRING_LENGTH;
   }
 }
 
@@ -402,22 +432,21 @@ function decryptAscii(data, key, discardNumber) {
   const count = data.length,
     maybeLength = count >>> 1;
   const decrypted = new Uint8Array(maybeLength);
+  let digit1 = -1;
   let i, j;
   for (i = 0, j = 0; i < count; i++) {
-    const digit1 = data[i];
-    if (!isHexDigit(digit1)) {
+    const digit = toHexDigit(data[i]);
+    if (digit < 0) {
       continue;
     }
-    i++;
-    let digit2;
-    while (i < count && !isHexDigit((digit2 = data[i]))) {
-      i++;
+    if (digit1 < 0) {
+      digit1 = digit;
+      continue;
     }
-    if (i < count) {
-      const value = parseInt(String.fromCharCode(digit1, digit2), 16);
-      decrypted[j++] = value ^ (r >> 8);
-      r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
-    }
+    const value = (digit1 << 4) | digit;
+    digit1 = -1;
+    decrypted[j++] = value ^ (r >> 8);
+    r = ((value + r) * c1 + c2) & ((1 << 16) - 1);
   }
   return decrypted.slice(discardNumber, j);
 }
@@ -895,15 +924,15 @@ class Type1Parser {
       let digit1 = -1,
         j = 0;
       for (let i = 0, ii = binary.length; i < ii && j < startDataLength; i++) {
-        const digit = binary[i];
-        if (!isHexDigit(digit)) {
+        const digit = toHexDigit(binary[i]);
+        if (digit < 0) {
           continue;
         }
         if (digit1 < 0) {
           digit1 = digit;
           continue;
         }
-        decoded[j++] = parseInt(String.fromCharCode(digit1, digit), 16);
+        decoded[j++] = (digit1 << 4) | digit;
         digit1 = -1;
       }
       if (j !== startDataLength) {

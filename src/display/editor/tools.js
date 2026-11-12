@@ -21,6 +21,7 @@ import {
   AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
+  createPromiseCapability,
   FeatureTest,
   getUuid,
   makeArr,
@@ -985,7 +986,8 @@ class AnnotationEditorUIManager {
     enableNewAltTextWhenAddingImage,
     mlManager,
     editorUndoBar,
-    supportsPinchToZoom
+    supportsPinchToZoom,
+    keepToolbarInPage
   ) {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
@@ -1048,6 +1050,7 @@ class AnnotationEditorUIManager {
     this.isShiftKeyDown = false;
     this._editorUndoBar = editorUndoBar || null;
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
+    this._keepToolbarInPage = keepToolbarInPage === true;
     commentManager?.setSidebarUiManager(this);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
@@ -1273,7 +1276,7 @@ class AnnotationEditorUIManager {
     if (this.#allLayers.has(pageNumber - 1)) {
       return;
     }
-    const { resolve, promise } = Promise.withResolvers();
+    const { resolve, promise } = createPromiseCapability();
     const onEditorsRendered = evt => {
       if (evt.pageNumber === pageNumber) {
         this._eventBus.off("editorsrendered", onEditorsRendered);
@@ -2128,7 +2131,7 @@ class AnnotationEditorUIManager {
       }
     }
 
-    this.#updateModeCapability = Promise.withResolvers();
+    this.#updateModeCapability = createPromiseCapability();
     this.#currentDrawingSession?.commitOrRemove();
 
     if (this.#mode === AnnotationEditorType.POPUP) {

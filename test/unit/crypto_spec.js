@@ -1155,6 +1155,45 @@ describe("CipherTransformFactory", function () {
       }
     });
 
+    it("should use the Identity crypt filter without a /CF dictionary", function () {
+      for (const [version, dict, fileId, password] of [
+        ["V4", dict2, fileId2, undefined],
+        ["V5", aes256Dict, fileId1, "user"],
+      ]) {
+        for (const [cfContext, cf] of [
+          ["missing", undefined],
+          ["not a dictionary", 123],
+        ]) {
+          const context = `${version}, /CF ${cfContext}`;
+          // Without /CF, /StmF and /StrF can only be the default /Identity.
+          const encryptDict = dict.clone();
+          encryptDict.setIfDefined("CF", cf);
+          const cipher = new CipherTransformFactory(
+            encryptDict,
+            fileId,
+            password
+          ).createCipherTransform(123, 0);
+          const string = "Hello";
+          expect(cipher.decryptString(string))
+            .withContext(context)
+            .toEqual(string);
+          expect(cipher.encryptString(string))
+            .withContext(context)
+            .toEqual(string);
+
+          const streamDict = new Dict();
+          expect(cipher.encryptStream(string, streamDict))
+            .withContext(context)
+            .toEqual(string);
+          const bytes = stringToBytes(string);
+          const stream = new Stream(bytes, 0, bytes.length, streamDict);
+          expect(cipher.createStream(stream, bytes.length).getBytes())
+            .withContext(context)
+            .toEqual(bytes);
+        }
+      }
+    });
+
     it("should encrypt and have the correct length using AES128", function () {
       dict3.CF = buildDict({
         Identity: buildDict({

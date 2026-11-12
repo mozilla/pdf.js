@@ -45,10 +45,8 @@ import { AppOptions } from "./app_options.js";
 import { Autolinker } from "./autolinker.js";
 import { BasePDFPageView } from "./base_pdf_page_view.js";
 import { DrawLayerBuilder } from "./draw_layer_builder.js";
-import { GenericL10n } from "web-null_l10n";
 import { PDFPageDetailView } from "./pdf_page_detail_view.js";
 import { RenderingStates } from "./renderable_view.js";
-import { SimpleLinkService } from "./pdf_link_service.js";
 import { StructTreeLayerBuilder } from "./struct_tree_layer_builder.js";
 import { TextAccessibilityManager } from "./text_accessibility.js";
 import { TextHighlighter } from "./text_highlighter.js";
@@ -77,8 +75,8 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {number} [maxCanvasPixels] - The maximum supported canvas size in
- *   total pixels, i.e. width * height. Use `-1` for no limit, or `0` for
- *   CSS-only zooming. The default value is 4096 * 8192 (32 mega-pixels).
+ *   total pixels, i.e. width * height. Use `-1` for no limit.
+ *   The default value is 4096 * 8192 (32 mega-pixels).
  * @property {number} [maxCanvasDim] - The maximum supported canvas dimension,
  *   in either width or height. Use `-1` for no limit.
  *   The default value is 32767.
@@ -104,8 +102,8 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {object} [pageColors] - Overwrites background and foreground colors
  *   with user defined ones in order to improve readability in high contrast
  *   mode.
- * @property {L10n} [l10n] - Localization service.
- * @property {object} [layerProperties] - The object that is used to lookup
+ * @property {L10n} l10n - Localization service.
+ * @property {object} layerProperties - The object that is used to lookup
  *   the necessary layer-properties.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
  *   text that look like URLs. The default value is `true`.
@@ -113,22 +111,6 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  *   to.
  * @property {AbortSignal} [abortSignal]
  */
-
-const DEFAULT_LAYER_PROPERTIES =
-  typeof PDFJSDev === "undefined" || !PDFJSDev.test("COMPONENTS")
-    ? null
-    : {
-        annotationEditorUIManager: null,
-        annotationStorage: null,
-        downloadManager: null,
-        enableScripting: false,
-        fieldObjectsPromise: null,
-        findController: null,
-        hasJSActionsPromise: null,
-        get linkService() {
-          return new SimpleLinkService();
-        },
-      };
 
 const LAYERS_ORDER = new Map([
   ["canvasWrapper", 0],
@@ -161,9 +143,9 @@ class PDFPageView extends BasePDFPageView {
 
   #previousRotation = null;
 
-  #scaleRoundX = 1;
+  #sfx = [1, 1];
 
-  #scaleRoundY = 1;
+  #sfy = [1, 1];
 
   #textLayerMode = TextLayerMode.ENABLE;
 
@@ -186,7 +168,7 @@ class PDFPageView extends BasePDFPageView {
     const { container, defaultViewport } = options;
 
     this.renderingId = "page" + this.id;
-    this.#layerProperties = options.layerProperties || DEFAULT_LAYER_PROPERTIES;
+    this.#layerProperties = options.layerProperties;
     this.#abortSignal = options.abortSignal || null;
 
     this.pdfPage = null;
@@ -203,7 +185,7 @@ class PDFPageView extends BasePDFPageView {
     this.imageResourcesPath = options.imageResourcesPath || "";
     this.enableDetailCanvas = options.enableDetailCanvas ?? true;
     this.maxCanvasPixels =
-      options.maxCanvasPixels ?? AppOptions.get("maxCanvasPixels");
+      options.maxCanvasPixels || AppOptions.get("maxCanvasPixels");
     this.maxCanvasDim = options.maxCanvasDim || AppOptions.get("maxCanvasDim");
     this.capCanvasAreaFactor =
       options.capCanvasAreaFactor ?? AppOptions.get("capCanvasAreaFactor");
@@ -211,15 +193,6 @@ class PDFPageView extends BasePDFPageView {
     this.#commentManager = options.commentManager || null;
 
     this.l10n = options.l10n;
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this.l10n ||= new GenericL10n();
-    }
-
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
-      this._isStandalone = !this.renderingQueue?.hasViewer();
-      this._container = container;
-    }
-
     this._annotationCanvasMap = null;
 
     this.annotationLayer = null;
@@ -239,46 +212,8 @@ class PDFPageView extends BasePDFPageView {
     div.setAttribute("data-l10n-args", JSON.stringify({ page: this.id }));
     this.div = div;
     this.#setDimensions();
+    this.#computeScale();
     container?.append(div);
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._isStandalone
-    ) {
-      // Ensure that the various layers always get the correct initial size,
-      // see issue 15795.
-      container?.style.setProperty(
-        "--scale-factor",
-        this.scale * PixelsPerInch.PDF_TO_CSS_UNITS
-      );
-
-      if (this.pageColors?.background) {
-        container?.style.setProperty(
-          "--page-bg-color",
-          this.pageColors.background
-        );
-      }
-
-      const { optionalContentConfigPromise } = options;
-      if (optionalContentConfigPromise) {
-        // Ensure that the thumbnails always display the *initial* document
-        // state, for documents with optional content.
-        optionalContentConfigPromise.then(optionalContentConfig => {
-          if (
-            optionalContentConfigPromise !== this._optionalContentConfigPromise
-          ) {
-            return;
-          }
-          this.#useThumbnailCanvas.initialOptionalContent =
-            optionalContentConfig.hasInitialVisibility;
-        });
-      }
-
-      // Ensure that Fluent is connected in e.g. the COMPONENTS build.
-      if (!options.l10n) {
-        this.l10n.translate(this.div);
-      }
-    }
   }
 
   clone(id) {
@@ -384,33 +319,6 @@ class PDFPageView extends BasePDFPageView {
   }
 
   setPdfPage(pdfPage) {
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._isStandalone &&
-      (this.pageColors?.foreground === "CanvasText" ||
-        this.pageColors?.background === "Canvas")
-    ) {
-      this._container?.style.setProperty(
-        "--hcm-highlight-filter",
-        pdfPage.filterFactory.addHighlightHCMFilter(
-          "highlight",
-          "CanvasText",
-          "Canvas",
-          "HighlightText",
-          "Highlight"
-        )
-      );
-      this._container?.style.setProperty(
-        "--hcm-highlight-selected-filter",
-        pdfPage.filterFactory.addHighlightHCMFilter(
-          "highlight_selected",
-          "CanvasText",
-          "Canvas",
-          "HighlightText",
-          "Highlight"
-        )
-      );
-    }
     this.pdfPage = pdfPage;
     this.pdfPageRotate = pdfPage.rotate;
 
@@ -420,6 +328,7 @@ class PDFPageView extends BasePDFPageView {
       rotation: totalRotation,
     });
     this.#setDimensions();
+    this.#computeScale();
     this.reset();
   }
 
@@ -479,7 +388,13 @@ class PDFPageView extends BasePDFPageView {
       this.#dispatchLayerRendered("annotationlayerrendered", error);
     }
 
-    if (this.#enableAutoLinking && textLayerPromise) {
+    // When re-rendering the page, with the annotationLayer kept,
+    // inferred links MAY have already been injected previously.
+    if (
+      this.#enableAutoLinking &&
+      textLayerPromise &&
+      !annotationLayer.linksInjected
+    ) {
       this.#injectLinkAnnotations(textLayerPromise, annotationLayer, textLayer);
     }
   }
@@ -617,9 +532,12 @@ class PDFPageView extends BasePDFPageView {
       if (
         textLayerAborted ||
         annotationLayer !== this.annotationLayer ||
-        textLayer !== this.textLayer
+        textLayer !== this.textLayer ||
+        annotationLayer.linksInjected
       ) {
-        return; // Rendering was cancelled while the textLayerPromise resolved.
+        // Rendering was cancelled while the textLayerPromise resolved,
+        // or inferred links were previously injected in the annotationLayer.
+        return;
       }
       await annotationLayer.injectLinkAnnotations(
         Autolinker.processLinks(this)
@@ -721,6 +639,14 @@ class PDFPageView extends BasePDFPageView {
   }
 
   toggleEditingMode(isEditing) {
+    if (
+      typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")
+    ) {
+      // Keep existing annotations painted while adding signatures.
+      return;
+    }
     // The page can be invisible, consequently there's no annotation layer and
     // we can't know if there are editable annotations.
     // So to avoid any issue when the page is rendered the #isEditing flag must
@@ -740,11 +666,7 @@ class PDFPageView extends BasePDFPageView {
 
   updateVisibleArea(visibleArea) {
     if (this.enableDetailCanvas) {
-      if (
-        this.#needsRestrictedScaling &&
-        this.maxCanvasPixels > 0 &&
-        visibleArea
-      ) {
+      if (this.#needsRestrictedScaling && visibleArea) {
         this.detailView ??= new PDFPageDetailView({
           pageView: this,
           enableOptimizedPartialRendering: this.enableOptimizedPartialRendering,
@@ -805,14 +727,6 @@ class PDFPageView extends BasePDFPageView {
       rotation: totalRotation,
     });
     this.#setDimensions();
-
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this._isStandalone
-    ) {
-      this._container?.style.setProperty("--scale-factor", this.viewport.scale);
-    }
-
     this.#computeScale();
 
     if (this.canvas) {
@@ -882,38 +796,45 @@ class PDFPageView extends BasePDFPageView {
   }
 
   #computeScale() {
-    const { width, height } = this.viewport;
+    const { div, viewport } = this;
     const outputScale = (this.outputScale = new OutputScale());
 
-    if (
-      (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) &&
-      this.maxCanvasPixels === 0
-    ) {
-      const invScale = 1 / this.scale;
-      // Use a scale that makes the canvas have the originally intended size
-      // of the page.
-      outputScale.sx *= invScale;
-      outputScale.sy *= invScale;
-      this.#needsRestrictedScaling = true;
-    } else {
-      this.#needsRestrictedScaling = outputScale.limitCanvas(
-        width,
-        height,
-        this.maxCanvasPixels,
-        this.maxCanvasDim,
-        this.capCanvasAreaFactor
-      );
-      if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
-        // If we are going to have a high-res detail view, further reduce
-        // the canvas resolution to improve rendering performance.
-        // When enableOptimizedPartialRendering is enabled the factor can be
-        // higher since less data will be rendered and it's more acceptable to
-        // have a lower quality (the canvas is exposed less time to the user).
-        const factor = this.enableOptimizedPartialRendering ? 4 : 2;
-        outputScale.sx /= factor;
-        outputScale.sy /= factor;
+    this.#needsRestrictedScaling = outputScale.limitCanvas(
+      viewport.width,
+      viewport.height,
+      this.maxCanvasPixels,
+      this.maxCanvasDim,
+      this.capCanvasAreaFactor
+    );
+    if (this.#needsRestrictedScaling && this.enableDetailCanvas) {
+      // If we are going to have a high-res detail view, further reduce
+      // the canvas resolution to improve rendering performance.
+      // When enableOptimizedPartialRendering is enabled the factor can be
+      // higher since less data will be rendered and it's more acceptable to
+      // have a lower quality (the canvas is exposed less time to the user).
+      const factor = this.enableOptimizedPartialRendering ? 4 : 2;
+      outputScale.sx /= factor;
+      outputScale.sy /= factor;
+    }
+
+    const sfx = approximateFraction(outputScale.sx),
+      sfy = approximateFraction(outputScale.sy);
+    if (this.#sfx[1] !== sfx[1]) {
+      if (sfx[1] !== 1) {
+        div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
+      } else {
+        div.style.removeProperty("--scale-round-x");
       }
     }
+    if (this.#sfy[1] !== sfy[1]) {
+      if (sfy[1] !== 1) {
+        div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
+      } else {
+        div.style.removeProperty("--scale-round-y");
+      }
+    }
+    this.#sfx = sfx;
+    this.#sfy = sfy;
   }
 
   /**
@@ -1068,7 +989,7 @@ class PDFPageView extends BasePDFPageView {
       console.error("Must be in new state before drawing");
       this.reset(); // Ensure that we reset all state to prevent issues.
     }
-    const { div, l10n, pdfPage, viewport } = this;
+    const { div, l10n, outputScale, pdfPage, viewport } = this;
 
     if (!pdfPage) {
       this.renderingState = RenderingStates.FINISHED;
@@ -1151,14 +1072,9 @@ class PDFPageView extends BasePDFPageView {
     });
     canvas.setAttribute("role", "presentation");
 
-    if (!this.outputScale) {
-      this.#computeScale();
-    }
-    const { outputScale } = this;
     this.#hasRestrictedScaling = this.#needsRestrictedScaling;
-
-    const sfx = approximateFraction(outputScale.sx);
-    const sfy = approximateFraction(outputScale.sy);
+    const sfx = this.#sfx;
+    const sfy = this.#sfy;
 
     const canvasWidth = (canvas.width = floorToDivide(
       calcRound(width * outputScale.sx),
@@ -1172,15 +1088,6 @@ class PDFPageView extends BasePDFPageView {
     const pageHeight = floorToDivide(calcRound(height), sfy[1]);
     outputScale.sx = canvasWidth / pageWidth;
     outputScale.sy = canvasHeight / pageHeight;
-
-    if (this.#scaleRoundX !== sfx[1]) {
-      div.style.setProperty("--scale-round-x", `${sfx[1]}px`);
-      this.#scaleRoundX = sfx[1];
-    }
-    if (this.#scaleRoundY !== sfy[1]) {
-      div.style.setProperty("--scale-round-y", `${sfy[1]}px`);
-      this.#scaleRoundY = sfy[1];
-    }
 
     const recordBBoxes =
       this.enableOptimizedPartialRendering &&

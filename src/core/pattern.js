@@ -76,15 +76,8 @@ function parseShadingFunction(
 }
 
 class Pattern {
-  // eslint-disable-next-line no-unused-private-class-members
-  static #hasGPU = false;
-
   constructor() {
     unreachable("Cannot initialize Pattern.");
-  }
-
-  static setOptions({ hasGPU }) {
-    this.#hasGPU = hasGPU;
   }
 
   static parseShading(
@@ -357,30 +350,19 @@ class RadialAxialShading extends BaseShading {
 
 // Helpers for MeshShading, which builds its mesh from a stream.
 function meshUpdateBounds(self) {
-  let minX = self.coords[0][0],
-    minY = self.coords[0][1],
-    maxX = minX,
-    maxY = minY;
-  for (let i = 1, ii = self.coords.length; i < ii; i++) {
-    const x = self.coords[i][0],
-      y = self.coords[i][1];
-    minX = minX > x ? x : minX;
-    minY = minY > y ? y : minY;
-    maxX = maxX < x ? x : maxX;
-    maxY = maxY < y ? y : maxY;
+  const coords = self.coords,
+    bounds = BBOX_INIT.slice();
+  for (let i = 0, ii = coords.length; i < ii; i++) {
+    Util.pointBoundingBox(coords[i][0], coords[i][1], bounds);
   }
-  self.bounds = [minX, minY, maxX, maxY];
+  self.bounds = bounds;
 }
 
 function meshPackData(self) {
-  let i, j, ii;
-
   const coords = self.coords;
   const coordsPacked = new Float32Array(coords.length * 2);
-  for (i = 0, j = 0, ii = coords.length; i < ii; i++) {
-    const xy = coords[i];
-    coordsPacked[j++] = xy[0];
-    coordsPacked[j++] = xy[1];
+  for (let i = 0, ii = coords.length; i < ii; i++) {
+    coordsPacked.set(coords[i], i * 2);
   }
   self.coords = coordsPacked;
 
@@ -388,12 +370,8 @@ function meshPackData(self) {
   // the WebGPU vertex shader read colors as array<u32> without repacking.
   const colors = self.colors;
   const colorsPacked = new Uint8Array(colors.length * 4);
-  for (i = 0, j = 0, ii = colors.length; i < ii; i++) {
-    const c = colors[i];
-    colorsPacked[j++] = c[0];
-    colorsPacked[j++] = c[1];
-    colorsPacked[j++] = c[2];
-    j++; // alpha — unused, stays 0
+  for (let i = 0, ii = colors.length; i < ii; i++) {
+    colorsPacked.set(colors[i], i * 4); // alpha is skipped, stays 0.
   }
   self.colors = colorsPacked;
 

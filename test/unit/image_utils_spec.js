@@ -387,6 +387,51 @@ describe("image_utils", function () {
       expect(result.destPos).toEqual(5);
       expect(dest).toEqual(new Uint32Array([WHITE, BLACK, WHITE, BLACK, RED]));
     });
+
+    it("pads a truncated source with black for RGB_24BPP", function () {
+      const src = new Uint8Array(12).fill(255);
+      const dest = new Uint32Array(6).fill(WHITE);
+      const result = convertToRGBA({
+        src,
+        dest,
+        width: 3,
+        height: 2,
+        kind: ImageKind.RGB_24BPP,
+      });
+      expect(result).toEqual({ srcPos: 18, destPos: 6 });
+      expect(dest).toEqual(
+        new Uint32Array([WHITE, WHITE, WHITE, WHITE, BLACK, BLACK])
+      );
+    });
+
+    it("doesn't read past the end of the source for RGB_24BPP", function () {
+      const src = new Uint8Array(24).fill(255).subarray(0, 3);
+      const dest = new Uint32Array(4);
+      const result = convertToRGBA({
+        src,
+        dest,
+        width: 4,
+        height: 1,
+        kind: ImageKind.RGB_24BPP,
+      });
+      expect(result).toEqual({ srcPos: 12, destPos: 4 });
+      expect(dest).toEqual(new Uint32Array([WHITE, BLACK, BLACK, BLACK]));
+    });
+
+    it("handles a srcPos past the end of the source for RGB_24BPP", function () {
+      const src = new Uint8Array([255, 0, 0]);
+      const dest = new Uint32Array(2).fill(WHITE);
+      const result = convertToRGBA({
+        src,
+        dest,
+        srcPos: 6,
+        width: 2,
+        height: 1,
+        kind: ImageKind.RGB_24BPP,
+      });
+      expect(result).toEqual({ srcPos: 12, destPos: 2 });
+      expect(dest).toEqual(new Uint32Array([BLACK, BLACK]));
+    });
   });
 
   describe("GlobalImageCache decoded images", function () {

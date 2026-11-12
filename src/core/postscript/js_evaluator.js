@@ -304,8 +304,8 @@ class PsJsCompiler {
   }
 
   compile(program) {
-    const outputs = new PSStackToTree().evaluate(program, this.nIn);
-    if (!outputs || outputs.length < this.nOut) {
+    const outputs = new PSStackToTree().evaluate(program, this.nIn, this.nOut);
+    if (!outputs) {
       return null;
     }
 

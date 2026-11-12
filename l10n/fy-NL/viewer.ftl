@@ -133,7 +133,7 @@ pdfjs-document-properties-page-size-orientation-landscape = lizzend
 pdfjs-document-properties-page-size-name-a-three = A3
 pdfjs-document-properties-page-size-name-a-four = A4
 pdfjs-document-properties-page-size-name-letter = Letter
-pdfjs-document-properties-page-size-name-legal = Juridysk
+pdfjs-document-properties-page-size-name-legal = Legal
 
 ## Variables:
 ##   $width (Number) - the width of the (current) page
@@ -644,10 +644,10 @@ pdfjs-editor-add-comment-button =
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
 pdfjs-toggle-views-manager-notification-button =
-    .title = Sidebalke yn-/útskeakelje (dokumint befettet miniatueren/oersjoch/bylagen/lagen)
+    .title = Sydbalke yn-/útskeakelje (dokumint befettet miniatueren/oersjoch/bylagen/lagen)
 pdfjs-toggle-views-manager-button1-label = Siden beheare
 pdfjs-views-manager-sidebar =
-    .aria-label = Sidebalke
+    .aria-label = Sydbalke
 pdfjs-views-manager-sidebar-resizer =
     .aria-label = Gruttewiziging sydbalke
 pdfjs-views-manager-view-selector-button =

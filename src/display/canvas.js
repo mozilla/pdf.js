@@ -22,6 +22,8 @@ import {
   convertRGBToRGBA,
 } from "../shared/image_utils.js";
 import {
+  DEFAULT_VERTICAL_ADVANCE,
+  DEFAULT_VERTICAL_ORIGIN_Y,
   F32_BBOX_INIT,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
@@ -490,20 +492,12 @@ class TransferMapsFallback {
   constructor(maps) {
     // One map applies to R, G, and B; `null` maps are identities.
     const [mapR, mapG = mapR, mapB = mapR] = maps;
-    const { identityMap } = TransferMapsFallback;
+    const identityMap = Util.identity0to256Map.slice();
     this.#maps = [
       mapR || identityMap,
       mapG || identityMap,
       mapB || identityMap,
     ];
-  }
-
-  static get identityMap() {
-    return shadow(
-      this,
-      "identityMap",
-      Uint8Array.from({ length: 256 }, (_, i) => i)
-    );
   }
 
   /**
@@ -2164,6 +2158,28 @@ class CanvasGraphics {
     this._cachedScaleForStroking[0] = -1;
   }
 
+  /**
+   * Resets the graphics state, except the clip and the transfer maps.
+   */
+  resetGraphicsState() {
+    const { clipBox, transferMaps, transferMapsFallback } = this.current;
+    const current = (this.current = new CanvasExtraState(0, 0));
+    current.clipBox = clipBox;
+    current.transferMaps = transferMaps;
+    current.transferMapsFallback = transferMapsFallback;
+
+    const ctx = this.ctx;
+    ctx.lineWidth = 1;
+    ctx.lineCap = "butt";
+    ctx.lineJoin = "miter";
+    ctx.miterLimit = 10;
+    if (ctx.setLineDash !== undefined) {
+      ctx.setLineDash([]);
+      ctx.lineDashOffset = 0;
+    }
+    this._cachedScaleForStroking[0] = -1;
+  }
+
   transform(opIdx, a, b, c, d, e, f) {
     this.dependencyTracker?.recordIncrementalData("transform", opIdx);
     this.ctx.transform(a, b, c, d, e, f);
@@ -2313,9 +2329,12 @@ class CanvasGraphics {
       const dims = this.current.tilingPatternDims;
       const tileIdx = dims && fillColor.canSkipPatternCanvas(dims);
       if (tileIdx) {
-        // Draw the tile directly, skipping the pattern canvas.
-        fillColor.drawPattern(this, path, this.pendingEOFill, tileIdx, opIdx);
+        // Keep the fill's pending state out of the tile operators.
+        const { pendingClip, pendingEOFill } = this;
+        this.pendingClip = null;
         this.pendingEOFill = false;
+        fillColor.drawPattern(this, path, pendingEOFill, tileIdx, opIdx);
+        this.pendingClip = pendingClip;
         if (consumePath) {
           this.consumePath(opIdx, path, intersect);
         }
@@ -2763,6 +2782,24 @@ class CanvasGraphics {
     return shadow(this, "isFontSubpixelAAEnabled", enabled);
   }
 
+  /**
+   * Return the pattern and the transform left by getPattern.
+   */
+  #getTextPattern(color, pathType, opIdx) {
+    const ctx = this.ctx;
+    ctx.save();
+    const pattern = color.getPattern(
+      ctx,
+      this,
+      getCurrentTransformInverse(ctx),
+      pathType,
+      opIdx
+    );
+    const transform = getCurrentTransform(ctx);
+    ctx.restore();
+    return [pattern, transform];
+  }
+
   showText(opIdx, glyphs) {
     if (this.dependencyTracker) {
       this.dependencyTracker
@@ -2852,31 +2889,19 @@ class CanvasGraphics {
     ctx.lineWidth = lineWidth;
 
     if (needsFill && current.patternFill) {
-      ctx.save();
-      const pattern = current.fillColor.getPattern(
-        ctx,
-        this,
-        getCurrentTransformInverse(ctx),
+      [ctx.fillStyle, patternFillTransform] = this.#getTextPattern(
+        current.fillColor,
         PathType.FILL,
         opIdx
       );
-      patternFillTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.fillStyle = pattern;
     }
 
     if (needsStroke && current.patternStroke) {
-      ctx.save();
-      const pattern = current.strokeColor.getPattern(
-        ctx,
-        this,
-        getCurrentTransformInverse(ctx),
+      [ctx.strokeStyle, patternStrokeTransform] = this.#getTextPattern(
+        current.strokeColor,
         PathType.STROKE,
         opIdx
       );
-      patternStrokeTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.strokeStyle = pattern;
     }
 
     if (font.isInvalidPDFjsFont) {
@@ -2909,7 +2934,8 @@ class CanvasGraphics {
     }
 
     let x = 0,
-      i;
+      i,
+      glyphPatterns = null;
     for (i = 0; i < glyphsLength; ++i) {
       const glyph = glyphs[i];
       if (typeof glyph === "number") {
@@ -2921,7 +2947,7 @@ class CanvasGraphics {
       const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
       const character = glyph.fontChar;
       const accent = glyph.accent;
-      let scaledX, scaledY;
+      let scaledX, scaledY, measure;
       let width = glyph.width;
       if (vertical) {
         const vmetric = glyph.vmetric;
@@ -2931,31 +2957,83 @@ class CanvasGraphics {
         width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
+        if (glyph.isRotated) {
+          // Anchor at 880 - 1000 / 2 = 380 glyph units above the horizontal
+          // baseline. Use ink bounds to center the glyph across the column.
+          measure = ctx.measureText(character);
+          const glyphScale = widthAdvanceScale / fontSizeScale;
+          const halfWidth = (glyph.width / 2) * glyphScale;
+          const centerX = scaledX + halfWidth;
+          // Convert to the 90-degree clockwise frame: (x, y) -> (y, -x).
+          scaledX =
+            scaledY -
+            (DEFAULT_VERTICAL_ORIGIN_Y - DEFAULT_VERTICAL_ADVANCE / 2) *
+              glyphScale -
+            halfWidth;
+          scaledY =
+            (measure.actualBoundingBoxAscent -
+              measure.actualBoundingBoxDescent) /
+              2 -
+            centerX;
+
+          restoreNeeded = true;
+          ctx.save();
+          ctx.rotate(Math.PI / 2);
+        }
       } else {
         scaledX = x / fontSizeScale;
         scaledY = 0;
       }
 
-      let measure;
-
-      if (font.remeasure && width > 0) {
-        measure = ctx.measureText(character);
+      // Fit rotated glyphs using their horizontal width; the vertical advance
+      // only controls spacing to the next glyph.
+      const glyphWidth = glyph.isRotated ? glyph.width : width;
+      let characterScaleX = 1;
+      if ((font.remeasure || glyph.isRotated) && glyphWidth > 0) {
+        measure ??= ctx.measureText(character);
 
         // Some standard fonts may not have the exact width: rescale per
         // character if measured width is greater than expected glyph width
         // and subpixel-aa is enabled, otherwise just center the glyph.
         const measuredWidth =
           ((measure.width * 1000) / fontSize) * fontSizeScale;
-        if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
-          const characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
+        if (glyphWidth < measuredWidth && this.isFontSubpixelAAEnabled) {
+          characterScaleX = glyphWidth / measuredWidth;
+          if (!restoreNeeded) {
+            restoreNeeded = true;
+            ctx.save();
+          }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
-        } else if (width !== measuredWidth) {
+        } else if (glyphWidth !== measuredWidth) {
           scaledX +=
-            (((width - measuredWidth) / 2000) * fontSize) / fontSizeScale;
+            (((glyphWidth - measuredWidth) / 2000) * fontSize) / fontSizeScale;
         }
+      }
+
+      if (
+        restoreNeeded &&
+        font.missingFile &&
+        (patternFillTransform || patternStrokeTransform)
+      ) {
+        // Compensate for glyph rotation and scaling in the pattern transform.
+        // Cache by scale; negative keys distinguish rotated glyphs.
+        glyphPatterns ||= new Map();
+        [ctx.fillStyle, ctx.strokeStyle] = glyphPatterns.getOrInsertComputed(
+          glyph.isRotated ? -characterScaleX : characterScaleX,
+          () => [
+            patternFillTransform
+              ? this.#getTextPattern(current.fillColor, PathType.FILL, opIdx)[0]
+              : ctx.fillStyle,
+            patternStrokeTransform
+              ? this.#getTextPattern(
+                  current.strokeColor,
+                  PathType.STROKE,
+                  opIdx
+                )[0]
+              : ctx.strokeStyle,
+          ]
+        );
       }
 
       // Only attempt to draw the glyph if it is actually in the embedded font
@@ -3035,11 +3113,11 @@ class CanvasGraphics {
     const textHScale = current.textHScale * fontDirection;
     const fontMatrix = current.fontMatrix || FONT_IDENTITY_MATRIX;
     const glyphsLength = glyphs.length;
-    const isTextInvisible =
-      current.textRenderingMode === TextRenderingMode.INVISIBLE;
+    const isTextVisible =
+      current.textRenderingMode !== TextRenderingMode.INVISIBLE;
     let i, glyph, width, spacingLength;
 
-    if (isTextInvisible || fontSize === 0) {
+    if (fontSize === 0) {
       return;
     }
     this._cachedScaleForStroking[0] = -1;
@@ -3075,22 +3153,16 @@ class CanvasGraphics {
         );
         if (!operatorList) {
           warn(`Type3 character "${glyph.operatorListId}" is not available.`);
-        } else if (this.contentVisible) {
+        } else if (this.contentVisible && isTextVisible) {
           this.save();
-          // Reset inherited alpha for colored (d0) glyphs (issue 21430).
-          if (operatorList.fnArray[0] === OPS.setCharWidth) {
-            current.fillAlpha = current.strokeAlpha = 1;
-            ctx.globalAlpha = 1;
-          }
           ctx.scale(fontSize, fontSize);
           ctx.transform(...fontMatrix);
           this.executeOperatorList(operatorList);
           this.restore();
         }
 
-        const p = [glyph.width, 0];
-        Util.applyTransform(p, fontMatrix);
-        width = p[0] * fontSize + spacing;
+        width =
+          glyph.width * fontMatrix[0] * fontSize + spacing * fontDirection;
 
         ctx.translate(width, 0);
         current.x += width * textHScale;

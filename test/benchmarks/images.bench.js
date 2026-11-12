@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import {
   captureImageMasks,
   captureImages,
   captureJpegImages,
   createSyntheticImage,
 } from "./image_utils.js";
+import { benchmark } from "./bench_utils.js";
+import { describe } from "vitest";
 import { JpegImage } from "../../src/core/jpg.js";
 import { PDFImage } from "../../src/core/image.js";
 
@@ -93,7 +94,7 @@ const IMAGE_MASKS = await captureImageMasks("issue17147.pdf");
 
 describe("images", () => {
   for (const { kind, filename, images } of JPEG_IMAGES) {
-    bench(`JpegImage: ${kind} (${filename})`, () =>
+    benchmark(`JpegImage: ${kind} (${filename})`, () =>
       images.map(({ bytes, options, getDataOptions }) => {
         const jpegImage = new JpegImage(options);
         jpegImage.parse(bytes);
@@ -103,7 +104,7 @@ describe("images", () => {
   }
 
   for (const { kind, filename, images } of IMAGES) {
-    bench(`PDFImage.createImageData: ${kind} (${filename})`, async () =>
+    benchmark(`PDFImage.createImageData: ${kind} (${filename})`, async () =>
       Promise.all(
         images.map(({ image, forceRGBA }) =>
           image.createImageData(
@@ -116,7 +117,7 @@ describe("images", () => {
   }
 
   for (const { kind, image } of SYNTHETIC_IMAGES) {
-    bench(
+    benchmark(
       `PDFImage.createImageData: downscaled ${kind} (2200x1000)`,
       async () =>
         image.createImageData(
@@ -126,7 +127,7 @@ describe("images", () => {
     );
   }
 
-  bench("PDFImage.createMask (issue17147.pdf)", async () =>
+  benchmark("PDFImage.createMask (issue17147.pdf)", async () =>
     Promise.all(
       IMAGE_MASKS.map(image => {
         image.reset();

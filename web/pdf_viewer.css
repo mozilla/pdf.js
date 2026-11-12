@@ -171,6 +171,11 @@
       height: 100%;
       pointer-events: none;
       background: rgb(0 90 255 / 0.22);
+
+      /* Avoid baseline space stretching Firefox's selection clip. */
+      svg {
+        display: block;
+      }
     }
   }
 }
@@ -208,24 +213,6 @@
   user-select: none;
 }
 
-/*#if GENERIC*/
-.pdfViewer.removePageBorders .page {
-  margin: 0 auto 10px;
-  border: none;
-}
-/*#endif*/
-
-/*#if COMPONENTS*/
-.pdfViewer.singlePageView {
-  display: inline-block;
-}
-
-.pdfViewer.singlePageView .page {
-  margin: 0;
-  border: none;
-}
-/*#endif*/
-
 .pdfViewer:is(.scrollHorizontal, .scrollWrapped),
 .spread {
   margin-inline: 3.5px;
@@ -237,9 +224,6 @@
   white-space: nowrap;
 }
 
-/*#if GENERIC*/
-.pdfViewer.removePageBorders,
-/*#endif*/
 .pdfViewer:is(.scrollHorizontal, .scrollWrapped) .spread {
   margin-inline: 0;
 }
@@ -254,13 +238,6 @@
 .pdfViewer:is(.scrollHorizontal, .scrollWrapped) .page {
   margin-inline: var(--spreadHorizontalWrapped-margin-LR);
 }
-
-/*#if GENERIC*/
-.pdfViewer.removePageBorders .spread .page,
-.pdfViewer.removePageBorders:is(.scrollHorizontal, .scrollWrapped) .page {
-  margin-inline: 5px;
-}
-/*#endif*/
 
 .pdfViewer .page.loadingIcon::after {
   position: absolute;

@@ -393,14 +393,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "enableMerge",
-    {
-      /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
-      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-    },
-  ],
-  [
     "enableNewAltTextWhenAddingImage",
     {
       /** @type {boolean} */
@@ -491,7 +483,7 @@ const defaultOptions = new Map([
     "enableSplitMerge",
     {
       /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+      value: true,
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
@@ -865,14 +857,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "maxImageSize",
-    {
-      /** @type {number} */
-      value: -1,
-      kind: OptionKind.API,
-    },
-  ],
-  [
     "pdfBug",
     {
       /** @type {boolean} */
@@ -887,7 +871,7 @@ const defaultOptions = new Map([
       value:
         // eslint-disable-next-line no-nested-ternary
         typeof PDFJSDev === "undefined"
-          ? "../external/standard_fonts/"
+          ? "../external/hellbox/"
           : PDFJSDev.test("MOZCENTRAL")
             ? "resource://pdf.js/web/standard_fonts/"
             : "../web/standard_fonts/",

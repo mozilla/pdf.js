@@ -86,6 +86,96 @@ describe("stream", function () {
       expect(await flate.asyncGetBytes()).toBeNull();
       expect(flate.getString()).toEqual(expected.substring(0, 107));
     });
+
+    describe("with DecompressionStream", function () {
+      async function deflate(data) {
+        const { readable, writable } = new CompressionStream("deflate");
+        const writer = writable.getWriter();
+        writer.write(data);
+        writer.close();
+        return new Response(readable).bytes();
+      }
+
+      const data = new Uint8Array(100000);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (i * 7) ^ (i >> 9);
+      }
+      let compressed;
+
+      beforeAll(async function () {
+        compressed = await deflate(data);
+      });
+
+      it("should decode a large stream", async function () {
+        const flate = new FlateStream(new Stream(compressed));
+        expect(await flate.asyncGetBytes()).toEqual(data);
+      });
+
+      it("should decode an image stream, whatever its expected length", async function () {
+        for (const length of [data.length, 1000, 2 * data.length]) {
+          const flate = new FlateStream(new Stream(compressed));
+          expect(await flate.getImageData(length)).toEqual(
+            data.subarray(0, length)
+          );
+        }
+      });
+
+      it("should decode an empty stream", async function () {
+        // Empty stored blocks, to get above the async length threshold.
+        const emptyBlock = final => [final ? 1 : 0, 0, 0, 0xff, 0xff];
+        const adler32 = [0, 0, 0, 1];
+        const empty = new Uint8Array([
+          120,
+          1,
+          ...Array(256).fill(emptyBlock(false)).flat(),
+          ...emptyBlock(true),
+          ...adler32,
+        ]);
+        const flate = new FlateStream(new Stream(empty));
+        expect(await flate.asyncGetBytes()).toEqual(new Uint8Array(0));
+        expect(flate.isAsync).toEqual(true);
+      });
+
+      it("should decode a small stream in JS and return its bytes", async function () {
+        const small = data.subarray(0, 300);
+        const flate = new FlateStream(new Stream(await deflate(small)));
+        const spy = spyOn(
+          flate,
+          "asyncGetBytesFromDecompressionStream"
+        ).and.callThrough();
+
+        expect(flate.isAsync).toEqual(true);
+        expect(await flate.asyncGetBytes()).toEqual(small);
+        expect(await flate.asyncGetBytes()).toEqual(small);
+        expect(spy).not.toHaveBeenCalled();
+      });
+
+      it("should choose a decoder for a small image stream and reuse it", async function () {
+        const zeros = new Uint8Array(100000);
+        const compressedZeros = await deflate(zeros);
+        expect(compressedZeros.length).toBeLessThan(1024);
+
+        for (const lengths of [
+          [zeros.length, 1000],
+          [1000, zeros.length],
+        ]) {
+          const flate = new FlateStream(new Stream(compressedZeros));
+          const spy = spyOn(
+            flate,
+            "asyncGetBytesFromDecompressionStream"
+          ).and.callThrough();
+          for (const length of lengths) {
+            flate.reset();
+            expect(await flate.getImageData(length)).toEqual(
+              zeros.subarray(0, length)
+            );
+          }
+          expect(spy).toHaveBeenCalledTimes(
+            lengths[0] === zeros.length ? lengths.length : 0
+          );
+        }
+      });
+    });
   });
 
   describe("StreamsSequenceStream", function () {

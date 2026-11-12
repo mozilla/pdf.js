@@ -440,3 +440,16 @@ pdfjs-editor-add-signature-cancel-button = Annulla
 
 pdfjs-editor-edit-comment-dialog-text-input =
     .placeholder = Cumintza a iscrìere…
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-notification-button =
+    .title = Ativa/disativa sa barra laterale (su documentu cuntenet miniaturas, istrutura, alligongiados o livellos)
+pdfjs-views-manager-outlines-title1 = Istrutura de su documentu
+    .title = Istrutura de su documentu (clic dòpiu pro ismanniare/minimare totu is elementos)
+pdfjs-views-manager-outlines-option-label = Istrutura de su documentu

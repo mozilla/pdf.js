@@ -17,6 +17,7 @@ import {
   CFFCharset,
   CFFCompiler,
   CFFFDSelect,
+  CFFIndex,
   CFFParser,
   CFFPrivateDict,
   CFFStrings,
@@ -121,6 +122,26 @@ describe("CFFParser", function () {
     expect(properties.ascent).toEqual(800);
     expect(properties.descent).toEqual(-200);
     expect(properties.ascentScaled).toBeUndefined();
+  });
+
+  it("doesn't validate the charstrings when not asked to", function () {
+    const compiled = new CFFCompiler(cff).compile();
+    const parse = validate =>
+      new CFFParser(new Stream(compiled), {}, SEAC_ANALYSIS_ENABLED).parse(
+        validate
+      );
+
+    const validated = parse(true);
+    const notValidated = parse(false);
+    expect(validated.widths).toBeDefined();
+    expect(notValidated.widths).toBeUndefined();
+    expect(notValidated.seacs).toBeUndefined();
+    expect(notValidated.charStrings.count).toEqual(validated.charStrings.count);
+    for (let i = 0; i < validated.charStrings.count; i++) {
+      expect(notValidated.charStrings.get(i)).toEqual(
+        validated.charStrings.get(i)
+      );
+    }
   });
 
   it("repairs an empty FontBBox from font descriptor data", function () {
@@ -414,7 +435,7 @@ describe("CFFParser", function () {
       const bytes = new Uint8Array([
         64, 39, 31, 30, 252, 114, 137, 115, 79, 30, 197, 119, 2, 99, 127, 6,
       ]);
-      parser.bytes = bytes;
+      parser = new CFFParser(new Stream(bytes), {}, SEAC_ANALYSIS_ENABLED);
       const topDict = cff.topDict;
       topDict.setByName("Private", [bytes.length, 0]);
 
@@ -523,6 +544,355 @@ describe("CFFParser", function () {
     expect(result.seacs.size).toEqual(0);
   });
 
+  it("duplicates glyph 0 with its width and FDSelect", function () {
+    const { charStrings, widths } = cff;
+    cff.isCIDFont = true;
+    const fdSelect = [1, 0];
+    cff.fdSelect = new CFFFDSelect(0, fdSelect);
+    expect(widths[0]).toEqual(250);
+
+    expect(cff.duplicateFirstGlyph()).toEqual(2);
+    expect(charStrings.count).toEqual(3);
+    expect(charStrings.get(2)).toBe(charStrings.get(0));
+    expect(widths[2]).toEqual(250);
+    expect(cff.fdSelect.getFDIndex(2)).toEqual(1);
+    expect(fdSelect).toEqual([1, 0, 1]);
+  });
+
+  it("duplicates glyph 0 over an empty glyph with its FDSelect when the CID font is full", function () {
+    const { charStrings } = cff;
+    // 500 0 0 rmoveto 100 hlineto endchar
+    const glyphZero = new Uint8Array([248, 136, 139, 139, 21, 239, 6, 14]);
+    const glyph = new Uint8Array([139, 139, 21, 239, 6, 14]);
+    charStrings.set(0, glyphZero);
+    charStrings.set(1, glyph);
+    while (charStrings.count < 65535) {
+      charStrings.add(glyph);
+    }
+    // Width 108, then endchar.
+    const emptyGlyph = new Uint8Array([247, 0, 14]);
+    charStrings.set(1000, emptyGlyph);
+    cff.widths = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    }).widths;
+    cff.isCIDFont = true;
+    const fdSelect = Array(charStrings.count).fill(1);
+    fdSelect[0] = 0;
+    cff.fdSelect = new CFFFDSelect(3, fdSelect);
+    expect(cff.widths[0]).toEqual(500);
+
+    expect(cff.duplicateFirstGlyph()).toEqual(0);
+    expect(charStrings.get(1000)).toBe(emptyGlyph);
+    expect(cff.widths[1000]).toEqual(108);
+    expect(cff.fdSelect.getFDIndex(1000)).toEqual(1);
+
+    expect(cff.duplicateFirstGlyph(/* replaceEmptyGlyph = */ true)).toEqual(
+      1000
+    );
+    expect(charStrings.count).toEqual(65535);
+    expect(charStrings.get(1000)).toBe(glyphZero);
+    expect(cff.widths[1000]).toEqual(500);
+    expect(cff.fdSelect.getFDIndex(1000)).toEqual(0);
+    expect(cff.fdSelect.getFDIndex(999)).toEqual(1);
+    expect(cff.fdSelect.getFDIndex(1001)).toEqual(1);
+    expect(fdSelect.length).toEqual(65535);
+  });
+
+  it("preserves SEAC glyphs when replacing an empty glyph in a full font", function () {
+    const { charStrings } = cff;
+    // 0 0 rmoveto 100 hlineto endchar
+    const glyphZero = new Uint8Array([139, 139, 21, 239, 6, 14]);
+    const glyph = new Uint8Array([139, 139, 21, 239, 6, 14]);
+    charStrings.set(0, glyphZero);
+    charStrings.set(1, glyph);
+    while (charStrings.count < 65535) {
+      charStrings.add(glyph);
+    }
+    charStrings.set(65533, new Uint8Array([14]));
+    // SEAC: 0 0 65 194 endchar; parsing leaves only endchar.
+    charStrings.set(65534, new Uint8Array([139, 139, 204, 247, 86, 14]));
+    const { seacs, widths } = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+    cff.seacs = seacs;
+    cff.widths = widths;
+    const seacGlyph = charStrings.get(65534);
+    expect(seacGlyph).toEqual(new Uint8Array([14]));
+    expect(seacs.get(65534)).toEqual([0, 0, 65, 194]);
+
+    expect(cff.duplicateFirstGlyph(/* replaceEmptyGlyph = */ true)).toEqual(
+      65533
+    );
+    expect(charStrings.count).toEqual(65535);
+    expect(charStrings.get(65533)).toBe(glyphZero);
+    expect(charStrings.get(65534)).toBe(seacGlyph);
+    expect(seacs.get(65534)).toEqual([0, 0, 65, 194]);
+  });
+
+  it("removes invalid operators without repeatedly copying the suffix", function () {
+    const bytes = new Uint8Array(4096);
+    for (let i = 0; i < bytes.length - 1; i++) {
+      bytes[i] = [9, 19, 20][i % 3];
+    }
+    bytes[bytes.length - 1] = 14;
+    const copyWithin = bytes.copyWithin;
+    let copiedBytes = 0;
+    spyOn(bytes, "copyWithin").and.callFake(function (target, start, end) {
+      const endPos = end < 0 ? this.length + end : (end ?? this.length);
+      copiedBytes += Math.max(0, endPos - start);
+      return copyWithin.call(this, target, start, end);
+    });
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({ charStrings, privateDict: privateDictStub });
+
+    expect(Array.from(bytes)).toEqual(new Array(bytes.length).fill(14));
+    expect(copiedBytes).toBeLessThanOrEqual(bytes.length);
+  });
+
+  it("preserves operand bytes while removing invalid operators", function () {
+    // Byte 9 can be part of a number.
+    const expected = [28, 0, 9, 22, 255, 0, 9, 0, 0, 22, 247, 9, 22, 14];
+    const bytes = new Uint8Array([
+      9, 28, 0, 9, 22, 9, 255, 0, 9, 0, 0, 22, 9, 247, 9, 22, 9, 14,
+    ]);
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({ charStrings, privateDict: privateDictStub });
+
+    expect(bytes).toEqual(new Uint8Array([...expected, 14, 14, 14, 14]));
+  });
+
+  it("preserves hint mask bytes while removing invalid operators", function () {
+    const bytes = new Uint8Array([
+      19, 20, 139, 139, 1, 19, 9, 9, 20, 9, 139, 22, 12, 0, 14,
+    ]);
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({ charStrings, privateDict: privateDictStub });
+
+    expect(bytes).toEqual(
+      new Uint8Array([
+        139, 139, 1, 19, 9, 20, 9, 139, 22, 139, 22, 14, 14, 14, 14,
+      ])
+    );
+  });
+
+  it("compacts invalid operators before returning from a reused subroutine", function () {
+    const subrs = new CFFIndex();
+    subrs.add(new Uint8Array([9, 139, 22, 9, 11]));
+    const charStrings = new CFFIndex();
+    const bytes = new Uint8Array([32, 10, 32, 10, 14]);
+    charStrings.add(bytes);
+
+    parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(bytes);
+    expect(subrs.get(0)).toEqual(new Uint8Array([139, 22, 11, 14, 14]));
+  });
+
+  it("compacts invalid operators in nested local and global subroutines", function () {
+    const globalSubrs = new CFFIndex();
+    globalSubrs.add(new Uint8Array([9, 139, 22, 9, 11]));
+    const localSubrs = new CFFIndex();
+    localSubrs.add(
+      new Uint8Array([9, 139, 22, 9, 32, /* callgsubr */ 29, 9, 139, 22, 9, 11])
+    );
+    const charStrings = new CFFIndex();
+    charStrings.add(
+      new Uint8Array([9, 139, 22, 9, 32, /* callsubr */ 10, 9, 139, 22, 9, 14])
+    );
+
+    parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: localSubrs,
+      globalSubrIndex: globalSubrs,
+      privateDict: privateDictStub,
+    });
+
+    expect(globalSubrs.get(0)).toEqual(new Uint8Array([139, 22, 11, 14, 14]));
+    expect(localSubrs.get(0)).toEqual(
+      new Uint8Array([139, 22, 32, 29, 139, 22, 11, 14, 14, 14, 14])
+    );
+    expect(charStrings.get(0)).toEqual(
+      new Uint8Array([139, 22, 32, 10, 139, 22, 14, 14, 14, 14, 14])
+    );
+  });
+
+  it("removes the extra arguments of stack-clearing operators (issue 10175)", function () {
+    const subrs = new CFFIndex();
+    subrs.add(new Uint8Array([/* rmoveto */ 21, /* return */ 11]));
+    const charStrings = new CFFIndex();
+    // Repeat the width (130) before each moveto.
+    charStrings.add(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 159, 169, /* rmoveto */ 21,
+        149, /* hlineto */ 6,
+        247, 22, 179, 189, /* rmoveto */ 21,
+        247, 22, 199, /* hmoveto */ 22,
+        14,
+      ])
+    );
+    // One excess operand before the initial width and rmoveto coordinates.
+    charStrings.add(new Uint8Array([140, 141, 142, 143, /* rmoveto */ 21, 14]));
+    // The caller supplies the subroutine's operands.
+    charStrings.add(
+      new Uint8Array([139, 139, /* hstem */ 1, 149, 159, 169, 32, 10, 14])
+    );
+
+    const { widths } = parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 159, 169, 21,
+        149, 6,
+        179, 189, 21,
+        199, 22,
+        14, 14, 14, 14, 14,
+      ])
+    );
+    expect(charStrings.get(1)).toEqual(
+      new Uint8Array([141, 142, 143, 21, 14, 14])
+    );
+    expect(charStrings.get(2)).toEqual(
+      new Uint8Array([139, 139, 1, 149, 159, 169, 32, 10, 14])
+    );
+    expect(subrs.get(0)).toEqual(new Uint8Array([21, 11]));
+    expect(widths.slice(0, 2)).toEqual([130, 2]);
+  });
+
+  it("preserves reordered extra arguments of stack-clearing operators", function () {
+    // exch moves the repeated width below the moveto coordinates.
+    // prettier-ignore
+    const bytes = new Uint8Array([
+      247, 22, 139, 139, /* rmoveto */ 21,
+      159, 247, 22, /* exch */ 12, 28, 169, /* rmoveto */ 21,
+      14,
+    ]);
+    const charStrings = new CFFIndex();
+    charStrings.add(bytes.slice());
+
+    const { widths } = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(bytes);
+    expect(widths).toEqual([130]);
+  });
+
+  it("removes a repeated width before hintmask while preserving its stems and mask", function () {
+    const charStrings = new CFFIndex();
+    charStrings.add(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 139, 149, /* hstem */ 1,
+        247, 22, 159, 169, /* hintmask */ 19, 0xc0,
+        139, 139, /* rmoveto */ 21,
+        14,
+      ])
+    );
+
+    const { widths } = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+
+    expect(charStrings.get(0)).toEqual(
+      // prettier-ignore
+      new Uint8Array([
+        247, 22, 139, 149, 1,
+        159, 169, 19, 0xc0,
+        139, 139, 21,
+        14, 14, 14,
+      ])
+    );
+    expect(widths).toEqual([130]);
+  });
+
+  it("doesn't remove the extra arguments of a shared subroutine", function () {
+    // The call follows the first moveto.
+    const notFirst = [139, 139, /* rmoveto */ 21, 32, /* callsubr */ 10, 14];
+    // The call supplies the first moveto and its width (130).
+    const first = [32, /* callsubr */ 10, 14];
+
+    for (const [name, glyphs, expectedWidths] of [
+      ["width last", [notFirst, first], [0, 130]],
+      ["width first", [first, notFirst], [130, 0]],
+    ]) {
+      const subrBytes = [247, 22, 179, 189, /* rmoveto */ 21, /* return */ 11];
+      const subrs = new CFFIndex();
+      subrs.add(new Uint8Array(subrBytes));
+      const charStrings = new CFFIndex();
+      for (const glyph of glyphs) {
+        charStrings.add(new Uint8Array(glyph));
+      }
+
+      const { widths } = parser.parseCharStrings({
+        charStrings,
+        localSubrIndex: subrs,
+        privateDict: privateDictStub,
+      });
+
+      expect(subrs.get(0)).withContext(name).toEqual(new Uint8Array(subrBytes));
+      expect(widths).withContext(name).toEqual(expectedWidths);
+    }
+  });
+
+  it("rejects a CharString executing too many operators and operands", function () {
+    const repeat = (ops, count, last) => {
+      const data = new Uint8Array(ops.length * count + 1);
+      for (let i = 0; i < count; i++) {
+        data.set(ops, i * ops.length);
+      }
+      data[data.length - 1] = last;
+      return data;
+    };
+    const subrs = new CFFIndex();
+    subrs.add(repeat([/* 1 - bias */ 33, /* callsubr */ 10], 256, 11));
+    subrs.add(repeat([/* 0 */ 139, /* hmoveto */ 22], 1024, 11));
+
+    const charStrings = new CFFIndex();
+    charStrings.add(repeat([/* 0 - bias */ 32, /* callsubr */ 10], 512, 14));
+    charStrings.add(new Uint8Array([32, 10, 14]));
+
+    const result = parser.parseCharStrings({
+      charStrings,
+      localSubrIndex: subrs,
+      privateDict: privateDictStub,
+    });
+    expect(result.charStrings.get(0)).toEqual(new Uint8Array([14]));
+    expect(result.charStrings.get(1)).toEqual(new Uint8Array([32, 10, 14]));
+  });
+
+  it("rejects a CharString overflowing the operand stack", function () {
+    const charStrings = new CFFIndex();
+    charStrings.add(new Uint8Array([...new Array(49).fill(139), 22, 14]));
+    charStrings.add(new Uint8Array([...new Array(48).fill(139), 22, 14]));
+
+    const result = parser.parseCharStrings({
+      charStrings,
+      privateDict: privateDictStub,
+    });
+    expect(result.charStrings.get(0)).toEqual(new Uint8Array([14]));
+    expect(result.charStrings.get(1).length).toEqual(50);
+  });
+
   it("parses predefined charsets", function () {
     const charset = parser.parseCharsets(0, 0, null, true);
     expect(charset.predefined).toBeTrue();
@@ -559,6 +929,23 @@ describe("CFFParser", function () {
     // CID font
     charset = parser.parseCharsets(3, 2, new CFFStrings(), true);
     expect(charset.charset).toEqual([0, 8, 9]);
+  });
+
+  it("parses truncated charset format 1", function () {
+    // The first three bytes make the offset large enough to skip predefined.
+    // prettier-ignore
+    const bytes = new Uint8Array([0x00, 0x00, 0x00,
+                                0x01, // format
+                                0x00, 0x08, // sid/cid start
+                                0x00 // sid/cid left (too small)
+                              ]);
+    parser.bytes = bytes;
+    let charset = parser.parseCharsets(3, 3, new CFFStrings(), false);
+    expect(charset.charset).toEqual([".notdef", "quoteright"]);
+
+    // CID font
+    charset = parser.parseCharsets(3, 3, new CFFStrings(), true);
+    expect(charset.charset).toEqual([0, 8]);
   });
 
   it("parses charset format 2", function () {
@@ -731,6 +1118,72 @@ describe("CFFParser", function () {
     ).parse();
 
     expect(reparsedCff.fdArray.length).toEqual(256);
+  });
+
+  it("compiles shared Private DICTs and Subrs only once", function () {
+    cff.isCIDFont = true;
+    cff.topDict.setByName("ROS", [0, 0, 0]);
+    cff.topDict.setByName("FDSelect", 0);
+    cff.topDict.setByName("FDArray", 0);
+
+    const subr = new Uint8Array(1000).fill(0x0b);
+    const subrsIndex = new CFFIndex();
+    subrsIndex.add(subr);
+    const privateDicts = [50, 60].map(stdHW => {
+      const privateDict = new CFFPrivateDict(cff.strings);
+      privateDict.setByName("StdHW", stdHW);
+      privateDict.setByName("Subrs", 0);
+      privateDict.subrsIndex = subrsIndex;
+      return privateDict;
+    });
+    cff.fdArray = [0, 0, 1].map(i => {
+      const fdDict = new CFFTopDict(cff.strings);
+      fdDict.setByName("Private", [0, 0]);
+      fdDict.privateDict = privateDicts[i];
+      return fdDict;
+    });
+    cff.fdSelect = new CFFFDSelect(0, Array(cff.charStrings.count).fill(0));
+
+    const { fdArray } = new CFFParser(
+      new Stream(new CFFCompiler(cff).compile()),
+      {},
+      SEAC_ANALYSIS_ENABLED
+    ).parse();
+    const getSubrsOffset = fdDict =>
+      fdDict.getByName("Private")[1] + fdDict.privateDict.getByName("Subrs");
+
+    expect(fdArray[1].getByName("Private")).toEqual(
+      fdArray[0].getByName("Private")
+    );
+    expect(fdArray[1].privateDict).toBe(fdArray[0].privateDict);
+    expect(fdArray[2].privateDict.getByName("StdHW")).toEqual(60);
+    expect(getSubrsOffset(fdArray[2])).toEqual(getSubrsOffset(fdArray[0]));
+    expect(fdArray[2].privateDict.subrsIndex).toBe(
+      fdArray[0].privateDict.subrsIndex
+    );
+    expect(fdArray[0].privateDict.subrsIndex.get(0)).toEqual(subr);
+  });
+
+  it("throws on overlapping Private DICT data", function () {
+    // prettier-ignore
+    const bytes = new Uint8Array([0x8b, 0x8b, 0x8b, 0x8b, 0x06, // BlueValues
+                                  0x8b, 0x0a]); // StdHW
+    parser = new CFFParser(new Stream(bytes), {}, SEAC_ANALYSIS_ENABLED);
+
+    const parsePrivateDict = function (size, offset) {
+      const fdDict = new CFFTopDict(cff.strings);
+      fdDict.setByName("Private", [size, offset]);
+      parser.parsePrivateDict(fdDict);
+      return fdDict.privateDict;
+    };
+    // Negative sizes must not reduce the parsed length.
+    expect(parsePrivateDict(-bytes.length, 0).getByName("StdHW")).toBeNull();
+    expect(parsePrivateDict(5, 0).getByName("BlueValues").length).toEqual(4);
+    expect(parsePrivateDict(2, 5).getByName("StdHW")).toEqual(0);
+    expect(() => parsePrivateDict(4, 1)).toThrowError(
+      FormatError,
+      "CFF Private DICT data exceeds the font length"
+    );
   });
 
   // TODO fdArray

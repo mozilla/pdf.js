@@ -18,9 +18,7 @@ if (!pdfjsLib.getDocument || !pdfjsViewer.PDFViewer) {
   alert("Please build the pdfjs-dist library using\n `gulp dist-install`");
 }
 
-const MAX_CANVAS_PIXELS = 0; // CSS-only zooming.
 const TEXT_LAYER_MODE = 0; // DISABLE
-const MAX_IMAGE_SIZE = 1024 * 1024;
 const CMAP_URL = "../../node_modules/pdfjs-dist/cmaps/";
 const CMAP_PACKED = true;
 
@@ -58,7 +56,6 @@ const PDFViewerApplication = {
     // Loading document.
     const loadingTask = pdfjsLib.getDocument({
       url,
-      maxImageSize: MAX_IMAGE_SIZE,
       cMapUrl: CMAP_URL,
       cMapPacked: CMAP_PACKED,
     });
@@ -256,7 +253,6 @@ const PDFViewerApplication = {
       eventBus,
       linkService,
       l10n: this.l10n,
-      maxCanvasPixels: MAX_CANVAS_PIXELS,
       textLayerMode: TEXT_LAYER_MODE,
     });
     this.pdfViewer = pdfViewer;

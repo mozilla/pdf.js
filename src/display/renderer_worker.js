@@ -14,10 +14,16 @@
  */
 
 import { CanvasGraphics, getAnnotationCanvasName } from "./canvas.js";
-import { isNodeJS, makeMap, setVerbosityLevel, warn } from "../shared/util.js";
+import {
+  createPromiseCapability,
+  isNodeJS,
+  makeMap,
+  setVerbosityLevel,
+  warn,
+} from "../shared/util.js";
+import { initGPU, isGPUReady } from "./webgpu.js";
 import { createCanvasTrackers } from "./canvas_dependency_tracker.js";
 import { FontLoader } from "./font_loader.js";
-import { initGPU } from "./webgpu.js";
 import { MessageHandler } from "../shared/message_handler.js";
 import { ObjectHandler } from "./object_handler.js";
 import { OffscreenCanvasFactory } from "./offscreen_canvas_factory.js";
@@ -43,6 +49,9 @@ class RendererMessageHandler {
   static #fontLoader = new FontLoader({
     ownerDocument: globalThis,
   });
+
+  // Set for the document once a mesh pattern is received.
+  static #hasMeshPattern = false;
 
   static #objsMap = new Map();
 
@@ -240,7 +249,7 @@ class RendererMessageHandler {
       ? i => operationsFilterMask[i]
       : null;
     while (!renderTaskState.aborted) {
-      const { promise, resolve, reject } = Promise.withResolvers();
+      const { promise, resolve, reject } = createPromiseCapability();
       renderTaskState.continueResolve = resolve;
 
       renderTaskState.operatorListIdx = gfx.executeOperatorList(
@@ -277,7 +286,7 @@ class RendererMessageHandler {
         this.#yieldResolvers.shift()();
       };
     }
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     this.#yieldResolvers.push(resolve);
     this.#yieldChannel.port2.postMessage(null);
     return promise;
@@ -292,15 +301,23 @@ class RendererMessageHandler {
       shouldCreatePageObjs: true,
     });
 
-    handler.on("commonobj", ([id, type, exportedData]) =>
-      this.#commonObjs.has(id)
-        ? null
-        : objectHandler.resolveCommonObject(id, type, exportedData)
-    );
+    handler.on("commonobj", ([id, type, exportedData]) => {
+      if (this.#commonObjs.has(id)) {
+        return;
+      }
+      objectHandler.resolveCommonObject(id, type, exportedData);
+      // Type 3 shading patterns arrive as common objects.
+      if (type === "Pattern" && this.#commonObjs.get(id)[0] === "Mesh") {
+        this.#hasMeshPattern = true;
+      }
+    });
 
     // The main thread drops objects for cleaned pages. This channel preserves
     // message order.
     handler.on("obj", ([id, pageProxyId, type, imageData]) => {
+      if (type === "Pattern" && imageData[0] === "Mesh") {
+        this.#hasMeshPattern = true;
+      }
       objectHandler.resolveObject(id, pageProxyId, type, imageData);
     });
 
@@ -411,12 +428,6 @@ class RendererMessageHandler {
       this.#renderTaskStates.set(renderTaskId, renderTaskState);
 
       try {
-        if (this.#enableWebGPU) {
-          await initGPU();
-          if (renderTaskState.aborted) {
-            return;
-          }
-        }
         const objs = this.#getPageObjs(pageProxyId);
         const optionalContentConfig = OptionalContentConfig.fromSerializable(
           data.optionalContentConfig
@@ -477,6 +488,14 @@ class RendererMessageHandler {
         // A render task can be cleaned up before queued
         // ExecuteOperatorList messages for that task are processed.
         return { operatorListIdx, aborted: true };
+      }
+
+      // Patterns arrive before the operators that use them.
+      if (this.#hasMeshPattern && this.#enableWebGPU && !isGPUReady()) {
+        await initGPU();
+        if (renderTaskState.aborted) {
+          return { operatorListIdx, aborted: true };
+        }
       }
 
       renderTaskState.operatorListIdx = operatorListIdx;
@@ -558,6 +577,7 @@ class RendererMessageHandler {
     }
     this.#objsMap.clear();
     this.#operatorLists.clear();
+    this.#hasMeshPattern = false;
     this.#commonObjs.clear();
     this.#fontLoader.clear();
     // Isolate pending font loads from the next connection.

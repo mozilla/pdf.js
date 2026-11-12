@@ -18,6 +18,7 @@ import {
   FormatError,
   info,
   isArrayEqual,
+  makeArr,
   shadow,
   stringToBytes,
   Util,
@@ -35,8 +36,39 @@ import { MathClamp } from "../shared/math_clamp.js";
 // Maximum subroutine call depth of type 2 charstrings. Matches OTS.
 const MAX_SUBR_NESTING = 10;
 
+// Per-glyph token limit, including subroutines.
+const MAX_CHARSTRING_TOKENS = 64 * 1024 * 1024;
+
+// Type 2 operand stack limit (OTS).
+const MAX_STACK_SIZE = 48;
+
 // CFF FDSelect uses Card8 indices, so only 256 font DICTs are addressable.
 const MAX_FD_ARRAY_COUNT = 256;
+
+function removeCharStringBytes(cursor, data, start, end) {
+  const { readStart } = cursor;
+  if (start > readStart) {
+    data.copyWithin(cursor.writePos, readStart, start);
+    cursor.writePos += start - readStart;
+  }
+  cursor.readStart = end;
+}
+
+// A charstring with only an optional width and endchar has no outline.
+function isEmptyCharString(data) {
+  const b0 = data[0];
+  let pos = 0;
+  if (b0 === 28) {
+    pos = 3;
+  } else if (b0 >= 32 && b0 <= 246) {
+    pos = 1;
+  } else if (b0 >= 247 && b0 <= 254) {
+    pos = 2;
+  } else if (b0 === 255) {
+    pos = 5;
+  }
+  return data[pos] === 14;
+}
 
 function looksLikeUnsigned16BitNegative(coord) {
   return coord > 0x7fff && coord <= 0xffff;
@@ -244,13 +276,23 @@ const CharstringValidationData12 = [
 ];
 
 class CFFParser {
+  #privateDicts = new Map();
+
+  #privateDataLength = 0;
+
+  #subrsIndexes = new Map();
+
   constructor(file, properties, seacAnalysisEnabled) {
     this.bytes = file.getBytes();
     this.properties = properties;
     this.seacAnalysisEnabled = !!seacAnalysisEnabled;
   }
 
-  parse() {
+  /**
+   * @param {boolean} [validate] - Check the charstrings, which is useless for
+   *   a font compiled by PDF.js.
+   */
+  parse(validate = true) {
     const properties = this.properties;
     const cff = new CFF(this.bytes.length);
     this.cff = cff;
@@ -373,6 +415,10 @@ class CFFParser {
     cff.charset = charset;
     cff.encoding = encoding;
 
+    if (!validate) {
+      cff.charStrings = charStringIndex;
+      return cff;
+    }
     const charStringsAndSeacs = this.parseCharStrings({
       charStrings: charStringIndex,
       localSubrIndex: topDict.privateDict.subrsIndex,
@@ -554,14 +600,43 @@ class CFFParser {
     if (!data || state.callDepth > MAX_SUBR_NESTING) {
       return false;
     }
+    const cursor = { readStart: 0, writePos: 0 };
+    try {
+      return this.#parseCharString(
+        state,
+        data,
+        localSubrIndex,
+        globalSubrIndex,
+        cursor
+      );
+    } finally {
+      const { readStart, writePos } = cursor;
+      if (readStart > 0) {
+        data.copyWithin(writePos, readStart);
+        data.fill(/* endchar = */ 14, data.length - readStart + writePos);
+      }
+    }
+  }
+
+  #parseCharString(state, data, localSubrIndex, globalSubrIndex, cursor) {
     const view = new DataView(data.buffer, data.byteOffset, data.bytesLength);
     let stackSize = state.stackSize;
-    const stack = state.stack;
+    const { stack, argStarts } = state;
 
-    let length = data.length;
+    const length = data.length;
 
     for (let j = 0; j < length;) {
+      // Track operand byte offsets, including the following operator.
+      // A negative first offset marks operands unsafe to remove.
+      argStarts[stackSize] = j;
       const value = data[j++];
+      if (
+        ++state.tokens > MAX_CHARSTRING_TOKENS ||
+        stackSize > MAX_STACK_SIZE
+      ) {
+        warn("Charstring exceeds the execution limits.");
+        return false;
+      }
       let validationCommand = null;
       if (value === 12) {
         const q = data[j++];
@@ -612,9 +687,7 @@ class CFFParser {
         state.hints += stackSize >> 1;
         if (state.hints === 0) {
           // Not a valid value (see bug 1529502): just remove it.
-          data.copyWithin(j - 1, j, -1);
-          j -= 1;
-          length -= 1;
+          removeCharStringBytes(cursor, data, j - 1, j);
           continue;
         }
         // skipping right amount of hints flag data
@@ -657,6 +730,7 @@ class CFFParser {
         }
         state.callDepth--;
         stackSize = state.stackSize;
+        argStarts[0] = -1;
         continue;
       } else if (value === 11) {
         state.stackSize = stackSize;
@@ -669,9 +743,7 @@ class CFFParser {
         validationCommand = CharstringValidationData[14];
       } else if (value === 9) {
         // Not a valid value.
-        data.copyWithin(j - 1, j, -1);
-        j -= 1;
-        length -= 1;
+        removeCharStringBytes(cursor, data, j - 1, j);
         continue;
       } else {
         validationCommand = CharstringValidationData[value];
@@ -709,21 +781,30 @@ class CFFParser {
           }
           return false;
         }
-        if (state.firstStackClearing && validationCommand.stackClearing) {
-          state.firstStackClearing = false;
-          // the optional character width can be found before the first
-          // stack-clearing command arguments
-          stackSize -= validationCommand.min;
-          if (stackSize >= 2 && validationCommand.stem) {
-            // there are even amount of arguments for stem commands
-            stackSize %= 2;
-          } else if (stackSize > 1) {
-            warn("Found too many parameters for stack-clearing command");
+        if (validationCommand.stackClearing) {
+          // Stem operands come in pairs.
+          let extraArgs = validationCommand.stem
+            ? stackSize % 2
+            : stackSize - validationCommand.min;
+          if (state.firstStackClearing && extraArgs > 0) {
+            // Use the last extra operand as a width delta from nominalWidthX.
+            state.width = stack[--extraArgs];
           }
-          if (stackSize > 0) {
-            // Width can be any number since its the difference
-            // from nominalWidthX.
-            state.width = stack[stackSize - 1];
+          state.firstStackClearing = false;
+          if (
+            extraArgs > 0 &&
+            state.callDepth === 0 &&
+            argStarts[0] >= cursor.readStart
+          ) {
+            // OTS rejects the repeated rmoveto widths in issue 10175;
+            // FreeType ignores them. Preserve shared subroutines, where an
+            // operand may be another glyph's width.
+            removeCharStringBytes(
+              cursor,
+              data,
+              argStarts[0],
+              argStarts[extraArgs]
+            );
           }
         }
         if ("stackDelta" in validationCommand) {
@@ -731,6 +812,7 @@ class CFFParser {
             validationCommand.stackFn(stack, stackSize);
           }
           stackSize += validationCommand.stackDelta;
+          argStarts[0] = -1;
         } else if (
           validationCommand.stackClearing ||
           validationCommand.resetStack
@@ -738,9 +820,6 @@ class CFFParser {
           stackSize = 0;
         }
       }
-    }
-    if (length < data.length) {
-      data.fill(/* endchar = */ 14, length);
     }
     state.stackSize = stackSize;
     return true;
@@ -761,8 +840,10 @@ class CFFParser {
       const charstring = charStrings.get(i);
       const state = {
         callDepth: 0,
+        tokens: 0,
         stackSize: 0,
         stack: [],
+        argStarts: [],
         hints: 0,
         firstStackClearing: true,
         seac: null,
@@ -819,6 +900,13 @@ class CFFParser {
     parentDict.privateDict = privateDict;
   }
 
+  #addPrivateDataLength(length) {
+    this.#privateDataLength += length;
+    if (this.#privateDataLength > this.bytes.length) {
+      throw new FormatError("CFF Private DICT data exceeds the font length");
+    }
+  }
+
   parsePrivateDict(parentDict) {
     // no private dict, do nothing
     if (!parentDict.hasName("Private")) {
@@ -845,8 +933,16 @@ class CFFParser {
       throw new FormatError("CFF Private DICT extends past end of font");
     }
 
+    const cacheKey = `${offset}_${size}`;
+    const cachedDict = this.#privateDicts.get(cacheKey);
+    if (cachedDict) {
+      parentDict.privateDict = cachedDict;
+      return;
+    }
+
     const privateDictEnd = offset + size;
     const dictData = this.bytes.subarray(offset, privateDictEnd);
+    this.#addPrivateDataLength(dictData.length);
     const dict = this.parseDict(dictData);
     const privateDict = this.createDict(
       CFFPrivateDict,
@@ -854,6 +950,7 @@ class CFFParser {
       parentDict.strings
     );
     parentDict.privateDict = privateDict;
+    this.#privateDicts.set(cacheKey, privateDict);
 
     const blueScale = privateDict.getByName("BlueScale");
     const blueShift = privateDict.getByName("BlueShift");
@@ -938,10 +1035,19 @@ class CFFParser {
     // Validate the offset.
     if (subrsOffset === 0 || relativeOffset >= this.bytes.length) {
       this.emptyPrivateDictionary(parentDict);
+      this.#privateDicts.set(cacheKey, parentDict.privateDict);
       return;
     }
-    const subrsIndex = this.parseIndex(relativeOffset);
-    privateDict.subrsIndex = subrsIndex.obj;
+    privateDict.subrsIndex = this.#subrsIndexes.getOrInsertComputed(
+      relativeOffset,
+      () => {
+        const { obj, endPos } = this.parseIndex(relativeOffset);
+        this.#addPrivateDataLength(
+          Math.max(endPos - relativeOffset, obj.count)
+        );
+        return obj;
+      }
+    );
   }
 
   parseCharsets(pos, length, strings, cid) {
@@ -982,6 +1088,10 @@ class CFFParser {
         break;
       case 1:
         while (charset.length <= length) {
+          if (pos + 3 > bytes.length) {
+            warn("parseCharsets: Truncated charset.");
+            break;
+          }
           id = (bytes[pos++] << 8) | bytes[pos++];
           count = bytes[pos++];
           for (i = 0; i <= count; i++) {
@@ -1154,19 +1264,36 @@ class CFF {
     this.rawFileLength = rawFileLength;
   }
 
-  duplicateFirstGlyph() {
-    // Browsers will not display a glyph at position 0. Typically glyph 0 is
-    // notdef, but a number of fonts put a valid glyph there so it must be
-    // duplicated and appended.
-    if (this.charStrings.count >= 65535) {
-      warn("Not enough space in charstrings to duplicate first glyph.");
-      return;
+  /**
+   * Copy glyph 0 to a nonzero index; cmap reserves index 0 for .notdef.
+   * @param {boolean} [replaceEmptyGlyph] - Reuse an empty glyph if full.
+   * @returns {number} The copy's glyph ID, or 0 if no slot is available.
+   */
+  duplicateFirstGlyph(replaceEmptyGlyph = false) {
+    const { charStrings, fdSelect } = this;
+    const glyphZero = charStrings.get(0);
+    let id = charStrings.count;
+    if (id < 65535) {
+      charStrings.add(glyphZero);
+    } else {
+      id = replaceEmptyGlyph ? id - 1 : 0;
+      while (
+        id > 0 &&
+        (this.seacs.has(id) || !isEmptyCharString(charStrings.get(id)))
+      ) {
+        id--;
+      }
+      if (id === 0) {
+        warn("Not enough space in charstrings to duplicate first glyph.");
+        return 0;
+      }
+      charStrings.set(id, glyphZero);
     }
-    const glyphZero = this.charStrings.get(0);
-    this.charStrings.add(glyphZero);
+    this.widths[id] = this.widths[0];
     if (this.isCIDFont) {
-      this.fdSelect.fdSelect.push(this.fdSelect.fdSelect[0]);
+      fdSelect.fdSelect[id] = fdSelect.fdSelect[0];
     }
+    return id;
   }
 
   hasGlyphId(id) {
@@ -1761,11 +1888,18 @@ class CFFCompiler {
   }
 
   compilePrivateDicts(dicts, trackers, output) {
+    const locations = new Map();
+    const subrs = new Map();
     for (let i = 0, ii = dicts.length; i < ii; ++i) {
       const fontDict = dicts[i];
       const privateDict = fontDict.privateDict;
       if (!privateDict || !fontDict.hasName("Private")) {
         throw new FormatError("There must be a private dictionary.");
+      }
+      let location = locations.get(privateDict);
+      if (location) {
+        trackers[i].setEntryLocation("Private", location, output);
+        continue;
       }
       const privateDictTracker = new CFFOffsetTracker();
       const privateDictData = this.compileDict(privateDict, privateDictTracker);
@@ -1779,22 +1913,28 @@ class CFFCompiler {
         outputLength = 0;
       }
 
-      trackers[i].setEntryLocation(
-        "Private",
-        [privateDictData.length, outputLength],
-        output
-      );
+      location = [privateDictData.length, outputLength];
+      locations.set(privateDict, location);
+      trackers[i].setEntryLocation("Private", location, output);
       output.setArray(privateDictData);
 
       if (privateDict.subrsIndex && privateDict.hasName("Subrs")) {
-        const subrs = this.compileIndex(privateDict.subrsIndex);
+        subrs
+          .getOrInsertComputed(privateDict.subrsIndex, makeArr)
+          .push([privateDictTracker, outputLength]);
+      }
+    }
+    // Write Subrs last to keep relative offsets positive.
+    for (const [subrsIndex, users] of subrs) {
+      const subrsStart = output.length;
+      for (const [privateDictTracker, privateDictStart] of users) {
         privateDictTracker.setEntryLocation(
           "Subrs",
-          [privateDictData.length],
+          [subrsStart - privateDictStart],
           output
         );
-        output.setArray(subrs);
       }
+      output.setArray(this.compileIndex(subrsIndex));
     }
   }
 

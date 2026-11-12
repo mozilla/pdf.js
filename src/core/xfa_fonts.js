@@ -14,274 +14,145 @@
  */
 
 import {
-  CalibriBoldFactors,
-  CalibriBoldItalicFactors,
-  CalibriBoldItalicMetrics,
-  CalibriBoldMetrics,
-  CalibriItalicFactors,
-  CalibriItalicMetrics,
-  CalibriRegularFactors,
-  CalibriRegularMetrics,
-} from "./calibri_factors.js";
+  ArialBoldItalicWidths,
+  ArialBoldWidths,
+  ArialItalicWidths,
+  ArialRegularWidths,
+  CalibriBoldItalicWidths,
+  CalibriBoldWidths,
+  CalibriItalicWidths,
+  CalibriRegularWidths,
+  HelveticaBoldItalicWidths,
+  HelveticaBoldWidths,
+  HelveticaItalicWidths,
+  HelveticaRegularWidths,
+  MyriadProBoldItalicWidths,
+  MyriadProBoldWidths,
+  MyriadProItalicWidths,
+  MyriadProRegularWidths,
+  SegoeuiBoldItalicWidths,
+  SegoeuiBoldWidths,
+  SegoeuiItalicWidths,
+  SegoeuiRegularWidths,
+  XfaFontCodePoints,
+} from "./xfa_font_widths.js";
 import { Dict, Name } from "./primitives.js";
-import {
-  HelveticaBoldFactors,
-  HelveticaBoldItalicFactors,
-  HelveticaBoldItalicMetrics,
-  HelveticaBoldMetrics,
-  HelveticaItalicFactors,
-  HelveticaItalicMetrics,
-  HelveticaRegularFactors,
-  HelveticaRegularMetrics,
-} from "./helvetica_factors.js";
-import {
-  LiberationSansBoldItalicMapping,
-  LiberationSansBoldItalicWidths,
-  LiberationSansBoldMapping,
-  LiberationSansBoldWidths,
-  LiberationSansItalicMapping,
-  LiberationSansItalicWidths,
-  LiberationSansRegularMapping,
-  LiberationSansRegularWidths,
-} from "./liberationsans_widths.js";
-import {
-  MyriadProBoldFactors,
-  MyriadProBoldItalicFactors,
-  MyriadProBoldItalicMetrics,
-  MyriadProBoldMetrics,
-  MyriadProItalicFactors,
-  MyriadProItalicMetrics,
-  MyriadProRegularFactors,
-  MyriadProRegularMetrics,
-} from "./myriadpro_factors.js";
-import {
-  SegoeuiBoldFactors,
-  SegoeuiBoldItalicFactors,
-  SegoeuiBoldItalicMetrics,
-  SegoeuiBoldMetrics,
-  SegoeuiItalicFactors,
-  SegoeuiItalicMetrics,
-  SegoeuiRegularFactors,
-  SegoeuiRegularMetrics,
-} from "./segoeui_factors.js";
 import { getLookupTableFactory } from "./core_utils.js";
 import { normalizeFontName } from "./fonts_utils.js";
 
+const DEFAULT_METRICS = { lineHeight: 1.2, lineGap: 0.2 };
+const HELVETICA_ITALIC_METRICS = { lineHeight: 1.35, lineGap: 0.2 };
+
 const getXFAFontMap = getLookupTableFactory(function (t) {
-  t["MyriadPro-Regular"] = t["PdfJS-Fallback-Regular"] = {
-    name: "LiberationSans-Regular",
-    factors: MyriadProRegularFactors,
-    baseWidths: LiberationSansRegularWidths,
-    baseMapping: LiberationSansRegularMapping,
-    metrics: MyriadProRegularMetrics,
-  };
-  t["MyriadPro-Bold"] = t["PdfJS-Fallback-Bold"] = {
-    name: "LiberationSans-Bold",
-    factors: MyriadProBoldFactors,
-    baseWidths: LiberationSansBoldWidths,
-    baseMapping: LiberationSansBoldMapping,
-    metrics: MyriadProBoldMetrics,
-  };
-  t["MyriadPro-It"] =
-    t["MyriadPro-Italic"] =
-    t["PdfJS-Fallback-Italic"] =
-      {
-        name: "LiberationSans-Italic",
-        factors: MyriadProItalicFactors,
-        baseWidths: LiberationSansItalicWidths,
-        baseMapping: LiberationSansItalicMapping,
-        metrics: MyriadProItalicMetrics,
+  const styles = [
+    ["Regular", "Helvetica"],
+    ["Bold", "Helvetica-Bold"],
+    ["Italic", "Helvetica-Oblique"],
+    ["BoldItalic", "Helvetica-BoldOblique"],
+  ];
+  for (const [family, widths, metrics] of [
+    [
+      "Arial",
+      [
+        ArialRegularWidths,
+        ArialBoldWidths,
+        ArialItalicWidths,
+        ArialBoldItalicWidths,
+      ],
+      null,
+    ],
+    [
+      "Calibri",
+      [
+        CalibriRegularWidths,
+        CalibriBoldWidths,
+        CalibriItalicWidths,
+        CalibriBoldItalicWidths,
+      ],
+      { lineHeight: 1.2207, lineGap: 0.2207 },
+    ],
+    [
+      "Helvetica",
+      [
+        HelveticaRegularWidths,
+        HelveticaBoldWidths,
+        HelveticaItalicWidths,
+        HelveticaBoldItalicWidths,
+      ],
+      DEFAULT_METRICS,
+    ],
+    [
+      "MyriadPro",
+      [
+        MyriadProRegularWidths,
+        MyriadProBoldWidths,
+        MyriadProItalicWidths,
+        MyriadProBoldItalicWidths,
+      ],
+      DEFAULT_METRICS,
+    ],
+    [
+      "Segoeui",
+      [
+        SegoeuiRegularWidths,
+        SegoeuiBoldWidths,
+        SegoeuiItalicWidths,
+        SegoeuiBoldItalicWidths,
+      ],
+      { lineHeight: 1.33008, lineGap: 0 },
+    ],
+  ]) {
+    for (const [i, [style, name]] of styles.entries()) {
+      const font = {
+        name,
+        widths: widths[i],
       };
-  t["MyriadPro-BoldIt"] =
-    t["MyriadPro-BoldItalic"] =
-    t["PdfJS-Fallback-BoldItalic"] =
-      {
-        name: "LiberationSans-BoldItalic",
-        factors: MyriadProBoldItalicFactors,
-        baseWidths: LiberationSansBoldItalicWidths,
-        baseMapping: LiberationSansBoldItalicMapping,
-        metrics: MyriadProBoldItalicMetrics,
-      };
-  t.ArialMT =
-    t.Arial =
-    t["Arial-Regular"] =
-      {
-        name: "LiberationSans-Regular",
-        baseWidths: LiberationSansRegularWidths,
-        baseMapping: LiberationSansRegularMapping,
-      };
-  t["Arial-BoldMT"] = t["Arial-Bold"] = {
-    name: "LiberationSans-Bold",
-    baseWidths: LiberationSansBoldWidths,
-    baseMapping: LiberationSansBoldMapping,
-  };
-  t["Arial-ItalicMT"] = t["Arial-Italic"] = {
-    name: "LiberationSans-Italic",
-    baseWidths: LiberationSansItalicWidths,
-    baseMapping: LiberationSansItalicMapping,
-  };
-  t["Arial-BoldItalicMT"] = t["Arial-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
-    baseWidths: LiberationSansBoldItalicWidths,
-    baseMapping: LiberationSansBoldItalicMapping,
-  };
-  t["Calibri-Regular"] = {
-    name: "LiberationSans-Regular",
-    factors: CalibriRegularFactors,
-    baseWidths: LiberationSansRegularWidths,
-    baseMapping: LiberationSansRegularMapping,
-    metrics: CalibriRegularMetrics,
-  };
-  t["Calibri-Bold"] = {
-    name: "LiberationSans-Bold",
-    factors: CalibriBoldFactors,
-    baseWidths: LiberationSansBoldWidths,
-    baseMapping: LiberationSansBoldMapping,
-    metrics: CalibriBoldMetrics,
-  };
-  t["Calibri-Italic"] = {
-    name: "LiberationSans-Italic",
-    factors: CalibriItalicFactors,
-    baseWidths: LiberationSansItalicWidths,
-    baseMapping: LiberationSansItalicMapping,
-    metrics: CalibriItalicMetrics,
-  };
-  t["Calibri-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
-    factors: CalibriBoldItalicFactors,
-    baseWidths: LiberationSansBoldItalicWidths,
-    baseMapping: LiberationSansBoldItalicMapping,
-    metrics: CalibriBoldItalicMetrics,
-  };
-  t["Segoeui-Regular"] = {
-    name: "LiberationSans-Regular",
-    factors: SegoeuiRegularFactors,
-    baseWidths: LiberationSansRegularWidths,
-    baseMapping: LiberationSansRegularMapping,
-    metrics: SegoeuiRegularMetrics,
-  };
-  t["Segoeui-Bold"] = {
-    name: "LiberationSans-Bold",
-    factors: SegoeuiBoldFactors,
-    baseWidths: LiberationSansBoldWidths,
-    baseMapping: LiberationSansBoldMapping,
-    metrics: SegoeuiBoldMetrics,
-  };
-  t["Segoeui-Italic"] = {
-    name: "LiberationSans-Italic",
-    factors: SegoeuiItalicFactors,
-    baseWidths: LiberationSansItalicWidths,
-    baseMapping: LiberationSansItalicMapping,
-    metrics: SegoeuiItalicMetrics,
-  };
-  t["Segoeui-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
-    factors: SegoeuiBoldItalicFactors,
-    baseWidths: LiberationSansBoldItalicWidths,
-    baseMapping: LiberationSansBoldItalicMapping,
-    metrics: SegoeuiBoldItalicMetrics,
-  };
-  t["Helvetica-Regular"] = t.Helvetica = {
-    name: "LiberationSans-Regular",
-    factors: HelveticaRegularFactors,
-    baseWidths: LiberationSansRegularWidths,
-    baseMapping: LiberationSansRegularMapping,
-    metrics: HelveticaRegularMetrics,
-  };
-  t["Helvetica-Bold"] = {
-    name: "LiberationSans-Bold",
-    factors: HelveticaBoldFactors,
-    baseWidths: LiberationSansBoldWidths,
-    baseMapping: LiberationSansBoldMapping,
-    metrics: HelveticaBoldMetrics,
-  };
-  t["Helvetica-Italic"] = {
-    name: "LiberationSans-Italic",
-    factors: HelveticaItalicFactors,
-    baseWidths: LiberationSansItalicWidths,
-    baseMapping: LiberationSansItalicMapping,
-    metrics: HelveticaItalicMetrics,
-  };
-  t["Helvetica-BoldItalic"] = {
-    name: "LiberationSans-BoldItalic",
-    factors: HelveticaBoldItalicFactors,
-    baseWidths: LiberationSansBoldItalicWidths,
-    baseMapping: LiberationSansBoldItalicMapping,
-    metrics: HelveticaBoldItalicMetrics,
-  };
+      if (metrics) {
+        font.metrics =
+          family === "Helvetica" && i >= 2 ? HELVETICA_ITALIC_METRICS : metrics;
+      }
+      t[`${family}-${style}`] = font;
+    }
+  }
+  for (const [style] of styles) {
+    t[`PdfJS-Fallback-${style}`] = t[`MyriadPro-${style}`];
+  }
+  t["MyriadPro-It"] = t["MyriadPro-Italic"];
+  t["MyriadPro-BoldIt"] = t["MyriadPro-BoldItalic"];
+  t.ArialMT = t.Arial = t["Arial-Regular"];
+  t["Arial-BoldMT"] = t["Arial-Bold"];
+  t["Arial-ItalicMT"] = t["Arial-Italic"];
+  t["Arial-BoldItalicMT"] = t["Arial-BoldItalic"];
+  t.Helvetica = t["Helvetica-Regular"];
 });
 
 function getXfaFontName(name) {
-  const fontName = normalizeFontName(name);
-  const fontMap = getXFAFontMap();
-  return fontMap[fontName];
+  return getXFAFontMap()[normalizeFontName(name)];
 }
 
-function getXfaFontWidths(name) {
-  const info = getXfaFontName(name);
-  if (!info) {
-    return null;
-  }
-
-  const { baseWidths, baseMapping, factors } = info;
-  const rescaledBaseWidths = !factors
-    ? baseWidths
-    : baseWidths.map((w, i) => w * factors[i]);
-
-  let currentCode = -2;
-  let currentArray;
-
+function getXfaFontDict(name) {
+  const { widths } = getXfaFontName(name);
   // Widths array for composite font is:
   // CharCode1 [10, 20, 30] ...
   // which means:
   //   - CharCode1 has a width equal to 10
   //   - CharCode1+1 has a width equal to 20
   //   - CharCode1+2 has a width equal to 30
-  //
-  // The baseMapping array contains a map for glyph index to unicode.
-  // So from baseMapping we'll get sorted unicodes and their positions
-  // (i.e. glyph indices) and then we put widths in an array for the
-  // the consecutive unicodes.
   const newWidths = [];
-  for (const [unicode, glyphIndex] of baseMapping
-    .map(
-      (charUnicode, index) => [
-        charUnicode,
-        index,
-      ] /* collect unicode and glyph index */
-    )
-    .sort(
-      ([unicode1], [unicode2]) =>
-        unicode1 - unicode2 /* order by unicode only */
-    )) {
-    if (unicode === -1) {
-      continue;
-    }
-
-    if (unicode === currentCode + 1) {
-      currentArray.push(rescaledBaseWidths[glyphIndex]);
-      currentCode += 1;
-    } else {
-      currentCode = unicode;
-      currentArray = [rescaledBaseWidths[glyphIndex]];
-      newWidths.push(unicode, currentArray);
-    }
+  for (let i = 0, j = 0, ii = XfaFontCodePoints.length; i < ii; i += 2) {
+    const count = XfaFontCodePoints[i + 1];
+    newWidths.push(XfaFontCodePoints[i], widths.slice(j, j + count));
+    j += count;
   }
-
-  return newWidths;
-}
-
-function getXfaFontDict(name) {
-  const widths = getXfaFontWidths(name);
   const dict = new Dict(null);
   dict.set("BaseFont", Name.get(name));
   dict.set("Type", Name.get("Font"));
   dict.set("Subtype", Name.get("CIDFontType2"));
   dict.set("Encoding", Name.get("Identity-H"));
   dict.set("CIDToGIDMap", Name.get("Identity"));
-  dict.set("W", widths);
-  dict.set("FirstChar", widths[0]);
-  dict.set("LastChar", widths.at(-2) + widths.at(-1).length - 1);
+  dict.set("W", newWidths);
+  dict.set("FirstChar", newWidths[0]);
+  dict.set("LastChar", newWidths.at(-2) + newWidths.at(-1).length - 1);
   const descriptor = new Dict(null);
   dict.set("FontDescriptor", descriptor);
   const systemInfo = new Dict(null);

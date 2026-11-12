@@ -14,129 +14,155 @@
  */
 
 import {
+  exposeObject,
   FORMS_VERSION,
+  uncurryThis,
   USERACTIVATION_CALLBACKID,
   VIEWER_TYPE,
   VIEWER_VARIATION,
   VIEWER_VERSION,
 } from "./app_utils.js";
-import { EventDispatcher } from "./event.js";
 import { FullScreen } from "./fullscreen.js";
 import { isValidColor } from "./color.js";
-import { PDFObject } from "./pdf_object.js";
 import { Thermometer } from "./thermometer.js";
 
-class App extends PDFObject {
+// Captured before any script runs: by redefining these methods, a script could
+// get the timer internals, e.g. to forge the data of a timeout handle and make
+// `clearTimeOut` cancel the user activation expiry (USERACTIVATION_CALLBACKID).
+const mapDelete = uncurryThis(Map.prototype.delete);
+const mapGet = uncurryThis(Map.prototype.get);
+const mapSet = uncurryThis(Map.prototype.set);
+const weakMapDelete = uncurryThis(WeakMap.prototype.delete);
+const weakMapGet = uncurryThis(WeakMap.prototype.get);
+const weakMapSet = uncurryThis(WeakMap.prototype.set);
+const registerFinalizer = uncurryThis(FinalizationRegistry.prototype.register);
+const unregisterFinalizer = uncurryThis(
+  FinalizationRegistry.prototype.unregister
+);
+
+// Internal entry point for initSandbox, populated by App's static block.
+const AppInternals = Object.create(null);
+
+class App {
+  #constants = null;
+
+  #focusRect = true;
+
+  #fs = exposeObject(new FullScreen(), /* bindMethods = */ true);
+
+  #language;
+
+  #openInPlace = false;
+
+  #platform;
+
+  #runtimeHighlight = false;
+
+  #runtimeHighlightColor = ["T"];
+
+  #thermometer = exposeObject(new Thermometer(), /* bindMethods = */ true);
+
+  #toolbar = false;
+
+  #doc;
+
+  #timeoutIds = new WeakMap();
+
+  // Cancel timers when their handles are collected, as specified by the
+  // Acrobat API for app.setTimeOut and app.setInterval.
+  #timeoutIdsRegistry = new FinalizationRegistry(this.#cleanTimeout.bind(this));
+
+  #timeoutCallbackIds = new Map();
+
+  #timeoutCallbackId = USERACTIVATION_CALLBACKID + 1;
+
+  #globalEval;
+
+  #externalCall;
+
+  #send;
+
+  #userActivationData;
+
   constructor(data) {
-    super(data);
+    this.#send = data.send;
+    this.#userActivationData = data.userActivationData;
 
-    this._constants = null;
-    this._focusRect = true;
-    this._fs = null;
-    this._language = App._getLanguage(data.language);
-    this._openInPlace = false;
-    this._platform = App._getPlatform(data.platform);
-    this._runtimeHighlight = false;
-    this._runtimeHighlightColor = ["T"];
-    this._thermometer = null;
-    this._toolbar = false;
+    this.#language = App.#getLanguage(data.language);
+    this.#platform = App.#getPlatform(data.platform);
 
-    this._document = data._document;
-    this._proxyHandler = data.proxyHandler;
-    this._objects = Object.create(null);
-    this._eventDispatcher = new EventDispatcher(
-      this._document,
-      data.calculationOrder,
-      this._objects,
-      data.externalCall
-    );
-
-    this._timeoutIds = new WeakMap();
-    // About setTimeOut/setInterval return values (specs):
-    //   The return value of this method must be held in a
-    //   JavaScript variable.
-    //   Otherwise, the timeout object is subject to garbage-collection,
-    //   which would cause the clock to stop.
-    this._timeoutIdsRegistry = new FinalizationRegistry(
-      this._cleanTimeout.bind(this)
-    );
-
-    this._timeoutCallbackIds = new Map();
-    this._timeoutCallbackId = USERACTIVATION_CALLBACKID + 1;
-    this._globalEval = data.globalEval;
-    this._externalCall = data.externalCall;
+    this.#doc = data.doc;
+    this.#globalEval = data.globalEval;
+    this.#externalCall = data.externalCall;
   }
 
-  // This function is called thanks to the proxy
-  // when we call app['random_string'] to dispatch the event.
-  _dispatchEvent(pdfEvent) {
-    this._eventDispatcher.dispatch(pdfEvent);
+  static {
+    Object.assign(AppInternals, {
+      evalCallback: (app, data) => app.#evalCallback(data),
+    });
   }
 
-  _registerTimeoutCallback(cExpr) {
-    const id = this._timeoutCallbackId++;
-    this._timeoutCallbackIds.set(id, cExpr);
+  #registerTimeoutCallback(cExpr) {
+    const id = this.#timeoutCallbackId++;
+    mapSet(this.#timeoutCallbackIds, id, cExpr);
     return id;
   }
 
-  _unregisterTimeoutCallback(id) {
-    this._timeoutCallbackIds.delete(id);
+  #unregisterTimeoutCallback(id) {
+    mapDelete(this.#timeoutCallbackIds, id);
   }
 
-  _evalCallback({ callbackId, interval }) {
-    const documentObj = this._document.obj;
+  #evalCallback({ callbackId, interval }) {
     if (callbackId === USERACTIVATION_CALLBACKID) {
-      // Special callback id for userActivation stuff.
-      documentObj._userActivation = false;
+      // Reserved callback for user-activation expiry.
+      this.#userActivationData.userActivation = false;
       return;
     }
-    const expr = this._timeoutCallbackIds.get(callbackId);
+    const expr = mapGet(this.#timeoutCallbackIds, callbackId);
     if (!interval) {
-      this._unregisterTimeoutCallback(callbackId);
+      this.#unregisterTimeoutCallback(callbackId);
     }
 
     if (expr) {
-      const saveUserActivation = documentObj._userActivation;
-      // A setTimeout/setInterval callback is executed so it can't be a user
-      // choice.
-      documentObj._userActivation = false;
-      this._globalEval(expr);
-      documentObj._userActivation = saveUserActivation;
+      const saveUserActivation = this.#userActivationData.userActivation;
+      // Timer callbacks do not carry user activation.
+      this.#userActivationData.userActivation = false;
+      this.#globalEval(expr);
+      this.#userActivationData.userActivation = saveUserActivation;
     }
   }
 
-  _registerTimeout(callbackId, interval) {
+  #registerTimeout(callbackId, interval) {
     const timeout = Object.create(null);
     const id = { callbackId, interval };
-    this._timeoutIds.set(timeout, id);
-    // Allow explicit cancellation to unregister the finalizer.
-    this._timeoutIdsRegistry.register(timeout, id, timeout);
+    weakMapSet(this.#timeoutIds, timeout, id);
+    // Reuse the handle to unregister its finalizer on explicit cancellation.
+    registerFinalizer(this.#timeoutIdsRegistry, timeout, id, timeout);
     return timeout;
   }
 
-  _unregisterTimeout(timeout) {
-    // Ignore unknown handles; unregister can throw for invalid tokens.
-    const data = this._timeoutIds.get(timeout);
+  #unregisterTimeout(timeout) {
+    const data = weakMapGet(this.#timeoutIds, timeout);
     if (!data) {
       return;
     }
 
-    this._timeoutIds.delete(timeout);
-    this._timeoutIdsRegistry.unregister(timeout);
-    this._cleanTimeout(data);
+    weakMapDelete(this.#timeoutIds, timeout);
+    unregisterFinalizer(this.#timeoutIdsRegistry, timeout);
+    this.#cleanTimeout(data);
   }
 
-  _cleanTimeout({ callbackId, interval }) {
-    this._unregisterTimeoutCallback(callbackId);
+  #cleanTimeout({ callbackId, interval }) {
+    this.#unregisterTimeoutCallback(callbackId);
 
     if (interval) {
-      this._externalCall("clearInterval", [callbackId]);
+      this.#externalCall("clearInterval", [callbackId]);
     } else {
-      this._externalCall("clearTimeout", [callbackId]);
+      this.#externalCall("clearTimeout", [callbackId]);
     }
   }
 
-  static _getPlatform(platform) {
+  static #getPlatform(platform) {
     if (typeof platform === "string") {
       platform = platform.toLowerCase();
       if (platform.includes("win")) {
@@ -148,7 +174,7 @@ class App extends PDFObject {
     return "UNIX";
   }
 
-  static _getLanguage(language) {
+  static #getLanguage(language) {
     const [main, sub] = language.toLowerCase().split(/[-_]/, 2);
     switch (main) {
       case "zh":
@@ -183,7 +209,7 @@ class App extends PDFObject {
   }
 
   get activeDocs() {
-    return [this._document.wrapped];
+    return [globalThis];
   }
 
   set activeDocs(_) {
@@ -191,15 +217,15 @@ class App extends PDFObject {
   }
 
   get calculate() {
-    return this._document.obj.calculate;
+    return this.#doc.calculate;
   }
 
   set calculate(calculate) {
-    this._document.obj.calculate = calculate;
+    this.#doc.calculate = calculate;
   }
 
   get constants() {
-    return (this._constants ??= Object.freeze({
+    return (this.#constants ??= Object.freeze({
       align: Object.freeze({
         left: 0,
         center: 1,
@@ -215,12 +241,12 @@ class App extends PDFObject {
   }
 
   get focusRect() {
-    return this._focusRect;
+    return this.#focusRect;
   }
 
   set focusRect(val) {
     /* TODO or not */
-    this._focusRect = val;
+    this.#focusRect = val;
   }
 
   get formsVersion() {
@@ -240,10 +266,7 @@ class App extends PDFObject {
   }
 
   get fs() {
-    return (this._fs ??= new Proxy(
-      new FullScreen({ send: this._send }),
-      this._proxyHandler
-    ));
+    return this.#fs;
   }
 
   set fs(_) {
@@ -251,7 +274,7 @@ class App extends PDFObject {
   }
 
   get language() {
-    return this._language;
+    return this.#language;
   }
 
   set language(_) {
@@ -283,16 +306,16 @@ class App extends PDFObject {
   }
 
   get openInPlace() {
-    return this._openInPlace;
+    return this.#openInPlace;
   }
 
   set openInPlace(val) {
-    this._openInPlace = val;
+    this.#openInPlace = val;
     /* TODO */
   }
 
   get platform() {
-    return this._platform;
+    return this.#platform;
   }
 
   set platform(_) {
@@ -324,30 +347,27 @@ class App extends PDFObject {
   }
 
   get runtimeHighlight() {
-    return this._runtimeHighlight;
+    return this.#runtimeHighlight;
   }
 
   set runtimeHighlight(val) {
-    this._runtimeHighlight = val;
+    this.#runtimeHighlight = val;
     /* TODO */
   }
 
   get runtimeHighlightColor() {
-    return this._runtimeHighlightColor;
+    return this.#runtimeHighlightColor;
   }
 
   set runtimeHighlightColor(val) {
     if (isValidColor(val)) {
-      this._runtimeHighlightColor = val;
+      this.#runtimeHighlightColor = val;
       /* TODO */
     }
   }
 
   get thermometer() {
-    return (this._thermometer ??= new Proxy(
-      new Thermometer({ send: this._send }),
-      this._proxyHandler
-    ));
+    return this.#thermometer;
   }
 
   set thermometer(_) {
@@ -355,11 +375,11 @@ class App extends PDFObject {
   }
 
   get toolbar() {
-    return this._toolbar;
+    return this.#toolbar;
   }
 
   set toolbar(val) {
-    this._toolbar = val;
+    this.#toolbar = val;
     /* TODO */
   }
 
@@ -425,10 +445,10 @@ class App extends PDFObject {
     oDoc = null,
     oCheckbox = null
   ) {
-    if (!this._document.obj._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return 0;
     }
-    this._document.obj._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     if (cMsg && typeof cMsg === "object") {
       nType = cMsg.nType;
@@ -443,10 +463,10 @@ class App extends PDFObject {
         ? 0
         : nType;
     if (nType >= 2) {
-      return this._externalCall("confirm", [cMsg]) ? 4 : 3;
+      return this.#externalCall("confirm", [cMsg]) ? 4 : 3;
     }
 
-    this._externalCall("alert", [cMsg]);
+    this.#externalCall("alert", [cMsg]);
     return 1;
   }
 
@@ -463,11 +483,11 @@ class App extends PDFObject {
   }
 
   clearInterval(oInterval) {
-    this._unregisterTimeout(oInterval);
+    this.#unregisterTimeout(oInterval);
   }
 
   clearTimeOut(oTime) {
-    this._unregisterTimeout(oTime);
+    this.#unregisterTimeout(oTime);
   }
 
   endPriv() {
@@ -479,17 +499,17 @@ class App extends PDFObject {
   }
 
   execMenuItem(item) {
-    if (!this._document.obj._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return;
     }
-    this._document.obj._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     switch (item) {
       case "SaveAs":
-        if (this._document.obj._disableSaving) {
+        if (this.#userActivationData.disableSaving) {
           return;
         }
-        this._send({ command: item });
+        this.#send({ command: item });
         break;
       case "FirstPage":
       case "LastPage":
@@ -497,16 +517,16 @@ class App extends PDFObject {
       case "PrevPage":
       case "ZoomViewIn":
       case "ZoomViewOut":
-        this._send({ command: item });
+        this.#send({ command: item });
         break;
       case "FitPage":
-        this._send({ command: "zoom", value: "page-fit" });
+        this.#send({ command: "zoom", value: "page-fit" });
         break;
       case "Print":
-        if (this._document.obj._disablePrinting) {
+        if (this.#userActivationData.disablePrinting) {
           return;
         }
-        this._send({ command: "print" });
+        this.#send({ command: "print" });
         break;
     }
   }
@@ -592,10 +612,10 @@ class App extends PDFObject {
   }
 
   response(cQuestion, cTitle = "", cDefault = "", bPassword = "", cLabel = "") {
-    if (!this._document.obj._userActivation) {
+    if (!this.#userActivationData.userActivation) {
       return null;
     }
-    this._document.obj._userActivation = false;
+    this.#userActivationData.userActivation = false;
 
     if (cQuestion && typeof cQuestion === "object") {
       cDefault = cQuestion.cDefault;
@@ -603,7 +623,7 @@ class App extends PDFObject {
     }
     cQuestion = (cQuestion || "").toString();
     cDefault = (cDefault || "").toString();
-    return this._externalCall("prompt", [cQuestion, cDefault || ""]);
+    return this.#externalCall("prompt", [cQuestion, cDefault || ""]);
   }
 
   setInterval(cExpr, nMilliseconds = 0) {
@@ -620,9 +640,9 @@ class App extends PDFObject {
         "Second argument of app.setInterval must be a number"
       );
     }
-    const callbackId = this._registerTimeoutCallback(cExpr);
-    this._externalCall("setInterval", [callbackId, nMilliseconds]);
-    return this._registerTimeout(callbackId, true);
+    const callbackId = this.#registerTimeoutCallback(cExpr);
+    this.#externalCall("setInterval", [callbackId, nMilliseconds]);
+    return this.#registerTimeout(callbackId, true);
   }
 
   setTimeOut(cExpr, nMilliseconds = 0) {
@@ -637,9 +657,9 @@ class App extends PDFObject {
     if (typeof nMilliseconds !== "number") {
       throw new TypeError("Second argument of app.setTimeOut must be a number");
     }
-    const callbackId = this._registerTimeoutCallback(cExpr);
-    this._externalCall("setTimeout", [callbackId, nMilliseconds]);
-    return this._registerTimeout(callbackId, false);
+    const callbackId = this.#registerTimeoutCallback(cExpr);
+    this.#externalCall("setTimeout", [callbackId, nMilliseconds]);
+    return this.#registerTimeout(callbackId, false);
   }
 
   trustedFunction() {
@@ -651,4 +671,4 @@ class App extends PDFObject {
   }
 }
 
-export { App };
+export { App, AppInternals };

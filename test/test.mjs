@@ -1163,6 +1163,9 @@ async function startBrowser({
       // file that Firefox keeps locked briefly after shutdown, causing EBUSY
       // errors in Puppeteer's profile cleanup on Windows.
       "privacy.bounceTrackingProtection.mode": 0,
+      // Keep fullscreen inside the browser window: on Linux, Xvfb has no
+      // window manager and fullscreen requests are denied (bug 2078254).
+      "full-screen-api.ignore-widgets": true,
       ...extraPrefsFirefox,
     };
   }

@@ -19,6 +19,7 @@ import {
   AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
+  createPromiseCapability,
   createValidAbsoluteUrl,
   FeatureTest,
   getUuid,
@@ -28,6 +29,7 @@ import {
   makeMap,
   makeObj,
   makeSet,
+  noopFn,
   normalizeUnicode,
   OPS,
   PasswordException,
@@ -47,7 +49,6 @@ import {
   OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
-  SupportedImageMimeTypes,
 } from "../../src/display/display_utils.js";
 import {
   build,
@@ -68,6 +69,7 @@ import {
   renderRichText,
   setLayerDimensions,
   stopEvent,
+  SupportedImageMimeTypes,
 } from "../../src/display/dom_utils.js";
 import { AnnotationEditorLayer } from "../../src/display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "../../src/display/editor/tools.js";
@@ -96,6 +98,7 @@ const expectedAPI = Object.freeze({
   applyOpacity,
   build,
   ColorPicker,
+  createPromiseCapability,
   createValidAbsoluteUrl,
   CSSConstants,
   DOMSVGFactory,
@@ -121,6 +124,7 @@ const expectedAPI = Object.freeze({
   makeSet,
   MathClamp,
   noContextMenu,
+  noopFn,
   normalizeUnicode,
   OPS,
   OutputScale,
