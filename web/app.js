@@ -53,6 +53,7 @@ import {
   isDataScheme,
   isPdfFile,
   MathClamp,
+  noopFn,
   OutputScale,
   PDFWorker,
   ResponseException,
@@ -1692,17 +1693,12 @@ const PDFViewerApplication = {
       });
     });
 
-    // Since the `setInitialView` call below depends on this being resolved,
-    // fetch it early to avoid delaying initial rendering of the PDF document.
-    const pageLayoutPromise = pdfDocument.getPageLayout().catch(() => {
-      /* Avoid breaking initial rendering; ignoring errors. */
-    });
-    const pageModePromise = pdfDocument.getPageMode().catch(() => {
-      /* Avoid breaking initial rendering; ignoring errors. */
-    });
-    const openActionPromise = pdfDocument.getOpenAction().catch(() => {
-      /* Avoid breaking initial rendering; ignoring errors. */
-    });
+    // Since the `setInitialView` call below depends on these being resolved,
+    // fetch them early to avoid delaying initial rendering of the document.
+    // Note: To avoid breaking initial rendering, ignore any errors.
+    const pageLayoutPromise = pdfDocument.getPageLayout().catch(noopFn);
+    const pageModePromise = pdfDocument.getPageMode().catch(noopFn);
+    const openActionPromise = pdfDocument.getOpenAction().catch(noopFn);
 
     this.toolbar?.setPagesCount(pdfDocument.numPages, false);
     this.secondaryToolbar?.setPagesCount(pdfDocument.numPages);
@@ -1739,9 +1735,7 @@ const PDFViewerApplication = {
         scrollMode: ScrollMode.UNKNOWN,
         spreadMode: SpreadMode.UNKNOWN,
       })
-      .catch(() => {
-        /* Unable to read from storage; ignoring errors. */
-      });
+      .catch(noopFn);
 
     firstPagePromise.then(pdfPage => {
       this.loadingBar?.setWidth(this.appConfig.viewerContainer);
@@ -1843,7 +1837,7 @@ const PDFViewerApplication = {
           // even if there are any errors thrown above.
           this.setInitialView();
         })
-        .then(function () {
+        .then(() => {
           // At this point, rendering of the initial page(s) should always have
           // started (and may even have completed).
           // To prevent any future issues, e.g. the document being completely
@@ -2345,9 +2339,7 @@ const PDFViewerApplication = {
   beforePrint() {
     this._printAnnotationStoragePromise = this.pdfScriptingManager
       .dispatchWillPrint()
-      .catch(() => {
-        /* Avoid breaking printing; ignoring errors. */
-      })
+      .catch(noopFn) // Avoid breaking printing; ignoring errors.
       .then(() => this.pdfDocument?.annotationStorage.print);
 
     if (this.printService) {
@@ -2836,7 +2828,7 @@ const PDFViewerApplication = {
     document.blockUnblockOnload?.(false);
 
     // Ensure that this method is only ever run once.
-    this._unblockDocumentLoadEvent = () => {};
+    this._unblockDocumentLoadEvent = noopFn;
   },
 
   /**
@@ -2988,9 +2980,7 @@ function onSidebarViewChanged({ view }) {
 
   if (this.isInitialViewSet) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.setMultiple({ sidebarView: view }).catch(() => {
-      // Unable to write to storage.
-    });
+    this.store?.setMultiple({ sidebarView: view }).catch(noopFn);
   }
 }
 
@@ -3005,9 +2995,7 @@ function onUpdateViewarea({ location }) {
         scrollTop: location.top,
         rotation: location.rotation,
       })
-      .catch(() => {
-        // Unable to write to storage.
-      });
+      .catch(noopFn);
   }
   if (this.appConfig.secondaryToolbar) {
     this.appConfig.secondaryToolbar.viewBookmarkButton.href =
@@ -3018,9 +3006,7 @@ function onUpdateViewarea({ location }) {
 function onViewerModesChanged(name, evt) {
   if (this.isInitialViewSet && !this.pdfViewer.isInPresentationMode) {
     // Only update the storage when the document has been loaded *and* rendered.
-    this.store?.setMultiple({ [name]: evt.mode }).catch(() => {
-      // Unable to write to storage.
-    });
+    this.store?.setMultiple({ [name]: evt.mode }).catch(noopFn);
   }
 }
 

@@ -17,6 +17,7 @@ import {
   AbortException,
   assert,
   createPromiseCapability,
+  noopFn,
 } from "../shared/util.js";
 import {
   BasePDFStream,
@@ -144,7 +145,7 @@ class PDFFetchStreamReader extends BasePDFStreamReader {
   }
 
   cancel(reason) {
-    this._reader?.cancel(reason).catch(() => {});
+    this._reader?.cancel(reason).catch(noopFn);
     this._abortController.abort();
   }
 }
@@ -186,7 +187,7 @@ class PDFFetchStreamRangeReader extends BasePDFStreamRangeReader {
   }
 
   cancel(reason) {
-    this._reader?.cancel(reason).catch(() => {});
+    this._reader?.cancel(reason).catch(noopFn);
     this._abortController.abort();
   }
 }

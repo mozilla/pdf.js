@@ -22,6 +22,7 @@ import {
   InvalidPDFException,
   isArrayEqual,
   makeArr,
+  noopFn,
   PageActionEventType,
   RenderingIntentFlag,
   shadow,
@@ -1503,9 +1504,7 @@ class PDFDocument {
 
   loadXfaResources(handler, task) {
     return Promise.all([
-      this.#loadXfaFonts(handler, task).catch(() => {
-        // Ignore errors, to allow the document to load.
-      }),
+      this.#loadXfaFonts(handler, task).catch(noopFn), // Ignore errors, to allow the document to load.
       this.#loadXfaImages(),
     ]);
   }

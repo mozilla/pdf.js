@@ -26,6 +26,7 @@ import {
   info,
   isNodeJS,
   makeObj,
+  noopFn,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
@@ -2033,9 +2034,7 @@ class PDFPageProxy {
     }
     intentState.streamReader
       .cancel(new AbortException(reason.message))
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      });
+      .catch(noopFn);
     intentState.streamReader = null;
 
     if (this._transport.destroyed) {
@@ -2176,10 +2175,9 @@ class PDFWorker {
   #initializeFromPort(port) {
     this.#port = port;
     this.#messageHandler = new MessageHandler("main", "worker", port);
-    this.#messageHandler.on("ready", () => {
-      // Ignoring "ready" event -- MessageHandler should already be initialized
-      // and ready to accept messages.
-    });
+    // Ignoring "ready" event -- MessageHandler should already be initialized
+    // and ready to accept messages.
+    this.#messageHandler.on("ready", noopFn);
     this.#resolve();
   }
 
@@ -2762,16 +2760,13 @@ class WorkerTransport {
     });
 
     // TODO: Connect the core and renderer workers directly.
-    this.rendererWorker?.promise.then(
-      () => {
-        this.rendererWorker?.messageHandler?.on("FontFallback", data =>
-          this.destroyed
-            ? null
-            : messageHandler.sendWithPromise("FontFallback", data)
-        );
-      },
-      () => {} // Rendering handles startup failure.
-    );
+    this.rendererWorker?.promise.then(() => {
+      this.rendererWorker?.messageHandler?.on("FontFallback", data =>
+        this.destroyed
+          ? null
+          : messageHandler.sendWithPromise("FontFallback", data)
+      );
+    }, noopFn); // Rendering handles startup failure.
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
@@ -3377,10 +3372,9 @@ class InternalRenderTask {
   }
 
   get completed() {
-    return this.capability.promise.catch(() => {
-      // Ignoring errors, since we only want to know when rendering is
-      // no longer pending.
-    });
+    // Ignoring errors, since we only want to know when rendering is
+    // no longer pending.
+    return this.capability.promise.catch(noopFn);
   }
 
   get isWorkerRendering() {
