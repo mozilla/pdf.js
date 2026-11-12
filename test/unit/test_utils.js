@@ -19,8 +19,9 @@ import {
   fetchData as fetchDataNode,
   NodeBinaryDataFactory,
 } from "../../src/display/node_utils.js";
-import { NullStream, StringStream } from "../../src/core/stream.js";
+import { NullStream, Stream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
+import { BrotliStream } from "../../src/core/brotli_stream.js";
 import { DOMBinaryDataFactory } from "../../src/display/binary_data_factory.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
 
@@ -50,13 +51,15 @@ const DefaultBinaryDataFactory =
     : DOMBinaryDataFactory;
 
 async function fetchBuiltInCMapHelper(binaryDataFactory, cMapPacked, name) {
-  return {
-    cMapData: await binaryDataFactory.fetch({
-      kind: "cMapUrl",
-      filename: `${name}${cMapPacked ? ".bcmap" : ""}`,
-    }),
-    cMapPacked,
-  };
+  let cMapData = await binaryDataFactory.fetch({
+    kind: "cMapUrl",
+    filename: `${name}${cMapPacked ? ".bcmap.br" : ""}`,
+  });
+  if (cMapPacked) {
+    const stream = new BrotliStream(new Stream(cMapData), cMapData.length);
+    cMapData = (await stream.asyncGetBytes()) ?? stream.getBytes();
+  }
+  return { cMapData, cMapPacked };
 }
 
 function buildGetDocumentParams(filename, options) {
