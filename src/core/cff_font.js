@@ -105,8 +105,22 @@ class CFFFont {
       return charCodeToGlyphId;
     }
 
-    const encoding = cff.encoding ? cff.encoding.encoding : null;
-    return type1FontGlyphMapping(properties, encoding, charsets);
+    const mapping = type1FontGlyphMapping(
+      properties,
+      cff.encoding?.encoding,
+      charsets
+    );
+    // For duplicate .notdef names, use the last glyph as the fallback,
+    // matching Ghostscript.
+    const notdefId = charsets.lastIndexOf(".notdef");
+    if (notdefId > 0) {
+      for (const [charCode, glyphId] of mapping) {
+        if (glyphId === 0) {
+          mapping.set(charCode, notdefId);
+        }
+      }
+    }
+    return mapping;
   }
 
   hasGlyphId(id) {
