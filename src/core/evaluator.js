@@ -2360,6 +2360,7 @@ class PartialEvaluator {
     keepWhiteSpace = false,
     prevRefs = null,
     intersector = null,
+    markedContentScope = "",
   }) {
     if (stream.isAsync) {
       const bytes = await stream.asyncGetBytes();
@@ -3588,6 +3589,11 @@ class PartialEvaluator {
                 }
 
                 const localResources = dict.get("Resources");
+                // MCIDs are local to a form XObject having /StructParents.
+                const xObjMarkedContentScope =
+                  Number.isInteger(dict.get("StructParents")) && dict.objId
+                    ? `_x${dict.objId}`
+                    : markedContentScope;
 
                 // Enqueue the `textContent` chunk before parsing the /Form
                 // XObject.
@@ -3611,6 +3617,7 @@ class PartialEvaluator {
                     disableNormalization,
                     keepWhiteSpace,
                     prevRefs: seenRefs,
+                    markedContentScope: xObjMarkedContentScope,
                   })
                   .then(function () {
                     if (!sinkWrapper.enqueueInvoked) {
@@ -3708,7 +3715,7 @@ class PartialEvaluator {
               textContent.items.push({
                 type: "beginMarkedContentProps",
                 id: Number.isInteger(mcid)
-                  ? `${self.idFactory.getPageObjId()}_mc${mcid}`
+                  ? `${self.idFactory.getPageObjId()}${markedContentScope}_mc${mcid}`
                   : null,
                 tag: args[0] instanceof Name ? args[0].name : null,
               });
