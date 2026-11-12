@@ -1109,20 +1109,25 @@ class AnnotationEditor {
     if (this._editToolbar || this.#isInEditMode) {
       return this._editToolbar;
     }
-    this._editToolbar = new EditorToolbar(this);
-    this.div.append(this._editToolbar.render());
+    const toolbar = (this._editToolbar = new EditorToolbar(this));
+    this.div.append(toolbar.render());
     const { toolbarButtons } = this;
     if (toolbarButtons) {
       for (const [name, tool] of toolbarButtons) {
-        await this._editToolbar.addButton(name, tool);
+        await toolbar.addButton(name, tool);
+        if (this._editToolbar !== toolbar) {
+          // The editor can be removed while a button is still being added,
+          // which nulls out `_editToolbar` (see issue 22341).
+          return this._editToolbar;
+        }
       }
     }
     if (!this.hasComment) {
-      this._editToolbar.addButton("comment", this.addCommentButton());
+      toolbar.addButton("comment", this.addCommentButton());
     }
-    this._editToolbar.addButton("delete");
+    toolbar.addButton("delete");
 
-    return this._editToolbar;
+    return toolbar;
   }
 
   addCommentButtonInToolbar() {
