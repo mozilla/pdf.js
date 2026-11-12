@@ -78,6 +78,7 @@ import {
 import { parseMarkedContentProps, textSinkWrapper } from "./evaluator_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
+import { BrotliStream } from "./brotli_stream.js";
 import { CharCodeMap } from "./char_code_map.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
@@ -398,7 +399,7 @@ class PartialEvaluator {
 
   async fetchBuiltInCMap(name) {
     const { cMapPacked, cMapUrl, useWorkerFetch } = this.options;
-    const cMapData = await WasmLoader.fetch(
+    let cMapData = await WasmLoader.fetch(
       {
         handler: this.handler,
         options: {
@@ -408,8 +409,12 @@ class PartialEvaluator {
         },
       },
       "cMapUrl",
-      `${name}${cMapPacked ? ".bcmap" : ""}`
+      `${name}${cMapPacked ? ".bcmap.br" : ""}`
     );
+    if (cMapPacked) {
+      const stream = new BrotliStream(new Stream(cMapData), cMapData.length);
+      cMapData = (await stream.asyncGetBytes()) ?? stream.getBytes();
+    }
     return { cMapData, cMapPacked };
   }
 

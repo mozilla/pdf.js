@@ -714,7 +714,7 @@ function createComponentsBundle(defines) {
 }
 
 function createCMapBundle() {
-  return gulp.src(["external/bcmaps/*.bcmap", "external/bcmaps/LICENSE"], {
+  return gulp.src(["external/bcmaps/*.bcmap.br", "external/bcmaps/LICENSE"], {
     base: "external/bcmaps",
     encoding: false,
   });
@@ -1445,6 +1445,27 @@ gulp.task("cmaps", async function () {
   const { compressCmaps } =
     await import("./external/cmapscompress/compress.mjs");
   compressCmaps(CMAP_INPUT, VIEWER_CMAP_OUTPUT, true);
+
+  // Compress the `.bcmap` files with Brotli, to further reduce their size.
+  fs.readdirSync(VIEWER_CMAP_OUTPUT).forEach(file => {
+    if (/\.bcmap$/i.test(file)) {
+      const src = path.join(VIEWER_CMAP_OUTPUT, file),
+        dest = path.join(VIEWER_CMAP_OUTPUT, file + ".br");
+      const data = fs.readFileSync(src);
+
+      const br = brotliCompressSync(data, {
+        params: {
+          [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_TEXT,
+          [constants.BROTLI_PARAM_QUALITY]: constants.BROTLI_MAX_QUALITY,
+          [constants.BROTLI_PARAM_LGWIN]: constants.BROTLI_MAX_WINDOW_BITS,
+          [constants.BROTLI_PARAM_SIZE_HINT]: data.length,
+        },
+      });
+      fs.writeFileSync(dest, br);
+
+      fs.unlinkSync(src); // Finally, remove the `.bcmap` file.
+    }
+  });
 });
 
 function preprocessCSS(source, defines) {

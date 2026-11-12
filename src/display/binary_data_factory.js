@@ -70,7 +70,7 @@ class DOMBinaryDataFactory extends BaseBinaryDataFactory {
    */
   async _fetch(url, kind) {
     const type =
-      kind === "cMapUrl" && !url.endsWith(".bcmap") ? "text" : "bytes";
+      kind === "cMapUrl" && !url.endsWith(".bcmap.br") ? "text" : "bytes";
     const data = await fetchData(url, type);
     return data instanceof Uint8Array ? data : stringToBytes(data);
   }
