@@ -1951,3 +1951,84 @@ describe("Stamp Editor", () => {
     });
   });
 });
+
+describe("Edit a saved stamp on a rotated page", () => {
+  let pages;
+  const pageSelector = `.page[data-page-number="2"]`;
+
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "rotation.pdf",
+      `${pageSelector} .annotationEditorLayer`,
+      50,
+      null,
+      null,
+      { width: 1000, height: 1100 }
+    );
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must check that the stamp isn't rotated when it's edited again", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        const editorSelector = `${pageSelector} ${getEditorSelector(0)}`;
+        const getStampState = () =>
+          page.$eval(editorSelector, editor => {
+            const { width, height } = editor.getBoundingClientRect();
+            // Compare thumbnails to detect rotation.
+            const canvas = document.createElement("canvas");
+            canvas.width = canvas.height = 4;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(editor.querySelector("canvas"), 0, 0, 4, 4);
+            return {
+              width,
+              height,
+              pixels: Array.from(ctx.getImageData(0, 0, 4, 4).data),
+            };
+          });
+
+        // Insert on page 2 even when both pages fit in the viewport.
+        await page.evaluate(() => {
+          window.PDFViewerApplication.pdfViewer.currentPageNumber = 2;
+        });
+        await switchToStamp(page);
+        await page.click("#editorStampAddImage");
+        const input = await page.$("#stampEditorFileInput");
+        await input.uploadFile(
+          path.join(__dirname, "../images/firefox_logo.png")
+        );
+        await waitForImage(page, editorSelector);
+        const initial = await getStampState();
+
+        await page.evaluate(async () => {
+          const app = window.PDFViewerApplication;
+          const data = await app.pdfDocument.saveDocument();
+          await app.open({ data });
+        });
+
+        const annotationSelector = `${pageSelector} .annotationLayer .stampAnnotation`;
+        await scrollIntoView(page, annotationSelector);
+        const modeChangedHandle = await waitForAnnotationModeChanged(page);
+        await page.click(annotationSelector, { count: 2 });
+        await awaitPromise(modeChangedHandle);
+        await waitForImage(page, editorSelector);
+
+        const current = await getStampState();
+        for (const dimension of ["width", "height"]) {
+          expect(Math.abs(current[dimension] - initial[dimension]))
+            .withContext(`${dimension} in ${browserName}`)
+            .toBeLessThanOrEqual(2);
+        }
+        const maxDiff = Math.max(
+          ...current.pixels.map((value, i) =>
+            Math.abs(value - initial.pixels[i])
+          )
+        );
+        expect(maxDiff).withContext(`In ${browserName}`).toBeLessThan(64);
+      })
+    );
+  });
+});
