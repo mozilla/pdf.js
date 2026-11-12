@@ -336,6 +336,18 @@ const defaultOptions = new Map([
         OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
     },
   ],
+  ...(typeof PDFJSDev === "undefined" || PDFJSDev.test("GECKOVIEW")
+    ? [
+        [
+          "enableAndroidEditing",
+          {
+            /** @type {boolean} */
+            value: false,
+            kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+          },
+        ],
+      ]
+    : []),
   [
     "enableAutoLinking",
     {
