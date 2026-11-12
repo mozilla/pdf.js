@@ -15366,5 +15366,13 @@
     "enableXfa": true,
     "type": "eq",
     "about": "XFA rich text with b and i elements."
+  },
+  {
+    "id": "bug2021583",
+    "file": "pdfs/bug2021583.pdf",
+    "md5": "9530ea1a410b790c83b5619ae8b06927",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Duplicate .notdef glyphs in a CFF font; char code 0 uses the last."
   }
 ]
