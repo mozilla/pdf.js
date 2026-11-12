@@ -36,6 +36,7 @@ import {
   createPromiseCapability,
   makeArr,
   MathClamp,
+  OutputScale,
   PermissionFlag,
   PixelsPerInch,
   shadow,
@@ -982,6 +983,22 @@ class PDFViewer {
       eventBus.off("pagerendered", onAfterDraw); // Remove immediately.
     };
     eventBus.on("pagerendered", onAfterDraw, evtOpts);
+
+    // Re-render the pages when the device pixel ratio changes, e.g. when the
+    // window is moved to a monitor with a different resolution, such that they
+    // don't become blurry.
+    const onResolutionChange = (evt = null) => {
+      if (evt) {
+        this.refresh();
+      }
+      window
+        .matchMedia(`(resolution: ${OutputScale.pixelRatio}dppx)`)
+        .addEventListener("change", onResolutionChange, {
+          once: true,
+          signal,
+        });
+    };
+    onResolutionChange();
 
     // Fetch a single page so we can get a viewport that will be the default
     // viewport for all pages

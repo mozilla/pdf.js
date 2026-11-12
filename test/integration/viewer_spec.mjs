@@ -517,6 +517,77 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Re-render on device pixel ratio change", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number="1"] .textLayer .endOfContent`,
+        "page-width",
+        {
+          // Keep the `resolution` media queries registered by the viewer, so
+          // that the test can fire their "change" event: moving the window to
+          // another monitor can't be emulated the same way in every browser.
+          earlySetup: () => {
+            window.resolutionQueries = [];
+            const matchMedia = window.matchMedia.bind(window);
+            window.matchMedia = query => {
+              const mediaQueryList = matchMedia(query);
+              if (query.startsWith("(resolution:")) {
+                window.resolutionQueries.push({ query, mediaQueryList });
+              }
+              return mediaQueryList;
+            };
+          },
+        }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must redraw the pages at the new pixel ratio", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getCanvasWidth = () =>
+            page.evaluate(
+              () =>
+                document.querySelector(`.page[data-page-number="1"] canvas`)
+                  .width
+            );
+          const widthBefore = await getCanvasWidth();
+          const ratioBefore = await page.evaluate(
+            () => window.devicePixelRatio
+          );
+
+          const handle = await waitForPageRendered(page, 1);
+          await page.evaluate(ratio => {
+            window.devicePixelRatio = ratio * 2;
+            window.resolutionQueries
+              .at(-1)
+              .mediaQueryList.dispatchEvent(new Event("change"));
+          }, ratioBefore);
+          await awaitPromise(handle);
+
+          const widthAfter = await getCanvasWidth();
+          expect(Math.abs(widthAfter - widthBefore * 2))
+            .withContext(`In ${browserName}`)
+            .toBeLessThanOrEqual(2);
+
+          // The viewer must now listen for the next change, at the new ratio.
+          const lastQuery = await page.evaluate(
+            () => window.resolutionQueries.at(-1).query
+          );
+          expect(lastQuery)
+            .withContext(`In ${browserName}`)
+            .toEqual(`(resolution: ${ratioBefore * 2}dppx)`);
+        })
+      );
+    });
+  });
+
   describe("Page background under the canvas (bug 2070624)", () => {
     let pages;
 
