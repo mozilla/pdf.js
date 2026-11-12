@@ -1,0 +1,45 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 220 85] /Resources << /Font << /F1 4 0 R >> /ColorSpace << /CS0 [/Separation /Spot0 /DeviceGray 5 0 R] >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /FunctionType 4 /Domain [0 1] /Range [0 1] /Length 42 >>
+stream
+{ dup 0.5 mul exch 0.5 gt { 0.2 add } if }
+endstream
+endobj
+6 0 obj
+<< /Length 201 >>
+stream
+BT /F1 10 Tf 10 60 Td (Four different grays, none black) Tj ET
+q
+/CS0 cs 0.25 scn 10 10 40 40 re f
+/CS0 cs 0.5 scn 60 10 40 40 re f
+/CS0 cs 0.75 scn 110 10 40 40 re f
+/CS0 cs 1 scn 160 10 40 40 re f
+Q
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000302 00000 n 
+0000000372 00000 n 
+0000000507 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+758
+%%EOF
