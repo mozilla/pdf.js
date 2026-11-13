@@ -166,6 +166,15 @@ pdfjs-digital-signature-properties-reason = Razlog: { $reason }
 # Variables:
 #   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
 pdfjs-digital-signature-properties-timestamp = Vremenska oznaka: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Podređeni potpis(i) ({ $count })
+        [few] Podređeni potpisi ({ $count })
+       *[other] Podređeni potpisi ({ $count })
+    }
 
 ## Print
 
@@ -639,6 +648,8 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
+pdfjs-toggle-views-manager-notification-button =
+    .title = Prikaži/sakrij bočnu traku (dokument sadrži sličice/strukturu/privitke/slojeve)
 pdfjs-toggle-views-manager-button1-label = Upravljaj stranicama
 pdfjs-views-manager-sidebar =
     .aria-label = Bočna traka
@@ -739,6 +750,36 @@ pdfjs-digital-signature-properties-button-label = Svojstva digitalnog potpisa
 ##   $count (Number) - number of signatures at the worst level.
 
 pdfjs-digital-signature-properties-banner-verified = Dokument je potpisan važećim digitalnim potpisom
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Dokument je potpisan, ali { $count } digitalni potpis nije bilo moguće provjeriti
+        [few] Dokument je potpisan, ali { $count } digitalna potpisa nije bilo moguće provjeriti
+       *[other] Dokument je potpisan, ali { $count } digitalnih potpisa nije bilo moguće provjeriti
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Dokument je potpisan s { $count } certifikatom koji nije pouzdan
+        [few] Dokument je potpisan s { $count } certifikata koji nisu pouzdani
+       *[other] Dokument je potpisan s { $count } certifikata koji nisu pouzdani
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Dokument je potpisan s { $count } isteklim certifikatom
+        [few] Dokument je potpisan s { $count } istekla certifikata
+       *[other] Dokument je potpisan s { $count } isteklih certifikata
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Dokument sadrži { $count } nevažeći digitalni potpis
+        [few] Dokument sadrži { $count } nevažeća digitalna potpisa
+       *[other] Dokument sadrži { $count } nevažećih digitalnih potpisa
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Dokument je potpisan s { $count } opozvanim certifikatom
+        [few] Dokument je potpisan s { $count } opozvana certifikata
+       *[other] Dokument je potpisan s { $count } opozvanih certifikata
+    }
 
 ## Per-signature status row. Only three distinct strings are needed:
 ## the signature crypto either verified (the cert chain may still be

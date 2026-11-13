@@ -139,7 +139,7 @@ pdfjs-additional-layers = අතිරේක ස්තර
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
-    .aria-label = පිටුවේ සිඟිත රූව { $page }
+    .aria-label = { $page } පිටුවේ සිඟිති රුව
 
 ## Find panel button title and messages
 
