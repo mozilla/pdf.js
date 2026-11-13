@@ -80,14 +80,23 @@ function _parseVisibilityExpression(
   }
 }
 
-function parseMarkedContentProps(xref, contentProperties, resources) {
-  let optionalContent;
+function lookupMarkedContentProps(contentProperties, resources) {
   if (contentProperties instanceof Name) {
     const properties = resources.get("Properties");
-    optionalContent = properties.get(contentProperties.name);
-  } else if (contentProperties instanceof Dict) {
-    optionalContent = contentProperties;
-  } else {
+    if (!(properties instanceof Dict)) {
+      return null;
+    }
+    contentProperties = properties.get(contentProperties.name);
+  }
+  return contentProperties instanceof Dict ? contentProperties : null;
+}
+
+function parseMarkedContentProps(xref, contentProperties, resources) {
+  const optionalContent = lookupMarkedContentProps(
+    contentProperties,
+    resources
+  );
+  if (!optionalContent) {
     throw new FormatError("Optional content properties malformed.");
   }
 
@@ -142,4 +151,4 @@ function parseMarkedContentProps(xref, contentProperties, resources) {
   return null;
 }
 
-export { parseMarkedContentProps, textSinkWrapper };
+export { lookupMarkedContentProps, parseMarkedContentProps, textSinkWrapper };
