@@ -35,13 +35,24 @@ function loadAndWait(filename, selector) {
     global.integrationSessions.map(async session => {
       const page = await session.browser.newPage();
 
-      // Keep locale-dependent checks deterministic.
       await page.evaluateOnNewDocument(() => {
+        // Keep locale-dependent checks deterministic.
         Object.defineProperty(navigator, "language", {
           get: () => "en-US",
         });
         Object.defineProperty(navigator, "languages", {
           get: () => ["en-US", "en"],
+        });
+
+        // The editor is disabled in GeckoView unless Android editing is
+        // enabled.
+        let options;
+        Object.defineProperty(window, "PDFViewerApplicationOptions", {
+          get: () => options,
+          set(value) {
+            options = value;
+            options.set("enableAndroidEditing", true);
+          },
         });
       });
 
