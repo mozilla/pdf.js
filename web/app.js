@@ -475,7 +475,12 @@ const PDFViewerApplication = {
 
     const container = appConfig.mainContainer,
       viewer = appConfig.viewerContainer;
-    const annotationEditorMode = AppOptions.get("annotationEditorMode");
+    const annotationEditorMode =
+      (typeof PDFJSDev === "undefined"
+        ? window.isGECKOVIEW
+        : PDFJSDev.test("GECKOVIEW")) && !AppOptions.get("enableAndroidEditing")
+        ? AnnotationEditorType.DISABLE
+        : AppOptions.get("annotationEditorMode");
     const hasForcedColors =
       AppOptions.get("forcePageColors") ||
       window.matchMedia("(forced-colors: active)").matches;
@@ -836,7 +841,12 @@ const PDFViewerApplication = {
         const nimbusData = JSON.parse(
           AppOptions.get("nimbusDataStr") || "null"
         );
-        this.toolbar = new Toolbar(appConfig.toolbar, eventBus, nimbusData);
+        this.toolbar = new Toolbar(
+          appConfig.toolbar,
+          eventBus,
+          nimbusData,
+          AppOptions.get("enableAndroidEditing")
+        );
       } else {
         this.toolbar = new Toolbar(
           appConfig.toolbar,
