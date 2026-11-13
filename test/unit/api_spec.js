@@ -7073,7 +7073,7 @@ have written that much by now. So, here’s to squashing bugs.`);
         // Reuse the context created during rendering.
         const attributes = canvas.getContext("2d").getContextAttributes();
         expect(attributes.alpha).toBeFalse();
-        expect(attributes.willReadFrequently).toBeTrue();
+        expect(attributes.willReadFrequently).toBeFalse();
 
         await loadingTask.destroy();
       }
