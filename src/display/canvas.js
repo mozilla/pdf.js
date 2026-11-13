@@ -1575,8 +1575,15 @@ class CanvasGraphics {
     this._clearPreparedSMask();
   }
 
-  #createKnockoutMaskCanvas(sourceCanvas, reuseEntry = null, alpha = 1) {
+  #createKnockoutMaskCanvas(
+    sourceCanvas,
+    reuseEntry = null,
+    alpha = 1,
+    rect = null
+  ) {
     const { width, height } = sourceCanvas;
+    // Only `rect` is read back, so only `rect` needs rebuilding.
+    const [rx, ry, rw, rh] = rect ?? [0, 0, width, height];
     // reuseEntry is assumed to match sourceCanvas in size (all current call
     // sites guarantee this); the mask is rebuilt in-place.
     const maskEntry = reuseEntry ?? this.canvasFactory.create(width, height);
@@ -1610,11 +1617,11 @@ class CanvasGraphics {
       if (reuseEntry) {
         maskCtx.save();
         maskCtx.setTransform(1, 0, 0, 1, 0, 0);
-        maskCtx.clearRect(0, 0, width, height);
+        maskCtx.clearRect(rx, ry, rw, rh);
         maskCtx.restore();
       }
       maskCtx.filter = knockoutFilter;
-      maskCtx.drawImage(sourceCanvas, 0, 0);
+      maskCtx.drawImage(sourceCanvas, rx, ry, rw, rh, rx, ry, rw, rh);
       maskCtx.filter = "none";
       return maskEntry;
     }
@@ -1635,7 +1642,7 @@ class CanvasGraphics {
     return maskEntry;
   }
 
-  #getOrCreatePooledEntry(meta, key, width, height) {
+  #getOrCreatePooledEntry(meta, key, width, height, dirtyRect = null) {
     let entry = meta?.[key] ?? null;
     if (
       entry &&
@@ -1655,7 +1662,11 @@ class CanvasGraphics {
     const ctx = entry.context;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, width, height);
+    if (dirtyRect) {
+      ctx.clearRect(...dirtyRect);
+    } else {
+      ctx.clearRect(0, 0, width, height);
+    }
     ctx.restore();
     return entry;
   }
@@ -1686,12 +1697,21 @@ class CanvasGraphics {
       sourceAlpha = 1,
       sourceFilter = "none",
       knockoutAlpha = 1,
+      // Pixel rectangle of surfaceCanvas that holds everything the element
+      // painted, or null for all of it. Outside it, every pass below is a
+      // no-op: the surface, and so the mask, is transparent there.
+      rect = null,
     } = options;
     const { width, height } = surfaceCanvas;
+    const [rx, ry, rw, rh] = rect ?? [0, 0, width, height];
+    if (rw <= 0 || rh <= 0) {
+      return;
+    }
     const knockoutMaskEntry = this.#createKnockoutMaskCanvas(
       surfaceCanvas,
       reuseMaskEntry,
-      knockoutAlpha
+      knockoutAlpha,
+      rect
     );
     const sourceCompositeOperation = destCtx.globalCompositeOperation;
 
@@ -1704,7 +1724,7 @@ class CanvasGraphics {
 
     // Erase prior group content wherever the new surface has any coverage.
     destCtx.globalCompositeOperation = "destination-out";
-    destCtx.drawImage(knockoutMaskEntry.canvas, 0, 0);
+    destCtx.drawImage(knockoutMaskEntry.canvas, rx, ry, rw, rh, rx, ry, rw, rh);
 
     if (backdropCanvas) {
       // Non-isolated: refill the just-erased footprint with the backdrop,
@@ -1715,27 +1735,44 @@ class CanvasGraphics {
         poolMeta,
         "knockoutBackdropEntry",
         width,
-        height
+        height,
+        rect
       );
       const backdropCtx = backdropEntry.context;
       backdropCtx.drawImage(
         backdropCanvas,
-        bx,
-        by,
-        width,
-        height,
-        0,
-        0,
-        width,
-        height
+        bx + rx,
+        by + ry,
+        rw,
+        rh,
+        rx,
+        ry,
+        rw,
+        rh
       );
+      // destination-in also clears outside the drawn image: keep it to rect.
+      backdropCtx.save();
+      backdropCtx.beginPath();
+      backdropCtx.rect(rx, ry, rw, rh);
+      backdropCtx.clip();
       backdropCtx.globalCompositeOperation = "destination-in";
-      backdropCtx.drawImage(knockoutMaskEntry.canvas, 0, 0);
+      backdropCtx.drawImage(
+        knockoutMaskEntry.canvas,
+        rx,
+        ry,
+        rw,
+        rh,
+        rx,
+        ry,
+        rw,
+        rh
+      );
+      backdropCtx.restore();
       // Reset the GCO so the pooled entry is in a known state for next use.
       backdropCtx.globalCompositeOperation = "source-over";
 
       destCtx.globalCompositeOperation = "destination-over";
-      destCtx.drawImage(backdropEntry.canvas, 0, 0);
+      destCtx.drawImage(backdropEntry.canvas, rx, ry, rw, rh, rx, ry, rw, rh);
       if (!poolMeta) {
         this.canvasFactory.destroy(backdropEntry);
       }
@@ -1745,7 +1782,7 @@ class CanvasGraphics {
     if (FeatureTest.isCanvasFilterSupported) {
       destCtx.filter = sourceFilter ?? "none";
     }
-    destCtx.drawImage(surfaceCanvas, 0, 0);
+    destCtx.drawImage(surfaceCanvas, rx, ry, rw, rh, rx, ry, rw, rh);
 
     destCtx.restore();
     if (!reuseMaskEntry) {
@@ -1773,12 +1810,17 @@ class CanvasGraphics {
     this.#knockoutElementAlpha = alpha;
     const groupMeta = this.#groupStackMeta.at(-1);
     const { canvas } = this.ctx;
+    // Only the previous element's pixels need clearing.
     const tempEntry = this.#getOrCreatePooledEntry(
       groupMeta,
       "knockoutTempEntry",
       canvas.width,
-      canvas.height
+      canvas.height,
+      groupMeta?.knockoutTempDirtyRect
     );
+    if (groupMeta) {
+      groupMeta.knockoutTempDirtyRect = null;
+    }
     this.#knockoutTempCanvasEntry = tempEntry;
     const tempCtx = tempEntry.context;
     // Bracket-save before installing mirroring so #endKnockoutElement can
@@ -1814,12 +1856,36 @@ class CanvasGraphics {
    * mask, restore the initial backdrop into the cleared footprint
    * (non-isolated only), then paint the element on top.
    * @param {boolean} started - the value returned by `#beginKnockoutElement`.
+   * @param {Array<number>|null} clippedBox - the element's clipped
+   *   device-space bounding box on the group canvas, when the caller knows
+   *   it; null for unknown.
+   * @param {Array<number>|null} paintedBox - the device-space box of what the
+   *   element painted on the temp canvas, which does not get the group's clip;
+   *   null for unknown.
    */
-  #endKnockoutElement(started) {
+  #endKnockoutElement(started, clippedBox = null, paintedBox = null) {
     if (!started) {
       return;
     }
     const tempEntry = this.#knockoutTempCanvasEntry;
+    const { width: tempWidth, height: tempHeight } = tempEntry.canvas;
+    // Pixel rectangle around a box, with one pixel of margin for
+    // anti-aliasing.
+    const toRect = box => {
+      if (!box) {
+        return null;
+      }
+      const x0 = MathClamp(Math.floor(box[0]) - 1, 0, tempWidth);
+      const y0 = MathClamp(Math.floor(box[1]) - 1, 0, tempHeight);
+      const x1 = MathClamp(Math.ceil(box[2]) + 1, x0, tempWidth);
+      const y1 = MathClamp(Math.ceil(box[3]) + 1, y0, tempHeight);
+      return [x0, y0, x1 - x0, y1 - y0];
+    };
+    // The group canvas has the clip, so compositing outside the clipped box
+    // changes nothing, but the next element must find the temp canvas clear
+    // wherever this one painted.
+    const rect = toRect(clippedBox);
+    const dirtyRect = paintedBox ? toRect(paintedBox) : null;
     const savedCtx = this.#knockoutSavedCtx;
     const savedSMaskCtx = this.#knockoutSavedSMaskCtx;
     const tempCtx = tempEntry.context;
@@ -1859,9 +1925,13 @@ class CanvasGraphics {
           reuseMaskEntry: groupMeta?.knockoutMaskEntry ?? null,
           poolMeta: groupMeta,
           knockoutAlpha,
+          rect,
         }
       );
     } finally {
+      if (groupMeta) {
+        groupMeta.knockoutTempDirtyRect = dirtyRect;
+      }
       // Pop the begin-element bracket save so the pooled canvas re-enters
       // with a clean clip+transform stack.
       tempCtx.restore();
@@ -2322,6 +2392,9 @@ class CanvasGraphics {
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
     const intersect = this.current.getClippedPathBoundingBox();
+    // What the fill paints on a knockout element's temp canvas, which does not
+    // get the clip; consumePath resets the path's box.
+    const pathBox = started ? this.current.getPathBoundingBox() : null;
 
     this.dependencyTracker?.recordDependencies(opIdx, Dependencies.fill);
 
@@ -2381,7 +2454,12 @@ class CanvasGraphics {
     if (consumePath) {
       this.consumePath(opIdx, path, intersect);
     }
-    this.#endKnockoutElement(started);
+    // A plain fill paints nothing outside its path's bounding box.
+    if (isPatternFill) {
+      this.#endKnockoutElement(started);
+    } else {
+      this.#endKnockoutElement(started, intersect ?? [0, 0, 0, 0], pathBox);
+    }
   }
 
   eoFill(opIdx, path) {
@@ -3641,6 +3719,7 @@ class CanvasGraphics {
       knockoutMaskEntry,
       // Per-group scratch pools, lazily filled and freed in endGroup.
       knockoutTempEntry: null,
+      knockoutTempDirtyRect: null,
       knockoutBackdropEntry: null,
     });
     this.groupLevel++;
