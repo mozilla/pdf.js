@@ -741,8 +741,8 @@ pdfjs-digital-signature-properties-button-label = Egenskaber for digitale signat
 pdfjs-digital-signature-properties-banner-verified = Dokumentet blev underskrevet med en gyldig digital signatur
 pdfjs-digital-signature-properties-banner-unknown =
     { $count ->
-        [one] Dokumentet er signeret, men { $count } digital signatur kunne ikke verificeres
-       *[other] Dokumentet er signeret, men { $count } digitale signaturer kunne ikke verificeres
+        [one] Dokumentet er signeret, men { $count } digital signatur kunne ikke bekræftes
+       *[other] Dokumentet er signeret, men { $count } digitale signaturer kunne ikke bekræftes
     }
 pdfjs-digital-signature-properties-banner-untrusted =
     { $count ->

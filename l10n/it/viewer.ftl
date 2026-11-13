@@ -336,6 +336,12 @@ pdfjs-editor-ink-editor =
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = Editor firme: { $description }
+    .aria-label = Editor firme
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-signature-editor1 =
     .aria-description = Editor firme: { $description }
 pdfjs-editor-stamp-editor =
@@ -806,3 +812,4 @@ pdfjs-editor-add-signature-edit-button-label = Modifica descrizione
 ## Edit signature description dialog
 
 pdfjs-editor-edit-signature-dialog-title = Modifica descrizione
+

@@ -273,6 +273,15 @@ pdfjs-editor-stamp-button =
     .title = Добавяне или редактиране на изображения
 pdfjs-editor-stamp-button-label = Добавяне или променяне на изображения
 
+## Default editor aria labels
+
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = Редактор на подписи: { $description }
+    .aria-label = Редактор на подписи
+
 ## Remove button for the various kind of editor.
 
 pdfjs-editor-remove-ink-button =
