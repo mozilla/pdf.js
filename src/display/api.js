@@ -206,6 +206,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   The default value is {DOMBinaryDataFactory}.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `true`.
+ * @property {boolean} [enableWebGPU] - Enables WebGPU rendering.
+ *   The default value is `true`.
  * @property {object} [pagesMapper] - The pages mapper that will be used to map
  *   page ids and page numbers. It's used when the page order is changed or some
  *   pages are removed, cloned, etc.
@@ -292,7 +294,7 @@ function getDocument(src = {}) {
       ? NodeBinaryDataFactory
       : DOMBinaryDataFactory);
   const enableHWA = src.enableHWA !== false;
-  const enableWebGPU = src.enableWebGPU === true;
+  const enableWebGPU = src.enableWebGPU !== false;
   if (enableWebGPU) {
     initGPU(); // Initialize without delaying document loading.
   }
