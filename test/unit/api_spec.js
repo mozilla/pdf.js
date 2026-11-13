@@ -5370,6 +5370,21 @@ ABCD E`);
       await loadingTask.destroy();
     });
 
+    it("gets text content, using the ToUnicode space width for letter-spaced text", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("tounicode_space_width.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+
+      expect(mergeText(items)).toEqual("TRACK TACK");
+
+      await loadingTask.destroy();
+    });
+
     it("gets text content, preserving various word spaces", async function () {
       const loadingTask = getDocument(
         buildGetDocumentParams("issue18768_word_spaces.pdf")
