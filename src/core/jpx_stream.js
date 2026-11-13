@@ -44,14 +44,17 @@ class JpxStream extends DecodeStream {
     return true;
   }
 
+  #reducePower = 0;
+
   async decodeImage(bytes, _length, decoderOptions) {
-    if (this.eof) {
+    if (this.eof && this.#reducePower === decoderOptions?.reducePower) {
       return this.buffer;
     }
     bytes ||= this.bytes;
     this.buffer = await JpxImage.instance.decode(bytes, decoderOptions);
     this.bufferLength = this.buffer.length;
     this.eof = true;
+    this.#reducePower = decoderOptions?.reducePower;
 
     return this.buffer;
   }

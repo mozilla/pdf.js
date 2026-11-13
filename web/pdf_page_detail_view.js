@@ -185,6 +185,7 @@ class PDFPageDetailView extends BasePDFPageView {
     const baseContext = this.pageView._getRenderingContext(
       canvas,
       transform,
+      OutputScale.pixelRatio,
       false
     );
     const recordedBBoxes = this.pdfPage.recordedBBoxes;

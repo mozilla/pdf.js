@@ -50,6 +50,15 @@ import {
   ZapfDingbatsEncoding,
 } from "./encodings.js";
 import {
+  getJpxReduceLevels,
+  LocalColorSpaceCache,
+  LocalGStateCache,
+  LocalImageCache,
+  LocalTilingPatternCache,
+  RegionalImageCache,
+  setJpxReduceLevels,
+} from "./image_utils.js";
+import {
   getSerifFonts,
   getStandardFontName,
   getStdFontMap,
@@ -67,13 +76,6 @@ import {
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { isPDFFunction, PDFFunctionFactory } from "./function.js";
 import { Lexer, Parser } from "./parser.js";
-import {
-  LocalColorSpaceCache,
-  LocalGStateCache,
-  LocalImageCache,
-  LocalTilingPatternCache,
-  RegionalImageCache,
-} from "./image_utils.js";
 import { parseMarkedContentProps, textSinkWrapper } from "./evaluator_utils.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
@@ -87,6 +89,7 @@ import { getGlyphsUnicode } from "./glyphlist.js";
 import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { Hellbox } from "./hellbox.js";
+import { JpxError } from "./jpx.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
 import { PDFImage } from "./image.js";
 import { Stream } from "./stream.js";
@@ -186,12 +189,23 @@ function normalizeBlendMode(value, parsingArray = false) {
   return parsingArray ? null : "source-over";
 }
 
+function isReducedJpx(jpx) {
+  return (
+    jpx &&
+    (jpx.image.reduce > jpx.image.minReduce ||
+      (jpx.alpha && jpx.alpha.reduce > jpx.alpha.minReduce))
+  );
+}
+
 function addCachedImageOps(
   opList,
-  { objId, fn, args, optionalContent, hasMask }
+  { objId, fn, args, optionalContent, hasMask, jpx }
 ) {
   if (objId) {
     opList.addDependency(objId);
+  }
+  if (isReducedJpx(jpx)) {
+    opList.hasReducedImages = true;
   }
   opList.addImageOps(fn, args, optionalContent, hasMask);
 
@@ -234,6 +248,7 @@ class PartialEvaluator {
     handler,
     pageIndex,
     pageProxyId = null,
+    imageScale = 0,
     idFactory,
     fontCache,
     builtInCMapCache,
@@ -246,6 +261,7 @@ class PartialEvaluator {
     this.handler = handler;
     this.pageIndex = pageIndex;
     this.pageProxyId = pageProxyId;
+    this.imageScale = imageScale;
     this.idFactory = idFactory;
     this.fontCache = fontCache;
     this.globalColorSpaceCache = globalColorSpaceCache;
@@ -429,6 +445,9 @@ class PartialEvaluator {
   ) {
     const { dict } = xobj;
     const matrix = lookupMatrix(dict.getArray("Matrix"), null);
+    if (matrix) {
+      initialState.ctm &&= Util.transform(initialState.ctm, matrix);
+    }
     const bbox = lookupNormalRect(dict.getArray("BBox"), null);
     let f32bbox = bbox && new Float32Array(bbox);
     if (f32bbox?.some(x => !isFinite(x))) {
@@ -553,6 +572,17 @@ class PartialEvaluator {
     );
   }
 
+  _getImageTargetSize(ctm) {
+    if (!this.imageScale || !ctm) {
+      return null;
+    }
+    const { imageScale } = this;
+    return {
+      width: Math.hypot(ctm[0], ctm[1]) * imageScale,
+      height: Math.hypot(ctm[2], ctm[3]) * imageScale,
+    };
+  }
+
   async buildPaintImageXObject({
     resources,
     image,
@@ -561,6 +591,7 @@ class PartialEvaluator {
     cacheKey,
     localImageCache,
     localColorSpaceCache,
+    targetSize = null,
   }) {
     const { ignoreErrors, isOffscreenCanvasSupported } = this.options;
 
@@ -727,7 +758,8 @@ class PartialEvaluator {
     } else if (cacheKey && imageRef) {
       cacheGlobally = this.globalImageCache.shouldCache(
         imageRef,
-        this.pageIndex
+        this.pageIndex,
+        targetSize
       );
 
       if (cacheGlobally) {
@@ -735,7 +767,6 @@ class PartialEvaluator {
 
         objId = `${this.idFactory.getDocId()}_${objId}`;
       } else if (this.pageProxyId !== null) {
-        this.globalImageCache.startDecodedImage(imageRef, this.pageProxyId);
         keepDecodedImage = true;
       }
     }
@@ -754,6 +785,7 @@ class PartialEvaluator {
         args,
         optionalContent,
         hasMask,
+        jpx: null, // Set below.
         byteSize: 0, // Temporary entry, to avoid `setData` returning early.
       };
 
@@ -763,11 +795,67 @@ class PartialEvaluator {
         this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
         return;
       }
+    }
 
-      const decodedImgData = this.globalImageCache.takeDecodedImage(imageRef);
+    const decodeFailed = reason => {
+      warn(`Unable to decode image "${objId}": "${reason}".`);
+
+      if (imageRef) {
+        this.globalImageCache.addDecodeFailed(imageRef);
+      }
+      return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
+    };
+
+    const cacheImage = jpx => {
+      if (!cacheKey) {
+        return;
+      }
+      const cacheData = { objId, fn, args, optionalContent, hasMask, jpx };
+      localImageCache.set(cacheKey, imageRef, cacheData);
+
+      if (imageRef) {
+        this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
+
+        if (cacheGlobally) {
+          assert(globalCacheData, "The global cache-data must be available.");
+          this.globalImageCache.setData(imageRef, globalCacheData);
+        }
+      }
+    };
+
+    let jpx;
+    try {
+      jpx = PDFImage.getJpxReduce(this.xref, image, targetSize);
+    } catch (reason) {
+      decodeFailed(reason);
+      cacheImage(/* jpx = */ null);
+      return;
+    }
+    const jpxReduce = getJpxReduceLevels(jpx);
+    if (keepDecodedImage) {
+      this.globalImageCache.startDecodedImage(
+        imageRef,
+        this.pageProxyId,
+        jpxReduce
+      );
+    }
+
+    if (cacheGlobally) {
+      globalCacheData.jpx = jpx;
+
+      const decodedImgData = this.globalImageCache.takeDecodedImage(
+        imageRef,
+        jpxReduce
+      );
       if (decodedImgData) {
         if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
           decodedImgData.reusedDecodedImage = true;
+        }
+        if (jpx) {
+          setJpxReduceLevels(jpx, decodedImgData.jpxReduce);
+          if (isReducedJpx(jpx)) {
+            operatorList.hasReducedImages = true;
+          }
         }
         this.globalImageCache.setData(imageRef, globalCacheData);
         this.globalImageCache.addByteSize(imageRef, decodedImgData.dataLen);
@@ -785,10 +873,13 @@ class PartialEvaluator {
         const localLength = await this.handler.sendWithPromise("commonobj", [
           objId,
           "CopyLocalImage",
-          { imageRef },
+          { imageRef, jpxReduce },
         ]);
 
         if (localLength) {
+          if (isReducedJpx(jpx)) {
+            operatorList.hasReducedImages = true;
+          }
           this.globalImageCache.setData(imageRef, globalCacheData);
           this.globalImageCache.addByteSize(imageRef, localLength);
           return;
@@ -796,16 +887,21 @@ class PartialEvaluator {
       }
     }
 
-    PDFImage.buildImage({
-      xref: this.xref,
-      res: resources,
-      image,
-      isInline,
-      pdfFunctionFactory: this._pdfFunctionFactory,
-      globalColorSpaceCache: this.globalColorSpaceCache,
-      localColorSpaceCache,
-    })
-      .then(async imageObj => {
+    if (isReducedJpx(jpx)) {
+      operatorList.hasReducedImages = true;
+    }
+
+    const decodeImage = () =>
+      PDFImage.buildImage({
+        xref: this.xref,
+        res: resources,
+        image,
+        isInline,
+        pdfFunctionFactory: this._pdfFunctionFactory,
+        globalColorSpaceCache: this.globalColorSpaceCache,
+        localColorSpaceCache,
+        jpx,
+      }).then(async imageObj => {
         imgData = await imageObj.createImageData(
           /* forceRGBA = */ false,
           isOffscreenCanvasSupported
@@ -814,6 +910,7 @@ class PartialEvaluator {
           ? imgData.width * imgData.height * 4
           : imgData.data.length;
         imgData.ref = imageRef;
+        imgData.jpxReduce = getJpxReduceLevels(jpx);
 
         if (cacheGlobally) {
           this.globalImageCache.addByteSize(imageRef, imgData.dataLen);
@@ -821,29 +918,23 @@ class PartialEvaluator {
           this.globalImageCache.setDecodedImage(imageRef, imgData);
         }
         return this._sendImgData(objId, imgData, cacheGlobally);
-      })
-      .catch(reason => {
-        warn(`Unable to decode image "${objId}": "${reason}".`);
-
-        if (imageRef) {
-          this.globalImageCache.addDecodeFailed(imageRef);
-        }
-        return this._sendImgData(objId, /* imgData = */ null, cacheGlobally);
       });
 
-    if (cacheKey) {
-      const cacheData = { objId, fn, args, optionalContent, hasMask };
-      localImageCache.set(cacheKey, imageRef, cacheData);
-
-      if (imageRef) {
-        this._regionalImageCache.set(/* name = */ null, imageRef, cacheData);
-
-        if (cacheGlobally) {
-          assert(globalCacheData, "The global cache-data must be available.");
-          this.globalImageCache.setData(imageRef, globalCacheData);
+    decodeImage()
+      .catch(reason => {
+        if (!(reason instanceof JpxError) || !isReducedJpx(jpx)) {
+          throw reason;
         }
-      }
-    }
+        warn(`Unable to decode reduced image "${objId}": "${reason}".`);
+        setJpxReduceLevels(jpx, {
+          image: jpx.image.minReduce,
+          alpha: jpx.alpha?.minReduce,
+        });
+        return decodeImage();
+      })
+      .catch(decodeFailed);
+
+    cacheImage(jpx);
   }
 
   #createTransferMap(fn) {
@@ -1629,6 +1720,7 @@ class PartialEvaluator {
     initialState = null,
     fallbackFontDict = null,
     prevRefs = null,
+    initialCtm = null,
   }) {
     if (stream.isAsync) {
       const bytes = await stream.asyncGetBytes();
@@ -1652,6 +1744,7 @@ class PartialEvaluator {
     // even if the provided parameter is e.g. `null`.
     resources ||= Dict.empty;
     initialState ||= new EvalState();
+    initialState.ctm ??= initialCtm;
 
     if (!operatorList) {
       throw new Error('getOperatorList: missing "operatorList" parameter');
@@ -1717,8 +1810,9 @@ class PartialEvaluator {
             isValidName = args[0] instanceof Name;
             name = args[0].name;
 
+            const targetSize = self._getImageTargetSize(stateManager.state.ctm);
             if (isValidName) {
-              const localImage = localImageCache.getByName(name);
+              const localImage = localImageCache.getByName(name, targetSize);
               if (localImage) {
                 addCachedImageOps(operatorList, localImage);
                 args = null;
@@ -1735,9 +1829,13 @@ class PartialEvaluator {
                 let xobj = xobjs.getRaw(name);
                 if (xobj instanceof Ref) {
                   const cachedImage =
-                    localImageCache.getByRef(xobj) ||
-                    self._regionalImageCache.getByRef(xobj) ||
-                    self.globalImageCache.getData(xobj, self.pageIndex);
+                    localImageCache.getByRef(xobj, targetSize) ||
+                    self._regionalImageCache.getByRef(xobj, targetSize) ||
+                    self.globalImageCache.getData(
+                      xobj,
+                      self.pageIndex,
+                      targetSize
+                    );
                   if (cachedImage) {
                     addCachedImageOps(operatorList, cachedImage);
                     resolveXObject();
@@ -1783,6 +1881,7 @@ class PartialEvaluator {
                       cacheKey: name,
                       localImageCache,
                       localColorSpaceCache,
+                      targetSize,
                     })
                     .then(resolveXObject, rejectXObject);
                   return;
@@ -5241,7 +5340,7 @@ class StateManager {
   }
 
   transform(args) {
-    this.state.ctm = Util.transform(this.state.ctm, args);
+    this.state.ctm &&= Util.transform(this.state.ctm, args);
   }
 }
 
@@ -5319,7 +5418,9 @@ class TextState {
 }
 
 class EvalState {
-  ctm = new Float32Array(IDENTITY_MATRIX);
+  // The transform from this stream's coordinates to the page, when known;
+  // used to decode images at the resolution they're drawn at.
+  ctm = null;
 
   font = null;
 
@@ -5648,4 +5749,4 @@ class EvaluatorPreprocessor {
   }
 }
 
-export { EvaluatorPreprocessor, PartialEvaluator };
+export { EvaluatorPreprocessor, PartialEvaluator, StateManager, TextState };

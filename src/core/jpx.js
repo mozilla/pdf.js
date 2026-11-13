@@ -85,6 +85,7 @@ class JpxImage extends WasmImage {
     // No need to use OpenJPEG here since we're only getting very basic
     // information which are located in the first bytes of the file.
     let newByte = stream.getByte();
+    let properties = null;
     while (newByte >= 0) {
       const oldByte = newByte;
       newByte = stream.getByte();
@@ -98,16 +99,29 @@ class JpxImage extends WasmImage {
         const YOsiz = stream.getInt32() >>> 0; // Byte 16
         stream.skip(16);
         const Csiz = stream.getUint16(); // Byte 36
-        return {
+        properties = {
           width: Xsiz - XOsiz,
           height: Ysiz - YOsiz,
           // Results are always returned as `Uint8ClampedArray`s.
           bitsPerComponent: 8,
           componentsCount: Csiz,
+          decompositionLevels: 0,
         };
+        stream.skip(3 * Csiz);
+        newByte = stream.getByte();
+      } else if (properties && code === 0xff52) {
+        // Coding style default (COD)
+        stream.skip(7);
+        properties.decompositionLevels = stream.getByte();
+        return properties;
+      } else if (properties && (code === 0xff90 || code === 0xff93)) {
+        return properties;
       }
     }
-    throw new JpxError("No size marker found in JPX stream");
+    if (!properties) {
+      throw new JpxError("No size marker found in JPX stream");
+    }
+    return properties;
   }
 }
 

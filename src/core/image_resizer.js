@@ -125,6 +125,23 @@ class ImageResizer {
     return this.getReducePower(width, height, 2 ** 30 / (componentsCount * 4));
   }
 
+  static getReducePowerForTargetSize(
+    { width, height, minReduce, maxReduce },
+    targetSize
+  ) {
+    let reduce = 0;
+    if (targetSize) {
+      const factor = Math.min(
+        width / Math.max(targetSize.width, 1),
+        height / Math.max(targetSize.height, 1)
+      );
+      if (factor >= 2) {
+        reduce = Math.min(Math.floor(Math.log2(factor)), maxReduce);
+      }
+    }
+    return Math.max(minReduce, reduce);
+  }
+
   static get MAX_DIM() {
     return shadow(
       this,

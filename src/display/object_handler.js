@@ -45,14 +45,20 @@ class ObjectHandler {
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
       type === "CopyLocalImage"
     ) {
-      const { imageRef } = exportedData;
+      const { imageRef, jpxReduce } = exportedData;
       assert(imageRef, "The imageRef must be defined.");
 
       for (const pageOrObjs of this.pageCache.values()) {
         const objs = pageOrObjs.objs || pageOrObjs;
 
         for (const [, data] of objs) {
-          if (data?.ref !== imageRef) {
+          // TODO: Also re-use a copy decoded at a finer level, and report its
+          //       levels back to the worker.
+          if (
+            data?.ref !== imageRef ||
+            data.jpxReduce?.image !== jpxReduce?.image ||
+            data.jpxReduce?.alpha !== jpxReduce?.alpha
+          ) {
             continue;
           }
           if (!data.dataLen) {
