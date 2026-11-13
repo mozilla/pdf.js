@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError } from "../shared/util.js";
+import { bytesToString, FormatError } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 function hexToInt(a, size) {
@@ -32,7 +32,7 @@ function hexToStr(a, size) {
   }
   return size === 3
     ? String.fromCharCode(a[0], a[1], a[2], a[3])
-    : String.fromCharCode(...a.subarray(0, size + 1));
+    : bytesToString(a.subarray(0, size + 1));
 }
 
 function addHex(a, b, size) {
@@ -134,7 +134,7 @@ class BinaryCMapStream extends Stream {
     for (let i = 0; i < len; i++) {
       buf[i] = this.readNumber();
     }
-    return String.fromCharCode(...buf);
+    return bytesToString(buf);
   }
 }
 
