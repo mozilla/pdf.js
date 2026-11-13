@@ -1655,6 +1655,58 @@ describe("Highlight Editor", () => {
     });
   });
 
+  describe("Undo the last highlight after a page has been rendered again", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must check that undo removes the last highlight", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Abstract");
+          await waitForSerialized(page, 1);
+
+          const twoToFourteen = Array.from(new Array(13).keys(), n => n + 2);
+          for (const pageNumber of twoToFourteen) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+            await scrollIntoView(page, pageSelector);
+          }
+          await page.waitForSelector(
+            `.page[data-page-number = "14"] .textLayer .endOfContent`
+          );
+
+          await highlightSpan(page, 14, "References");
+          await waitForSerialized(page, 2);
+
+          // Going back to the first page renders its editor layer again.
+          const thirteenToOne = Array.from(new Array(13).keys(), n => 13 - n);
+          for (const pageNumber of thirteenToOne) {
+            const pageSelector = `.page[data-page-number = "${pageNumber}"]`;
+            await scrollIntoView(page, pageSelector);
+          }
+          await page.waitForSelector(getEditorSelector(0));
+
+          await kbUndo(page);
+          await waitForSerialized(page, 1);
+
+          const serialized = await getSerialized(page);
+          expect(serialized[0].pageIndex)
+            .withContext(`In ${browserName}`)
+            .toEqual(0);
+          await page.waitForSelector(getEditorSelector(0));
+        })
+      );
+    });
+  });
+
   describe("Use a toolbar overlapping an other highlight", () => {
     let pages;
 

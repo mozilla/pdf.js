@@ -320,7 +320,7 @@ class SignatureEditor extends DrawingEditor {
 
     if (this.#isWaitingForSignature) {
       this.#isWaitingForSignature = false;
-      this.parent.addUndoableEditor(this);
+      this._addToUndoStack();
     }
   }
 
