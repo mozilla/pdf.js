@@ -296,6 +296,37 @@ describe("Link annotations with internal destinations", () => {
   });
 });
 
+describe("Annotation border", () => {
+  describe("issue14802.pdf", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "issue14802.pdf",
+        ".annotationLayer [data-annotation-id='4R']",
+        150
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must scale the border width with the zoom level", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          // At 150% a PDF point is 2 CSS pixels, so the 1pt border is 2px wide.
+          const borderWidth = await page.$eval(
+            ".annotationLayer [data-annotation-id='4R']",
+            el => getComputedStyle(el).borderTopWidth
+          );
+          expect(borderWidth).withContext(`In ${browserName}`).toEqual("2px");
+        })
+      );
+    });
+  });
+});
+
 describe("Annotation and storage", () => {
   describe("issue14023.pdf", () => {
     let pages;
