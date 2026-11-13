@@ -282,16 +282,27 @@ class ImageManager {
     return this.getFromUrl(data.url);
   }
 
-  getFromCanvas(id, canvas) {
+  /**
+   * @param {string} id
+   * @param {HTMLCanvasElement} canvas
+   * @param {number} [rotation] - Annotation rotation in degrees.
+   */
+  getFromCanvas(id, canvas, rotation = 0) {
     this.#cache ||= new Map();
     let data = this.#cache.get(id);
     if (data?.bitmap) {
       data.refCounter += 1;
       return data;
     }
-    const offscreen = new OffscreenCanvas(canvas.width, canvas.height);
+    const { width, height } = canvas;
+    const offscreen =
+      rotation % 180 === 0
+        ? new OffscreenCanvas(width, height)
+        : new OffscreenCanvas(height, width);
     const ctx = offscreen.getContext("2d");
-    ctx.drawImage(canvas, 0, 0);
+    ctx.translate(offscreen.width / 2, offscreen.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(canvas, -width / 2, -height / 2);
     data = {
       bitmap: offscreen.transferToImageBitmap(),
       id: `image_${this.#baseId}_${this.#id++}`,
