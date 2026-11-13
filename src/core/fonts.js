@@ -19,6 +19,7 @@ import {
   FONT_IDENTITY_MATRIX,
   FormatError,
   info,
+  normalizeUnicode,
   shadow,
   stringToBytes,
   warn,
@@ -273,6 +274,19 @@ class Glyph {
       this,
       "category",
       getCharUnicodeCategory(this.unicode),
+      /* nonSerializable = */ true
+    );
+  }
+
+  /**
+   * Cached for `PartialEvaluator.getTextContent` as a non-enumerable property.
+   * @type {string}
+   */
+  get normalizedUnicode() {
+    return shadow(
+      this,
+      "normalizedUnicode",
+      normalizeUnicode(this.unicode),
       /* nonSerializable = */ true
     );
   }

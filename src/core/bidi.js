@@ -84,14 +84,13 @@ function isEven(i) {
   return (i & 1) === 0;
 }
 
-function findUnequal(arr, start, value) {
-  let j, jj;
-  for (j = start, jj = arr.length; j < jj; ++j) {
+function findUnequal(arr, start, value, end = arr.length) {
+  for (let j = start; j < end; ++j) {
     if (arr[j] !== value) {
       return j;
     }
   }
-  return j;
+  return end;
 }
 
 function reverseValues(arr, start, end) {
@@ -117,8 +116,15 @@ function createBidiText(str, isLTR, vertical = false) {
 const chars = [];
 const types = [];
 
-function bidi(str, startLevel = -1, vertical = false) {
+/**
+ * @param {string|Array<string>} text - Text to reorder, or glyph texts in
+ *   visual order. Each glyph's text is expected to be in logical order and is
+ *   kept intact if all its characters resolve to the same bidi level.
+ */
+function bidi(text, startLevel = -1, vertical = false) {
   let isLTR = true;
+  const glyphs = Array.isArray(text) ? text : null;
+  const str = glyphs ? glyphs.join("") : text;
   const strLength = str.length;
   if (strLength === 0 || vertical) {
     return createBidiText(str, isLTR, vertical);
@@ -401,6 +407,23 @@ function bidi(str, startLevel = -1, vertical = false) {
     }
   }
 
+  if (glyphs) {
+    let pos = 0;
+    for (const glyph of glyphs) {
+      const end = pos + glyph.length;
+      if (
+        glyph.length > 1 &&
+        findUnequal(levels, pos + 1, levels[pos], end) === end
+      ) {
+        // Store the whole glyph in one slot. Empty strings in the remaining
+        // slots preserve the indices used by the character levels.
+        chars[pos] = glyph;
+        chars.fill("", pos + 1, end);
+      }
+      pos = end;
+    }
+  }
+
   // now reverse between those limits
   for (level = highestLevel; level >= lowestOddLevel; --level) {
     // find segments to reverse
@@ -438,13 +461,7 @@ function bidi(str, startLevel = -1, vertical = false) {
   // don't mirror as characters are already mirrored in the pdf
 
   // Finally, return string
-  for (i = 0, ii = chars.length; i < ii; ++i) {
-    const ch = chars[i];
-    if (ch === "<" || ch === ">") {
-      chars[i] = "";
-    }
-  }
-  return createBidiText(chars.join(""), isLTR);
+  return createBidiText(chars.join("").replaceAll(/[<>]/g, ""), isLTR);
 }
 
 export { bidi };

@@ -5864,6 +5864,20 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    it("gets text content with RTL ligatures (issue 16880)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue16880.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      for (const disableNormalization of [false, true]) {
+        const { items } = await pdfPage.getTextContent({
+          disableNormalization,
+        });
+        expect(mergeText(items)).toEqual("سلام کلاس لاله");
+      }
+
+      await loadingTask.destroy();
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 

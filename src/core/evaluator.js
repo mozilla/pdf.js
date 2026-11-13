@@ -26,7 +26,6 @@ import {
   FormatError,
   info,
   isArrayEqual,
-  normalizeUnicode,
   OPS,
   shadow,
   TextRenderingMode,
@@ -2680,11 +2679,7 @@ class PartialEvaluator {
     }
 
     function runBidiTransform(textChunk) {
-      let text = textChunk.str.join("");
-      if (!disableNormalization) {
-        text = normalizeUnicode(text);
-      }
-      const bidiResult = bidi(text, -1, textChunk.vertical);
+      const bidiResult = bidi(textChunk.str, -1, textChunk.vertical);
       return {
         str: bidiResult.str,
         dir: bidiResult.dir,
@@ -3205,7 +3200,9 @@ class PartialEvaluator {
         }
 
         if (!intersector) {
-          textChunk.str.push(glyphUnicode);
+          textChunk.str.push(
+            disableNormalization ? glyphUnicode : glyph.normalizedUnicode
+          );
         }
 
         if (charSpacing) {
