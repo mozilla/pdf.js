@@ -133,6 +133,29 @@ describe("bidi", function () {
     }
   );
 
+  it("should reorder glyphs using their resolved levels (issue 16880)", function () {
+    for (const [glyphs, expected] of [
+      [["م", "لا", "س"], "سلام"],
+      [["١٢", "م"], "م١٢"],
+      [["fi", "م", "س"], "سمfi"],
+      [["<>", "م"], "م"],
+      // A glyph with mixed levels is reordered char by char.
+      [["لa", "م"], "مaل"],
+    ]) {
+      expect(bidi(glyphs).str)
+        .withContext(JSON.stringify(glyphs))
+        .toEqual(expected);
+    }
+  });
+
+  it("should preserve a combining mark within a single glyph", function () {
+    for (const previous of ["a", "1", "١", " "]) {
+      expect(bidi([previous, "لَ"]).str)
+        .withContext(previous)
+        .toEqual(`لَ${previous}`);
+    }
+  });
+
   it("should reorder characters correctly per BidiCharacterTest.txt", async function () {
     const content = await readTestFile("BidiCharacterTest.txt");
 
