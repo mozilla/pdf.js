@@ -31,6 +31,7 @@ import {
   $isBindable,
   $isDataValue,
   $isDescendent,
+  $isTransparent,
   $namespaceId,
   $nodeName,
   $removeChild,
@@ -591,7 +592,9 @@ class Binder {
           }
         }
       } else {
-        if (!child.name) {
+        if (child[$isTransparent]()) {
+          // Unnamed nodes and areas must not be matched with a data node
+          // (otherwise they could consume the data of a same-named subform).
           this._setAndBind(child, dataNode);
           continue;
         }

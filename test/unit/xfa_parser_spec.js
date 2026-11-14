@@ -1511,6 +1511,69 @@ describe("XFAParser", function () {
         )
       ).toEqual(["a", "b", "c", "d", "e"]);
     });
+
+    it("should not bind an area to the data of a subform with the same name", function () {
+      // The area mustn't consume the data node meant for the "Foo" subform.
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root">
+      <subform name="first">
+        <area name="Foo">
+          <draw/>
+        </area>
+      </subform>
+      <subform name="Foo">
+        <field name="bar"/>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <root><Foo><bar>foobar</bar></Foo></root>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const form = new Binder(root).bind();
+
+      expect(
+        searchNode(form, form, "root.Foo.bar.value.text")[0][$dump]().$content
+      ).toBe("foobar");
+    });
+
+    it("should bind the fields of an area to the data of its parent", function () {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <area name="Foo">
+        <field name="bar"/>
+      </area>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+      <root><bar>foobar</bar></root>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const root = new XFAParser().parse(xml);
+      const binder = new Binder(root);
+      const form = binder.bind();
+      const data = binder.getData();
+
+      expect(
+        searchNode(form, form, "root..bar..text")[0][$dump]().$content
+      ).toBe("foobar");
+      // No data node must have been created for the area.
+      const dumped = searchNode(data, data, "root")[0][$dump]();
+      expect(dumped.children.map(x => x.$name)).toEqual(["bar"]);
+    });
   });
 
   it("should make a binding with a element in an area", function () {
