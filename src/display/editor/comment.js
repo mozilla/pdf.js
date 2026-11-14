@@ -13,7 +13,13 @@
  * limitations under the License.
  */
 
-import { noContextMenu, stopEvent } from "../dom_utils.js";
+import {
+  clientRectToLayerLeftBottom,
+  getUnrotatedSize,
+  layerFractionToClientPoint,
+  noContextMenu,
+  stopEvent,
+} from "../dom_utils.js";
 
 class Comment {
   #commentStandaloneButton = null;
@@ -89,10 +95,19 @@ class Comment {
   }
 
   get commentButtonWidth() {
-    return (
-      (this.#commentStandaloneButton?.getBoundingClientRect().width ?? 0) /
-      this.#editor.parent.boundingClientRect.width
+    if (!this.#commentStandaloneButton) {
+      return 0;
+    }
+    const rotation = this.#editor.parentRotation;
+    const [buttonWidth] = getUnrotatedSize(
+      this.#commentStandaloneButton.getBoundingClientRect(),
+      rotation
     );
+    const [parentWidth] = getUnrotatedSize(
+      this.#editor.parent.boundingClientRect,
+      rotation
+    );
+    return buttonWidth / parentWidth;
   }
 
   get commentPopupPositionInLayer() {
@@ -102,15 +117,12 @@ class Comment {
     if (!this.#commentStandaloneButton) {
       return null;
     }
-    const { x, y, height } =
-      this.#commentStandaloneButton.getBoundingClientRect();
-    const {
-      x: parentX,
-      y: parentY,
-      width: parentWidth,
-      height: parentHeight,
-    } = this.#editor.parent.boundingClientRect;
-    return [(x - parentX) / parentWidth, (y + height - parentY) / parentHeight];
+    // The position is relative to the layer, which can be rotated.
+    return clientRectToLayerLeftBottom(
+      this.#commentStandaloneButton.getBoundingClientRect(),
+      this.#editor.parent.boundingClientRect,
+      this.#editor.parentRotation
+    );
   }
 
   set commentPopupPositionInLayer(pos) {
@@ -236,30 +248,38 @@ class Comment {
   }
 
   edit(options) {
-    const position = this.commentPopupPositionInLayer;
+    const parentDimensions = this.#editor.parent.boundingClientRect;
     let posX, posY;
+    const position = this.#popupPosition;
     if (position) {
-      [posX, posY] = position;
+      [posX, posY] = layerFractionToClientPoint(
+        position[0],
+        position[1],
+        parentDimensions,
+        this.#editor.parentRotation
+      );
+    } else if (this.#commentStandaloneButton) {
+      // The dialog isn't rotated, hence it's anchored to the bottom-left corner
+      // of the button as it's displayed.
+      const { x, y, height } =
+        this.#commentStandaloneButton.getBoundingClientRect();
+      posX = x;
+      posY = y + height;
     } else {
       // The position is in the editor coordinates.
       [posX, posY] = this.#editor.commentButtonPosition;
       const { width, height, x, y } = this.#editor;
-      posX = x + posX * width;
-      posY = y + posY * height;
+      [posX, posY] = layerFractionToClientPoint(
+        x + posX * width,
+        y + posY * height,
+        parentDimensions,
+        this.#editor.parentRotation
+      );
     }
-    const parentDimensions = this.#editor.parent.boundingClientRect;
-    const {
-      x: parentX,
-      y: parentY,
-      width: parentWidth,
-      height: parentHeight,
-    } = parentDimensions;
-    this.#editor._uiManager.editComment(
-      this.#editor,
-      parentX + posX * parentWidth,
-      parentY + posY * parentHeight,
-      { ...options, parentDimensions }
-    );
+    this.#editor._uiManager.editComment(this.#editor, posX, posY, {
+      ...options,
+      parentDimensions,
+    });
   }
 
   finish() {

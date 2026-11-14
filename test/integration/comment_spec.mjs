@@ -753,6 +753,194 @@ describe("Comment", () => {
     });
   });
 
+  describe("Comment popup position after a rotation", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-fit",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must display the popup next to its button when the pages are rotated", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          const buttonSelector = `${editorSelector} button.annotationCommentButton`;
+          const popupSelector = "#commentPopup";
+
+          for (const rotation of [90, 180, 270, 0]) {
+            await page.evaluate(() => {
+              window.PDFViewerApplication.rotatePages(90);
+            });
+            await page.waitForSelector(
+              `.annotationEditorLayer[data-main-rotation='${rotation}']`
+            );
+            await waitForBrowserTrip(page);
+
+            await waitAndClick(page, buttonSelector);
+            await page.waitForSelector(popupSelector, { visible: true });
+
+            const button = await getRect(page, buttonSelector);
+            const popup = await getRect(page, popupSelector);
+            // The rectangles of the button and of the popup must touch each
+            // other whatever the rotation is.
+            const gapX = Math.max(
+              popup.x - (button.x + button.width),
+              button.x - (popup.x + popup.width),
+              0
+            );
+            const gapY = Math.max(
+              popup.y - (button.y + button.height),
+              button.y - (popup.y + popup.height),
+              0
+            );
+            expect(gapX)
+              .withContext(`In ${browserName}, with a rotation of ${rotation}`)
+              .toBeLessThan(5);
+            expect(gapY)
+              .withContext(`In ${browserName}, with a rotation of ${rotation}`)
+              .toBeLessThan(5);
+
+            // Hide the popup.
+            await waitAndClick(page, buttonSelector);
+            await page.waitForSelector(popupSelector, { hidden: true });
+          }
+        })
+      );
+    });
+
+    it("must keep the popup where it has been dragged when the pages are rotated", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Abstract");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          const buttonSelector = `${editorSelector} button.annotationCommentButton`;
+          const popupSelector = "#commentPopup";
+          // The keyboard is used because the popup, which may be dropped on
+          // the button, would be hidden when the pointer leaves the button.
+          const showPopup = async () => {
+            await page.focus(buttonSelector);
+            await page.keyboard.press("Enter");
+            await page.waitForSelector(popupSelector, { visible: true });
+          };
+          // The top-left corner of the popup in the unrotated frame of the
+          // layer, as fractions of its width and of its height. It's the point
+          // which is kept in the layer: the size of the popup doesn't change
+          // with the zoom.
+          const getCornerInLayer = async rotation => {
+            const layer = await getRect(page, ".annotationEditorLayer");
+            const popup = await getRect(page, popupSelector);
+            // The corner is on the right and/or the bottom once rotated.
+            const left =
+              popup.x + (rotation === 90 || rotation === 180 ? popup.width : 0);
+            const top =
+              popup.y +
+              (rotation === 180 || rotation === 270 ? popup.height : 0);
+            const x = (left - layer.x) / layer.width;
+            const y = (top - layer.y) / layer.height;
+            switch (rotation) {
+              case 90:
+                return [y, 1 - x];
+              case 180:
+                return [1 - x, 1 - y];
+              case 270:
+                return [1 - y, x];
+              default:
+                return [x, y];
+            }
+          };
+
+          for (const rotation of [0, 90, 180, 270]) {
+            const context = `In ${browserName}, dragged with a rotation of ${rotation}`;
+            await showPopup();
+
+            // The popup is dragged towards the center of the window in order
+            // to stay in it.
+            const before = await getRect(page, popupSelector);
+            const windowSize = await page.evaluate(() => ({
+              width: window.innerWidth,
+              height: window.innerHeight,
+            }));
+            const deltaX =
+              before.x + before.width / 2 < windowSize.width / 2 ? 30 : -30;
+            const deltaY =
+              before.y + before.height / 2 < windowSize.height / 2 ? 40 : -40;
+            const grip = await getRect(
+              page,
+              `${popupSelector} .commentPopupTime`
+            );
+            const startX = grip.x + grip.width / 2;
+            const startY = grip.y + grip.height / 2;
+            await page.mouse.move(startX, startY);
+            await page.mouse.down();
+            await page.mouse.move(startX + deltaX, startY + deltaY, {
+              steps: 5,
+            });
+            await page.mouse.up();
+
+            // Whatever the rotation is, the popup must follow the pointer.
+            const dragged = await getRect(page, popupSelector);
+            expect(Math.abs(dragged.x - before.x - deltaX))
+              .withContext(context)
+              .toBeLessThan(2);
+            expect(Math.abs(dragged.y - before.y - deltaY))
+              .withContext(context)
+              .toBeLessThan(2);
+
+            const [cornerX, cornerY] = await getCornerInLayer(rotation);
+            const nextRotation = (rotation + 90) % 360;
+            await page.evaluate(() => {
+              window.PDFViewerApplication.rotatePages(90);
+            });
+            await page.waitForSelector(
+              `.annotationEditorLayer[data-main-rotation='${nextRotation}']`
+            );
+            await waitForBrowserTrip(page);
+
+            // The popup belongs to the page: it must stay at the same place on
+            // it once the page is rotated.
+            const isHidden = await page.$eval(popupSelector, el =>
+              el.classList.contains("hidden")
+            );
+            if (isHidden) {
+              await showPopup();
+            }
+            const [newCornerX, newCornerY] =
+              await getCornerInLayer(nextRotation);
+            expect(Math.abs(newCornerX - cornerX))
+              .withContext(`${context}, to ${nextRotation}`)
+              .toBeLessThan(0.01);
+            expect(Math.abs(newCornerY - cornerY))
+              .withContext(`${context}, to ${nextRotation}`)
+              .toBeLessThan(0.01);
+
+            await page.focus(popupSelector);
+            await page.keyboard.press("Escape");
+            await page.waitForSelector(popupSelector, { hidden: true });
+          }
+        })
+      );
+    });
+  });
+
   describe("Annotations order in reading mode", () => {
     let pages;
 
