@@ -7705,6 +7705,13 @@
     "type": "eq"
   },
   {
+    "id": "issue22489",
+    "file": "pdfs/issue22489.pdf",
+    "md5": "3dc3133e9d9d7147125957d4bbdac941",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "scorecard_reduced",
     "file": "pdfs/scorecard_reduced.pdf",
     "md5": "aa8ed0827092c963eea64adb718a3806",
