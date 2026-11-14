@@ -29,6 +29,7 @@ import {
   XRefParseException,
 } from "./core_utils.js";
 import { Dict, isDict, Ref, RefMap } from "./primitives.js";
+import { finalizeFlattening, StructTreeFlattener } from "./flattener.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
@@ -580,7 +581,7 @@ class WorkerMessageHandler {
 
     handler.on(
       "ExtractPages",
-      async function ({ pageInfos, annotationStorage }) {
+      async function ({ pageInfos, annotationStorage, flatten, intent }) {
         if (!pageInfos) {
           warn("extractPages: nothing to extract.");
           return null;
@@ -658,13 +659,26 @@ class WorkerMessageHandler {
           task = new WorkerTask(`ExtractPages: ${pageInfos.length} page(s)`);
           startWorkerTask(task);
 
-          return await pdfEditor.extractPages(
+          const data = await pdfEditor.extractPages(
             pageInfos,
             annotationStorage,
             pdfManager.pdfDocument,
             handler,
             task
           );
+          if (!data || !flatten) {
+            return data;
+          }
+          // Remap pending form edits to the extracted annotations.
+          return await flattenData({
+            data,
+            password: pdfEditor.password,
+            annotationStorage:
+              pdfEditor.getCopiedAnnotationStorage(annotationStorage),
+            flatten,
+            intent,
+            task,
+          });
         } catch (reason) {
           warn(`extractPages: "${reason}".`);
           return null;
@@ -678,6 +692,116 @@ class WorkerMessageHandler {
         }
       }
     );
+
+    let savedDocumentId = 0;
+
+    // Flatten the PDF produced by extractPages.
+    async function flattenData({
+      data,
+      password,
+      annotationStorage,
+      flatten,
+      intent,
+      task,
+    }) {
+      const managers = [];
+      const load = async source => {
+        const manager = new LocalPdfManager({
+          source,
+          docId: `${docId}_saved_${savedDocumentId++}`,
+          handler,
+          password,
+          evaluatorOptions: { ...pdfManager.evaluatorOptions },
+        });
+        managers.push(manager);
+        await manager.requestLoadedStream();
+        await manager.initDocument(false);
+        return manager;
+      };
+      try {
+        let manager = await load(data);
+        const flattenedData = await saveDocument(manager, {
+          isPureXfa: false,
+          numPages: await manager.ensureDoc("numPages"),
+          annotationStorage,
+          supportsPrintToPDF: false,
+          filename: null,
+          flatten,
+          intent,
+        });
+        if (flattenedData === data) {
+          return data;
+        }
+        // Rebuild the PDF to discard the unflattened incremental revision.
+        manager = await load(flattenedData);
+        return await new PDFEditor().extractPages(
+          [{ document: manager.pdfDocument }],
+          null,
+          manager.pdfDocument,
+          handler,
+          task
+        );
+      } finally {
+        for (const manager of managers) {
+          manager.terminate(new AbortException("ExtractPages was finished."));
+        }
+      }
+    }
+
+    // Returns the AcroForm dictionary to write, unless it's removed.
+    async function flattenDocument({
+      manager,
+      numPages,
+      annotationStorage,
+      acroForm,
+      acroFormRef,
+      catalogRef,
+      changes,
+      xref,
+      flattenForms,
+      intent,
+    }) {
+      const structTree = StructTreeFlattener.create({
+        catalogRef,
+        changes,
+        xref,
+      });
+      const promises = [];
+      for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+        promises.push(
+          runPageTask(manager, pageIndex, "Flatten", async (page, task) => {
+            try {
+              const result = await page.flattenAnnotations(handler, task, {
+                annotationStorage,
+                changes,
+                flattenForms,
+                intent,
+                structTree,
+              });
+              return { ...result, pageRef: page.ref };
+            } catch (reason) {
+              // Continue saving and retain the form if flattening fails.
+              warn(
+                `flattenDocument - ignoring page ${pageIndex}: "${reason}".`
+              );
+              return { hadWidgets: true, hasWidgets: true };
+            }
+          })
+        );
+      }
+      const results = await Promise.all(promises);
+      return finalizeFlattening({
+        results,
+        structTree,
+        manager,
+        acroForm,
+        acroFormRef,
+        catalogRef,
+        changes,
+        xref,
+        flattenForms,
+      });
+    }
 
     // Import platform-rendered appearances before saving annotations.
     async function generateAppearances({ annotationStorage, changes, xref }) {
@@ -723,8 +847,19 @@ class WorkerMessageHandler {
 
     async function saveDocument(
       manager,
-      { isPureXfa, numPages, annotationStorage, supportsPrintToPDF, filename }
+      {
+        isPureXfa,
+        numPages,
+        annotationStorage,
+        supportsPrintToPDF,
+        filename,
+        flatten,
+        intent,
+      }
     ) {
+      if (isPureXfa) {
+        flatten = false;
+      }
       const globalPromises = [
         manager.requestLoadedStream(),
         manager.ensureCatalog("acroForm"),
@@ -756,6 +891,7 @@ class WorkerMessageHandler {
       let structTreeRoot;
 
       if (newAnnotationsByPage) {
+        // Create annotation tags before flattening updates their references.
         if (!_structTreeRoot) {
           if (
             await StructTreeRoot.canCreateStructureTree({
@@ -835,6 +971,21 @@ class WorkerMessageHandler {
       }
       const refs = await Promise.all(promises);
 
+      const keptAcroForm = flatten
+        ? await flattenDocument({
+            manager,
+            numPages,
+            annotationStorage,
+            acroForm,
+            acroFormRef,
+            catalogRef,
+            changes,
+            xref,
+            flattenForms: flatten !== "non-forms",
+            intent,
+          })
+        : acroForm;
+
       let xfaData = null;
       if (isPureXfa) {
         xfaData = refs[0];
@@ -845,13 +996,13 @@ class WorkerMessageHandler {
         return stream.bytes;
       }
 
-      const hasAcroForm = acroForm instanceof Dict;
+      const hasAcroForm = keptAcroForm instanceof Dict;
       const needAppearances =
         acroFormRef &&
         hasAcroForm &&
         changes.values().some(ref => ref.needAppearances);
 
-      const xfa = (hasAcroForm && acroForm.get("XFA")) || null;
+      const xfa = (hasAcroForm && keptAcroForm.get("XFA")) || null;
       let xfaDatasetsRef = null;
       let hasXfaDatasetsEntry = false;
       if (Array.isArray(xfa)) {
@@ -904,7 +1055,7 @@ class WorkerMessageHandler {
         hasXfaDatasetsEntry,
         needAppearances,
         acroFormRef,
-        acroForm,
+        acroForm: keptAcroForm,
         xfaData,
         // Preserve the XRef table/stream format.
         useXrefStream: isDict(xref.topDict, "XRef"),
