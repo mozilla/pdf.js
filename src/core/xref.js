@@ -899,6 +899,14 @@ class XRef {
       this.#pendingRefs.remove(ref);
     } catch (ex) {
       this.#pendingRefs.remove(ref);
+      // "InternalError" is SpiderMonkey's (Firefox's) name for a stack
+      // overflow; V8 (Chrome, Node.js, and therefore pdfjs-dist) names the
+      // same condition "RangeError" instead. Both must be checked, or a
+      // deeply/circularly nested object only gets converted to a clean
+      // FormatError in Firefox and still crashes uncaught everywhere else.
+      if (ex?.name === "InternalError" || ex?.name === "RangeError") {
+        throw new FormatError(`Nesting too deep in object: ${ref}.`);
+      }
       throw ex;
     }
     if (xrefEntry instanceof Dict) {
