@@ -690,6 +690,14 @@ class PDFDataRangeTransport {
  *   Firefox-only callback receiving ordered `{ data }` entries. Returns a PDF
  *   with one page per entry, or `null`. Place each appearance within
  *   `[0, 0, data.width, data.height]` in points.
+ * @property {boolean} [flatten] - Draw visible annotation appearances into
+ *   page content where possible. Keep widgets, links, file attachments and
+ *   media annotations interactive. Ignored for pure XFA documents. Defaults to
+ *   `false`.
+ * @property {"display" | "print"} [intent] - Visibility to use when flattening
+ *   annotations. The default value is `"print"`. Ignored unless `flatten` is
+ *   enabled. Document scripts are not executed. Callers handle WillPrint
+ *   before saving and DidPrint afterward for scripted print changes.
  */
 
 /**
@@ -2470,6 +2478,15 @@ class WorkerTransport {
     return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
+  #getFlattenIntent(intent) {
+    if (intent !== "display" && intent !== "print") {
+      warn(`Invalid flattening intent: ${intent}, using "print".`);
+    }
+    return intent === "display"
+      ? RenderingIntentFlag.DISPLAY
+      : RenderingIntentFlag.PRINT;
+  }
+
   getRenderingIntent(
     intent,
     annotationMode = AnnotationMode.ENABLE,
@@ -2854,8 +2871,8 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
-  saveDocument({ printToPDF = null } = {}) {
-    if (this.annotationStorage.size <= 0) {
+  saveDocument({ printToPDF = null, flatten = false, intent = "print" } = {}) {
+    if (this.annotationStorage.size <= 0 && !flatten) {
       warn(
         "saveDocument called while `annotationStorage` is empty, " +
           "please use the getData-method instead."
@@ -2878,6 +2895,8 @@ class WorkerTransport {
           annotationStorage: map,
           supportsPrintToPDF: this.#printToPDF !== null,
           filename: this.#fullReader?.filename ?? null,
+          flatten,
+          intent: this.#getFlattenIntent(intent),
         },
         transfer
       )

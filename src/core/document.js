@@ -74,6 +74,7 @@ import { Linearization } from "./parser.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
+import { PageAnnotationFlattener } from "./flattener.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
@@ -445,6 +446,15 @@ class Page {
       );
     }
     return Promise.all(promises);
+  }
+
+  async flattenAnnotations(options) {
+    return new PageAnnotationFlattener({
+      ...options,
+      page: this,
+      getResources: streamDict =>
+        this.#getMergedResources(streamDict, RESOURCES_KEYS_OPERATOR_LIST),
+    }).flatten();
   }
 
   async loadResources(keys) {
@@ -1510,7 +1520,7 @@ class PDFDocument {
   }
 
   serializeXfaData(annotationStorage) {
-    return this.xfaFactory
+    return this.xfaFactory && annotationStorage
       ? this.xfaFactory.serializeData(annotationStorage)
       : null;
   }

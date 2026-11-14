@@ -5978,6 +5978,7 @@ export {
   AnnotationBorderStyle,
   AnnotationFactory,
   getQuadPoints,
+  getTransformMatrix,
   MarkupAnnotation,
   PopupAnnotation,
   WidgetAnnotation,
