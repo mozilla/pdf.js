@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FormatError } from "../shared/util.js";
+import { bytesToString, FormatError } from "../shared/util.js";
 import { Stream } from "./stream.js";
 
 function hexToInt(a, size) {
@@ -32,7 +32,7 @@ function hexToStr(a, size) {
   }
   return size === 3
     ? String.fromCharCode(a[0], a[1], a[2], a[3])
-    : String.fromCharCode(...a.subarray(0, size + 1));
+    : bytesToString(a.subarray(0, size + 1));
 }
 
 function addHex(a, b, size) {
@@ -128,13 +128,16 @@ class BinaryCMapStream extends Stream {
     }
   }
 
-  readString() {
-    const len = this.readNumber(),
-      buf = new Array(len);
-    for (let i = 0; i < len; i++) {
-      buf[i] = this.readNumber();
+  readString(skip = false) {
+    const ii = this.readNumber();
+    if (skip) {
+      for (let i = 0; i < ii; i++) {
+        this.readNumber();
+      }
+      return null;
     }
-    return String.fromCharCode(...buf);
+    const buf = Array.from({ length: ii }, () => this.readNumber());
+    return bytesToString(buf);
   }
 }
 
@@ -159,7 +162,7 @@ class BinaryCMapReader {
         // metadata, e.g. comment or usecmap
         switch (b & 0x1f) {
           case 0:
-            stream.readString(); // skipping comment
+            stream.readString(true); // skipping comment
             break;
           case 1:
             useCMap = stream.readString();
