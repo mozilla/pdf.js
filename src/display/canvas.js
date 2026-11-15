@@ -2851,11 +2851,7 @@ class CanvasGraphics {
     }
     ctx.translate(current.x, current.y + current.textRise);
 
-    if (fontDirection > 0) {
-      ctx.scale(textHScale, -1);
-    } else {
-      ctx.scale(textHScale, 1);
-    }
+    ctx.scale(textHScale, fontDirection > 0 ? -1 : 1);
 
     let patternFillTransform, patternStrokeTransform;
 

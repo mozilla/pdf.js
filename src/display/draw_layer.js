@@ -131,7 +131,6 @@ function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
     return offsetA <= offsetB;
   }
   const relation = nodeA.compareDocumentPosition(nodeB);
-  /* eslint-disable unicorn/prefer-ternary */
   if (relation & Node.DOCUMENT_POSITION_FOLLOWING) {
     return true;
   }
@@ -139,7 +138,6 @@ function isPointBefore(nodeA, offsetA, nodeB, offsetB) {
     return false;
   }
   return null;
-  /* eslint-enable unicorn/prefer-ternary */
 }
 
 /**

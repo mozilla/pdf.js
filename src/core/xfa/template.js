@@ -2259,12 +2259,10 @@ class ExData extends ContentObject {
   }
 
   [$toHTML](availableSpace) {
-    if (this.contentType !== "text/html" || !this[$content]) {
-      // TODO: fix other cases.
-      return HTMLResult.EMPTY;
-    }
-
-    return this[$content][$toHTML](availableSpace);
+    // TODO: fix other cases.
+    return this.contentType !== "text/html" || !this[$content]
+      ? HTMLResult.EMPTY
+      : this[$content][$toHTML](availableSpace);
   }
 }
 
@@ -5395,11 +5393,9 @@ class Template extends XFAObject {
   }
 
   [$searchNode](expr, container) {
-    if (expr.startsWith("#")) {
-      // This is an id.
-      return [this[$ids].get(expr.slice(1))];
-    }
-    return searchNode(this, container, expr, true, true);
+    return expr.startsWith("#")
+      ? [this[$ids].get(expr.slice(1))] // This is an id.
+      : searchNode(this, container, expr, true, true);
   }
 
   /**

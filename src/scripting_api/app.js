@@ -155,11 +155,8 @@ class App {
   #cleanTimeout({ callbackId, interval }) {
     this.#unregisterTimeoutCallback(callbackId);
 
-    if (interval) {
-      this.#externalCall("clearInterval", [callbackId]);
-    } else {
-      this.#externalCall("clearTimeout", [callbackId]);
-    }
+    const name = interval ? "clearInterval" : "clearTimeout";
+    this.#externalCall(name, [callbackId]);
   }
 
   static #getPlatform(platform) {

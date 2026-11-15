@@ -863,22 +863,17 @@ class Annotation {
 
     if (noView) {
       flags |= AnnotationFlag.PRINT;
-      if (noPrint) {
-        // display === 1.
-        return (flags & ~AnnotationFlag.NOVIEW) | AnnotationFlag.HIDDEN;
-      }
-      // display === 3.
-      return (flags & ~AnnotationFlag.HIDDEN) | AnnotationFlag.NOVIEW;
+      // display === 1 when `noPrint` is set, otherwise display === 3.
+      return noPrint
+        ? (flags & ~AnnotationFlag.NOVIEW) | AnnotationFlag.HIDDEN
+        : (flags & ~AnnotationFlag.HIDDEN) | AnnotationFlag.NOVIEW;
     }
 
     flags &= ~(AnnotationFlag.HIDDEN | AnnotationFlag.NOVIEW);
-    if (noPrint) {
-      // display === 2.
-      return flags & ~AnnotationFlag.PRINT;
-    }
-
-    // display === 0.
-    return flags | AnnotationFlag.PRINT;
+    // display === 2 when `noPrint` is set, otherwise display === 0.
+    return noPrint
+      ? flags & ~AnnotationFlag.PRINT
+      : flags | AnnotationFlag.PRINT;
   }
 
   /**
@@ -4820,12 +4815,7 @@ class SquareAnnotation extends MarkupAnnotation {
           const y = points[5] + this.borderStyle.width / 2;
           const width = points[6] - points[4] - this.borderStyle.width;
           const height = points[3] - points[7] - this.borderStyle.width;
-          buffer.push(`${x} ${y} ${width} ${height} re`);
-          if (fillColor) {
-            buffer.push("B");
-          } else {
-            buffer.push("S");
-          }
+          buffer.push(`${x} ${y} ${width} ${height} re`, fillColor ? "B" : "S");
           return [points[0], points[7], points[2], points[3]];
         },
       });
@@ -4882,13 +4872,9 @@ class CircleAnnotation extends MarkupAnnotation {
             `${x1} ${yMid - yOffset} ${xMid + xOffset} ${y0} ${xMid} ${y0} c`,
             `${xMid - xOffset} ${y0} ${x0} ${yMid - yOffset} ${x0} ${yMid} c`,
             `${x0} ${yMid + yOffset} ${xMid - xOffset} ${y1} ${xMid} ${y1} c`,
-            "h"
+            "h",
+            fillColor ? "B" : "S"
           );
-          if (fillColor) {
-            buffer.push("B");
-          } else {
-            buffer.push("S");
-          }
           return [points[0], points[7], points[2], points[3]];
         },
       });
@@ -5813,21 +5799,21 @@ class RichMediaAnnotation extends MediaAnnotation {
       }
       for (const instanceRef of instances) {
         const instance = xref.fetchIfRef(instanceRef);
-        if (!(instance instanceof Dict)) {
-          continue;
-        }
-        // Skip Flash instances: it's obsolete.
-        if (isName(instance.get("Subtype"), "Flash")) {
+        if (
+          !(instance instanceof Dict) ||
+          // Skip Flash instances: it's obsolete.
           // Flash has been supported (see PDF 1.7 Extension Level 3).
+          isName(instance.get("Subtype"), "Flash")
+        ) {
           continue;
         }
         const rawAsset = instance.getRaw("Asset");
         const asset = xref.fetchIfRef(rawAsset);
-        if (!(asset instanceof Dict)) {
-          continue;
-        }
-        // Skip assets that only reference an external file we can't read.
-        if (!FileSpec.hasEmbeddedFile(asset)) {
+        if (
+          !(asset instanceof Dict) ||
+          // Skip assets that only reference an external file we can't read.
+          !FileSpec.hasEmbeddedFile(asset)
+        ) {
           continue;
         }
         const { filename } = new FileSpec(asset).serializable;

@@ -1406,11 +1406,9 @@ class PDFEditor {
             parent = null;
           }
           if (!parent) {
-            if (dict.has("StructParent")) {
-              dict.delete("StructParent");
-            } else {
-              dict.delete("StructParents");
-            }
+            dict.delete(
+              dict.has("StructParent") ? "StructParent" : "StructParents"
+            );
             return;
           }
           let newStructParent = oldStructParentMapping.get(structParent);
@@ -1419,11 +1417,10 @@ class PDFEditor {
             oldStructParentMapping.set(structParent, newStructParent);
             newParentTree.set(newStructParent, [oldRefMapping, parent]);
           }
-          if (dict.has("StructParent")) {
-            dict.set("StructParent", newStructParent);
-          } else {
-            dict.set("StructParents", newStructParent);
-          }
+          dict.set(
+            dict.has("StructParent") ? "StructParent" : "StructParents",
+            newStructParent
+          );
         },
         visited
       );

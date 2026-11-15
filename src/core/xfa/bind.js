@@ -180,12 +180,12 @@ class Binder {
     }
 
     for (const { ref, target, connection } of formNode.setProperty.children) {
-      if (connection) {
+      if (
         // TODO: evaluate if we should implement this feature.
         // Skip for security reasons.
-        continue;
-      }
-      if (!ref) {
+        connection ||
+        !ref
+      ) {
         continue;
       }
 
@@ -304,12 +304,12 @@ class Binder {
 
     for (const { ref, labelRef, valueRef, connection } of formNode.bindItems
       .children) {
-      if (connection) {
+      if (
         // TODO: evaluate if we should implement this feature.
         // Skip for security reasons.
-        continue;
-      }
-      if (!ref) {
+        connection ||
+        !ref
+      ) {
         continue;
       }
 

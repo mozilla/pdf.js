@@ -384,11 +384,9 @@ class SimpleExprParser {
           }
           return [tok, this.getNode()];
         case TOKEN.minus:
-          if (this.last === OPERATOR) {
-            this.pushOperator(Operators.minus);
-          } else {
-            this.pushOperator(Operators.sub);
-          }
+          this.pushOperator(
+            this.last === OPERATOR ? Operators.minus : Operators.sub
+          );
           break;
         case TOKEN.ne:
           if (this.last === OPERAND) {
@@ -421,11 +419,9 @@ class SimpleExprParser {
           }
           return [tok, this.getNode()];
         case TOKEN.plus:
-          if (this.last === OPERATOR) {
-            this.pushOperator(Operators.plus);
-          } else {
-            this.pushOperator(Operators.add);
-          }
+          this.pushOperator(
+            this.last === OPERATOR ? Operators.plus : Operators.add
+          );
           break;
         case TOKEN.rightBracket:
           if (!this.flushUntil(Operators.subscript.id)) {

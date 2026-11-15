@@ -459,10 +459,8 @@ class SimpleXMLParser extends XMLParserBase {
 
     // We should only have one root.
     const [documentElement] = this._currentFragment;
-    if (!documentElement) {
-      return undefined; // Return undefined if no root was found.
-    }
-    return { documentElement };
+    // Return undefined if no root was found.
+    return documentElement ? { documentElement } : undefined;
   }
 
   onText(text) {

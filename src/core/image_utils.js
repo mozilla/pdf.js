@@ -317,11 +317,13 @@ class GlobalImageCache {
    */
   addByteSize(ref, byteSize) {
     const imageData = this._imageCache.get(ref);
-    if (!imageData) {
-      return; // The image data isn't cached (the limit was reached).
-    }
-    if (imageData.byteSize) {
-      return; // The byte-size has already been set.
+    if (
+      // The image data isn't cached (the limit was reached).
+      !imageData ||
+      // The byte-size has already been set.
+      imageData.byteSize
+    ) {
+      return;
     }
     imageData.byteSize = byteSize;
   }

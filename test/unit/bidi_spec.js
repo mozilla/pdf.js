@@ -184,13 +184,12 @@ describe("bidi", function () {
       // 0 = LTR, 1 = RTL, 2 = auto-LTR (P2/P3).
       // Skip auto-LTR: bidi.js uses a 30%-threshold instead of P2/P3.
       const paragraphDir = parseInt(fields[1].trim(), 10);
-      if (paragraphDir === 2) {
-        continue;
-      }
-
-      // Field 3: resolved levels; "x" marks characters removed by rule X9.
-      // Skip those cases since bidi.js does not implement X9.
-      if (fields[3].trim().split(/\s+/).includes("x")) {
+      if (
+        paragraphDir === 2 ||
+        // Field 3: resolved levels; "x" marks characters removed by rule X9.
+        // Skip those cases since bidi.js does not implement X9.
+        fields[3].trim().split(/\s+/).includes("x")
+      ) {
         continue;
       }
 
@@ -199,13 +198,12 @@ describe("bidi", function () {
         .split(/\s+/)
         .map(cp => parseInt(cp, 16));
 
-      // Skip cases with embedding/isolate code points (X1-X10 not implemented).
-      if (codePoints.some(cp => EMBEDDING_CODEPOINTS.has(cp))) {
-        continue;
-      }
-
-      // Skip cases containing bidi paired brackets (N0 rule not implemented).
-      if (codePoints.some(cp => BRACKET_CODEPOINTS.has(cp))) {
+      if (
+        // Skip cases with embedding/isolate code points (X1-X10 unimplemented).
+        codePoints.some(cp => EMBEDDING_CODEPOINTS.has(cp)) ||
+        // Skip cases containing bidi paired brackets (N0 rule not implemented).
+        codePoints.some(cp => BRACKET_CODEPOINTS.has(cp))
+      ) {
         continue;
       }
 
@@ -273,17 +271,14 @@ describe("bidi", function () {
         continue;
       }
 
-      // Ignore other @ directives (forward compatibility).
-      if (trimmed.startsWith("@")) {
-        continue;
-      }
-
-      if (!currentLevels || !currentReorder) {
-        continue;
-      }
-
-      // Skip cases where rule X9 removes characters (bidi.js omits X9).
-      if (currentLevels.includes("x")) {
+      if (
+        // Ignore other @ directives (forward compatibility).
+        trimmed.startsWith("@") ||
+        !currentLevels ||
+        !currentReorder ||
+        // Skip cases where rule X9 removes characters (bidi.js omits X9).
+        currentLevels.includes("x")
+      ) {
         continue;
       }
 
@@ -295,14 +290,13 @@ describe("bidi", function () {
       const classes = trimmed.slice(0, semicolonIdx).trim().split(/\s+/);
       const bitset = parseInt(trimmed.slice(semicolonIdx + 1).trim(), 10);
 
-      // Skip cases that involve unsupported bidi classes.
-      if (classes.some(c => UNSUPPORTED_BIDI_CLASSES.has(c))) {
-        continue;
-      }
-
-      // Skip cases with no RTL character: bidi.js returns the input unchanged
-      // when no R/AL/AN is present, regardless of paragraph direction.
-      if (!classes.some(c => c === "R" || c === "AL" || c === "AN")) {
+      if (
+        // Skip cases that involve unsupported bidi classes.
+        classes.some(c => UNSUPPORTED_BIDI_CLASSES.has(c)) ||
+        // Skip cases with no RTL character: bidi.js returns the input unchanged
+        // when no R/AL/AN is present, regardless of paragraph direction.
+        !classes.some(c => c === "R" || c === "AL" || c === "AN")
+      ) {
         continue;
       }
 

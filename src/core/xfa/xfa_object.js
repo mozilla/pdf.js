@@ -835,11 +835,8 @@ class XmlObject extends XFAObject {
       buf.push(` ${utf8Name}="${encodeToXmlString(value[$content])}"`);
     }
     if (this[_dataValue] !== null) {
-      if (this[_dataValue]) {
-        buf.push(` xfa:dataNode="dataValue"`);
-      } else {
-        buf.push(` xfa:dataNode="dataGroup"`);
-      }
+      const dataNode = this[_dataValue] ? "dataValue" : "dataGroup";
+      buf.push(` xfa:dataNode="${dataNode}"`);
     }
     if (!this[$content] && this[_children].length === 0) {
       buf.push("/>");

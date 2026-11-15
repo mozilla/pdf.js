@@ -271,6 +271,9 @@ class TestPdfsServer {
     // WebServer from webserver.mjs is imported dynamically instead of
     // statically because we do not need it when running from the browser.
     let WebServer;
+    // Keep the branches, since only the first one needs the comment and the
+    // `import/no-unresolved` suppression below.
+    // eslint-disable-next-line unicorn/prefer-ternary
     if (import.meta.url.endsWith("/lib-legacy/test/unit/test_utils.js")) {
       // When "gulp unittestcli" is used to run tests, the tests are run from
       // pdf.js/build/lib-legacy/test/ instead of directly from pdf.js/test/.
@@ -291,15 +294,15 @@ class TestPdfsServer {
   static async ensureStopped() {
     assert(this.#startCount > 0, "ensureStarted() should be called first");
     assert(!this.#startPromise, "ensureStarted() should have resolved");
-    if (--this.#startCount) {
+    if (
       // Keep server alive as long as there is an ensureStarted() that was not
       // followed by an ensureStopped() call.
       // This could happen if ensureStarted() was called again before
       // ensureStopped() was called from afterAll().
-      return;
-    }
-    if (!isNodeJS) {
+      --this.#startCount ||
       // Web browsers cannot stop the server.
+      !isNodeJS
+    ) {
       return;
     }
 
@@ -317,15 +320,14 @@ class TestPdfsServer {
     assert(this.#startCount > 0, "ensureStarted() should be called first");
     assert(!this.#startPromise, "ensureStarted() should have resolved");
 
-    if (isNodeJS) {
-      // Note: TestPdfsServer.ensureStarted() should be called first.
-      return new URL(path, `http://127.0.0.1:${this.#webServer.port}/`);
-    }
+    // In Node.js, TestPdfsServer.ensureStarted() should be called first.
     // When "gulp server" is used, our URL looks like
     // http://localhost:8888/test/unit/unit_test.html
     // The PDFs are served from:
     // http://localhost:8888/test/pdfs/
-    return new URL(TEST_PDFS_PATH + path, window.location);
+    return isNodeJS
+      ? new URL(path, `http://127.0.0.1:${this.#webServer.port}/`)
+      : new URL(TEST_PDFS_PATH + path, window.location);
   }
 }
 

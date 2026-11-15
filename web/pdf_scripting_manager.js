@@ -184,11 +184,13 @@ class PDFScriptingManager {
     eventBus.on(
       "pagerendered",
       ({ pageNumber }) => {
-        if (!this._pageOpenPending.has(pageNumber)) {
-          return; // No pending "PageOpen" event for the newly rendered page.
-        }
-        if (pageNumber !== this.#pdfViewer.currentPageNumber) {
-          return; // The newly rendered page is no longer the current one.
+        if (
+          // No pending "PageOpen" event for the newly rendered page.
+          !this._pageOpenPending.has(pageNumber) ||
+          // The newly rendered page is no longer the current one.
+          pageNumber !== this.#pdfViewer.currentPageNumber
+        ) {
+          return;
         }
         this.#dispatchPageOpen(pageNumber);
       },
@@ -471,11 +473,13 @@ class PDFScriptingManager {
     const pdfDocument = this.#pdfDocument,
       visitedPages = this._visitedPages;
 
-    if (!this.#closeCapability) {
-      return; // Scripting isn't fully initialized yet.
-    }
-    if (this._pageOpenPending.has(pageNumber)) {
-      return; // The page is still rendering; no "PageOpen" event dispatched.
+    if (
+      // Scripting isn't fully initialized yet.
+      !this.#closeCapability ||
+      // The page is still rendering; no "PageOpen" event dispatched.
+      this._pageOpenPending.has(pageNumber)
+    ) {
+      return;
     }
     const actionsPromise = visitedPages.get(pageNumber);
     if (!actionsPromise) {

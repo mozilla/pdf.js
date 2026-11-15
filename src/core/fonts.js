@@ -142,26 +142,22 @@ function adjustWidths(properties) {
 }
 
 function adjustTrueTypeToUnicode(properties, isSymbolicFont, nameRecords) {
-  if (properties.hasIncludedToUnicodeMap) {
-    return; // The font dictionary has a `ToUnicode` entry.
-  }
-  if (properties.hasEncoding) {
-    return; // The font dictionary has an `Encoding` entry.
-  }
-  if (properties.toUnicode instanceof IdentityToUnicodeMap) {
-    return;
-  }
-  if (!isSymbolicFont) {
-    return; // A non-symbolic font should default to `StandardEncoding`.
-  }
-  if (nameRecords.length === 0) {
+  if (
+    // The font dictionary has a `ToUnicode` entry.
+    properties.hasIncludedToUnicodeMap ||
+    // The font dictionary has an `Encoding` entry.
+    properties.hasEncoding ||
+    properties.toUnicode instanceof IdentityToUnicodeMap ||
+    // A non-symbolic font should default to `StandardEncoding`.
+    !isSymbolicFont ||
+    nameRecords.length === 0 ||
+    // The fallback encoding is already `WinAnsiEncoding`.
+    properties.defaultEncoding === WinAnsiEncoding
+  ) {
     return;
   }
 
   // Try to infer if the fallback encoding should really be `WinAnsiEncoding`.
-  if (properties.defaultEncoding === WinAnsiEncoding) {
-    return;
-  }
   for (const r of nameRecords) {
     if (!isWinNameRecord(r)) {
       return; // Not Windows, hence `WinAnsiEncoding` wouldn't make sense.
@@ -186,13 +182,13 @@ function adjustTrueTypeToUnicode(properties, isSymbolicFont, nameRecords) {
 }
 
 function adjustType1ToUnicode(properties, builtInEncoding) {
-  if (properties.hasIncludedToUnicodeMap) {
-    return; // The font dictionary has a `ToUnicode` entry.
-  }
-  if (builtInEncoding === properties.defaultEncoding) {
-    return; // No point in trying to adjust `toUnicode` if the encodings match.
-  }
-  if (properties.toUnicode instanceof IdentityToUnicodeMap) {
+  if (
+    // The font dictionary has a `ToUnicode` entry.
+    properties.hasIncludedToUnicodeMap ||
+    // No point in trying to adjust `toUnicode` if the encodings match.
+    builtInEncoding === properties.defaultEncoding ||
+    properties.toUnicode instanceof IdentityToUnicodeMap
+  ) {
     return;
   }
   const toUnicode = new CharCodeMap(),
@@ -1560,11 +1556,12 @@ class Font {
 
       for (let i = 0; i < numTables; i++) {
         const table = readTableEntry(file);
-        if (!VALID_TABLES.includes(table.tag)) {
-          continue; // skipping table if it's not a required or optional table
-        }
-        if (table.length === 0) {
-          continue; // skipping empty tables
+        if (
+          // Skip tables that are neither required nor optional, and empty ones.
+          !VALID_TABLES.includes(table.tag) ||
+          table.length === 0
+        ) {
+          continue;
         }
         tables[table.tag] = table;
       }

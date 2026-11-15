@@ -26,7 +26,7 @@
     "eslint-plugin-perfectionist": "^5.13.0",
     "eslint-plugin-prettier": "^5.5.7",
     "eslint-plugin-regexp": "^3.3.3",
-    "eslint-plugin-unicorn": "^77.0.0",
+    "eslint-plugin-unicorn": "^79.0.0",
     "globals": "^17.14.0",
     "gulp": "^5.0.1",
     "gulp-postcss": "^10.0.0",

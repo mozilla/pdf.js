@@ -956,12 +956,13 @@ class Driver {
 
   _prefetchNextTask() {
     const task = this.taskQueue[0];
-    if (!task) {
-      return;
-    }
-    // Skip tasks that do not load a PDF or that need DOM setup (XFA style
-    // element injection) to happen synchronously before getDocument.
-    if (task.type === "other" || task.enableXfa) {
+    if (
+      !task ||
+      // Skip tasks that do not load a PDF or that need DOM setup (XFA style
+      // element injection) to happen synchronously before getDocument.
+      task.type === "other" ||
+      task.enableXfa
+    ) {
       return;
     }
     task._prefetchedLoadingTask ??= getDocument(this._getDocumentOptions(task));

@@ -47,12 +47,9 @@ class PDFWorkerStreamReader extends BasePDFStreamReader {
 
   async read() {
     const { value, done } = await this._reader.read();
-    if (done) {
-      return { value: undefined, done: true };
-    }
     // `value` is wrapped into Uint8Array, we need to
     // unwrap it to ArrayBuffer for further processing.
-    return { value: value.buffer, done: false };
+    return { value: done ? undefined : value.buffer, done };
   }
 
   cancel(reason) {

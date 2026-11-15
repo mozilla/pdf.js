@@ -283,12 +283,12 @@ class PDFHistory {
       return;
     }
 
-    if (this._destination?.page === pageNumber) {
+    if (
       // When the new page is identical to the one in `this._destination`, we
       // don't want to add a potential duplicate entry in the browser history.
-      return;
-    }
-    if (this._popStateInProgress) {
+      this._destination?.page === pageNumber ||
+      this._popStateInProgress
+    ) {
       return;
     }
 

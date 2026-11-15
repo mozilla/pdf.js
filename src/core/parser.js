@@ -412,14 +412,11 @@ class Parser {
         case 0xfe: // COM
           // The marker should be followed by the length of the segment.
           markerLength = stream.getUint16();
-          if (markerLength > 2) {
-            // |markerLength| contains the byte length of the marker segment,
-            // including its own length (2 bytes) and excluding the marker.
-            stream.skip(markerLength - 2); // Jump to the next marker.
-          } else {
-            // The marker length is invalid, resetting the stream position.
-            stream.skip(-2);
-          }
+          // |markerLength| contains the byte length of the marker segment,
+          // including its own length (2 bytes) and excluding the marker, so
+          // jump to the next marker. If the marker length is invalid, reset the
+          // stream position instead.
+          stream.skip(markerLength > 2 ? markerLength - 2 : -2);
           break;
       }
       if (foundEOI) {

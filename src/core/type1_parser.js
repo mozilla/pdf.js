@@ -569,12 +569,9 @@ class Type1Parser {
   }
 
   readCharStrings(bytes, lenIV) {
-    if (lenIV === -1) {
-      // This isn't in the spec, but Adobe's tx program handles -1
-      // as plain text.
-      return bytes;
-    }
-    return decrypt(bytes, CHAR_STRS_ENCRYPT_KEY, lenIV);
+    // This isn't in the spec, but Adobe's tx program handles -1
+    // as plain text.
+    return lenIV === -1 ? bytes : decrypt(bytes, CHAR_STRS_ENCRYPT_KEY, lenIV);
   }
 
   /*

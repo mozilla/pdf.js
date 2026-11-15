@@ -488,11 +488,12 @@ class PDFThumbnailViewer {
     if (!isValidRotation(rotation)) {
       throw new Error("Invalid thumbnails rotation angle.");
     }
-    if (!this.pdfDocument) {
+    if (
+      !this.pdfDocument ||
+      // The rotation didn't change.
+      this._pagesRotation === rotation
+    ) {
       return;
-    }
-    if (this._pagesRotation === rotation) {
-      return; // The rotation didn't change.
     }
     this._pagesRotation = rotation;
 

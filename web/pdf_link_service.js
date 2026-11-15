@@ -446,13 +446,15 @@ class PDFLinkService {
         this.goToDestination(params.get("nameddest"));
       }
 
-      if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) {
-        return;
-      }
-      // Support opening of PDF attachments in the Firefox PDF Viewer,
-      // which uses a couple of non-standard hash parameters; refer to
-      // `DownloadManager._getOpenDataUrl` in the firefoxcom.js file.
-      if (!params.has("filename") || !params.has("filedest")) {
+      if (
+        typeof PDFJSDev === "undefined" ||
+        !PDFJSDev.test("MOZCENTRAL") ||
+        // Support opening of PDF attachments in the Firefox PDF Viewer,
+        // which uses a couple of non-standard hash parameters; refer to
+        // `DownloadManager._getOpenDataUrl` in the firefoxcom.js file.
+        !params.has("filename") ||
+        !params.has("filedest")
+      ) {
         return;
       }
       hash = params.get("filedest");

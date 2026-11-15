@@ -2111,11 +2111,11 @@ const PDFViewerApplication = {
       !info.IsAcroFormPresent &&
       !pdfDocument.isPureXfa
     ) {
-      if (pdfDocument.loadingParams.enableXfa) {
-        console.warn("Warning: XFA Foreground documents are not supported");
-      } else {
-        console.warn("Warning: XFA support is not enabled");
-      }
+      console.warn(
+        pdfDocument.loadingParams.enableXfa
+          ? "Warning: XFA Foreground documents are not supported"
+          : "Warning: XFA support is not enabled"
+      );
     } else if (
       (info.IsAcroFormPresent || info.IsXFAPresent) &&
       !this.pdfViewer.renderForms
@@ -2173,10 +2173,12 @@ const PDFViewerApplication = {
     }
     const labels = await pdfDocument.getPageLabels();
 
-    if (pdfDocument !== this.pdfDocument) {
-      return; // The document was closed while the page labels resolved.
-    }
-    if (!labels || AppOptions.get("disablePageLabels")) {
+    if (
+      // The document was closed while the page labels resolved.
+      pdfDocument !== this.pdfDocument ||
+      !labels ||
+      AppOptions.get("disablePageLabels")
+    ) {
       return;
     }
     const numLabels = labels.length;

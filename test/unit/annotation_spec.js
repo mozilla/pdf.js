@@ -71,11 +71,7 @@ describe("annotation", function () {
     ensure(obj, prop, args) {
       return new Promise(function (resolve) {
         const value = obj[prop];
-        if (typeof value === "function") {
-          resolve(value.apply(obj, args));
-        } else {
-          resolve(value);
-        }
+        resolve(typeof value === "function" ? value.apply(obj, args) : value);
       });
     }
 

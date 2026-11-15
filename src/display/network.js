@@ -120,13 +120,12 @@ class PDFNetworkStream extends BasePDFStream {
       delete pendingRequest.onHeadersReceived;
     }
 
-    if (xhr.readyState !== 4) {
-      return;
-    }
-
-    if (!this.#pendingRequests.has(xhr)) {
+    if (
+      xhr.readyState !== 4 ||
       // The XHR request might have been aborted in onHeadersReceived()
       // callback, in which case we should abort request.
+      !this.#pendingRequests.has(xhr)
+    ) {
       return;
     }
     this.#pendingRequests.delete(xhr);

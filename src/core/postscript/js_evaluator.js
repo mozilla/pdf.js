@@ -776,11 +776,11 @@ class PSStackBasedInterpreter {
           }
           break;
         case PS_NODE.ifelse:
-          if (this.#stack[--this.#sp] !== 0) {
-            this.#execBlock(instr.then.instructions);
-          } else {
-            this.#execBlock(instr.otherwise.instructions);
-          }
+          this.#execBlock(
+            this.#stack[--this.#sp] !== 0
+              ? instr.then.instructions
+              : instr.otherwise.instructions
+          );
           break;
       }
     }

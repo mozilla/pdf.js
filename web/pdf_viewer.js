@@ -2257,12 +2257,12 @@ class PDFViewer {
     if (!(promise instanceof Promise)) {
       throw new Error(`Invalid optionalContentConfigPromise: ${promise}`);
     }
-    if (!this.pdfDocument) {
-      return;
-    }
-    if (!this._optionalContentConfigPromise) {
+    if (
+      !this.pdfDocument ||
       // Ignore the setter *before* the `onePageRendered` promise has resolved,
       // since it'll be overwritten anyway; won't happen in the default viewer.
+      !this._optionalContentConfigPromise
+    ) {
       return;
     }
     this._optionalContentConfigPromise = promise;

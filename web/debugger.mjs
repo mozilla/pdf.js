@@ -423,11 +423,11 @@ class Stepper {
         this.indentLevel++;
       }
 
-      if (decArgs instanceof HTMLElement) {
-        line.append(decArgs);
-      } else {
-        line.append(this.#c("td", JSON.stringify(this.#simplifyArgs(decArgs))));
-      }
+      line.append(
+        decArgs instanceof HTMLElement
+          ? decArgs
+          : this.#c("td", JSON.stringify(this.#simplifyArgs(decArgs)))
+      );
     }
     if (operatorsToDisplay < operatorList.fnArray.length) {
       const lastCell = this.#c("td", "...");

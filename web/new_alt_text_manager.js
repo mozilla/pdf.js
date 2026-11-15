@@ -264,13 +264,12 @@ class NewAltTextManager {
   }
 
   async #mlGuessAltText(isInitial) {
-    if (this.#isAILoading) {
+    if (
       // We're still loading the previous guess.
-      return;
-    }
-
-    if (this.#textarea.value) {
+      this.#isAILoading ||
       // The user has already set an alt text.
+      this.#textarea.value
+    ) {
       return;
     }
 

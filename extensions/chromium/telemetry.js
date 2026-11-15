@@ -74,11 +74,9 @@ limitations under the License.
 
   function maybeSendPing() {
     getLoggingPref(function (didOptOut) {
-      if (didOptOut) {
+      if (
         // Respect the user's decision to not send statistics.
-        return;
-      }
-      if (!navigator.onLine) {
+        didOptOut ||
         // No network available; Wait until the next scheduled ping opportunity.
         // Even if onLine is true, the server may still be unreachable. But
         // because it is impossible to tell whether a request failed due to the
@@ -86,6 +84,8 @@ limitations under the License.
         // server, we don't validate the response and assume that the request
         // succeeded. This ensures that the server cannot ask the client to
         // send more pings.
+        !navigator.onLine
+      ) {
         return;
       }
       doSendPing();
