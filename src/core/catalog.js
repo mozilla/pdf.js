@@ -20,6 +20,7 @@ import {
   FormatError,
   info,
   makeArr,
+  noopFn,
   PermissionFlag,
   shadow,
   stringToUTF8String,
@@ -1414,7 +1415,11 @@ class Catalog {
           lastKid instanceof Ref &&
           !pageDictCache.has(lastKid)
         ) {
-          pageDictCache.put(lastKid, xref.fetchAsync(lastKid));
+          const kidPromise = xref.fetchAsync(lastKid);
+          // Speculative reads may never be awaited. Keep the original
+          // rejection available to callers that do need this page.
+          kidPromise.catch(noopFn);
+          pageDictCache.put(lastKid, kidPromise);
         }
       }
     }

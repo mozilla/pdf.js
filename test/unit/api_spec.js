@@ -209,6 +209,22 @@ describe("api", function () {
   }
 
   describe("getDocument", function () {
+    it("handles rejection of an unused page prefetch (issue 22529)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue22529.pdf"));
+      try {
+        const pdfDocument = await loadingTask.promise;
+        expect(pdfDocument.numPages).toEqual(1);
+        expect((await pdfDocument.getPage(1)).pageNumber).toEqual(1);
+
+        // Allow an unused prefetch rejection to reach the test runner.
+        await new Promise(resolve => {
+          setTimeout(resolve, 0);
+        });
+      } finally {
+        await loadingTask.destroy();
+      }
+    });
+
     it("creates pdf doc from URL-string", async function () {
       const urlStr = TEST_PDFS_PATH + basicApiFileName;
       const loadingTask = getDocument({ url: urlStr });
