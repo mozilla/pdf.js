@@ -15389,5 +15389,21 @@
     "rounds": 1,
     "type": "eq",
     "about": "The transform of a form in hidden optional content doesn't leak."
+  },
+  {
+    "id": "form_unbalanced_restore",
+    "file": "pdfs/form_unbalanced_restore.pdf",
+    "md5": "0d379b121f35fab593907a6d624f6dcc",
+    "rounds": 1,
+    "type": "eq",
+    "about": "An unmatched Q must preserve the form's transform"
+  },
+  {
+    "id": "annotation_unbalanced_restore",
+    "file": "pdfs/annotation_unbalanced_restore.pdf",
+    "md5": "56cdbf740ba13067152fb352ac802d86",
+    "rounds": 1,
+    "type": "eq",
+    "about": "An unmatched Q must preserve the annotation's transform"
   }
 ]
