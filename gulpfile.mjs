@@ -731,7 +731,7 @@ function createStandardFontBundle() {
   return gulp.src(
     [
       "external/hellbox/*.hbgd",
-      "external/hellbox/unicode.bin",
+      "external/hellbox/unicode.bin.br",
       "external/hellbox/LICENSE_*",
       "!external/hellbox/LICENSE_HELLBOX",
     ],
@@ -1793,7 +1793,7 @@ async function buildMozcentral(changedFiles = null) {
     },
     {
       files:
-        /^external\/hellbox\/(?:.*\.hbgd|unicode\.bin|LICENSE_(?!HELLBOX))/,
+        /^external\/hellbox\/(?:.*\.hbgd|unicode\.bin\.br|LICENSE_(?!HELLBOX))/,
       dest: MOZCENTRAL_WEB_DIR + "/standard_fonts",
       create: createStandardFontBundle,
     },

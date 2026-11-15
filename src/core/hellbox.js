@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { decodeBrotli, WasmLoader } from "./wasm_loader.js";
 import {
   font_data_files as fontDataFiles,
   generate_font as generateFont,
@@ -26,7 +27,6 @@ import {
   standard_font_data_files as standardFontDataFiles,
 } from "../../external/hellbox/hellbox.js";
 import { makeMap, warn } from "../shared/util.js";
-import { WasmLoader } from "./wasm_loader.js";
 
 const FAMILIES = new Map([
   ["Courier", 2],
@@ -89,15 +89,24 @@ class Hellbox {
         if (hasData(file)) {
           return null;
         }
-        return pending.getOrInsertComputed(file, () =>
-          WasmLoader.fetch(context, "standardFontDataUrl", file)
-            .then(data => {
-              if (!hasData(file)) {
-                setData(file, data);
+        return pending.getOrInsertComputed(file, async () => {
+          const isBrotli = file === "unicode.bin";
+          try {
+            let data = await WasmLoader.fetch(
+              context,
+              "standardFontDataUrl",
+              isBrotli ? `${file}.br` : file
+            );
+            if (!hasData(file)) {
+              if (isBrotli) {
+                data = await decodeBrotli(data);
               }
-            })
-            .finally(() => pending.delete(file))
-        );
+              setData(file, data);
+            }
+          } finally {
+            pending.delete(file);
+          }
+        });
       })
     );
   }
