@@ -166,7 +166,10 @@ class EventDispatcher {
     const event = (globalThis.event = createEvent(baseEvent));
     let savedChange;
 
-    this.#userActivation();
+    if (!baseEvent.scripted) {
+      // Script-driven focus changes must not refresh the sandbox's activation.
+      this.#userActivation();
+    }
     FieldInternals.prepareEvent(source, id, event);
 
     switch (name) {

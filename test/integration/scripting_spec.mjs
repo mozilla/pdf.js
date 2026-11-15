@@ -29,14 +29,9 @@ import {
   scrollIntoView,
   waitForEntryInStorage,
   waitForSandboxTrip,
+  waitForScripting,
   waitForTimeout,
 } from "./test_utils.mjs";
-
-async function waitForScripting(page) {
-  await page.waitForFunction(
-    "window.PDFViewerApplication.scriptingReady === true"
-  );
-}
 
 async function typeAndWaitForSandbox(page, selector, value) {
   /**
