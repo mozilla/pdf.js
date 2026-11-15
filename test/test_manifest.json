@@ -15381,5 +15381,13 @@
     "rounds": 1,
     "type": "eq",
     "about": "Duplicate .notdef glyphs in a CFF font; char code 0 uses the last."
+  },
+  {
+    "id": "hidden_oc_form_cm",
+    "file": "pdfs/hidden_oc_form_cm.pdf",
+    "md5": "578897c16495b96ce9997be1ec481f6e",
+    "rounds": 1,
+    "type": "eq",
+    "about": "The transform of a form in hidden optional content doesn't leak."
   }
 ]
