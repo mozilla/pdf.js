@@ -259,6 +259,9 @@ class CanvasExtraState {
 
   activeSMask = null;
 
+  // PDF blend mode; the soft-mask scratch context uses source-over.
+  blendMode = "source-over";
+
   transferMaps = "none";
 
   // Software fallback for transfer maps when canvas filters are unavailable.
@@ -1262,19 +1265,16 @@ class CanvasGraphics {
             "globalCompositeOperation",
             opIdx
           );
-          this.ctx.globalCompositeOperation = value;
+          this.current.blendMode = value;
+          if (!this.inSMaskMode) {
+            this.ctx.globalCompositeOperation = value;
+          }
           break;
         case "SMask":
           this.dependencyTracker?.recordSimpleData("SMask", opIdx);
           this.current.activeSMask = value ? this.tempSMask : null;
-          if (this.current.activeSMask) {
-            // Save the current blend mode so that it can be applied when
-            // compositing the SMask result back to the main canvas.
-            this.current.activeSMask.blendMode =
-              this.ctx.globalCompositeOperation;
-          }
           this.tempSMask = null;
-          this.checkSMaskState(opIdx);
+          this.checkSMaskState();
           break;
         case "TR": {
           this.dependencyTracker?.recordSimpleData("filter", opIdx);
@@ -1335,18 +1335,16 @@ class CanvasGraphics {
     this._prepareSMaskCanvas(smask);
   }
 
-  checkSMaskState(opIdx) {
-    const inSMaskMode = this.inSMaskMode;
-    if (this.current.activeSMask && !inSMaskMode) {
-      this.beginSMaskMode(opIdx);
-    } else if (!this.current.activeSMask && inSMaskMode) {
-      this.endSMaskMode();
-    } else if (this.current.activeSMask && inSMaskMode) {
-      // The active SMask may have changed while SMask mode stayed active
-      // (e.g. a direct SMask A->B replacement, or a restore() that surfaces
-      // a different saved mask). _ensurePreparedSMask is a no-op when the
-      // same mask object is re-encountered.
-      this._ensurePreparedSMask(this.current.activeSMask);
+  checkSMaskState() {
+    const { activeSMask } = this.current;
+    if (!activeSMask) {
+      if (this.inSMaskMode) {
+        this.endSMaskMode();
+      }
+    } else if (this.inSMaskMode) {
+      this._ensurePreparedSMask(activeSMask);
+    } else {
+      this.beginSMaskMode();
     }
   }
 
@@ -1541,7 +1539,7 @@ class CanvasGraphics {
    * that clipping paths and transformations remain correct when soft mask mode
    * ends.
    */
-  beginSMaskMode(opIdx) {
+  beginSMaskMode() {
     if (this.inSMaskMode) {
       throw new Error("beginSMaskMode called while already in smask mode");
     }
@@ -1556,7 +1554,8 @@ class CanvasGraphics {
 
     this._ensurePreparedSMask(this.current.activeSMask);
 
-    this.setGState(opIdx, [["BM", "source-over"]]);
+    // Blend in composeSMask; keep the original BM dependency.
+    ctx.globalCompositeOperation = "source-over";
   }
 
   endSMaskMode() {
@@ -1568,6 +1567,7 @@ class CanvasGraphics {
     this.ctx._removeMirroring();
     copyCtxState(this.ctx, this.suspendedCtx);
     this.ctx = this.suspendedCtx;
+    this.ctx.globalCompositeOperation = this.current.blendMode;
 
     this.suspendedCtx = null;
     this.canvasFactory.destroy(this.smaskScratchCanvas);
@@ -2003,7 +2003,7 @@ class CanvasGraphics {
 
     ctx.save();
     ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = smask.blendMode || "source-over";
+    ctx.globalCompositeOperation = this.current.blendMode;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Blit only the dirty box -- the rest of the scratch canvas was
     // cleared in compose().
@@ -2142,6 +2142,7 @@ class CanvasGraphics {
       // Graphics state is stored on the main(suspended) canvas. Restore its
       // state then copy it over to the temporary canvas.
       copyCtxState(this.suspendedCtx, this.ctx);
+      this.ctx.globalCompositeOperation = "source-over";
       // The scratch canvas may have been freshly created by beginSMaskMode
       // (called from checkSMaskState during a previous endGroup), in which
       // case its save/restore stack is empty and ctx.restore() above was a
@@ -2150,7 +2151,7 @@ class CanvasGraphics {
       // reflected on the scratch canvas.
       this.ctx.setTransform(this.suspendedCtx.getTransform());
     }
-    this.checkSMaskState(opIdx);
+    this.checkSMaskState();
 
     // Ensure that the clipping path is reset (fixes issue6413.pdf).
     this.pendingClip = null;
@@ -2159,11 +2160,13 @@ class CanvasGraphics {
   }
 
   /**
-   * Resets the graphics state, except the clip and the transfer maps.
+   * Preserves the clip, blend mode and transfer maps.
    */
   resetGraphicsState() {
-    const { clipBox, transferMaps, transferMapsFallback } = this.current;
+    const { blendMode, clipBox, transferMaps, transferMapsFallback } =
+      this.current;
     const current = (this.current = new CanvasExtraState(0, 0));
+    current.blendMode = blendMode;
     current.clipBox = clipBox;
     current.transferMaps = transferMaps;
     current.transferMapsFallback = transferMapsFallback;
