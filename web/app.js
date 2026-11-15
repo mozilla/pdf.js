@@ -1843,6 +1843,9 @@ const PDFViewerApplication = {
           this.setInitialView(hash);
         })
         .catch(() => {
+          if (pdfDocument !== this.pdfDocument) {
+            return; // The document was closed while initializing.
+          }
           // Ensure that the document is always completely initialized,
           // even if there are any errors thrown above.
           this.setInitialView();
@@ -1863,6 +1866,9 @@ const PDFViewerApplication = {
         this._initializeAutoPrint(pdfDocument, openActionPromise);
       },
       reason => {
+        if (pdfDocument !== this.pdfDocument) {
+          return; // The document was closed while the pages loaded.
+        }
         this._documentError("pdfjs-loading-error", { message: reason.message });
       }
     );

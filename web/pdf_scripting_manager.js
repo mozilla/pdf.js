@@ -361,7 +361,11 @@ class PDFScriptingManager {
           pdfViewer.currentPageNumber = value + 1;
           break;
         case "print":
-          await pdfViewer.pagesPromise;
+          try {
+            await pdfViewer.pagesPromise;
+          } catch {
+            break; // The document was closed, or failed to load.
+          }
           this.#eventBus.dispatch("print", { source: this });
           break;
         case "println":
