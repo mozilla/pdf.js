@@ -1670,7 +1670,7 @@ class PartialEvaluator {
     const timeSlotManager = new TimeSlotManager();
     let markedContentLevel = 0;
 
-    function closePendingRestoreOPS(argument) {
+    function closePendingRestoreOPS() {
       for (let i = 0, ii = preprocessor.savedStatesDepth; i < ii; i++) {
         operatorList.addOp(OPS.restore, []);
       }
@@ -1703,13 +1703,19 @@ class PartialEvaluator {
         // in |null| as the initial value (see the comment on
         // EvaluatorPreprocessor_read() for why).
         operation.args = null;
+        const savedStatesDepth = preprocessor.savedStatesDepth;
         if (!preprocessor.read(operation)) {
           break;
         }
-        let args = operation.args;
-        let fn = operation.fn;
+        let { args, fn } = operation;
 
         switch (fn | 0) {
+          case OPS.restore:
+            if (savedStatesDepth === 0) {
+              // Preserve the enclosing form or annotation state.
+              continue;
+            }
+            break;
           case OPS.paintXObject:
             // eagerly compile XForm objects
             isValidName = args[0] instanceof Name;
