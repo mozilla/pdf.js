@@ -4,9 +4,10 @@ import process from "process";
 import { stripVTControlCharacters } from "util";
 
 const MARKER = "<!-- viewer-preview -->";
+// `master` is the viewer path on the website, see `gulp web`.
 const TARGETS = [
-  { name: "generic", title: "Modern" },
-  { name: "generic-legacy", title: "Legacy" },
+  { name: "generic", title: "Modern", master: "web/viewer.html" },
+  { name: "generic-legacy", title: "Legacy", master: "legacy/web/viewer.html" },
 ];
 const MAX_ERROR_LINES = 80;
 const MAX_ERROR_CHARS = 12000;
@@ -19,6 +20,7 @@ const {
   BUILD_RUN_URL,
   RUN_URL,
   PREVIEW_URL,
+  MASTER_URL,
   ACTION,
   APPROVAL,
   PUBLISH_OUTCOME,
@@ -48,8 +50,31 @@ function readLog(target) {
   }
 }
 
-function isPublished(target) {
-  return fs.existsSync(path.join(SITE, target, "web", "viewer.html"));
+function readDirectory(dir) {
+  try {
+    return fs.readdirSync(dir).sort();
+  } catch {
+    return [];
+  }
+}
+
+// Link files come from the untrusted artifact, as in prepare-site.sh.
+function readLinks() {
+  const dir = path.join(ARTIFACT, "pdfs");
+  const links = [];
+  for (const file of readDirectory(dir)) {
+    const match = /^([A-Za-z0-9][\w.-]*\.pdf)\.link$/.exec(file);
+    if (!match) {
+      continue;
+    }
+    try {
+      const url = new URL(fs.readFileSync(path.join(dir, file), "utf8").trim());
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        links.push({ pdf: match[1], url: url.href });
+      }
+    } catch {}
+  }
+  return links;
 }
 
 function extractErrors(log) {
@@ -90,10 +115,28 @@ function codeBlock(text) {
 
 const meta = readMeta();
 const trusted = ACTION === "publish";
-const results = TARGETS.map(target => ({
-  ...target,
-  built: meta.targets?.[target.name] === "success",
-}));
+const results = TARGETS.map(target => {
+  const built = meta.targets?.[target.name] === "success";
+  let preview = "–";
+  let viewer = null;
+  if (built) {
+    if (!trusted) {
+      preview = "not published";
+    } else if (PUBLISH_OUTCOME !== "success") {
+      preview = ":warning: not published";
+    } else if (
+      fs.existsSync(path.join(SITE, target.name, "web", "viewer.html"))
+    ) {
+      if (DEPLOY === "pending") {
+        preview = ":hourglass: waiting";
+      } else {
+        viewer = `${PREVIEW_URL}/${PR}/${target.name}/web/viewer.html`;
+        preview = `[viewer.html](${viewer})`;
+      }
+    }
+  }
+  return { ...target, built, preview, viewer };
+});
 
 const body = [MARKER, "### Viewer preview", ""];
 
@@ -112,25 +155,41 @@ if (ACTION === "remove") {
     "| Viewer | Build | Preview |",
     "| --- | --- | --- |"
   );
-  for (const { name, title, built } of results) {
-    let preview = "–";
-    if (built) {
-      if (!trusted) {
-        preview = "not published";
-      } else if (PUBLISH_OUTCOME !== "success") {
-        preview = ":warning: not published";
-      } else if (isPublished(name)) {
-        preview =
-          DEPLOY === "pending"
-            ? ":hourglass: waiting"
-            : `[viewer.html](${PREVIEW_URL}/${PR}/${name}/web/viewer.html)`;
-      }
-    }
+  for (const { name, title, built, preview } of results) {
     body.push(
       `| ${title} (\`gulp ${name}\`) | ${built ? ":white_check_mark:" : ":x:"} | ${preview} |`
     );
   }
   body.push("");
+
+  const linked = results.filter(r => r.viewer);
+  const pdfs = linked.length ? readDirectory(path.join(SITE, "pdfs")) : [];
+  if (pdfs.length) {
+    body.push(
+      `| Test PDF | ${linked.map(r => r.title).join(" | ")} |`,
+      `| --- |${" --- |".repeat(linked.length)}`
+    );
+    for (const pdf of pdfs) {
+      const file = encodeURIComponent(`${PREVIEW_URL}/${PR}/pdfs/${pdf}`);
+      const links = linked.map(
+        ({ master, viewer }) =>
+          `[master](${MASTER_URL}/${master}?file=${file}) · [PR](${viewer}?file=${file})`
+      );
+      body.push(`| \`${pdf}\` | ${links.join(" | ")} |`);
+    }
+    body.push("");
+  }
+
+  // Not republished; the original hosts don't allow CORS.
+  const links = linked.length ? readLinks() : [];
+  if (links.length) {
+    body.push(
+      "Linked test PDFs must be downloaded, then opened or dropped in each viewer:",
+      "",
+      ...links.map(({ pdf, url }) => `- [\`${pdf}\`](<${url}>)`),
+      ""
+    );
+  }
 
   for (const { name, built } of results) {
     if (built) {
