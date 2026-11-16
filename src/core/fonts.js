@@ -2377,7 +2377,8 @@ class Font {
       const missingGlyphs = new Uint8Array(numGlyphs);
       // Compute all offsets before choosing the loca format.
       const newOffsets = new Uint32Array(numGlyphsOut + 1);
-      let writeOffset = 0;
+      let writeOffset = 0,
+        isLong = isGlyphLocationsLong;
       for (i = 0; i < numGlyphs; i++) {
         const glyphProfile = droppedGlyphs.has(i)
           ? { length: 0, sizeOfInstructions: 0 }
@@ -2397,6 +2398,8 @@ class Font {
           maxSizeOfInstructions = glyphProfile.sizeOfInstructions;
         }
         writeOffset += newLength;
+        // Short loca offsets require every glyph length to be even.
+        isLong ||= (newLength & 1) !== 0;
         newOffsets[i + 1] = writeOffset;
       }
 
@@ -2423,25 +2426,31 @@ class Font {
         glyf.data = newGlyfData.subarray(0, writeOffset);
       }
 
-      // Short loca offsets must be even and at most 0x1fffe.
-      const isLong =
-        isGlyphLocationsLong ||
-        newOffsets.some(offset => offset > 0x1fffe || offset & 1);
+      // The last offset is the largest, including the duplicated glyph.
+      isLong ||= newOffsets[numGlyphsOut] > 0x1fffe;
       // indexToLocFormat: 0 = short, 1 = long.
       head.data[50] = 0;
       head.data[51] = isLong ? 1 : 0;
 
-      const locaBuilder = new DataBuilder({
-        exactLength: (isLong ? 4 : 2) * newOffsets.length,
-      });
-      for (const offset of newOffsets) {
-        if (isLong) {
-          locaBuilder.setInt32(offset);
-        } else {
-          locaBuilder.setInt16(offset / 2);
+      // Write offsets directly to avoid DataBuilder calls in cold code.
+      const numOffsets = newOffsets.length;
+      const newLocaData = new Uint8Array((isLong ? 4 : 2) * numOffsets);
+      if (isLong) {
+        for (i = 0, j = 0; i < numOffsets; i++, j += 4) {
+          const offset = newOffsets[i];
+          newLocaData[j] = offset >>> 24;
+          newLocaData[j + 1] = offset >> 16;
+          newLocaData[j + 2] = offset >> 8;
+          newLocaData[j + 3] = offset;
+        }
+      } else {
+        for (i = 0, j = 0; i < numOffsets; i++, j += 2) {
+          const offset = newOffsets[i];
+          newLocaData[j] = offset >> 9;
+          newLocaData[j + 1] = offset >> 1;
         }
       }
-      loca.data = locaBuilder.data;
+      loca.data = newLocaData;
 
       return {
         missingGlyphs,
