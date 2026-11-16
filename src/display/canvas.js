@@ -3352,9 +3352,8 @@ class CanvasGraphics {
   }
 
   paintFormXObjectBegin(opIdx, matrix, bbox) {
-    if (!this.contentVisible) {
-      return;
-    }
+    // Hidden forms still need their own state, since their transforms and
+    // clips are applied.
     this.save(opIdx);
     this.baseTransformStack.push(this.baseTransform);
 
@@ -3379,9 +3378,6 @@ class CanvasGraphics {
   }
 
   paintFormXObjectEnd(opIdx) {
-    if (!this.contentVisible) {
-      return;
-    }
     this.restore(opIdx);
     this.baseTransform = this.baseTransformStack.pop();
   }
