@@ -19,15 +19,27 @@ for target in generic generic-legacy; do
     cp -r "$ARTIFACT/$target" "$SITE/$target"
   fi
 done
-
-size="$(du -sm "$SITE" | cut -f1)"
-if [ "$size" -gt 100 ]; then
-  echo "::error::The viewers weigh ${size} MB (at most 100 MB)"
-  exit 1
-fi
 if [ -z "$(ls -A "$SITE")" ]; then
   echo "No viewer was built"
   exit 0
+fi
+
+# Names end up in URLs and in the comment.
+for pdf in "$ARTIFACT"/pdfs/*.pdf; do
+  [ -f "$pdf" ] || continue
+  name="${pdf##*/}"
+  if [[ "$name" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*\.pdf$ ]]; then
+    mkdir -p "$SITE/pdfs"
+    cp "$pdf" "$SITE/pdfs/$name"
+  else
+    echo "::notice::Skipping the test PDF ${name@Q}"
+  fi
+done
+
+size="$(du -sm "$SITE" | cut -f1)"
+if [ "$size" -gt 100 ]; then
+  echo "::error::The viewers and test PDFs weigh ${size} MB (at most 100 MB)"
+  exit 1
 fi
 
 published_at="$(date -u +%FT%TZ)"

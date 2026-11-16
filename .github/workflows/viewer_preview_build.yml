@@ -70,6 +70,16 @@ jobs:
           done
           echo "failed=$failed" >> "$GITHUB_OUTPUT"
 
+      - name: Collect the test PDFs
+        # HEAD is the merge commit: HEAD^1 is the base branch.
+        run: |
+          OUT="$RUNNER_TEMP/viewer-preview/pdfs"
+          mkdir -p "$OUT"
+          git diff -z --name-only --diff-filter=AM HEAD^1 HEAD -- \
+            ':(glob)test/pdfs/*.pdf' ':(glob)test/pdfs/*.pdf.link' |
+            xargs -0 -r cp -t "$OUT" --
+          ls -l "$OUT"
+
       - name: Describe the build
         if: ${{ !cancelled() }}
         env:
