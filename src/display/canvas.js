@@ -3433,9 +3433,7 @@ class CanvasGraphics {
       return;
     }
 
-    // Reached only when the direct path above didn't apply, e.g. a soft mask,
-    // non-default group alpha or blend mode: we still composite on a
-    // transparent intermediate canvas rather than the real backdrop.
+    // A soft mask, group alpha or blend mode requires an intermediate canvas.
     if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
       info("TODO: Fully support non-isolated non-knockout groups.");
     }
@@ -3522,52 +3520,23 @@ class CanvasGraphics {
     groupCtx.translate(-offsetX, -offsetY);
     groupCtx.transform(...currentTransform);
 
-    const needsBackdropCopy =
-      !group.isolated && !group.smask && group.needsIsolation;
-    const replaceBackdrop =
-      needsBackdropCopy &&
-      !inSMaskMode &&
-      savedKnockoutLevel === 0 &&
-      !group.knockout &&
-      !group.isGray &&
-      group.hasSoftMask &&
-      currentCtx.globalAlpha === 1 &&
-      currentCtx.globalCompositeOperation === "source-over" &&
-      this.current.transferMaps === "none" &&
-      !this.current.transferMapsFallback;
-    if (needsBackdropCopy && (inSMaskMode || replaceBackdrop)) {
-      // A non-isolated group that needs isolation (because of an inner blend
-      // mode and/or a soft mask) can't use the direct path above, so it
-      // renders on a transparent intermediate canvas. Copy the current
-      // backdrop into it so the inner blend modes (e.g. "multiply", "screen")
-      // interact with the real background instead of transparency; otherwise a
-      // /Multiply highlight, say, would be painted opaquely over the text
-      // behind it, hiding it (bug 1873345 -- same as the direct path, but here
-      // the soft mask forces an intermediate canvas).
-      // This is needed both when entered from SMask mode and at the top level;
-      // a non-isolated subgroup nested inside a knockout group instead gets its
-      // backdrop through the hasInnerBackdrop path in endGroup, so it's
-      // excluded here via savedKnockoutLevel.
-      //
-      // Outside SMask mode the copy is limited to a group that *would* have
-      // qualified for the direct path (source-over, group alpha 1, not
-      // knockout/gray) but was forced onto the intermediate canvas by its soft
-      // mask (`hasSoftMask`). Restricting to that domain keeps the change
-      // surgical:
-      //   - Only the soft-mask case is the bug 1873345 gap; a non-isolated
-      //     blend group pushed onto the intermediate canvas merely by a
-      //     non-default group alpha (no soft mask) is a separate pre-existing
-      //     case, left untouched to avoid changing its rendering (issue 13520).
-      //   - source-over/alpha 1 let endGroup replace the backdrop region with
-      //     the copied-and-updated result; compositing it normally would blend
-      //     partially transparent backdrop pixels twice. Under an outer blend
-      //     mode the outer blend would combine the backdrop with itself (e.g.
-      //     a /Multiply group with an inner soft mask darkens, issue 12798); a
-      //     non-1 group alpha would likewise mix the copied backdrop back in.
-      //     Those groups keep the transparent canvas and blend against the
-      //     real backdrop instead.
-      //   - isGray groups are grayscaled in endGroup, and inherited transfer
-      //     maps would also alter the copied backdrop.
+    // Inner blend modes need the real backdrop (bug 1873345). Outside SMask
+    // mode, endGroup must replace it rather than composite it twice. An outer
+    // blend mode, grayscale conversion or transfer map would alter the copied
+    // backdrop, so those cases keep a transparent canvas (issue 12798).
+    // Knockout subgroups get their backdrop through hasInnerBackdrop instead.
+    const copyBackdrop =
+      !group.isolated &&
+      !group.smask &&
+      group.needsIsolation &&
+      (inSMaskMode ||
+        (savedKnockoutLevel === 0 &&
+          !group.knockout &&
+          !group.isGray &&
+          currentCtx.globalCompositeOperation === "source-over" &&
+          this.current.transferMaps === "none" &&
+          !this.current.transferMapsFallback));
+    if (copyBackdrop) {
       groupCtx.save();
       groupCtx.setTransform(1, 0, 0, 1, 0, 0);
       groupCtx.drawImage(currentCtx.canvas, -offsetX, -offsetY);
@@ -3636,7 +3605,7 @@ class CanvasGraphics {
       offsetX,
       offsetY,
       hasInnerBackdrop,
-      replaceBackdrop,
+      replaceBackdrop: copyBackdrop && !inSMaskMode,
       knockoutMaskEntry,
       // Per-group scratch pools, lazily filled and freed in endGroup.
       knockoutTempEntry: null,
@@ -3795,10 +3764,20 @@ class CanvasGraphics {
         if (groupMeta.replaceBackdrop) {
           // "copy" clears the destination outside the source within the
           // current clip, so limit it to the intermediate canvas bounds.
+          const { width, height } = groupCtx.canvas;
           const clip = new Path2D();
-          clip.rect(0, 0, groupCtx.canvas.width, groupCtx.canvas.height);
+          clip.rect(0, 0, width, height);
           this.ctx.clip(clip);
-          this.ctx.globalCompositeOperation = "copy";
+          if (this.ctx.globalAlpha === 1) {
+            this.ctx.globalCompositeOperation = "copy";
+          } else {
+            // The result includes the backdrop: interpolate in premultiplied
+            // space as backdrop * (1 - alpha) + result * alpha.
+            this.ctx.globalCompositeOperation = "destination-out";
+            this.ctx.fillStyle = "#000";
+            this.ctx.fillRect(0, 0, width, height);
+            this.ctx.globalCompositeOperation = "lighter";
+          }
         }
         this.ctx.drawImage(groupCtx.canvas, 0, 0);
       }
