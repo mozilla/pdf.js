@@ -15405,5 +15405,23 @@
     "rounds": 1,
     "type": "eq",
     "about": "An unmatched Q must preserve the annotation's transform"
+  },
+  {
+    "id": "issue20266-print",
+    "file": "pdfs/issue20266.pdf",
+    "md5": "6d5ae3047e9e93bd6db61cb805cbb2f1",
+    "rounds": 1,
+    "type": "eq",
+    "print": true,
+    "about": "Print text fields with a value but a missing or invalid /AP."
+  },
+  {
+    "id": "issue20266-annotations",
+    "file": "pdfs/issue20266.pdf",
+    "md5": "6d5ae3047e9e93bd6db61cb805cbb2f1",
+    "rounds": 1,
+    "type": "eq",
+    "annotations": true,
+    "about": "Text fields with a value but a missing or invalid /AP, forms disabled."
   }
 ]
