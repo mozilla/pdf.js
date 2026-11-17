@@ -50,13 +50,43 @@ describe("scripting_utils", function () {
     it("should check CMYK conversion", function () {
       const color = [0.4, 0.5, 0.6, 0];
 
-      expect(ColorConverters.CMYK_RGB(color)).toEqual(["RGB", 0.6, 0.4, 0.5]);
+      expect(ColorConverters.CMYK_RGB(color)).toEqual(["RGB", 0.6, 0.5, 0.4]);
 
-      expect(ColorConverters.CMYK_G(color)).toEqual(["G", 0.471]);
+      expect(ColorConverters.CMYK_G(color)).toEqual(["G", 0.519]);
 
-      expect(ColorConverters.CMYK_rgb(color)).toEqual([153, 102, 127.5]);
+      expect(ColorConverters.CMYK_rgb(color)).toEqual([153, 127.5, 102]);
 
-      expect(ColorConverters.CMYK_HTML(color)).toEqual("#99667f");
+      expect(ColorConverters.CMYK_HTML(color)).toEqual("#997f66");
+    });
+
+    // `RGB_CMYK` emits [cyan, magenta, yellow, black] and
+    // `src/scripting_api/color.js` declares e.g.
+    // `yellow = ["CMYK", 0, 0, 1, 0]`, while `DeviceCmykCS` in
+    // `src/core/colorspace.js` reads src[0]/[1]/[2]/[3] as c/m/y/k:
+    // the CMYK converters must read that very same component order.
+    it("should read CMYK components as cyan, magenta, yellow, black", function () {
+      expect(ColorConverters.CMYK_rgb([0, 0, 1, 0])).toEqual([255, 255, 0]);
+      expect(ColorConverters.CMYK_rgb([0, 1, 0, 0])).toEqual([255, 0, 255]);
+      expect(ColorConverters.CMYK_rgb([1, 0, 0, 0])).toEqual([0, 255, 255]);
+
+      expect(ColorConverters.CMYK_HTML([0, 0, 1, 0])).toEqual("#ffff00");
+      expect(ColorConverters.CMYK_HTML([0, 1, 0, 0])).toEqual("#ff00ff");
+      expect(ColorConverters.CMYK_HTML([1, 0, 0, 0])).toEqual("#00ffff");
+    });
+
+    it("should round-trip a RGB color through CMYK without a black component", function () {
+      const color = [0.4, 0.7, 1];
+      const cmyk = ColorConverters.RGB_CMYK(color).slice(1);
+
+      expect(ColorConverters.CMYK_RGB(cmyk)).toEqual(["RGB", ...color]);
+      expect(ColorConverters.CMYK_HTML(cmyk)).toEqual(
+        ColorConverters.RGB_HTML(color)
+      );
+    });
+
+    it("should convert CMYK to gray with more weight on magenta than on yellow", function () {
+      expect(ColorConverters.CMYK_G([0, 1, 0, 0])[1]).toBeCloseTo(0.41, 10);
+      expect(ColorConverters.CMYK_G([0, 0, 1, 0])[1]).toBeCloseTo(0.89, 10);
     });
 
     it("should check T conversion", function () {

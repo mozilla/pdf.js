@@ -34,7 +34,7 @@ function scaleAndClamp(x) {
 
 // PDF specifications section 10.3
 class ColorConverters {
-  static CMYK_G([c, y, m, k]) {
+  static CMYK_G([c, m, y, k]) {
     return ["G", 1 - Math.min(1, 0.3 * c + 0.59 * m + 0.11 * y + k)];
   }
 
@@ -76,7 +76,7 @@ class ColorConverters {
     return [null];
   }
 
-  static CMYK_RGB([c, y, m, k]) {
+  static CMYK_RGB([c, m, y, k]) {
     return [
       "RGB",
       1 - Math.min(1, c + k),
@@ -85,7 +85,7 @@ class ColorConverters {
     ];
   }
 
-  static CMYK_rgb([c, y, m, k]) {
+  static CMYK_rgb([c, m, y, k]) {
     return [
       scaleAndClamp(1 - Math.min(1, c + k)),
       scaleAndClamp(1 - Math.min(1, m + k)),
