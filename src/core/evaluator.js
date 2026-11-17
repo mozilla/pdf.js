@@ -2365,6 +2365,7 @@ class PartialEvaluator {
     viewBox,
     lang = null,
     disableNormalization = false,
+    textLayerFonts = null,
     keepWhiteSpace = false,
     prevRefs = null,
     intersector = null,
@@ -2617,6 +2618,7 @@ class PartialEvaluator {
           style.fontSubstitution = font.systemFontInfo.css;
           style.fontSubstitutionLoadedName = font.systemFontInfo.loadedName;
         }
+        textLayerFonts?.addFont(loadedName, font);
       }
       textContentItem.fontName = loadedName;
 
@@ -3127,12 +3129,14 @@ class PartialEvaluator {
 
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
+      // Converts the glyph widths to 1/1000 em.
+      const advanceScale = Math.abs(textState.fontMatrix[0] * 1000);
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
         const { category } = glyph;
         const glyphWidth = font.vertical ? glyph.vmetric[0] : glyph.width;
-        const { isInvisibleFormatMark } = category;
+        const { isInvisibleFormatMark, isZeroWidthDiacritic } = category;
 
         if (isInvisibleFormatMark && !glyphWidth) {
           continue;
@@ -3151,6 +3155,11 @@ class PartialEvaluator {
           // it will be done (if required) in next call to
           // compareWithLastPosition.
           // This way we can merge real spaces and spaces due to cursor moves.
+          textLayerFonts?.addGlyph(
+            font,
+            " ",
+            Math.abs(glyphWidth) * advanceScale
+          );
           if (!font.vertical) {
             charSpacing += scaledDim;
             textState.translateTextMatrix(
@@ -3165,10 +3174,7 @@ class PartialEvaluator {
           continue;
         }
 
-        if (
-          !category.isZeroWidthDiacritic &&
-          !compareWithLastPosition(scaledDim)
-        ) {
+        if (!isZeroWidthDiacritic && !compareWithLastPosition(scaledDim)) {
           // The glyph is not in page so just skip it but move the cursor.
           if (!font.vertical) {
             textState.translateTextMatrix(scaledDim * textState.textHScale, 0);
@@ -3181,7 +3187,7 @@ class PartialEvaluator {
         // Must be called after compareWithLastPosition because
         // the textContentItem could have been flushed.
         const textChunk = ensureTextContentItem();
-        if (category.isZeroWidthDiacritic) {
+        if (isZeroWidthDiacritic) {
           scaledDim = 0;
         }
 
@@ -3223,11 +3229,17 @@ class PartialEvaluator {
             intersector?.addExtraChar(" ");
           }
 
+          const unicode = disableNormalization
+            ? glyphUnicode
+            : glyph.normalizedUnicode;
           if (!intersector) {
-            textChunk.str.push(
-              disableNormalization ? glyphUnicode : glyph.normalizedUnicode
-            );
+            textChunk.str.push(unicode);
           }
+          textLayerFonts?.addGlyph(
+            font,
+            unicode,
+            isZeroWidthDiacritic ? 0 : Math.abs(glyphWidth) * advanceScale
+          );
         }
 
         if (charSpacing) {
@@ -3272,6 +3284,14 @@ class PartialEvaluator {
           resetLastChars();
           textContentItem.str.push(" ");
           lastFakeSpaceExtraCharId = intersector?.addExtraChar(" ") ?? -1;
+          if (textLayerFonts && !textContentItem.vertical) {
+            const [, , c, d] = textContentItem.transform;
+            textLayerFonts.addSpaceGap(
+              textContentItem.fontName,
+              (1000 * Math.abs(width) * textContentItem.textAdvanceScale) /
+                Math.hypot(c, d)
+            );
+          }
         }
         return false;
       }
@@ -3642,6 +3662,7 @@ class PartialEvaluator {
                     viewBox,
                     lang,
                     disableNormalization,
+                    textLayerFonts,
                     keepWhiteSpace,
                     prevRefs: seenRefs,
                     markedContentScope: xObjMarkedContentScope,

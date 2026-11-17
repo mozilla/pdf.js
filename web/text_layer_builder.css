@@ -43,6 +43,11 @@
     user-select: text;
   }
 
+  /* Show the glyph boxes of the text layer fonts, see `newTextLayerMode`. */
+  &.debugFonts :is(span, br) {
+    color: red;
+  }
+
   /* We multiply the font size by --min-font-size, and then scale the text
    * elements by 1/--min-font-size. This allows us to effectively ignore the
    * minimum font size enforced by the browser, so that the text layer <span>s

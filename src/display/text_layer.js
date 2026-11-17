@@ -15,17 +15,20 @@
 
 /** @typedef {import("./page_viewport").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
+/** @typedef {import("./api").TextStyle} TextStyle */
 /** @typedef {import("./text_layer_images").TextLayerImages} TextLayerImages */
 
 import {
   AbortException,
   createPromiseCapability,
   FeatureTest,
+  makeMap,
   noopFn,
   shadow,
   Util,
   warn,
 } from "../shared/util.js";
+import { FontLoader } from "./font_loader.js";
 import { OutputScale } from "./display_utils.js";
 import { setLayerDimensions } from "./dom_utils.js";
 
@@ -60,11 +63,15 @@ class TextLayer {
 
   #fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
+  #fonts = new Map();
+
   #imagesHandler = null;
 
   #lang = null;
 
   #layoutTextParams = null;
+
+  #ownerDocument;
 
   #pageHeight = 0;
 
@@ -90,11 +97,12 @@ class TextLayer {
 
   #transform = null;
 
-  static #ascentCache = new Map();
-
   static #canvasContexts = new Map();
 
   static #canvasCtxFonts = new WeakMap();
+
+  // Text layers in the same document share fonts by name.
+  static #fontCache = new WeakMap();
 
   static #minFontSize = null;
 
@@ -120,6 +128,7 @@ class TextLayer {
       throw new Error('No "textContentSource" parameter specified.');
     }
     this.#container = this.#rootContainer = container;
+    this.#ownerDocument = container.ownerDocument || globalThis.document;
 
     this.#imagesHandler = images;
 
@@ -186,26 +195,39 @@ class TextLayer {
    * Render the textLayer.
    * @returns {Promise}
    */
-  render() {
+  async render() {
     if (this.#imagesHandler) {
       this.#container.append(this.#imagesHandler.render());
     }
 
-    const pump = () => {
-      this.#reader.read().then(({ value, done }) => {
+    this.#reader = this.#textContentSource.getReader();
+    TextLayer.#pendingTextLayers.add(this);
+
+    try {
+      while (this.#reader) {
+        const { value, done } = await this.#reader.read();
+        if (!this.#reader) {
+          break; // Cancelled.
+        }
         if (done) {
           this.#capability.resolve();
-          return;
+          break;
         }
         this.#lang ??= value.lang;
         Object.assign(this.#styleCache, value.styles);
+        const fontsPromise = this.#loadFonts(value.styles);
+        if (fontsPromise) {
+          // Cancellation should also interrupt the wait for fonts.
+          await Promise.race([fontsPromise, this.#capability.promise]);
+          if (!this.#reader) {
+            break;
+          }
+        }
         this.#processItems(value.items);
-        pump();
-      }, this.#capability.reject);
-    };
-    this.#reader = this.#textContentSource.getReader();
-    TextLayer.#pendingTextLayers.add(this);
-    pump();
+      }
+    } catch (reason) {
+      this.#capability.reject(reason);
+    }
 
     return this.#capability.promise;
   }
@@ -230,7 +252,7 @@ class TextLayer {
   }
 
   /**
-   * Cancel rendering of the textLayer.
+   * Cancel rendering of the textLayer, and release its fonts.
    * @returns {undefined}
    */
   cancel() {
@@ -240,6 +262,52 @@ class TextLayer {
     this.#reader = null;
 
     this.#capability.reject(abortEx);
+
+    const fontSet = this.#ownerDocument.fonts;
+    const fontCache = TextLayer.#fontCache.get(fontSet);
+    for (const [name, font] of this.#fonts) {
+      if (--font.count === 0) {
+        fontSet.delete(font.fontFace);
+        fontCache.delete(name);
+      }
+    }
+    this.#fonts.clear();
+  }
+
+  /**
+   * @param {Record<string, TextStyle>} styles
+   * @returns {Promise|null} Resolved when the fonts are loaded, or failed to.
+   */
+  #loadFonts(styles) {
+    const fontSet = this.#ownerDocument.fonts;
+    if (!fontSet || typeof FontFace === "undefined") {
+      return null;
+    }
+    const promises = [];
+    let fontCache;
+    for (const { textLayerFont } of Object.values(styles)) {
+      if (!textLayerFont || this.#fonts.has(textLayerFont.name)) {
+        continue;
+      }
+      fontCache ??= TextLayer.#fontCache.getOrInsertComputed(fontSet, makeMap);
+      const { name, data } = textLayerFont;
+      const font = fontCache.getOrInsertComputed(name, () => {
+        const fontFace = new FontFace(name, data);
+        return {
+          fontFace,
+          count: 0,
+          promise: FontLoader.loadBinaryFontFace(fontSet, fontFace).catch(
+            reason => {
+              warn(`Cannot load the text layer font "${name}": "${reason}".`);
+            }
+          ),
+        };
+      });
+      this.#fonts.set(name, font);
+      font.count++;
+      promises.push(font.promise);
+    }
+    return promises.length ? Promise.all(promises) : null;
   }
 
   /**
@@ -264,7 +332,10 @@ class TextLayer {
     if (this.#disableProcessItems) {
       return;
     }
-    this.#layoutTextParams.ctx ??= TextLayer.#getCtx(this.#lang);
+    this.#layoutTextParams.ctx ??= TextLayer.#getCtx(
+      this.#ownerDocument,
+      this.#lang
+    );
 
     const textDivs = this.#textDivs,
       textContentItemsStr = this.#textContentItemsStr;
@@ -285,7 +356,7 @@ class TextLayer {
           item.type === "beginMarkedContent"
         ) {
           const parent = this.#container;
-          this.#container = document.createElement("span");
+          this.#container = this.#ownerDocument.createElement("span");
           this.#container.classList.add("markedContent");
           if (item.id) {
             this.#container.setAttribute("id", item.id);
@@ -306,7 +377,7 @@ class TextLayer {
 
   #appendText(geom) {
     // Initialize all used properties to keep the caches monomorphic.
-    const textDiv = document.createElement("span");
+    const textDiv = this.#ownerDocument.createElement("span");
     const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
@@ -329,9 +400,21 @@ class TextLayer {
 
     // Workaround for bug 1922063.
     fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
+    let ascent;
+    const { textLayerFont } = style;
+    if (
+      textLayerFont &&
+      this.#fonts.get(textLayerFont.name)?.fontFace.status === "loaded"
+    ) {
+      // The other fonts are only used for the characters missing in it.
+      fontFamily = `"${textLayerFont.name}", ${fontFamily}`;
+      ascent = textLayerFont.ascent;
+    }
     const fontHeight = Math.hypot(tx[2], tx[3]);
     const fontAscent =
-      fontHeight * TextLayer.#getAscent(fontFamily, style, this.#lang);
+      fontHeight *
+      (ascent ??
+        TextLayer.#getAscent(fontFamily, style, this.#layoutTextParams.ctx));
 
     let left, top;
     if (angle === 0) {
@@ -402,7 +485,7 @@ class TextLayer {
       this.#container.append(textDiv);
     }
     if (textDivProperties.hasEOL) {
-      const br = document.createElement("br");
+      const br = this.#ownerDocument.createElement("br");
       br.setAttribute("role", "presentation");
       this.#container.append(br);
     }
@@ -446,16 +529,20 @@ class TextLayer {
     if (this.#pendingTextLayers.size > 0) {
       return;
     }
-    this.#ascentCache.clear();
-
-    for (const { canvas } of this.#canvasContexts.values()) {
-      canvas.remove();
+    for (const contexts of this.#canvasContexts.values()) {
+      for (const { canvas } of contexts.values()) {
+        canvas.remove();
+      }
     }
     this.#canvasContexts.clear();
   }
 
-  static #getCtx(lang = null) {
-    let ctx = this.#canvasContexts.get((lang ||= ""));
+  static #getCtx(ownerDocument, lang = null) {
+    const contexts = this.#canvasContexts.getOrInsertComputed(
+      ownerDocument,
+      makeMap
+    );
+    let ctx = contexts.get((lang ||= ""));
     if (!ctx) {
       // We don't use an OffscreenCanvas here because we use serif/sans serif
       // fonts with it and they depends on the locale.
@@ -467,21 +554,25 @@ class TextLayer {
       // Ideally, we should use in the text layer the fonts we've in the pdf (or
       // their replacements when they aren't embedded) and then we can use an
       // OffscreenCanvas.
-      const canvas = document.createElement("canvas");
+      const canvas = ownerDocument.createElement("canvas");
       canvas.style.cssText =
         "position:absolute;top:0;left:0;width:0;height:0;display:none;" +
         "letter-spacing:normal;word-spacing:normal";
       canvas.lang = lang;
-      document.body.append(canvas);
+      ownerDocument.body.append(canvas);
       ctx = canvas.getContext("2d", {
         alpha: false,
         willReadFrequently: true,
       });
-      this.#canvasContexts.set(lang, ctx);
+      contexts.set(lang, ctx);
 
       // Also, initialize state for the `#ensureCtxFont` method.
       // Resizing the canvas resets ctx.font but leaves this cache stale.
-      this.#canvasCtxFonts.set(ctx, { size: 0, family: "" });
+      this.#canvasCtxFonts.set(ctx, {
+        size: 0,
+        family: "",
+        ascents: new Map(),
+      });
     }
     return ctx;
   }
@@ -525,13 +616,12 @@ class TextLayer {
     div.remove();
   }
 
-  static #getAscent(fontFamily, style, lang) {
-    const cachedAscent = this.#ascentCache.get(fontFamily);
+  static #getAscent(fontFamily, style, ctx) {
+    const { ascents } = this.#canvasCtxFonts.get(ctx);
+    const cachedAscent = ascents.get(fontFamily);
     if (cachedAscent) {
       return cachedAscent;
     }
-    const ctx = this.#getCtx(lang);
-
     this.#ensureCtxFont(ctx, DEFAULT_FONT_SIZE, fontFamily);
     const metrics = ctx.measureText("");
 
@@ -559,7 +649,7 @@ class TextLayer {
       }
     }
 
-    this.#ascentCache.set(fontFamily, ratio);
+    ascents.set(fontFamily, ratio);
     return ratio;
   }
 }

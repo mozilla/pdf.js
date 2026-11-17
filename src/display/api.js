@@ -1188,6 +1188,11 @@ class PDFDocumentProxy {
  *   content items in the items array of TextContent. The default is `false`.
  * @property {boolean} [disableNormalization] - When true the text is *not*
  *   normalized in the worker-thread. The default is `false`.
+ * @property {boolean} [includeTextLayerFonts] - When true include, in the
+ *   styles, the fonts to use in the text layer, see {@link TextLayerFont}.
+ *   The default is `false`.
+ * @property {boolean} [debugTextLayerFonts] - When true, the glyphs of the
+ *   text layer fonts are the outlines of their boxes. The default is `false`.
  */
 
 /**
@@ -1230,6 +1235,16 @@ class PDFDocumentProxy {
  * @property {number} descent - Font descent.
  * @property {boolean} vertical - Whether or not the text is in vertical mode.
  * @property {string} fontFamily - The possible font family.
+ * @property {TextLayerFont} [textLayerFont] - See `includeTextLayerFonts`.
+ */
+
+/**
+ * A font with empty glyphs, having the advances of the PDF font, and a line
+ * height of one em. For a vertical font, they're the vertical advances.
+ * @typedef {object} TextLayerFont
+ * @property {string} name - Font family name.
+ * @property {Uint8Array} data - TrueType font.
+ * @property {number} ascent - Fraction of the em above the baseline.
  */
 
 /**
@@ -1765,8 +1780,10 @@ class PDFPageProxy {
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
   streamTextContent({
-    includeMarkedContent = false,
-    disableNormalization = false,
+    includeMarkedContent,
+    disableNormalization,
+    includeTextLayerFonts,
+    debugTextLayerFonts,
   } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
@@ -1777,6 +1794,8 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         includeMarkedContent: includeMarkedContent === true,
         disableNormalization: disableNormalization === true,
+        includeTextLayerFonts: includeTextLayerFonts === true,
+        debugTextLayerFonts: debugTextLayerFonts === true,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,

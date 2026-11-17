@@ -330,8 +330,19 @@ class Rasterize {
       // Items are transformed to have 1px font size.
       svg.setAttribute("font-size", 1);
 
+      // The fonts of the document aren't available in the SVG image.
+      const fontRules = [];
+      for (const { textLayerFont } of Object.values(textContent.styles)) {
+        if (textLayerFont) {
+          const { name, data } = textLayerFont;
+          fontRules.push(
+            `@font-face { font-family: "${name}"; src: url(data:font/opentype;base64,${data.toBase64()}); }`
+          );
+        }
+      }
+
       const [common, overrides] = await this.textStylePromise;
-      style.textContent = `${common}\n${overrides}\n${this.createRootCSS(viewport)}`;
+      style.textContent = `${common}\n${overrides}\n${this.createRootCSS(viewport)}\n${fontRules.join("\n")}`;
 
       // Rendering text layer as HTML.
       const textLayer = new TextLayer({
@@ -344,6 +355,9 @@ class Rasterize {
       svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
+
+      // Release the text layer fonts.
+      textLayer.cancel();
     } catch (reason) {
       throw new Error(`Rasterize.textLayer: "${reason?.message}".`);
     }
@@ -1138,6 +1152,9 @@ class Driver {
                 .getTextContent({
                   includeMarkedContent: true,
                   disableNormalization: true,
+                  // Draw the glyph boxes of the text layer fonts.
+                  includeTextLayerFonts: !!task.textLayerFonts,
+                  debugTextLayerFonts: !!task.textLayerFonts,
                 })
                 .then(textContent =>
                   task.type === "text"

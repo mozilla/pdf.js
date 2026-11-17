@@ -67,6 +67,10 @@ import { XfaLayerBuilder } from "./xfa_layer_builder.js";
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
+ * @property {number} [newTextLayerMode] - Controls if the text layer uses fonts
+ *   with the advances of the PDF fonts: 1 to enable, 2 to enable with fonts
+ *   drawing their glyph boxes (debugging), anything else to disable.
+ *   The default value is `0`.
  * @property {number} [annotationMode] - Controls if the annotation layer is
  *   created, and if interactive form elements or `AnnotationStorage`-data are
  *   being rendered. The constants from {@link AnnotationMode} should be used;
@@ -133,6 +137,8 @@ class PDFPageView extends BasePDFPageView {
 
   #hasRestrictedScaling = false;
 
+  #newTextLayerMode = 0;
+
   #isEditing = false;
 
   #layerProperties = null;
@@ -190,6 +196,7 @@ class PDFPageView extends BasePDFPageView {
     this.capCanvasAreaFactor =
       options.capCanvasAreaFactor ?? AppOptions.get("capCanvasAreaFactor");
     this.#enableAutoLinking = options.enableAutoLinking !== false;
+    this.#newTextLayerMode = options.newTextLayerMode ?? 0;
     this.#commentManager = options.commentManager || null;
 
     this.l10n = options.l10n;
@@ -1013,6 +1020,7 @@ class PDFPageView extends BasePDFPageView {
         accessibilityManager: this._accessibilityManager,
         enablePermissions:
           this.#textLayerMode === TextLayerMode.ENABLE_PERMISSIONS,
+        newTextLayerMode: this.#newTextLayerMode,
         onAppend: textLayerDiv => {
           // Pause translation when inserting the textLayer in the DOM.
           this.l10n.pause();

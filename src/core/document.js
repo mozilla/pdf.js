@@ -80,6 +80,7 @@ import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreePage } from "./struct_tree.js";
+import { TextLayerFonts } from "./text_layer_font.js";
 import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
 
@@ -693,6 +694,8 @@ class Page {
     task,
     includeMarkedContent,
     disableNormalization,
+    includeTextLayerFonts = false,
+    debugTextLayerFonts = false,
     sink,
     intersector = null,
   }) {
@@ -711,18 +714,24 @@ class Page {
     );
 
     const partialEvaluator = this._createPartialEvaluator(handler);
+    // The text is buffered until the fonts of the page are known.
+    const textLayerFonts = includeTextLayerFonts
+      ? new TextLayerFonts(sink, this._localIdFactory, debugTextLayerFonts)
+      : null;
 
-    return partialEvaluator.getTextContent({
+    await partialEvaluator.getTextContent({
       stream: contentStream,
       task,
       resources,
       includeMarkedContent,
       disableNormalization,
-      sink,
+      textLayerFonts,
+      sink: textLayerFonts ?? sink,
       viewBox: this.view,
       lang,
       intersector,
     });
+    textLayerFonts?.send();
   }
 
   async getStructTree() {

@@ -22,6 +22,7 @@ import {
   FSI,
   getAnnotationSelector,
   getRect,
+  getTextLayerFonts,
   getThumbnailSelector,
   kbCopy,
   kbCut,
@@ -1375,6 +1376,48 @@ describe("Reorganize Pages View", () => {
             .withContext(`In ${browserName}`)
             .toEqual(expected);
           await waitForHavingContents(page, expected);
+        })
+      );
+    });
+  });
+
+  describe("Text layer fonts of the deleted pages", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "page_with_number.pdf",
+        `.page[data-page-number = "1"] .endOfContent`,
+        "1",
+        null,
+        { enableSplitMerge: true, newTextLayerMode: 1 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must unload the fonts of a deleted page when the document is closed", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const { loaded } = await getTextLayerFonts(page);
+          expect(loaded.length).withContext(browserName).toBeGreaterThan(0);
+
+          await waitForThumbnailVisible(page, 1);
+          await waitAndClick(
+            page,
+            `.thumbnail:has(${getThumbnailSelector(1)}) input`
+          );
+          const handlePagesEdited = await waitForPagesEdited(page);
+          await kbDelete(page);
+          await awaitPromise(handlePagesEdited);
+
+          // The deletion can still be undone.
+          await page.evaluate(() => window.PDFViewerApplication.close());
+          expect((await getTextLayerFonts(page)).loaded)
+            .withContext(browserName)
+            .toEqual([]);
         })
       );
     });
