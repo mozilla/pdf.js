@@ -2543,7 +2543,8 @@ class WidgetAnnotation extends Annotation {
     if (
       rotation === undefined &&
       value === undefined &&
-      !this._needAppearances
+      !this._needAppearances &&
+      !this._hasValueWithoutAppearance
     ) {
       if (!this._hasValueFromXFA || this.appearance) {
         // The annotation hasn't been rendered so use the appearance.
@@ -3039,6 +3040,12 @@ class TextWidgetAnnotation extends WidgetAnnotation {
     // The field value is always a string.
     if (typeof this.data.fieldValue !== "string") {
       this.data.fieldValue = "";
+    }
+
+    if (!this.appearance && this.data.fieldValue && !this.data.password) {
+      // Generate an appearance for the value, as for /NeedAppearances.
+      this._hasValueWithoutAppearance = true;
+      this.data.hasAppearance = true;
     }
 
     // Determine the alignment of text in the field.

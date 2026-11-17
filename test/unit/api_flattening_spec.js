@@ -653,6 +653,28 @@ describe("api flattening", function () {
       await loadingTask.destroy();
     });
 
+    it("save the pdf flattened and check that the values of fields without a valid appearance are drawn in the page content (issue 20266)", async function () {
+      let loadingTask = getDocument(buildGetDocumentParams("issue20266.pdf"));
+      let pdfDoc = await loadingTask.promise;
+
+      const data = await pdfDoc.saveDocument({ flatten: true });
+      await loadingTask.destroy();
+
+      loadingTask = getDocument({ data });
+      pdfDoc = await loadingTask.promise;
+      expect(await pdfDoc.getFieldObjects()).toBeNull();
+
+      const page = await pdfDoc.getPage(1);
+      expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
+
+      const { items } = await page.getTextContent();
+      const strings = items.map(({ str }) => str);
+      expect(strings).toContain("No appearance stream");
+      expect(strings).toContain("Invalid appearance");
+
+      await loadingTask.destroy();
+    });
+
     it("write a value the field font can't encode, save the pdf flattened and check that the field is kept", async function () {
       let loadingTask = getDocument(buildGetDocumentParams("evaljs.pdf"));
       let pdfDoc = await loadingTask.promise;
