@@ -1073,21 +1073,20 @@ class PDFPageView extends BasePDFPageView {
     canvas.setAttribute("role", "presentation");
 
     this.#hasRestrictedScaling = this.#needsRestrictedScaling;
-    const sfx = this.#sfx;
-    const sfy = this.#sfy;
-
-    const canvasWidth = (canvas.width = floorToDivide(
+    canvas.width = floorToDivide(
       calcRound(width * outputScale.sx),
-      sfx[0]
-    ));
-    const canvasHeight = (canvas.height = floorToDivide(
+      this.#sfx[0]
+    );
+    canvas.height = floorToDivide(
       calcRound(height * outputScale.sy),
-      sfy[0]
-    ));
-    const pageWidth = floorToDivide(calcRound(width), sfx[1]);
-    const pageHeight = floorToDivide(calcRound(height), sfy[1]);
-    outputScale.sx = canvasWidth / pageWidth;
-    outputScale.sy = canvasHeight / pageHeight;
+      this.#sfy[0]
+    );
+
+    // Fit the full viewport into the rounded canvas and preserve the sizing
+    // scale for redraws.
+    const sx = canvas.width / width;
+    const sy = canvas.height / height;
+    const transform = sx !== 1 || sy !== 1 ? [sx, 0, 0, sy, 0, 0] : null;
 
     const recordBBoxes =
       this.enableOptimizedPartialRendering &&
@@ -1097,10 +1096,6 @@ class PDFPageView extends BasePDFPageView {
     const recordImages =
       this.imagesRightClickMinSize !== -1 && !this.imageCoordinates;
 
-    // Rendering area
-    const transform = outputScale.scaled
-      ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0]
-      : null;
     const resultPromise = this._drawCanvas(
       this._getRenderingContext(canvas, transform, recordBBoxes, recordImages),
       () => {
