@@ -184,6 +184,20 @@ describe("api", function () {
     ]);
   }
 
+  function buildEmptyPagePdf(numPages = 1) {
+    // Object 0 is reserved, and objects 1 and 2 are the catalog and page tree.
+    const pageRefs = Array.from({ length: numPages }, (_, i) => i + 3);
+    const kids = pageRefs.map(ref => `${ref} 0 R`).join(" ");
+    return assemblePdf([
+      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+      `2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${numPages} >>\nendobj\n`,
+      ...pageRefs.map(
+        ref =>
+          `${ref} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>\nendobj\n`
+      ),
+    ]);
+  }
+
   function getNamedNodeInXML(node, path) {
     for (const component of path.split(".")) {
       if (!node.childNodes) {
@@ -3807,7 +3821,7 @@ describe("api", function () {
         "72R",
         "75R",
         "78R",
-        "140R",
+        "139R",
       ]);
 
       await loadingTask.destroy();
@@ -10714,6 +10728,73 @@ small scripts as well as for`);
         expect(mergeText(textItems).includes("3. Trace Trees")).toBeTrue();
 
         await loadingTask.destroy();
+      });
+
+      describe("FreeText appearances during extraction (bug 2094622)", function () {
+        const koreanText = "한글";
+        let loadingTask;
+
+        afterEach(async () => {
+          await loadingTask?.destroy();
+          loadingTask = undefined;
+        });
+
+        async function extractAnnotation(printToPDF) {
+          // With three pages, output font refs can collide with source pages.
+          loadingTask = getDocument({ data: buildEmptyPagePdf(3) });
+          const source = await loadingTask.promise;
+          for (const [pageIndex, value] of [koreanText, "Excluded"].entries()) {
+            source.annotationStorage.setValue(
+              `pdfjs_internal_editor_${pageIndex}`,
+              {
+                annotationType: AnnotationEditorType.FREETEXT,
+                rect: [12, 34, 56, 78],
+                rotation: 0,
+                fontSize: 10,
+                color: [0, 0, 0],
+                value,
+                pageIndex,
+              }
+            );
+          }
+          const data = await source.extractPages(
+            [{ document: null, includePages: [0] }],
+            null,
+            { printToPDF }
+          );
+          await loadingTask.destroy();
+
+          loadingTask = getDocument({ data });
+          const extracted = await loadingTask.promise;
+          expect(extracted.numPages).toBe(1);
+          const page = await extracted.getPage(1);
+          const annotations = await page.getAnnotations();
+          expect(annotations.length).toBe(1);
+          const [annotation] = annotations;
+          expect(annotation.contentsObj.str).toBe(koreanText);
+          return annotation;
+        }
+
+        it("embeds the platform appearance for the selected page", async function () {
+          const printToPDF = jasmine
+            .createSpy("printToPDF")
+            .and.returnValue(
+              buildGeneratedAppearancePdf([
+                "BT /F1 10 Tf 1 0 0 1 2 22 Tm (Generated appearance) Tj ET",
+              ])
+            );
+          const annotation = await extractAnnotation(printToPDF);
+          expect(printToPDF).toHaveBeenCalledOnceWith([
+            { data: jasmine.objectContaining({ text: koreanText }) },
+          ]);
+          expect(annotation.hasAppearance).toBeTrue();
+          expect(annotation.textContent).toEqual(["Generated appearance"]);
+        });
+
+        it("preserves unsupported text when no platform appearance is available", async function () {
+          const annotation = await extractAnnotation();
+          expect(annotation.hasAppearance).toBeFalse();
+        });
       });
 
       it("save an ink annotation on a cloned page", async function () {

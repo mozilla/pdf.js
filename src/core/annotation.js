@@ -73,6 +73,7 @@ import { bidi } from "./bidi.js";
 import { Catalog } from "./catalog.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { createImage } from "./editor/pdf_images.js";
+import { ErrorFont } from "./fonts.js";
 import { FileSpec } from "./file_spec.js";
 import { getMetrics } from "./metrics.js";
 import { getSoundFormat } from "./sound.js";
@@ -395,9 +396,10 @@ class AnnotationFactory {
   /**
    * Get platform-rendering data for a serialized editor annotation.
    * @param {object} annotation - Serialized annotation data.
+   * @param {XRef} sourceXref - The cross-reference table of the source PDF.
    * @returns {object | null}
    */
-  static getPrintData(annotation) {
+  static getPrintData(annotation, sourceXref) {
     if (
       typeof PDFJSDev !== "undefined" &&
       !PDFJSDev.test("TESTING || MOZCENTRAL")
@@ -406,7 +408,7 @@ class AnnotationFactory {
     }
     switch (annotation?.annotationType) {
       case AnnotationEditorType.FREETEXT:
-        return FreeTextAnnotation.getPrintData(annotation);
+        return FreeTextAnnotation.getPrintData(annotation, sourceXref);
       default:
         return null;
     }
@@ -420,9 +422,17 @@ class AnnotationFactory {
     imagePromises,
     changes
   ) {
-    let baseFontRef;
     const promises = [];
     const { isOffscreenCanvasSupported } = evaluator.options;
+    // The generated FreeText appearances share one font object.
+    let fontRef = null;
+    const getFontRef = font => {
+      if (!fontRef) {
+        fontRef = xref.getNewTemporaryRef();
+        changes.put(fontRef, { data: font });
+      }
+      return fontRef;
+    };
 
     for (const annotation of annotations) {
       if (annotation.deleted) {
@@ -430,22 +440,11 @@ class AnnotationFactory {
       }
       switch (annotation.annotationType) {
         case AnnotationEditorType.FREETEXT:
-          if (!annotation.appearanceRef && !baseFontRef) {
-            const baseFont = new Dict(xref);
-            baseFont.setIfName("BaseFont", "Helvetica");
-            baseFont.setIfName("Type", "Font");
-            baseFont.setIfName("Subtype", "Type1");
-            baseFont.setIfName("Encoding", "WinAnsiEncoding");
-            baseFontRef = xref.getNewTemporaryRef();
-            changes.put(baseFontRef, {
-              data: baseFont,
-            });
-          }
           promises.push(
             FreeTextAnnotation.createNewAnnotation(xref, annotation, changes, {
               evaluator,
               task,
-              baseFontRef,
+              getFontRef,
             })
           );
           break;
@@ -729,6 +728,17 @@ function writeLineToCurveToAppearance(data, buffer, maybeClose = false) {
   }
 }
 
+function getNormalAppearance(dict) {
+  const appearanceStates = dict.get("AP");
+  let normal = appearanceStates instanceof Dict && appearanceStates.get("N");
+  if (normal instanceof Dict) {
+    // /AS selects the stream when /N is an appearance state dictionary.
+    const state = dict.get("AS");
+    normal = state instanceof Name && normal.get(state.name);
+  }
+  return normal instanceof BaseStream ? normal : null;
+}
+
 class Annotation {
   #cmyk;
 
@@ -790,7 +800,7 @@ class Annotation {
     this.setRectangle(dict.getArray("Rect"));
     this.setColor(dict.getArray("C"));
     this.setBorderStyle(dict);
-    this.setAppearance(dict);
+    this.appearance = getNormalAppearance(dict);
     this.#setOptionalContent(xref, dict);
 
     const MK = dict.get("MK");
@@ -1250,40 +1260,6 @@ class Annotation {
       // See also https://github.com/mozilla/pdf.js/issues/6179.
       this.borderStyle.setWidth(0);
       this._noBorderEntries = true;
-    }
-  }
-
-  /**
-   * Set the (normal) appearance.
-   * @public
-   * @memberof Annotation
-   * @param {Dict} dict - The annotation's data dictionary
-   */
-  setAppearance(dict) {
-    const appearanceStates = dict.get("AP");
-    if (!(appearanceStates instanceof Dict)) {
-      return;
-    }
-
-    // In case the normal appearance is a stream, then it is used directly.
-    const normalAppearanceState = appearanceStates.get("N");
-    if (normalAppearanceState instanceof BaseStream) {
-      this.appearance = normalAppearanceState;
-      return;
-    }
-    if (!(normalAppearanceState instanceof Dict)) {
-      return;
-    }
-
-    // In case the normal appearance is a dictionary, the `AS` entry provides
-    // the key of the stream in this dictionary.
-    const as = dict.get("AS");
-    if (!(as instanceof Name)) {
-      return;
-    }
-    const appearance = normalAppearanceState.get(as.name);
-    if (appearance instanceof BaseStream) {
-      this.appearance = appearance;
     }
   }
 
@@ -4511,6 +4487,8 @@ class PopupAnnotation extends Annotation {
 class FreeTextAnnotation extends MarkupAnnotation {
   static _hasDefaultAppearance = true;
 
+  static #helveticaFonts = new WeakMap();
+
   constructor(params) {
     super(params);
 
@@ -4575,6 +4553,7 @@ class FreeTextAnnotation extends MarkupAnnotation {
 
   static createNewDict(annotation, xref, { apRef, ap }) {
     const {
+      appearanceChanged,
       color,
       date,
       fontSize,
@@ -4609,19 +4588,33 @@ class FreeTextAnnotation extends MarkupAnnotation {
       const n = new Dict(xref);
       freetext.set("AP", n);
       n.set("N", apRef || ap);
+    } else if (oldAnnotation && appearanceChanged) {
+      // Drop the stale appearance if we couldn't generate a replacement.
+      freetext.delete("AP");
     }
 
     return freetext;
   }
 
-  static getPrintData({ color, fontSize, rect, rotation, value }) {
-    if (
-      typeof PDFJSDev !== "undefined" &&
-      !PDFJSDev.test("TESTING || MOZCENTRAL")
-    ) {
-      throw new Error("Not implemented: getPrintData");
+  static #canReuseAppearance({ appearanceChanged, id, oldAnnotation }, xref) {
+    if (appearanceChanged !== false) {
+      return false;
     }
-    if (!color || !value) {
+    // `oldAnnotation` is only set once the annotation is being saved.
+    try {
+      const dict = oldAnnotation ?? xref.fetchIfRef(Ref.fromString(id));
+      return dict instanceof Dict && !!getNormalAppearance(dict);
+    } catch (reason) {
+      if (reason instanceof MissingDataException) {
+        throw reason;
+      }
+      return false;
+    }
+  }
+
+  static getPrintData(annotation, xref) {
+    const { color, fontSize, rect, rotation, value } = annotation;
+    if (!color || !value || this.#canReuseAppearance(annotation, xref)) {
       return null;
     }
     const width = rect[2] - rect[0];
@@ -4641,46 +4634,40 @@ class FreeTextAnnotation extends MarkupAnnotation {
     };
   }
 
-  static async createNewAppearanceStream(annotation, xref, params) {
-    if (
-      (typeof PDFJSDev === "undefined" ||
-        PDFJSDev.test("TESTING || MOZCENTRAL")) &&
-      annotation.appearanceRef
-    ) {
-      // Use the platform-rendered appearance.
+  static #getHelveticaFontDict({ fontCache }) {
+    return this.#helveticaFonts.getOrInsertComputed(fontCache, () => {
+      const font = new Dict();
+      font.setIfName("BaseFont", "Helvetica");
+      font.setIfName("Type", "Font");
+      font.setIfName("Subtype", "Type1");
+      font.setIfName("Encoding", "WinAnsiEncoding");
+      return font;
+    });
+  }
+
+  static async createNewAppearanceStream(
+    annotation,
+    xref,
+    { evaluator, getFontRef, task }
+  ) {
+    const { appearanceRef, color, fontSize, rect, rotation, value } =
+      annotation;
+    if (!color || appearanceRef || this.#canReuseAppearance(annotation, xref)) {
       return null;
     }
 
-    const { baseFontRef, evaluator, task } = params;
-    const { color, fontSize, rect, rotation, value } = annotation;
-    if (!color) {
-      return null;
-    }
-
-    const resources = new Dict(xref);
-    const font = new Dict(xref);
-
-    if (baseFontRef) {
-      font.set("Helv", baseFontRef);
-    } else {
-      const baseFont = new Dict(xref);
-      baseFont.setIfName("BaseFont", "Helvetica");
-      baseFont.setIfName("Type", "Font");
-      baseFont.setIfName("Subtype", "Type1");
-      baseFont.setIfName("Encoding", "WinAnsiEncoding");
-      font.set("Helv", baseFont);
-    }
-    resources.set("Font", font);
-
-    const helv = await WidgetAnnotation._getFontData(
-      evaluator,
-      task,
-      {
-        fontName: "Helv",
-        fontSize,
-      },
-      resources
+    // Load the dictionary itself: the evaluator may belong to the source PDF
+    // whereas the font ref belongs to the output PDF.
+    const fontDict = this.#getHelveticaFontDict(evaluator);
+    const { font: helv } = await evaluator.loadFont(
+      "Helv",
+      fontDict,
+      Dict.empty,
+      task
     );
+    if (helv instanceof ErrorFont) {
+      return null;
+    }
 
     const [x1, y1, x2, y2] = rect;
     let w = x2 - x1;
@@ -4763,6 +4750,11 @@ class FreeTextAnnotation extends MarkupAnnotation {
     }
     buffer.push("ET", "Q");
     const appearance = buffer.join("\n");
+
+    const font = new Dict(xref);
+    font.set("Helv", getFontRef?.(fontDict) ?? fontDict);
+    const resources = new Dict(xref);
+    resources.set("Font", font);
 
     const appearanceStreamDict = new Dict(xref);
     appearanceStreamDict.set("FormType", 1);
