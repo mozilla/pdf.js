@@ -48,8 +48,8 @@ class DrawnSignatureOptions extends InkDrawingOptions {
     });
   }
 
-  clone() {
-    const clone = new DrawnSignatureOptions(this._viewParameters);
+  clone(viewParameters = this._viewParameters) {
+    const clone = new DrawnSignatureOptions(viewParameters);
     clone.updateAll(this);
     return clone;
   }
@@ -277,7 +277,9 @@ class SignatureEditor extends DrawingEditor {
     if (this.#isExtracted) {
       drawingOptions = SignatureEditor.getDefaultDrawingOptions();
     } else {
-      drawingOptions = SignatureEditor._defaultDrawnSignatureOptions.clone();
+      drawingOptions = SignatureEditor._defaultDrawnSignatureOptions.clone(
+        this._uiManager.viewParameters
+      );
       drawingOptions.updateProperties({ "stroke-width": outline.thickness });
     }
     this._addOutlines({
@@ -375,7 +377,9 @@ class SignatureEditor extends DrawingEditor {
       this._drawingOptions = SignatureEditor.getDefaultDrawingOptions();
     } else {
       this._drawingOptions =
-        SignatureEditor._defaultDrawnSignatureOptions.clone();
+        SignatureEditor._defaultDrawnSignatureOptions.clone(
+          this._uiManager.viewParameters
+        );
       this._drawingOptions.updateProperties({ "stroke-width": thickness });
     }
   }

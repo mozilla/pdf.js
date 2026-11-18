@@ -941,6 +941,80 @@ describe("Ink Editor", () => {
     });
   });
 
+  describe("Drawing after reopening a document (issue 22272)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must use the current document's scale for new drawings", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+          let { x, y } = await getRect(page, ".annotationEditorLayer");
+          await drawLine(page, x + 20, y + 20, x + 70, y + 70);
+          await commit(page);
+
+          for (const scale of [2, 0.5]) {
+            await page.evaluate(async newScale => {
+              const app = window.PDFViewerApplication;
+              const loaded = new Promise(resolve => {
+                app.eventBus.on("pagesloaded", resolve, { once: true });
+              });
+              await app.open({ url: "/test/pdfs/empty.pdf" });
+              await loaded;
+              app.pdfViewer.currentScale = newScale;
+            }, scale);
+            await page.waitForSelector(".annotationEditorLayer");
+            await switchToInk(page);
+            ({ x, y } = await getRect(page, ".annotationEditorLayer"));
+            await drawLine(page, x + 20, y + 20, x + 70, y + 70);
+
+            const svgSelector = ".canvasWrapper svg.draw";
+            let strokeWidth = await page.$eval(svgSelector, el =>
+              parseFloat(el.getAttribute("stroke-width"))
+            );
+            expect(strokeWidth)
+              .withContext(browserName)
+              .toBeCloseTo((scale * 96) / 72, 6);
+
+            // Zooming while the drawing session is active must use the same
+            // document's view parameters too.
+            await page.evaluate(newScale => {
+              window.PDFViewerApplication.pdfViewer.currentScale = newScale;
+            }, scale * 1.5);
+            strokeWidth = await page.$eval(svgSelector, el =>
+              parseFloat(el.getAttribute("stroke-width"))
+            );
+            expect(strokeWidth)
+              .withContext(browserName)
+              .toBeCloseTo((scale * 1.5 * 96) / 72, 6);
+            await page.$eval("#editorInkThickness", el => {
+              el.value = 2;
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            strokeWidth = await page.$eval(svgSelector, el =>
+              parseFloat(el.getAttribute("stroke-width"))
+            );
+            expect(strokeWidth)
+              .withContext(browserName)
+              .toBeCloseTo((2 * scale * 1.5 * 96) / 72, 6);
+            await page.$eval("#editorInkThickness", el => {
+              el.value = 1;
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+            });
+            await commit(page);
+          }
+        })
+      );
+    });
+  });
+
   describe("Ink must update its stroke width when not the current active layer", () => {
     let pages;
 

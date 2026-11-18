@@ -21,6 +21,7 @@ import {
   FSI,
   getEditorSelector,
   getRect,
+  getSerialized,
   kbRedo,
   kbUndo,
   loadAndWait,
@@ -28,6 +29,7 @@ import {
   PDI,
   switchToEditor,
   waitForPointerUp,
+  waitForSerialized,
   waitForTextToBe,
   waitForTimeout,
 } from "./test_utils.mjs";
@@ -394,6 +396,61 @@ describe("Signature Editor", () => {
           .withContext(`In ${browserName}`)
           .toEqual(originalL10nParameter);
       }
+    });
+  });
+
+  describe("Drawing after reopening a document (issue 22272)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer", 100);
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must use the current document's scale for drawn signatures", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await page.evaluate(async () => {
+            const app = window.PDFViewerApplication;
+            const loaded = new Promise(resolve => {
+              app.eventBus.on("pagesloaded", resolve, { once: true });
+            });
+            await app.open({ url: "/test/pdfs/empty.pdf" });
+            await loaded;
+            app.pdfViewer.currentScale = 2;
+          });
+          await page.waitForSelector(".annotationEditorLayer");
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+          await page.waitForSelector("#addSignatureDialog", { visible: true });
+          await page.click("#addSignatureDrawButton");
+          const { x, y, width, height } = await getRect(
+            page,
+            "#addSignatureDraw"
+          );
+          const clickHandle = await waitForPointerUp(page);
+          await page.mouse.move(x + 0.1 * width, y + 0.1 * height);
+          await page.mouse.down();
+          await page.mouse.move(x + 0.3 * width, y + 0.3 * height);
+          await page.mouse.up();
+          await awaitPromise(clickHandle);
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click(addButtonSelector);
+          await waitForSerialized(page, 1);
+
+          const [{ thickness }] = await getSerialized(page);
+          const strokeWidth = await page.$eval(
+            ".canvasWrapper > svg[stroke-width]",
+            el => parseFloat(el.getAttribute("stroke-width"))
+          );
+          expect(strokeWidth)
+            .withContext(browserName)
+            .toBeCloseTo((thickness * 2 * 96) / 72, 6);
+        })
+      );
     });
   });
 
