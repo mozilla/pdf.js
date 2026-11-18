@@ -61,10 +61,9 @@ class PageData {
     this.page = page;
     this.documentData = documentData;
     this.annotations = null;
+    this.newAnnotations = null;
     // Named destinations which points to this page.
     this.pointingNamedDestinations = null;
-    // Rank of this page among the output pages sharing the same source page.
-    this.copyLevel = 0;
 
     documentData.pagesMap.put(page.ref, this);
   }
@@ -112,6 +111,12 @@ class XRefWrapper {
     return this._getNewRef();
   }
 
+  applyChanges(changes) {
+    for (const [ref, { data }] of changes.items()) {
+      this.entries[ref.num] = data;
+    }
+  }
+
   countUpdatesAfter(offset) {
     return null;
   }
@@ -145,8 +150,6 @@ class PDFEditor {
   isSingleFile = false;
 
   #newAnnotationsParams = null;
-
-  #primaryDocument = null;
 
   // Reference mappings for each copy of the primary document.
   #primaryRefMappings = [];
@@ -982,16 +985,19 @@ class PDFEditor {
    *  the annotations.
    * @param {WorkerTask} task - The worker task to use for reporting progress
    *  and cancellation.
-   * @returns {Promise<void>}
+   * @param {function(Array<object>, XRefWrapper): Promise<RefMap|null>}
+   *  [generateAppearances] - Generates platform appearances for the edited
+   *  annotations.
+   * @returns {Promise<Uint8Array>}
    */
   async extractPages(
     pageInfos,
     annotationStorage,
     primaryDocument,
     handler,
-    task
+    task,
+    generateAppearances = null
   ) {
-    this.#primaryDocument = primaryDocument;
     pageInfos = this.#resolveInsertAfterIndices(pageInfos);
     const promises = [];
     let newIndex = 0;
@@ -1008,11 +1014,11 @@ class PDFEditor {
     };
     const allDocumentData = [];
 
-    if (annotationStorage) {
+    const newAnnotationsByPage = getNewAnnotationsMap(annotationStorage);
+    if (newAnnotationsByPage) {
       this.#newAnnotationsParams = {
         handler,
         task,
-        newAnnotationsByPage: getNewAnnotationsMap(annotationStorage),
         imagesPromises: AnnotationFactory.generateImages(
           annotationStorage.values(),
           this.xrefWrapper,
@@ -1115,15 +1121,38 @@ class PDFEditor {
         throw new Error("extractPages: sparse pageIndices.");
       }
       if (pageData) {
-        const { page } = pageData;
-        const copyLevel = copyCounts.get(page) ?? 0;
-        copyCounts.set(page, copyLevel + 1);
-        pageData.copyLevel = copyLevel;
-        documents.add(pageData.documentData.document);
+        const {
+          page,
+          documentData: { document },
+        } = pageData;
+        documents.add(document);
+        if (newAnnotationsByPage && document === primaryDocument) {
+          // Rank among the output pages sharing the same source page.
+          const copyLevel = copyCounts.get(page) ?? 0;
+          copyCounts.set(page, copyLevel + 1);
+          pageData.newAnnotations = newAnnotationsByPage
+            .get(page.pageIndex)
+            ?.filter(({ copyLevel: level }) => (level ?? 0) === copyLevel);
+        }
       }
     }
     this.isSingleFile = documents.size === 1;
     promises.length = 0;
+
+    if (generateAppearances && newAnnotationsByPage) {
+      const annotations = this.oldPages.flatMap(
+        pageData => pageData?.newAnnotations ?? []
+      );
+      // Stage the references with the imported objects so a failed import
+      // leaves no gaps in the output xref.
+      let nextRef = this.newRefCount;
+      const xref = new XRefWrapper(this.xref, () => Ref.get(nextRef++, 0));
+      const changes = await generateAppearances(annotations, xref);
+      if (changes) {
+        this.newRefCount = nextRef;
+        this.xrefWrapper.applyChanges(changes);
+      }
+    }
 
     this.#collectValidDestinations(allDocumentData);
     this.#collectOutlineDestinations(allDocumentData);
@@ -2445,7 +2474,7 @@ class PDFEditor {
       documentData,
       annotations,
       pointingNamedDestinations,
-      copyLevel,
+      newAnnotations,
     } = this.oldPages[pageIndex];
     this.currentDocument = documentData;
     const { dedupNamedDestinations, oldRefMapping } = documentData;
@@ -2499,12 +2528,6 @@ class PDFEditor {
       await this.#collectDependencies(resources, true, xref)
     );
 
-    const newAnnotations =
-      documentData.document === this.#primaryDocument
-        ? this.#newAnnotationsParams?.newAnnotationsByPage
-            ?.get(page.pageIndex)
-            ?.filter(({ copyLevel: level }) => (level ?? 0) === copyLevel)
-        : null;
     const deletedAnnotations = new RefSet();
     for (const { id, deleted, popup, popupRef } of newAnnotations || []) {
       if (!Ref.fromString(id)) {
@@ -2570,9 +2593,7 @@ class PDFEditor {
         imagesPromises,
         changes
       );
-      for (const [ref, { data }] of changes.items()) {
-        this.xref[ref.num] = data;
-      }
+      this.xrefWrapper.applyChanges(changes);
       newAnnots ||= [];
       for (const { ref } of newData.annotations) {
         if (!editedAnnotations.has(ref)) {

@@ -139,13 +139,13 @@ function filterContentStream(bytes, isWidget) {
  * @param {Uint8Array} params.buffer - The generated PDF.
  * @param {RefMap} params.changes - Where the new objects are added.
  * @param {string} params.docId
- * @param {Array<object>} params.entries - `{ key, isWidget, matrix, data }`
- *   entries, in the same order as the pages of the generated PDF.
+ * @param {Array<object>} params.entries
+ *   `{ annotation, isWidget, matrix, data }` entries in generated page order.
  * @param {object} params.evaluatorOptions
  * @param {MessageHandler} params.handler
  * @param {XRef} params.xref - The target document's xref.
- * @returns {Promise<Map<string, Ref>>} the appearance reference for each entry
- *   key; the appearance streams themselves are added to `changes`.
+ * @returns {Promise<Map<object, Ref>>} the appearance reference for each
+ *   annotation. The appearance streams are added to `changes`.
  */
 async function importPrintedAppearances({
   buffer,
@@ -177,7 +177,7 @@ async function importPrintedAppearances({
   };
 
   for (let i = 0, ii = entries.length; i < ii; i++) {
-    const { key, isWidget, matrix, data } = entries[i];
+    const { annotation, isWidget, matrix, data } = entries[i];
     const page = await pdfDocument.getPage(i);
     const contentStream = await page.getContentStream();
     contentStream.reset();
@@ -199,7 +199,7 @@ async function importPrintedAppearances({
 
     const ref = xref.getNewTemporaryRef();
     changes.put(ref, { data: new Stream(bytes, 0, bytes.length, dict) });
-    appearances.set(key, ref);
+    appearances.set(annotation, ref);
   }
 
   return appearances;
