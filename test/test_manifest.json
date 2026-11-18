@@ -15412,5 +15412,14 @@
     "rounds": 1,
     "type": "eq",
     "about": "An unmatched Q must preserve the annotation's transform"
+  },
+  {
+    "id": "issue22550",
+    "file": "pdfs/issue22550.pdf",
+    "md5": "78b11e29be8010052d0f44ea5c5696c1",
+    "rounds": 1,
+    "link": true,
+    "type": "eq",
+    "about": "A subsetted DFKai-SB font (tricky font) without its family name"
   }
 ]
