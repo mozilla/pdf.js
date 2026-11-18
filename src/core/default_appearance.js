@@ -20,6 +20,7 @@ import {
   numberToString,
 } from "./core_utils.js";
 import { Dict, Name } from "./primitives.js";
+import { EvaluatorPreprocessor, StateManager, TextState } from "./evaluator.js";
 import {
   LINE_DESCENT_FACTOR,
   LINE_FACTOR,
@@ -29,7 +30,6 @@ import {
   warn,
 } from "../shared/util.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
-import { EvaluatorPreprocessor } from "./evaluator.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { PDFFunctionFactory } from "./function.js";
 import { StringStream } from "./stream.js";
@@ -99,7 +99,7 @@ function parseDefaultAppearance(str) {
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
   constructor(stream, xref, globalColorSpaceCache) {
-    super(stream);
+    super(stream, /* xref = */ null, new StateManager(new TextState()));
     this.stream = stream;
     this.xref = xref;
     this.globalColorSpaceCache = globalColorSpaceCache;

@@ -1077,6 +1077,7 @@ class WorkerMessageHandler {
           cacheKey,
           annotationStorage,
           modifiedIds,
+          imageScale,
         },
         sink
       ) {
@@ -1095,6 +1096,7 @@ class WorkerMessageHandler {
               modifiedIds,
               pageIndex,
               pageProxyId,
+              imageScale,
             })
             .then(
               () => {

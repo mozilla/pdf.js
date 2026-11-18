@@ -1216,6 +1216,7 @@ class Driver {
               annotationCanvasMap,
               pageColors,
               transform,
+              imageOutputScale: outputScale,
             };
             if (renderForms) {
               renderContext.annotationMode = AnnotationMode.ENABLE_FORMS;
@@ -1332,6 +1333,7 @@ class Driver {
                     annotationCanvasMap,
                     pageColors,
                     transform,
+                    imageOutputScale: outputScale,
                     recordOperations: false,
                     operationsFilter(index) {
                       if (recordedBBoxes.isEmpty(index)) {

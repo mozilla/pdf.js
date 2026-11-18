@@ -21,6 +21,57 @@ import {
   warn,
 } from "../shared/util.js";
 import { RefMap, RefSet } from "./primitives.js";
+import { ImageResizer } from "./image_resizer.js";
+
+function getUsableImage(data, targetSize) {
+  if (!data) {
+    return null;
+  }
+  const { jpx } = data;
+  if (!jpx) {
+    return data;
+  }
+  const isFineEnough = part =>
+    !part ||
+    ImageResizer.getReducePowerForTargetSize(part, targetSize) >= part.reduce;
+  return isFineEnough(jpx.image) && isFineEnough(jpx.alpha) ? data : null;
+}
+
+function getJpxReduceLevels(jpx) {
+  return jpx && { image: jpx.image.reduce, alpha: jpx.alpha?.reduce ?? null };
+}
+
+function setJpxReduceLevels(jpx, { image, alpha }) {
+  jpx.image.reduce = image;
+  if (jpx.alpha) {
+    jpx.alpha.reduce = alpha;
+  }
+}
+
+function isJpxReduceAtMost(jpxReduce, otherJpxReduce) {
+  return (
+    jpxReduce.image <= otherJpxReduce.image &&
+    jpxReduce.alpha <= otherJpxReduce.alpha
+  );
+}
+
+function isFinerJpxReduce(jpxReduce, otherJpxReduce) {
+  return (
+    !!jpxReduce &&
+    isJpxReduceAtMost(jpxReduce, otherJpxReduce) &&
+    !isJpxReduceAtMost(otherJpxReduce, jpxReduce)
+  );
+}
+
+function canReplaceImage(cachedData, data) {
+  return (
+    !cachedData ||
+    isFinerJpxReduce(
+      getJpxReduceLevels(data.jpx),
+      getJpxReduceLevels(cachedData.jpx)
+    )
+  );
+}
 
 class BaseLocalCache {
   constructor(options) {
@@ -57,12 +108,23 @@ class BaseLocalCache {
 }
 
 class LocalImageCache extends BaseLocalCache {
+  getByName(name, targetSize = null) {
+    const ref = this._nameRefMap.get(name);
+    return ref
+      ? this.getByRef(ref, targetSize)
+      : getUsableImage(this._imageMap.get(name), targetSize);
+  }
+
+  getByRef(ref, targetSize = null) {
+    return getUsableImage(this._imageCache.get(ref), targetSize);
+  }
+
   set(name, ref = null, data) {
     if (typeof name !== "string") {
       throw new Error('LocalImageCache.set - expected "name" argument.');
     }
     if (ref) {
-      if (this._imageCache.has(ref)) {
+      if (!canReplaceImage(this._imageCache.get(ref), data)) {
         return;
       }
       this._nameRefMap.set(name, ref);
@@ -70,7 +132,7 @@ class LocalImageCache extends BaseLocalCache {
       return;
     }
     // name
-    if (this._imageMap.has(name)) {
+    if (!canReplaceImage(this._imageMap.get(name), data)) {
       return;
     }
     this._imageMap.set(name, data);
@@ -161,11 +223,15 @@ class RegionalImageCache extends BaseLocalCache {
     super({ onlyRefs: true });
   }
 
+  getByRef(ref, targetSize = null) {
+    return getUsableImage(this._imageCache.get(ref), targetSize);
+  }
+
   set(name = null, ref, data) {
     if (!ref) {
       throw new Error('RegionalImageCache.set - expected "ref" argument.');
     }
-    if (this._imageCache.has(ref)) {
+    if (!canReplaceImage(this._imageCache.get(ref), data)) {
       return;
     }
     this._imageCache.put(ref, data);
@@ -230,14 +296,17 @@ class GlobalImageCache {
     );
   }
 
-  shouldCache(ref, pageIndex) {
+  shouldCache(ref, pageIndex, targetSize = null) {
     const pageIndexSet = this._refCache.getOrPutComputed(ref, makeSet);
     pageIndexSet.add(pageIndex);
 
     if (pageIndexSet.size < GlobalImageCache.NUM_PAGES_THRESHOLD) {
       return false;
     }
-    if (!this._imageCache.has(ref) && this.#cacheLimitReached) {
+    if (
+      !getUsableImage(this._imageCache.get(ref), targetSize) &&
+      this.#cacheLimitReached
+    ) {
       return false;
     }
     return true;
@@ -253,8 +322,9 @@ class GlobalImageCache {
 
   /**
    * Track the page before decoding so cleanup can discard the entry.
+   * A finer image, kept or being decoded, isn't replaced by a coarser one.
    */
-  startDecodedImage(ref, pageProxyId) {
+  startDecodedImage(ref, pageProxyId, jpxReduce = null) {
     if (!FeatureTest.isVideoFrameSupported) {
       return;
     }
@@ -264,16 +334,28 @@ class GlobalImageCache {
     ) {
       return;
     }
-    this.#decodedImages.get(ref)?.imgData?.bitmap.close();
-    this.#decodedImages.put(ref, { pageProxyId, imgData: null });
+    const entry = this.#decodedImages.get(ref);
+    if (
+      entry &&
+      isFinerJpxReduce(entry.imgData?.jpxReduce ?? entry.jpxReduce, jpxReduce)
+    ) {
+      return;
+    }
+    entry?.imgData?.bitmap.close();
+    this.#decodedImages.put(ref, { pageProxyId, jpxReduce, imgData: null });
   }
 
   setDecodedImage(ref, imgData) {
     const entry = this.#decodedImages.get(ref);
-    if (!entry || entry.imgData) {
+    if (
+      !entry ||
+      (entry.imgData &&
+        !isFinerJpxReduce(imgData.jpxReduce, entry.imgData.jpxReduce))
+    ) {
       return;
     }
     const { bitmap } = imgData;
+    const prevImgData = entry.imgData;
     try {
       if (bitmap instanceof ImageBitmap) {
         entry.imgData = {
@@ -286,7 +368,9 @@ class GlobalImageCache {
     } catch (reason) {
       warn(`GlobalImageCache.setDecodedImage - "${reason}".`);
     }
-    if (!entry.imgData) {
+    if (entry.imgData !== prevImgData) {
+      prevImgData?.bitmap.close();
+    } else if (!entry.imgData) {
       this.#decodedImages.remove(ref);
     }
   }
@@ -294,12 +378,16 @@ class GlobalImageCache {
   /**
    * @returns {object | null} The cached image, owned by the caller, or null.
    */
-  takeDecodedImage(ref) {
+  takeDecodedImage(ref, jpxReduce) {
     const imgData = this.#decodedImages.get(ref)?.imgData;
     if (!imgData) {
       return null;
     }
     this.#decodedImages.remove(ref);
+    if (jpxReduce && !isJpxReduceAtMost(imgData.jpxReduce, jpxReduce)) {
+      imgData.bitmap.close();
+      return null;
+    }
     return imgData;
   }
 
@@ -320,13 +408,10 @@ class GlobalImageCache {
     if (!imageData) {
       return; // The image data isn't cached (the limit was reached).
     }
-    if (imageData.byteSize) {
-      return; // The byte-size has already been set.
-    }
-    imageData.byteSize = byteSize;
+    imageData.byteSize = Math.max(imageData.byteSize, byteSize);
   }
 
-  getData(ref, pageIndex) {
+  getData(ref, pageIndex, targetSize = null) {
     const pageIndexSet = this._refCache.get(ref);
     if (
       !pageIndexSet ||
@@ -341,7 +426,7 @@ class GlobalImageCache {
     // Ensure that we keep track of all pages containing the image reference.
     pageIndexSet.add(pageIndex);
 
-    return imageData;
+    return getUsableImage(imageData, targetSize);
   }
 
   setData(ref, data) {
@@ -350,7 +435,7 @@ class GlobalImageCache {
         'GlobalImageCache.setData - expected "shouldCache" to have been called.'
       );
     }
-    if (this._imageCache.has(ref)) {
+    if (!canReplaceImage(this._imageCache.get(ref), data)) {
       return;
     }
     if (this.#cacheLimitReached) {
@@ -375,6 +460,7 @@ class GlobalImageCache {
 }
 
 export {
+  getJpxReduceLevels,
   GlobalColorSpaceCache,
   GlobalImageCache,
   LocalColorSpaceCache,
@@ -383,4 +469,5 @@ export {
   LocalImageCache,
   LocalTilingPatternCache,
   RegionalImageCache,
+  setJpxReduceLevels,
 };
