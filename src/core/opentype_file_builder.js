@@ -18,6 +18,19 @@ import { stringToBytes } from "../shared/util.js";
 const OTF_HEADER_SIZE = 12;
 const OTF_TABLE_ENTRY_SIZE = 16;
 
+function computeOpenTypeChecksum(view, start = 0, end = view.byteLength) {
+  let checksum = 0;
+  let offset = start;
+  for (; offset + 4 <= end; offset += 4) {
+    checksum = (checksum + view.getUint32(offset)) >>> 0;
+  }
+  // Pad the last word with zeros when the table length isn't a multiple of 4.
+  for (let shift = 24; offset < end; offset++, shift -= 8) {
+    checksum += view.getUint8(offset) << shift;
+  }
+  return checksum >>> 0;
+}
+
 class OpenTypeFileBuilder {
   #tables = new Map();
 
@@ -92,12 +105,10 @@ class OpenTypeFileBuilder {
       file.set(stringToBytes(tableName), offset);
 
       // checksum
-      let checksum = 0;
-      for (let j = tableOffsets[i], jj = tableOffsets[i + 1]; j < jj; j += 4) {
-        const quad = view.getUint32(j);
-        checksum = (checksum + quad) >>> 0;
-      }
-      view.setInt32(offset + 4, checksum);
+      view.setInt32(
+        offset + 4,
+        computeOpenTypeChecksum(view, tableOffsets[i], tableOffsets[i + 1])
+      );
 
       // offset
       view.setInt32(offset + 8, tableOffsets[i]);
@@ -119,4 +130,4 @@ class OpenTypeFileBuilder {
   }
 }
 
-export { OpenTypeFileBuilder };
+export { computeOpenTypeChecksum, OpenTypeFileBuilder };

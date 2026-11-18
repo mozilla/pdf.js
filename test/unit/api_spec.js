@@ -8729,6 +8729,41 @@ have written that much by now. So, here’s to squashing bugs.`);
       );
       expect(fonts.length).toEqual(5);
     });
+
+    it("restores the family name of a subsetted tricky font (issue 22550)", async function () {
+      function getMacFamilyName(data) {
+        const { view, tables } = readFontTables(data);
+        const start = tables.get("name");
+        const stringsStart = start + view.getUint16(start + 4);
+        for (let i = 0, ii = view.getUint16(start + 2); i < ii; i++) {
+          const record = start + 6 + 12 * i;
+          if (
+            view.getUint16(record) === 1 &&
+            view.getUint16(record + 6) === 1
+          ) {
+            const offset = stringsStart + view.getUint16(record + 10);
+            return bytesToString(
+              data.subarray(offset, offset + view.getUint16(record + 8))
+            );
+          }
+        }
+        return null;
+      }
+
+      const loadingTask = loadDocument(
+        buildGetDocumentParams("issue22550.pdf")
+      );
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const fonts = await getFonts(pdfPage, await pdfPage.getOperatorList());
+      const familyNames = Object.fromEntries(
+        fonts.values().map(({ name, data }) => [name, getMacFamilyName(data)])
+      );
+      expect(familyNames).toEqual({
+        "AAAAAB+___": "AAAAAB+___",
+        "AAAAAD+___": "DFKai-SB",
+        "AAAAAF+____": "AAAAAF+____",
+      });
+    });
   });
 
   describe("Annotations", function () {

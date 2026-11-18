@@ -21,6 +21,10 @@ import {
 } from "./test_utils.js";
 import { CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
 import {
+  getTrickyFontName,
+  getTrickyFontNameFromTables,
+} from "../../src/core/tricky_fonts.js";
+import {
   IdentityToUnicodeMap,
   ToUnicodeMap,
 } from "../../src/core/to_unicode_map.js";
@@ -591,5 +595,38 @@ describe("Font", () => {
       expect(font.missingFile).toBeFalse();
       expect(getHorizontalExtents(font.data)).toEqual([0, 0x0fff]);
     });
+  });
+});
+
+describe("Tricky fonts", () => {
+  function createTable(length, firstWord) {
+    const view = new DataView(new ArrayBuffer(length));
+    view.setUint32(0, firstWord);
+    return { length, view };
+  }
+
+  it("matches the lengths and checksums of the hint tables", () => {
+    const tables = {
+      "cvt ": createTable(0x350, 0x11e5ead4),
+      fpgm: createTable(0x9063, 0x5a30c93b),
+      prep: createTable(0x7e, 0x13a42602),
+    };
+    // The last fpgm byte adds 0x100 to the DFKai-SB checksum.
+    tables.fpgm.view.setUint8(0x9062, 1);
+    expect(getTrickyFontNameFromTables(tables)).toBe("DFKai-SB");
+
+    expect(getTrickyFontNameFromTables({ ...tables, prep: null })).toBeNull();
+    tables.fpgm.view.setUint8(0x9062, 2);
+    expect(getTrickyFontNameFromTables(tables)).toBeNull();
+  });
+
+  it("identifies a tricky font from its name", () => {
+    expect(getTrickyFontName("ABCDEF+DFKaiShu-SB-Estd-BF")).toBe(
+      "DFKaiShu-SB-Estd-BF"
+    );
+    expect(getTrickyFontName("Arial")).toBeNull();
+    expect(getTrickyFontName(undefined)).toBeNull();
+    // Use the ASCII match when the name would require Mac Roman transcoding.
+    expect(getTrickyFontName("DFHei Caf\u00e9")).toBe("DFHei");
   });
 });

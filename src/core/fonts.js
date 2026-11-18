@@ -59,6 +59,10 @@ import {
   getSupplementalGlyphMapForCalibri,
   getSupplementalGlyphMapForTrebuchetMS,
 } from "./standard_fonts.js";
+import {
+  getTrickyFontName,
+  getTrickyFontNameFromTables,
+} from "./tricky_fonts.js";
 import { IdentityToUnicodeMap, ToUnicodeMap } from "./to_unicode_map.js";
 import { CFFFont } from "./cff_font.js";
 import { CharCodeMap } from "./char_code_map.js";
@@ -3030,6 +3034,8 @@ class Font {
     tables.maxp.data[4] = numGlyphsOut >> 8;
     tables.maxp.data[5] = numGlyphsOut & 255;
 
+    // The programs must be checked before being sanitized.
+    const trickyNameFromTables = getTrickyFontNameFromTables(tables);
     const hintsValid = sanitizeTTPrograms(
       tables.fpgm,
       tables.prep,
@@ -3341,25 +3347,34 @@ class Font {
       }
     }
 
-    // Re-creating 'name' table
-    if (!tables.name) {
-      tables.name = {
-        tag: "name",
-        data: createNameTable(this.name),
-      };
-    } else {
-      // ... using existing 'name' table as prototype
-      const [namePrototype, nameRecords] = readNameTable(tables.name);
+    // Use the original name table as a prototype when rebuilding it.
+    const [namePrototype, nameRecords] = tables.name
+      ? readNameTable(tables.name)
+      : [[[], []], null];
+    const [macNames, windowsNames] = namePrototype;
 
-      tables.name.data = createNameTable(name, namePrototype);
-      this.psName = namePrototype[0][6] || null;
+    // OTS needs a recognized Macintosh family name to preserve the glyph
+    // bounds of tricky fonts (issue 22550).
+    if ((tables.fpgm || tables.prep) && !getTrickyFontName(macNames[1])) {
+      const familyName =
+        getTrickyFontName(windowsNames[1]) ??
+        getTrickyFontName(name) ??
+        trickyNameFromTables;
+      if (familyName) {
+        macNames[1] = familyName;
+      }
+    }
 
+    const nameData = createNameTable(name, namePrototype);
+    if (tables.name) {
+      this.psName = macNames[6] || null;
       if (!properties.composite) {
         // For TrueType fonts that do not include `ToUnicode` or `Encoding`
         // data, attempt to use the name-table to improve text selection.
         adjustTrueTypeToUnicode(properties, this.isSymbolicFont, nameRecords);
       }
     }
+    tables.name = { tag: "name", data: nameData };
 
     const builder = new OpenTypeFileBuilder(header.version);
     for (const tableTag in tables) {
