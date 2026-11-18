@@ -26,8 +26,11 @@ import {
   loadAndWait,
   paste,
   PDI,
+  selectEditor,
   switchToEditor,
+  unselectEditor,
   waitForPointerUp,
+  waitForSelectedEditor,
   waitForTextToBe,
   waitForTimeout,
 } from "./test_utils.mjs";
@@ -226,6 +229,34 @@ describe("Signature Editor", () => {
           await page.waitForSelector(
             `.altText.editDescription[title="Hello PDF.js World"]`
           );
+        })
+      );
+    });
+
+    it("must keep the application role for an unselected signature", async () => {
+      await Promise.all(
+        pages.map(async ([_, page]) => {
+          await switchToSignature(page);
+          await page.click("#editorSignatureAddSignature");
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: true,
+          });
+          await page.type("#addSignatureTypeInput", "PDF.js");
+          await page.waitForSelector(`${addButtonSelector}:not(:disabled)`);
+          await page.click(addButtonSelector);
+          await page.waitForSelector("#addSignatureDialog", {
+            visible: false,
+          });
+
+          const editorSelector = getEditorSelector(0);
+          await waitForSelectedEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="application"]`);
+
+          await unselectEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="application"]`);
+
+          await selectEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="application"]`);
         })
       );
     });

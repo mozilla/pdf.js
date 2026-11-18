@@ -1027,6 +1027,10 @@ class PDFViewer {
               // GeckoView's toolbar sticks out of the editor.
               typeof PDFJSDev === "undefined"
                 ? window.isGECKOVIEW
+                : PDFJSDev.test("GECKOVIEW"),
+              // GeckoView needs unselected signatures as buttons for TalkBack.
+              typeof PDFJSDev === "undefined"
+                ? window.isGECKOVIEW
                 : PDFJSDev.test("GECKOVIEW")
             );
             eventBus.dispatch("annotationeditoruimanager", {

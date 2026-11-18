@@ -23,6 +23,8 @@ import {
   getRect,
   getSerialized,
   isCanvasMonochrome,
+  selectEditor,
+  unselectEditor,
   waitForAnnotationEditorLayer,
   waitForNoElement,
   waitForPageRendered,
@@ -259,6 +261,54 @@ describe("GeckoView viewer", () => {
           expect(serialized[0].accessibilityData?.alt)
             .withContext(`In ${browserName}`)
             .toEqual("Hello");
+        })
+      );
+    });
+
+    it("must expose an unselected signature as a button", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await addSignature(page, "Hello");
+          const editorSelector = getEditorSelector(0);
+          await waitForSelectedEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="application"]`);
+
+          await unselectEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="button"]`);
+          await page.waitForSelector(`${editorSelector} .editToolbar.hidden`);
+
+          await selectEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="application"]`);
+          await page.waitForSelector(
+            `${editorSelector} .editToolbar:not(.hidden)`
+          );
+
+          await unselectEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="button"]`);
+          await page.focus(editorSelector);
+          await waitForSelectedEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector}[role="application"]`);
+          await page.waitForSelector(
+            `${editorSelector} .editToolbar:not(.hidden)`
+          );
+        })
+      );
+    });
+
+    it("must expose the previous signature as a button when adding another one", async () => {
+      await Promise.all(
+        pages.map(async ([, page]) => {
+          await addSignature(page, "Hello");
+          const editorSelector = getEditorSelector(0);
+          await waitForSelectedEditor(page, editorSelector);
+
+          await addSignature(page, "World");
+          const secondEditorSelector = getEditorSelector(1);
+          await waitForSelectedEditor(page, secondEditorSelector);
+          await page.waitForSelector(`${editorSelector}[role="button"]`);
+          await page.waitForSelector(
+            `${secondEditorSelector}[role="application"]`
+          );
         })
       );
     });
