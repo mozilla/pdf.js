@@ -861,14 +861,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "isOffscreenCanvasSupported",
-    {
-      /** @type {boolean} */
-      value: true,
-      kind: OptionKind.API,
-    },
-  ],
-  [
     "pdfBug",
     {
       /** @type {boolean} */
