@@ -517,6 +517,78 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Canvas isn't cropped (bug 2094402)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      // At 60% zoom and DPR 1.5, the 489.6 x 633.6 viewport is rounded
+      // down to 488 x 632 CSS pixels.
+      pages = await loadAndWait(
+        "bug2094402.pdf",
+        ".textLayer .endOfContent",
+        "60",
+        {
+          earlySetup: () => {
+            Object.defineProperty(window, "devicePixelRatio", { value: 1.5 });
+          },
+        },
+        { capCanvasAreaFactor: -1 },
+        { width: 800, height: 1000 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must render the page edges when the page dimensions are rounded", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const wrapper = await page.$(".canvasWrapper");
+          const { data, width, height } = await decodePNG(
+            await wrapper.screenshot({ type: "png" })
+          );
+          const redAt = (x, y) => data[4 * (y * width + x)];
+
+          // The PDF has a black frame on a white background. Check each
+          // midpoint away from the corners, where two edges meet.
+          expect(redAt(Math.floor(width / 2), height - 1))
+            .withContext(`In ${browserName}, bottom edge`)
+            .toBeLessThan(0x40);
+          expect(redAt(width - 1, Math.floor(height / 2)))
+            .withContext(`In ${browserName}, right edge`)
+            .toBeLessThan(0x40);
+        })
+      );
+    });
+
+    it("must keep the canvas dimensions when a page is redrawn", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getCanvasSize = () =>
+            page.$eval(".canvasWrapper canvas", ({ width, height }) => [
+              width,
+              height,
+            ]);
+          const size = await getCanvasSize();
+
+          // Simulate the page being evicted from the cache and redrawn.
+          const handle = await waitForPageRendered(page);
+          await page.evaluate(() => {
+            const { pdfViewer } = window.PDFViewerApplication;
+            pdfViewer.getPageView(0).reset();
+            pdfViewer.update();
+          });
+          await awaitPromise(handle);
+
+          expect(await getCanvasSize())
+            .withContext(`In ${browserName}`)
+            .toEqual(size);
+        })
+      );
+    });
+  });
+
   describe("Page background under the canvas (bug 2070624)", () => {
     let pages;
 
