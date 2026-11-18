@@ -998,7 +998,8 @@ class AnnotationEditorUIManager {
     mlManager,
     editorUndoBar,
     supportsPinchToZoom,
-    keepToolbarInPage
+    keepToolbarInPage,
+    useButtonRoleForUnselectedSignatures
   ) {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
@@ -1062,6 +1063,8 @@ class AnnotationEditorUIManager {
     this._editorUndoBar = editorUndoBar || null;
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
     this._keepToolbarInPage = keepToolbarInPage === true;
+    this._useButtonRoleForUnselectedSignatures =
+      useButtonRoleForUnselectedSignatures === true;
     commentManager?.setSidebarUiManager(this);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {

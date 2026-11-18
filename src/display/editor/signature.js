@@ -166,6 +166,7 @@ class SignatureEditor extends DrawingEditor {
     }
 
     super.render();
+    this.#updateRoleForSelection();
 
     if (this._drawId === null) {
       if (this.#signatureData) {
@@ -214,6 +215,27 @@ class SignatureEditor extends DrawingEditor {
     }
 
     return this.div;
+  }
+
+  /** @inheritdoc */
+  select() {
+    super.select();
+    this.#updateRoleForSelection();
+  }
+
+  /** @inheritdoc */
+  unselect() {
+    super.unselect();
+    this.#updateRoleForSelection();
+  }
+
+  #updateRoleForSelection() {
+    if (this._uiManager._useButtonRoleForUnselectedSignatures) {
+      this.div?.setAttribute(
+        "role",
+        this.isSelected ? "application" : "button"
+      );
+    }
   }
 
   setUuid(uuid) {
