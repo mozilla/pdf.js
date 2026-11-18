@@ -2573,31 +2573,38 @@ class PartialEvaluator {
 
     function getCurrentTextTransform() {
       // 9.4.4 Text Space Details
-      const font = textState.font;
-      const tsm = [
-        textState.fontSize * textState.textHScale,
-        0,
-        0,
-        textState.fontSize,
-        0,
-        textState.textRise,
-      ];
+      const { ctm, font, fontSize, textMatrix: tm, textRise } = textState;
+      const scaleX = fontSize * textState.textHScale;
+      let scaleY = fontSize;
 
       if (
         font.isType3Font &&
-        (textState.fontSize <= 1 || font.isCharBBox) &&
+        (fontSize <= 1 || font.isCharBBox) &&
         !isArrayEqual(textState.fontMatrix, FONT_IDENTITY_MATRIX)
       ) {
         const glyphHeight = font.bbox[3] - font.bbox[1];
         if (glyphHeight > 0) {
-          tsm[3] *= glyphHeight * textState.fontMatrix[3];
+          scaleY *= glyphHeight * textState.fontMatrix[3];
         }
       }
 
-      return Util.transform(
-        textState.ctm,
-        Util.transform(textState.textMatrix, tsm)
-      );
+      // This is `Util.transform(ctm, Util.transform(tm, tsm))`, with
+      // `tsm = [scaleX, 0, 0, scaleY, 0, textRise]`, but without allocating
+      // the intermediate arrays, since it runs (at least) once per glyph.
+      const a = tm[0] * scaleX,
+        b = tm[1] * scaleX,
+        c = tm[2] * scaleY,
+        d = tm[3] * scaleY,
+        e = tm[2] * textRise + tm[4],
+        f = tm[3] * textRise + tm[5];
+      return [
+        ctm[0] * a + ctm[2] * b,
+        ctm[1] * a + ctm[3] * b,
+        ctm[0] * c + ctm[2] * d,
+        ctm[1] * c + ctm[3] * d,
+        ctm[0] * e + ctm[2] * f + ctm[4],
+        ctm[1] * e + ctm[3] * f + ctm[5],
+      ];
     }
 
     function ensureTextContentItem() {
