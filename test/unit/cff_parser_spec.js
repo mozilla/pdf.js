@@ -381,7 +381,7 @@ describe("CFFParser", function () {
     };
     const pdfDocument = new PDFDocument(pdfManager, new Stream(data));
     pdfDocument.parseStartXRef();
-    pdfDocument.xref.parse();
+    await pdfDocument.xref.parse();
 
     // Object 8 is the `/FontFile3` (`/CIDFontType0C`) stream in the fixture.
     const fontProgram = pdfDocument.xref.fetch(Ref.get(8, 0)).getBytes();
