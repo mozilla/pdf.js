@@ -47,6 +47,79 @@ function handlePreprocessorAction(ctx, actionName, args, path) {
 }
 
 function babelPluginPDFJSPreprocessor(babel, ctx) {
+  function isRemovableValue(path) {
+    if (path.isPure()) {
+      return true;
+    }
+    const { node } = path;
+    if (
+      t.isMemberExpression(node, { computed: false }) &&
+      t.isMetaProperty(node.object) &&
+      node.object.meta.name === "import" &&
+      node.object.property.name === "meta" &&
+      t.isIdentifier(node.property, { name: "url" })
+    ) {
+      // import.meta.url
+      return true;
+    }
+    // Emscripten computes `new URL(".", _scriptName).href` inside a `try`;
+    // building the URL has no side effects other than a possible exception.
+    if (
+      path.isMemberExpression({ computed: false }) &&
+      path.get("object").isNewExpression() &&
+      path.get("object.callee").isIdentifier({ name: "URL" }) &&
+      !path.scope.hasBinding("URL", /* noGlobals = */ true)
+    ) {
+      return path.get("object.arguments").every(isRemovableValue);
+    }
+    return false;
+  }
+
+  function removeUnusedVariable(binding) {
+    // Only `var` bindings in functions: they come from generated code, such as
+    // the Emscripten glue, since the linter doesn't allow unused variables.
+    const { path: declarator } = binding;
+    if (
+      binding.kind !== "var" ||
+      !declarator.isVariableDeclarator() ||
+      !declarator.get("id").isIdentifier() ||
+      // Not the left side of a for-in/of loop.
+      declarator.parentPath.listKey !== "body"
+    ) {
+      return false;
+    }
+    const init = declarator.get("init");
+    if (init.node && !isRemovableValue(init)) {
+      return false;
+    }
+    const assignments = binding.constantViolations;
+    for (const assignment of assignments) {
+      if (
+        !assignment.isAssignmentExpression({ operator: "=" }) ||
+        !assignment.parentPath.isExpressionStatement() ||
+        !isRemovableValue(assignment.get("right"))
+      ) {
+        return false;
+      }
+    }
+    for (const assignment of assignments) {
+      const statement = assignment.parentPath;
+      const { parentPath } = statement;
+      statement.remove();
+      if (
+        parentPath.isBlockStatement() &&
+        parentPath.node.body.length === 0 &&
+        parentPath.parentPath.isTryStatement({ block: parentPath.node }) &&
+        !parentPath.parent.finalizer
+      ) {
+        // try {} catch {} => (nothing)
+        parentPath.parentPath.remove();
+      }
+    }
+    declarator.remove();
+    return true;
+  }
+
   function removeUnusedFunctions(path) {
     let removed;
     do {
@@ -59,10 +132,12 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
           if (bindingPath.isFunctionDeclaration()) {
             bindingPath.remove();
             removed = true;
+          } else if (path.isFunction() && removeUnusedVariable(binding)) {
+            removed = true;
           }
         }
       }
-      // If we removed some functions, there might be new unused ones
+      // If we removed something, there might be new unused bindings
     } while (removed);
   }
 

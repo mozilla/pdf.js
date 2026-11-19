@@ -11,14 +11,14 @@ function f2() {
 f2();
 
 function f3() {
-  var i = 0;
+  before();
   throw "test";
   var j = 0;
 }
 f3();
 
 function f4() {
-  var i = 0;
+  before();
   if (true) {
     return;
   }

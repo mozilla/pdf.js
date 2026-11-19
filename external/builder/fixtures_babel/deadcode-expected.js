@@ -5,12 +5,12 @@ function f2() {
 }
 f2();
 function f3() {
-  var i = 0;
+  before();
   throw "test";
 }
 f3();
 function f4() {
-  var i = 0;
+  before();
 }
 f4();
 var obj = {

@@ -24,6 +24,7 @@ class F {
   constructor() {
     if (PDFJSDev.test('TRUE')) {
       var a = 0;
+      use(a);
     }
   }
 }
