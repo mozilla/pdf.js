@@ -73,7 +73,6 @@ import { Linearization } from "./parser.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
-import { PageAnnotationFlattener } from "./flattener.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
@@ -448,6 +447,9 @@ class Page {
   }
 
   async flattenAnnotations(handler, task, options) {
+    const { PageAnnotationFlattener } = await import(
+      /* webpackChunkName: "flatten" */ "./flattener.js"
+    );
     return new PageAnnotationFlattener({
       ...options,
       page: this,
