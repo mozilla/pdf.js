@@ -6389,8 +6389,10 @@ have written that much by now. So, here’s to squashing bugs.`);
       const operatorList = await pdfPage.getOperatorList();
 
       const imgIndex = operatorList.fnArray.indexOf(OPS.paintImageXObject);
-      const imgArgs = operatorList.argsArray[imgIndex];
-      const { data } = pdfPage.objs.get(imgArgs[0]);
+      const [objId] = operatorList.argsArray[imgIndex];
+      const { data } = await new Promise((resolve, reject) => {
+        pdfPage.objs.get(objId, resolve, reject);
+      });
 
       expect(data).toBeInstanceOf(Uint8ClampedArray);
       expect(data.length).toEqual(90000);

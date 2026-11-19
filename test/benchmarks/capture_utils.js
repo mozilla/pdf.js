@@ -15,6 +15,7 @@
 
 import { buildGetDocumentParams, readTestPdf } from "./bench_utils.js";
 import { getDocument } from "../../src/display/api.js";
+import { OPS } from "../../src/shared/util.js";
 import { PartialEvaluator } from "../../src/core/evaluator.js";
 
 /**
@@ -115,7 +116,28 @@ async function processPdf(
 
     for (const pageNumber of pages) {
       const page = await pdfDocument.getPage(pageNumber);
-      await (operatorList ? page.getOperatorList() : page.getTextContent());
+      if (!operatorList) {
+        await page.getTextContent();
+        continue;
+      }
+      const { fnArray, argsArray } = await page.getOperatorList();
+      const dependencies = new Set();
+      for (const [i, fn] of fnArray.entries()) {
+        if (fn === OPS.dependency) {
+          for (const id of argsArray[i]) {
+            dependencies.add(id);
+          }
+        }
+      }
+      // Image decoding may finish after the operator list arrives.
+      await Promise.all(
+        Array.from(dependencies, id => {
+          const objs = id.startsWith("g_") ? page.commonObjs : page.objs;
+          return new Promise((resolve, reject) => {
+            objs.get(id, resolve, reject);
+          });
+        })
+      );
     }
   } finally {
     await loadingTask.destroy();
