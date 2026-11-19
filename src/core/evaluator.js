@@ -681,7 +681,7 @@ class PartialEvaluator {
     // Inlining small images into the queue as RGB data
     if (isInline && w + h < SMALL_IMAGE_DIMENSIONS && !hasMask) {
       try {
-        const imageObj = new PDFImage({
+        const imageObj = await PDFImage.buildImage({
           xref: this.xref,
           res: resources,
           image,
@@ -843,8 +843,8 @@ class PartialEvaluator {
     }
   }
 
-  #createTransferMap(fn) {
-    const transferFn = this._pdfFunctionFactory.create(fn),
+  async #createTransferMap(fn) {
+    const transferFn = await this._pdfFunctionFactory.create(fn),
       tmp = new Float32Array(1);
     return Uint8Array.from({ length: 256 }, (_, i) => {
       tmp[0] = i / 255;
@@ -853,7 +853,7 @@ class PartialEvaluator {
     });
   }
 
-  handleSMask(
+  async handleSMask(
     smask,
     resources,
     operatorList,
@@ -872,7 +872,7 @@ class PartialEvaluator {
     // we will build a map of integer values in range 0..255 to be fast.
     const transferObj = smask.get("TR");
     if (isPDFFunction(transferObj)) {
-      smaskOptions.transferMap = this.#createTransferMap(transferObj);
+      smaskOptions.transferMap = await this.#createTransferMap(transferObj);
     }
 
     return this.buildFormXObject(
@@ -887,7 +887,7 @@ class PartialEvaluator {
     );
   }
 
-  handleTransferFunction(tr) {
+  async handleTransferFunction(tr) {
     let transferArray;
     if (Array.isArray(tr)) {
       // If all entries in the array are the same, we can just use one of them.
@@ -912,7 +912,7 @@ class PartialEvaluator {
       } else if (!isPDFFunction(transferObj)) {
         return null; // Not a valid transfer function object.
       }
-      transferMaps.push(this.#createTransferMap(transferObj));
+      transferMaps.push(await this.#createTransferMap(transferObj));
       numEffectfulFns++;
     }
 
@@ -1158,7 +1158,7 @@ class PartialEvaluator {
           // /Default (and /Identity) means "no transfer function" here, which
           // clears any filter previously set on the display side (issue 21406).
           // `handleTransferFunction` returns `null` for those names.
-          const transferMaps = this.handleTransferFunction(value);
+          const transferMaps = await this.handleTransferFunction(value);
           gStateObj.push(["TR", transferMaps]);
           break;
         }
@@ -1467,7 +1467,6 @@ class PartialEvaluator {
       pdfFunctionFactory: this._pdfFunctionFactory,
       globalColorSpaceCache: this.globalColorSpaceCache,
       localColorSpaceCache,
-      asyncIfNotCached: true,
     });
   }
 
@@ -1486,7 +1485,7 @@ class PartialEvaluator {
     }
   }
 
-  parseShading({
+  async parseShading({
     shading,
     resources,
     localColorSpaceCache,
@@ -1501,7 +1500,7 @@ class PartialEvaluator {
     let patternIR;
 
     try {
-      const shadingFill = Pattern.parseShading(
+      const shadingFill = await Pattern.parseShading(
         shading,
         this.xref,
         resources,
@@ -1538,7 +1537,7 @@ class PartialEvaluator {
     return id;
   }
 
-  handleColorN(
+  async handleColorN(
     operatorList,
     fn,
     args,
@@ -1596,7 +1595,7 @@ class PartialEvaluator {
           );
         } else if (typeNum === PatternType.SHADING) {
           const shading = dict.get("Shading");
-          const objId = this.parseShading({
+          const objId = await this.parseShading({
             shading,
             resources,
             localColorSpaceCache,
@@ -2104,18 +2103,21 @@ class PartialEvaluator {
               }
               throw reason;
             }
-            const patternId = self.parseShading({
-              shading,
-              resources,
-              localColorSpaceCache,
-              localShadingPatternCache,
-            });
-            if (!patternId) {
-              continue;
-            }
-            args = [patternId];
-            fn = OPS.shadingFill;
-            break;
+            next(
+              self
+                .parseShading({
+                  shading,
+                  resources,
+                  localColorSpaceCache,
+                  localShadingPatternCache,
+                })
+                .then(patternId => {
+                  if (patternId) {
+                    operatorList.addOp(OPS.shadingFill, [patternId]);
+                  }
+                })
+            );
+            return;
           case OPS.setGState:
             isValidName = args[0] instanceof Name;
             name = args[0].name;

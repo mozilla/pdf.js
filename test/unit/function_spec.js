@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { FunctionType, PDFFunctionFactory } from "../../src/core/function.js";
+import { Stream, StringStream } from "../../src/core/stream.js";
 import { Dict } from "../../src/core/primitives.js";
 import { FormatError } from "../../src/shared/util.js";
-import { PDFFunctionFactory } from "../../src/core/function.js";
-import { Stream } from "../../src/core/stream.js";
 import { XRefMock } from "./test_utils.js";
 
 describe("function", function () {
@@ -28,6 +28,23 @@ describe("function", function () {
 
   afterAll(function () {
     factory = null;
+  });
+
+  it("evaluates concurrent requests for the same calculator stream", async function () {
+    const dict = new Dict();
+    dict.set("FunctionType", FunctionType.POSTSCRIPT_CALCULATOR);
+    dict.set("Domain", [0, 1]);
+    dict.set("Range", [0, 1]);
+    const stream = new StringStream("{ dup mul }", dict);
+
+    const [first, second] = await Promise.all([
+      factory.create(stream),
+      factory.create(stream),
+    ]);
+
+    expect(evaluate(first, 0.5)).toEqual([0.25]);
+    expect(evaluate(second, 0.25)).toEqual([0.0625]);
+    expect(stream.pos).toEqual(0);
   });
 
   function createSampledStream({
@@ -93,8 +110,8 @@ describe("function", function () {
   }
 
   describe("Sampled function", function () {
-    it("must interpolate multilinearly", function () {
-      const fn = createAndFunction(2);
+    it("must interpolate multilinearly", async function () {
+      const fn = await createAndFunction(2);
 
       expect(fn.numInputs).toEqual(2);
       expect(fn.numOutputs).toEqual(1);
@@ -103,8 +120,8 @@ describe("function", function () {
       expect(evaluate(fn, 1, 1)).toEqual([1]);
     });
 
-    it("must use simplex interpolation for many inputs", function () {
-      const fn = createAndFunction(9);
+    it("must use simplex interpolation for many inputs", async function () {
+      const fn = await createAndFunction(9);
 
       expect(fn.numInputs).toEqual(9);
       expect(evaluate(fn, 0.5, 0.25, 0, 0, 0, 0, 0, 0, 0)).toEqual([0.25]);
@@ -112,8 +129,8 @@ describe("function", function () {
       expect(evaluate(fn, 1, 1, 0, 1, 0, 1, 0, 1, 0)).toEqual([1]);
     });
 
-    it("must handle inputs with a single sample", function () {
-      const fn = createSampledFunction({
+    it("must handle inputs with a single sample", async function () {
+      const fn = await createSampledFunction({
         domain: [0, 1, 0, 1, 0, 1],
         range: [0, 1],
         size: [2, 1, 2],
@@ -124,9 +141,9 @@ describe("function", function () {
       expect(evaluate(fn, 1, 0.3, 1)).toEqual([1]);
     });
 
-    it("must evaluate functions with many single-sample inputs", function () {
+    it("must evaluate functions with many single-sample inputs", async function () {
       const numInputs = 18;
-      const fn = createSampledFunction({
+      const fn = await createSampledFunction({
         domain: new Array(numInputs).fill([0, 1]).flat(),
         range: [0, 1],
         size: new Array(numInputs).fill(1),
@@ -136,8 +153,8 @@ describe("function", function () {
       expect(evaluate(fn, ...new Array(numInputs).fill(0.5))).toEqual([0.2]);
     });
 
-    it("must interpret 32-bit samples as unsigned", function () {
-      const fn = createSampledFunction({
+    it("must interpret 32-bit samples as unsigned", async function () {
+      const fn = await createSampledFunction({
         domain: [0, 1],
         range: [0, 1],
         size: [2],
@@ -152,8 +169,8 @@ describe("function", function () {
   });
 
   describe("Array of functions", function () {
-    it("must combine 1-out functions", function () {
-      const fn = factory.create(
+    it("must combine 1-out functions", async function () {
+      const fn = await factory.create(
         [
           createExponentialFunction([0], [1]),
           createExponentialFunction([1], [0]),
@@ -166,8 +183,8 @@ describe("function", function () {
       expect(evaluate(fn, 0.25)).toEqual([0.25, 0.75]);
     });
 
-    it("must accept a single n-out function", function () {
-      const fn = factory.create(
+    it("must accept a single n-out function", async function () {
+      const fn = await factory.create(
         [createExponentialFunction([0, 0, 0], [1, 1, 1])],
         /* parseArray = */ true
       );
@@ -176,8 +193,8 @@ describe("function", function () {
       expect(fn.numOutputs).toEqual(3);
     });
 
-    it("must reject several n-out functions", function () {
-      expect(() =>
+    it("must reject several n-out functions", async function () {
+      await expectAsync(
         factory.create(
           [
             createExponentialFunction([0, 0], [1, 1]),
@@ -185,13 +202,25 @@ describe("function", function () {
           ],
           /* parseArray = */ true
         )
-      ).toThrowError(FormatError, "Invalid array of functions.");
+      ).toBeRejectedWithError(FormatError, "Invalid array of functions.");
     });
   });
 
   describe("Stitching function", function () {
-    it("must have the outputs of its sub-functions", function () {
-      const fn = createStitchedFunction([
+    it("must reject a circular sub-function", async function () {
+      const dict = new Dict();
+      dict.set("FunctionType", FunctionType.STITCHING);
+      dict.set("Domain", [0, 1]);
+      dict.set("Functions", [dict]);
+
+      await expectAsync(factory.create(dict)).toBeRejectedWithError(
+        FormatError,
+        "Circular stitched function"
+      );
+    });
+
+    it("must have the outputs of its sub-functions", async function () {
+      const fn = await createStitchedFunction([
         createExponentialFunction([0, 0, 0], [1, 1, 1]),
         createExponentialFunction([1, 0, 0], [0, 0, 1]),
       ]);
@@ -202,8 +231,8 @@ describe("function", function () {
       expect(evaluate(fn, 0.75)).toEqual([0.5, 0, 0.5]);
     });
 
-    it("must reject sub-functions with several inputs", function () {
-      expect(() =>
+    it("must reject sub-functions with several inputs", async function () {
+      await expectAsync(
         createStitchedFunction([
           createExponentialFunction([0, 0, 0], [1, 1, 1]),
           createSampledStream({
@@ -213,26 +242,26 @@ describe("function", function () {
             samples: new Array(12).fill(0),
           }),
         ])
-      ).toThrowError(
+      ).toBeRejectedWithError(
         FormatError,
         "Incompatible sub-functions for stitched function"
       );
     });
 
-    it("must reject sub-functions with different outputs", function () {
-      expect(() =>
+    it("must reject sub-functions with different outputs", async function () {
+      await expectAsync(
         createStitchedFunction([
           createExponentialFunction([0, 0, 0], [1, 1, 1]),
           createExponentialFunction([0], [1]),
         ])
-      ).toThrowError(
+      ).toBeRejectedWithError(
         FormatError,
         "Incompatible sub-functions for stitched function"
       );
     });
 
-    it("must reject an empty array of sub-functions", function () {
-      expect(() => createStitchedFunction([])).toThrowError(
+    it("must reject an empty array of sub-functions", async function () {
+      await expectAsync(createStitchedFunction([])).toBeRejectedWithError(
         FormatError,
         "Incompatible sub-functions for stitched function"
       );

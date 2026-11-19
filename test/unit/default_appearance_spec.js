@@ -69,7 +69,26 @@ describe("Default appearance", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should parse a FreeText (from Acrobat) appearance", () => {
+    it("parses the same appearance stream concurrently", async function () {
+      const appearance = new StringStream(
+        "BT /F1 12 Tf /DeviceRGB cs 1 0 0 sc (text) Tj ET"
+      );
+      const expected = {
+        fontSize: 12,
+        fontName: "F1",
+        fontColor: new Uint8ClampedArray([255, 0, 0]),
+      };
+      const parse = () =>
+        parseAppearanceStream(appearance, xref, globalColorSpaceCache);
+
+      expect(await Promise.all([parse(), parse()])).toEqual([
+        expected,
+        expected,
+      ]);
+      expect(appearance.pos).toEqual(0);
+    });
+
+    it("should parse a FreeText (from Acrobat) appearance", async () => {
       const appearance = new StringStream(`
       0 w
       46.5 621.0552 156.389 18.969 re
@@ -100,12 +119,12 @@ describe("Default appearance", function () {
         fontColor: new Uint8ClampedArray([107, 217, 41]),
       };
       expect(
-        parseAppearanceStream(appearance, xref, globalColorSpaceCache)
+        await parseAppearanceStream(appearance, xref, globalColorSpaceCache)
       ).toEqual(result);
       expect(appearance.pos).toEqual(0);
     });
 
-    it("should parse a FreeText (from Firefox) appearance", () => {
+    it("should parse a FreeText (from Firefox) appearance", async () => {
       const appearance = new StringStream(`
       q
       0 0 203.7 28.3 re W n
@@ -121,12 +140,12 @@ describe("Default appearance", function () {
         fontColor: new Uint8ClampedArray([237, 43, 112]),
       };
       expect(
-        parseAppearanceStream(appearance, xref, globalColorSpaceCache)
+        await parseAppearanceStream(appearance, xref, globalColorSpaceCache)
       ).toEqual(result);
       expect(appearance.pos).toEqual(0);
     });
 
-    it("should parse a FreeText (from Preview) appearance", () => {
+    it("should parse a FreeText (from Preview) appearance", async () => {
       const indexedDict = new Dict(xref);
       indexedDict.set("Alternate", Name.get("DeviceRGB"));
       indexedDict.set("N", 3);
@@ -159,12 +178,12 @@ describe("Default appearance", function () {
         fontColor: new Uint8ClampedArray([135, 78, 254]),
       };
       expect(
-        parseAppearanceStream(appearance, xref, globalColorSpaceCache)
+        await parseAppearanceStream(appearance, xref, globalColorSpaceCache)
       ).toEqual(result);
       expect(appearance.pos).toEqual(0);
     });
 
-    it("should parse a FreeText (from Edge) appearance", () => {
+    it("should parse a FreeText (from Edge) appearance", async () => {
       const appearance = new StringStream(`
       q
       0 0 292.5 18.75 re W n
@@ -182,12 +201,12 @@ describe("Default appearance", function () {
         fontColor: new Uint8ClampedArray([16, 124, 16]),
       };
       expect(
-        parseAppearanceStream(appearance, xref, globalColorSpaceCache)
+        await parseAppearanceStream(appearance, xref, globalColorSpaceCache)
       ).toEqual(result);
       expect(appearance.pos).toEqual(0);
     });
 
-    it("should parse a FreeText (from Foxit) appearance", () => {
+    it("should parse a FreeText (from Foxit) appearance", async () => {
       const appearance = new StringStream(`
       q
       /Tx BMC
@@ -208,12 +227,12 @@ describe("Default appearance", function () {
         fontColor: new Uint8ClampedArray([149, 63, 60]),
       };
       expect(
-        parseAppearanceStream(appearance, xref, globalColorSpaceCache)
+        await parseAppearanceStream(appearance, xref, globalColorSpaceCache)
       ).toEqual(result);
       expect(appearance.pos).toEqual(0);
     });
 
-    it("should parse a FreeText (from Okular) appearance", () => {
+    it("should parse a FreeText (from Okular) appearance", async () => {
       const appearance = new StringStream(`
       q
       0.00 0.00 172.65 41.46 re W n
@@ -232,7 +251,7 @@ describe("Default appearance", function () {
         fontColor: new Uint8ClampedArray([0, 85, 127]),
       };
       expect(
-        parseAppearanceStream(appearance, xref, globalColorSpaceCache)
+        await parseAppearanceStream(appearance, xref, globalColorSpaceCache)
       ).toEqual(result);
       expect(appearance.pos).toEqual(0);
     });

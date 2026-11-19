@@ -40,22 +40,20 @@ class ShadingInput {
     return shading instanceof BaseStream ? shading.dict : shading;
   }
 
-  /**
-   * @returns {Array} Shading arguments with a reset stream and fresh caches.
-   */
-  args() {
+  async getIR() {
     const shading = this.#shading;
     if (shading instanceof BaseStream) {
       shading.reset();
     }
-    return [
+    const pattern = await Pattern.parseShading(
       shading,
       this.#xref,
       this.#resources,
       new PDFFunctionFactory({ xref: this.#xref }),
       new GlobalColorSpaceCache(),
-      new LocalColorSpaceCache(),
-    ];
+      new LocalColorSpaceCache()
+    );
+    return pattern.getIR();
   }
 }
 
@@ -80,7 +78,7 @@ async function captureShadings(filename, filter = () => true, options) {
     throw new Error(`No matching shading in "${filename}".`);
   }
   for (const input of shadings) {
-    if (Pattern.parseShading(...input.args()).getIR()[0] === "Dummy") {
+    if ((await input.getIR())[0] === "Dummy") {
       throw new Error(`Shading in "${filename}" can't be replayed.`);
     }
   }

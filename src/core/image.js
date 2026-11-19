@@ -140,7 +140,7 @@ function sumPreblendedRow(
 }
 
 class PDFImage {
-  constructor({
+  async #initialize({
     xref,
     res,
     image,
@@ -266,7 +266,7 @@ class PDFImage {
       ) {
         this.jpxPremultiplied = true;
         if (this.matte) {
-          const matteColorSpace = ColorSpaceUtils.parse({
+          const matteColorSpace = await ColorSpaceUtils.parse({
             cs: hasColorSpace ? colorSpace : Name.get("DeviceRGB"),
             xref,
             resources: isInline ? res : null,
@@ -304,7 +304,7 @@ class PDFImage {
         colorSpace = Name.get("DeviceRGBA");
       }
 
-      this.colorSpace = ColorSpaceUtils.parse({
+      this.colorSpace = await ColorSpaceUtils.parse({
         cs: colorSpace,
         xref,
         resources: isInline ? res : null,
@@ -356,7 +356,7 @@ class PDFImage {
       // (see issue19611.pdf).
       smask.fallbackDims ??= { width, height };
 
-      this.smask = new PDFImage({
+      this.smask = await new PDFImage().#initialize({
         xref,
         res,
         image: smask,
@@ -376,7 +376,7 @@ class PDFImage {
           // (see issue19611.pdf).
           mask.fallbackDims ??= { width, height };
 
-          this.mask = new PDFImage({
+          this.mask = await new PDFImage().#initialize({
             xref,
             res,
             image: mask,
@@ -392,53 +392,28 @@ class PDFImage {
         this.mask = mask;
       }
     }
+    return this;
   }
 
   /**
    * Handles processing of image data and returns the Promise that is resolved
    * with a PDFImage when the image is ready to be used.
    */
-  static async buildImage({
-    xref,
-    res,
-    image,
-    isInline = false,
-    pdfFunctionFactory,
-    globalColorSpaceCache,
-    localColorSpaceCache,
-  }) {
-    const imageData = image;
-    let smaskData = null;
-    let maskData = null;
-
-    const smask = image.dict.get("SMask");
-    const mask = image.dict.get("Mask");
-
+  static async buildImage(options) {
+    const { dict } = options.image;
+    let smask = dict.get("SMask");
+    let mask = dict.get("Mask");
     if (smask) {
-      if (smask instanceof BaseStream) {
-        smaskData = smask;
-      } else {
+      mask = null;
+      if (!(smask instanceof BaseStream)) {
         warn("Unsupported /SMask format.");
+        smask = null;
       }
-    } else if (mask) {
-      if (mask instanceof BaseStream || Array.isArray(mask)) {
-        maskData = mask;
-      } else {
-        warn("Unsupported /Mask format.");
-      }
+    } else if (mask && !(mask instanceof BaseStream || Array.isArray(mask))) {
+      warn("Unsupported /Mask format.");
+      mask = null;
     }
-
-    return new PDFImage({
-      xref,
-      res,
-      image: imageData,
-      isInline,
-      smask: smaskData,
-      mask: maskData,
-      pdfFunctionFactory,
-      globalColorSpaceCache,
-      localColorSpaceCache,
-    });
+    return new PDFImage().#initialize({ ...options, smask, mask });
   }
 
   static async createMask({ image, isOffscreenCanvasSupported = false }) {

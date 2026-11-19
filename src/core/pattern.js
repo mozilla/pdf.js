@@ -59,13 +59,13 @@ function getColorConversionBatchSize(count, numComps) {
 
 // Input count follows the shading type; output count matches the color space
 // (ISO 32000-1:2008, 8.7.4.5).
-function parseShadingFunction(
+async function parseShadingFunction(
   fnObj,
   pdfFunctionFactory,
   numInputs,
   numOutputs
 ) {
-  const fn = pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
+  const fn = await pdfFunctionFactory.create(fnObj, /* parseArray = */ true);
   if (fn.numInputs !== numInputs || fn.numOutputs !== numOutputs) {
     throw new FormatError(
       `Invalid shading function: expected ${numInputs}-in ${numOutputs}-out, ` +
@@ -80,7 +80,7 @@ class Pattern {
     unreachable("Cannot initialize Pattern.");
   }
 
-  static parseShading(
+  static async parseShading(
     shading,
     xref,
     res,
@@ -92,41 +92,45 @@ class Pattern {
     const type = dict.get("ShadingType");
 
     try {
-      switch (type) {
-        case ShadingType.FUNCTION_BASED:
-          return new FunctionBasedShading(
-            dict,
-            xref,
-            res,
-            pdfFunctionFactory,
-            globalColorSpaceCache,
-            localColorSpaceCache
-          );
-        case ShadingType.AXIAL:
-        case ShadingType.RADIAL:
-          return new RadialAxialShading(
-            dict,
-            xref,
-            res,
-            pdfFunctionFactory,
-            globalColorSpaceCache,
-            localColorSpaceCache
-          );
-        case ShadingType.FREE_FORM_MESH:
-        case ShadingType.LATTICE_FORM_MESH:
-        case ShadingType.COONS_PATCH_MESH:
-        case ShadingType.TENSOR_PATCH_MESH:
-          return new MeshShading(
-            shading,
-            xref,
-            res,
-            pdfFunctionFactory,
-            globalColorSpaceCache,
-            localColorSpaceCache
-          );
-        default:
-          throw new FormatError("Unsupported ShadingType: " + type);
+      if (
+        !Number.isInteger(type) ||
+        type < ShadingType.FUNCTION_BASED ||
+        type > ShadingType.TENSOR_PATCH_MESH
+      ) {
+        throw new FormatError("Unsupported ShadingType: " + type);
       }
+      const isMesh = type >= ShadingType.FREE_FORM_MESH;
+      if (isMesh && !(shading instanceof BaseStream)) {
+        throw new FormatError("Mesh data is not a stream");
+      }
+      const cs = await ColorSpaceUtils.parse({
+        cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
+        xref,
+        resources: res,
+        pdfFunctionFactory,
+        globalColorSpaceCache,
+        localColorSpaceCache,
+      });
+      const fnObj = dict.getRaw("Function");
+      const isFunctionBased = type === ShadingType.FUNCTION_BASED;
+      if (isFunctionBased && !fnObj) {
+        throw new FormatError("FunctionBasedShading: missing /Function");
+      }
+      const fn =
+        !isMesh || fnObj
+          ? await parseShadingFunction(
+              fnObj,
+              pdfFunctionFactory,
+              isFunctionBased ? 2 : 1,
+              cs.numComps
+            )
+          : null;
+      if (isFunctionBased) {
+        return new FunctionBasedShading(dict, cs, fn);
+      }
+      return !isMesh
+        ? new RadialAxialShading(dict, cs, fn)
+        : new MeshShading(shading, cs, fn);
     } catch (ex) {
       if (ex instanceof MissingDataException) {
         throw ex;
@@ -159,14 +163,7 @@ class BaseShading {
 // Radial and axial shading have very similar implementations
 // If needed, the implementations can be broken into two classes.
 class RadialAxialShading extends BaseShading {
-  constructor(
-    dict,
-    xref,
-    resources,
-    pdfFunctionFactory,
-    globalColorSpaceCache,
-    localColorSpaceCache
-  ) {
+  constructor(dict, cs, fn) {
     super();
     this.shadingType = dict.get("ShadingType");
     let coordsLen = 0;
@@ -179,14 +176,6 @@ class RadialAxialShading extends BaseShading {
     if (!isNumberArray(this.coordsArr, coordsLen)) {
       throw new FormatError("RadialAxialShading: Invalid /Coords array.");
     }
-    const cs = ColorSpaceUtils.parse({
-      cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
-      xref,
-      resources,
-      pdfFunctionFactory,
-      globalColorSpaceCache,
-      localColorSpaceCache,
-    });
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
 
     const domainArr = dict.getArray("Domain");
@@ -196,9 +185,6 @@ class RadialAxialShading extends BaseShading {
     const [extendStart, extendEnd] = isBooleanArray(extendArr, 2)
       ? extendArr
       : [false, false];
-
-    const fnObj = dict.getRaw("Function");
-    const fn = parseShadingFunction(fnObj, pdfFunctionFactory, 1, cs.numComps);
 
     // Use lcm(1,2,3,4,5,6,7,8,10) = 840 (including 9 increases this to 2520)
     // to catch evenly spaced stops. oeis.org/A003418
@@ -446,34 +432,13 @@ class FunctionBasedShading extends BaseShading {
   // Maximum grid steps per axis to avoid huge meshes.
   static MAX_STEP_COUNT = 512;
 
-  constructor(
-    dict,
-    xref,
-    resources,
-    pdfFunctionFactory,
-    globalColorSpaceCache,
-    localColorSpaceCache
-  ) {
+  constructor(dict, cs, fn) {
     super();
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
 
-    const cs = ColorSpaceUtils.parse({
-      cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
-      xref,
-      resources,
-      pdfFunctionFactory,
-      globalColorSpaceCache,
-      localColorSpaceCache,
-    });
     this.background = dict.has("Background")
       ? cs.getRgb(dict.get("Background"), 0)
       : null;
-
-    const fnObj = dict.getRaw("Function");
-    if (!fnObj) {
-      throw new FormatError("FunctionBasedShading: missing /Function");
-    }
-    const fn = parseShadingFunction(fnObj, pdfFunctionFactory, 2, cs.numComps);
 
     // Domain [x0, x1, y0, y1]; defaults to [0, 1, 0, 1].
     const [x0, x1, y0, y1] = lookupRect(dict.getArray("Domain"), [0, 1, 0, 1]);
@@ -723,36 +688,13 @@ class MeshShading extends BaseShading {
   // Count of triangles per entire mesh bounds.
   static TRIANGLE_DENSITY = 20;
 
-  constructor(
-    stream,
-    xref,
-    resources,
-    pdfFunctionFactory,
-    globalColorSpaceCache,
-    localColorSpaceCache
-  ) {
+  constructor(stream, cs, fn) {
     super();
-    if (!(stream instanceof BaseStream)) {
-      throw new FormatError("Mesh data is not a stream");
-    }
     const dict = stream.dict;
     this.shadingType = dict.get("ShadingType");
     this.bbox = lookupNormalRect(dict.getArray("BBox"), null);
-    const cs = ColorSpaceUtils.parse({
-      cs: dict.getRaw("CS") || dict.getRaw("ColorSpace"),
-      xref,
-      resources,
-      pdfFunctionFactory,
-      globalColorSpaceCache,
-      localColorSpaceCache,
-    });
     this.background = dict.has("Background")
       ? cs.getRgb(dict.get("Background"), 0)
-      : null;
-
-    const fnObj = dict.getRaw("Function");
-    const fn = fnObj
-      ? parseShadingFunction(fnObj, pdfFunctionFactory, 1, cs.numComps)
       : null;
 
     this.coords = [];

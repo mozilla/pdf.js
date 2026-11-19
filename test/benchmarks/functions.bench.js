@@ -18,7 +18,6 @@ import { benchmark } from "./bench_utils.js";
 import { captureImages } from "./image_utils.js";
 import { captureShadings } from "./shading_utils.js";
 import { describe } from "vitest";
-import { Pattern } from "../../src/core/pattern.js";
 
 const SHADINGS = [
   { kind: "axial, exponential", filename: "bug1019475_1.pdf" },
@@ -53,9 +52,11 @@ const DEVICEN_IMAGES = await captureImages(
 
 describe("functions", () => {
   for (const { kind, filename, shadings } of SHADINGS) {
-    benchmark(`Pattern.parseShading: ${kind} (${filename})`, () =>
-      shadings.map(input => Pattern.parseShading(...input.args()).getIR())
-    );
+    benchmark(`Pattern.parseShading: ${kind} (${filename})`, async () => {
+      for (const input of shadings) {
+        await input.getIR();
+      }
+    });
   }
 
   benchmark(
