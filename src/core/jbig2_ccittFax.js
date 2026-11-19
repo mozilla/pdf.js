@@ -14,7 +14,6 @@
  */
 
 import { BaseException, shadow } from "../shared/util.js";
-import JBig2 from "../../external/jbig2/jbig2.js";
 import { WasmImage } from "./wasm_image.js";
 
 class Jbig2Error extends BaseException {
@@ -33,7 +32,10 @@ class JBig2CCITTFaxImage extends WasmImage {
   }
 
   async decode(bytes, width, height, globals, CCITTOptions) {
-    const module = await this._getModule(JBig2);
+    const module = await this._getModule(
+      () =>
+        import(/* webpackChunkName: "jbig2" */ "../../external/jbig2/jbig2.js")
+    );
 
     if (!module) {
       throw new Jbig2Error("JBig2 failed to initialize");

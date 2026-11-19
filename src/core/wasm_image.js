@@ -66,15 +66,17 @@ class WasmImage {
     }
   }
 
-  _getModule(ImageDecoder) {
+  _getModule(loadDecoder) {
     if (!this.#modulePromise) {
       const { promise, resolve } = createPromiseCapability();
       this.#modulePromise = Promise.race([
         promise,
-        ImageDecoder({
-          warn,
-          instantiateWasm: this.#instantiateWasm.bind(this, resolve),
-        }),
+        loadDecoder().then(({ default: createDecoder }) =>
+          createDecoder({
+            warn,
+            instantiateWasm: this.#instantiateWasm.bind(this, resolve),
+          })
+        ),
       ]);
     }
     return this.#modulePromise;

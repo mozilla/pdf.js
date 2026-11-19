@@ -14,7 +14,6 @@
  */
 
 import { BaseException, shadow } from "../shared/util.js";
-import OpenJPEG from "../../external/openjpeg/openjpeg.js";
 import { WasmImage } from "./wasm_image.js";
 
 class JpxError extends BaseException {
@@ -43,7 +42,12 @@ class JpxImage extends WasmImage {
   ) {
     const padComponents = numComponents !== undefined;
     numComponents ??= 4;
-    const module = await this._getModule(OpenJPEG);
+    const module = await this._getModule(
+      () =>
+        import(
+          /* webpackChunkName: "openjpeg" */ "../../external/openjpeg/openjpeg.js"
+        )
+    );
 
     if (!module) {
       throw new JpxError("OpenJPEG failed to initialize");
