@@ -32,6 +32,8 @@ import { removeNullCharacters } from "./ui_utils.js";
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {boolean} [enablePermissions]
+ * @property {number} [newTextLayerMode] - 1 to use the text layer fonts, 2 to
+ *   use them with their glyph boxes drawn in red.
  * @property {Function} [onAppend]
  * @property {AbortSignal} [abortSignal]
  */
@@ -53,6 +55,8 @@ class TextLayerBuilder {
 
   #enablePermissions = false;
 
+  #textContentParams;
+
   #onAppend = null;
 
   #removeOwnSelectionListener = null;
@@ -73,6 +77,7 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     enablePermissions = false,
+    newTextLayerMode = 0,
     onAppend = null,
     abortSignal = null,
   }) {
@@ -80,12 +85,22 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
+    const debugTextLayerFonts = newTextLayerMode === 2;
+    this.#textContentParams = {
+      includeMarkedContent: true,
+      disableNormalization: true,
+      includeTextLayerFonts: newTextLayerMode === 1 || debugTextLayerFonts,
+      debugTextLayerFonts,
+    };
     this.#onAppend = onAppend;
     this.#abortSignal = abortSignal;
 
     this.div = document.createElement("div");
     this.div.tabIndex = 0;
     this.div.className = "textLayer";
+    if (debugTextLayerFonts) {
+      this.div.classList.add("debugFonts");
+    }
   }
 
   /**
@@ -105,10 +120,7 @@ class TextLayerBuilder {
     this.cancel();
     this.#textLayer = new TextLayer({
       textContentSource: this.pdfPage.streamTextContent(
-        textContentParams || {
-          includeMarkedContent: true,
-          disableNormalization: true,
-        }
+        textContentParams || this.#textContentParams
       ),
       images,
       container: this.div,

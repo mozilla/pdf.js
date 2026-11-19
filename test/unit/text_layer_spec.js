@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
+import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { DEFAULT_FONT_SIZE, TextLayer } from "../../src/display/text_layer.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
-import { isNodeJS } from "../../src/shared/util.js";
 import { OutputScale } from "../../src/display/display_utils.js";
 
 describe("textLayer", function () {
@@ -251,6 +251,154 @@ describe("textLayer", function () {
     expect(transform2).toEqual(serialTransform2);
 
     await loadingTask.destroy();
+  });
+
+  describe("with text layer fonts", function () {
+    let loadingTask, textContent, viewport, textLayers;
+
+    const hasFont = (name, ownerDocument = document) =>
+      [...ownerDocument.fonts].some(
+        ({ family }) => family.replaceAll('"', "") === name
+      );
+
+    function createTextLayer(ownerDocument = document) {
+      const textLayer = new TextLayer({
+        textContentSource: textContent,
+        container: ownerDocument.createElement("div"),
+        viewport,
+      });
+      textLayers.push(textLayer);
+      return textLayer;
+    }
+
+    beforeEach(async function () {
+      if (isNodeJS) {
+        pending("document.createElement is not supported in Node.js.");
+      }
+      textLayers = [];
+      loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
+      const pdfDocument = await loadingTask.promise;
+      const page = await pdfDocument.getPage(1);
+      textContent = await page.getTextContent({
+        disableNormalization: true,
+        includeTextLayerFonts: true,
+      });
+      viewport = page.getViewport({ scale: 1 });
+    });
+
+    afterEach(async function () {
+      for (const textLayer of textLayers || []) {
+        textLayer.cancel();
+      }
+      await loadingTask?.destroy();
+    });
+
+    it("lays out the text and shares the fonts until the last cancellation", async function () {
+      const first = createTextLayer();
+      const second = createTextLayer();
+      await Promise.all(textLayers.map(textLayer => textLayer.render()));
+
+      const { pageHeight, pageY } = viewport.rawDims;
+      const { items, styles } = textContent;
+      const names = new Set();
+      expect(first.textDivs.length).toEqual(items.length);
+      for (const [i, { style }] of first.textDivs.entries()) {
+        const { name, ascent } = styles[items[i].fontName].textLayerFont;
+        names.add(name);
+        expect(style.fontFamily).toMatch(new RegExp(`^"?${name}"?, `));
+        // The span is moved up by the ascent of the font.
+        const [, , , d, , f] = items[i].transform;
+        expect(parseFloat(style.top)).toBeCloseTo(
+          (100 * (pageY + pageHeight - f - ascent * d)) / pageHeight,
+          2
+        );
+      }
+      expect([...names].every(name => hasFont(name))).toBeTrue();
+
+      first.cancel();
+      expect([...names].every(name => hasFont(name))).toBeTrue();
+      second.cancel();
+      expect([...names].some(name => hasFont(name))).toBeFalse();
+    });
+
+    it("loads and measures fonts in the container's document", async function () {
+      const iframe = document.createElement("iframe");
+      document.body.append(iframe);
+      const { contentDocument } = iframe;
+      const inner = createTextLayer(contentDocument);
+      const outer = createTextLayer();
+      const { name } =
+        textContent.styles[textContent.items[0].fontName].textLayerFont;
+
+      try {
+        await inner.render();
+        expect(hasFont(name, contentDocument)).toBeTrue();
+        expect(hasFont(name)).toBeFalse();
+
+        await outer.render();
+        expect(hasFont(name)).toBeTrue();
+        const getScales = ({ textDivs }) =>
+          textDivs.map(({ style }) => style.getPropertyValue("--scale-x"));
+        expect(getScales(inner)).toEqual(getScales(outer));
+
+        inner.cancel();
+        expect(hasFont(name, contentDocument)).toBeFalse();
+        expect(hasFont(name)).toBeTrue();
+      } finally {
+        inner.cancel();
+        TextLayer.cleanup();
+        iframe.remove();
+      }
+    });
+
+    it("doesn't load fonts when cancelled before rendering starts", async function () {
+      const { name } =
+        textContent.styles[textContent.items[0].fontName].textLayerFont;
+      const textLayer = createTextLayer();
+      const promise = textLayer.render();
+      textLayer.cancel();
+      await expectAsync(promise).toBeRejectedWith(jasmine.any(AbortException));
+      await new Promise(resolve => {
+        setTimeout(resolve, 0);
+      });
+      expect(textLayer.textDivs).toEqual([]);
+      expect(hasFont(name)).toBeFalse();
+    });
+
+    it("cancels rendering while the fonts are still loading", async function () {
+      const loading = Promise.withResolvers();
+      const started = Promise.withResolvers();
+      spyOnProperty(FontFace.prototype, "loaded", "get").and.callFake(() => {
+        started.resolve();
+        return loading.promise;
+      });
+
+      const textLayer = createTextLayer();
+      const promise = textLayer.render();
+      try {
+        await started.promise;
+        textLayer.cancel();
+        await expectAsync(promise).toBeRejectedWith(
+          jasmine.any(AbortException)
+        );
+        expect(textLayer.textDivs).toEqual([]);
+      } finally {
+        loading.resolve();
+      }
+    });
+
+    it("removes a failed font and renders with the fallback font", async function () {
+      const { textLayerFont } =
+        textContent.styles[textContent.items[0].fontName];
+      textLayerFont.data = new Uint8Array(1);
+      const textLayer = createTextLayer();
+      await textLayer.render();
+
+      expect(hasFont(textLayerFont.name)).toBeFalse();
+      expect(textLayer.textDivs[0].style.fontFamily).not.toContain(
+        textLayerFont.name
+      );
+    });
   });
 
   it("measures the text with the correct font after computing the ascent", async function () {

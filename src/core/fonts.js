@@ -3108,10 +3108,18 @@ class Font {
       lineGap: signedInt16(tables.hhea.data[8], tables.hhea.data[9]),
     };
 
-    // PDF FontDescriptor metrics lie -- using data from actual font.
-    this.ascent = metricsOverride.ascent / metricsOverride.unitsPerEm;
-    this.descent = metricsOverride.descent / metricsOverride.unitsPerEm;
-    this.lineGap = metricsOverride.lineGap / metricsOverride.unitsPerEm;
+    // PDF FontDescriptor metrics lie -- using data from actual font, unless
+    // they're obviously wrong.
+    const { unitsPerEm, ascent, descent, lineGap } = metricsOverride;
+    // Four ems leaves room for unusually tall fonts while filtering out
+    // implausible heights that would misplace text layer spans.
+    if (ascent > 0 && descent <= 0 && ascent - descent <= 4 * unitsPerEm) {
+      this.ascent = ascent / unitsPerEm;
+      this.descent = descent / unitsPerEm;
+      this.lineGap = lineGap / unitsPerEm;
+    } else {
+      this.lineGap = 0;
+    }
 
     if (this.cssFontInfo?.lineHeight) {
       this.lineHeight = this.cssFontInfo.metrics.lineHeight;
@@ -3942,4 +3950,4 @@ class ErrorFont {
   }
 }
 
-export { ErrorFont, Font };
+export { createCmapTable, createNameTable, createPostTable, ErrorFont, Font };

@@ -613,6 +613,15 @@ const defaultOptions = new Map([
     },
   ],
   [
+    "newTextLayerMode",
+    {
+      // 1 to enable, 2 to enable with the glyph boxes drawn, else disabled.
+      /** @type {number} */
+      value: 1,
+      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+    },
+  ],
+  [
     "forcePageColors",
     {
       /** @type {boolean} */

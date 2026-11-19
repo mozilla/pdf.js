@@ -59,6 +59,7 @@ import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { CipherTransformFactory } from "../../src/core/crypto.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
 import { FontRendererFactory } from "../../src/core/font_renderer.js";
+import { FontTestData } from "./font_test_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
 import { MessageHandler } from "../../src/shared/message_handler.js";
@@ -5089,6 +5090,128 @@ page 1 / 3`);
       canvasFactory.destroy(canvasAndCtx);
 
       expect(pdfPage.commonObjs.has(fontName)).toBeTrue();
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with the descriptor metrics of a font with wrong ones (issue 16839)", async function () {
+      const loadingTask = getDocument(buildGetDocumentParams("issue16839.pdf"));
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items, styles } = await pdfPage.getTextContent();
+
+      // The descent in the hhea table is positive and larger than ten ems.
+      const item = items.find(({ str }) => str.startsWith("Hybrid"));
+      const { ascent, descent } = styles[item.fontName];
+      expect(ascent).toBeCloseTo(0.765, 6);
+      expect(descent).toBeCloseTo(-0.207, 6);
+
+      // Hence the text layer font has the ascent of the descriptor.
+      const { styles: fontStyles } = await pdfPage.getTextContent({
+        includeTextLayerFonts: true,
+      });
+      expect(fontStyles[item.fontName].textLayerFont.ascent).toBeCloseTo(
+        0.765 / 0.972,
+        6
+      );
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with the fonts of the text layer", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("tracemonkey.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+
+      const textContent = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
+      expect(
+        Object.values(textContent.styles).some(s => "textLayerFont" in s)
+      ).toBeFalse();
+
+      const { items, styles } = await pdfPage.getTextContent({
+        disableNormalization: true,
+        includeTextLayerFonts: true,
+      });
+      expect(items).toEqual(textContent.items);
+      const item = items.find(({ str }) => str === "identi\ufb01es");
+      const { textLayerFont } = styles[item.fontName];
+      expect(textLayerFont.name).toMatch(/^g_d\d+_tf\d+$/);
+      expect(textLayerFont.ascent).toBeGreaterThan(0.5);
+      expect(textLayerFont.ascent).toBeLessThan(0.95);
+
+      // The advances of the font are the ones of the PDF font.
+      const font = new FontTestData(textLayerFont.data);
+      let advance = 0;
+      for (const char of item.str) {
+        advance += font.getAdvance(char.codePointAt(0));
+      }
+      const fontSize = Math.hypot(item.transform[2], item.transform[3]);
+      expect((advance * fontSize) / 1000).toBeCloseTo(item.width, 0);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with the gaps as spaces in the fonts of the text layer", async function () {
+      const content =
+        "BT /F1 20 Tf 10 150 Td [(A) -300 (B) -300 (A) -400 (B)] TJ ET";
+      const loadingTask = getDocument({
+        data: assemblePdf([
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+            "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\n" +
+            "endobj\n",
+          `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
+            "endstream\nendobj\n",
+          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
+            "/Encoding /WinAnsiEncoding >>\nendobj\n",
+        ]),
+      });
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items, styles } = await pdfPage.getTextContent({
+        includeTextLayerFonts: true,
+      });
+
+      expect(items.map(({ str }) => str)).toEqual(["A B A B"]);
+      // No space is drawn: the spaces get the median gap.
+      const font = new FontTestData(
+        styles[items[0].fontName].textLayerFont.data
+      );
+      expect(font.getAdvance(0x20)).toBeCloseTo(300, 0);
+      expect(font.getAdvance(0x41)).toBeCloseTo(667, 0);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with the fonts of the text layer for a vertical text", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("vertical.pdf", {
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        })
+      );
+      const pdfDoc = await loadingTask.promise;
+      const pdfPage = await pdfDoc.getPage(1);
+      const { items, styles } = await pdfPage.getTextContent({
+        disableNormalization: true,
+        includeTextLayerFonts: true,
+      });
+
+      const item = items.find(
+        ({ str }) => str === "\u3042\u3044\u3046\u3048\u304a"
+      );
+      const { vertical, textLayerFont } = styles[item.fontName];
+      expect(vertical).toBeTrue();
+      // Centered on the column, with the vertical advances.
+      expect(textLayerFont.ascent).toEqual(0.5);
+      expect(
+        new FontTestData(textLayerFont.data).getAdvance(0x3042)
+      ).toBeCloseTo(1000, 0);
 
       await loadingTask.destroy();
     });

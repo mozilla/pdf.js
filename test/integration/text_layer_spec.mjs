@@ -30,6 +30,7 @@ import {
   getRect,
   getSelector,
   getSpanRectFromText,
+  getTextLayerFonts,
   kbSelectAll,
   loadAndWait,
   scrollIntoView,
@@ -1602,6 +1603,114 @@ describe("Text layer", () => {
           expect(count).toBe(6);
         })
       );
+    });
+  });
+
+  describe("with the text layer fonts", () => {
+    let pages;
+
+    const load = async mode => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`,
+        undefined,
+        undefined,
+        { newTextLayerMode: mode }
+      );
+    };
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    const checkFonts = async mode => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const { color, fontFamily } = await page.evaluate(() => {
+            const span = [
+              ...document.querySelectorAll(
+                `.page[data-page-number = "1"] .textLayer span`
+              ),
+            ].find(({ textContent }) => textContent === "Andreas Gal");
+            const style = getComputedStyle(span);
+            return { color: style.color, fontFamily: style.fontFamily };
+          });
+          expect(color)
+            .withContext(browserName)
+            .toEqual(mode === 2 ? "rgb(255, 0, 0)" : "rgba(0, 0, 0, 0)");
+          expect(/^"?g_d\d+_tf\d+"?, /.test(fontFamily))
+            .withContext(`${browserName}: ${fontFamily}`)
+            .toEqual(mode !== 0);
+        })
+      );
+    };
+
+    describe("with `newTextLayerMode` set to 0", () => {
+      beforeEach(() => load(0));
+
+      it("must not use the text layer fonts", async () => {
+        await checkFonts(0);
+      });
+    });
+
+    describe("with `newTextLayerMode` set to 1", () => {
+      beforeEach(() => load(1));
+
+      it("must use the text layer fonts", async () => {
+        await checkFonts(1);
+      });
+    });
+
+    describe("with `newTextLayerMode` set to 2", () => {
+      beforeEach(() => load(2));
+
+      it("must use the text layer fonts with the glyph boxes", async () => {
+        await checkFonts(2);
+      });
+    });
+
+    describe("when the pages are destroyed", () => {
+      beforeEach(() => load(1));
+
+      it("must unload the fonts of the pages removed from the cache", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const pagesCount = await page.evaluate(
+              () => window.PDFViewerApplication.pagesCount
+            );
+            for (let i = 2; i <= pagesCount; i++) {
+              await page.evaluate(n => {
+                window.PDFViewerApplication.page = n;
+              }, i);
+              await page.waitForSelector(
+                `.page[data-page-number = "${i}"] .textLayer .endOfContent`
+              );
+            }
+            // The first pages aren't in the cache anymore.
+            expect(await page.$(`.page[data-page-number = "1"] .textLayer`))
+              .withContext(browserName)
+              .toBeNull();
+
+            const { loaded, used } = await getTextLayerFonts(page);
+            expect(used.length).withContext(browserName).toBeGreaterThan(0);
+            expect(loaded).withContext(browserName).toEqual(used);
+          })
+        );
+      });
+
+      it("must unload the fonts when the document is closed", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const { loaded } = await getTextLayerFonts(page);
+            expect(loaded.length).withContext(browserName).toBeGreaterThan(0);
+
+            await page.evaluate(() => window.PDFViewerApplication.close());
+            expect((await getTextLayerFonts(page)).loaded)
+              .withContext(browserName)
+              .toEqual([]);
+          })
+        );
+      });
     });
   });
 });

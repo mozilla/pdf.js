@@ -156,6 +156,28 @@ function closePages(pages) {
   return Promise.all(pages.map(([_, page]) => closeSinglePage(page)));
 }
 
+/**
+ * @param {Page} page
+ * @returns {Promise<object>} The names of the loaded text layer fonts and of
+ *   the ones used by the text layer spans.
+ */
+function getTextLayerFonts(page) {
+  return page.evaluate(() => {
+    const isTextLayerFont = name => /^g_d\d+_tf\d+$/.test(name);
+    const loaded = [...document.fonts]
+      .map(({ family }) => family.replaceAll('"', ""))
+      .filter(isTextLayerFont);
+    const used = new Set();
+    for (const span of document.querySelectorAll(".textLayer span")) {
+      const name = span.style.fontFamily.split(",")[0].replaceAll('"', "");
+      if (isTextLayerFont(name)) {
+        used.add(name);
+      }
+    }
+    return { loaded: loaded.sort(), used: [...used].sort() };
+  });
+}
+
 async function closeSinglePage(page) {
   const coverage = await page.evaluate(async () => {
     // Close the viewer gracefully, and clear local storage to avoid state
@@ -1258,6 +1280,7 @@ export {
   getSelector,
   getSerialized,
   getSpanRectFromText,
+  getTextLayerFonts,
   getThumbnailSelector,
   getXY,
   highlightSpan,

@@ -236,6 +236,15 @@
     "type": "text"
   },
   {
+    "id": "tracemonkey-text-layer-fonts",
+    "file": "pdfs/tracemonkey.pdf",
+    "md5": "9a192d8b1a7dc652a19835f6f08098bd",
+    "rounds": 1,
+    "lastPage": 3,
+    "type": "text",
+    "textLayerFonts": true
+  },
+  {
     "id": "tracemonkey-forced-colors-eq",
     "file": "pdfs/tracemonkey.pdf",
     "md5": "9a192d8b1a7dc652a19835f6f08098bd",
@@ -998,6 +1007,14 @@
     "type": "text"
   },
   {
+    "id": "arabiccidtruetype-text-layer-fonts",
+    "file": "pdfs/ArabicCIDTrueType.pdf",
+    "md5": "d66dbd18bdb572d3ac8b88b32de2ece6",
+    "rounds": 1,
+    "type": "text",
+    "textLayerFonts": true
+  },
+  {
     "id": "complexttffont-pdf",
     "file": "pdfs/complex_ttf_font.pdf",
     "md5": "76de93f9116b01b693bf8583b3e76d91",
@@ -1044,6 +1061,16 @@
     "type": "text"
   },
   {
+    "id": "taro-text-layer-fonts",
+    "file": "pdfs/TaroUTR50SortedList112.pdf",
+    "md5": "ce63eab622ff473a43f8a8de85ef8a46",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 4,
+    "type": "text",
+    "textLayerFonts": true
+  },
+  {
     "id": "issue15594",
     "file": "pdfs/issue15594_reduced.pdf",
     "md5": "6820808944a2a84c72d00a0e1476227b",
@@ -1056,6 +1083,14 @@
     "md5": "aed187f53e969ccdcbab0bb4c59f9e46",
     "rounds": 1,
     "type": "text"
+  },
+  {
+    "id": "rotated-text-layer-fonts",
+    "file": "pdfs/rotated.pdf",
+    "md5": "aed187f53e969ccdcbab0bb4c59f9e46",
+    "rounds": 1,
+    "type": "text",
+    "textLayerFonts": true
   },
   {
     "id": "issue3115",
@@ -3533,6 +3568,15 @@
     "link": false,
     "rounds": 1,
     "type": "text"
+  },
+  {
+    "id": "simpletype3font-text-layer-fonts",
+    "file": "pdfs/simpletype3font.pdf",
+    "md5": "b374c7543920840c61999e9e86939f99",
+    "link": false,
+    "rounds": 1,
+    "type": "text",
+    "textLayerFonts": true
   },
   {
     "id": "issue10717",

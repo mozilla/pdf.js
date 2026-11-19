@@ -62,6 +62,17 @@ class FontLoader {
     this._document.fonts.delete(nativeFontFace);
   }
 
+  static async loadBinaryFontFace(fontSet, fontFace) {
+    fontSet.add(fontFace);
+    try {
+      // A FontFace created from binary data starts loading on construction.
+      await fontFace.loaded;
+    } catch (reason) {
+      fontSet.delete(fontFace);
+      throw reason;
+    }
+  }
+
   insertRule(rule) {
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
       throw new Error("Not implemented: insertRule");
@@ -172,12 +183,12 @@ class FontLoader {
     if (!fontFace) {
       return;
     }
-    this.addNativeFontFace(fontFace);
+    this.#nativeFontFaces.add(fontFace);
     try {
-      await fontFace.loaded;
+      await FontLoader.loadBinaryFontFace(this._document.fonts, fontFace);
     } catch (ex) {
       warn(`Failed to load font '${fontFace.family}': '${ex}'.`);
-      this.removeNativeFontFace(fontFace);
+      this.#nativeFontFaces.delete(fontFace);
       if (!font.missingFile) {
         // Use paths when an embedded or replacement font fails to load.
         font.disableFontFace = true;

@@ -1116,21 +1116,17 @@ class WorkerMessageHandler {
 
     handler.on(
       "GetTextContent",
-      function (
-        { pageId, pageIndex, includeMarkedContent, disableNormalization },
-        sink
-      ) {
+      function ({ pageId, pageIndex, ...params }, sink) {
         pdfManager.getPage(pageId).then(function (page) {
           const task = new WorkerTask("GetTextContent: page " + pageIndex);
           startWorkerTask(task);
 
           page
             .extractTextContent({
+              ...params,
               handler,
               task,
               sink,
-              includeMarkedContent,
-              disableNormalization,
             })
             .then(
               () => {
