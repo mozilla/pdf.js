@@ -58,7 +58,6 @@ import {
   isKnownFontName,
 } from "./standard_fonts.js";
 import { getTilingPatternIR, Pattern } from "./pattern.js";
-import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import {
   IDENTITY_MATRIX,
   isNumberArray,
@@ -4857,6 +4856,9 @@ class PartialEvaluator {
       }
     } else if (cssFontInfo) {
       // We've a missing XFA font.
+      const { getXfaFontDict, getXfaFontName } = await import(
+        /* webpackChunkName: "xfa" */ "./xfa/factory.js"
+      );
       const xfaFont = getXfaFontName(fontName.name);
       if (xfaFont) {
         cssFontInfo.fontFamily = `${cssFontInfo.fontFamily}-PdfJS-XFA`;

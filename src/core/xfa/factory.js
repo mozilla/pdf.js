@@ -13,21 +13,13 @@
  * limitations under the License.
  */
 
-import {
-  $appendChild,
-  $globalData,
-  $nodeName,
-  $text,
-  $toHTML,
-  $toPages,
-} from "./symbol_utils.js";
+import { $globalData, $toPages } from "./symbol_utils.js";
 import { Binder } from "./bind.js";
 import { DataHandler } from "./data.js";
 import { FontFinder } from "./fonts.js";
 import { stripQuotes } from "./utils.js";
 import { warn } from "../../shared/util.js";
 import { XFAParser } from "./parser.js";
-import { XhtmlNamespace } from "./xhtml.js";
 
 class XFAFactory {
   constructor(data) {
@@ -130,41 +122,7 @@ class XFAFactory {
   static _createDocument(data) {
     return !data.get("/xdp:xdp") ? data.get("xdp:xdp") : data.values().join("");
   }
-
-  static getRichTextAsHtml(rc) {
-    if (!rc || typeof rc !== "string") {
-      return null;
-    }
-
-    try {
-      let root = new XFAParser(XhtmlNamespace, /* richText */ true).parse(rc);
-      if (!["body", "xhtml"].includes(root[$nodeName])) {
-        // No body, so create one.
-        const newRoot = XhtmlNamespace.body({});
-        newRoot[$appendChild](root);
-        root = newRoot;
-      }
-
-      const result = root[$toHTML]();
-      if (!result.success) {
-        return null;
-      }
-
-      const { html } = result;
-      const { attributes } = html;
-      if (attributes) {
-        attributes.class &&= attributes.class.filter(
-          attr => !attr.startsWith("xfa")
-        );
-        attributes.dir = "auto";
-      }
-
-      return { html, str: root[$text]() };
-    } catch (e) {
-      warn(`XFA - an error occurred during parsing of rich text: ${e}`);
-    }
-    return null;
-  }
 }
 
 export { XFAFactory };
+export { getXfaFontDict, getXfaFontName } from "../xfa_fonts.js";

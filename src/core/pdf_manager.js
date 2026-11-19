@@ -20,10 +20,14 @@ import {
   unreachable,
   warn,
 } from "../shared/util.js";
+import {
+  MissingDataException,
+  XRefEntryException,
+  XRefParseException,
+} from "./core_utils.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
 import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
-import { MissingDataException } from "./core_utils.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFDocument } from "./document.js";
 import { PDFFunctionFactory } from "./function.js";
@@ -125,6 +129,18 @@ class BasePdfManager {
     await this.ensureDoc("checkHeader");
     await this.ensureDoc("parseStartXRef");
     await this.ensureDoc("parse", [recoveryMode]);
+
+    if (this.enableXfa) {
+      try {
+        await this.ensureDoc("loadXfaFactory");
+      } catch (reason) {
+        if (reason instanceof XRefEntryException && !recoveryMode) {
+          await this.cleanup();
+          throw new XRefParseException();
+        }
+        warn(`Cannot load XFA data: "${reason}".`);
+      }
+    }
 
     // Check that at least the first page can be successfully loaded,
     // since otherwise the XRef table is definitely not valid.

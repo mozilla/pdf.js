@@ -1806,6 +1806,40 @@ describe("api", function () {
       await loadingTask.destroy();
     });
 
+    it("recovers a broken cross-reference to an XFA packet", async function () {
+      const xdp = `
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform>
+      <pageSet>
+        <pageArea>
+          <contentArea w="96pt" h="96pt"/>
+          <medium short="96pt" long="96pt"/>
+        </pageArea>
+      </pageSet>
+      <draw w="48pt" h="24pt"><value><text>XFA</text></value></draw>
+    </subform>
+  </template>
+</xdp:xdp>`;
+      const pdf = assemblePdf([
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R /NeedsRendering true " +
+          "/AcroForm << /XFA [(xdp:xdp) 4 0 R] >> >>\nendobj\n",
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 72 72] >>\nendobj\n",
+        `4 0 obj\n<< /Length ${xdp.length} >>\nstream\n${xdp}\nendstream\nendobj\n`,
+      ]);
+      // Point the last xref entry to the catalog instead of the XFA packet.
+      const data = stringToBytes(
+        bytesToString(pdf).replace(/\d{10}(?= 00000 n \ntrailer)/, "0000000009")
+      );
+      const loadingTask = getDocument({ data, enableXfa: true });
+      const doc = await loadingTask.promise;
+      expect(doc.isPureXfa).toBeTrue();
+      expect(doc.numPages).toEqual(1);
+
+      await loadingTask.destroy();
+    });
+
     it("gets page", async function () {
       const data = await pdfDocument.getPage(1);
       expect(data).toBeInstanceOf(PDFPageProxy);
