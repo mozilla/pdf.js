@@ -55,7 +55,6 @@ import {
   findContrastColor,
   getRGB,
   getRGBA,
-  OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
 } from "./display/display_utils.js";
@@ -90,6 +89,7 @@ import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { HighlightOutliner } from "./display/editor/drawers/highlight.js";
 import { isValidExplicitDest } from "./display/api_utils.js";
 import { MathClamp } from "./shared/math_clamp.js";
+import { OutputScale } from "./display/output_scale.js";
 import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
 import { TextLayerImages } from "./display/text_layer_images.js";

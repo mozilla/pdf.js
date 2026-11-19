@@ -23,7 +23,7 @@ import { BBoxReader } from "./canvas_dependency_tracker.js";
 import { getWorkerSrc } from "./api_utils.js";
 import { GlobalWorkerOptions } from "./worker_options.js";
 import { MessageHandler } from "../shared/message_handler.js";
-import { OutputScale } from "./display_utils.js";
+import { OutputScale } from "./output_scale.js";
 import { setAnnotationCanvasName } from "./canvas.js";
 
 const PORT_CONNECTION_TIMEOUT = 5000; // ms

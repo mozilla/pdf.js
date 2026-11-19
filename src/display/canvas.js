@@ -43,7 +43,6 @@ import {
   getCurrentTransformInverse,
   getRGBA,
   makePathFromDrawOPS,
-  OutputScale,
   PixelsPerInch,
 } from "./display_utils.js";
 import {
@@ -610,11 +609,7 @@ class CanvasGraphics {
     objs,
     canvasFactory,
     filterFactory,
-    {
-      optionalContentConfig,
-      markedContentStack = null,
-      pixelRatio = OutputScale.pixelRatio,
-    },
+    { optionalContentConfig, markedContentStack = null, pixelRatio },
     annotationCanvasMap,
     pageColors,
     dependencyTracker,

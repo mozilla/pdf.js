@@ -67,6 +67,7 @@ import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { ObjectHandler } from "./object_handler.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
+import { OutputScale } from "./output_scale.js";
 import { PagesMapper } from "./pages_mapper.js";
 import { PageViewport } from "./page_viewport.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
@@ -3523,7 +3524,7 @@ class InternalRenderTask {
         this.objs,
         this.canvasFactory,
         this.filterFactory,
-        { optionalContentConfig },
+        { optionalContentConfig, pixelRatio: OutputScale.pixelRatio },
         this.annotationCanvasMap,
         this.pageColors,
         dependencyTracker,
