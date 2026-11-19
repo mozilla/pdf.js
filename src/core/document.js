@@ -1382,15 +1382,18 @@ class PDFDocument {
     if (!acroForm) {
       return;
     }
-    const resources = await acroForm.getAsync("DR");
-    if (!(resources instanceof Dict)) {
-      return;
+    // Without any fonts in /DR, the XFA layout still needs a font finder:
+    // the fonts it uses are then all loaded as missing fonts.
+    let resources = await acroForm.getAsync("DR");
+    if (resources instanceof Dict) {
+      await ObjectLoader.load(resources, ["Font"], this.xref);
+    } else {
+      resources = Dict.empty;
     }
-    await ObjectLoader.load(resources, ["Font"], this.xref);
 
-    const fontRes = resources.get("Font");
+    let fontRes = resources.get("Font");
     if (!(fontRes instanceof Dict)) {
-      return;
+      fontRes = Dict.empty;
     }
 
     const options = Object.assign(
