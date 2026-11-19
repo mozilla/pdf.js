@@ -5171,7 +5171,8 @@ class Subform extends XFAObject {
 
     if (this[$extra].attempt === maxRun) {
       if (this.overflow) {
-        this[$getTemplateRoot]()[$extra].overflowNode = this.overflow;
+        // The ancestors which overflow too come after this one.
+        this[$getTemplateRoot]()[$extra].overflowNodes.push(this.overflow);
       }
 
       if (!isSplittable) {
@@ -5415,7 +5416,7 @@ class Template extends XFAObject {
       });
     }
     this[$extra] = {
-      overflowNode: null,
+      overflowNodes: [],
       firstUnsplittable: null,
       currentContentArea: null,
       currentPageArea: null,
@@ -5596,14 +5597,19 @@ class Template extends XFAObject {
           continue;
         }
 
-        if (this[$extra].overflowNode) {
-          const node = this[$extra].overflowNode;
-          this[$extra].overflowNode = null;
+        if (this[$extra].overflowNodes.length > 0) {
+          const nodes = this[$extra].overflowNodes;
+          this[$extra].overflowNodes = [];
 
-          const overflowExtra = node[$getExtra]();
+          // Each subform which has been split gets its leader and trailer,
+          // and the outermost one gives the target.
+          let overflowExtra;
+          for (const node of nodes) {
+            overflowExtra = node[$getExtra]();
+            overflowExtra.addLeader = overflowExtra.leader !== null;
+            overflowExtra.addTrailer = overflowExtra.trailer !== null;
+          }
           const target = overflowExtra.target;
-          overflowExtra.addLeader = overflowExtra.leader !== null;
-          overflowExtra.addTrailer = overflowExtra.trailer !== null;
 
           flush(i);
 

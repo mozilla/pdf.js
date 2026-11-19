@@ -146,6 +146,75 @@ describe("XFAFactory", function () {
       );
     });
 
+    it("should repeat an overflow leader when an ancestor overflows too", async () => {
+      const parentOverflows = [
+        "",
+        // The parent has its own overflow: it must not hide the leader.
+        `<overflow target="#nextId"/>`,
+      ];
+      for (const parentOverflow of parentOverflows) {
+        const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" layout="tb" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea name="first" id="firstId">
+          <contentArea x="0pt" w="456pt" h="100pt"/>
+          <medium stock="default" short="456pt" long="100pt"/>
+        </pageArea>
+        <pageArea name="next" id="nextId">
+          <contentArea x="0pt" w="456pt" h="100pt"/>
+          <medium stock="default" short="456pt" long="100pt"/>
+        </pageArea>
+      </pageSet>
+      <subform name="part" layout="tb" w="456pt">
+        ${parentOverflow}
+        <subform name="list" layout="tb" w="456pt">
+          <subform name="caption" w="456pt" h="10pt">
+            <draw w="1pt" h="1pt"><value><text>caption</text></value></draw>
+          </subform>
+          <overflow leader="caption"/>
+          ${[1, 2, 3, 4]
+            .map(
+              n => `
+          <subform name="entry${n}" w="456pt" h="30pt">
+            <draw w="1pt" h="1pt"><value><text>entry${n}</text></value></draw>
+          </subform>`
+            )
+            .join("")}
+        </subform>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+        const factory = new XFAFactory(new Map([["xdp:xdp", xml]]));
+        factory.setFonts([]);
+        const context = parentOverflow || "no parent overflow";
+
+        expect(await factory.getNumPages())
+          .withContext(context)
+          .toEqual(2);
+
+        const [page1, page2] = (await factory.getPages()).children;
+        expect(searchHtmlNode(page1, "value", "entry3"))
+          .withContext(context)
+          .not.toBeNull();
+        expect(searchHtmlNode(page2, "value", "entry4"))
+          .withContext(context)
+          .not.toBeNull();
+        // The leader is laid out again at the top of the second page.
+        expect(searchHtmlNode(page2, "value", "caption"))
+          .withContext(context)
+          .not.toBeNull();
+      }
+    });
+
     it("should have an alt attribute from toolTip", async () => {
       const xml = `
 <?xml version="1.0"?>
