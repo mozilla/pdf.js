@@ -68,8 +68,14 @@ function babelPluginPDFJSPreprocessor(babel, ctx) {
 
   return {
     name: "babel-plugin-pdfjs-preprocessor",
-    manipulateOptions({ parserOpts }) {
-      parserOpts.attachComment = false;
+    manipulateOptions({ parserOpts, generatorOpts }) {
+      const namedWorkerChunks =
+        ctx.defines?.MOZCENTRAL && ctx.defines.WORKER_THREAD;
+      parserOpts.attachComment = !!namedWorkerChunks;
+      if (namedWorkerChunks) {
+        generatorOpts.shouldPrintComment = comment =>
+          /webpack(?:ChunkName|Ignore|Mode):|@vite-ignore/.test(comment);
+      }
     },
     visitor: {
       "ExportNamedDeclaration|ImportDeclaration": ({ node }) => {
