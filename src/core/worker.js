@@ -36,7 +36,6 @@ import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
 import { importPrintedAppearances } from "./editor/print_appearances.js";
 import { incrementalUpdate } from "./writer.js";
-import { PDFEditor } from "./editor/pdf_editor.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreeRoot } from "./struct_tree.js";
@@ -655,6 +654,9 @@ class WorkerMessageHandler {
         }
         let task;
         try {
+          const { PDFEditor } = await import(
+            /* webpackChunkName: "editor" */ "./editor/pdf_editor.js"
+          );
           const pdfEditor = new PDFEditor();
           task = new WorkerTask(`ExtractPages: ${pageInfos.length} page(s)`);
           startWorkerTask(task);
@@ -734,6 +736,9 @@ class WorkerMessageHandler {
         }
         // Rebuild the PDF to discard the unflattened incremental revision.
         manager = await load(flattenedData);
+        const { PDFEditor } = await import(
+          /* webpackChunkName: "editor" */ "./editor/pdf_editor.js"
+        );
         return await new PDFEditor().extractPages(
           [{ document: manager.pdfDocument }],
           null,
