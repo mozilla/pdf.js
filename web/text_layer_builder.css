@@ -65,7 +65,12 @@
   }
 
   .markedContent {
-    display: contents;
+    /* Chrome ignores aria-owns for an element without a layout box (e.g. one
+     * with `display: contents`), which disconnects the text from the
+     * structure tree (issue 20790). Being static, these elements still don't
+     * affect the positioning of their children. */
+    display: inline;
+    position: static;
   }
 
   span[role="img"] {
