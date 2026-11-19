@@ -16,7 +16,6 @@
 import { bytesToString, FormatError, info, shadow } from "../shared/util.js";
 import { Dict, Ref } from "./primitives.js";
 import { BaseStream } from "./base_stream.js";
-import { buildPostScriptFunction } from "./postscript/calculator.js";
 import { isNumberArray } from "./core_utils.js";
 import { LocalFunctionCache } from "./image_utils.js";
 import { MathClamp } from "../shared/math_clamp.js";
@@ -424,7 +423,7 @@ class PDFFunction {
     return setArity(constructStitchedFn, inputSize, numOutputs);
   }
 
-  static constructPostScript(factory, fn, dict) {
+  static async constructPostScript(factory, fn, dict) {
     const domain = toNumberArray(dict.getArray("Domain"));
     const range = toNumberArray(dict.getArray("Range"));
 
@@ -436,6 +435,9 @@ class PDFFunction {
       throw new FormatError("No range.");
     }
 
+    const { buildPostScriptFunction } = await import(
+      /* webpackChunkName: "postscript" */ "./postscript/calculator.js"
+    );
     const psCode = bytesToString(fn.peekBytes());
     const numInputs = domain.length / 2,
       numOutputs = range.length / 2;
