@@ -100,91 +100,6 @@ function getCurrentTransformInverse(ctx) {
   return [a, b, c, d, e, f];
 }
 
-/**
- * Scale factors for the canvas, necessary with HiDPI displays.
- */
-class OutputScale {
-  constructor() {
-    const { pixelRatio } = OutputScale;
-
-    /**
-     * @type {number} Horizontal scale.
-     */
-    this.sx = pixelRatio;
-
-    /**
-     * @type {number} Vertical scale.
-     */
-    this.sy = pixelRatio;
-  }
-
-  /**
-   * @type {boolean} Returns `true` when scaling is required, `false` otherwise.
-   */
-  get scaled() {
-    return this.sx !== 1 || this.sy !== 1;
-  }
-
-  /**
-   * @type {boolean} Returns `true` when scaling is symmetric,
-   *   `false` otherwise.
-   */
-  get symmetric() {
-    return this.sx === this.sy;
-  }
-
-  /**
-   * @returns {boolean} Returns `true` if scaling was limited,
-   *   `false` otherwise.
-   */
-  limitCanvas(width, height, maxPixels, maxDim, capAreaFactor = -1) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
-      return false;
-    }
-    let maxAreaScale = Infinity,
-      maxWidthScale = Infinity,
-      maxHeightScale = Infinity;
-
-    maxPixels = OutputScale.capPixels(maxPixels, capAreaFactor);
-    if (maxPixels > 0) {
-      maxAreaScale = Math.sqrt(maxPixels / (width * height));
-    }
-    if (maxDim > 0) {
-      maxWidthScale = maxDim / width;
-      maxHeightScale = maxDim / height;
-    }
-    const maxScale = Math.min(maxAreaScale, maxWidthScale, maxHeightScale);
-
-    if (this.sx > maxScale || this.sy > maxScale) {
-      this.sx = maxScale;
-      this.sy = maxScale;
-      return true;
-    }
-    return false;
-  }
-
-  static get pixelRatio() {
-    return globalThis.devicePixelRatio || 1;
-  }
-
-  static capPixels(maxPixels, capAreaFactor) {
-    if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("WORKER_THREAD")) &&
-      capAreaFactor >= 0
-    ) {
-      const winPixels = Math.ceil(
-        (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")
-          ? window.innerWidth * window.innerHeight
-          : window.screen.availWidth * window.screen.availHeight) *
-          this.pixelRatio ** 2 *
-          (1 + capAreaFactor / 100)
-      );
-      return maxPixels > 0 ? Math.min(maxPixels, winPixels) : winPixels;
-    }
-    return maxPixels;
-  }
-}
-
 function applyOpacity(color, opacity) {
   opacity = MathClamp(opacity ?? 1, 0, 1);
   const white = 255 * (1 - opacity);
@@ -403,7 +318,6 @@ export {
   getRGB,
   getRGBA,
   makePathFromDrawOPS,
-  OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
 };

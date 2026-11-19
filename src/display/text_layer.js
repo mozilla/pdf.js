@@ -29,7 +29,7 @@ import {
   warn,
 } from "../shared/util.js";
 import { FontLoader } from "./font_loader.js";
-import { OutputScale } from "./display_utils.js";
+import { OutputScale } from "./output_scale.js";
 import { setLayerDimensions } from "./dom_utils.js";
 
 /**

@@ -17,7 +17,7 @@ import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { DEFAULT_FONT_SIZE, TextLayer } from "../../src/display/text_layer.js";
 import { buildGetDocumentParams } from "./test_utils.js";
 import { getDocument } from "../../src/display/api.js";
-import { OutputScale } from "../../src/display/display_utils.js";
+import { OutputScale } from "../../src/display/output_scale.js";
 
 describe("textLayer", function () {
   it("creates textLayer from ReadableStream", async function () {
