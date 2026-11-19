@@ -1134,6 +1134,30 @@ describe("PostScript Type 4 lexer, parser, and Wasm compiler", function () {
       expect(r).toBeCloseTo(25, 9);
     });
 
+    it("CSE: shared subexpression first used in a branch of an if", function () {
+      // `in0 sin` is used in both branches, but not in the condition.
+      const src = "{ dup sin exch 0 gt { 1 add } if }";
+      const domain = [-360, 360];
+      const range = [-2, 2];
+      expect(compileAndRun(src, domain, range, [90])).toBeCloseTo(2, 9);
+      expect(compileAndRun(src, domain, range, [-90])).toBeCloseTo(-1, 9);
+      expect(compileAndRun(src, domain, range, [-30])).toBeCloseTo(-0.5, 9);
+    });
+
+    it("CSE: condition shared by several ternary nodes", function () {
+      // `in0 2 mul` is used in the condition of the two ternary nodes created
+      // by the `if`, and then as the last output: its local mustn't be reused
+      // in the meantime, e.g. for the temporary needed by `cvi`.
+      const r = compileAndRun(
+        "{ exch 2 mul dup dup dup dup 1 gt { pop pop 7 8 } if" +
+          "  5 -1 roll cvi 3 and 5 -1 roll }",
+        [0, 10, 0, 10],
+        [-100, 100, -100, 100, -100, 100, -100, 100, -100, 100],
+        [3.25, 6.5]
+      );
+      expect(r).toEqual([6.5, 7, 8, 2, 6.5]);
+    });
+
     it("reuses temporary locals across sequential shared-subexpression codegen", function () {
       const bytes = compilePostScriptToWasm(
         "{ dup 1 add dup mul exch 2 add dup mul add }",
