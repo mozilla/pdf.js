@@ -657,10 +657,35 @@ function createWorkerBundle(defines) {
   };
   const workerFileConfig = createWebpackConfig(workerDefines, {
     filename: workerDefines.MINIFIED ? "pdf.worker.min.mjs" : "pdf.worker.mjs",
+    // Keep the standalone worker used by generic builds self-contained.
+    asyncChunks: workerDefines.MOZCENTRAL,
+    ...(workerDefines.MOZCENTRAL && {
+      chunkFilename: "pdf.worker.[name].mjs",
+      chunkFormat: "module",
+      chunkLoading: "import",
+    }),
     library: {
       type: "module",
     },
   });
+  if (workerDefines.MOZCENTRAL) {
+    workerFileConfig.optimization.chunkIds = "named";
+    workerFileConfig.optimization.splitChunks = {
+      cacheGroups: {
+        default: {
+          // Keep the XHTML parser in both chunks so each can load on its own.
+          test: module =>
+            !/[/\\]src[/\\]core[/\\]xfa[/\\]/.test(module.nameForCondition()),
+          idHint: "",
+          minChunks: 2,
+          // Share small modules too, e.g. the writer.
+          minSize: 0,
+          priority: -20,
+          reuseExistingChunk: true,
+        },
+      },
+    };
+  }
   return createWebpackStream("./src/pdf.worker.js", workerFileConfig);
 }
 

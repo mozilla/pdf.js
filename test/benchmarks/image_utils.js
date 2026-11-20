@@ -211,19 +211,21 @@ async function createSyntheticImage({
   colorSpace,
   smask = false,
 }) {
-  const image = new PDFImage({
+  const stream = createImageStream(
+    width,
+    height,
+    colorSpace,
+    (x, y, c) => (x + (c + 1) * y) & 0xff
+  );
+  if (smask) {
+    stream.dict.set(
+      "SMask",
+      createImageStream(width, height, "DeviceGray", (x, y) => (x ^ y) & 0xff)
+    );
+  }
+  const image = await PDFImage.buildImage({
     xref: new XRef(new NullStream(), /* pdfManager = */ null),
-    res: null,
-    image: createImageStream(
-      width,
-      height,
-      colorSpace,
-      (x, y, c) => (x + (c + 1) * y) & 0xff
-    ),
-    smask: smask
-      ? createImageStream(width, height, "DeviceGray", (x, y) => (x ^ y) & 0xff)
-      : null,
-    pdfFunctionFactory: null,
+    image: stream,
     globalColorSpaceCache: new GlobalColorSpaceCache(),
     localColorSpaceCache: new LocalColorSpaceCache(),
   });

@@ -52,13 +52,17 @@ describe("image", function () {
       if (decode) {
         entries.Decode = decode;
       }
+      if (smask) {
+        entries.SMask = smask;
+      }
+      if (mask) {
+        entries.Mask = mask;
+      }
       const xref = new XRefMock();
-      return new PDFImage({
+      return PDFImage.buildImage({
         xref,
         res: new Dict(),
         image: createStream(data, entries),
-        smask,
-        mask,
         pdfFunctionFactory: new PDFFunctionFactory({ xref }),
         globalColorSpaceCache: new GlobalColorSpaceCache(),
         localColorSpaceCache: new LocalColorSpaceCache(),
@@ -92,7 +96,7 @@ describe("image", function () {
           ...transparent, 0, 0, 255,
           ...transparent, 0, 0, 255,
         ]);
-        const image = createImage({
+        const image = await createImage({
           width: 4,
           height: 1,
           data,
@@ -119,7 +123,7 @@ describe("image", function () {
         204, 0, 255,
         51, 204, 51,
       ]);
-      const image = createImage({
+      const image = await createImage({
         width: 2,
         height: 1,
         data,
@@ -139,7 +143,7 @@ describe("image", function () {
 
     it("should average a 1 bpc /SMask larger than the image", async function () {
       // Mask rows 1100 and 1000: the left 2x2 block is 3/4 opaque, the right 0.
-      const image = createImage({
+      const image = await createImage({
         width: 1,
         height: 1,
         data: new Uint8Array([0, 255, 0]),
@@ -158,7 +162,7 @@ describe("image", function () {
 
     it("should use the inverted /Mask samples as opacity", async function () {
       // With the default /Decode, a /Mask sample of 1 is transparent.
-      const image = createImage({
+      const image = await createImage({
         width: 1,
         height: 1,
         data: new Uint8Array([255, 0, 0]),
@@ -180,7 +184,7 @@ describe("image", function () {
         0, 0, 0, 100, 50, 30, 200, 100, 60,
         0, 0, 0, 100, 50, 30, 200, 100, 60,
       ]);
-      const image = createImage({ width: 3, height: 2, data });
+      const image = await createImage({ width: 3, height: 2, data });
       const dest = new Uint8ClampedArray(2 * 4);
       await image._fillDownscaledRgba(dest, 2, 1);
 
@@ -191,7 +195,7 @@ describe("image", function () {
     });
 
     it("should average palette colors with non-integer scaling ratios", async function () {
-      const image = createImage({
+      const image = await createImage({
         width: 5,
         height: 3,
         // prettier-ignore
@@ -219,7 +223,7 @@ describe("image", function () {
     });
 
     it("should decode packed grayscale samples before averaging", async function () {
-      const image = createImage({
+      const image = await createImage({
         width: 4,
         height: 2,
         data: new Uint8Array([0xc0, 0x80]),

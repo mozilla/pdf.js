@@ -71,8 +71,8 @@ describe("pattern", function () {
       );
     }
 
-    it("must convert Type 1 shading into packed mesh IR", function () {
-      const shading = createFunctionBasedShading();
+    it("must convert Type 1 shading into packed mesh IR", async function () {
+      const shading = await createFunctionBasedShading();
       const ir = shading.getIR();
 
       expect(ir[0]).toEqual("Mesh");
@@ -89,7 +89,7 @@ describe("pattern", function () {
       expect(ir[7]).toBeNull();
     });
 
-    it("must bound the color component buffer while batching", function () {
+    it("must bound the color component buffer while batching", async function () {
       const numComps = 32;
       let batchStarts = 0;
       let componentBufferLength = 0;
@@ -105,7 +105,7 @@ describe("pattern", function () {
           },
         },
       ];
-      const shading = createFunctionBasedShading({
+      const shading = await createFunctionBasedShading({
         colorSpace,
         matrix: [64, 0, 0, 64, 0, 0],
         fn(src, srcOffset, dest, destOffset) {
@@ -128,8 +128,8 @@ describe("pattern", function () {
       expect(Array.from(colors.subarray(0, 4))).toEqual([0, 0, 128, 0]);
     });
 
-    it("must keep mesh colors intact through binary serialization", function () {
-      const shading = createFunctionBasedShading({
+    it("must keep mesh colors intact through binary serialization", async function () {
+      const shading = await createFunctionBasedShading({
         background: [0.25, 0.5, 0.75],
       });
       const ir = shading.getIR();
@@ -143,8 +143,8 @@ describe("pattern", function () {
       expect(Array.from(reconstructedIR[7])).toEqual([64, 128, 191]);
     });
 
-    it("must sample the upper and right edges half a step inside", function () {
-      const shading = createFunctionBasedShading({
+    it("must sample the upper and right edges half a step inside", async function () {
+      const shading = await createFunctionBasedShading({
         colorSpace: "DeviceGray",
         fn(src, srcOffset, dest, destOffset) {
           dest[destOffset] =
@@ -158,13 +158,13 @@ describe("pattern", function () {
       expect(Array.from(colors)).toEqual(new Array(144).fill(0));
     });
 
-    it("must ignore a function with the wrong dimensions", function () {
-      expect(createFunctionBasedShading({ numInputs: 1 }).getIR()).toEqual([
-        "Dummy",
-      ]);
-      expect(createFunctionBasedShading({ numOutputs: 1 }).getIR()).toEqual([
-        "Dummy",
-      ]);
+    it("must ignore a function with the wrong dimensions", async function () {
+      expect(
+        (await createFunctionBasedShading({ numInputs: 1 })).getIR()
+      ).toEqual(["Dummy"]);
+      expect(
+        (await createFunctionBasedShading({ numOutputs: 1 })).getIR()
+      ).toEqual(["Dummy"]);
     });
   });
 
@@ -194,8 +194,10 @@ describe("pattern", function () {
       );
     }
 
-    it("must accept a 1-in, n-out function", function () {
-      const ir = createAxialShading({ numInputs: 1, numOutputs: 3 }).getIR();
+    it("must accept a 1-in, n-out function", async function () {
+      const ir = (
+        await createAxialShading({ numInputs: 1, numOutputs: 3 })
+      ).getIR();
 
       expect(ir[0]).toEqual("RadialAxial");
       expect(ir[3]).toEqual([
@@ -204,12 +206,12 @@ describe("pattern", function () {
       ]);
     });
 
-    it("must ignore a function with the wrong dimensions", function () {
+    it("must ignore a function with the wrong dimensions", async function () {
       expect(
-        createAxialShading({ numInputs: 18, numOutputs: 3 }).getIR()
+        (await createAxialShading({ numInputs: 18, numOutputs: 3 })).getIR()
       ).toEqual(["Dummy"]);
       expect(
-        createAxialShading({ numInputs: 1, numOutputs: 1 }).getIR()
+        (await createAxialShading({ numInputs: 1, numOutputs: 1 })).getIR()
       ).toEqual(["Dummy"]);
     });
   });

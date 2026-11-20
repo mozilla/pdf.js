@@ -30,7 +30,6 @@ import {
   XRefParseException,
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
-import { CipherTransformFactory } from "./crypto.js";
 
 class XRef {
   #cacheMap = new Map();
@@ -116,7 +115,7 @@ class XRef {
     this.startXRefQueue = [startXRef];
   }
 
-  parse(recoveryMode = false) {
+  async parse(recoveryMode = false) {
     this.#parsedWithRecovery = recoveryMode;
     let trailerDict;
     if (!recoveryMode) {
@@ -140,6 +139,9 @@ class XRef {
     if (encrypt instanceof Dict) {
       const ids = trailerDict.get("ID");
       const fileId = ids?.length ? ids[0] : "";
+      const { CipherTransformFactory } = await import(
+        /* webpackChunkName: "crypto" */ "./crypto.js"
+      );
       // The 'Encrypt' dictionary itself should not be encrypted, and by
       // setting `suppressEncryption` we can prevent an infinite loop inside
       // of `XRef_fetchUncompressed` if the dictionary contains indirect

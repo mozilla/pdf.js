@@ -29,14 +29,10 @@ import {
   XRefParseException,
 } from "./core_utils.js";
 import { Dict, isDict, Ref, RefMap } from "./primitives.js";
-import { finalizeFlattening, StructTreeFlattener } from "./flattener.js";
 import { LocalPdfManager, NetworkPdfManager } from "./pdf_manager.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import { AnnotationFactory } from "./annotation.js";
 import { clearGlobalCaches } from "./cleanup_helper.js";
-import { importPrintedAppearances } from "./editor/print_appearances.js";
-import { incrementalUpdate } from "./writer.js";
-import { PDFEditor } from "./editor/pdf_editor.js";
 import { PDFWorkerStream } from "./worker_stream.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreeRoot } from "./struct_tree.js";
@@ -655,6 +651,9 @@ class WorkerMessageHandler {
         }
         let task;
         try {
+          const { PDFEditor } = await import(
+            /* webpackChunkName: "editor" */ "./editor/pdf_editor.js"
+          );
           const pdfEditor = new PDFEditor();
           task = new WorkerTask(`ExtractPages: ${pageInfos.length} page(s)`);
           startWorkerTask(task);
@@ -734,6 +733,9 @@ class WorkerMessageHandler {
         }
         // Rebuild the PDF to discard the unflattened incremental revision.
         manager = await load(flattenedData);
+        const { PDFEditor } = await import(
+          /* webpackChunkName: "editor" */ "./editor/pdf_editor.js"
+        );
         return await new PDFEditor().extractPages(
           [{ document: manager.pdfDocument }],
           null,
@@ -761,6 +763,9 @@ class WorkerMessageHandler {
       flattenForms,
       intent,
     }) {
+      const { finalizeFlattening, StructTreeFlattener } = await import(
+        /* webpackChunkName: "flatten" */ "./flattener.js"
+      );
       const structTree = StructTreeFlattener.create({
         catalogRef,
         changes,
@@ -827,6 +832,9 @@ class WorkerMessageHandler {
         if (!buffer) {
           return;
         }
+        const { importPrintedAppearances } = await import(
+          /* webpackChunkName: "print-appearances" */ "./editor/print_appearances.js"
+        );
         const appearances = await importPrintedAppearances({
           buffer,
           changes,
@@ -996,6 +1004,9 @@ class WorkerMessageHandler {
         return stream.bytes;
       }
 
+      const { incrementalUpdate } = await import(
+        /* webpackChunkName: "writer" */ "./writer.js"
+      );
       const hasAcroForm = keptAcroForm instanceof Dict;
       const needAppearances =
         acroFormRef &&

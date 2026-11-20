@@ -81,13 +81,13 @@ describe("colorspace", function () {
       localColorSpaceCache = null;
     });
 
-    it("caching by Name", function () {
+    it("caching by Name", async function () {
       const xref = new XRefMock();
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
 
-      const colorSpace1 = ColorSpaceUtils.parse({
+      const colorSpace1 = await ColorSpaceUtils.parse({
         cs: Name.get("Pattern"),
         xref,
         resources: null,
@@ -97,7 +97,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace1.name).toEqual("Pattern");
 
-      const colorSpace2 = ColorSpaceUtils.parse({
+      const colorSpace2 = await ColorSpaceUtils.parse({
         cs: Name.get("Pattern"),
         xref,
         resources: null,
@@ -107,7 +107,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace2.name).toEqual("Pattern");
 
-      const colorSpaceNonCached = ColorSpaceUtils.parse({
+      const colorSpaceNonCached = await ColorSpaceUtils.parse({
         cs: Name.get("Pattern"),
         xref,
         resources: null,
@@ -117,7 +117,7 @@ describe("colorspace", function () {
       });
       expect(colorSpaceNonCached.name).toEqual("Pattern");
 
-      const colorSpaceOther = ColorSpaceUtils.parse({
+      const colorSpaceOther = await ColorSpaceUtils.parse({
         cs: Name.get("RGB"),
         xref,
         resources: null,
@@ -134,7 +134,7 @@ describe("colorspace", function () {
       expect(colorSpace1).not.toBe(colorSpaceOther);
     });
 
-    it("caching by Ref", function () {
+    it("caching by Ref", async function () {
       const paramsCalGray = new Dict();
       paramsCalGray.set("WhitePoint", [1, 1, 1]);
       paramsCalGray.set("BlackPoint", [0, 0, 0]);
@@ -160,7 +160,7 @@ describe("colorspace", function () {
         xref,
       });
 
-      const colorSpace1 = ColorSpaceUtils.parse({
+      const colorSpace1 = await ColorSpaceUtils.parse({
         cs: Ref.get(50, 0),
         xref,
         resources: null,
@@ -170,7 +170,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace1.name).toEqual("CalGray");
 
-      const colorSpace2 = ColorSpaceUtils.parse({
+      const colorSpace2 = await ColorSpaceUtils.parse({
         cs: Ref.get(50, 0),
         xref,
         resources: null,
@@ -180,7 +180,7 @@ describe("colorspace", function () {
       });
       expect(colorSpace2.name).toEqual("CalGray");
 
-      const colorSpaceNonCached = ColorSpaceUtils.parse({
+      const colorSpaceNonCached = await ColorSpaceUtils.parse({
         cs: Ref.get(50, 0),
         xref,
         resources: null,
@@ -190,7 +190,7 @@ describe("colorspace", function () {
       });
       expect(colorSpaceNonCached.name).toEqual("CalGray");
 
-      const colorSpaceOther = ColorSpaceUtils.parse({
+      const colorSpaceOther = await ColorSpaceUtils.parse({
         cs: Ref.get(100, 0),
         xref,
         resources: null,
@@ -219,7 +219,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is a Name object", function () {
+    it("should handle the case when cs is a Name object", async function () {
       const cs = Name.get("DeviceGray");
       const xref = new XRefMock([
         {
@@ -232,7 +232,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -270,7 +270,7 @@ describe("colorspace", function () {
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
-    it("should handle the case when cs is an indirect object", function () {
+    it("should handle the case when cs is an indirect object", async function () {
       const cs = Ref.get(10, 0);
       const xref = new XRefMock([
         {
@@ -283,7 +283,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -327,7 +327,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is a Name object", function () {
+    it("should handle the case when cs is a Name object", async function () {
       const cs = Name.get("DeviceRGB");
       const xref = new XRefMock([
         {
@@ -340,7 +340,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -384,7 +384,7 @@ describe("colorspace", function () {
       expect(colorSpace.isPassthrough(8)).toBeTrue();
       expect(testDest).toEqual(expectedDest);
     });
-    it("should handle the case when cs is an indirect object", function () {
+    it("should handle the case when cs is an indirect object", async function () {
       const cs = Ref.get(10, 0);
       const xref = new XRefMock([
         {
@@ -397,7 +397,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -435,9 +435,9 @@ describe("colorspace", function () {
       expect(testDest).toEqual(expectedDest);
     });
 
-    it("should upscale images wider than 21845 pixels", function () {
+    it("should upscale images wider than 21845 pixels", async function () {
       const xref = new XRefMock();
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs: Name.get("DeviceRGB"),
         xref,
         resources: new Dict(),
@@ -470,7 +470,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is a Name object", function () {
+    it("should handle the case when cs is a Name object", async function () {
       const cs = Name.get("DeviceCMYK");
       const xref = new XRefMock([
         {
@@ -483,7 +483,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -527,7 +527,7 @@ describe("colorspace", function () {
       expect(colorSpace.isPassthrough(8)).toBeFalse();
       expect(testDest).toEqual(expectedDest);
     });
-    it("should handle the case when cs is an indirect object", function () {
+    it("should handle the case when cs is an indirect object", async function () {
       const cs = Ref.get(10, 0);
       const xref = new XRefMock([
         {
@@ -540,7 +540,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -590,7 +590,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is an array", function () {
+    it("should handle the case when cs is an array", async function () {
       const params = new Dict();
       params.set("WhitePoint", [1, 1, 1]);
       params.set("BlackPoint", [0, 0, 0]);
@@ -608,7 +608,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -659,7 +659,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is an array", function () {
+    it("should handle the case when cs is an array", async function () {
       const params = new Dict();
       params.set("WhitePoint", [1, 1, 1]);
       params.set("BlackPoint", [0, 0, 0]);
@@ -678,7 +678,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -728,7 +728,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is an array", function () {
+    it("should handle the case when cs is an array", async function () {
       const params = new Dict();
       params.set("WhitePoint", [1, 1, 1]);
       params.set("BlackPoint", [0, 0, 0]);
@@ -746,7 +746,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -797,7 +797,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is an array", function () {
+    it("should handle the case when cs is an array", async function () {
       // prettier-ignore
       const lookup = new Stream(
         new Uint8Array([
@@ -818,7 +818,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -851,7 +851,7 @@ describe("colorspace", function () {
       expect(testDest).toEqual(expectedDest);
     });
 
-    it("should downscale images wider than 21845 pixels", function () {
+    it("should downscale images wider than 21845 pixels", async function () {
       // prettier-ignore
       const lookup = new Stream(
         new Uint8Array([
@@ -861,7 +861,7 @@ describe("colorspace", function () {
         ])
       );
       const xref = new XRefMock();
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs: [Name.get("Indexed"), Name.get("DeviceRGB"), 2, lookup],
         xref,
         resources: new Dict(),
@@ -899,7 +899,7 @@ describe("colorspace", function () {
       globalColorSpaceCache = null;
     });
 
-    it("should handle the case when cs is an array", function () {
+    it("should handle the case when cs is an array", async function () {
       const fnDict = new Dict();
       fnDict.set("FunctionType", FunctionType.POSTSCRIPT_CALCULATOR);
       fnDict.set("Domain", [0.0, 1.0]);
@@ -932,7 +932,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,
@@ -965,7 +965,7 @@ describe("colorspace", function () {
       expect(testDest).toEqual(expectedDest);
     });
 
-    it("should handle a sampled function with a degenerate Domain", function () {
+    it("should handle a sampled function with a degenerate Domain", async function () {
       const fnDict = new Dict();
       fnDict.set("FunctionType", FunctionType.SAMPLED);
       fnDict.set("Domain", [0, 1, 0, 0, 0, 1]);
@@ -1001,7 +1001,7 @@ describe("colorspace", function () {
       const pdfFunctionFactory = new PDFFunctionFactory({
         xref,
       });
-      const colorSpace = ColorSpaceUtils.parse({
+      const colorSpace = await ColorSpaceUtils.parse({
         cs,
         xref,
         resources,

@@ -62,7 +62,6 @@ import {
   RefSet,
 } from "./primitives.js";
 import { FunctionType, PDFFunctionFactory } from "./function.js";
-import { getXfaFontDict, getXfaFontName } from "./xfa_fonts.js";
 import { NullStream, Stream } from "./stream.js";
 import { BaseStream } from "./base_stream.js";
 import { calculateMD5 } from "./calculate_md5.js";
@@ -74,14 +73,12 @@ import { Linearization } from "./parser.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
-import { PageAnnotationFlattener } from "./flattener.js";
 import { PartialEvaluator } from "./evaluator.js";
 import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreePage } from "./struct_tree.js";
 import { TextLayerFonts } from "./text_layer_font.js";
-import { XFAFactory } from "./xfa/factory.js";
 import { XRef } from "./xref.js";
 
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
@@ -450,6 +447,9 @@ class Page {
   }
 
   async flattenAnnotations(handler, task, options) {
+    const { PageAnnotationFlattener } = await import(
+      /* webpackChunkName: "flatten" */ "./flattener.js"
+    );
     return new PageAnnotationFlattener({
       ...options,
       page: this,
@@ -1043,6 +1043,8 @@ class PDFDocument {
 
   #version = null;
 
+  xfaFactory = null;
+
   constructor(pdfManager, stream) {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       assert(
@@ -1102,9 +1104,10 @@ class PDFDocument {
     });
   }
 
-  parse(recoveryMode) {
-    this.xref.parse(recoveryMode);
+  async parse(recoveryMode) {
+    await this.xref.parse(recoveryMode);
     this.catalog = new Catalog(this.pdfManager, this.xref);
+    this.xfaFactory = null;
   }
 
   get linearization() {
@@ -1362,12 +1365,14 @@ class PDFDocument {
     );
   }
 
-  get xfaFactory() {
-    let data;
-    if (this.pdfManager.enableXfa && this.hasOnlyXfa) {
-      data = this.xfaData;
+  async loadXfaFactory() {
+    const data = this.hasOnlyXfa && this.xfaData;
+    if (data) {
+      const { XFAFactory } = await import(
+        /* webpackChunkName: "xfa" */ "./xfa/factory.js"
+      );
+      this.xfaFactory = new XFAFactory(data);
     }
-    return shadow(this, "xfaFactory", data ? new XFAFactory(data) : null);
   }
 
   get isPureXfa() {
@@ -1479,6 +1484,9 @@ class PDFDocument {
       return;
     }
 
+    const { getXfaFontDict, getXfaFontName } = await import(
+      /* webpackChunkName: "xfa" */ "./xfa/factory.js"
+    );
     options.ignoreErrors = true;
     promises.length = 0;
     pdfFonts.length = 0;
@@ -1791,7 +1799,6 @@ class PDFDocument {
 
     try {
       await Promise.all([
-        pdfManager.ensureDoc("xfaFactory"),
         pdfManager.ensureDoc("linearization"),
         pdfManager.ensureCatalog("numPages"),
       ]);

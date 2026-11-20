@@ -667,6 +667,28 @@ describe("annotation", function () {
       expect(data.replyType).toBeUndefined();
     });
 
+    it("should convert XHTML rich text in a markup annotation", async function () {
+      const richTextDict = new Dict();
+      richTextDict.set("Subtype", Name.get("Text"));
+      richTextDict.set(
+        "RC",
+        '<body xmlns="http://www.w3.org/1999/xhtml"><p><b>Rich text</b></p></body>'
+      );
+      const xref = new XRefMock([{ ref, data: richTextDict }]);
+      const { data } = await AnnotationFactory.create(
+        xref,
+        ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      expect(data.richText.str).toEqual("Rich text");
+      expect(data.richText.html.attributes.dir).toEqual("auto");
+      expect(data.richText.html.children[0].children[0]).toEqual(
+        jasmine.objectContaining({ name: "b", value: "Rich text" })
+      );
+    });
+
     it("should parse IRT and set default RT when not defined", async function () {
       const annotationRef = Ref.get(819, 0);
       const annotationDict = new Dict();

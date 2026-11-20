@@ -20,6 +20,7 @@ import {
 } from "./xml_utils.js";
 import { benchmark } from "./bench_utils.js";
 import { describe } from "vitest";
+import { getRichTextAsHtml } from "../../src/core/xfa/rich_text.js";
 import { MetadataParser } from "../../src/core/metadata_parser.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 
@@ -39,8 +40,8 @@ describe("xml", () => {
     METADATA.map(data => new MetadataParser(data).serializable)
   );
 
-  benchmark("XFAFactory.getRichTextAsHtml (issue13447.pdf)", () =>
-    RICH_TEXTS.map(rc => XFAFactory.getRichTextAsHtml(rc))
+  benchmark("getRichTextAsHtml (issue13447.pdf)", () =>
+    RICH_TEXTS.map(getRichTextAsHtml)
   );
 
   for (const { filename, input } of XFA_DOCUMENTS) {

@@ -82,7 +82,6 @@ import { ObjectLoader } from "./object_loader.js";
 import { OperatorList } from "./operator_list.js";
 import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { StringStream } from "./stream.js";
-import { XFAFactory } from "./xfa/factory.js";
 import { ZapfDingbatsEncoding } from "./encodings.js";
 
 class AnnotationFactory {
@@ -152,17 +151,41 @@ class AnnotationFactory {
       ? await this._getPageIndex(xref, ref, annotationGlobals.pdfManager)
       : null;
 
-    return annotationGlobals.pdfManager.ensure(this, "_create", [
-      xref,
-      ref,
-      annotationGlobals,
-      idFactory,
-      collectFields,
-      orphanFields,
-      collectByType,
-      pageIndex,
-      pageRef,
-    ]);
+    const annotation = await annotationGlobals.pdfManager.ensure(
+      this,
+      "_create",
+      [
+        xref,
+        ref,
+        annotationGlobals,
+        idFactory,
+        collectFields,
+        orphanFields,
+        collectByType,
+        pageIndex,
+        pageRef,
+      ]
+    );
+    if (annotation instanceof FreeTextAnnotation && annotation.hasTextContent) {
+      await annotationGlobals.pdfManager.ensure(
+        annotation,
+        "setAppearanceData",
+        [xref, annotationGlobals.globalColorSpaceCache]
+      );
+    }
+    const data = annotation?.data;
+    if (data && Object.hasOwn(data, "richText")) {
+      const { richText } = data;
+      if (richText && typeof richText === "string") {
+        const { getRichTextAsHtml } = await import(
+          /* webpackChunkName: "rich-text" */ "./xfa/rich_text.js"
+        );
+        data.richText = getRichTextAsHtml(richText);
+      } else {
+        data.richText = null;
+      }
+    }
+    return annotation;
   }
 
   /**
@@ -1791,7 +1814,7 @@ class MarkupAnnotation extends Annotation {
     this.data.popupRef = popupRef instanceof Ref ? popupRef.toString() : null;
 
     if (dict.has("RC")) {
-      this.data.richText = XFAFactory.getRichTextAsHtml(dict.get("RC"));
+      this.data.richText = dict.get("RC");
     }
   }
 
@@ -4430,7 +4453,7 @@ class PopupAnnotation extends Annotation {
     this.data.contentsObj = this._contents;
 
     if (parentItem.has("RC")) {
-      this.data.richText = XFAFactory.getRichTextAsHtml(parentItem.get("RC"));
+      this.data.richText = parentItem.get("RC");
     }
 
     this.data.open = !!dict.get("Open");
@@ -4465,19 +4488,11 @@ class FreeTextAnnotation extends MarkupAnnotation {
     // We want to be able to add mouse listeners to the annotation.
     this.data.noHTML = false;
 
-    const { annotationGlobals, xref } = params;
+    const { xref } = params;
     this.setDefaultAppearance(params);
     this._hasAppearance = !!this.appearance;
 
-    if (this._hasAppearance) {
-      const { fontColor, fontSize } = parseAppearanceStream(
-        this.appearance,
-        xref,
-        annotationGlobals.globalColorSpaceCache
-      );
-      this.data.defaultAppearanceData.fontColor = fontColor;
-      this.data.defaultAppearanceData.fontSize = fontSize || 10;
-    } else {
+    if (!this._hasAppearance) {
       this.data.defaultAppearanceData.fontSize ||= 10;
       const { fontColor, fontSize } = this.data.defaultAppearanceData;
       if (this._contents.str) {
@@ -4509,6 +4524,16 @@ class FreeTextAnnotation extends MarkupAnnotation {
         );
       }
     }
+  }
+
+  async setAppearanceData(xref, globalColorSpaceCache) {
+    const { fontColor, fontSize } = await parseAppearanceStream(
+      this.appearance,
+      xref,
+      globalColorSpaceCache
+    );
+    this.data.defaultAppearanceData.fontColor = fontColor;
+    this.data.defaultAppearanceData.fontSize = fontSize || 10;
   }
 
   get hasTextContent() {

@@ -16,44 +16,13 @@
 import { $buildXFAObject, NamespaceIds } from "./namespaces.js";
 import {
   $cleanup,
-  $finalize,
-  $ids,
   $isNsAgnostic,
   $nsAttributes,
   $onChild,
-  $resolvePrototypes,
-  $root,
 } from "./symbol_utils.js";
 import { makeArr, warn } from "../../shared/util.js";
-import { NamespaceSetUp } from "./setup.js";
-import { Template } from "./template.js";
 import { UnknownNamespace } from "./unknown.js";
 import { XFAObject } from "./xfa_object.js";
-
-class Root extends XFAObject {
-  constructor(ids) {
-    super(-1, "root", Object.create(null));
-    this.element = null;
-    this[$ids] = ids;
-  }
-
-  [$onChild](child) {
-    this.element = child;
-    return true;
-  }
-
-  [$finalize]() {
-    super[$finalize]();
-    if (this.element.template instanceof Template) {
-      // Set the root element in $ids using a symbol in order
-      // to avoid conflict with real IDs.
-      this[$ids].set($root, this.element);
-
-      this.element.template[$resolvePrototypes](this[$ids]);
-      this.element.template[$ids] = this[$ids];
-    }
-  }
-}
 
 class Empty extends XFAObject {
   constructor() {
@@ -66,7 +35,8 @@ class Empty extends XFAObject {
 }
 
 class Builder {
-  constructor(rootNameSpace = null) {
+  constructor(namespaces, rootNamespace) {
+    this._namespaceSetup = namespaces;
     this._namespaceStack = [];
     this._nsAgnosticLevel = 0;
 
@@ -77,11 +47,7 @@ class Builder {
       ...Object.values(NamespaceIds).map(({ id }) => id)
     );
     this._currentNamespace =
-      rootNameSpace || new UnknownNamespace(++this._nextNsId);
-  }
-
-  buildRoot(ids) {
-    return new Root(ids);
+      rootNamespace || new UnknownNamespace(++this._nextNsId);
   }
 
   build({ nsPrefix, name, attributes, namespace, prefixes }) {
@@ -99,12 +65,12 @@ class Builder {
 
     if (Object.hasOwn(attributes, $nsAttributes)) {
       // Only support xfa-data namespace.
-      const dataTemplate = NamespaceSetUp.datasets;
+      const dataTemplate = this._namespaceSetup.datasets;
       const nsAttrs = attributes[$nsAttributes];
       let xfaAttrs = null;
       for (const [ns, attrs] of Object.entries(nsAttrs)) {
         const nsToUse = this._getNamespaceToUse(ns);
-        if (nsToUse === dataTemplate) {
+        if (dataTemplate && nsToUse === dataTemplate) {
           xfaAttrs = { xfa: attrs };
           break;
         }
@@ -148,7 +114,7 @@ class Builder {
     }
     for (const [name, { check }] of Object.entries(NamespaceIds)) {
       if (check(nsName)) {
-        ns = NamespaceSetUp[name];
+        ns = this._namespaceSetup[name];
         if (ns) {
           this._namespaces.set(nsName, ns);
           return ns;
