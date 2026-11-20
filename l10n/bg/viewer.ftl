@@ -180,6 +180,11 @@ pdfjs-additional-layers = Допълнителни слоеве
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Миниатюра на страница { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Страница { $page } от { $total }
 
 ## Find panel button title and messages
 
@@ -272,6 +277,13 @@ pdfjs-editor-ink-button-label = Рисуване
 pdfjs-editor-stamp-button =
     .title = Добавяне или редактиране на изображения
 pdfjs-editor-stamp-button-label = Добавяне или променяне на изображения
+pdfjs-editor-highlight-button =
+    .title = Открояване
+pdfjs-editor-highlight-button-label = Открояване
+pdfjs-highlight-floating-button1 =
+    .aria-label = Открояване
+    .title = Открояване
+pdfjs-highlight-floating-button-label = Открояване
 
 ## Default editor aria labels
 
@@ -417,9 +429,23 @@ pdfjs-editor-add-comment-button =
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
+pdfjs-toggle-views-manager-notification-button =
+    .title = Превключване на страничния панел (документът съдържа миниатюри/структура/прикачени файлове/слоеве)
 pdfjs-toggle-views-manager-button1-label = Управление на страници
+pdfjs-views-manager-sidebar =
+    .aria-label = Страничен панел
+pdfjs-views-manager-view-selector-button =
+    .title = Изгледи
+pdfjs-views-manager-view-selector-button-label = Изгледи
 pdfjs-views-manager-pages-title = Страници
+pdfjs-views-manager-outlines-title1 = Структура на документа
+    .title = Структура на документа (двукратно щракване за свиване/разгъване на всичко)
+pdfjs-views-manager-layers-title1 = Слоеве
+    .title = Слоеве (двукратно щракване за връщане на всички слоеве в първоначалното им състояние)
 pdfjs-views-manager-pages-option-label = Страници
+pdfjs-views-manager-outlines-option-label = Структура на документа
+pdfjs-views-manager-attachments-option-label = Прикачени файлове
+pdfjs-views-manager-layers-option-label = Слоеве
 # Variables:
 #   $count (Number) - the number of selected pages.
 pdfjs-views-manager-pages-status-action-label =
@@ -428,6 +454,7 @@ pdfjs-views-manager-pages-status-action-label =
        *[other] { $count } избрани
     }
 pdfjs-views-manager-pages-status-action-button-label = Управление
+pdfjs-views-manager-pages-status-export-selected-button-label = Експортиране на избраните…
 # Variables:
 #   $count (Number) - the number of selected pages to be copied.
 pdfjs-views-manager-pages-status-undo-copy-label =

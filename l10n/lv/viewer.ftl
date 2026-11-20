@@ -598,9 +598,9 @@ pdfjs-editor-add-signature-image-browse-link =
 
 ## Controls
 
-pdfjs-editor-add-signature-description-label = Apraksts (alternatīvais teksts)
+pdfjs-editor-add-signature-description-label = Apraksts (paskaidrojošais teksts)
 pdfjs-editor-add-signature-description-input =
-    .title = Apraksts (alternatīvais teksts)
+    .title = Apraksts (paskaidrojošais teksts)
 pdfjs-editor-add-signature-description-default-when-drawing = Paraksts
 pdfjs-editor-add-signature-clear-button-label = Skaidrs paraksts
 pdfjs-editor-add-signature-clear-button =
@@ -655,7 +655,7 @@ pdfjs-editor-add-comment-button =
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
 pdfjs-toggle-views-manager-notification-button =
-    .title = Pārslēgt sānu joslu (dokumentā ir sīktēli/saturs/pielikumi/slāņi)
+    .title = Pārslēgt sānjoslu (dokumentā ir sīktēli/saturs/pielikumi/slāņi)
 pdfjs-toggle-views-manager-button1-label = Pārvaldīt lapas
 pdfjs-views-manager-sidebar =
     .aria-label = Sānu josla
