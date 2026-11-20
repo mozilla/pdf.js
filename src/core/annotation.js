@@ -241,10 +241,10 @@ class AnnotationFactory {
 
     switch (subtype) {
       case "Link":
-        return new LinkAnnotation(parameters);
+        return LinkAnnotation.create(parameters);
 
       case "Text":
-        return new TextAnnotation(parameters);
+        return TextAnnotation.create(parameters);
 
       case "Widget":
         let fieldType = getInheritableProperty({ dict, key: "FT" });
@@ -252,73 +252,73 @@ class AnnotationFactory {
 
         switch (fieldType) {
           case "Tx":
-            return new TextWidgetAnnotation(parameters);
+            return TextWidgetAnnotation.create(parameters);
           case "Btn":
-            return new ButtonWidgetAnnotation(parameters);
+            return ButtonWidgetAnnotation.create(parameters);
           case "Ch":
-            return new ChoiceWidgetAnnotation(parameters);
+            return ChoiceWidgetAnnotation.create(parameters);
           case "Sig":
-            return new SignatureWidgetAnnotation(parameters);
+            return SignatureWidgetAnnotation.create(parameters);
         }
         warn(
           `Unimplemented widget field type "${fieldType}", ` +
             "falling back to base field type."
         );
-        return new WidgetAnnotation(parameters);
+        return WidgetAnnotation.create(parameters);
 
       case "Popup":
-        return new PopupAnnotation(parameters);
+        return PopupAnnotation.create(parameters);
 
       case "FreeText":
-        return new FreeTextAnnotation(parameters);
+        return FreeTextAnnotation.create(parameters);
 
       case "Line":
-        return new LineAnnotation(parameters);
+        return LineAnnotation.create(parameters);
 
       case "Square":
-        return new SquareAnnotation(parameters);
+        return SquareAnnotation.create(parameters);
 
       case "Circle":
-        return new CircleAnnotation(parameters);
+        return CircleAnnotation.create(parameters);
 
       case "PolyLine":
-        return new PolylineAnnotation(parameters);
+        return PolylineAnnotation.create(parameters);
 
       case "Polygon":
-        return new PolygonAnnotation(parameters);
+        return PolygonAnnotation.create(parameters);
 
       case "Caret":
-        return new CaretAnnotation(parameters);
+        return CaretAnnotation.create(parameters);
 
       case "Ink":
-        return new InkAnnotation(parameters);
+        return InkAnnotation.create(parameters);
 
       case "Highlight":
-        return new HighlightAnnotation(parameters);
+        return HighlightAnnotation.create(parameters);
 
       case "Underline":
-        return new UnderlineAnnotation(parameters);
+        return UnderlineAnnotation.create(parameters);
 
       case "Squiggly":
-        return new SquigglyAnnotation(parameters);
+        return SquigglyAnnotation.create(parameters);
 
       case "StrikeOut":
-        return new StrikeOutAnnotation(parameters);
+        return StrikeOutAnnotation.create(parameters);
 
       case "Stamp":
-        return new StampAnnotation(parameters);
+        return StampAnnotation.create(parameters);
 
       case "FileAttachment":
-        return new FileAttachmentAnnotation(parameters);
+        return FileAttachmentAnnotation.create(parameters);
 
       case "RichMedia":
-        return new RichMediaAnnotation(parameters);
+        return RichMediaAnnotation.create(parameters);
 
       case "Screen":
-        return new ScreenAnnotation(parameters);
+        return ScreenAnnotation.create(parameters);
 
       case "Sound":
-        return new SoundAnnotation(parameters);
+        return SoundAnnotation.create(parameters);
 
       default:
         if (!collectFields) {
@@ -331,7 +331,7 @@ class AnnotationFactory {
             );
           }
         }
-        return new Annotation(parameters);
+        return Annotation.create(parameters);
     }
   }
 
@@ -756,13 +756,26 @@ class Annotation {
 
   _oc = undefined;
 
-  constructor(params) {
-    const { annotationGlobals, dict, orphanFields, ref, subtype, xref } =
-      params;
+  static async create(params) {
+    const { annotationGlobals, dict, orphanFields, ref } = params;
     const parentRef = orphanFields?.get(ref);
     if (parentRef) {
       dict.set("Parent", parentRef);
     }
+    if (this._hasDefaultAppearance) {
+      const da =
+        getInheritableProperty({ dict, key: "DA" }) ||
+        annotationGlobals.acroForm.get("DA");
+      params.defaultAppearance = typeof da === "string" ? da : "";
+      params.defaultAppearanceData = await parseDefaultAppearance(
+        params.defaultAppearance
+      );
+    }
+    return new this(params);
+  }
+
+  constructor(params) {
+    const { annotationGlobals, dict, subtype, xref } = params;
 
     this.setTitle(dict.get("T"));
     this.setContents(dict.get("Contents"));
@@ -812,6 +825,11 @@ class Annotation {
       isEditable: false,
       structParent: -1,
     };
+
+    if (params.defaultAppearanceData) {
+      this._defaultAppearance = params.defaultAppearance;
+      this.data.defaultAppearanceData = params.defaultAppearanceData;
+    }
 
     if (annotationGlobals.structTreeRoot) {
       let structParent = dict.get("StructParent");
@@ -990,19 +1008,6 @@ class Annotation {
     const dir = str && bidi(str).dir === "rtl" ? "rtl" : "ltr";
 
     return { str, dir };
-  }
-
-  setDefaultAppearance(params) {
-    const { dict, annotationGlobals } = params;
-
-    const defaultAppearance =
-      getInheritableProperty({ dict, key: "DA" }) ||
-      annotationGlobals.acroForm.get("DA");
-    this._defaultAppearance =
-      typeof defaultAppearance === "string" ? defaultAppearance : "";
-    this.data.defaultAppearanceData = parseDefaultAppearance(
-      this._defaultAppearance
-    );
   }
 
   /**
@@ -1964,7 +1969,7 @@ class MarkupAnnotation extends Annotation {
       ap ? { ap } : {}
     );
 
-    const newAnnotation = new this.prototype.constructor({
+    const newAnnotation = await this.create({
       dict: annotationDict,
       xref,
       annotationGlobals,
@@ -1980,6 +1985,8 @@ class MarkupAnnotation extends Annotation {
 }
 
 class WidgetAnnotation extends Annotation {
+  static _hasDefaultAppearance = true;
+
   constructor(params) {
     super(params);
 
@@ -2026,8 +2033,6 @@ class WidgetAnnotation extends Annotation {
     }
 
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
-
-    this.setDefaultAppearance(params);
 
     data.hasAppearance ||=
       this._needAppearances &&
@@ -2085,6 +2090,20 @@ class WidgetAnnotation extends Annotation {
       return stringToPDFString(formValue);
     }
     return null;
+  }
+
+  _ensureDefaultAppearance() {
+    if (this._defaultAppearance) {
+      return;
+    }
+    // DA is required. If Helvetica is missing, the evaluator supplies a font.
+    const appearanceData = {
+      fontName: "Helvetica",
+      fontSize: 0,
+      fontColor: new Uint8ClampedArray(3),
+    };
+    this.data.defaultAppearanceData = appearanceData;
+    this._defaultAppearance = createDefaultAppearance(appearanceData);
   }
 
   /**
@@ -2567,16 +2586,7 @@ class WidgetAnnotation extends Annotation {
       [totalWidth, totalHeight] = [totalHeight, totalWidth];
     }
 
-    if (!this._defaultAppearance) {
-      // The DA is required and must be a string.
-      // If there is no font named Helvetica in the resource dictionary,
-      // the evaluator will fall back to a default font.
-      // Doing so prevents exceptions and allows saving/printing
-      // the file as expected.
-      this.data.defaultAppearanceData = parseDefaultAppearance(
-        (this._defaultAppearance = "/Helvetica 0 Tf 0 g")
-      );
-    }
+    this._ensureDefaultAppearance();
 
     if (
       !this.data.defaultAppearanceData.fontSize &&
@@ -4205,16 +4215,7 @@ class ChoiceWidgetAnnotation extends WidgetAnnotation {
       }
     }
 
-    if (!this._defaultAppearance) {
-      // The DA is required and must be a string.
-      // If there is no font named Helvetica in the resource dictionary,
-      // the evaluator will fall back to a default font.
-      // Doing so prevents exceptions and allows saving/printing
-      // the file as expected.
-      this.data.defaultAppearanceData = parseDefaultAppearance(
-        (this._defaultAppearance = "/Helvetica 0 Tf 0 g")
-      );
-    }
+    this._ensureDefaultAppearance();
 
     const font = await WidgetAnnotation._getFontData(
       evaluator,
@@ -4477,6 +4478,8 @@ class PopupAnnotation extends Annotation {
 }
 
 class FreeTextAnnotation extends MarkupAnnotation {
+  static _hasDefaultAppearance = true;
+
   constructor(params) {
     super(params);
 
@@ -4489,7 +4492,6 @@ class FreeTextAnnotation extends MarkupAnnotation {
     this.data.noHTML = false;
 
     const { xref } = params;
-    this.setDefaultAppearance(params);
     this._hasAppearance = !!this.appearance;
 
     if (!this._hasAppearance) {

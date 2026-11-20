@@ -25,18 +25,18 @@ import { XRefMock } from "./test_utils.js";
 
 describe("Default appearance", function () {
   describe("parseDefaultAppearance and createDefaultAppearance", function () {
-    it("should parse and create default appearance", function () {
+    it("should parse and create default appearance", async function () {
       const da = "/F1 12 Tf 0.1 0.2 0.3 rg";
       const result = {
         fontSize: 12,
         fontName: "F1",
         fontColor: new Uint8ClampedArray([26, 51, 76]),
       };
-      expect(parseDefaultAppearance(da)).toEqual(result);
+      expect(await parseDefaultAppearance(da)).toEqual(result);
       expect(createDefaultAppearance(result)).toEqual(da);
 
       expect(
-        parseDefaultAppearance(
+        await parseDefaultAppearance(
           "0.1 0.2 0.3 rg /F1 12 Tf 0.3 0.2 0.1 rg /F2 13 Tf"
         )
       ).toEqual({
@@ -46,9 +46,9 @@ describe("Default appearance", function () {
       });
     });
 
-    it("should parse default appearance with save/restore", function () {
+    it("should parse default appearance with save/restore", async function () {
       const da = "q Q 0.1 0.2 0.3 rg /F1 12 Tf q 0.3 0.2 0.1 rg /F2 13 Tf Q";
-      expect(parseDefaultAppearance(da)).toEqual({
+      expect(await parseDefaultAppearance(da)).toEqual({
         fontSize: 12,
         fontName: "F1",
         fontColor: new Uint8ClampedArray([26, 51, 76]),

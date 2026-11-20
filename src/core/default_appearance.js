@@ -40,7 +40,7 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
     super(new StringStream(str));
   }
 
-  parse() {
+  async parse() {
     const operation = {
       fn: 0,
       args: [],
