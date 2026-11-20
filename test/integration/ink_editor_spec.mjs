@@ -213,6 +213,114 @@ describe("Ink Editor", () => {
     });
   });
 
+  describe("Rotating the pages with a zoom depending on their size", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-fit"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    const rotate = async (page, delta, rotation) => {
+      await page.evaluate(angle => {
+        window.PDFViewerApplication.rotatePages(angle);
+      }, delta);
+      await page.waitForSelector(
+        `.annotationEditorLayer[data-main-rotation='${rotation}']`
+      );
+      await waitForBrowserTrip(page);
+    };
+
+    // The position of the editor in the unrotated frame of its layer, as
+    // fractions of the width and of the height of the layer.
+    const getRectInLayer = async (page, rotation) => {
+      const layer = await getRect(page, ".annotationEditorLayer");
+      const editor = await getRect(page, getEditorSelector(0));
+      const centerX = (editor.x + editor.width / 2 - layer.x) / layer.width;
+      const centerY = (editor.y + editor.height / 2 - layer.y) / layer.height;
+      const width = editor.width / layer.width;
+      const height = editor.height / layer.height;
+      switch (rotation) {
+        case 90:
+          return { x: centerY, y: 1 - centerX, width: height, height: width };
+        case 180:
+          return { x: 1 - centerX, y: 1 - centerY, width, height };
+        case 270:
+          return { x: 1 - centerY, y: centerX, width: height, height: width };
+        default:
+          return { x: centerX, y: centerY, width, height };
+      }
+    };
+
+    it("must keep the drawing in place while the pages are rotated", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const { x, y } = await getRect(page, ".annotationEditorLayer");
+          await drawLine(page, x + 100, y + 100, x + 250, y + 200);
+          await commit(page);
+
+          const before = await getRectInLayer(page, 0);
+
+          for (const rotation of [90, 180, 270, 0]) {
+            await rotate(page, 90, rotation);
+
+            const after = await getRectInLayer(page, rotation);
+            for (const key of ["x", "y", "width", "height"]) {
+              expect(Math.abs(after[key] - before[key]))
+                .withContext(
+                  `In ${browserName}, with a rotation of ${rotation}, for ${key}`
+                )
+                .toBeLessThan(0.005);
+            }
+          }
+        })
+      );
+    });
+
+    it("must keep a drawing in progress in place after rotating the pages", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToInk(page);
+
+          const { x, y } = await getRect(page, ".annotationEditorLayer");
+          await drawLine(page, x + 100, y + 100, x + 250, y + 200);
+
+          // The drawing session isn't finished: the drawing must be committed
+          // before the rotation, otherwise its points would be interpreted in
+          // the wrong coordinate system.
+          await rotate(page, 90, 90);
+          await rotate(page, -90, 0);
+          await page.waitForSelector(getEditorSelector(0));
+
+          const layer = await getRect(page, ".annotationEditorLayer");
+          const editor = await getRect(page, getEditorSelector(0));
+          const tolerance = 20;
+          expect(Math.abs(editor.x - layer.x - 100))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(tolerance);
+          expect(Math.abs(editor.y - layer.y - 100))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(tolerance);
+          expect(Math.abs(editor.x + editor.width - layer.x - 250))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(tolerance);
+          expect(Math.abs(editor.y + editor.height - layer.y - 200))
+            .withContext(`In ${browserName}`)
+            .toBeLessThan(tolerance);
+        })
+      );
+    });
+  });
+
   describe("with a rotated pdf", () => {
     let pages;
 
