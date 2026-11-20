@@ -144,8 +144,9 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {string} [wasmUrl] - The URL where the wasm files are located.
  *   Include the trailing slash.
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
- *   worker-thread when reading built-in CMap files, standard font files,
- *   and wasm files. If `true`, the `BinaryDataFactory` option is ignored.
+ *   worker-thread when reading built-in CMap files, ICC profiles, standard
+ *   font files, and wasm files. If `true`, the `BinaryDataFactory` option is
+ *   ignored.
  *   The default value is `true` in web environments and `false` in Node.js.
  * @property {boolean} [useWasm] - Attempt to use WebAssembly in order to
  *    improve e.g. image decoding performance.
@@ -202,8 +203,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *    create SVG filters when rendering some images on the main canvas.
  *    The default value is {DOMFilterFactory}.
  * @property {object} [BinaryDataFactory] - The factory that will be used when
- *   falling back to reading built-in CMap files, standard font files,
- *   and wasm files in the main-thread.
+ *   falling back to reading built-in CMap files, ICC profiles, standard font
+ *   files, and wasm files in the main-thread.
  *   The default value is {DOMBinaryDataFactory}.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `true`.
@@ -324,6 +325,7 @@ function getDocument(src = {}) {
           standardFontDataUrl &&
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
+          (!iccUrl || isValidFetchUrl(iccUrl, document.baseURI)) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
         ));
@@ -346,7 +348,12 @@ function getDocument(src = {}) {
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       useWorkerFetch
         ? null
-        : new BinaryDataFactory({ cMapUrl, standardFontDataUrl, wasmUrl }),
+        : new BinaryDataFactory({
+            cMapUrl,
+            iccUrl,
+            standardFontDataUrl,
+            wasmUrl,
+          }),
   };
 
   if (!worker) {

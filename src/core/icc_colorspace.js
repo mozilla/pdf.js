@@ -24,34 +24,22 @@ import {
   qcms_drop_transformer,
   qcms_transformer_from_memory,
 } from "../../external/qcms/qcms.js";
-import { shadow, Util, warn } from "../shared/util.js";
+import { Util, warn } from "../shared/util.js";
 import { ColorSpace } from "./colorspace.js";
 import { QCMS } from "../../external/qcms/qcms_utils.js";
-
-function fetchSync(url) {
-  // Parsing and using color spaces is still synchronous,
-  // so we must load the wasm module synchronously.
-  // TODO: Make the color space stuff asynchronous and use fetch.
-  const xhr = new XMLHttpRequest();
-  xhr.open("GET", url, false);
-  xhr.responseType = "arraybuffer";
-  xhr.send(null);
-  return xhr.response;
-}
+import { WasmLoader } from "./wasm_loader.js";
 
 class IccColorSpace extends ColorSpace {
   #transformer;
 
   #convertPixel;
 
-  static #useWasm = true;
-
-  static #wasmUrl = null;
+  static #loadPromises = new WeakMap();
 
   static #finalizer = null;
 
   constructor(iccProfile, name, numComps) {
-    if (!IccColorSpace.isUsable) {
+    if (!QCMS._memory) {
       throw new Error("No ICC color space support");
     }
 
@@ -148,63 +136,51 @@ class IccColorSpace extends ColorSpace {
     QCMS._destBuffer = null;
   }
 
-  static setOptions({ useWasm, useWorkerFetch, wasmUrl }) {
-    if (!useWorkerFetch) {
-      this.#useWasm = false;
-      return;
+  static load(context) {
+    if (!context?.options.useWasm) {
+      return false;
     }
-    this.#useWasm = useWasm;
-    this.#wasmUrl = wasmUrl;
-  }
-
-  static get isUsable() {
-    let isUsable = false;
-    if (this.#useWasm) {
-      if (this.#wasmUrl) {
-        try {
-          this._module = initSync({
-            module: fetchSync(`${this.#wasmUrl}qcms_bg.wasm`),
-          });
-          isUsable = !!this._module;
-          QCMS._memory = this._module.memory;
-        } catch (e) {
-          warn(`ICCBased color space: "${e}".`);
-        }
-      } else {
+    // Keep the result for the lifetime of this document.
+    return this.#loadPromises.getOrInsertComputed(context, async () => {
+      if (context.options.useWorkerFetch && !context.options.wasmUrl) {
         warn("No ICC color space support due to missing `wasmUrl` API option");
+        return false;
       }
-    }
+      if (QCMS._memory) {
+        return true;
+      }
+      try {
+        const module = await WasmLoader.compile(context, "qcms_bg.wasm");
+        // initSync only instantiates the already compiled module.
+        QCMS._memory ??= initSync({ module }).memory;
+        return true;
+      } catch (ex) {
+        warn(`No ICC color space support: "${ex}".`);
+        return false;
+      }
+    });
+  }
 
-    return shadow(this, "isUsable", isUsable);
+  static async createCmyk(context) {
+    if (!(await this.load(context))) {
+      return null;
+    }
+    if (context.options.useWorkerFetch && !context.options.iccUrl) {
+      warn("No CMYK ICC profile support due to missing `iccUrl` API option");
+      return null;
+    }
+    try {
+      const iccProfile = await WasmLoader.fetch(
+        context,
+        "iccUrl",
+        "CGATS001Compat-v2-micro.icc"
+      );
+      return new IccColorSpace(iccProfile, "DeviceCMYK", 4);
+    } catch (ex) {
+      warn(`No CMYK ICC profile support: "${ex}".`);
+      return null;
+    }
   }
 }
 
-class CmykICCBasedCS extends IccColorSpace {
-  static #iccUrl;
-
-  constructor() {
-    const iccProfile = new Uint8Array(
-      fetchSync(`${CmykICCBasedCS.#iccUrl}CGATS001Compat-v2-micro.icc`)
-    );
-    super(iccProfile, "DeviceCMYK", 4);
-  }
-
-  static setOptions({ iccUrl }) {
-    this.#iccUrl = iccUrl;
-  }
-
-  static get isUsable() {
-    let isUsable = false;
-    if (IccColorSpace.isUsable) {
-      if (this.#iccUrl) {
-        isUsable = true;
-      } else {
-        warn("No CMYK ICC profile support due to missing `iccUrl` API option");
-      }
-    }
-
-    return shadow(this, "isUsable", isUsable);
-  }
-}
-
-export { CmykICCBasedCS, IccColorSpace };
+export { IccColorSpace };

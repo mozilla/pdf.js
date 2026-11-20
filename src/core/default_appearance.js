@@ -40,7 +40,7 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
     super(new StringStream(str));
   }
 
-  async parse() {
+  async parse(xref) {
     const operation = {
       fn: 0,
       args: [],
@@ -79,9 +79,11 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+          case OPS.setFillCMYKColor: {
+            const cmyk = await ColorSpaceUtils.getCmyk(xref);
+            cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
+          }
         }
       }
     } catch (reason) {
@@ -93,8 +95,8 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
 }
 
 // Parse DA to extract font and color information.
-function parseDefaultAppearance(str) {
-  return new DefaultAppearanceEvaluator(str).parse();
+function parseDefaultAppearance(str, xref) {
+  return new DefaultAppearanceEvaluator(str).parse(xref);
 }
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
@@ -185,9 +187,11 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+          case OPS.setFillCMYKColor: {
+            const cmyk = await ColorSpaceUtils.getCmyk(this.xref);
+            cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
+          }
           case OPS.showText:
           case OPS.showSpacedText:
           case OPS.nextLineShowText:

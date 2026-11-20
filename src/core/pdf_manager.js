@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-import { CmykICCBasedCS, IccColorSpace } from "./icc_colorspace.js";
 import {
   createValidAbsoluteUrl,
   FeatureTest,
@@ -88,6 +87,7 @@ class BasePdfManager {
       FeatureTest.isImageDecoderSupported;
 
     this.evaluatorOptions = Object.freeze(evaluatorOptions);
+    this.binaryDataContext = { handler, options: this.evaluatorOptions };
 
     // Initialize image-options once per document.
     ImageResizer.setOptions(evaluatorOptions);
@@ -99,8 +99,6 @@ class BasePdfManager {
       getHandler: () =>
         BasePdfManager.#handlers.values().find(h => !h.destroyed),
     };
-    IccColorSpace.setOptions(options);
-    CmykICCBasedCS.setOptions(options);
     PDFFunctionFactory.setOptions(options);
     WasmImage.setOptions(options);
   }

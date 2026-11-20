@@ -74,11 +74,17 @@ class WasmLoader {
     );
   }
 
-  static #compile(context, filename) {
+  /**
+   * Compile a Wasm module, sharing successful compilations across documents.
+   * @param {object} context - Document handler and options.
+   * @param {string} filename
+   * @returns {Promise<WebAssembly.Module>}
+   */
+  static compile(context, filename) {
     const cached = this.#modules.get(filename);
     if (cached) {
       // Retry with this context if the shared attempt fails.
-      return cached.catch(() => this.#compile(context, filename));
+      return cached.catch(() => this.compile(context, filename));
     }
     const promise = this.#fetchAndCompile(context, filename).catch(ex => {
       // Don't cache failures.
@@ -124,7 +130,7 @@ class WasmLoader {
     const { useWasm, wasmUrl } = context.options;
     if (useWasm) {
       try {
-        const module = await this.#compile(context, filename);
+        const module = await this.compile(context, filename);
         init(imports => new WebAssembly.Instance(module, imports).exports);
         return true;
       } catch (ex) {

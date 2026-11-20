@@ -1680,6 +1680,14 @@ class PartialEvaluator {
       }
     }
 
+    function setCmykColor(cmyk, fn, args) {
+      const isFill = fn === OPS.setFillCMYKColor;
+      stateManager.state[isFill ? "fillColorSpace" : "strokeColorSpace"] = cmyk;
+      operatorList.addOp(isFill ? OPS.setFillRGBColor : OPS.setStrokeRGBColor, [
+        cmyk.getRgbHex(args, 0),
+      ]);
+    }
+
     return new Promise(function promiseBody(resolve, reject) {
       const next = function (promise) {
         Promise.all([promise, operatorList.ready]).then(function () {
@@ -1973,21 +1981,18 @@ class PartialEvaluator {
             fn = OPS.setStrokeRGBColor;
             break;
           case OPS.setFillCMYKColor:
+          case OPS.setStrokeCMYKColor: {
             if (!isNumberArray(args, null)) {
               continue;
             }
-            stateManager.state.fillColorSpace = ColorSpaceUtils.cmyk;
-            args = [ColorSpaceUtils.cmyk.getRgbHex(args, 0)];
-            fn = OPS.setFillRGBColor;
-            break;
-          case OPS.setStrokeCMYKColor:
-            if (!isNumberArray(args, null)) {
+            const cmyk = ColorSpaceUtils.getCmyk(xref);
+            if (cmyk instanceof ColorSpace) {
+              setCmykColor(cmyk, fn, args);
               continue;
             }
-            stateManager.state.strokeColorSpace = ColorSpaceUtils.cmyk;
-            args = [ColorSpaceUtils.cmyk.getRgbHex(args, 0)];
-            fn = OPS.setStrokeRGBColor;
-            break;
+            next(cmyk.then(colorSpace => setCmykColor(colorSpace, fn, args)));
+            return;
+          }
           case OPS.setFillRGBColor:
             if (!isNumberArray(args, null)) {
               continue;
