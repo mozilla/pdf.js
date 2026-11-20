@@ -34,20 +34,36 @@ class WasmLoader {
    * @returns {Promise<Uint8Array>}
    */
   static async fetch(context, kind, filename) {
-    const { handler, options } = context;
+    const url = this.#getWorkerUrl(context, kind, filename);
+    if (
+      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+      !url
+    ) {
+      return context.handler.sendWithPromise("FetchBinaryData", {
+        kind,
+        filename,
+      });
+    }
+    const response = await this.#workerFetch(url);
+    return response.bytes();
+  }
+
+  static #getWorkerUrl({ options }, kind, filename) {
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
       !options.useWorkerFetch
     ) {
-      return handler.sendWithPromise("FetchBinaryData", { kind, filename });
+      return null;
     }
-    const response = await this.#workerFetch(options[kind], filename);
-    return response.bytes();
+    const baseUrl = options[kind];
+    if (!baseUrl) {
+      throw new Error(`Ensure that the \`${kind}\` API parameter is provided.`);
+    }
+    return `${baseUrl}${filename}`;
   }
 
-  static async #workerFetch(baseUrl, filename) {
-    const url = `${baseUrl}${filename}`,
-      response = await fetch(url);
+  static async #workerFetch(url) {
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(
         `Failed to fetch file "${url}" with "${response.statusText}".`
@@ -56,17 +72,16 @@ class WasmLoader {
     return response;
   }
 
-  static async #fetchAndCompile(context, filename) {
-    const { options } = context;
+  static async #fetchAndCompile(context, filename, url) {
     if (
       (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      !options.useWorkerFetch
+      !url
     ) {
       return WebAssembly.compile(
         await this.fetch(context, "wasmUrl", filename)
       );
     }
-    const { body } = await this.#workerFetch(options.wasmUrl, filename);
+    const { body } = await this.#workerFetch(url);
     // Streaming compilation requires the exact MIME type, without parameters
     // (e.g. Firefox adds a charset to resource:// responses).
     return WebAssembly.compileStreaming(
@@ -80,13 +95,15 @@ class WasmLoader {
    * @param {string} filename
    * @returns {Promise<WebAssembly.Module>}
    */
-  static compile(context, filename) {
+  static async compile(context, filename) {
+    // Check the document's worker URL before using a shared module.
+    const url = this.#getWorkerUrl(context, "wasmUrl", filename);
     const cached = this.#modules.get(filename);
     if (cached) {
       // Retry with this context if the shared attempt fails.
       return cached.catch(() => this.compile(context, filename));
     }
-    const promise = this.#fetchAndCompile(context, filename).catch(ex => {
+    const promise = this.#fetchAndCompile(context, filename, url).catch(ex => {
       // Don't cache failures.
       this.#modules.delete(filename);
       throw ex;
@@ -99,7 +116,7 @@ class WasmLoader {
   static async #importFallback(context, wasmUrl, filename) {
     let source;
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
-      const { body } = await this.#workerFetch(wasmUrl, `${filename}.br`);
+      const { body } = await this.#workerFetch(`${wasmUrl}${filename}.br`);
       source = body.pipeThrough(new DecompressionStream("brotli"));
     } else {
       const data = await this.fetch(context, "wasmUrl", `${filename}.br`);

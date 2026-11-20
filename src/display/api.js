@@ -147,7 +147,9 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   worker-thread when reading built-in CMap files, ICC profiles, standard
  *   font files, and wasm files. If `true`, the `BinaryDataFactory` option is
  *   ignored.
- *   The default value is `true` in web environments and `false` in Node.js.
+ *   In web environments, this defaults to `true` when using the default
+ *   `BinaryDataFactory`, packed CMaps, and valid fetch URLs for all four
+ *   resources. It defaults to `false` in Node.js.
  * @property {boolean} [useWasm] - Attempt to use WebAssembly in order to
  *    improve e.g. image decoding performance.
  *    The default value is `true`.
@@ -322,10 +324,11 @@ function getDocument(src = {}) {
           BinaryDataFactory === DOMBinaryDataFactory &&
           cMapUrl &&
           cMapPacked &&
+          iccUrl &&
           standardFontDataUrl &&
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
-          (!iccUrl || isValidFetchUrl(iccUrl, document.baseURI)) &&
+          isValidFetchUrl(iccUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
         ));

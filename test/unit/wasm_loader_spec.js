@@ -56,6 +56,17 @@ describe("WasmLoader", function () {
     expect(init).toHaveBeenCalledWith(jasmine.any(Function));
   });
 
+  it("requires a worker URL even when the module is cached", async function () {
+    const filename = "cached.wasm";
+    expect(await loadWasm(filename)).toBeTrue();
+
+    const fetch = spyOn(globalThis, "fetch");
+    context.options.useWorkerFetch = true;
+    expect(await loadWasm(filename)).toBeFalse();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(init).toHaveBeenCalledTimes(1);
+  });
+
   it("retries a failed fetch", async function () {
     sendWithPromise.and.rejectWith(new Error("Fetch failed."));
 

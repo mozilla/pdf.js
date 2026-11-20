@@ -36,11 +36,12 @@ import { PDFFunctionFactory } from "./function.js";
 import { stringToUTF16HexString } from "./string_utils.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
-  constructor(str) {
+  constructor(str, xref) {
     super(new StringStream(str));
+    this.xref = xref;
   }
 
-  async parse(xref) {
+  async parse() {
     const operation = {
       fn: 0,
       args: [],
@@ -80,7 +81,7 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
           case OPS.setFillCMYKColor: {
-            const cmyk = await ColorSpaceUtils.getCmyk(xref);
+            const cmyk = await ColorSpaceUtils.getCmyk(this.xref);
             cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
           }
@@ -96,7 +97,7 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
 
 // Parse DA to extract font and color information.
 function parseDefaultAppearance(str, xref) {
-  return new DefaultAppearanceEvaluator(str).parse(xref);
+  return new DefaultAppearanceEvaluator(str, xref).parse();
 }
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {

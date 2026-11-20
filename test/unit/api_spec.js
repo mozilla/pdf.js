@@ -4803,6 +4803,28 @@ describe("api", function () {
       expect(laterOps.argsArray[0]).toEqual(["#00b9f2"]);
     });
 
+    it("uses the binary data factory by default when iccUrl is missing", async function () {
+      if (isNodeJS) {
+        pending("Worker fetching is disabled by default in Node.js.");
+      }
+      const fetch = spyOn(
+        DefaultBinaryDataFactory.prototype,
+        "fetch"
+      ).and.callThrough();
+      const page = await loadPage({
+        cMapUrl: CMAP_URL,
+        standardFontDataUrl: STANDARD_FONT_DATA_URL,
+        iccUrl: null,
+        useWorkerFetch: undefined,
+      });
+      const { argsArray } = await page.getOperatorList();
+      expect(argsArray[0]).toEqual(["#00b9f2"]);
+      expect(fetch).toHaveBeenCalledWith({
+        kind: "iccUrl",
+        filename: CMYK_PROFILE,
+      });
+    });
+
     it("keeps the ICCBased fallback when another document in the worker loads qcms", async function () {
       const profile = await new DefaultBinaryDataFactory({
         iccUrl: ICC_URL,

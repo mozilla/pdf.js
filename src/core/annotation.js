@@ -727,6 +727,8 @@ function writeLineToCurveToAppearance(data, buffer, maybeClose = false) {
 class Annotation {
   #cmyk;
 
+  static _hasDefaultAppearance = false;
+
   appearance = null;
 
   _oc = undefined;
