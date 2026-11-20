@@ -3644,4 +3644,91 @@ describe("FreeText Editor", () => {
       );
     });
   });
+
+  describe("Delete a FreeText editor while it is edited (bug 22341)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait("empty.pdf", ".annotationEditorLayer");
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must delete the editor without throwing", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToFreeText(page);
+
+          const rect = await getRect(page, ".annotationEditorLayer");
+          const editorSelector = getEditorSelector(await getNextEditorId(page));
+          await page.mouse.click(rect.x + 100, rect.y + 100);
+          await page.waitForSelector(`${editorSelector} .internal`, {
+            visible: true,
+          });
+          await page.type(
+            `${editorSelector} .internal`,
+            "Hello PDF.js World !!"
+          );
+
+          const isEditing = await page.$eval(
+            `${editorSelector} .internal`,
+            el => el.isContentEditable
+          );
+          expect(isEditing).withContext(`In ${browserName}`).toEqual(true);
+
+          const pageErrors = [];
+          const onPageError = error => {
+            pageErrors.push(error?.message || String(error));
+          };
+          page.on("pageerror", onPageError);
+
+          await page.evaluate(() => {
+            window.pdfjsIntegrationRejections = [];
+            window.addEventListener("unhandledrejection", event => {
+              const reason = event.reason;
+              window.pdfjsIntegrationRejections.push(
+                reason?.message || String(reason)
+              );
+            });
+          });
+
+          await page.evaluate(() => {
+            window.PDFViewerApplication.pdfViewer._layerProperties.annotationEditorUIManager.delete();
+          });
+
+          await page.waitForFunction(
+            sel => !document.querySelector(sel),
+            {},
+            editorSelector
+          );
+          await waitForStorageEntries(page, 0);
+
+          const rejectionErrors = await page.evaluate(
+            () =>
+              new Promise(resolve => {
+                setTimeout(() => {
+                  resolve(window.pdfjsIntegrationRejections);
+                }, 0);
+              })
+          );
+          expect(rejectionErrors).withContext(`In ${browserName}`).toEqual([]);
+          expect(pageErrors).withContext(`In ${browserName}`).toEqual([]);
+          page.off("pageerror", onPageError);
+
+          // The restored editor must come back with one complete toolbar.
+          await kbUndo(page);
+          await page.waitForSelector(editorSelector, { visible: true });
+          await selectEditor(page, editorSelector);
+          await page.waitForSelector(`${editorSelector} button.deleteButton`);
+          const toolbarCount = await page.evaluate(
+            sel => document.querySelectorAll(`${sel} .editToolbar`).length,
+            editorSelector
+          );
+          expect(toolbarCount).withContext(`In ${browserName}`).toEqual(1);
+        })
+      );
+    });
+  });
 });
