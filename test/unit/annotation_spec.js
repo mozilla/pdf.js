@@ -6208,6 +6208,73 @@ describe("annotation", function () {
   });
 
   describe("FreeTextAnnotation", () => {
+    const oldAppearance = new StringStream("q Q");
+
+    // Returns the normal appearance of the updated annotation.
+    async function updateFreeText(
+      appearanceChanged,
+      {
+        appearance = oldAppearance,
+        value = "Hello",
+        xref = new XRefMock(),
+      } = {}
+    ) {
+      partialEvaluator.xref = xref;
+      const oldAnnotation = new Dict(xref);
+      if (appearance) {
+        const appearanceDict = new Dict(xref);
+        appearanceDict.set("N", appearance);
+        oldAnnotation.set("AP", appearanceDict);
+      }
+      const ref = Ref.get(7, 0);
+      const changes = new RefMap();
+      await AnnotationFactory.saveNewAnnotations(
+        partialEvaluator,
+        xref,
+        new WorkerTask("update FreeText"),
+        [
+          {
+            annotationType: AnnotationEditorType.FREETEXT,
+            ref,
+            oldAnnotation,
+            appearanceChanged,
+            rect: [20, 34, 64, 78],
+            rotation: 0,
+            fontSize: 10,
+            color: [0, 0, 0],
+            value,
+          },
+        ],
+        null,
+        changes
+      );
+      return changes.get(ref).data.get("AP")?.getRaw("N");
+    }
+
+    it("reuses the existing appearance when moving FreeText", async () => {
+      const loadFont = spyOn(partialEvaluator, "loadFont").and.callThrough();
+      expect(await updateFreeText(false)).toBe(oldAppearance);
+      expect(loadFont).not.toHaveBeenCalled();
+    });
+
+    it("generates an appearance when moving FreeText without one", async () => {
+      expect(await updateFreeText(false, { appearance: null })).toBeInstanceOf(
+        Ref
+      );
+    });
+
+    it("generates an appearance when the old FreeText appearance is unreadable", async () => {
+      const xref = new XRefMock();
+      spyOn(xref, "fetch").and.throwError("Unreadable appearance");
+      expect(
+        await updateFreeText(false, { appearance: Ref.get(8, 0), xref })
+      ).toBeInstanceOf(Ref);
+    });
+
+    it("drops a stale FreeText appearance when the edited text cannot be rendered", async () => {
+      expect(await updateFreeText(true, { value: "한글" })).toBeUndefined();
+    });
+
     it("should create a new FreeText annotation", async () => {
       const xref = (partialEvaluator.xref = new XRefMock());
       const task = new WorkerTask("test FreeText creation");
@@ -6231,35 +6298,36 @@ describe("annotation", function () {
       );
       const data = await writeChanges(changes, xref);
 
-      const base = data[1].data.replace(/\(D:\d+\)/, "(date)");
+      const base = data[0].data.replace(/\(D:\d+\)/, "(date)");
       expect(base).toEqual(
-        "2 0 obj\n" +
+        "1 0 obj\n" +
           "<< /Type /Annot /Subtype /FreeText /CreationDate (date) " +
           "/Rect [12 34 56 78] /DA (/Helv 10 Tf 0 g) /Contents (Hello PDF.js World!) " +
           "/F 4 /Border [0 0 0] /Rotate 0 /AP << /N 3 0 R>>>>\n" +
           "endobj\n"
       );
 
-      const font = data[0].data;
+      const font = data[1].data;
       expect(font).toEqual(
-        "1 0 obj\n" +
+        "2 0 obj\n" +
           "<< /BaseFont /Helvetica /Type /Font /Subtype /Type1 /Encoding " +
           "/WinAnsiEncoding>>\n" +
           "endobj\n"
       );
 
       const appearance = data[2].data;
+      // The Helvetica metrics scale the text to fit the annotation width.
       expect(appearance).toEqual(
         "3 0 obj\n" +
           "<< /FormType 1 /Subtype /Form /Type /XObject /BBox [12 34 56 78] " +
-          "/Resources << /Font << /Helv 1 0 R>>>> /Matrix [1 0 0 1 -12 -34] " +
-          "/Length 98>> stream\n" +
+          "/Resources << /Font << /Helv 2 0 R>>>> /Matrix [1 0 0 1 -12 -34] " +
+          "/Length 100>> stream\n" +
           "q\n" +
           "1 0 0 1 0 0 cm\n" +
           "12 34 44 44 re W n\n" +
           "BT\n" +
           "0 g\n" +
-          "0 Tc /Helv 10 Tf\n" +
+          "0 Tc /Helv 5.04 Tf\n" +
           "12 68 Td (Hello PDF.js World!) Tj\n" +
           "ET\n" +
           "Q\n" +

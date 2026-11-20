@@ -95,6 +95,28 @@ const commit = async page => {
   await page.waitForSelector(".freeTextEditor.selectedEditor .overlay.enabled");
 };
 
+// Returns the printToPDF call counts when saving and extracting, or null if
+// the operation failed.
+function countPrintToPDFCalls(page) {
+  return page.evaluate(async () => {
+    const { pdfDocument } = window.PDFViewerApplication;
+    const count = async save => {
+      let calls = 0;
+      const data = await save(() => {
+        calls++;
+        return null;
+      });
+      return data ? calls : null;
+    };
+    return [
+      await count(printToPDF => pdfDocument.saveDocument({ printToPDF })),
+      await count(printToPDF =>
+        pdfDocument.extractPages([{ document: null }], null, { printToPDF })
+      ),
+    ];
+  });
+}
+
 const switchToFreeText = switchToEditor.bind(null, "FreeText");
 
 const cancelFocusIn = async (page, selector) => {
@@ -927,6 +949,25 @@ describe("FreeText Editor", () => {
     it("must move an annotation", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
+          const drag = [100, 100];
+          const { originalRect, dx, dy } = await page.evaluate(dragDelta => {
+            const { annotationLayer, viewport } =
+              window.PDFViewerApplication.pdfViewer.getPageView(0);
+            const annotation =
+              annotationLayer.annotationLayer.getEditableAnnotation("26R");
+            // Exercise the editor's normalization after text extraction.
+            annotation.textContent[0] = annotation.textContent[0].replace(
+              " ",
+              "\xa0"
+            );
+            const [x, y] = viewport.convertToPdfPoint(0, 0);
+            const [movedX, movedY] = viewport.convertToPdfPoint(...dragDelta);
+            return {
+              originalRect: annotation.data.rect,
+              dx: movedX - x,
+              dy: movedY - y,
+            };
+          }, drag);
           await switchToFreeText(page);
 
           const editorIds = await getEditors(page, "freeText");
@@ -937,12 +978,45 @@ describe("FreeText Editor", () => {
           const serialized = await getSerialized(page);
           expect(serialized).withContext(`In ${browserName}`).toEqual([]);
 
-          // Select the annotation we want to move.
           const editorSelector = getEditorSelector(0);
+          // Editing and undoing the text restores the drawing but remeasures
+          // the editor's box.
+          await selectEditor(page, editorSelector, 2);
+          await kbGoToEnd(page);
+          await page.type(`${editorSelector} .internal`, "!");
+          await commit(page);
+          await waitForSerialized(page, 1);
+          await kbUndo(page);
+          await waitForSerialized(page, 0);
+
           await selectEditor(page, editorSelector);
 
-          await dragAndDrop(page, editorSelector, [[100, 100]]);
+          await dragAndDrop(page, editorSelector, [drag]);
           await waitForSerialized(page, 1);
+          const moved = await getFirstSerialized(page);
+          expect(moved).toEqual(
+            jasmine.objectContaining({
+              appearanceChanged: false,
+              id: "26R",
+              value: "Hello World from Acrobat",
+            })
+          );
+          const [x1, y1, x2, y2] = moved.rect;
+          expect(x2 - x1)
+            .withContext(`Width in ${browserName}`)
+            .toBeCloseTo(originalRect[2] - originalRect[0], 8);
+          expect(y2 - y1)
+            .withContext(`Height in ${browserName}`)
+            .toBeCloseTo(originalRect[3] - originalRect[1], 8);
+          expect(Math.abs(x1 - originalRect[0] - dx))
+            .withContext(`Horizontal drag in ${browserName}`)
+            .toBeLessThanOrEqual(1);
+          expect(Math.abs(y1 - originalRect[1] - dy))
+            .withContext(`Vertical drag in ${browserName}`)
+            .toBeLessThanOrEqual(1);
+          expect(await countPrintToPDFCalls(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([0, 0]);
         })
       );
     });
@@ -997,8 +1071,12 @@ describe("FreeText Editor", () => {
               fontSize: 14,
               value: "Hello World from Acrobat and edited in Firefox",
               id: "26R",
+              appearanceChanged: true,
             })
           );
+          expect(await countPrintToPDFCalls(page))
+            .withContext(`In ${browserName}`)
+            .toEqual([1, 1]);
 
           // Disable editing mode.
           await switchToFreeText(page, /* disable = */ true);

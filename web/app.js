@@ -2824,6 +2824,7 @@ const PDFViewerApplication = {
         return;
       }
       modifiedPdfBytes = await pdfDocument.extractPages(pageInfos, copyLevels, {
+        printToPDF: this.externalServices.printToPDF,
         flatten,
         intent,
       });
@@ -2852,7 +2853,8 @@ const PDFViewerApplication = {
     }
     const modifiedPdfBytes = await this.pdfDocument.extractPages(
       pageInfos,
-      copyLevels
+      copyLevels,
+      { printToPDF: this.externalServices.printToPDF }
     );
     if (!modifiedPdfBytes) {
       console.error(

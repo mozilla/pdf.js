@@ -581,7 +581,13 @@ class WorkerMessageHandler {
 
     handler.on(
       "ExtractPages",
-      async function ({ pageInfos, annotationStorage, flatten, intent }) {
+      async function ({
+        pageInfos,
+        annotationStorage,
+        printToPDFId,
+        flatten,
+        intent,
+      }) {
         if (!pageInfos) {
           warn("extractPages: nothing to extract.");
           return null;
@@ -659,12 +665,19 @@ class WorkerMessageHandler {
           task = new WorkerTask(`ExtractPages: ${pageInfos.length} page(s)`);
           startWorkerTask(task);
 
+          const generateAnnotationAppearances =
+            (typeof PDFJSDev === "undefined" ||
+              PDFJSDev.test("TESTING || MOZCENTRAL")) &&
+            printToPDFId
+              ? generateAppearances.bind(null, printToPDFId)
+              : null;
           const data = await pdfEditor.extractPages(
             pageInfos,
             annotationStorage,
             pdfManager.pdfDocument,
             handler,
-            task
+            task,
+            generateAnnotationAppearances
           );
           if (!data || !flatten) {
             return data;
@@ -724,7 +737,6 @@ class WorkerMessageHandler {
           isPureXfa: false,
           numPages: await manager.ensureDoc("numPages"),
           annotationStorage,
-          supportsPrintToPDF: false,
           filename: null,
           flatten,
           intent,
@@ -804,29 +816,35 @@ class WorkerMessageHandler {
     }
 
     // Import platform-rendered appearances before saving annotations.
-    async function generateAppearances({ annotationStorage, changes, xref }) {
-      const entries = [];
-      for (const [key, value] of annotationStorage) {
-        const entry = AnnotationFactory.getPrintData(value);
-        if (entry) {
-          entries.push({ key, ...entry });
-        }
-      }
-      if (entries.length === 0) {
-        return;
-      }
-
+    async function generateAppearances(printToPDFId, annotations, xref) {
       try {
-        // One PDF permits resources to be shared across pages.
-        // Only the print data crosses to the main thread: `key` and `matrix`
-        // are consumed here when the generated appearances are imported.
-        const buffer = await handler.sendWithPromise(
-          "PrintToPDF",
-          entries.map(({ data }) => ({ data }))
-        );
-        if (!buffer) {
-          return;
+        const entries = [];
+        for (const annotation of annotations) {
+          if (annotation?.deleted) {
+            continue;
+          }
+          const entry = await pdfManager.ensure(
+            AnnotationFactory,
+            "getPrintData",
+            [annotation, pdfManager.pdfDocument.xref]
+          );
+          if (entry) {
+            entries.push({ annotation, ...entry });
+          }
         }
+        if (entries.length === 0) {
+          return null;
+        }
+
+        // One PDF lets the appearances share fonts and other resources.
+        const buffer = await handler.sendWithPromise("PrintToPDF", {
+          id: printToPDFId,
+          entries: entries.map(({ data }) => ({ data })),
+        });
+        if (!buffer) {
+          return null;
+        }
+        const changes = new RefMap();
         const appearances = await importPrintedAppearances({
           buffer,
           changes,
@@ -837,11 +855,13 @@ class WorkerMessageHandler {
           handler,
           xref,
         });
-        for (const [key, ref] of appearances) {
-          annotationStorage.get(key).appearanceRef = ref;
+        for (const [annotation, ref] of appearances) {
+          annotation.appearanceRef = ref;
         }
+        return changes;
       } catch (reason) {
         warn(`generateAppearances: "${reason}".`);
+        return null;
       }
     }
 
@@ -851,7 +871,7 @@ class WorkerMessageHandler {
         isPureXfa,
         numPages,
         annotationStorage,
-        supportsPrintToPDF,
+        printToPDFId,
         filename,
         flatten,
         intent,
@@ -868,7 +888,6 @@ class WorkerMessageHandler {
         manager.ensureDoc("xref"),
         manager.ensureCatalog("structTreeRoot"),
       ];
-      const changes = new RefMap();
       const promises = [];
 
       const newAnnotationsByPage = !isPureXfa
@@ -877,15 +896,20 @@ class WorkerMessageHandler {
       const [stream, acroForm, acroFormRef, startXRef, xref, _structTreeRoot] =
         await Promise.all(globalPromises);
 
+      let changes;
       if (
         (typeof PDFJSDev === "undefined" ||
           PDFJSDev.test("TESTING || MOZCENTRAL")) &&
         !isPureXfa &&
-        supportsPrintToPDF &&
-        annotationStorage
+        printToPDFId
       ) {
-        await generateAppearances({ annotationStorage, changes, xref });
+        changes = await generateAppearances(
+          printToPDFId,
+          annotationStorage.values(),
+          xref
+        );
       }
+      changes ||= new RefMap();
 
       const catalogRef = xref.trailer.getRaw("Root") || null;
       let structTreeRoot;

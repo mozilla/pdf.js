@@ -591,6 +591,15 @@ class AnnotationEditor {
     );
   }
 
+  _getTranslatedRect([x1, y1, x2, y2]) {
+    const [initialX, initialY] = this.#initialRect ?? [this.x, this.y];
+    const [pageWidth, pageHeight] = this.pageDimensions;
+    const dx = (this.x - initialX) * pageWidth;
+    // Editor y increases down the page, while PDF y increases upwards.
+    const dy = (initialY - this.y) * pageHeight;
+    return [x1 + dx, y1 + dy, x2 + dx, y2 + dy];
+  }
+
   get _hasBeenResized() {
     return (
       !!this.#initialRect &&

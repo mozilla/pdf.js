@@ -1058,6 +1058,8 @@ class PDFDocumentProxy {
    *  This routes editor annotations when the viewer contains multiple copies
    *  of a source page.
    * @param {object} [options]
+   * @param {SaveDocumentParameters["printToPDF"]} [options.printToPDF] -
+   *   Generates appearances for edited annotations in the extracted pages.
    * @param {boolean | "non-forms"} [options.flatten] - Flatten extracted
    *   annotations; see {@link SaveDocumentParameters}. The default value is
    *   `false`.
@@ -2415,7 +2417,9 @@ class WorkerTransport {
 
   #passwordCapability = null;
 
-  #printToPDF = null;
+  #printToPDFCallbacks = new Map();
+
+  #printToPDFId = 0;
 
   constructor(
     messageHandler,
@@ -2893,12 +2897,34 @@ class WorkerTransport {
       typeof PDFJSDev === "undefined" ||
       PDFJSDev.test("TESTING || MOZCENTRAL")
     ) {
-      messageHandler.on("PrintToPDF", data => this.#printToPDF?.(data) ?? null);
+      messageHandler.on(
+        "PrintToPDF",
+        ({ id, entries }) =>
+          this.#printToPDFCallbacks.get(id)?.(entries) ?? null
+      );
     }
   }
 
   getData() {
     return this.messageHandler.sendWithPromise("GetData", null);
+  }
+
+  #sendSaveRequest(action, data, transfer, printToPDF) {
+    if (
+      (typeof PDFJSDev === "undefined" ||
+        PDFJSDev.test("TESTING || MOZCENTRAL")) &&
+      printToPDF &&
+      data.annotationStorage
+    ) {
+      data.printToPDFId = ++this.#printToPDFId;
+      this.#printToPDFCallbacks.set(data.printToPDFId, printToPDF);
+    }
+    return this.messageHandler
+      .sendWithPromise(action, data, transfer)
+      .finally(() => {
+        this.#printToPDFCallbacks.delete(data.printToPDFId);
+        this.annotationStorage.resetModified();
+      });
   }
 
   saveDocument({ printToPDF = null, flatten = false, intent = "print" } = {}) {
@@ -2909,37 +2935,25 @@ class WorkerTransport {
       );
     }
     const { map, transfer } = this.annotationStorage.serializable;
-    if (
-      typeof PDFJSDev === "undefined" ||
-      PDFJSDev.test("TESTING || MOZCENTRAL")
-    ) {
-      this.#printToPDF = printToPDF;
-    }
-
-    return this.messageHandler
-      .sendWithPromise(
-        "SaveDocument",
-        {
-          isPureXfa: !!this._htmlForXfa,
-          numPages: this._numPages,
-          annotationStorage: map,
-          supportsPrintToPDF: this.#printToPDF !== null,
-          filename: this.#fullReader?.filename ?? null,
-          flatten,
-          intent: this.#getFlattenIntent(intent),
-        },
-        transfer
-      )
-      .finally(() => {
-        this.#printToPDF = null;
-        this.annotationStorage.resetModified();
-      });
+    return this.#sendSaveRequest(
+      "SaveDocument",
+      {
+        isPureXfa: !!this._htmlForXfa,
+        numPages: this._numPages,
+        annotationStorage: map,
+        filename: this.#fullReader?.filename ?? null,
+        flatten,
+        intent: this.#getFlattenIntent(intent),
+      },
+      transfer,
+      printToPDF
+    );
   }
 
   extractPages(
     pageInfos,
     copyLevels = null,
-    { flatten = false, intent = "print" } = {}
+    { printToPDF = null, flatten = false, intent = "print" } = {}
   ) {
     const params = {
       pageInfos,
@@ -2996,11 +3010,7 @@ class WorkerTransport {
       }
       params.annotationStorage = map;
     }
-    return this.messageHandler
-      .sendWithPromise("ExtractPages", params, transfer)
-      .finally(() => {
-        this.annotationStorage.resetModified();
-      });
+    return this.#sendSaveRequest("ExtractPages", params, transfer, printToPDF);
   }
 
   /**
