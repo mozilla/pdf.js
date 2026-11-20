@@ -226,7 +226,7 @@ pdfjs-find-not-found = Արտահայտությունը չգտնվեց
 
 ## Predefined zoom values
 
-pdfjs-page-scale-width = Էջի լայնքը
+pdfjs-page-scale-width = Էջի լայնքով
 pdfjs-page-scale-fit = Ձգել էջը
 pdfjs-page-scale-auto = Ինքնաշխատ
 pdfjs-page-scale-actual = Իրական չափը
@@ -296,6 +296,10 @@ pdfjs-comment-floating-button =
     .aria-label = Մեկնաբանություն
     .title = Մեկնաբանություն
 pdfjs-comment-floating-button-label = Մեկնաբանություն
+pdfjs-editor-comment-button =
+    .aria-label = Մեկնաբանություն
+    .title = Մեկնաբանություն
+pdfjs-editor-comment-button-label = Մեկնաբանություն
 pdfjs-editor-signature-button =
     .title = Ավելացնել ստորագրություն
 pdfjs-editor-signature-button-label = Ավելացնել ստորագրություն
@@ -507,6 +511,7 @@ pdfjs-editor-undo-bar-message-freetext = Գրվածքը հեռացվել է
 pdfjs-editor-undo-bar-message-ink = Նկարվածը հեռացվել է
 pdfjs-editor-undo-bar-message-stamp = Պատկերը հեռացվել է
 pdfjs-editor-undo-bar-message-signature = Ստորագրությունը հեռացված է
+pdfjs-editor-undo-bar-message-comment = Մեկնաբանությունը հեռացվել է
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -578,8 +583,21 @@ pdfjs-editor-add-signature-cancel-button = Չեղարկել
 pdfjs-editor-add-signature-add-button = Ավելացնել
 pdfjs-editor-edit-signature-update-button = Թարմացնել
 
+## Comment popup
+
+pdfjs-editor-edit-comment-popup-button-label = Խմբագրել մեկնաբանությունը
+pdfjs-editor-edit-comment-popup-button =
+    .title = Խմբագրել մեկնաբանությունը
+pdfjs-editor-delete-comment-popup-button-label = Հեռացնել մեկնաբանությունը
+pdfjs-editor-delete-comment-popup-button =
+    .title = Հեռացնել մեկնաբանությունը
+pdfjs-show-comment-button =
+    .title = Ցուցադրել մեկնաբանությունը
+
 ##  Edit a comment dialog
 
+# An existing comment is edited
+pdfjs-editor-edit-comment-dialog-title-when-editing = Ավելացնել մեկնաբանությունը
 # No existing comment
 pdfjs-editor-edit-comment-dialog-title-when-adding = Ավելացնել մեկնաբանություն
 pdfjs-editor-edit-comment-dialog-save-button-when-adding = Ավելացնել
