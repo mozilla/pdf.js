@@ -66,6 +66,63 @@ class FontTestData {
     const offset = this.tables.get("hmtx").offset + 4 * index;
     return (this.view.getUint16(offset) * 1000) / this.unitsPerEm;
   }
+
+  getKerningPairs() {
+    const gpos = this.tables.get("GPOS");
+    if (gpos) {
+      const { view, unitsPerEm } = this;
+      const lookupList = gpos.offset + view.getUint16(gpos.offset + 8);
+      const lookup = lookupList + view.getUint16(lookupList + 2);
+      const pairPos = lookup + view.getUint16(lookup + 6);
+      const coverage = pairPos + view.getUint16(pairPos + 2);
+      const count = view.getUint16(pairPos + 8);
+      const pairs = [];
+      for (let i = 0; i < count; i++) {
+        const left = view.getUint16(coverage + 4 + 2 * i);
+        const pairSet = pairPos + view.getUint16(pairPos + 10 + 2 * i);
+        const end = pairSet + 2 + 4 * view.getUint16(pairSet);
+        for (let offset = pairSet + 2; offset < end; offset += 4) {
+          pairs.push([
+            left,
+            view.getUint16(offset),
+            (view.getInt16(offset + 2) * 1000) / unitsPerEm,
+          ]);
+        }
+      }
+      return pairs;
+    }
+    const table = this.tables.get("kern");
+    if (!table) {
+      return [];
+    }
+    const { view, unitsPerEm } = this;
+    const count = view.getUint16(table.offset + 10);
+    const pairs = [];
+    for (let i = 0, offset = table.offset + 18; i < count; i++, offset += 6) {
+      pairs.push([
+        view.getUint16(offset),
+        view.getUint16(offset + 2),
+        (view.getInt16(offset + 4) * 1000) / unitsPerEm,
+      ]);
+    }
+    return pairs;
+  }
+
+  expectKerningPairs(pairs) {
+    expect(
+      this.getKerningPairs().map(([left, right, advance]) => [
+        left,
+        right,
+        Math.round(advance),
+      ])
+    ).toEqual(
+      pairs.map(([left, right, advance]) => [
+        this.getGlyphId(left.codePointAt(0)),
+        this.getGlyphId(right.codePointAt(0)),
+        advance,
+      ])
+    );
+  }
 }
 
 export { FontTestData };

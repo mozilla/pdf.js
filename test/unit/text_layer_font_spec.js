@@ -259,6 +259,26 @@ describe("text layer font", function () {
     ]);
   });
 
+  it("compensates for the advance of a normalized ligature with kerning", function () {
+    const { data } = getTextLayerFont([
+      ["f", 300],
+      ["i", 220],
+      ["fi", 480],
+    ]);
+    const font = new FontTestData(data);
+    font.expectKerningPairs([["f", "i", -40]]);
+  });
+
+  it("leaves a ligature with inconsistent advances to span fitting", function () {
+    const { data } = getTextLayerFont([
+      ["f", 300],
+      ["i", 220],
+      ["fi", 480],
+      ["fi", 510],
+    ]);
+    new FontTestData(data).expectKerningPairs([]);
+  });
+
   it("includes the Thai and Lao SARA AM shaping components", function () {
     const { data } = getTextLayerFont([
       ["\u0e33", 500],

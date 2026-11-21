@@ -537,6 +537,11 @@ class TextLayer {
           TextLayer.#quantizeFontSize((fontSize * this.#scale) / pixelRatio) *
           pixelRatio;
 
+        // Match the layer's kerning setting on the shared measurement canvas.
+        const kerning = this.#hasTextLayerFonts ? "normal" : "auto";
+        if (ctx.fontKerning !== kerning) {
+          ctx.fontKerning = kerning;
+        }
         TextLayer.#ensureCtxFont(ctx, measuredSize, style.fontFamily);
         width =
           (ctx.measureText(div.textContent).width * fontSize) / measuredSize;

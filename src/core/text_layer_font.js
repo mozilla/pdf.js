@@ -15,19 +15,29 @@
 
 import { BBOX_INIT, makeMap, Util } from "../shared/util.js";
 import { createCmapTable, createNameTable, createPostTable } from "./fonts.js";
+import { isRtlCodePoint, isStrongLtrCodePoint } from "./bidi.js";
 import { DataBuilder } from "./data_builder.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
 
 const UNITS_PER_EM = 2048;
+const KERNING_KEY_FACTOR = 0x110000;
+// The length of a version 0 kern subtable is a uint16.
+const MAX_KERNING_PAIRS = Math.floor((0xffff - 14) / 6);
+const GAP_STEP = 5; // thousandths of an em
+const MIN_KERNING_SHARE = 0.8;
+const MAX_KERNING_VALUES_PER_PAIR = 8;
+// A single small negative adjustment can be kerning in a sparsely used font.
+const MAX_SINGLE_KERNING = 200;
 
 // The advances are in 1/1000 em.
 const DEFAULT_ASCENT = 0.8;
 const DEFAULT_SPACE_ADVANCE = 250;
 // The largest advance fitting in the hmtx table.
 const MAX_ADVANCE = (0xffff * 1000) / UNITS_PER_EM;
-// The browsers give no advance to these characters.
+// The browsers give no advance to nonspacing marks or default ignorables.
 const ZERO_WIDTH_REGEXP = /^[\p{Mn}\p{Default_Ignorable_Code_Point}]+$/u;
 // The browser shapes Thai and Lao SARA AM as a mark followed by SARA AA.
+// https://searchfox.org/firefox-main/rev/bb52b0d2720259aa4babab6a376836bce6dde70e/gfx/harfbuzz/src/hb-ot-shaper-thai.cc#335
 const SARA_AM_DECOMPOSITIONS = new Map([
   [0x0e33, [0x0e4d, 0x0e32]],
   [0x0eb3, [0x0ecd, 0x0eb2]],
@@ -42,8 +52,8 @@ function toFontUnits(advance) {
   return Math.round((advance * UNITS_PER_EM) / 1000);
 }
 
-function roundFontAdvance(advance) {
-  return (toFontUnits(advance) * 1000) / UNITS_PER_EM;
+function roundTextGap(gap) {
+  return Math.round(gap / GAP_STEP) * GAP_STEP;
 }
 
 function isZeroWidth(text) {
@@ -51,23 +61,48 @@ function isZeroWidth(text) {
   return text.charCodeAt(0) >= 0xad && ZERO_WIDTH_REGEXP.test(text);
 }
 
+function getKerningKey(left, right) {
+  return left * KERNING_KEY_FACTOR + right;
+}
+
+function getAdvanceCodePoint(char) {
+  const codePoint = char.codePointAt(0);
+  return SARA_AM_DECOMPOSITIONS.get(codePoint)?.[1] ?? codePoint;
+}
+
+function getAdvanceCodePoints(text) {
+  const codePoints = [];
+  for (const char of text) {
+    if (!isZeroWidth(char) && char.isWellFormed()) {
+      codePoints.push(getAdvanceCodePoint(char));
+    }
+  }
+  return codePoints;
+}
+
 /**
  * @param {string} text
- * @param {Map<number, number>} advances
+ * @param {object} metrics - See `TextLayerFonts.getMetrics`.
  * @returns {number} The advance of the text shaped by the browser, in 1/1000
  *   em, or NaN if a character is missing.
  */
-function getTextAdvance(text, advances) {
-  let width = 0;
+function getTextAdvance(text, metrics) {
+  const { advances, kerning } = metrics;
+  let width = 0,
+    prev = -1;
   for (const char of text) {
-    const codePoint = char.codePointAt(0);
-    if (!isZeroWidth(char)) {
-      width += roundFontAdvance(
-        advances.get(SARA_AM_DECOMPOSITIONS.get(codePoint)?.[1] ?? codePoint)
-      );
-    } else if (!advances.has(codePoint)) {
-      return NaN;
+    if (isZeroWidth(char)) {
+      if (!advances.has(char.codePointAt(0))) {
+        return NaN;
+      }
+      continue;
     }
+    const codePoint = getAdvanceCodePoint(char);
+    width += advances.get(codePoint);
+    if (prev >= 0) {
+      width += kerning.get(getKerningKey(prev, codePoint)) ?? 0;
+    }
+    prev = codePoint;
   }
   return width;
 }
@@ -76,6 +111,7 @@ function createStats() {
   return {
     advances: new Map(),
     ligatures: new Map(),
+    kerning: new Map(),
     spaceGaps: [],
   };
 }
@@ -123,10 +159,12 @@ function getAscentRatio(
  * @param {Map} samples - Advance counts by character or ligature.
  * @param {number|string} key
  * @param {number} advance
+ * @param {number} [count]
+ * @returns {Map<number, number>} Updated counts for the key.
  */
-function addCount(samples, key, advance) {
+function addCount(samples, key, advance, count = 1) {
   const counts = samples.getOrInsertComputed(key, makeMap);
-  counts.set(advance, (counts.get(advance) || 0) + 1);
+  return counts.set(advance, (counts.get(advance) || 0) + count);
 }
 
 /**
@@ -143,6 +181,42 @@ function getMostFrequent(counts) {
     }
   }
   return best;
+}
+
+function addKerningSample(samples, key, advance, count = 1) {
+  if (samples.get(key) === null || !Number.isFinite(advance)) {
+    return;
+  }
+  const counts = addCount(samples, key, roundTextGap(advance), count);
+  if (counts.size > MAX_KERNING_VALUES_PER_PAIR) {
+    samples.set(key, null);
+  }
+}
+
+function selectKerningPairs(samples, ligaturePairs) {
+  const candidates = [];
+  for (const [key, counts] of samples) {
+    if (!counts) {
+      continue;
+    }
+    const value = getMostFrequent(counts);
+    const count = counts.get(value);
+    if (
+      value &&
+      Math.abs(value) <= 1000 &&
+      (count >= 2 ||
+        (value < 0 && value >= -MAX_SINGLE_KERNING) ||
+        ligaturePairs?.has(key)) &&
+      count >= MIN_KERNING_SHARE * counts.values().reduce((a, b) => a + b, 0)
+    ) {
+      candidates.push({ key, value, count });
+    }
+  }
+  if (candidates.length > MAX_KERNING_PAIRS) {
+    candidates.sort((a, b) => b.count - a.count);
+    candidates.length = MAX_KERNING_PAIRS;
+  }
+  return new Map(candidates.map(({ key, value }) => [key, value]));
 }
 
 function getAdvances(stats) {
@@ -192,6 +266,39 @@ function getAdvances(stats) {
   return advances;
 }
 
+function getKerning({ kerning, ligatures }, advances) {
+  if (!ligatures.size) {
+    return selectKerningPairs(kerning);
+  }
+  // A ligature's remaining advance is distributed over its internal
+  // pairs. Count those observations together with the gaps in the PDF.
+  const samples = new Map(kerning);
+  const ligaturePairs = new Set();
+  for (const [unicode, counts] of ligatures) {
+    const codePoints = getAdvanceCodePoints(unicode);
+    if (codePoints.some(isRtlCodePoint)) {
+      continue;
+    }
+    const width = codePoints.reduce(
+      (sum, codePoint) => sum + advances.get(codePoint),
+      0
+    );
+    for (let i = 1; i < codePoints.length; i++) {
+      const key = getKerningKey(codePoints[i - 1], codePoints[i]);
+      const observed = kerning.get(key);
+      if (observed && samples.get(key) === observed) {
+        samples.set(key, new Map(observed));
+      }
+      ligaturePairs.add(key);
+      for (const [advance, frequency] of counts) {
+        const value = (advance - width) / (codePoints.length - 1);
+        addKerningSample(samples, key, value, frequency);
+      }
+    }
+  }
+  return selectKerningPairs(samples, ligaturePairs);
+}
+
 /**
  * @param {number} width
  * @param {number} yMin
@@ -229,23 +336,153 @@ function createBoxGlyph(width, yMin, yMax) {
   return glyph;
 }
 
+function createKerningPositioning(pairs) {
+  const pairSets = Map.groupBy(pairs, ([left]) => left);
+  const count = pairSets.size;
+  const coverageOffset = 10 + 2 * count;
+  const pairSetsOffset = coverageOffset + 4 + 2 * count;
+  const pairPosLength = pairSetsOffset + 2 * count + 4 * pairs.length;
+  if (pairPosLength > 0xffff) {
+    return null;
+  }
+
+  const scriptList = 10;
+  const featureList = scriptList + 20;
+  const lookupList = featureList + 14;
+  const lookup = lookupList + 4;
+  const pairPos = lookup + 8;
+  const data = new Uint8Array(pairPos + pairPosLength);
+  const view = new DataView(data.buffer);
+  view.setUint32(0, 0x00010000); // version 1.0
+  view.setUint16(4, scriptList);
+  view.setUint16(6, featureList);
+  view.setUint16(8, lookupList);
+
+  // The default script and language select the first feature.
+  view.setUint16(scriptList, 1);
+  view.setUint32(scriptList + 2, 0x44464c54); // DFLT
+  view.setUint16(scriptList + 6, 8); // Script offset
+  view.setUint16(scriptList + 8, 4); // DefaultLangSys offset
+  view.setUint16(scriptList + 14, 0xffff); // No required feature.
+  view.setUint16(scriptList + 16, 1); // Feature count
+
+  view.setUint16(featureList, 1);
+  view.setUint32(featureList + 2, 0x6b65726e); // kern
+  view.setUint16(featureList + 6, 8); // Feature offset
+  view.setUint16(featureList + 10, 1); // Lookup count
+
+  view.setUint16(lookupList, 1);
+  view.setUint16(lookupList + 2, 4); // Lookup offset
+  view.setUint16(lookup, 2); // Pair adjustment
+  view.setUint16(lookup + 2, 0x0008); // Ignore marks.
+  view.setUint16(lookup + 4, 1); // Subtable count
+  view.setUint16(lookup + 6, 8); // First subtable offset
+
+  // Adjust the full advance of the first glyph. This keeps the selection
+  // boundary at the start of the second glyph.
+  view.setUint16(pairPos, 1); // Pair positioning format 1
+  view.setUint16(pairPos + 2, coverageOffset);
+  view.setUint16(pairPos + 4, 4); // xAdvance
+  view.setUint16(pairPos + 8, count);
+  const coverage = pairPos + coverageOffset;
+  view.setUint16(coverage, 1); // Coverage format 1
+  view.setUint16(coverage + 2, count);
+
+  let index = 0,
+    offset = pairPos + pairSetsOffset;
+  for (const [left, records] of pairSets) {
+    view.setUint16(coverage + 4 + 2 * index, left);
+    view.setUint16(pairPos + 10 + 2 * index++, offset - pairPos);
+    view.setUint16(offset, records.length);
+    offset += 2;
+    for (const [, right, units] of records) {
+      view.setUint16(offset, right);
+      view.setInt16(offset + 2, units);
+      offset += 4;
+    }
+  }
+  return data;
+}
+
+function addKerningTable(builder, codePointPairs, charCodeToGlyphId) {
+  // The legacy kern table uses visual order. GPOS preserves caret positions,
+  // but its pairs use reading order, which must match the PDF's visual order.
+  const useGpos =
+    !charCodeToGlyphId.keys().some(isRtlCodePoint) ||
+    codePointPairs.every(
+      ([left, right]) =>
+        isStrongLtrCodePoint(left) && isStrongLtrCodePoint(right)
+    );
+
+  const pairs = codePointPairs.map(([left, right, units]) => [
+    charCodeToGlyphId.get(left),
+    charCodeToGlyphId.get(right),
+    units,
+  ]);
+  pairs.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (useGpos) {
+    const gpos = createKerningPositioning(pairs);
+    if (gpos) {
+      builder.addTable("GPOS", gpos);
+      return;
+    }
+  }
+  const count = pairs.length;
+  const data = new Uint8Array(18 + 6 * count);
+  const kern = new DataView(data.buffer);
+  kern.setUint16(2, 1); // nTables
+  kern.setUint16(6, 14 + 6 * count); // subtable length
+  kern.setUint16(8, 1); // format 0, horizontal
+  kern.setUint16(10, count);
+  const { range, entry, rangeShift } = OpenTypeFileBuilder.getSearchParams(
+    count,
+    6
+  );
+  kern.setUint16(12, range);
+  kern.setUint16(14, entry);
+  kern.setUint16(16, rangeShift);
+  let offset = 18;
+  for (const [left, right, units] of pairs) {
+    kern.setUint16(offset, left);
+    kern.setUint16(offset + 2, right);
+    kern.setInt16(offset + 4, units);
+    offset += 6;
+  }
+  builder.addTable("kern", data);
+}
+
 /**
  * Build a TrueType font, with empty glyphs, for the text layer.
  * @param {Map<number, number>} advances - Advance by code point.
  * @param {number} ascent - Fraction of the em; the descent is the rest.
  * @param {boolean} [drawBoxes] - Debug: draw glyph bounds.
  * @param {number} [advanceScale] - PDF advance per unit of encoded advance.
+ * @param {Map<number, number>} [kerning] - Advances by Unicode pair key.
  * @returns {Uint8Array|null} The font, or null if the advances don't fit.
  */
 function buildTextLayerFont(
   advances,
   ascent,
   drawBoxes = false,
-  advanceScale = 1
+  advanceScale = 1,
+  kerning
 ) {
-  // Glyph 0 is .notdef. The characters with the same advance share a glyph.
+  const kerned = new Set();
+  const pairs = [];
+  for (const [key, advance] of kerning || []) {
+    const left = Math.floor(key / KERNING_KEY_FACTOR);
+    const right = key % KERNING_KEY_FACTOR;
+    const units = toFontUnits(advance / advanceScale);
+    if (units && advances.has(left) && advances.has(right)) {
+      kerned.add(left).add(right);
+      pairs.push([left, right, units]);
+    }
+  }
+
+  // Glyph 0 is .notdef. Unkerned characters with the same advance can share
+  // a glyph. The kern table identifies a pair by glyph IDs, not code points.
   const hmtxAdvances = [0];
-  const glyphIds = new Map();
+  const glyphIdByWidth = new Map();
   const charCodeToGlyphId = new Map();
   let advanceSum = 0,
     advanceMax = 0,
@@ -253,7 +490,7 @@ function buildTextLayerFont(
     lastChar = 0;
   for (const [codePoint, advance] of advances) {
     const scaledAdvance = advance / advanceScale;
-    const units = Math.round((scaledAdvance * UNITS_PER_EM) / 1000);
+    const units = toFontUnits(scaledAdvance);
     // A positive advance rounded to zero would make the span impossible to fit.
     if (
       !(scaledAdvance >= 0 && scaledAdvance <= MAX_ADVANCE) ||
@@ -261,10 +498,13 @@ function buildTextLayerFont(
     ) {
       return null;
     }
-    let glyphId = glyphIds.get(units);
+    const hasKerning = kerned.has(codePoint);
+    let glyphId = hasKerning ? undefined : glyphIdByWidth.get(units);
     if (glyphId === undefined) {
       glyphId = hmtxAdvances.push(units) - 1;
-      glyphIds.set(units, glyphId);
+      if (!hasKerning) {
+        glyphIdByWidth.set(units, glyphId);
+      }
       advanceSum += units;
       advanceMax = Math.max(advanceMax, units);
     }
@@ -274,6 +514,9 @@ function buildTextLayerFont(
     lastChar = Math.max(lastChar, char);
   }
   const numGlyphs = hmtxAdvances.length;
+  if (numGlyphs > 0xffff) {
+    return null;
+  }
   // The advances are unsigned, unlike xAvgCharWidth.
   const avgCharWidth = Math.round(advanceSum / (numGlyphs - 1));
   const ascender = Math.round(ascent * UNITS_PER_EM);
@@ -361,6 +604,9 @@ function buildTextLayerFont(
   builder.addTable("name", (nameTable ??= createNameTable("PDFJSTextLayer")));
   builder.addTable("post", (postTable ??= createPostTable({ italicAngle: 0 })));
 
+  if (pairs.length) {
+    addKerningTable(builder, pairs, charCodeToGlyphId);
+  }
   return builder.toArray();
 }
 
@@ -373,6 +619,8 @@ class TextLayerFonts {
   #heightScaled = new WeakSet();
 
   #idFactory;
+
+  #advanceCodePoints = new Map();
 
   #stats = new Map();
 
@@ -387,7 +635,7 @@ class TextLayerFonts {
 
   /**
    * @param {Font} font
-   * @returns {object} The advance, ligature and space gap samples.
+   * @returns {object} The samples collected for the font.
    */
   #getStats(font) {
     return this.#stats.getOrInsertComputed(font, createStats);
@@ -444,6 +692,27 @@ class TextLayerFonts {
     }
   }
 
+  addKerning(font, leftText, rightText, advance) {
+    if (font.vertical) {
+      return;
+    }
+    const codePoints = this.#advanceCodePoints;
+    const left = codePoints
+      .getOrInsertComputed(leftText, getAdvanceCodePoints)
+      .at(-1);
+    const right = codePoints.getOrInsertComputed(
+      rightText,
+      getAdvanceCodePoints
+    )[0];
+    if (left !== undefined && right !== undefined) {
+      addKerningSample(
+        this.#getStats(font).kerning,
+        getKerningKey(left, right),
+        advance
+      );
+    }
+  }
+
   /**
    * @param {Font} font - A Type 3 font whose item height is its bbox height.
    */
@@ -453,7 +722,7 @@ class TextLayerFonts {
 
   /**
    * @param {Font} font
-   * @returns {object|null} The advances for fitting the spans.
+   * @returns {object|null} The advances and kerning for fitting the spans.
    */
   getMetrics(font) {
     const stats = this.#stats.get(font);
@@ -464,7 +733,7 @@ class TextLayerFonts {
     // Use the smallest power of two that fits every advance in hmtx.
     let advanceScale = 1;
     for (const advance of advances.values()) {
-      if (!Number.isFinite(advance)) {
+      if (!Number.isFinite(advance) || advance < 0) {
         return null;
       }
       while (advance > MAX_ADVANCE * advanceScale) {
@@ -476,19 +745,22 @@ class TextLayerFonts {
       0x20,
       Math.max(DEFAULT_SPACE_ADVANCE, (advanceScale * 1000) / UNITS_PER_EM)
     );
-    if (advanceScale !== 1) {
-      // Keep the fitter in PDF units, quantized to exactly the advances the
-      // generated font will use.
-      for (const [key, value] of advances) {
-        const advance = roundFontAdvance(value / advanceScale) * advanceScale;
-        if (advance === 0 && value > 0) {
-          // See `buildTextLayerFont`.
-          return null;
-        }
-        advances.set(key, advance);
+    // `addKerning` skips vertical fonts, but the ligatures still give samples.
+    const kerning = font.vertical ? new Map() : getKerning(stats, advances);
+    // Keep the fitter in PDF units, using the same advances as the font.
+    const quantize = value =>
+      (toFontUnits(value / advanceScale) * 1000 * advanceScale) / UNITS_PER_EM;
+    for (const [key, value] of advances) {
+      const advance = quantize(value);
+      if (advance === 0 && value > 0) {
+        return null;
       }
+      advances.set(key, advance);
     }
-    return { advances, advanceScale };
+    for (const [key, value] of kerning) {
+      kerning.set(key, quantize(value));
+    }
+    return { advances, kerning, advanceScale };
   }
 
   /**
@@ -504,12 +776,13 @@ class TextLayerFonts {
     const ascent = font.vertical
       ? 0.5
       : getAscentRatio(font, this.#heightScaled.has(font));
-    const { advances, advanceScale } = metrics;
+    const { advances, kerning, advanceScale } = metrics;
     const data = buildTextLayerFont(
       advances,
       ascent,
       this.#drawBoxes,
-      advanceScale
+      advanceScale,
+      kerning
     );
     if (!data) {
       return null;
@@ -523,4 +796,10 @@ class TextLayerFonts {
   }
 }
 
-export { buildTextLayerFont, getTextAdvance, isZeroWidth, TextLayerFonts };
+export {
+  buildTextLayerFont,
+  getTextAdvance,
+  isZeroWidth,
+  roundTextGap,
+  TextLayerFonts,
+};

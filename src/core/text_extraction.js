@@ -17,6 +17,7 @@ import { AbortException, TEXT_CONTENT_CHUNK_SIZE } from "../shared/util.js";
 import {
   getTextAdvance,
   isZeroWidth,
+  roundTextGap,
   TextLayerFonts,
 } from "./text_layer_font.js";
 import { bidi } from "./bidi.js";
@@ -28,7 +29,6 @@ const SIMPLE_TEXT =
   /^[ 0-9\u30fc\uff10-\uff19\uff70\p{sc=Latin}\p{sc=Greek}\p{sc=Cyrillic}\p{sc=Han}\p{sc=Hiragana}\p{sc=Katakana}\p{sc=Thai}\p{sc=Lao}\p{Mn}\p{P}\p{Sc}\p{Sm}\p{Sk}]+$/u;
 const SIMPLE_RTL_TEXT =
   /^[ \ufb50-\ufdff\ufe70-\ufefc\p{sc=Hebr}\p{Mn}\p{P}]+$/u;
-const GAP_STEP = 5; // thousandths of an em
 const MIN_SPACE_GAP = 30;
 const MAX_GLYPH_OVERLAP = 200;
 const MAX_INLINE_SPACE = 600; // thousandths of an em
@@ -99,22 +99,18 @@ function hasSameAxes(left, right) {
   );
 }
 
-// For a reflected transform with d > 0, move the origin along the baseline
-// by the item width, then reverse the baseline direction.
+function hasReflectedBaseline({ transform: [a, b, c, d], vertical }) {
+  return !vertical && d > 0 && a * d - b * c < 0;
+}
+
 function unmirrorTransform(transform, width) {
-  const a = transform[0];
-  const b = transform[1];
-  const c = transform[2];
-  const d = transform[3];
-  if (a * d - b * c >= 0 || d <= 0) {
-    return false;
-  }
+  const [a, b] = transform;
+  // Move the origin along the baseline, then reverse the baseline direction.
   const scale = width / Math.hypot(a, b);
   transform[0] = -a;
   transform[1] = -b;
   transform[4] += a * scale;
   transform[5] += b * scale;
-  return true;
 }
 
 // The move across the baseline from the origin `from` to `to`, in page units,
@@ -368,7 +364,7 @@ function inferTracking(glyphs, start, end, threshold) {
       continue;
     }
     const gap = getGap(left, right) - left.charSpacing;
-    const value = Math.round(gap / GAP_STEP) * GAP_STEP;
+    const value = roundTextGap(gap);
     const bin = bins.get(value);
     if (bin) {
       bin.count++;
@@ -412,7 +408,7 @@ function inferTracking(glyphs, start, end, threshold) {
   return value > 0 && value < maxTracking && 2 * count >= samples ? value : 0;
 }
 
-function inferSpaces({ glyphs, spaceWidth }, fonts, font) {
+function inferSpaces({ glyphs, spaceWidth }, fonts, font, unmirrored) {
   for (let start = 0, end; start < glyphs.length; start = end) {
     end = start + 1;
     while (end < glyphs.length && !glyphs[end].trackingStart) {
@@ -440,8 +436,18 @@ function inferSpaces({ glyphs, spaceWidth }, fonts, font) {
       right.space = right.space
         ? gap > MIN_SPACE_GAP
         : adjustedGap > (pairTracking > 0 ? 0.8 : 1) * threshold;
-      if (right.space && adjustedGap > 0) {
-        fonts?.addSpaceGap(font, adjustedGap);
+      if (!fonts) {
+        continue;
+      }
+      if (!right.space) {
+        fonts.addKerning(
+          font,
+          (unmirrored ? right : left).unicode,
+          (unmirrored ? left : right).unicode,
+          adjustedGap
+        );
+      } else if (adjustedGap > 0) {
+        fonts.addSpaceGap(font, adjustedGap);
       }
     }
   }
@@ -486,7 +492,7 @@ function hasSimpleGlyphOrder({ str, dir }, parts, visualText) {
     : SIMPLE_TEXT.test(str) && str === visualText;
 }
 
-function widthFittedItem(item, { advances }, visualText) {
+function widthFittedItem(item, metrics, visualText) {
   const { str } = item;
   // Even with simple glyph order, mirroring, variation selectors or NFC
   // composition can change which glyphs the browser measures.
@@ -497,7 +503,7 @@ function widthFittedItem(item, { advances }, visualText) {
     !/\p{Variation_Selector}/u.test(visualText) &&
     visualText === visualText.normalize("NFC")
   ) {
-    const width = getTextAdvance(visualText, advances);
+    const width = getTextAdvance(visualText, metrics);
     if (width > 0) {
       item.textLayerAdvance = width / 1000;
     }
@@ -516,11 +522,9 @@ function makeSpan(run, first, last, dir, metrics) {
   );
 }
 
-function getBidiRun(run, onMirror) {
+function getBidiRun(run, unmirrored, onMirror) {
   const { glyphs, vertical } = run;
   const fullItem = makeTextItem(run, 0, glyphs.length - 1, "");
-  const unmirrored =
-    !vertical && unmirrorTransform(fullItem.transform, fullItem.width);
   // The glyphs tell bidi whether their Unicode is the shape to mirror.
   const parts = [];
   for (const glyph of glyphs) {
@@ -530,6 +534,7 @@ function getBidiRun(run, onMirror) {
     parts.push(glyph);
   }
   if (unmirrored) {
+    unmirrorTransform(fullItem.transform, fullItem.width);
     parts.reverse();
   }
   Object.assign(fullItem, bidi(parts, -1, vertical, onMirror));
@@ -610,8 +615,9 @@ function intersectRun(intersector, run) {
 }
 
 /**
- * Infers the word spaces of the runs. With the text layer fonts, buffers the
- * page to fit the spans to the advances of the generated fonts.
+ * Infers the word spaces of the runs. With the text layer fonts, also infers
+ * the font kerning and buffers the page to fit the spans to the advances of
+ * the generated fonts.
  */
 class TextExtraction {
   #chunks = [];
@@ -673,7 +679,8 @@ class TextExtraction {
         continue;
       }
       const font = this.#fonts.get(run.fontName);
-      inferSpaces(run, fonts, font);
+      const unmirrored = hasReflectedBaseline(run);
+      inferSpaces(run, fonts, font, unmirrored);
       if (intersector) {
         intersectRun(intersector, run);
         continue;
@@ -682,6 +689,7 @@ class TextExtraction {
       // generated font needs them too.
       items[i] = getBidiRun(
         run,
+        unmirrored,
         fonts &&
           ((glyph, unicode) => fonts.addGlyph(font, unicode, glyph.advance))
       );

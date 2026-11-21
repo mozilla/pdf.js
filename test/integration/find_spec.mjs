@@ -115,6 +115,53 @@ describe("find bar", () => {
     });
   });
 
+  describe("highlight in kerned text", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "text_layer_kerning.pdf",
+        ".textLayer .endOfContent",
+        100
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep the kerning around the highlighted text", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const query = "V";
+          const span = await page.$(".textLayer span");
+          const before = await span.boundingBox();
+          const matchX = await span.evaluate((element, text) => {
+            const start = element.textContent.indexOf(text);
+            const range = document.createRange();
+            range.setStart(element.firstChild, start);
+            range.setEnd(element.firstChild, start + text.length);
+            return range.getBoundingClientRect().left;
+          }, query);
+          // Helvetica A at 40 pt with the PDF's -200 unit adjustment.
+          const expectedOffset = (467 / 1000) * 40 * (96 / 72);
+          fuzzyMatch(matchX - before.x, expectedOffset, browserName, 0.25);
+
+          await search(page, query);
+          const highlight = await span.$(".highlight.selected");
+          const { x } = await highlight.boundingBox();
+          fuzzyMatch(x, matchX, browserName, 0.25);
+          fuzzyMatch(
+            (await span.boundingBox()).width,
+            before.width,
+            browserName,
+            0.5
+          );
+        })
+      );
+    });
+  });
+
   describe("search with no search results", () => {
     let pages;
 

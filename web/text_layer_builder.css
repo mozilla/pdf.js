@@ -57,6 +57,7 @@
   --min-font-size-inv: calc(1 / var(--min-font-size));
 
   &.textLayerFonts {
+    font-kerning: normal;
     font-variant-ligatures: none;
   }
 
@@ -85,6 +86,7 @@
   .highlight {
     --highlight-bg-color: rgb(180 0 170 / 0.25);
     --highlight-selected-bg-color: rgb(0 100 0 / 0.25);
+    --highlight-color: var(--highlight-bg-color);
     --highlight-backdrop-filter: none;
     --highlight-selected-backdrop-filter: none;
 
@@ -99,7 +101,7 @@
 
     margin: -1px;
     padding: 1px;
-    background-color: var(--highlight-bg-color);
+    background-color: var(--highlight-color);
     backdrop-filter: var(--highlight-backdrop-filter);
     border-radius: 4px;
 
@@ -120,10 +122,18 @@
     }
 
     &.selected {
-      background-color: var(--highlight-selected-bg-color);
+      --highlight-color: var(--highlight-selected-bg-color);
+
       backdrop-filter: var(--highlight-selected-backdrop-filter);
       scroll-margin-top: 50px;
     }
+  }
+
+  /* Paint the outline without breaking kerning across an inline highlight. */
+  &.textLayerFonts .highlight {
+    margin: 0;
+    padding: 0;
+    box-shadow: 0 0 0 1px var(--highlight-color);
   }
 
   ::selection {
