@@ -45,29 +45,38 @@ function createStats() {
  * @param {Font} font
  * @returns {number} The fraction of the em above the baseline.
  */
-function getAscentRatio({ ascent, descent, bbox, fontMatrix, isType3Font }) {
+function getAscentRatio(
+  { ascent, descent, bbox, fontMatrix, isType3Font },
+  heightScaled = false
+) {
   const isValid = ratio => ratio > 0.5 && ratio < 0.95;
   // The descent sometimes has the wrong sign.
-  let ratio = ascent / (ascent + Math.abs(descent));
+  const ratio = ascent / (ascent + Math.abs(descent));
   if (isValid(ratio)) {
     return ratio;
   }
-  if (bbox) {
-    let yMin = bbox[1],
-      yMax = bbox[3];
-    if (isType3Font && fontMatrix) {
-      // The glyph space of Type3 fonts may be flipped.
-      const bounds = BBOX_INIT.slice();
-      Util.axialAlignedBoundingBox(bbox, fontMatrix, bounds);
-      yMin = bounds[1];
-      yMax = bounds[3];
-    }
-    ratio = yMax / (yMax - yMin);
-    if (isValid(ratio)) {
-      return ratio;
-    }
+  if (!bbox) {
+    return DEFAULT_ASCENT;
   }
-  return DEFAULT_ASCENT;
+  if (isType3Font && fontMatrix && !heightScaled) {
+    // The glyph space of Type3 fonts may be flipped, unless the item height
+    // already carries that flip.
+    const bounds = BBOX_INIT.slice();
+    Util.axialAlignedBoundingBox(bbox, fontMatrix, bounds);
+    bbox = bounds;
+  }
+  const [, yMin, , yMax] = bbox;
+  const height = yMax - yMin;
+  if (!(height > 0 && Number.isFinite(height))) {
+    return DEFAULT_ASCENT;
+  }
+  const bboxRatio = yMax / height;
+  // Type 3 glyphs can be arbitrary drawings, with the baseline at either
+  // edge of their box. Keep that baseline when it lies within the bounds.
+  if (isType3Font && yMin <= 0 && yMax >= 0) {
+    return bboxRatio;
+  }
+  return isValid(bboxRatio) ? bboxRatio : DEFAULT_ASCENT;
 }
 
 /**
@@ -138,9 +147,15 @@ function createBoxGlyph(width, yMin, yMax) {
  * @param {Map<number, number>} advances - Advance by code point.
  * @param {number} ascent - Fraction of the em; the descent is the rest.
  * @param {boolean} [drawBoxes] - Debug: draw glyph bounds.
+ * @param {number} [advanceScale] - PDF advance per unit of encoded advance.
  * @returns {Uint8Array|null} The font, or null if the advances don't fit.
  */
-function buildTextLayerFont(advances, ascent, drawBoxes = false) {
+function buildTextLayerFont(
+  advances,
+  ascent,
+  drawBoxes = false,
+  advanceScale = 1
+) {
   // Glyph 0 is .notdef. The characters with the same advance share a glyph.
   const hmtxAdvances = [0];
   const glyphIds = new Map();
@@ -150,10 +165,15 @@ function buildTextLayerFont(advances, ascent, drawBoxes = false) {
     firstChar = 0xffff,
     lastChar = 0;
   for (const [codePoint, advance] of advances) {
-    if (!(advance >= 0 && advance <= MAX_ADVANCE)) {
+    const scaledAdvance = advance / advanceScale;
+    const units = Math.round((scaledAdvance * UNITS_PER_EM) / 1000);
+    // A positive advance rounded to zero would make the span impossible to fit.
+    if (
+      !(scaledAdvance >= 0 && scaledAdvance <= MAX_ADVANCE) ||
+      (units === 0 && scaledAdvance > 0)
+    ) {
       return null;
     }
-    const units = Math.round((advance * UNITS_PER_EM) / 1000);
     let glyphId = glyphIds.get(units);
     if (glyphId === undefined) {
       glyphId = hmtxAdvances.push(units) - 1;
@@ -167,6 +187,8 @@ function buildTextLayerFont(advances, ascent, drawBoxes = false) {
     lastChar = Math.max(lastChar, char);
   }
   const numGlyphs = hmtxAdvances.length;
+  // The advances are unsigned, unlike xAvgCharWidth.
+  const avgCharWidth = Math.round(advanceSum / (numGlyphs - 1));
   const ascender = Math.round(ascent * UNITS_PER_EM);
   const descender = ascender - UNITS_PER_EM;
 
@@ -203,7 +225,7 @@ function buildTextLayerFont(advances, ascent, drawBoxes = false) {
 
   const os2 = createTable("OS/2", 96);
   os2.setUint16(0, 4); // version
-  os2.setInt16(2, Math.round(advanceSum / (numGlyphs - 1))); // xAvgCharWidth
+  os2.setInt16(2, Math.min(avgCharWidth, 0x7fff)); // xAvgCharWidth
   os2.setUint16(4, 400); // usWeightClass
   os2.setUint16(6, 5); // usWidthClass
   os2.setUint32(58, 0x5044464a, /* littleEndian = */ false); // achVendID ("PDFJ")
@@ -212,7 +234,8 @@ function buildTextLayerFont(advances, ascent, drawBoxes = false) {
   os2.setUint16(66, lastChar);
   os2.setInt16(68, ascender); // sTypoAscender
   os2.setInt16(70, descender); // sTypoDescender
-  os2.setUint16(74, ascender); // usWinAscent
+  // Windows rejects a font with no usWinAscent.
+  os2.setUint16(74, Math.max(ascender, 1)); // usWinAscent
   os2.setUint16(76, -descender); // usWinDescent
   os2.setUint16(92, 0x20); // usBreakChar
   os2.setUint16(94, 1); // usMaxContext
@@ -265,6 +288,8 @@ class TextLayerFonts {
 
   #drawBoxes;
 
+  #heightScaled = new WeakSet();
+
   #idFactory;
 
   #loadedNames = new Map();
@@ -302,8 +327,11 @@ class TextLayerFonts {
    * @param {string} loadedName
    * @param {Font} font
    */
-  addFont(loadedName, font) {
+  addFont(loadedName, font, heightScaled = false) {
     this.#loadedNames.set(loadedName, font);
+    if (heightScaled) {
+      this.#heightScaled.add(font);
+    }
   }
 
   /**
@@ -401,16 +429,35 @@ class TextLayerFonts {
       }
     }
     // Without a space glyph, e.g. with TeX fonts, a space gets the median gap.
-    if (!advances.has(0x20)) {
+    if (!advances.has(0x20) && stats.spaceGaps.length > 0) {
       const gaps = stats.spaceGaps.sort((a, b) => a - b);
-      advances.set(
-        0x20,
-        gaps.length > 0 ? gaps[gaps.length >> 1] : DEFAULT_SPACE_ADVANCE
-      );
+      advances.set(0x20, gaps[gaps.length >> 1]);
     }
+    // Use the smallest power of two that fits every advance in hmtx.
+    let advanceScale = 1;
+    for (const advance of advances.values()) {
+      if (!Number.isFinite(advance)) {
+        return null;
+      }
+      while (advance > MAX_ADVANCE * advanceScale) {
+        advanceScale *= 2;
+      }
+    }
+    // A default space must occupy at least one encoded unit.
+    advances.getOrInsert(
+      0x20,
+      Math.max(DEFAULT_SPACE_ADVANCE, (advanceScale * 1000) / UNITS_PER_EM)
+    );
     // Vertical glyphs are centered on their column.
-    const ascent = font.vertical ? 0.5 : getAscentRatio(font);
-    const data = buildTextLayerFont(advances, ascent, this.#drawBoxes);
+    const ascent = font.vertical
+      ? 0.5
+      : getAscentRatio(font, this.#heightScaled.has(font));
+    const data = buildTextLayerFont(
+      advances,
+      ascent,
+      this.#drawBoxes,
+      advanceScale
+    );
     if (!data) {
       return null;
     }
@@ -418,6 +465,7 @@ class TextLayerFonts {
       name: `${this.#idFactory.getDocId()}_t${this.#idFactory.createFontId()}`,
       data,
       ascent,
+      advanceScale,
     };
   }
 

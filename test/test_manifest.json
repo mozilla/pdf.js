@@ -15474,5 +15474,25 @@
     "link": true,
     "type": "eq",
     "about": "A subsetted DFKai-SB font (tricky font) without its family name"
+  },
+  {
+    "id": "type3_space_gap",
+    "file": "pdfs/type3_space_gap.pdf",
+    "md5": "e28e683264410975cadde74f0fd0988e",
+    "rounds": 1,
+    "type": "text",
+    "textLayerFonts": true,
+    "about": "Type 3 glyphs sized by their bbox, with spaces from TJ gaps around Tz and line moves"
+  },
+  {
+    "id": "bug810214-text-layer-fonts",
+    "file": "pdfs/bug810214.pdf",
+    "md5": "2b7243178f5dd5fd3edc7b6649e4bdf3",
+    "link": true,
+    "rounds": 1,
+    "lastPage": 1,
+    "type": "text",
+    "textLayerFonts": true,
+    "about": "Bitmap Type 3 fonts sized by their bbox, with a flipped font matrix"
   }
 ]

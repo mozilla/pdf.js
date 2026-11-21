@@ -32,13 +32,21 @@ function createSink() {
 
 function getTextLayerFont(
   glyphs,
-  { font = { ascent: 0.8, descent: -0.2 }, drawBoxes = false } = {}
+  {
+    font = { ascent: 0.8, descent: -0.2 },
+    drawBoxes = false,
+    heightScaled = false,
+    spaceGaps = [],
+  } = {}
 ) {
   const sink = createSink();
   const textLayerFonts = new TextLayerFonts(sink, idFactory, drawBoxes);
-  textLayerFonts.addFont("f1", font);
+  textLayerFonts.addFont("f1", font, heightScaled);
   for (const [unicode, advance] of glyphs) {
     textLayerFonts.addGlyph(font, unicode, advance);
+  }
+  for (const gap of spaceGaps) {
+    textLayerFonts.addSpaceGap("f1", gap);
   }
   textLayerFonts.enqueue({ items: [], styles: { f1: {} } });
   textLayerFonts.send();
@@ -135,9 +143,60 @@ describe("text layer font", function () {
     expect(getGlyfLength(true)).toBeGreaterThan(1);
   });
 
+  it("clamps the average advance and keeps a Windows ascent", function () {
+    const { data } = getTextLayerFont(
+      [
+        ["A", 80000],
+        ["B", 90000],
+        [" ", 100000],
+      ],
+      { font: { isType3Font: true, bbox: [0, -100, 80, 0] } }
+    );
+    const { view, tables } = new FontTestData(data);
+    const offset = tables.get("OS/2").offset;
+    expect(view.getInt16(offset + 2)).toEqual(0x7fff); // xAvgCharWidth
+    expect(view.getInt16(offset + 68)).toEqual(0); // sTypoAscender
+    expect(view.getUint16(offset + 74)).toEqual(1); // usWinAscent
+  });
+
+  it("keeps a default space which would round to zero", function () {
+    const { data, advanceScale } = getTextLayerFont([["A", 40000000]]);
+    expect(advanceScale).toEqual(2048);
+    const font = new FontTestData(data);
+    expect(font.getAdvance(0x41) * advanceScale).toEqual(40000000);
+    expect(font.getAdvance(0x20)).toBeGreaterThan(0);
+  });
+
+  it("doesn't build a font whose measured space would round to zero", function () {
+    const glyphs = [
+      ["A", 1000],
+      ["B", 1000],
+      ["C", 40000000],
+    ];
+    expect(getTextLayerFont(glyphs, { spaceGaps: [300] })).toBeUndefined();
+  });
+
   it("doesn't build a font with advances which don't fit", function () {
     expect(buildTextLayerFont(new Map([[0x41, 117000]]), 0.8)).toBeNull();
     expect(buildTextLayerFont(new Map([[0x41, NaN]]), 0.8)).toBeNull();
+    // The narrow glyph would vanish at the scale of the widest one.
+    expect(
+      getTextLayerFont([
+        ["A", 1],
+        ["B", 200000],
+      ])
+    ).toBeUndefined();
+  });
+
+  it("encodes wide advances with the smallest scale which fits them", function () {
+    const { data, advanceScale } = getTextLayerFont([
+      ["A", 80000],
+      ["B", 10],
+    ]);
+    expect(advanceScale).toEqual(4);
+    const font = new FontTestData(data);
+    expect(font.getAdvance(0x41) * advanceScale).toEqual(80000);
+    expect(font.getAdvance(0x42) * advanceScale).toBeCloseTo(10, 0);
   });
 
   it("gets the most frequent advance of a character", function () {
@@ -201,7 +260,8 @@ describe("text layer font", function () {
   });
 
   it("gets the ascent from the font, else from its bounding box", function () {
-    const getAscent = font => getTextLayerFont([["a", 500]], { font }).ascent;
+    const getAscent = (font, heightScaled = false) =>
+      getTextLayerFont([["a", 500]], { font, heightScaled }).ascent;
 
     expect(getAscent({ ascent: 0.9, descent: -0.3 })).toBeCloseTo(0.75, 6);
     // With a descent having the wrong sign.
@@ -222,6 +282,27 @@ describe("text layer font", function () {
     expect(getAscent({ ascent: 0, descent: 0, bbox: [0, 0, 0, 0] })).toEqual(
       0.8
     );
+    // When the item height is the bbox height, it already carries the flip.
+    expect(
+      getAscent(
+        {
+          ascent: NaN,
+          descent: NaN,
+          bbox: [-5, -25, 97, 91],
+          fontMatrix: [1, 0, 0, -1, 0, 0],
+          isType3Font: true,
+        },
+        /* heightScaled = */ true
+      )
+    ).toBeCloseTo(91 / 116, 6);
+    // A Type 3 drawing can also lie entirely below the baseline.
+    expect(
+      getAscent({
+        isType3Font: true,
+        bbox: [0, 0, 80, 100],
+        fontMatrix: [1, 0, 0, -1, 0, 0],
+      })
+    ).toBe(0);
     // Vertical glyphs are centered on their column.
     expect(getAscent({ ascent: 0.9, descent: -0.3, vertical: true })).toEqual(
       0.5

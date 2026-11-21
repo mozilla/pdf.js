@@ -400,6 +400,7 @@ class TextLayer {
 
     // Workaround for bug 1922063.
     fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
+    let shouldScaleText = geom.str.length > 1;
     let ascent;
     const { textLayerFont } = style;
     if (
@@ -409,6 +410,8 @@ class TextLayer {
       // The other fonts are only used for the characters missing in it.
       fontFamily = `"${textLayerFont.name}", ${fontFamily}`;
       ascent = textLayerFont.ascent;
+      // Scaled advances need fitting even for a single character.
+      shouldScaleText ||= textLayerFont.advanceScale !== 1;
     }
     const fontHeight = Math.hypot(tx[2], tx[3]);
     const fontAscent =
@@ -454,23 +457,15 @@ class TextLayer {
     if (angle !== 0) {
       textDivProperties.angle = angle * (180 / Math.PI);
     }
-    // We don't bother scaling single-char text divs, because it has very
-    // little effect on text highlighting. This makes scrolling on docs with
-    // lots of such divs a lot faster.
-    let shouldScaleText = false;
-    if (geom.str.length > 1) {
-      shouldScaleText = true;
-    } else if (geom.str !== " " && geom.transform[0] !== geom.transform[3]) {
-      const absScaleX = Math.abs(geom.transform[0]),
-        absScaleY = Math.abs(geom.transform[3]);
+    const scaleX = geom.transform[0],
+      scaleY = geom.transform[3];
+    if (!shouldScaleText && geom.str !== " " && scaleX !== scaleY) {
       // When the horizontal/vertical scaling differs significantly, also scale
       // even single-char text to improve highlighting (fixes issue11713.pdf).
-      if (
-        absScaleX !== absScaleY &&
-        Math.max(absScaleX, absScaleY) / Math.min(absScaleX, absScaleY) > 1.5
-      ) {
-        shouldScaleText = true;
-      }
+      const absScaleX = Math.abs(scaleX),
+        absScaleY = Math.abs(scaleY);
+      shouldScaleText =
+        Math.max(absScaleX, absScaleY) > 1.5 * Math.min(absScaleX, absScaleY);
     }
     if (shouldScaleText) {
       textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
@@ -506,7 +501,6 @@ class TextLayer {
         pixelRatio;
 
       TextLayer.#ensureCtxFont(ctx, measuredSize, fontFamily);
-      // Only measure the width for multi-char text divs, see `appendText`.
       const { width } = ctx.measureText(div.textContent);
 
       if (width > 0) {
