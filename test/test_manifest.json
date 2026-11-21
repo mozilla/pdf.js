@@ -8045,6 +8045,15 @@
     "type": "eq"
   },
   {
+    "id": "xfa_without_dr_fonts",
+    "file": "pdfs/xfa_without_dr_fonts.pdf",
+    "md5": "80d3a2f5eb7332010ca35d33348d4011",
+    "rounds": 1,
+    "enableXfa": true,
+    "type": "eq",
+    "about": "Pure XFA form without fonts in the AcroForm /DR."
+  },
+  {
     "id": "issue3207",
     "file": "pdfs/issue3207r.pdf",
     "md5": "617bcf475c109365a113cf9fb6711b0a",
