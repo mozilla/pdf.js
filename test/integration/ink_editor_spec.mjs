@@ -1954,6 +1954,58 @@ describe("Tap after a two-finger gesture", () => {
   });
 });
 
+describe("Undo the last drawing after a page is rendered again", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait("tracemonkey.pdf", ".annotationEditorLayer");
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must remove the last drawing", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+        const drawOnPage = async pageNumber => {
+          const rect = await getRect(
+            page,
+            `.page[data-page-number = "${pageNumber}"] .annotationEditorLayer`
+          );
+          const x = rect.x + 300;
+          const y = rect.y + 300;
+          await drawLine(page, x, y, x + 50, y + 50);
+          await commit(page);
+        };
+        const scrollTo = async pageNumbers => {
+          for (const pageNumber of pageNumbers) {
+            await scrollIntoView(
+              page,
+              `.page[data-page-number = "${pageNumber}"]`
+            );
+          }
+        };
+
+        await drawOnPage(1);
+        await waitForSerialized(page, 1);
+        await scrollTo(Array.from(new Array(13).keys(), n => n + 2));
+        await drawOnPage(14);
+        await waitForSerialized(page, 2);
+        // Going back to the first page renders its editor layer again.
+        await scrollTo(Array.from(new Array(13).keys(), n => 13 - n));
+        await page.waitForSelector(getEditorSelector(0));
+
+        await kbUndo(page);
+        await waitForSerialized(page, 1);
+        const [{ pageIndex }] = await getSerialized(page);
+        expect(pageIndex).withContext(`In ${browserName}`).toEqual(0);
+      })
+    );
+  });
+});
+
 describe("Removal during a pinch-resize", () => {
   let pages;
 
