@@ -743,6 +743,47 @@ describe("XFAFactory", function () {
     expect(p.attributes.style.fontSize).toEqual("13.86px");
   });
 
+  it("should ignore a class step on a node without that class", async () => {
+    // From the field on the page area, "page1[0]" finds the content area,
+    // which has no subform property.
+    const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea name="master">
+          <contentArea name="page1" x="0pt" y="30pt" w="456pt" h="759pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+          <field name="first" x="0pt" y="0pt" w="100pt" h="20pt">
+            <ui><textEdit/></ui>
+            <traversal>
+              <traverse operation="next" ref="page1[0].#subform[0].second[0]"/>
+            </traversal>
+          </field>
+        </pageArea>
+      </pageSet>
+      <subform name="page1">
+        <subform>
+          <field name="second" w="100pt" h="20pt">
+            <ui><textEdit/></ui>
+          </field>
+        </subform>
+      </subform>
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+    `;
+    const factory = new XFAFactory(new Map([["xdp:xdp", xml]]));
+    factory.setFonts([]);
+
+    expect(await factory.getNumPages()).toEqual(1);
+  });
+
   it("should measure b and i elements like the equivalent styles", async () => {
     const draws = {
       regular: "Hello World",
