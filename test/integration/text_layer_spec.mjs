@@ -744,6 +744,11 @@ describe("Text layer", () => {
         it("when dragging up into the page above", async () => {
           await Promise.all(
             pages.map(async ([browserName, page]) => {
+              if (browserName === "firefox") {
+                await page.waitForSelector(
+                  '.page[data-page-number="1"] .textLayerImages'
+                );
+              }
               const scrollTarget = await getSpanRectFromText(
                 page,
                 1,
