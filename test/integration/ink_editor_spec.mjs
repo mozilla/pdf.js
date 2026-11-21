@@ -102,6 +102,56 @@ const drawAndSelectEditor = async page => {
   };
 };
 
+describe("Zoom out with ink near a page edge", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "empty.pdf",
+      ".annotationEditorLayer",
+      100,
+      null,
+      null,
+      { width: 1000, height: 900 }
+    );
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must keep the stroke at the same PDF coordinates", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const { x, y } = await getRect(page, ".annotationEditorLayer");
+        await drawLine(page, x + 8, y + 60, x + 100, y + 90);
+        await commit(page);
+
+        const getPoints = () =>
+          page.evaluate(() => {
+            const { map } =
+              window.PDFViewerApplication.pdfDocument.annotationStorage
+                .serializable;
+            const [drawing] = map.values();
+            return Array.from(drawing.paths.points[0]);
+          });
+        const before = await getPoints();
+        await page.evaluate(() => {
+          window.PDFViewerApplication.pdfViewer.currentScale /= 4;
+        });
+        const after = await getPoints();
+
+        expect(after.length).withContext(browserName).toEqual(before.length);
+        for (let i = 0; i < before.length; i++) {
+          expect(after[i]).withContext(browserName).toBeCloseTo(before[i], 3);
+        }
+      })
+    );
+  });
+});
+
 describe("Ink Editor", () => {
   describe("Basic operations", () => {
     let pages;

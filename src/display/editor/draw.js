@@ -627,11 +627,15 @@ class DrawingEditor extends AnnotationEditor {
     }
   }
 
-  #updateBbox(bbox) {
+  #updateBbox(bbox, fixPosition = true) {
     [this.x, this.y, this.width, this.height] =
       this.#convertToParentSpace(bbox);
     if (this.div) {
-      this.fixAndSetPosition();
+      if (fixPosition) {
+        this.fixAndSetPosition();
+      } else {
+        this.setPosition();
+      }
       this.setDims();
     }
     this._onResized();
@@ -800,7 +804,8 @@ class DrawingEditor extends AnnotationEditor {
       this.parent.scale
     );
     if (bbox) {
-      this.#updateBbox(bbox);
+      // Only the editor padding changes with zoom. The stroke stays put.
+      this.#updateBbox(bbox, /* fixPosition = */ false);
     }
   }
 

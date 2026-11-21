@@ -636,10 +636,7 @@ class AnnotationEditor {
    * @param {number} [rotation] - the rotation of the page.
    */
   fixAndSetPosition(rotation = this.rotation) {
-    const {
-      div: { style },
-      pageDimensions: [pageWidth, pageHeight],
-    } = this;
+    const [pageWidth, pageHeight] = this.pageDimensions;
     let { x, y, width, height } = this;
     width *= pageWidth;
     height *= pageHeight;
@@ -702,15 +699,16 @@ class AnnotationEditor {
       }
     }
 
-    this.x = x = (x - tx) / pageWidth;
-    this.y = y = (y - ty) / pageHeight;
+    this.x = (x - tx) / pageWidth;
+    this.y = (y - ty) / pageHeight;
+    this.setPosition();
+  }
 
+  setPosition() {
+    const { style } = this.div;
     const [bx, by] = this.getBaseTranslation();
-    x += bx;
-    y += by;
-
-    style.left = `${(100 * x).toFixed(2)}%`;
-    style.top = `${(100 * y).toFixed(2)}%`;
+    style.left = `${(100 * (this.x + bx)).toFixed(2)}%`;
+    style.top = `${(100 * (this.y + by)).toFixed(2)}%`;
 
     this.moveInDOM();
   }
