@@ -4161,6 +4161,8 @@ class PageSet extends XFAObject {
     }
     for (const page of this.pageSet.children) {
       page[$cleanPage]();
+      // A nested page set starts again with its parent.
+      delete page[$extra];
     }
   }
 
@@ -4195,6 +4197,8 @@ class PageSet extends XFAObject {
         this[$extra].numberOfUse += 1;
         this[$extra].pageIndex = -1;
         this[$extra].pageSetIndex = -1;
+        // A new occurrence of the page set: its page areas can be used again.
+        this[$cleanPage]();
         return this[$getNextPage]();
       }
 
@@ -4203,7 +4207,9 @@ class PageSet extends XFAObject {
         return parent[$getNextPage]();
       }
 
+      // Start the page set again, from its first page area.
       this[$cleanPage]();
+      delete this[$extra];
       return this[$getNextPage]();
     }
     const pageNumber = this[$getTemplateRoot]()[$extra].pageNumber;
