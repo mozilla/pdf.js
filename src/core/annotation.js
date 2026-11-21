@@ -3420,13 +3420,7 @@ class ButtonWidgetAnnotation extends WidgetAnnotation {
 
   async getOperatorList(evaluator, task, intent, annotationStorage) {
     if (this.data.pushButton) {
-      return super.getOperatorList(
-        evaluator,
-        task,
-        intent,
-        false, // we use normalAppearance to render the button
-        annotationStorage
-      );
+      return super.getOperatorList(evaluator, task, intent, annotationStorage);
     }
 
     if (
