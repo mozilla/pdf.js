@@ -1035,8 +1035,11 @@ describe("Ink Editor", () => {
 
           let editorSelector = getEditorSelector(1);
           await waitForSelectedEditor(page, editorSelector);
-          await dragAndDrop(page, editorSelector, [[0, -30]], /* steps = */ 10);
+          // Cross onto the first page on the only pointer move.
+          await dragAndDrop(page, editorSelector, [[0, -30]]);
           await waitForSerialized(page, 2);
+          const pageIndices = await getSerialized(page, data => data.pageIndex);
+          expect(pageIndices).withContext(browserName).toEqual([0, 0]);
 
           await page.waitForSelector(`${editorSelector} button.deleteButton`);
           await page.click(`${editorSelector} button.deleteButton`);
