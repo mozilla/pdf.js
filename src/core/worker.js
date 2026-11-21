@@ -1163,7 +1163,7 @@ class WorkerMessageHandler {
     });
 
     handler.on("FontFallback", function ({ id }) {
-      return pdfManager.fontFallback(id, handler);
+      return pdfManager.ensureDoc("fontFallback", [id, handler]);
     });
 
     if (
