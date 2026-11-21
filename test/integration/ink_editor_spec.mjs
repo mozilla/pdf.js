@@ -1995,3 +1995,72 @@ describe("Removal during a pinch-resize", () => {
     );
   });
 });
+
+describe("Rebuild ink after zooming and rotating an unloaded page", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "empty.pdf",
+      ".annotationEditorLayer",
+      50,
+      null,
+      null,
+      { width: 1000, height: 900 }
+    );
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must update the editor padding and the SVG transform", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const { x, y } = await getRect(page, ".annotationEditorLayer");
+        await drawLine(page, x + 60, y + 60, x + 150, y + 100);
+        await commit(page);
+
+        const editorSelector = getEditorSelector(0);
+        const svgSelector = ".canvasWrapper svg.draw";
+        const before = await getRect(page, editorSelector);
+        await page.evaluate(() => {
+          const { pdfViewer } = window.PDFViewerApplication;
+          const { renderingQueue } = pdfViewer;
+          const pageView = pdfViewer.getPageView(0);
+          renderingQueue.renderHighestPriority = () => {};
+          pageView.reset();
+          pdfViewer.currentScale *= 2;
+          pdfViewer.pagesRotation = 90;
+          renderingQueue.renderView(pageView);
+        });
+
+        const editorRect = await getRect(page, editorSelector);
+        const svgRect = await getRect(page, svgSelector);
+        for (const key of ["x", "y", "width", "height"]) {
+          expect(Math.abs(editorRect[key] - svgRect[key]))
+            .withContext(`${browserName} ${key}`)
+            .toBeLessThanOrEqual(1);
+        }
+
+        // Rotation swaps the dimensions, and the three CSS pixels of
+        // padding on each side stay constant through the zoom change.
+        const padding = 6;
+        expect(Math.abs(editorRect.width - (2 * before.height - padding)))
+          .withContext(browserName)
+          .toBeLessThanOrEqual(1);
+        expect(Math.abs(editorRect.height - (2 * before.width - padding)))
+          .withContext(browserName)
+          .toBeLessThanOrEqual(1);
+        const transform = await page.$eval(`${svgSelector} defs > path`, path =>
+          path.getAttribute("transform")
+        );
+        expect(transform)
+          .withContext(browserName)
+          .toMatch(/^matrix\(0 [\d.]+ -/);
+      })
+    );
+  });
+});

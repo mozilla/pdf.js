@@ -522,13 +522,19 @@ class DrawingEditor extends AnnotationEditor {
     }
 
     this.#addToDrawLayer();
-    this.#updateBbox(this._drawOutlines.box);
-
     if (!this.isAttachedToDOM) {
       // At some point this editor was removed and we're rebuilding it,
       // hence we must add it to its parent.
       this.parent.add(this);
     }
+
+    // Detached drawings don't receive zoom or rotation updates.
+    const bbox = this._drawOutlines.updateParentDimensions(
+      this.parentDimensions,
+      this.parent.scale
+    );
+    this.#updateBbox(bbox ?? this._drawOutlines.box, /* fixPosition = */ false);
+    this.rotate();
   }
 
   setParent(parent) {
@@ -627,11 +633,15 @@ class DrawingEditor extends AnnotationEditor {
     }
   }
 
-  #updateBbox(bbox) {
+  #updateBbox(bbox, fixPosition = true) {
     [this.x, this.y, this.width, this.height] =
       this.#convertToParentSpace(bbox);
     if (this.div) {
-      this.fixAndSetPosition();
+      if (fixPosition) {
+        this.fixAndSetPosition();
+      } else {
+        this.setPosition();
+      }
       this.setDims();
     }
     this._onResized();
