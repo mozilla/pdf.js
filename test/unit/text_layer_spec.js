@@ -39,19 +39,16 @@ describe("textLayer", function () {
 
     expect(textLayer.textContentItemsStr).toEqual([
       "Table Of Content",
-      "",
       "Chapter 1",
       " ",
       "..........................................................",
       " ",
       "2",
-      "",
       "Paragraph 1.1",
       " ",
       "......................................................",
       " ",
       "3",
-      "",
       "page 1 / 3",
     ]);
 
@@ -75,19 +72,16 @@ describe("textLayer", function () {
 
     expect(textLayer.textContentItemsStr).toEqual([
       "Table Of Content",
-      "",
       "Chapter 1",
       " ",
       "..........................................................",
       " ",
       "2",
-      "",
       "Paragraph 1.1",
       " ",
       "......................................................",
       " ",
       "3",
-      "",
       "page 1 / 3",
     ]);
 
@@ -318,10 +312,10 @@ describe("textLayer", function () {
         ({ family }) => family.replaceAll('"', "") === name
       );
 
-    function createTextLayer(ownerDocument = document) {
+    function createTextLayer(container = document.createElement("div")) {
       const textLayer = new TextLayer({
         textContentSource: textContent,
-        container: ownerDocument.createElement("div"),
+        container,
         viewport,
       });
       textLayers.push(textLayer);
@@ -349,6 +343,30 @@ describe("textLayer", function () {
       await loadingTask?.destroy();
     });
 
+    it("fits isolated glyphs with the same text and different PDF widths", async function () {
+      const item = textContent.items.find(({ str }) => /^[A-Z]/i.test(str));
+      const widths = [3, 12];
+      textContent.items = widths.map(width => ({
+        ...item,
+        str: item.str[0],
+        width,
+        textLayerAdvance: undefined,
+      }));
+      const container = document.createElement("div");
+      container.className = "textLayer";
+      container.style.setProperty("--total-scale-factor", "1");
+      document.body.append(container);
+      try {
+        const layer = createTextLayer(container);
+        await layer.render();
+        for (const [i, span] of layer.textDivs.entries()) {
+          expect(span.getBoundingClientRect().width).toBeCloseTo(widths[i], 1);
+        }
+      } finally {
+        container.remove();
+      }
+    });
+
     it("lays out the text and shares the fonts until the last cancellation", async function () {
       const first = createTextLayer();
       const second = createTextLayer();
@@ -361,7 +379,7 @@ describe("textLayer", function () {
       for (const [i, { style }] of first.textDivs.entries()) {
         const { name, ascent } = styles[items[i].fontName].textLayerFont;
         names.add(name);
-        expect(style.fontFamily).toMatch(new RegExp(`^"?${name}"?, `));
+        expect(style.fontFamily.replaceAll('"', "")).toBe(name);
         // The span is moved up by the ascent of the font.
         const [, , , d, , f] = items[i].transform;
         expect(parseFloat(style.top)).toBeCloseTo(
@@ -370,6 +388,13 @@ describe("textLayer", function () {
         );
       }
       expect([...names].every(name => hasFont(name))).toBeTrue();
+      const spaces = first.textDivs.filter(
+        ({ textContent: str }) => str === " "
+      );
+      expect(spaces.length).toBeGreaterThan(0);
+      expect(
+        spaces.every(({ style }) => !style.getPropertyValue("--scale-x"))
+      ).toBeTrue();
 
       first.cancel();
       expect([...names].every(name => hasFont(name))).toBeTrue();
@@ -381,7 +406,7 @@ describe("textLayer", function () {
       const iframe = document.createElement("iframe");
       document.body.append(iframe);
       const { contentDocument } = iframe;
-      const inner = createTextLayer(contentDocument);
+      const inner = createTextLayer(contentDocument.createElement("div"));
       const outer = createTextLayer();
       const { name } =
         textContent.styles[textContent.items[0].fontName].textLayerFont;
@@ -444,15 +469,15 @@ describe("textLayer", function () {
     });
 
     it("removes a failed font and renders with the fallback font", async function () {
-      const { textLayerFont } =
+      const { fontFamily, textLayerFont } =
         textContent.styles[textContent.items[0].fontName];
       textLayerFont.data = new Uint8Array(1);
       const textLayer = createTextLayer();
       await textLayer.render();
 
       expect(hasFont(textLayerFont.name)).toBeFalse();
-      expect(textLayer.textDivs[0].style.fontFamily).not.toContain(
-        textLayerFont.name
+      expect(textLayer.textDivs[0].style.fontFamily).toBe(
+        TextLayer.fontFamilyMap.get(fontFamily) || fontFamily
       );
     });
   });

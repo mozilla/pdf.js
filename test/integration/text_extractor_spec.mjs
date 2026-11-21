@@ -110,7 +110,7 @@ describe("PdfTextExtractor", () => {
               "Conference on Virtual Execution Environments, pages 83–93. ACM\nPress, 2007."
             )
           ).toBeTrue();
-          expect(text.length).toEqual(82804);
+          expect(text.length).toEqual(82801);
           expect(requestId).toEqual(2);
         })
       );

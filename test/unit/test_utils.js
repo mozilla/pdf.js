@@ -98,6 +98,37 @@ function assemblePdf(objects, trailerEntries = "") {
   return stringToBytes(pdf);
 }
 
+function buildPdfWithFont(content, fontObjects) {
+  return assemblePdf([
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+      "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n",
+    `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`,
+    ...fontObjects,
+  ]);
+}
+
+function buildTextPdf(content, fontEntries = "/Encoding /WinAnsiEncoding") {
+  return buildPdfWithFont(content, [
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
+      `${fontEntries} >>\nendobj\n`,
+  ]);
+}
+
+function buildVerticalTextPdf(content) {
+  return buildPdfWithFont(content, [
+    "5 0 obj\n<< /Type /Font /Subtype /Type0 /BaseFont /VerticalTest " +
+      "/Encoding /UniJIS-UTF16-V /DescendantFonts [6 0 R] >>\nendobj\n",
+    "6 0 obj\n<< /Type /Font /Subtype /CIDFontType0 /BaseFont /VerticalTest " +
+      "/CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 6 >> " +
+      "/FontDescriptor 7 0 R /DW2 [880 -900] >>\nendobj\n",
+    "7 0 obj\n<< /Type /FontDescriptor /FontName /VerticalTest /Flags 4 " +
+      "/FontBBox [0 -120 1000 880] /ItalicAngle 0 /Ascent 880 /Descent -120 " +
+      "/CapHeight 700 /StemV 80 >>\nendobj\n",
+  ]);
+}
+
 // Builds a PDF sound object's stream dictionary (ISO 32000-1, 12.5.6.16). Pass
 // a key as `null` to omit it (to exercise defaults/missing entries); pass
 // `type: true` to add the optional `/Type /Sound` entry.
@@ -341,6 +372,8 @@ export {
   assemblePdf,
   BoundedXRefMock,
   buildGetDocumentParams,
+  buildTextPdf,
+  buildVerticalTextPdf,
   CMAP_URL,
   createIdFactory,
   createSoundDict,

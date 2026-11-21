@@ -35,6 +35,8 @@ import {
 import {
   assemblePdf,
   buildGetDocumentParams,
+  buildTextPdf,
+  buildVerticalTextPdf,
   CMAP_URL,
   DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
@@ -5202,7 +5204,7 @@ describe("api", function () {
     it("gets text content", async function () {
       const { items, styles, lang } = await page.getTextContent();
 
-      expect(items.length).toEqual(15);
+      expect(items.length).toEqual(12);
       expect(Object.keys(styles).length).toEqual(5);
       expect(lang).toEqual("en");
 
@@ -5234,9 +5236,12 @@ page 1 / 3`);
         height: 18,
         str: "Issue 8276",
         transform: new Float32Array([18, 0, 0, 18, 441.81, 708.45]),
-        width: 77.49,
+        width: jasmine.any(Number),
         hasEOL: false,
+        textLayerAdvance: jasmine.any(Number),
       });
+      expect(items[0].width).toBeCloseTo(77.49, 4);
+      expect(items[0].textLayerAdvance * 18).toBeCloseTo(77.49, 2);
       expect(styles[fontName]).toEqual({
         fontFamily: "serif",
         ascent: 0.683,
@@ -5309,7 +5314,6 @@ page 1 / 3`);
       expect(textLayerFont.ascent).toBeGreaterThan(0.5);
       expect(textLayerFont.ascent).toBeLessThan(0.95);
 
-      // The advances of the font are the ones of the PDF font.
       const font = new FontTestData(textLayerFont.data);
       let advance = 0;
       for (const char of item.str) {
@@ -5321,62 +5325,135 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
-    it("gets text content, with the gaps as spaces in the fonts of the text layer", async function () {
-      const content =
-        "BT /F1 20 Tf 10 150 Td [(A) -300 (B) -300 (A) -400 (B)] TJ ET";
-      const loadingTask = getDocument({
-        data: assemblePdf([
-          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
-            "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\n" +
-            "endobj\n",
-          `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
-            "endstream\nendobj\n",
-          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
-            "/Encoding /WinAnsiEncoding >>\nendobj\n",
-        ]),
-      });
+    it("positions text after an overprinted accent in the text layer", async function () {
+      const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
-      const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent();
+      const pdfPage = await pdfDoc.getPage(2);
+      const { items } = await pdfPage.getTextContent({
+        disableNormalization: true,
+      });
 
-      expect(items.map(({ str }) => str)).toEqual(["A B A B"]);
-      // No space is drawn: the spaces get the median gap.
-      const font = new FontTestData(
-        styles[items[0].fontName].textLayerFont.data
-      );
-      expect(font.getAdvance(0x20)).toBeCloseTo(300, 0);
-      expect(font.getAdvance(0x41)).toBeCloseTo(667, 0);
+      const index = items.findIndex(({ str }) => str === "a na\u00a8");
+      const item = items[index + 1];
+      expect(item.str).toMatch(/^\u0131ve implementation, inner loops/);
+      expect(item.transform[4]).toBeCloseTo(69.6272, 4);
+      expect(items[index].hasEOL).toBeFalse();
 
       await loadingTask.destroy();
     });
 
-    it("gets text content, with the fonts of the text layer for a vertical text", async function () {
-      const loadingTask = getDocument(
-        buildGetDocumentParams("vertical.pdf", {
-          cMapUrl: CMAP_URL,
-          useWorkerFetch: false,
-        })
-      );
-      const pdfDoc = await loadingTask.promise;
-      const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent({
-        disableNormalization: true,
+    describe("text layer extraction", function () {
+      let loadingTask;
+      async function loadPage(params) {
+        loadingTask = getDocument(params);
+        return (await loadingTask.promise).getPage(1);
+      }
+
+      afterEach(async function () {
+        await loadingTask?.destroy();
+        loadingTask = null;
       });
 
-      const item = items.find(
-        ({ str }) => str === "\u3042\u3044\u3046\u3048\u304a"
-      );
-      const { vertical, textLayerFont } = styles[item.fontName];
-      expect(vertical).toBeTrue();
-      // Centered on the column, with the vertical advances.
-      expect(textLayerFont.ascent).toEqual(0.5);
-      expect(
-        new FontTestData(textLayerFont.data).getAdvance(0x3042)
-      ).toBeCloseTo(1000, 0);
+      function loadTextPage(content, fontEntries) {
+        return loadPage({ data: buildTextPdf(content, fontEntries) });
+      }
 
-      await loadingTask.destroy();
+      it("gets text content, with the gaps as spaces in the fonts of the text layer", async function () {
+        const content =
+          "BT /F1 20 Tf 10 150 Td [(A) -300 (B) -300 (A) -400 (B)] TJ ET";
+        const pdfPage = await loadTextPage(content);
+
+        const { items, styles } = await pdfPage.getTextContent();
+
+        expect(items.map(({ str }) => str).join("")).toEqual("A B A B");
+        // No space is drawn: the spaces get the median gap.
+        const font = new FontTestData(
+          styles[items[0].fontName].textLayerFont.data
+        );
+        expect(font.getAdvance(0x20)).toBeCloseTo(300, 0);
+        expect(font.getAdvance(0x41)).toBeCloseTo(667, 0);
+      });
+
+      it("gets text content, with the fonts of the text layer for a vertical text", async function () {
+        const pdfPage = await loadPage(
+          buildGetDocumentParams("vertical.pdf", {
+            cMapUrl: CMAP_URL,
+            useWorkerFetch: false,
+          })
+        );
+
+        const { items, styles } = await pdfPage.getTextContent({
+          disableNormalization: true,
+        });
+
+        const item = items.find(
+          ({ str }) => str === "\u3042\u3044\u3046\u3048\u304a"
+        );
+        const { vertical, textLayerFont } = styles[item.fontName];
+        expect(vertical).toBeTrue();
+        // Centered on the column, with the vertical advances.
+        expect(textLayerFont.ascent).toEqual(0.5);
+        expect(
+          new FontTestData(textLayerFont.data).getAdvance(0x3042)
+        ).toBeCloseTo(1000, 0);
+        expect(item.dir).toBe("ttb");
+        expect(item.height).toBeCloseTo(
+          5 * Math.hypot(...item.transform.slice(2, 4)),
+          1
+        );
+      });
+
+      it("fits vertical character spacing and TJ gaps along the column", async function () {
+        const content =
+          "BT /F1 20 Tf 50 Tz -2 Tc 90 180 Td " +
+          "[<30423044> 350 <3046>] TJ " +
+          "0 1 -1 0 20 80 Tm [100 <3048304a> 800 <3042>] TJ ET";
+        const data = buildVerticalTextPdf(content);
+        const pdfPage = await loadPage({
+          data,
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        });
+
+        const { items } = await pdfPage.getTextContent();
+        expect(items.map(item => item.str).join("")).toEqual("あい うえお あ");
+        const [first, rotated] = items;
+        expect(first.dir).toBe("ttb");
+        expect(first.hasEOL).toBeTrue();
+        expect(first.transform).toEqual(
+          new Float32Array([10, 0, 0, 20, 90, 180])
+        );
+        expect(first.width).toBe(10);
+        expect(first.height).toBeCloseTo(65, 6);
+        expect(rotated.transform).toEqual(
+          new Float32Array([0, 10, -20, 0, 22, 80])
+        );
+        // The large TJ gap splits the rotated column at x = 60.
+        expect(rotated.height).toBeCloseTo(38, 6);
+        const [, , space, last] = items;
+        expect(space.str).toBe(" ");
+        expect(space.dir).toBe("ttb");
+        expect(space.transform).toEqual(
+          new Float32Array([0, 10, -20, 0, 60, 80])
+        );
+        expect(space.height).toBeCloseTo(18, 6);
+        expect(last.transform).toEqual(
+          new Float32Array([0, 10, -20, 0, 78, 80])
+        );
+      });
+
+      it("provides the generated font advance for mirrored text", async function () {
+        const pdfPage = await loadTextPage(
+          "BT /F1 20 Tf -1 0 0 1 150 150 Tm (ABC) Tj ET"
+        );
+
+        const { items } = await pdfPage.getTextContent();
+
+        expect(items.length).toBe(1);
+        const [item] = items;
+        expect(item.str).toBe("CBA");
+        expect(item.textLayerAdvance * 20).toBeCloseTo(item.width, 1);
+      });
     });
 
     it("gets text content, with no extra spaces (issue 13226)", async function () {
@@ -5391,6 +5468,10 @@ page 1 / 3`);
       expect(text).toEqual(
         "Mitarbeiterinnen und Mitarbeiter arbeiten in über 100 Ländern engagiert im Dienste"
       );
+      const { items: textLayerItems } = await pdfPage.getTextContent({
+        includeMarkedContent: true,
+      });
+      expect(mergeText(textLayerItems)).toEqual(text);
 
       await loadingTask.destroy();
     });
@@ -5456,9 +5537,9 @@ page 1 / 3`);
       expect(items).toEqual([
         jasmine.objectContaining({
           str: "सप्रणाम",
-          width: 109.12,
         }),
       ]);
+      expect(items[0]?.width).toBeCloseTo(109.12, 4);
 
       await loadingTask.destroy();
     });
@@ -5625,9 +5706,9 @@ ABCD E`);
         styles[fitted[0].fontName].textLayerFont;
       // The rectangles extend from the baseline to the top of the font box.
       expect(ascent).toBe(1);
-      // The 80 em glyph is 0.8 of the 100 em high font box, the span's em.
-      expect(advanceScale).toEqual(1);
-      expect(new FontTestData(data).getAdvance(0x41)).toBeCloseTo(800, 0);
+      expect(new FontTestData(data).getAdvance(0x41) * advanceScale).toBe(
+        80000
+      );
 
       await loadingTask.destroy();
     });
@@ -5638,16 +5719,16 @@ ABCD E`);
       );
       const pdfDoc = await loadingTask.promise;
       for (const [pageNumber, context, text, space] of [
-        [1, "tall glyph bounding box", "A B", 240],
-        [2, "page scale canceled by the text matrix", "A B", 400],
-        [3, "scale change before the preceding glyph", "AB A", 480],
+        [1, "tall glyph bounding box", "A B", 300],
+        [2, "page scale canceled by the text matrix", "A B", 500],
+        [3, "scale change before the preceding glyph", "AB A", 600],
         [4, "scale change immediately before the gap", "A BA", 250],
-        [5, "scale change immediately after the gap", "A B\nA B", 240],
-        [6, "absolute positioning after a discarded move", "A B", 240],
+        [5, "scale change immediately after the gap", "A B\nA B", 300],
+        [6, "absolute positioning after a discarded move", "A B", 300],
         [7, "spacing moves at different scales", "A B\nA B", 250],
-        [8, "next line", "A B", 480],
-        [9, "next line and show text", "A B", 480],
-        [10, "set spacing, move to next line and show text", "A B", 480],
+        [8, "next line", "A B", 250],
+        [9, "next line and show text", "A B", 250],
+        [10, "set spacing, move to next line and show text", "A B", 250],
       ]) {
         const pdfPage = await pdfDoc.getPage(pageNumber);
         const { items, styles } = await pdfPage.getTextContent();
@@ -5655,8 +5736,7 @@ ABCD E`);
           styles[items[0].fontName].textLayerFont.data
         );
         expect(mergeText(items)).withContext(context).toEqual(text);
-        // The 0.8 em wide glyphs in the 1.25 em high font box, the span's em.
-        expect(font.getAdvance(0x41)).withContext(context).toBeCloseTo(640, 0);
+        expect(font.getAdvance(0x41)).withContext(context).toBeCloseTo(800, 0);
         expect(font.getAdvance(0x20))
           .withContext(context)
           .toBeCloseTo(space, 0);
@@ -6045,7 +6125,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         disableNormalization: true,
       });
 
-      expect(items.map(i => i.str)).toEqual(["Hello ", "World"]);
+      expect(items.map(i => i.str)).toEqual(["Hello", " ", "World"]);
 
       await loadingTask.destroy();
     });
@@ -6092,18 +6172,13 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const { items } = await pdfPage.getTextContent({
         disableNormalization: true,
       });
-      // The pdf has 3 different fonts but with the same underlying font data
-      // so we have finally one chunk.
-      expect(items).toEqual([
-        jasmine.objectContaining({
-          str: "ABCDEFGHI",
-          dir: "ltr",
-          height: 10,
-          transform: new Float32Array([10, 0, 0, 10, 100, 100]),
-          hasEOL: false,
-        }),
+      expect(items.map(({ str }) => str)).toEqual(["ABC", "DEF", "GHI"]);
+      expect(items.map(({ transform }) => transform[4])).toEqual([
+        100, 120, 140,
       ]);
-      expect(items[0]?.width).toBeCloseTo(57.78, 5);
+      expect(items.every(({ hasEOL }) => !hasEOL)).toBeTrue();
+      expect(items[0].fontName).toBe(items[2].fontName);
+      expect(items[0].fontName).not.toBe(items[1].fontName);
       await loadingTask.destroy();
     });
 
@@ -6193,20 +6268,18 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent();
-      const withFonts = await pdfPage.getTextContent();
-      expect(withFonts.items).toEqual(items);
       // The same Hebrew character sequence uses normal and mirrored text
-      // matrices; the mirrored run ends with an LRM (U+200E).
+      // matrices. The trailing LRM (U+200E) is outside the visible run.
       expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
         { str: "רחאב", dir: "rtl" },
         { str: "באחר", dir: "rtl" },
       ]);
       const { transform, width } = items[1];
       expect(transform).toBeInstanceOf(Float32Array);
-      [20, 0, 0, 20, 145.52, 100].forEach((value, i) => {
+      [20, 0, 0, 20, 156.64, 100].forEach((value, i) => {
         expect(transform[i]).toBeCloseTo(value, 2);
       });
-      expect(width).toBeCloseTo(54.48, 2);
+      expect(width).toBeCloseTo(43.36, 2);
 
       await loadingTask.destroy();
     });
@@ -6273,9 +6346,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       );
       try {
         const pdfPage = await (await loadingTask.promise).getPage(1);
-        const plainText = await pdfPage.getTextContent();
         const { items, styles } = await pdfPage.getTextContent();
-        expect(items).toEqual(plainText.items);
         expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
           { str: "[אב(", dir: "rtl" },
         ]);

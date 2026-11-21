@@ -1225,6 +1225,8 @@ class PDFDocumentProxy {
  * @property {string} fontName - Font name used by PDF.js for converted font.
  * @property {boolean} hasEOL - Indicating if the text content is followed by a
  *   line-break.
+ * @property {number} [textLayerAdvance] - Advance of the text in the generated
+ *   font, in em.
  */
 
 /**

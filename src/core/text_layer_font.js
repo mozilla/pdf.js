@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { AbortException, BBOX_INIT, makeMap, Util } from "../shared/util.js";
+import { BBOX_INIT, makeMap, Util } from "../shared/util.js";
 import { createCmapTable, createNameTable, createPostTable } from "./fonts.js";
 import { DataBuilder } from "./data_builder.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
@@ -26,12 +26,51 @@ const DEFAULT_SPACE_ADVANCE = 250;
 // The largest advance fitting in the hmtx table.
 const MAX_ADVANCE = (0xffff * 1000) / UNITS_PER_EM;
 // The browsers give no advance to these characters.
-const ZERO_WIDTH_REGEXP = /^[\p{Mn}\p{Default_Ignorable_Code_Point}]$/u;
+const ZERO_WIDTH_REGEXP = /^[\p{Mn}\p{Default_Ignorable_Code_Point}]+$/u;
+// The browser shapes Thai and Lao SARA AM as a mark followed by SARA AA.
+const SARA_AM_DECOMPOSITIONS = new Map([
+  [0x0e33, [0x0e4d, 0x0e32]],
+  [0x0eb3, [0x0ecd, 0x0eb2]],
+]);
 // For debugging, the glyphs can be their boxes, in font units.
 const DEBUG_STROKE_WIDTH = 80;
 
 let nameTable;
 let postTable;
+
+function toFontUnits(advance) {
+  return Math.round((advance * UNITS_PER_EM) / 1000);
+}
+
+function roundFontAdvance(advance) {
+  return (toFontUnits(advance) * 1000) / UNITS_PER_EM;
+}
+
+function isZeroWidth(text) {
+  // No such character is below U+00AD (soft hyphen).
+  return text.charCodeAt(0) >= 0xad && ZERO_WIDTH_REGEXP.test(text);
+}
+
+/**
+ * @param {string} text
+ * @param {Map<number, number>} advances
+ * @returns {number} The advance of the text shaped by the browser, in 1/1000
+ *   em, or NaN if a character is missing.
+ */
+function getTextAdvance(text, advances) {
+  let width = 0;
+  for (const char of text) {
+    const codePoint = char.codePointAt(0);
+    if (!isZeroWidth(char)) {
+      width += roundFontAdvance(
+        advances.get(SARA_AM_DECOMPOSITIONS.get(codePoint)?.[1] ?? codePoint)
+      );
+    } else if (!advances.has(codePoint)) {
+      return NaN;
+    }
+  }
+  return width;
+}
 
 function createStats() {
   return {
@@ -103,6 +142,53 @@ function getMostFrequent(counts) {
     }
   }
   return best;
+}
+
+function getAdvances(stats) {
+  const advances = new Map();
+  for (const [codePoint, counts] of stats.advances) {
+    let advance = getMostFrequent(counts);
+    if (advance === 0 && counts.size > 1) {
+      // A nonzero glyph can be scaled to either width.
+      advance = counts.keys().find(width => width > 0) ?? 0;
+    }
+    advances.set(codePoint, advance);
+  }
+  // A character only drawn in ligatures gets what the others leave.
+  for (const [unicode, counts] of stats.ligatures) {
+    let known = 0;
+    const missing = [];
+    for (const char of unicode) {
+      const codePoint = char.codePointAt(0);
+      const advance = advances.get(codePoint);
+      if (advance === undefined) {
+        missing.push(codePoint);
+      } else {
+        known += advance;
+      }
+    }
+    if (!missing.length) {
+      continue;
+    }
+    const advance =
+      Math.max(getMostFrequent(counts) - known, 0) / missing.length;
+    for (const codePoint of missing) {
+      advances.set(codePoint, advance);
+    }
+  }
+  for (const [codePoint, [mark, base]] of SARA_AM_DECOMPOSITIONS) {
+    const advance = advances.get(codePoint);
+    if (advance !== undefined) {
+      advances.getOrInsert(mark, 0);
+      advances.getOrInsert(base, advance);
+    }
+  }
+  // Without a space glyph, e.g. with TeX fonts, a space gets the median gap.
+  if (!advances.has(0x20) && stats.spaceGaps.length > 0) {
+    const gaps = stats.spaceGaps.sort((a, b) => a - b);
+    advances.set(0x20, gaps[gaps.length >> 1]);
+  }
+  return advances;
 }
 
 /**
@@ -278,60 +364,24 @@ function buildTextLayerFont(
 }
 
 /**
- * Buffers the text content of a page and collects the advances of the glyphs
- * of its fonts, then sends it with the text layer fonts built from them.
+ * Collects PDF glyph advances and builds the fonts for the text layer.
  */
 class TextLayerFonts {
-  #buildBound = this.#build.bind(this);
-
-  #chunks = [];
-
   #drawBoxes;
 
   #heightScaled = new WeakSet();
 
   #idFactory;
 
-  #loadedNames = new Map();
-
-  #sink;
-
   #stats = new Map();
 
-  desiredSize = Infinity;
-
   /**
-   * @param {object} sink
    * @param {object} idFactory
    * @param {boolean} [drawBoxes] - Debug: draw glyph bounds.
    */
-  constructor(sink, idFactory, drawBoxes = false) {
-    this.#sink = sink;
+  constructor(idFactory, drawBoxes = false) {
     this.#idFactory = idFactory;
     this.#drawBoxes = drawBoxes;
-  }
-
-  get ready() {
-    // Stop the text extraction when the stream is cancelled.
-    return this.#sink.isCancelled
-      ? Promise.reject(new AbortException("Text content stream cancelled."))
-      : Promise.resolve();
-  }
-
-  enqueue(chunk) {
-    // The evaluator reuses the chunk object.
-    this.#chunks.push({ ...chunk });
-  }
-
-  /**
-   * @param {string} loadedName
-   * @param {Font} font
-   */
-  addFont(loadedName, font, heightScaled = false) {
-    this.#loadedNames.set(loadedName, font);
-    if (heightScaled) {
-      this.#heightScaled.add(font);
-    }
   }
 
   /**
@@ -351,88 +401,65 @@ class TextLayerFonts {
     if (!unicode) {
       return;
     }
-    const stats = this.#getStats(font);
-    const firstCodePoint = unicode.codePointAt(0);
-    if (unicode.length === (firstCodePoint > 0xffff ? 2 : 1)) {
-      if (firstCodePoint < 0xd800 || firstCodePoint > 0xdfff) {
+    const { advances, ligatures } = this.#getStats(font);
+    // Most PDF glyphs map to one UTF-16 code unit.
+    if (unicode.length === 1) {
+      if (unicode.isWellFormed()) {
         addCount(
-          stats.advances,
-          firstCodePoint,
-          ZERO_WIDTH_REGEXP.test(unicode) ? 0 : advance
+          advances,
+          unicode.charCodeAt(0),
+          isZeroWidth(unicode) ? 0 : advance
         );
       }
       return;
     }
-
-    const chars = [];
+    let text = "",
+      length = 0;
     for (const char of unicode) {
-      const codePoint = char.codePointAt(0);
-      if (codePoint >= 0xd800 && codePoint <= 0xdfff) {
+      if (!char.isWellFormed()) {
         continue;
       }
-      if (ZERO_WIDTH_REGEXP.test(char)) {
-        addCount(stats.advances, codePoint, 0);
+      if (isZeroWidth(char)) {
+        addCount(advances, char.codePointAt(0), 0);
       } else {
-        chars.push(char);
+        text += char;
+        length++;
       }
     }
-    if (chars.length === 1) {
-      addCount(stats.advances, chars[0].codePointAt(0), advance);
-    } else if (chars.length > 1) {
-      addCount(stats.ligatures, chars.join(""), advance);
-    }
-  }
-
-  /**
-   * @param {string} loadedName - The font of the item.
-   * @param {number} gap - The gap replaced by a space, in 1/1000 em.
-   */
-  addSpaceGap(loadedName, gap) {
-    const font = this.#loadedNames.get(loadedName);
-    if (font && Number.isFinite(gap)) {
-      this.#getStats(font).spaceGaps.push(gap);
+    if (length === 1) {
+      addCount(advances, text.codePointAt(0), advance);
+    } else if (length > 1) {
+      addCount(ligatures, text, advance);
     }
   }
 
   /**
    * @param {Font} font
-   * @returns {object|null} See `TextLayerFont` in the API.
+   * @param {number} gap - The gap replaced by a space, in 1/1000 em.
    */
-  #build(font) {
+  addSpaceGap(font, gap) {
+    if (Number.isFinite(gap)) {
+      this.#getStats(font).spaceGaps.push(gap);
+    }
+  }
+
+  /**
+   * @param {Font} font - A Type 3 font whose item height is its bbox height.
+   */
+  addHeightScaledFont(font) {
+    this.#heightScaled.add(font);
+  }
+
+  /**
+   * @param {Font} font
+   * @returns {object|null} The advances for fitting the spans.
+   */
+  getMetrics(font) {
     const stats = this.#stats.get(font);
     if (!stats) {
       return null;
     }
-    const advances = new Map();
-    for (const [codePoint, counts] of stats.advances) {
-      advances.set(codePoint, getMostFrequent(counts));
-    }
-    // A character only drawn in ligatures gets what the others leave.
-    for (const [unicode, counts] of stats.ligatures) {
-      const codePoints = Array.from(unicode, char => char.codePointAt(0));
-      let known = 0,
-        unknown = 0;
-      for (const codePoint of codePoints) {
-        const advance = advances.get(codePoint);
-        if (advance === undefined) {
-          unknown++;
-        } else {
-          known += advance;
-        }
-      }
-      if (!unknown) {
-        continue;
-      }
-      const advance = Math.max(getMostFrequent(counts) - known, 0) / unknown;
-      for (const codePoint of codePoints) {
-        advances.getOrInsert(codePoint, advance);
-      }
-    }
-    // Without a space glyph, e.g. with TeX fonts, a space gets the median gap.
-    if (!advances.has(0x20) && stats.spaceGaps.length > 0) {
-      const gaps = stats.spaceGaps.sort((a, b) => a - b);
-      advances.set(0x20, gaps[gaps.length >> 1]);
-    }
+    const advances = getAdvances(stats);
     // Use the smallest power of two that fits every advance in hmtx.
     let advanceScale = 1;
     for (const advance of advances.values()) {
@@ -448,10 +475,35 @@ class TextLayerFonts {
       0x20,
       Math.max(DEFAULT_SPACE_ADVANCE, (advanceScale * 1000) / UNITS_PER_EM)
     );
+    if (advanceScale !== 1) {
+      // Keep the fitter in PDF units, quantized to exactly the advances the
+      // generated font will use.
+      for (const [key, value] of advances) {
+        const advance = roundFontAdvance(value / advanceScale) * advanceScale;
+        if (advance === 0 && value > 0) {
+          // See `buildTextLayerFont`.
+          return null;
+        }
+        advances.set(key, advance);
+      }
+    }
+    return { advances, advanceScale };
+  }
+
+  /**
+   * @param {Font} font
+   * @param {object|null} [metrics] - See `getMetrics`.
+   * @returns {object|null} See `TextLayerFont` in the API.
+   */
+  build(font, metrics = this.getMetrics(font)) {
+    if (!metrics) {
+      return null;
+    }
     // Vertical glyphs are centered on their column.
     const ascent = font.vertical
       ? 0.5
       : getAscentRatio(font, this.#heightScaled.has(font));
+    const { advances, advanceScale } = metrics;
     const data = buildTextLayerFont(
       advances,
       ascent,
@@ -468,25 +520,6 @@ class TextLayerFonts {
       advanceScale,
     };
   }
-
-  send() {
-    const sink = this.#sink;
-    if (sink.isCancelled) {
-      return;
-    }
-    // Only the fonts of the items, i.e. the ones with a style, are built.
-    const fonts = new Map();
-    for (const chunk of this.#chunks) {
-      for (const [loadedName, style] of Object.entries(chunk.styles)) {
-        const font = this.#loadedNames.get(loadedName);
-        const textLayerFont = fonts.getOrInsertComputed(font, this.#buildBound);
-        if (textLayerFont) {
-          style.textLayerFont = textLayerFont;
-        }
-      }
-      sink.enqueue(chunk, chunk.items.length);
-    }
-  }
 }
 
-export { buildTextLayerFont, TextLayerFonts };
+export { buildTextLayerFont, getTextAdvance, isZeroWidth, TextLayerFonts };

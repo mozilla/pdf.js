@@ -607,7 +607,7 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[2734]],
+      pageMatches: [[2731]],
       pageMatchesLength: [[14]],
     });
 
@@ -870,7 +870,7 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[139]],
+      pageMatches: [[138]],
       pageMatchesLength: [[8]],
     });
 
@@ -1098,7 +1098,7 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[6, 25, 44, 63]],
+      pageMatches: [[18, 37, 56, 75]],
       pageMatchesLength: [[1, 1, 1, 1]],
     });
 
@@ -1113,7 +1113,7 @@ describe("pdf_find_controller", function () {
         pageIndex: 0,
         matchIndex: 0,
       },
-      pageMatches: [[6, 25, 44, 63]],
+      pageMatches: [[18, 37, 56, 75]],
       pageMatchesLength: [[1, 1, 1, 1]],
     });
 

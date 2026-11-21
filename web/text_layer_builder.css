@@ -56,6 +56,10 @@
   --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
   --min-font-size-inv: calc(1 / var(--min-font-size));
 
+  &.newTextLayer {
+    font-variant-ligatures: none;
+  }
+
   > :not(.markedContent),
   .markedContent span:not(.markedContent) {
     z-index: 1;

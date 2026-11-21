@@ -74,6 +74,8 @@ class TextLayer {
 
   #layoutTextParams = null;
 
+  #newTextLayer = false;
+
   #ownerDocument;
 
   #pageHeight = 0;
@@ -232,6 +234,15 @@ class TextLayer {
           if (!this.#reader) {
             break;
           }
+          if (
+            !this.#newTextLayer &&
+            this.#fonts
+              .values()
+              .some(({ fontFace }) => fontFace.status === "loaded")
+          ) {
+            this.#newTextLayer = true;
+            this.#rootContainer.classList.add("newTextLayer");
+          }
         }
         this.#processItems(value.items);
       }
@@ -282,6 +293,7 @@ class TextLayer {
       }
     }
     this.#fonts.clear();
+    this.#rootContainer.classList.remove("newTextLayer");
   }
 
   /**
@@ -388,12 +400,15 @@ class TextLayer {
   #appendText(geom) {
     // Initialize all used properties to keep the caches monomorphic.
     const textDiv = this.#ownerDocument.createElement("span");
+    const isSpace = geom.str === " ";
     const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
       hasText: geom.str !== "",
       hasEOL: geom.hasEOL,
       fontSize: 0,
+      fontAdvance: 0,
+      scaleX: 1,
     };
     this.#textDivs.push(textDiv);
 
@@ -404,24 +419,25 @@ class TextLayer {
       angle += Math.PI / 2;
     }
 
-    let fontFamily =
-      (this.#fontInspectorEnabled && style.fontSubstitution) ||
-      style.fontFamily;
-
-    // Workaround for bug 1922063.
-    fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
-    let shouldScaleText = geom.str.length > 1;
-    let ascent;
     const { textLayerFont } = style;
-    if (
+    let fontFamily,
+      ascent,
+      advanceScale = 1;
+    const hasTextLayerFont =
       textLayerFont &&
-      this.#fonts.get(textLayerFont.name)?.fontFace.status === "loaded"
-    ) {
-      // The other fonts are only used for the characters missing in it.
-      fontFamily = `"${textLayerFont.name}", ${fontFamily}`;
+      this.#fonts.get(textLayerFont.name)?.fontFace.status === "loaded";
+    if (hasTextLayerFont) {
+      fontFamily = textLayerFont.name;
       ascent = textLayerFont.ascent;
-      // Scaled advances need fitting even for a single character.
-      shouldScaleText ||= textLayerFont.advanceScale !== 1;
+      advanceScale = textLayerFont.advanceScale;
+      textDivProperties.fontAdvance =
+        (geom.textLayerAdvance ?? 0) / advanceScale;
+    } else {
+      fontFamily =
+        (this.#fontInspectorEnabled && style.fontSubstitution) ||
+        style.fontFamily;
+      // Workaround for bug 1922063.
+      fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
     }
     const fontHeight = Math.hypot(TX[2], TX[3]);
     const fontAscent =
@@ -467,9 +483,14 @@ class TextLayer {
     if (angle !== 0) {
       textDivProperties.angle = angle * (180 / Math.PI);
     }
+    // Different PDF glyphs can map to the same character. The generated font
+    // has one advance for it, so even an isolated glyph may need width fitting.
+    let shouldScaleText =
+      geom.str.length > 1 ||
+      (hasTextLayerFont && (!isSpace || advanceScale !== 1));
     const scaleX = geom.transform[0],
       scaleY = geom.transform[3];
-    if (!shouldScaleText && geom.str !== " " && scaleX !== scaleY) {
+    if (!shouldScaleText && !isSpace && scaleX !== scaleY) {
       // When the horizontal/vertical scaling differs significantly, also scale
       // even single-char text to improve highlighting (fixes issue11713.pdf).
       const absScaleX = Math.abs(scaleX),
@@ -479,6 +500,9 @@ class TextLayer {
     }
     if (shouldScaleText) {
       textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
+      if (!textDivProperties.canvasWidth && textDivProperties.fontAdvance > 0) {
+        textDivProperties.scaleX = 0;
+      }
     }
 
     // Finally, layout and append the text to the DOM.
@@ -499,26 +523,31 @@ class TextLayer {
   #layout(params) {
     const { div, properties, ctx } = params;
     const { style } = div;
-    const { canvasWidth, fontSize } = properties;
+    const { canvasWidth, fontSize, fontAdvance } = properties;
+    let { scaleX } = properties;
 
     if (canvasWidth !== 0 && fontSize !== 0 && properties.hasText) {
-      const { fontFamily } = style;
-      // Firefox quantizes canvas font sizes after dividing by the device-pixel
-      // ratio. Measure at a quantized size, then rescale the width.
-      const pixelRatio = this.#pixelRatio;
-      const measuredSize =
-        TextLayer.#quantizeFontSize((fontSize * this.#scale) / pixelRatio) *
-        pixelRatio;
+      let width = fontAdvance * fontSize;
+      if (!width) {
+        // Firefox quantizes canvas font sizes after dividing by the
+        // device-pixel ratio. Measure at a quantized size, then rescale the
+        // width.
+        const pixelRatio = this.#pixelRatio;
+        const measuredSize =
+          TextLayer.#quantizeFontSize((fontSize * this.#scale) / pixelRatio) *
+          pixelRatio;
 
-      TextLayer.#ensureCtxFont(ctx, measuredSize, fontFamily);
-      const { width } = ctx.measureText(div.textContent);
+        TextLayer.#ensureCtxFont(ctx, measuredSize, style.fontFamily);
+        width =
+          (ctx.measureText(div.textContent).width * fontSize) / measuredSize;
+      }
 
       if (width > 0) {
-        style.setProperty(
-          "--scale-x",
-          (canvasWidth * measuredSize) / (width * fontSize)
-        );
+        scaleX = canvasWidth / width;
       }
+    }
+    if (scaleX !== 1) {
+      style.setProperty("--scale-x", scaleX);
     }
     if (properties.angle !== 0) {
       style.setProperty("--rotate", `${properties.angle}deg`);

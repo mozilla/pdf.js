@@ -1626,21 +1626,30 @@ describe("Text layer", () => {
     const checkFonts = async debug => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const { color, fontFamily } = await page.evaluate(() => {
-            const span = [
-              ...document.querySelectorAll(
-                `.page[data-page-number = "1"] .textLayer span`
-              ),
-            ].find(({ textContent }) => textContent === "Andreas Gal");
-            const style = getComputedStyle(span);
-            return { color: style.color, fontFamily: style.fontFamily };
-          });
+          const { color, fontFamily, newTextLayer } = await page.evaluate(
+            () => {
+              const span = [
+                ...document.querySelectorAll(
+                  `.page[data-page-number = "1"] .textLayer span`
+                ),
+              ].find(({ textContent }) => textContent === "Andreas Gal");
+              const style = getComputedStyle(span);
+              return {
+                color: style.color,
+                fontFamily: style.fontFamily,
+                newTextLayer: span
+                  .closest(".textLayer")
+                  .classList.contains("newTextLayer"),
+              };
+            }
+          );
           expect(color)
             .withContext(browserName)
             .toEqual(debug ? "rgb(255, 0, 0)" : "rgba(0, 0, 0, 0)");
-          expect(/^"?g_d\d+_tf\d+"?, /.test(fontFamily))
+          expect(/^"?g_d\d+_tf\d+"?$/.test(fontFamily))
             .withContext(`${browserName}: ${fontFamily}`)
             .toBeTrue();
+          expect(newTextLayer).withContext(browserName).toBeTrue();
         })
       );
     };

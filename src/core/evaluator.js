@@ -75,6 +75,7 @@ import {
   RegionalImageCache,
 } from "./image_utils.js";
 import { parseMarkedContentProps, textSinkWrapper } from "./evaluator_utils.js";
+import { TextRuns, unmirrorTransform } from "./text_extraction.js";
 import { BaseStream } from "./base_stream.js";
 import { bidi } from "./bidi.js";
 import { CharCodeMap } from "./char_code_map.js";
@@ -123,6 +124,9 @@ const PatternType = {
 // building negatively by forcing all textContent to be handled at once, which
 // could easily end up hurting *overall* performance (e.g. rendering as well).
 const TEXT_CHUNK_BATCH_SIZE = 10;
+
+// The page-space rise offset of the text drawn without Ts.
+const NO_TEXT_RISE = Object.freeze([0, 0]);
 
 const deferred = Promise.resolve();
 
@@ -2382,7 +2386,7 @@ class PartialEvaluator {
     viewBox,
     lang = null,
     disableNormalization = false,
-    textLayerFonts = null,
+    textExtraction = null,
     keepWhiteSpace = false,
     prevRefs = null,
     intersector = null,
@@ -2420,6 +2424,11 @@ class PartialEvaluator {
       styles: Object.create(null),
       lang,
     };
+    const textRuns =
+      textExtraction && !keepWhiteSpace && !intersector
+        ? new TextRuns(item => textContent.items.push(item))
+        : null;
+    const textLayerFonts = textExtraction?.fonts ?? null;
     const textContentItem = {
       initialized: false,
       str: [],
@@ -2563,26 +2572,6 @@ class PartialEvaluator {
     const textSpaceMatrix = new Float32Array(6);
     const glyphTransform = new Float32Array(6);
     let lastFakeSpaceExtraCharId = -1;
-    // A Tz since the previous glyph leaves the em of the next gap unknown.
-    let hScaleChanged = false;
-
-    // For a reflected transform with d > 0, move the origin along the baseline
-    // by the item width, then reverse the baseline direction.
-    function unmirrorTransform(transform, width) {
-      const a = transform[0];
-      const b = transform[1];
-      const c = transform[2];
-      const d = transform[3];
-      if (a * d - b * c >= 0 || d <= 0) {
-        return false;
-      }
-      const scale = width / Math.hypot(a, b);
-      transform[0] = -a;
-      transform[1] = -b;
-      transform[4] += a * scale;
-      transform[5] += b * scale;
-      return true;
-    }
 
     function pushWhitespace({
       width = 0,
@@ -2632,10 +2621,7 @@ class PartialEvaluator {
       return Util.transform(textState.ctm, result, result);
     }
 
-    function ensureTextContentItem() {
-      if (textContentItem.initialized) {
-        return textContentItem;
-      }
+    function ensureTextStyle() {
       const { font, loadedName } = textState;
       if (!seenStyles.has(loadedName)) {
         seenStyles.add(loadedName);
@@ -2650,12 +2636,20 @@ class PartialEvaluator {
           style.fontSubstitution = font.systemFontInfo.css;
           style.fontSubstitutionLoadedName = font.systemFontInfo.loadedName;
         }
-        textLayerFonts?.addFont(
+        textExtraction?.addFont(
           loadedName,
           font,
           /* heightScaled = */ getType3HeightScale() !== 1
         );
       }
+    }
+
+    function ensureTextContentItem() {
+      if (textContentItem.initialized) {
+        return textContentItem;
+      }
+      const { font, loadedName } = textState;
+      ensureTextStyle();
       textContentItem.fontName = loadedName;
 
       const trm = (textContentItem.transform = getCurrentTextTransform());
@@ -2822,8 +2816,8 @@ class PartialEvaluator {
     // spacing measurement, even when the new position is on the same line.
     function resetTextMatrix() {
       textState.setTextMatrix(textState.textLineMatrix);
-      hScaleChanged = false;
       resetAdaptiveSpacing();
+      textRuns?.resetTracking();
     }
 
     function moveText(x, y) {
@@ -3033,9 +3027,7 @@ class PartialEvaluator {
           } else {
             textContentItem.height += advanceY;
           }
-        } else if (
-          !addFakeSpaces(advanceY, currentTransform, textOrientation)
-        ) {
+        } else if (!addFakeSpaces(advanceY, textOrientation)) {
           if (textContentItem.str.length === 0) {
             resetLastChars();
             pushWhitespace({ height: Math.abs(advanceY) });
@@ -3127,7 +3119,7 @@ class PartialEvaluator {
         } else {
           textContentItem.width += advanceX;
         }
-      } else if (!addFakeSpaces(advanceX, currentTransform, textOrientation)) {
+      } else if (!addFakeSpaces(advanceX, textOrientation)) {
         if (textContentItem.str.length === 0) {
           resetLastChars();
           pushWhitespace({ width: Math.abs(advanceX) });
@@ -3150,7 +3142,113 @@ class PartialEvaluator {
       return true;
     }
 
+    // Move the cursor along the writing direction.
+    function advanceTextMatrix(distance, vertical) {
+      if (vertical) {
+        textState.translateTextMatrix(0, -distance);
+      } else {
+        textState.translateTextMatrix(distance * textState.textHScale, 0);
+      }
+    }
+
+    function buildTextRun(chars, extraSpacing) {
+      const { font, fontSize, fontMatrix, loadedName, textRise } = textState;
+      const { vertical } = font;
+      if (!chars) {
+        // A TJ number moves the cursor without painting a glyph or adding Tc.
+        advanceTextMatrix(extraSpacing, vertical);
+        return;
+      }
+      const glyphs = font.charsToGlyphs(chars);
+      const unitScale = fontMatrix[0] * 1000;
+      const spaceWidth = font.isType3Font
+        ? null
+        : (vertical ? Math.abs(font.defaultVMetrics[0]) : font.spaceWidth) *
+          unitScale;
+      const charSpacing = vertical
+        ? -textState.charSpacing
+        : textState.charSpacing;
+      const wordSpacing = vertical
+        ? -textState.wordSpacing
+        : textState.wordSpacing;
+      const charSpacingUnits = (1000 * charSpacing) / fontSize;
+      // The rise offset in page space, the same for all the glyphs.
+      let rise = null;
+      for (let i = 0, ii = glyphs.length; i < ii; i++) {
+        const glyph = glyphs[i];
+        const { isWhitespace, isInvisibleFormatMark } = glyph.category;
+        const advance =
+          (vertical ? -glyph.vmetric[0] : glyph.width) * unitScale;
+        // The generated glyph has a positive extent even if W2 moves the
+        // cursor back up the column. Keep the signed advance for positioning.
+        const extent = vertical ? Math.abs(advance) : advance;
+        const spacing =
+          charSpacing +
+          (glyph.isSpace ? wordSpacing : 0) +
+          (i + 1 === ii ? extraSpacing : 0);
+        if (isWhitespace) {
+          textLayerFonts?.addGlyph(font, " ", extent);
+          textRuns.addSpace();
+        } else if (!isInvisibleFormatMark) {
+          // TextRuns copies what it keeps from the shared transform.
+          const transform = getCurrentTextTransform(glyphTransform);
+          const c = transform[2],
+            d = transform[3],
+            x = transform[4],
+            y = transform[5];
+          const endX = x + ((vertical ? -c : transform[0]) * advance) / 1000;
+          const endY = y + ((vertical ? -d : transform[1]) * advance) / 1000;
+          const unicode = disableNormalization
+            ? glyph.unicode
+            : glyph.normalizedUnicode;
+          if (
+            unicode &&
+            Math.max(x, endX) >= viewBox[0] &&
+            Math.min(x, endX) <= viewBox[2] &&
+            Math.max(y, endY) >= viewBox[1] &&
+            Math.min(y, endY) <= viewBox[3]
+          ) {
+            ensureTextStyle();
+            if (!rise) {
+              // The transform's y axis is scaled by the Type 3 height scale.
+              const riseScale = textRise / (fontSize * getType3HeightScale());
+              rise = textRise ? [c * riseScale, d * riseScale] : NO_TEXT_RISE;
+            }
+            textRuns.addGlyph(
+              loadedName,
+              transform,
+              rise,
+              unicode,
+              glyph.isUnicodeVisual,
+              extent,
+              charSpacingUnits,
+              spaceWidth,
+              vertical
+            );
+            textLayerFonts?.addGlyph(font, unicode, extent);
+          }
+        }
+        advanceTextMatrix((advance * fontSize) / 1000 + spacing, vertical);
+      }
+    }
+
     function buildTextContentItem({ chars, extraSpacing }) {
+      if (
+        textRuns &&
+        textState.fontSize > 0 &&
+        textState.textHScale > 0 &&
+        textState.fontMatrix[0] > 0
+      ) {
+        // A text state outside the run extractor may have left an item open.
+        if (textContentItem.initialized) {
+          flushTextContentItem();
+        }
+        textContentItem.prevTransform = null;
+        resetLastChars();
+        buildTextRun(chars, extraSpacing);
+        return;
+      }
+      textRuns?.reset();
       if (
         currentFontSize !== textState.fontSize ||
         (currentFontName !== textState.fontName &&
@@ -3190,10 +3288,8 @@ class PartialEvaluator {
 
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
-      // Converts the glyph widths to 1/1000 of the text layer em.
-      const advanceScale = Math.abs(
-        (textState.fontMatrix[0] * 1000) / getType3HeightScale()
-      );
+      // Converts the glyph widths to 1/1000 em.
+      const advanceScale = Math.abs(textState.fontMatrix[0] * 1000);
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
@@ -3239,7 +3335,6 @@ class PartialEvaluator {
 
         const inView =
           isZeroWidthDiacritic || compareWithLastPosition(scaledDim);
-        hScaleChanged = false;
         if (!inView) {
           // The glyph is not in page so just skip it but move the cursor.
           if (!font.vertical) {
@@ -3350,7 +3445,7 @@ class PartialEvaluator {
       }
     }
 
-    function addFakeSpaces(width, currentTransform, textOrientation) {
+    function addFakeSpaces(width, textOrientation) {
       lastFakeSpaceExtraCharId = -1;
       if (
         textOrientation * textContentItem.spaceInFlowMin <= width &&
@@ -3360,19 +3455,6 @@ class PartialEvaluator {
           resetLastChars();
           textContentItem.str.push(" ");
           lastFakeSpaceExtraCharId = intersector?.addExtraChar(" ") ?? -1;
-          if (textLayerFonts && !textContentItem.vertical && !hScaleChanged) {
-            // Measure the gap in page units, in the em along the baseline.
-            const emLength =
-              Math.hypot(currentTransform[0], currentTransform[1]) *
-              Math.abs(getType3HeightScale());
-            if (emLength > 0) {
-              textLayerFonts.addSpaceGap(
-                textContentItem.fontName,
-                (1000 * Math.abs(width) * textContentItem.textAdvanceScale) /
-                  emLength
-              );
-            }
-          }
         }
         return false;
       }
@@ -3397,6 +3479,7 @@ class PartialEvaluator {
     }
 
     function flushTextContentItem() {
+      textRuns?.flush();
       if (!textContentItem.initialized || !textContentItem.str) {
         return;
       }
@@ -3503,7 +3586,6 @@ class PartialEvaluator {
           case OPS.setHScale:
             if (textState.textHScale !== args[0] / 100) {
               textState.textHScale = args[0] / 100;
-              hScaleChanged = true;
               resetAdaptiveSpacing();
             }
             break;
@@ -3701,7 +3783,7 @@ class PartialEvaluator {
                     viewBox,
                     lang,
                     disableNormalization,
-                    textLayerFonts,
+                    textExtraction,
                     keepWhiteSpace,
                     prevRefs: seenRefs,
                     markedContentScope: xObjMarkedContentScope,
