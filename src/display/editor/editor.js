@@ -547,9 +547,10 @@ class AnnotationEditor {
       // a problem to not find a new parent: it's something which is related to
       // what the user is seeing, hence it depends on how pages are layed out.
 
-      // The element will be outside of its parent so change the parent.
-      const { x, y } = this.div.getBoundingClientRect();
-      if (this.parent.findNewParent(this, x, y)) {
+      // The DOM still has the editor's previous position.
+      const { x, y } = div.getBoundingClientRect();
+      const [dx, dy] = this.pageTranslationToScreen(tx, ty);
+      if (this.parent.findNewParent(this, x + dx, y + dy)) {
         this.x -= Math.floor(this.x);
         this.y -= Math.floor(this.y);
       }
