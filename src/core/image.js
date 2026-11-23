@@ -28,7 +28,6 @@ import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
-import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 import { MathClamp } from "../shared/math_clamp.js";
@@ -140,6 +139,8 @@ function sumPreblendedRow(
 }
 
 class PDFImage {
+  #imageResizer;
+
   async #initialize({
     xref,
     res,
@@ -153,6 +154,7 @@ class PDFImage {
     localColorSpaceCache,
   }) {
     this.image = image;
+    this.#imageResizer = xref.pdfManager.imageResizer;
     const dict = image.dict;
 
     const filter = dict.get("F", "Filter");
@@ -174,7 +176,7 @@ class PDFImage {
           bitsPerComponent: image.bitsPerComponent,
         } = JpxImage.parseImageProperties(image.stream));
         image.stream.reset();
-        const reducePower = ImageResizer.getReducePowerForJPX(
+        const reducePower = this.#imageResizer.getReducePowerForJPX(
           image.width,
           image.height,
           image.numComps
@@ -416,7 +418,11 @@ class PDFImage {
     return new PDFImage().#initialize({ ...options, smask, mask });
   }
 
-  static async createMask({ image, isOffscreenCanvasSupported = false }) {
+  static async createMask({
+    image,
+    imageResizer,
+    isOffscreenCanvasSupported = false,
+  }) {
     const { dict } = image;
     const width = dict.get("W", "Width");
     const height = dict.get("H", "Height");
@@ -438,7 +444,7 @@ class PDFImage {
     }
 
     if (isOffscreenCanvasSupported) {
-      if (ImageResizer.needsToBeResized(width, height)) {
+      if (imageResizer.needsToBeResized(width, height)) {
         const data = new Uint8ClampedArray(width * height * 4);
         convertBlackAndWhiteToRGBA({
           src: imgArray,
@@ -448,7 +454,7 @@ class PDFImage {
           nonBlackColor: 0,
           inverseDecode,
         });
-        return ImageResizer.createImage({
+        return imageResizer.createImage({
           kind: ImageKind.RGBA_32BPP,
           data,
           width,
@@ -749,6 +755,7 @@ class PDFImage {
   }
 
   async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
+    const imageResizer = this.#imageResizer;
     const drawWidth = this.drawWidth;
     const drawHeight = this.drawHeight;
     const imgData = {
@@ -769,7 +776,7 @@ class PDFImage {
     const rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
     const mustBeResized =
       isOffscreenCanvasSupported &&
-      ImageResizer.needsToBeResized(drawWidth, drawHeight);
+      imageResizer.needsToBeResized(drawWidth, drawHeight);
 
     if (!this.smask && !this.mask && this.colorSpace.name === "DeviceRGBA") {
       imgData.kind = ImageKind.RGBA_32BPP;
@@ -798,7 +805,7 @@ class PDFImage {
             imgArray
           );
         }
-        return ImageResizer.createImage(imgData, false);
+        return imageResizer.createImage(imgData);
       }
 
       return imgData;
@@ -836,7 +843,7 @@ class PDFImage {
         });
         if (isOffscreenCanvasSupported) {
           if (mustBeResized) {
-            return ImageResizer.createImage(
+            return imageResizer.createImage(
               {
                 data,
                 kind,
@@ -917,7 +924,7 @@ class PDFImage {
             forceRGB: true,
             internal: mustBeResized,
           });
-          return mustBeResized ? ImageResizer.createImage(imgData) : imgData;
+          return mustBeResized ? imageResizer.createImage(imgData) : imgData;
         }
       }
     }
@@ -925,10 +932,10 @@ class PDFImage {
     if (mustBeResized && !Array.isArray(this.mask)) {
       // Avoid a full-size RGBA buffer and BMP conversion (see issue16263.pdf).
       // Color-key masks use the existing path to mask source components.
-      const reducePower = ImageResizer.getReducePower(drawWidth, drawHeight);
+      const reducePower = imageResizer.getReducePower(drawWidth, drawHeight);
       const width = Math.max(1, drawWidth >> reducePower);
       const height = Math.max(1, drawHeight >> reducePower);
-      if (!ImageResizer.needsToBeResized(width, height)) {
+      if (!imageResizer.needsToBeResized(width, height)) {
         const rgba = new Uint8ClampedArray(width * height * 4);
         await this._fillDownscaledRgba(rgba, width, height);
         return this.createBitmap(ImageKind.RGBA_32BPP, width, height, rgba);
@@ -1013,7 +1020,7 @@ class PDFImage {
     }
 
     imgData.data = data;
-    return mustBeResized ? ImageResizer.createImage(imgData) : imgData;
+    return mustBeResized ? imageResizer.createImage(imgData) : imgData;
   }
 
   /**

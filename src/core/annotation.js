@@ -588,7 +588,12 @@ class AnnotationFactory {
             } = image;
             const imageRef =
               imageRenderStream ||
-              new JpegStream(imageStream, imageStream.length);
+              new JpegStream(
+                imageStream,
+                imageStream.length,
+                null,
+                xref.pdfManager
+              );
             if (smaskStream || smaskRenderStream) {
               imageRef.dict.set("SMask", smaskRenderStream || smaskStream);
             }

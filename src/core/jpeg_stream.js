@@ -13,41 +13,35 @@
  * limitations under the License.
  */
 
-import { FeatureTest, shadow, warn } from "../shared/util.js";
+import { shadow, warn } from "../shared/util.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
 import { getJpegImageInfo } from "./jpeg_utils.js";
-import { ImageResizer } from "./image_resizer.js";
 
 /**
  * For JPEG's we use a library to decode these images and the stream behaves
  * like all the other DecodeStreams.
  */
 class JpegStream extends DecodeStream {
-  static #isImageDecoderSupported = FeatureTest.isImageDecoderSupported;
+  #pdfManager;
 
-  constructor(stream, maybeLength, params) {
+  constructor(stream, maybeLength, params, pdfManager) {
     super(maybeLength);
 
     this.stream = stream;
     this.dict = stream.dict;
     this.maybeLength = maybeLength;
     this.params = params;
+    this.#pdfManager = pdfManager;
   }
 
   static get canUseImageDecoder() {
     return shadow(
       this,
       "canUseImageDecoder",
-      this.#isImageDecoderSupported
-        ? ImageDecoder.isTypeSupported("image/jpeg")
-        : Promise.resolve(false)
+      ImageDecoder.isTypeSupported("image/jpeg")
     );
-  }
-
-  static setOptions({ isImageDecoderSupported = false }) {
-    this.#isImageDecoderSupported = isImageDecoderSupported;
   }
 
   get bytes() {
@@ -134,7 +128,10 @@ class JpegStream extends DecodeStream {
   }
 
   async getTransferableImage(width, height) {
-    if (!(await JpegStream.canUseImageDecoder)) {
+    if (
+      !this.#pdfManager.evaluatorOptions.isImageDecoderSupported ||
+      !(await JpegStream.canUseImageDecoder)
+    ) {
       return null;
     }
     const jpegOptions = this.jpegOptions;
@@ -161,7 +158,10 @@ class JpegStream extends DecodeStream {
         exifStart,
         exifEnd,
       } = info;
-      const reducePower = ImageResizer.getReducePower(frameWidth, frameHeight);
+      const reducePower = this.#pdfManager.imageResizer.getReducePower(
+        frameWidth,
+        frameHeight
+      );
       if (
         (frameWidth !== width || frameHeight !== height) &&
         (reducePower || !frameHeight)

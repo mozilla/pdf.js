@@ -36,24 +36,42 @@ const MAX_ERROR = 128;
 class ImageResizer {
   static #goodSquareLength = MIN_IMAGE_DIM;
 
-  static #isImageDecoderSupported = FeatureTest.isImageDecoderSupported;
+  #isImageDecoderSupported;
 
-  constructor(imgData, isMask) {
-    this._imgData = imgData;
-    this._isMask = isMask;
+  #maxArea;
+
+  constructor({
+    canvasMaxAreaInBytes = -1,
+    isImageDecoderSupported = false,
+  } = {}) {
+    // Convert the byte limit to RGBA pixels.
+    this.#maxArea =
+      canvasMaxAreaInBytes < 0 ? null : Math.floor(canvasMaxAreaInBytes / 4);
+    this.#isImageDecoderSupported = isImageDecoderSupported;
   }
 
   static get canUseImageDecoder() {
     return shadow(
       this,
       "canUseImageDecoder",
-      this.#isImageDecoderSupported
-        ? ImageDecoder.isTypeSupported("image/bmp")
-        : Promise.resolve(false)
+      ImageDecoder.isTypeSupported("image/bmp")
     );
   }
 
-  static needsToBeResized(width, height) {
+  needsToBeResized(width, height) {
+    if (this.#maxArea === null) {
+      return ImageResizer.#needsToBeResized(width, height);
+    }
+    if (width <= MIN_IMAGE_DIM && height <= MIN_IMAGE_DIM) {
+      return false;
+    }
+    const { MAX_DIM } = this;
+    return (
+      width > MAX_DIM || height > MAX_DIM || width * height > this.#maxArea
+    );
+  }
+
+  static #needsToBeResized(width, height) {
     if (width <= this.#goodSquareLength && height <= this.#goodSquareLength) {
       return false;
     }
@@ -91,13 +109,15 @@ class ImageResizer {
       MAX_ERROR,
       0
     );
-    const maxArea = (this.MAX_AREA = this.#goodSquareLength ** 2);
+    const maxArea = this.#goodSquareLength ** 2;
+    this._hasMaxArea = true;
+    shadow(this, "MAX_AREA", maxArea);
 
     return area > maxArea;
   }
 
   // Return the power-of-two reduction exponent for canvas and area limits.
-  static getReducePower(width, height, maxArea = Infinity) {
+  getReducePower(width, height, maxArea = Infinity) {
     if (
       !Number.isInteger(width) ||
       width <= 0 ||
@@ -119,7 +139,7 @@ class ImageResizer {
     return Math.max(0, Math.ceil(Math.log2(minFactor)));
   }
 
-  static getReducePowerForJPX(width, height, componentsCount) {
+  getReducePowerForJPX(width, height, componentsCount) {
     // Budget 1 GiB of OpenJPEG's 2 GiB Wasm heap for four-byte component
     // samples.
     return this.getReducePower(width, height, 2 ** 30 / (componentsCount * 4));
@@ -142,22 +162,12 @@ class ImageResizer {
     );
   }
 
-  static set MAX_AREA(area) {
-    if (area >= 0) {
-      this._hasMaxArea = true;
-      shadow(this, "MAX_AREA", area);
-    }
+  get MAX_DIM() {
+    return ImageResizer.MAX_DIM;
   }
 
-  static setOptions({
-    canvasMaxAreaInBytes = -1,
-    isImageDecoderSupported = false,
-  }) {
-    if (!this._hasMaxArea) {
-      // Divide by 4 to have the value in pixels.
-      this.MAX_AREA = canvasMaxAreaInBytes >> 2;
-    }
-    this.#isImageDecoderSupported = isImageDecoderSupported;
+  get MAX_AREA() {
+    return this.#maxArea ?? ImageResizer.MAX_AREA;
   }
 
   static _areGoodDims(width, height) {
@@ -198,27 +208,25 @@ class ImageResizer {
     return start;
   }
 
-  static async createImage(imgData, isMask = false) {
-    return new ImageResizer(imgData, isMask)._createImage();
-  }
-
-  async _createImage() {
-    const { _imgData: imgData } = this;
+  async createImage(imgData, isMask = false) {
     const { width, height } = imgData;
 
     if (width * height * 4 > MAX_INT_32) {
       // The resulting RGBA image is too large.
       // We just rescale the data.
-      const result = this._rescaleImageData();
+      const result = this._rescaleImageData(imgData, isMask);
       if (result) {
         return result;
       }
     }
 
-    const data = this._encodeBMP();
+    const data = this._encodeBMP(imgData, isMask);
     let decoder, imagePromise;
 
-    if (await ImageResizer.canUseImageDecoder) {
+    if (
+      this.#isImageDecoderSupported &&
+      (await ImageResizer.canUseImageDecoder)
+    ) {
       decoder = new ImageDecoder({
         data,
         type: "image/bmp",
@@ -232,7 +240,7 @@ class ImageResizer {
           // It's a bit unfortunate to create the BMP twice but we shouldn't be
           // here in the first place.
           return createImageBitmap(
-            new Blob([this._encodeBMP().buffer], {
+            new Blob([this._encodeBMP(imgData, isMask).buffer], {
               type: "image/bmp",
             })
           );
@@ -248,7 +256,7 @@ class ImageResizer {
       );
     }
 
-    const { MAX_AREA, MAX_DIM } = ImageResizer;
+    const { MAX_AREA, MAX_DIM } = this;
     const minFactor = Math.max(
       width / MAX_DIM,
       height / MAX_DIM,
@@ -306,8 +314,7 @@ class ImageResizer {
     return imgData;
   }
 
-  _rescaleImageData(maxSize = MAX_INT_32) {
-    const { _imgData: imgData } = this;
+  _rescaleImageData(imgData, isMask, maxSize = MAX_INT_32) {
     const { data, width, height, kind } = imgData;
     const rgbaSize = width * height * 4;
     // Choose K so rgbaSize / 2 ** K <= maxSize.
@@ -364,7 +371,7 @@ class ImageResizer {
         dest: src32,
         width,
         height: h,
-        inverseDecode: this._isMask,
+        inverseDecode: isMask,
         srcPos,
       }));
 
@@ -376,7 +383,7 @@ class ImageResizer {
       }
     }
 
-    if (ImageResizer.needsToBeResized(newWidth, newHeight)) {
+    if (this.needsToBeResized(newWidth, newHeight)) {
       imgData.data = dest32;
       imgData.width = newWidth;
       imgData.height = newHeight;
@@ -400,9 +407,9 @@ class ImageResizer {
     return imgData;
   }
 
-  _encodeBMP() {
-    const { width, height, kind } = this._imgData;
-    let data = this._imgData.data;
+  _encodeBMP(imgData, isMask) {
+    const { width, height, kind } = imgData;
+    let { data } = imgData;
     let bitPerPixel;
     let colorTable = new Uint8Array(0);
     let maskTable = colorTable;
@@ -415,7 +422,7 @@ class ImageResizer {
       case ImageKind.GRAYSCALE_1BPP: {
         bitPerPixel = 1;
         colorTable = new Uint8Array(
-          this._isMask
+          isMask
             ? [255, 255, 255, 255, 0, 0, 0, 0]
             : [0, 0, 0, 0, 255, 255, 255, 255]
         );
