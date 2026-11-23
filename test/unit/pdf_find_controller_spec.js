@@ -84,7 +84,7 @@ async function initPdfFindController(
   });
   pdfFindController.setDocument(pdfDocument); // Enable searching.
 
-  return { eventBus, loadingTask, pdfFindController };
+  return { eventBus, linkService, loadingTask, pdfFindController };
 }
 
 function testSearch({
@@ -213,6 +213,38 @@ function testEmptySearch({ eventBus, pdfFindController, state }) {
 }
 
 describe("pdf_find_controller", function () {
+  it("scrolls to a match on the current page without resetting the page view", async function () {
+    const { eventBus, linkService, loadingTask, pdfFindController } =
+      await initPdfFindController("find_all.pdf");
+    try {
+      const resetPage = spyOnProperty(
+        linkService,
+        "page",
+        "set"
+      ).and.callThrough();
+      const element = { scrollIntoView: jasmine.createSpy("scrollIntoView") };
+
+      const { promise, resolve } = Promise.withResolvers();
+      eventBus.on("updatetextlayermatches", ({ pageIndex }) => {
+        if (pageIndex === 0) {
+          pdfFindController.scrollMatchIntoView({
+            element,
+            pageIndex,
+            matchIndex: 0,
+          });
+          resolve();
+        }
+      });
+      eventBus.dispatch("find", { query: "a", type: "again" });
+      await promise;
+
+      expect(element.scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(resetPage).not.toHaveBeenCalled();
+    } finally {
+      await loadingTask.destroy();
+    }
+  });
+
   it("performs a normal search", async function () {
     const { eventBus, loadingTask, pdfFindController } =
       await initPdfFindController();

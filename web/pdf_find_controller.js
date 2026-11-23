@@ -930,17 +930,33 @@ class PDFFindController {
   }
 
   #updatePage(index) {
-    if (this._scrollMatches && this._selected.pageIdx === index) {
+    const pageNumber = index + 1;
+    const isCurrentPage = pageNumber === this._linkService.page;
+    if (
+      !isCurrentPage &&
+      this._scrollMatches &&
+      this._selected.pageIdx === index
+    ) {
       // If the page is selected, scroll the page into view, which triggers
       // rendering the page, which adds the text layer. Once the text layer
       // is built, it will attempt to scroll the selected match into view.
-      this._linkService.page = index + 1;
+      this._linkService.page = pageNumber;
     }
 
     this._eventBus.dispatch("updatetextlayermatches", {
       source: this,
       pageIndex: index,
     });
+
+    // On the current page, a rendered text layer scrolls to the match during
+    // dispatch. If it couldn't, scroll to the page to trigger rendering.
+    if (
+      isCurrentPage &&
+      this._scrollMatches &&
+      this._selected.pageIdx === index
+    ) {
+      this._linkService.page = pageNumber;
+    }
   }
 
   #updateAllPages() {
