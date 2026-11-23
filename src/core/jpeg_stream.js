@@ -14,6 +14,7 @@
  */
 
 import { FeatureTest, shadow, warn } from "../shared/util.js";
+import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
 import { Dict } from "./primitives.js";
 import { getJpegImageInfo } from "./jpeg_utils.js";
@@ -109,11 +110,17 @@ class JpegStream extends DecodeStream {
 
     const jpegImage = new JpegImage(this.jpegOptions);
     jpegImage.parse(bytes);
+    const { forceRGBA, forceRGB } = this;
+    const cmyk =
+      jpegImage.numComponents === 4 && (forceRGBA || forceRGB)
+        ? await ColorSpaceUtils.getCmyk(this.dict?.xref)
+        : undefined;
     const data = jpegImage.getData({
       width: this.drawWidth,
       height: this.drawHeight,
-      forceRGBA: this.forceRGBA,
-      forceRGB: this.forceRGB,
+      forceRGBA,
+      forceRGB,
+      cmyk,
     });
     this.buffer = data;
     this.bufferLength = data.length;

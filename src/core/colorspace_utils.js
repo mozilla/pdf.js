@@ -25,13 +25,15 @@ import {
   LabCS,
   PatternCS,
 } from "./colorspace.js";
-import { CmykICCBasedCS, IccColorSpace } from "./icc_colorspace.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { shadow, unreachable, warn } from "../shared/util.js";
+import { IccColorSpace } from "./icc_colorspace.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { MissingDataException } from "./core_utils.js";
 
 class ColorSpaceUtils {
+  static #cmykByContext = new WeakMap();
+
   static parse({
     cs,
     xref,
@@ -126,7 +128,7 @@ class ColorSpaceUtils {
           return this.rgba;
         case "CMYK":
         case "DeviceCMYK":
-          return this.cmyk;
+          return this.getCmyk(xref);
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
         default:
@@ -161,7 +163,7 @@ class ColorSpaceUtils {
           return this.rgb;
         case "CMYK":
         case "DeviceCMYK":
-          return this.cmyk;
+          return this.getCmyk(xref);
         case "CalGray":
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray("WhitePoint");
@@ -177,6 +179,9 @@ class ColorSpaceUtils {
           return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
         case "ICCBased":
           const isRef = cs[1] instanceof Ref;
+          const useIcc = await IccColorSpace.load(
+            xref.pdfManager?.binaryDataContext
+          );
           if (isRef) {
             const cachedCS = globalColorSpaceCache.getByRef(cs[1]);
             if (cachedCS) {
@@ -188,10 +193,10 @@ class ColorSpaceUtils {
           const dict = stream.dict;
           numComps = dict.get("N");
 
-          if (IccColorSpace.isUsable) {
+          if (useIcc) {
             try {
               const iccCS = new IccColorSpace(
-                stream.getBytes(),
+                stream.peekBytes(),
                 "ICCBased",
                 numComps
               );
@@ -222,7 +227,7 @@ class ColorSpaceUtils {
           } else if (numComps === 3) {
             return this.rgb;
           } else if (numComps === 4) {
-            return this.cmyk;
+            return this.getCmyk(xref);
           }
           break;
         case "Pattern":
@@ -271,15 +276,24 @@ class ColorSpaceUtils {
     return shadow(this, "rgba", new DeviceRgbaCS());
   }
 
-  static get cmyk() {
-    if (CmykICCBasedCS.isUsable) {
-      try {
-        return shadow(this, "cmyk", new CmykICCBasedCS());
-      } catch {
-        warn("CMYK fallback: DeviceCMYK");
-      }
+  static get deviceCmyk() {
+    return shadow(this, "deviceCmyk", new DeviceCmykCS());
+  }
+
+  // Share the profile request and keep the resulting color space for the
+  // lifetime of this document, even when the request falls back to DeviceCMYK.
+  static getCmyk(xref) {
+    const context = xref?.pdfManager?.binaryDataContext;
+    if (!context?.options.useWasm) {
+      return this.deviceCmyk;
     }
-    return shadow(this, "cmyk", new DeviceCmykCS());
+    return this.#cmykByContext.getOrInsertComputed(context, () =>
+      IccColorSpace.createCmyk(context).then(colorSpace => {
+        const cmyk = colorSpace ?? this.deviceCmyk;
+        this.#cmykByContext.set(context, cmyk);
+        return cmyk;
+      })
+    );
   }
 }
 

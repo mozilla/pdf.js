@@ -36,11 +36,12 @@ import { PDFFunctionFactory } from "./function.js";
 import { stringToUTF16HexString } from "./string_utils.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
-  constructor(str) {
+  constructor(str, xref) {
     super(new StringStream(str));
+    this.xref = xref;
   }
 
-  parse() {
+  async parse() {
     const operation = {
       fn: 0,
       args: [],
@@ -79,9 +80,11 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+          case OPS.setFillCMYKColor: {
+            const cmyk = await ColorSpaceUtils.getCmyk(this.xref);
+            cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
+          }
         }
       }
     } catch (reason) {
@@ -93,8 +96,8 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
 }
 
 // Parse DA to extract font and color information.
-function parseDefaultAppearance(str) {
-  return new DefaultAppearanceEvaluator(str).parse();
+function parseDefaultAppearance(str, xref) {
+  return new DefaultAppearanceEvaluator(str, xref).parse();
 }
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
@@ -185,9 +188,11 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+          case OPS.setFillCMYKColor: {
+            const cmyk = await ColorSpaceUtils.getCmyk(this.xref);
+            cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
+          }
           case OPS.showText:
           case OPS.showSpacedText:
           case OPS.nextLineShowText:

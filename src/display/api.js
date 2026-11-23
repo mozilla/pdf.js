@@ -144,9 +144,12 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {string} [wasmUrl] - The URL where the wasm files are located.
  *   Include the trailing slash.
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
- *   worker-thread when reading built-in CMap files, standard font files,
- *   and wasm files. If `true`, the `BinaryDataFactory` option is ignored.
- *   The default value is `true` in web environments and `false` in Node.js.
+ *   worker-thread when reading built-in CMap files, ICC profiles, standard
+ *   font files, and wasm files. If `true`, the `BinaryDataFactory` option is
+ *   ignored.
+ *   In web environments, this defaults to `true` when using the default
+ *   `BinaryDataFactory`, packed CMaps, and valid fetch URLs for all four
+ *   resources. It defaults to `false` in Node.js.
  * @property {boolean} [useWasm] - Attempt to use WebAssembly in order to
  *    improve e.g. image decoding performance.
  *    The default value is `true`.
@@ -202,8 +205,8 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *    create SVG filters when rendering some images on the main canvas.
  *    The default value is {DOMFilterFactory}.
  * @property {object} [BinaryDataFactory] - The factory that will be used when
- *   falling back to reading built-in CMap files, standard font files,
- *   and wasm files in the main-thread.
+ *   falling back to reading built-in CMap files, ICC profiles, standard font
+ *   files, and wasm files in the main-thread.
  *   The default value is {DOMBinaryDataFactory}.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
  *   rendering. The default value is `true`.
@@ -321,9 +324,11 @@ function getDocument(src = {}) {
           BinaryDataFactory === DOMBinaryDataFactory &&
           cMapUrl &&
           cMapPacked &&
+          iccUrl &&
           standardFontDataUrl &&
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
+          isValidFetchUrl(iccUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
         ));
@@ -346,7 +351,12 @@ function getDocument(src = {}) {
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       useWorkerFetch
         ? null
-        : new BinaryDataFactory({ cMapUrl, standardFontDataUrl, wasmUrl }),
+        : new BinaryDataFactory({
+            cMapUrl,
+            iccUrl,
+            standardFontDataUrl,
+            wasmUrl,
+          }),
   };
 
   if (!worker) {

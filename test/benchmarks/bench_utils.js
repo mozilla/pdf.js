@@ -79,16 +79,6 @@ globalThis.fetch = async (url, options) =>
     ? new Response(readCachedFile(url))
     : nodeFetch(url, options);
 
-globalThis.XMLHttpRequest = class {
-  open(method, url) {
-    this.url = url;
-  }
-
-  send() {
-    this.response = readCachedFile(this.url).slice().buffer;
-  }
-};
-
 function buildGetDocumentParams(data) {
   return {
     // `getDocument` transfers the data to the worker, hence always pass a

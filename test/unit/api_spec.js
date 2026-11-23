@@ -39,6 +39,7 @@ import {
   DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
   getCrossOriginHostname,
+  ICC_URL,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   TestPdfsServer,
@@ -115,23 +116,19 @@ describe("api", function () {
   }
 
   function buildSharedImageResourcePdf() {
-    const streamObject = (num, dict, data) =>
-      `${num} 0 obj\n<< ${dict} /Length ${data.length} >>\n` +
-      `stream\n${data}\nendstream\nendobj\n`;
-    return assemblePdf([
-      "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-      "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 10 10] " +
+    return buildSinglePagePdf(
+      "/MediaBox [0 0 10 10] " +
         "/Resources << /XObject << /Im0 4 0 R /Im1 4 0 R >> >> " +
-        "/Contents 5 0 R >>\nendobj\n",
-      streamObject(
-        4,
-        "/Type /XObject /Subtype /Image /Width 1 /Height 1 " +
-          "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode",
-        "FF0000>"
-      ),
-      streamObject(5, "", "q 10 0 0 10 0 0 cm /Im0 Do Q"),
-    ]);
+        "/Contents 5 0 R",
+      [
+        streamObject(
+          "FF0000>",
+          "/Type /XObject /Subtype /Image /Width 1 /Height 1 " +
+            "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode"
+        ),
+        streamObject("q 10 0 0 10 0 0 cm /Im0 Do Q"),
+      ]
+    );
   }
 
   function buildGeneratedAppearancePdf(pageContents = null) {
@@ -171,11 +168,19 @@ describe("api", function () {
     return assemblePdf(objects);
   }
 
-  function buildEmptyPagePdf() {
+  function streamObject(data, entries = "") {
+    return `<< /Length ${data.length} ${entries} >>\nstream\n${data}\nendstream`;
+  }
+
+  function buildSinglePagePdf(
+    entries = "/MediaBox [0 0 100 100]",
+    objects = []
+  ) {
     return assemblePdf([
       "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
       "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-      "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 100 100] >>\nendobj\n",
+      `3 0 obj\n<< /Type /Page /Parent 2 0 R ${entries} >>\nendobj\n`,
+      ...objects.map((object, i) => `${i + 4} 0 obj\n${object}\nendobj\n`),
     ]);
   }
 
@@ -3575,7 +3580,7 @@ describe("api", function () {
           `stream\n${content}\nendstream\nendobj\n`,
       ]);
 
-      let loadingTask = getDocument({ data: buildEmptyPagePdf() });
+      let loadingTask = getDocument({ data: buildSinglePagePdf() });
       let pdfDoc = await loadingTask.promise;
       pdfDoc.annotationStorage.setValue("pdfjs_internal_editor_0", {
         annotationType: AnnotationEditorType.FREETEXT,
@@ -3603,7 +3608,7 @@ describe("api", function () {
     });
 
     it("embeds externally generated FreeText appearances sharing their font", async function () {
-      let loadingTask = getDocument({ data: buildEmptyPagePdf() });
+      let loadingTask = getDocument({ data: buildSinglePagePdf() });
       let pdfDoc = await loadingTask.promise;
       for (let i = 0; i < 2; i++) {
         pdfDoc.annotationStorage.setValue(`pdfjs_internal_editor_${i}`, {
@@ -4710,6 +4715,142 @@ describe("api", function () {
 
         await loadingTask.destroy();
       });
+    });
+  });
+
+  describe("CMYK profiles", function () {
+    const CMYK_PROFILE = "CGATS001Compat-v2-micro.icc";
+    const loadingTasks = [];
+    let worker;
+
+    beforeEach(function () {
+      worker = new PDFWorker({ name: "CMYKProfiles" });
+    });
+
+    afterEach(async function () {
+      await Promise.all(loadingTasks.splice(0).map(task => task.destroy()));
+      worker.destroy();
+    });
+
+    async function loadPage(params) {
+      const task = getDocument({
+        data: buildSinglePagePdf(
+          "/MediaBox [0 0 10 10] /Contents 4 0 R /Annots [5 0 R]",
+          [
+            streamObject("1 0 0 0 k 0 0 10 10 re f 0 1 0 0 K 0 0 10 10 re S"),
+            "<< /Type /Annot /Subtype /Widget /FT /Tx /T (Field) " +
+              "/Rect [0 0 10 10] /C [1 0 0 0] /DA (/Helv 8 Tf 0 1 0 0 k) >>",
+          ]
+        ),
+        iccUrl: ICC_URL,
+        wasmUrl: WASM_URL,
+        useWorkerFetch: false,
+        worker,
+        ...params,
+      });
+      loadingTasks.push(task);
+      return (await task.promise).getPage(1);
+    }
+
+    it("loads the CMYK profile once on demand through the binary data factory", async function () {
+      const fetch = spyOn(
+        DefaultBinaryDataFactory.prototype,
+        "fetch"
+      ).and.callThrough();
+      const getProfileRequests = () =>
+        fetch.calls
+          .allArgs()
+          .flat()
+          .filter(({ kind }) => kind === "iccUrl");
+      const page = await loadPage();
+      expect(getProfileRequests()).toEqual([]);
+
+      const [{ fnArray, argsArray }, [annotation]] = await Promise.all([
+        page.getOperatorList(),
+        page.getAnnotations(),
+      ]);
+      expect(getProfileRequests()).toEqual([
+        { kind: "iccUrl", filename: CMYK_PROFILE },
+      ]);
+      expect(fnArray.slice(0, 4)).toEqual([
+        OPS.setFillRGBColor,
+        OPS.constructPath,
+        OPS.setStrokeRGBColor,
+        OPS.constructPath,
+      ]);
+      expect(argsArray[0]).toEqual(["#00adef"]);
+      expect(argsArray[2]).toEqual(["#ea028c"]);
+      expect(annotation.color).toEqual(new Uint8ClampedArray([0, 173, 239]));
+      expect(annotation.defaultAppearanceData.fontColor).toEqual(
+        new Uint8ClampedArray([234, 2, 140])
+      );
+    });
+
+    it("keeps the CMYK fallback when another document in the worker loads a profile", async function () {
+      const withoutProfile = await loadPage({ iccUrl: null });
+      const [annotation] = await withoutProfile.getAnnotations();
+      expect(annotation.color).toEqual(new Uint8ClampedArray([0, 185, 242]));
+
+      const withProfile = await loadPage();
+      const profileOps = await withProfile.getOperatorList();
+      expect(profileOps.argsArray[0]).toEqual(["#00adef"]);
+
+      const fallbackOps = await withoutProfile.getOperatorList();
+      expect(fallbackOps.argsArray[0]).toEqual(["#00b9f2"]);
+
+      const laterPage = await loadPage({ iccUrl: null });
+      const laterOps = await laterPage.getOperatorList();
+      expect(laterOps.argsArray[0]).toEqual(["#00b9f2"]);
+    });
+
+    it("uses the binary data factory by default when iccUrl is missing", async function () {
+      if (isNodeJS) {
+        pending("Worker fetching is disabled by default in Node.js.");
+      }
+      const fetch = spyOn(
+        DefaultBinaryDataFactory.prototype,
+        "fetch"
+      ).and.callThrough();
+      const page = await loadPage({
+        cMapUrl: CMAP_URL,
+        standardFontDataUrl: STANDARD_FONT_DATA_URL,
+        iccUrl: null,
+        useWorkerFetch: undefined,
+      });
+      const { argsArray } = await page.getOperatorList();
+      expect(argsArray[0]).toEqual(["#00b9f2"]);
+      expect(fetch).toHaveBeenCalledWith({
+        kind: "iccUrl",
+        filename: CMYK_PROFILE,
+      });
+    });
+
+    it("keeps the ICCBased fallback when another document in the worker loads qcms", async function () {
+      const profile = await new DefaultBinaryDataFactory({
+        iccUrl: ICC_URL,
+      }).fetch({ kind: "iccUrl", filename: CMYK_PROFILE });
+      const withoutQcms = await loadPage({
+        data: buildSinglePagePdf(
+          "/MediaBox [0 0 10 10] /Contents 4 0 R " +
+            "/Resources << /ColorSpace << /CS0 [/ICCBased 5 0 R] >> >>",
+          [
+            streamObject("/CS0 cs 1 0 0 0 sc 0 0 10 10 re f"),
+            streamObject(bytesToString(profile), "/N 4"),
+          ]
+        ),
+        useWorkerFetch: true,
+        wasmUrl: null,
+      });
+      // The intents differ, hence the color space is parsed twice.
+      const getColor = async annotationMode =>
+        (await withoutQcms.getOperatorList({ annotationMode })).argsArray[0];
+      expect(await getColor(AnnotationMode.DISABLE)).toEqual(["#00b9f2"]);
+
+      const withQcms = await loadPage();
+      const profileOps = await withQcms.getOperatorList();
+      expect(profileOps.argsArray[0]).toEqual(["#00adef"]);
+
+      expect(await getColor(AnnotationMode.ENABLE_FORMS)).toEqual(["#00b9f2"]);
     });
   });
 

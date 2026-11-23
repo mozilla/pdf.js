@@ -1160,16 +1160,6 @@ class JpegImage {
     return out;
   }
 
-  _convertYcckToRgb(data) {
-    this._convertYcckToCmyk(data);
-    return this._convertCmykToRgb(data);
-  }
-
-  _convertYcckToRgba(data) {
-    this._convertYcckToCmyk(data);
-    return this._convertCmykToRgba(data);
-  }
-
   _convertYcckToCmyk(data) {
     let Y, Cb, Cr;
     for (let i = 0, ii = data.length; i < ii; i += 4) {
@@ -1184,16 +1174,14 @@ class JpegImage {
     return data;
   }
 
-  _convertCmykToRgb(data) {
+  #convertCmyk(data, cmyk, forceRGBA) {
     const count = data.length / 4;
-    ColorSpaceUtils.cmyk.getRgbBuffer(data, 0, count, data, 0, 8, 0);
-    return data.subarray(0, count * 3);
-  }
+    cmyk.getRgbBuffer(data, 0, count, data, 0, 8, forceRGBA ? 1 : 0);
+    if (!forceRGBA) {
+      return data.subarray(0, count * 3);
+    }
 
-  _convertCmykToRgba(data) {
-    ColorSpaceUtils.cmyk.getRgbBuffer(data, 0, data.length / 4, data, 0, 8, 1);
-
-    if (ColorSpaceUtils.cmyk instanceof DeviceCmykCS) {
+    if (cmyk instanceof DeviceCmykCS) {
       // The alpha-component isn't updated by `DeviceCmykCS`, doing it manually.
       for (let i = 3, ii = data.length; i < ii; i += 4) {
         data[i] = 255;
@@ -1202,7 +1190,13 @@ class JpegImage {
     return data;
   }
 
-  getData({ width, height, forceRGBA = false, forceRGB = false }) {
+  getData({
+    width,
+    height,
+    forceRGBA = false,
+    forceRGB = false,
+    cmyk = ColorSpaceUtils.deviceCmyk,
+  }) {
     if (this.numComponents > 4) {
       throw new JpegError("Unsupported color mode");
     }
@@ -1231,16 +1225,10 @@ class JpegImage {
       return this._convertYccToRgb(data);
     } else if (this.numComponents === 4) {
       if (this._isColorConversionNeeded) {
-        if (forceRGBA) {
-          return this._convertYcckToRgba(data);
-        }
-        return forceRGB
-          ? this._convertYcckToRgb(data)
-          : this._convertYcckToCmyk(data);
-      } else if (forceRGBA) {
-        return this._convertCmykToRgba(data);
-      } else if (forceRGB) {
-        return this._convertCmykToRgb(data);
+        this._convertYcckToCmyk(data);
+      }
+      if (forceRGBA || forceRGB) {
+        return this.#convertCmyk(data, cmyk, forceRGBA);
       }
     }
     return data;

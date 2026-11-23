@@ -19,11 +19,17 @@ import { fetchData } from "./dom_utils.js";
 class BaseBinaryDataFactory {
   #errorStr = Object.freeze({
     cMapUrl: "CMap",
+    iccUrl: "ICC profile",
     standardFontDataUrl: "font",
     wasmUrl: "wasm",
   });
 
-  constructor({ cMapUrl = null, standardFontDataUrl = null, wasmUrl = null }) {
+  constructor({
+    cMapUrl = null,
+    iccUrl = null,
+    standardFontDataUrl = null,
+    wasmUrl = null,
+  }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
       this.constructor === BaseBinaryDataFactory
@@ -31,6 +37,7 @@ class BaseBinaryDataFactory {
       unreachable("Cannot initialize BaseBinaryDataFactory.");
     }
     this.cMapUrl = cMapUrl;
+    this.iccUrl = iccUrl;
     this.standardFontDataUrl = standardFontDataUrl;
     this.wasmUrl = wasmUrl;
   }
@@ -38,6 +45,7 @@ class BaseBinaryDataFactory {
   async fetch({ kind, filename }) {
     switch (kind) {
       case "cMapUrl":
+      case "iccUrl":
       case "standardFontDataUrl":
       case "wasmUrl":
         break;

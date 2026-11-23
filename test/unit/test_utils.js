@@ -29,6 +29,8 @@ const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
 const CMAP_URL = isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/";
 
+const ICC_URL = isNodeJS ? "./external/iccs/" : "../../external/iccs/";
+
 const STANDARD_FONT_DATA_URL = isNodeJS
   ? "./external/hellbox/"
   : "../../external/hellbox/";
@@ -340,6 +342,7 @@ export {
   DefaultFileReaderFactory,
   fetchBuiltInCMapHelper,
   getCrossOriginHostname,
+  ICC_URL,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   TestPdfsServer,
