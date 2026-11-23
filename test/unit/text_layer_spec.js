@@ -399,6 +399,27 @@ describe("textLayer", function () {
         textLayerFont.name
       );
     });
+
+    it("releases fonts even if ownerDocument.fonts returns a new wrapper", async function () {
+      const { name } =
+        textContent.styles[textContent.items[0].fontName].textLayerFont;
+      const realFonts = document.fonts;
+      spyOnProperty(Document.prototype, "fonts", "get").and.callFake(() => ({
+        add: fontFace => realFonts.add(fontFace),
+        delete: fontFace => realFonts.delete(fontFace),
+        [Symbol.iterator]: () => realFonts[Symbol.iterator](),
+      }));
+
+      const first = createTextLayer();
+      const second = createTextLayer();
+      await Promise.all([first.render(), second.render()]);
+      expect(hasFont(name)).toBeTrue();
+
+      first.cancel();
+      expect(hasFont(name)).toBeTrue();
+      second.cancel();
+      expect(hasFont(name)).toBeFalse();
+    });
   });
 
   it("measures the text with the correct font after computing the ascent", async function () {
