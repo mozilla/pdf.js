@@ -154,7 +154,7 @@ function getPdfFilenameFromUrl(url, defaultFilename = "document.pdf") {
   };
 
   const pdfRegex = /\.pdf$/i;
-  const filename = stripPath(newURL.pathname);
+  const filename = stripPath(newURL.pathname).replace(/%2e(?=pdf$)/i, ".");
   if (pdfRegex.test(filename)) {
     return decode(filename);
   }

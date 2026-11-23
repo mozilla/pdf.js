@@ -46,6 +46,16 @@ describe("dom_utils", function () {
   });
 
   describe("getPdfFilenameFromUrl", function () {
+    it("recognizes an encoded dot in the PDF extension", function () {
+      expect(getPdfFilenameFromUrl("/pdfs/report%2Epdf")).toEqual("report.pdf");
+      expect(
+        getPdfFilenameFromUrl("/pdfs/report%2epdf?name=other.pdf")
+      ).toEqual("report.pdf");
+      expect(getPdfFilenameFromUrl("/pdfs/report%2Etxt")).toEqual(
+        "document.pdf"
+      );
+    });
+
     it("gets PDF filename", function () {
       // Relative URL
       expect(getPdfFilenameFromUrl("/pdfs/file1.pdf")).toEqual("file1.pdf");
