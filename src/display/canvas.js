@@ -569,6 +569,8 @@ class CanvasGraphics {
 
   #knockoutTempCanvasEntry = null;
 
+  #knockoutShapeCanvasEntry = null;
+
   #knockoutSavedCtx = null;
 
   #knockoutSavedSMaskCtx = null;
@@ -1570,7 +1572,7 @@ class CanvasGraphics {
     this._clearPreparedSMask();
   }
 
-  #createKnockoutMaskCanvas(sourceCanvas, reuseEntry = null, alpha = 1) {
+  #createKnockoutMaskEntry(sourceCanvas, reuseEntry = null, alpha = 1) {
     const { width, height } = sourceCanvas;
     // reuseEntry is assumed to match sourceCanvas in size (all current call
     // sites guarantee this); the mask is rebuilt in-place.
@@ -1655,8 +1657,34 @@ class CanvasGraphics {
     return entry;
   }
 
+  #accumulateKnockoutGroupShape(
+    groupMeta,
+    shapeCanvas,
+    transform = [1, 0, 0, 1, 0, 0]
+  ) {
+    if (!groupMeta?.isNestedKnockoutGroup || !shapeCanvas) {
+      return;
+    }
+    const entry = groupMeta.nestedKnockoutShapeEntry;
+    groupMeta.hasKnockoutGroupShape = true;
+    const ctx = entry.context;
+    ctx.save();
+    ctx.setTransform(...transform);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    if (FeatureTest.isCanvasFilterSupported) {
+      ctx.filter = "none";
+    }
+    ctx.drawImage(shapeCanvas, 0, 0);
+    ctx.restore();
+  }
+
   #compositeKnockoutSurface(destCtx, surfaceCanvas, options = {}) {
     const {
+      // Explicit element/group shape, kept separate from the colour surface.
+      // Callers that don't provide one retain the legacy alpha-recovery path
+      // below until their paint primitive records shape explicitly.
+      shapeCanvas = null,
       // Backdrop canvas for non-isolated groups, or null for isolated.
       // Passed directly (no copy) since the parent canvas is frozen while
       // the group renders.
@@ -1683,11 +1711,16 @@ class CanvasGraphics {
       knockoutAlpha = 1,
     } = options;
     const { width, height } = surfaceCanvas;
-    const knockoutMaskEntry = this.#createKnockoutMaskCanvas(
-      surfaceCanvas,
-      reuseMaskEntry,
-      knockoutAlpha
-    );
+    let fallbackMaskEntry = null;
+    let knockoutMaskCanvas = shapeCanvas;
+    if (!knockoutMaskCanvas) {
+      fallbackMaskEntry = this.#createKnockoutMaskEntry(
+        surfaceCanvas,
+        reuseMaskEntry,
+        knockoutAlpha
+      );
+      knockoutMaskCanvas = fallbackMaskEntry.canvas;
+    }
     const sourceCompositeOperation = destCtx.globalCompositeOperation;
 
     destCtx.save();
@@ -1699,7 +1732,7 @@ class CanvasGraphics {
 
     // Erase prior group content wherever the new surface has any coverage.
     destCtx.globalCompositeOperation = "destination-out";
-    destCtx.drawImage(knockoutMaskEntry.canvas, 0, 0);
+    destCtx.drawImage(knockoutMaskCanvas, 0, 0);
 
     if (backdropCanvas) {
       // Non-isolated: refill the just-erased footprint with the backdrop,
@@ -1725,7 +1758,7 @@ class CanvasGraphics {
         height
       );
       backdropCtx.globalCompositeOperation = "destination-in";
-      backdropCtx.drawImage(knockoutMaskEntry.canvas, 0, 0);
+      backdropCtx.drawImage(knockoutMaskCanvas, 0, 0);
       // Reset the GCO so the pooled entry is in a known state for next use.
       backdropCtx.globalCompositeOperation = "source-over";
 
@@ -1742,9 +1775,18 @@ class CanvasGraphics {
     }
     destCtx.drawImage(surfaceCanvas, 0, 0);
 
+    // Keep the exact mask used for this element as part of the group's shape.
+    // This reuses the legacy recovered mask for primitives that don't yet
+    // provide explicit shape, avoiding an unnecessary second rasterization.
+    this.#accumulateKnockoutGroupShape(
+      poolMeta,
+      knockoutMaskCanvas,
+      destTransform
+    );
+
     destCtx.restore();
-    if (!reuseMaskEntry) {
-      this.canvasFactory.destroy(knockoutMaskEntry);
+    if (fallbackMaskEntry && !reuseMaskEntry) {
+      this.canvasFactory.destroy(fallbackMaskEntry);
     }
   }
 
@@ -1766,6 +1808,7 @@ class CanvasGraphics {
     }
     this.#knockoutElementDepth++;
     this.#knockoutElementAlpha = alpha;
+    this.#knockoutShapeCanvasEntry = null;
     const groupMeta = this.#groupStackMeta.at(-1);
     const { canvas } = this.ctx;
     const tempEntry = this.#getOrCreatePooledEntry(
@@ -1801,13 +1844,39 @@ class CanvasGraphics {
     return true;
   }
 
+  #recordKnockoutFillShape(path, fillRule = "nonzero") {
+    if (this.#knockoutElementDepth === 0 || !this.#knockoutElementGroupMeta) {
+      return;
+    }
+    const { width, height } = this.#knockoutTempCanvasEntry.canvas;
+    const shapeEntry = this.#getOrCreatePooledEntry(
+      this.#knockoutElementGroupMeta,
+      "knockoutMaskEntry",
+      width,
+      height
+    );
+    const shapeCtx = shapeEntry.context;
+    shapeCtx.save();
+    shapeCtx.setTransform(this.ctx.getTransform());
+    copyCtxState(this.ctx, shapeCtx);
+    shapeCtx.globalAlpha = 1;
+    shapeCtx.globalCompositeOperation = "source-over";
+    if (FeatureTest.isCanvasFilterSupported) {
+      shapeCtx.filter = "none";
+    }
+    shapeCtx.fillStyle = "#000000";
+    shapeCtx.fill(path, fillRule);
+    shapeCtx.restore();
+    this.#knockoutShapeCanvasEntry = shapeEntry;
+  }
+
   /**
    * End a knockout element started by `#beginKnockoutElement`. Composites
-   * the rendered surface onto the group canvas with KO semantics: build a
-   * shape mask from the element (painted alpha scaled back to geometric
-   * coverage when alpha_s < 1), destination-out the group canvas over that
-   * mask, restore the initial backdrop into the cleared footprint
-   * (non-isolated only), then paint the element on top.
+   * the rendered surface onto the group canvas with KO semantics: use an
+   * explicitly recorded shape when available, otherwise recover one from
+   * painted alpha. Then destination-out the group canvas over that mask,
+   * restore the initial backdrop into the cleared footprint (non-isolated
+   * only), and paint the element on top.
    * @param {boolean} started - the value returned by `#beginKnockoutElement`.
    */
   #endKnockoutElement(started) {
@@ -1815,10 +1884,12 @@ class CanvasGraphics {
       return;
     }
     const tempEntry = this.#knockoutTempCanvasEntry;
+    const shapeEntry = this.#knockoutShapeCanvasEntry;
     const savedCtx = this.#knockoutSavedCtx;
     const savedSMaskCtx = this.#knockoutSavedSMaskCtx;
     const tempCtx = tempEntry.context;
     this.#knockoutTempCanvasEntry = null;
+    this.#knockoutShapeCanvasEntry = null;
     this.#knockoutSavedCtx = null;
     this.#knockoutSavedSMaskCtx = null;
     if (
@@ -1847,6 +1918,7 @@ class CanvasGraphics {
         savedSMaskCtx ?? savedCtx,
         tempEntry.canvas,
         {
+          shapeCanvas: shapeEntry?.canvas ?? null,
           backdropCanvas: groupMeta?.backdropCtx?.canvas ?? null,
           backdropOffset: groupMeta?.backdropCtx
             ? [groupMeta.offsetX, groupMeta.offsetY]
@@ -1867,6 +1939,9 @@ class CanvasGraphics {
       // element, but if it isn't we must release the unpooled entry.
       if (!groupMeta) {
         this.canvasFactory.destroy(tempEntry);
+        if (shapeEntry) {
+          this.canvasFactory.destroy(shapeEntry);
+        }
       }
     }
   }
@@ -2320,6 +2395,17 @@ class CanvasGraphics {
     const isPatternFill = this.current.patternFill;
     let needRestore = false;
     const intersect = this.current.getClippedPathBoundingBox();
+    if (
+      started &&
+      this.current.activeSMask &&
+      this.contentVisible &&
+      intersect !== null
+    ) {
+      this.#recordKnockoutFillShape(
+        path,
+        this.pendingEOFill ? "evenodd" : "nonzero"
+      );
+    }
 
     this.dependencyTracker?.recordDependencies(opIdx, Dependencies.fill);
 
@@ -2423,6 +2509,9 @@ class CanvasGraphics {
   rawFillPath(opIdx, path) {
     const started = this.#beginKnockoutElement(this.current.fillAlpha);
     this.ctx.fill(path);
+    if (started && this.current.activeSMask && this.contentVisible) {
+      this.#recordKnockoutFillShape(path);
+    }
     this.dependencyTracker
       ?.recordDependencies(opIdx, Dependencies.rawFillPath)
       .recordOperation(opIdx);
@@ -3538,6 +3627,22 @@ class CanvasGraphics {
       groupCtx.restore();
     }
 
+    // A nested KO group must preserve its shape independently of
+    // colour/opacity. Keep this context's geometry state synchronized with
+    // the colour context so accumulated shape observes the exact same clips.
+    // It is created before the group bbox clip below, allowing the existing
+    // context-operation mirroring to reproduce that clip and all later ones.
+    const isNestedKnockoutGroup = savedKnockoutLevel > 0 && group.knockout;
+    const nestedKnockoutShapeEntry = isNestedKnockoutGroup
+      ? this.canvasFactory.create(drawnWidth, drawnHeight)
+      : null;
+    if (nestedKnockoutShapeEntry) {
+      const shapeCtx = nestedKnockoutShapeEntry.context;
+      shapeCtx.setTransform(groupCtx.getTransform());
+      copyCtxState(groupCtx, shapeCtx);
+      mirrorContextOperations(groupCtx, shapeCtx);
+    }
+
     // Apply the bbox to the group context.
     if (group.bbox) {
       let clip = new Path2D();
@@ -3599,11 +3704,16 @@ class CanvasGraphics {
       savedKnockoutLevel,
       offsetX,
       offsetY,
+      width: drawnWidth,
+      height: drawnHeight,
+      isNestedKnockoutGroup,
       hasInnerBackdrop,
       replaceBackdrop: copyBackdrop && !inSMaskMode,
       knockoutMaskEntry,
       // Per-group scratch pools, lazily filled and freed in endGroup.
       knockoutTempEntry: null,
+      nestedKnockoutShapeEntry,
+      hasKnockoutGroupShape: false,
       knockoutBackdropEntry: null,
     });
     this.groupLevel++;
@@ -3617,6 +3727,9 @@ class CanvasGraphics {
     const groupCtx = this.ctx;
     const ctx = this.groupStack.pop();
     const groupMeta = this.#groupStackMeta.pop();
+    if (groupMeta?.nestedKnockoutShapeEntry) {
+      groupCtx._removeMirroring?.();
+    }
     // Restore the knockout level that was in effect before this group began.
     // Simple groups (groupMeta === null) never modify the level, so skip them.
     if (groupMeta) {
@@ -3672,6 +3785,9 @@ class CanvasGraphics {
       );
       const parentGroupMeta = this.#groupStackMeta.at(-1);
       if (this.#knockoutGroupLevel > 0) {
+        const groupShapeCanvas = groupMeta.hasKnockoutGroupShape
+          ? groupMeta.nestedKnockoutShapeEntry.canvas
+          : null;
         // The subgroup is one element of the enclosing KO group, so
         // composite it with KO semantics. Two coord systems below:
         //  - `currentMtx` (`destTransform`) places the subgroup canvas in
@@ -3711,9 +3827,7 @@ class CanvasGraphics {
           // parent KO group's pooled mask here; allocate a fresh entry
           // and reuse it for both the destination-in and the
           // destination-out below.
-          const shapeMaskEntry = this.#createKnockoutMaskCanvas(
-            groupCtx.canvas
-          );
+          const shapeMaskEntry = this.#createKnockoutMaskEntry(groupCtx.canvas);
           colorCtx.globalCompositeOperation = "destination-in";
           colorCtx.drawImage(shapeMaskEntry.canvas, 0, 0);
           // Inline the isolated-path compositing here so we can share
@@ -3743,6 +3857,7 @@ class CanvasGraphics {
           // Compound the parent's and subgroup's offsets to crop it.
           const backdropCtx = parentGroupMeta?.backdropCtx ?? null;
           this.#compositeKnockoutSurface(this.ctx, groupCtx.canvas, {
+            shapeCanvas: groupShapeCanvas,
             backdropCanvas: backdropCtx?.canvas ?? null,
             destTransform: currentMtx,
             backdropOffset: backdropCtx
@@ -3753,6 +3868,7 @@ class CanvasGraphics {
               : [0, 0],
             sourceAlpha: this.ctx.globalAlpha,
             sourceFilter: this.ctx.filter,
+            poolMeta: parentGroupMeta,
           });
         }
       } else {
@@ -3829,6 +3945,10 @@ class CanvasGraphics {
     if (groupMeta.knockoutTempEntry) {
       this.canvasFactory.destroy(groupMeta.knockoutTempEntry);
       groupMeta.knockoutTempEntry = null;
+    }
+    if (groupMeta.nestedKnockoutShapeEntry) {
+      this.canvasFactory.destroy(groupMeta.nestedKnockoutShapeEntry);
+      groupMeta.nestedKnockoutShapeEntry = null;
     }
     if (groupMeta.knockoutBackdropEntry) {
       this.canvasFactory.destroy(groupMeta.knockoutBackdropEntry);
