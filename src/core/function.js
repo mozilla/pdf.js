@@ -28,18 +28,12 @@ const FunctionType = {
 };
 
 class PDFFunctionFactory {
-  static #useWasm = true;
-
-  static setOptions({ useWasm }) {
-    this.#useWasm = useWasm;
-  }
-
   constructor({ xref }) {
     this.xref = xref;
   }
 
   get useWasm() {
-    return PDFFunctionFactory.#useWasm;
+    return this.xref.pdfManager.evaluatorOptions.useWasm;
   }
 
   async create(fn, parseArray = false) {

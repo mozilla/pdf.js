@@ -79,6 +79,7 @@ import { StreamsSequenceStream } from "./decode_stream.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreePage } from "./struct_tree.js";
 import { TextLayerFonts } from "./text_layer_font.js";
+import { WasmImage } from "./wasm_image.js";
 import { XRef } from "./xref.js";
 
 const LETTER_SIZE_MEDIABOX = [0, 0, 612, 792];
@@ -1869,6 +1870,7 @@ class PDFDocument {
   }
 
   async cleanup(manuallyTriggered = false) {
+    WasmImage.cleanup(this.pdfManager.binaryDataContext);
     return this.catalog
       ? this.catalog.cleanup(manuallyTriggered)
       : clearGlobalCaches();

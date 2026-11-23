@@ -19,12 +19,15 @@ import { JBig2CCITTFaxImage } from "./jbig2_ccittFax.js";
 import { shadow } from "../shared/util.js";
 
 class CCITTFaxStream extends DecodeStream {
-  constructor(str, maybeLength, params) {
+  #pdfManager;
+
+  constructor(str, maybeLength, params, pdfManager) {
     super(maybeLength);
 
     this.stream = str;
     this.maybeLength = maybeLength;
     this.dict = str.dict;
+    this.#pdfManager = pdfManager;
 
     if (!(params instanceof Dict)) {
       params = Dict.empty;
@@ -63,6 +66,7 @@ class CCITTFaxStream extends DecodeStream {
       : this.bytes;
 
     this.buffer = await JBig2CCITTFaxImage.instance.decode(
+      this.#pdfManager.binaryDataContext,
       bytes,
       this.dict.get("W", "Width"),
       this.dict.get("H", "Height"),

@@ -19,22 +19,16 @@ import { WasmLoader } from "./wasm_loader.js";
 class WasmImage {
   static #instances = new Set();
 
-  static #options = { useWasm: true, useWorkerFetch: true, wasmUrl: null };
-
-  #modulePromise = null;
-
-  static setOptions({ getHandler, useWasm, useWorkerFetch, wasmUrl }) {
-    WasmImage.#options = { getHandler, useWasm, useWorkerFetch, wasmUrl };
-  }
+  #modulePromises = new WeakMap();
 
   // eslint-disable-next-line getter-return
   static get instance() {
     unreachable("Abstract getter `instance` accessed");
   }
 
-  static cleanup() {
+  static cleanup(context) {
     for (const instance of WasmImage.#instances) {
-      instance.#modulePromise = null;
+      instance.#modulePromises.delete(context);
     }
   }
 
@@ -51,12 +45,9 @@ class WasmImage {
     WasmImage.#instances.add(this);
   }
 
-  async #instantiateWasm(failureCallback, imports, successCallback) {
+  async #instantiateWasm(context, failureCallback, imports, successCallback) {
     const loaded = await WasmLoader.load(
-      {
-        handler: WasmImage.#options.getHandler?.(),
-        options: WasmImage.#options,
-      },
+      context,
       this._filename,
       this._noWasmFilename,
       instantiate => successCallback({ exports: instantiate(imports) })
@@ -66,23 +57,22 @@ class WasmImage {
     }
   }
 
-  _getModule(loadDecoder) {
-    if (!this.#modulePromise) {
+  _getModule(context, loadDecoder) {
+    return this.#modulePromises.getOrInsertComputed(context, () => {
       const { promise, resolve } = createPromiseCapability();
-      this.#modulePromise = Promise.race([
+      return Promise.race([
         promise,
         loadDecoder().then(({ default: createDecoder }) =>
           createDecoder({
             warn,
-            instantiateWasm: this.#instantiateWasm.bind(this, resolve),
+            instantiateWasm: this.#instantiateWasm.bind(this, context, resolve),
           })
         ),
       ]);
-    }
-    return this.#modulePromise;
+    });
   }
 
-  async decode(bytes, _params) {
+  async decode(context, bytes, _params) {
     unreachable("Abstract method `decode` called");
   }
 }

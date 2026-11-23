@@ -32,6 +32,7 @@ class JpxImage extends WasmImage {
   }
 
   async decode(
+    context,
     bytes,
     {
       numComponents,
@@ -43,6 +44,7 @@ class JpxImage extends WasmImage {
     const padComponents = numComponents !== undefined;
     numComponents ??= 4;
     const module = await this._getModule(
+      context,
       () =>
         import(
           /* webpackChunkName: "openjpeg" */ "../../external/openjpeg/openjpeg.js"

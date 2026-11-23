@@ -8135,7 +8135,9 @@ have written that much by now. So, here’s to squashing bugs.`);
       // PDF document without any images, but with path-rendering.
       const loadingTask2 = getDocument(
         buildGetDocumentParams("clippath.pdf", {
+          useWasm: false,
           useWorkerFetch: false,
+          wasmUrl: null,
           worker,
         })
       );
