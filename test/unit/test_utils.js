@@ -155,6 +155,8 @@ class XRefMock {
 
   stream = new NullStream();
 
+  pdfManager = { evaluatorOptions: { useWasm: true } };
+
   constructor(array = []) {
     for (const { ref, data } of array) {
       this.#map.set(ref.toString(), data);

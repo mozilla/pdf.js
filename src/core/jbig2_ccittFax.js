@@ -31,8 +31,9 @@ class JBig2CCITTFaxImage extends WasmImage {
     );
   }
 
-  async decode(bytes, width, height, globals, CCITTOptions) {
+  async decode(context, bytes, width, height, globals, CCITTOptions) {
     const module = await this._getModule(
+      context,
       () =>
         import(/* webpackChunkName: "jbig2" */ "../../external/jbig2/jbig2.js")
     );

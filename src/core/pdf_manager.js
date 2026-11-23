@@ -29,9 +29,7 @@ import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { OperatorList } from "./operator_list.js";
 import { PDFDocument } from "./document.js";
-import { PDFFunctionFactory } from "./function.js";
 import { Stream } from "./stream.js";
-import { WasmImage } from "./wasm_image.js";
 
 /**
  * @typedef { LocalPdfManager | NetworkPdfManager } PdfManager
@@ -49,8 +47,6 @@ function parseDocBaseUrl(url) {
 }
 
 class BasePdfManager {
-  static #handlers = new Map();
-
   constructor({
     // source,
     // disableAutoFetch,
@@ -74,11 +70,6 @@ class BasePdfManager {
     this._password = password;
     this.enableXfa = enableXfa;
 
-    // Keep track of all active `MessageHandler`s to prevent issues with
-    // Wasm-decoding of images if multiple PDFs are parsed in parallel in one
-    // worker-thread and `useWorkerFetch = false` is set (fixes issue 22131).
-    BasePdfManager.#handlers.set(this, handler);
-
     // Check `OffscreenCanvas` and `ImageDecoder` support once,
     // rather than repeatedly throughout the worker-thread code.
     evaluatorOptions.isOffscreenCanvasSupported &&=
@@ -93,14 +84,6 @@ class BasePdfManager {
     ImageResizer.setOptions(evaluatorOptions);
     JpegStream.setOptions(evaluatorOptions);
     OperatorList.setOptions(evaluatorOptions);
-
-    const options = {
-      ...evaluatorOptions,
-      getHandler: () =>
-        BasePdfManager.#handlers.values().find(h => !h.destroyed),
-    };
-    PDFFunctionFactory.setOptions(options);
-    WasmImage.setOptions(options);
   }
 
   get docId() {
@@ -184,9 +167,7 @@ class BasePdfManager {
     this.pdfDocument.xref.encrypt?.setPassword(password);
   }
 
-  terminate(reason) {
-    BasePdfManager.#handlers.delete(this);
-  }
+  terminate(reason) {}
 }
 
 class LocalPdfManager extends BasePdfManager {

@@ -24,13 +24,16 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 class Jbig2Stream extends DecodeStream {
-  constructor(stream, maybeLength, params) {
+  #pdfManager;
+
+  constructor(stream, maybeLength, params, pdfManager) {
     super(maybeLength);
 
     this.stream = stream;
     this.dict = stream.dict;
     this.maybeLength = maybeLength;
     this.params = params;
+    this.#pdfManager = pdfManager;
   }
 
   get bytes() {
@@ -85,6 +88,7 @@ class Jbig2Stream extends DecodeStream {
       }
     }
     this.buffer = await JBig2CCITTFaxImage.instance.decode(
+      this.#pdfManager.binaryDataContext,
       bytes,
       this.dict.get("Width"),
       this.dict.get("Height"),

@@ -807,6 +807,7 @@ class Parser {
       return new NullStream();
     }
 
+    const pdfManager = this.xref?.pdfManager;
     try {
       switch (name) {
         case "Fl":
@@ -838,7 +839,7 @@ class Parser {
           return new JpegStream(stream, maybeLength, params);
         case "JPX":
         case "JPXDecode":
-          return new JpxStream(stream, maybeLength);
+          return new JpxStream(stream, maybeLength, pdfManager);
         case "A85":
         case "ASCII85Decode":
           return new Ascii85Stream(stream, maybeLength);
@@ -847,12 +848,12 @@ class Parser {
           return new AsciiHexStream(stream, maybeLength);
         case "CCF":
         case "CCITTFaxDecode":
-          return new CCITTFaxStream(stream, maybeLength, params);
+          return new CCITTFaxStream(stream, maybeLength, params, pdfManager);
         case "RL":
         case "RunLengthDecode":
           return new RunLengthStream(stream, maybeLength);
         case "JBIG2Decode":
-          return new Jbig2Stream(stream, maybeLength, params);
+          return new Jbig2Stream(stream, maybeLength, params, pdfManager);
         case "BrotliDecode":
           if (params) {
             return new PredictorStream(
