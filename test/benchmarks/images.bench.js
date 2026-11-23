@@ -129,9 +129,9 @@ describe("images", () => {
 
   benchmark("PDFImage.createMask (issue17147.pdf)", async () =>
     Promise.all(
-      IMAGE_MASKS.map(image => {
-        image.reset();
-        return PDFImage.createMask({ image, isOffscreenCanvasSupported: true });
+      IMAGE_MASKS.map(params => {
+        params.image.reset();
+        return PDFImage.createMask(params);
       })
     )
   );

@@ -589,6 +589,7 @@ class PartialEvaluator {
       // for later.
       imgData = await PDFImage.createMask({
         image,
+        imageResizer: this.xref.pdfManager.imageResizer,
         isOffscreenCanvasSupported:
           isOffscreenCanvasSupported && !this.parsingType3Font,
       });

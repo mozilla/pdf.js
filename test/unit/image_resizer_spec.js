@@ -17,6 +17,8 @@ import { ImageKind } from "../../src/shared/util.js";
 import { ImageResizer } from "../../src/core/image_resizer.js";
 
 describe("image_resizer", function () {
+  const resizer = new ImageResizer();
+
   describe("rescaleImageData", function () {
     const Uint8ArrayConstructor = Uint8Array;
 
@@ -35,7 +37,7 @@ describe("image_resizer", function () {
 
     beforeEach(function () {
       // Keep the rescaled pixels in imgData.data.
-      spyOn(ImageResizer, "needsToBeResized").and.returnValue(true);
+      spyOn(resizer, "needsToBeResized").and.returnValue(true);
     });
 
     it("samples the rows on the image grid across chunks", function () {
@@ -82,8 +84,13 @@ describe("image_resizer", function () {
           }
 
           allocSpy.and.callFake(getLimitedUint8Array(maxAllocation));
-          const resizer = new ImageResizer(imgData, false);
-          expect(resizer._rescaleImageData((width * height * 4) / factor))
+          expect(
+            resizer._rescaleImageData(
+              imgData,
+              false,
+              (width * height * 4) / factor
+            )
+          )
             .withContext(context)
             .toBeNull();
           expect(imgData.width).withContext(context).toEqual(newWidth);
@@ -109,11 +116,12 @@ describe("image_resizer", function () {
       const original = { ...imgData };
       // One RGBA row needs 36 bytes; allocation is limited to 31.
       spyOn(globalThis, "Uint8Array").and.callFake(getLimitedUint8Array(31));
-      const resizer = new ImageResizer(imgData, false);
-      expect(resizer._rescaleImageData((9 * 17 * 4) / 2)).toBeNull();
+      expect(
+        resizer._rescaleImageData(imgData, false, (9 * 17 * 4) / 2)
+      ).toBeNull();
       expect(imgData).toEqual(original);
       expect(imgData.data).toBe(data);
-      expect(ImageResizer.needsToBeResized).not.toHaveBeenCalled();
+      expect(resizer.needsToBeResized).not.toHaveBeenCalled();
     });
   });
 
@@ -121,50 +129,65 @@ describe("image_resizer", function () {
     // Canvas limits depend on the runtime, so derive expectations from them.
 
     it("should not reduce images that fit within the limits", function () {
-      const { MAX_DIM } = ImageResizer;
+      const { MAX_DIM } = resizer;
 
-      expect(ImageResizer.getReducePower(1, 1)).toEqual(0);
-      expect(ImageResizer.getReducePower(MAX_DIM, 1)).toEqual(0);
-      expect(ImageResizer.getReducePower(1, MAX_DIM)).toEqual(0);
+      expect(resizer.getReducePower(1, 1)).toEqual(0);
+      expect(resizer.getReducePower(MAX_DIM, 1)).toEqual(0);
+      expect(resizer.getReducePower(1, MAX_DIM)).toEqual(0);
     });
 
     it("should ignore invalid dimensions", function () {
       // A JPEG SOF height can be zero until a later DNL marker defines it.
-      expect(ImageResizer.getReducePower(40000, 0)).toEqual(0);
-      expect(ImageResizer.getReducePower(0, 40000)).toEqual(0);
-      expect(ImageResizer.getReducePower(-40000, 4000)).toEqual(0);
-      expect(ImageResizer.getReducePower(40000.5, 4000)).toEqual(0);
-      expect(ImageResizer.getReducePower(NaN, 4000)).toEqual(0);
+      expect(resizer.getReducePower(40000, 0)).toEqual(0);
+      expect(resizer.getReducePower(0, 40000)).toEqual(0);
+      expect(resizer.getReducePower(-40000, 4000)).toEqual(0);
+      expect(resizer.getReducePower(40000.5, 4000)).toEqual(0);
+      expect(resizer.getReducePower(NaN, 4000)).toEqual(0);
     });
 
     it("should reduce images exceeding the maximum dimension", function () {
-      const { MAX_DIM } = ImageResizer;
+      const { MAX_DIM } = resizer;
 
-      expect(ImageResizer.getReducePower(MAX_DIM + 1, 1)).toEqual(1);
-      expect(ImageResizer.getReducePower(2 * MAX_DIM, 1)).toEqual(1);
-      expect(ImageResizer.getReducePower(2 * MAX_DIM + 1, 1)).toEqual(2);
-      expect(ImageResizer.getReducePower(4 * MAX_DIM, 1)).toEqual(2);
-      expect(ImageResizer.getReducePower(1, 4 * MAX_DIM)).toEqual(2);
+      expect(resizer.getReducePower(MAX_DIM + 1, 1)).toEqual(1);
+      expect(resizer.getReducePower(2 * MAX_DIM, 1)).toEqual(1);
+      expect(resizer.getReducePower(2 * MAX_DIM + 1, 1)).toEqual(2);
+      expect(resizer.getReducePower(4 * MAX_DIM, 1)).toEqual(2);
+      expect(resizer.getReducePower(1, 4 * MAX_DIM)).toEqual(2);
     });
 
     it("should reduce images exceeding the maximum area", function () {
-      const side = Math.floor(Math.sqrt(ImageResizer.MAX_AREA));
+      const side = Math.floor(Math.sqrt(resizer.MAX_AREA));
 
-      expect(ImageResizer.getReducePower(side, side)).toEqual(0);
-      expect(ImageResizer.getReducePower(2 * side, 2 * side)).toEqual(1);
-      expect(ImageResizer.getReducePower(4 * side, 4 * side)).toEqual(2);
+      expect(resizer.getReducePower(side, side)).toEqual(0);
+      expect(resizer.getReducePower(2 * side, 2 * side)).toEqual(1);
+      expect(resizer.getReducePower(4 * side, 4 * side)).toEqual(2);
     });
 
     it("should honour the given maximum area", function () {
       // 1024² bypasses the runtime canvas limits, isolating `maxArea`.
-      expect(ImageResizer.getReducePower(1024, 1024, 2 ** 20)).toEqual(0);
-      expect(ImageResizer.getReducePower(1024, 1024, 2 ** 19)).toEqual(1);
-      expect(ImageResizer.getReducePower(1024, 1024, 2 ** 18)).toEqual(2);
-      expect(ImageResizer.getReducePower(1024, 1024, 2 ** 14)).toEqual(6);
+      expect(resizer.getReducePower(1024, 1024, 2 ** 20)).toEqual(0);
+      expect(resizer.getReducePower(1024, 1024, 2 ** 19)).toEqual(1);
+      expect(resizer.getReducePower(1024, 1024, 2 ** 18)).toEqual(2);
+      expect(resizer.getReducePower(1024, 1024, 2 ** 14)).toEqual(6);
+    });
+
+    it("uses the canvas area limit configured on each instance", function () {
+      const width = 2049;
+      const height = 1024;
+      const small = new ImageResizer({
+        canvasMaxAreaInBytes: (width * height) / 4,
+      });
+      const large = new ImageResizer({
+        canvasMaxAreaInBytes: 4 * width * height,
+      });
+
+      // The canvas can be as limited as 2048 pixels per side in Node.js.
+      expect(large.getReducePower(width, height)).toBeLessThan(2);
+      expect(small.getReducePower(width, height)).toEqual(2);
     });
 
     it("should reduce representative dimensions to fit the limits", function () {
-      const { MAX_DIM, MAX_AREA } = ImageResizer;
+      const { MAX_DIM, MAX_AREA } = resizer;
 
       for (const [width, height] of [
         [MAX_DIM + 1, 1],
@@ -174,7 +197,7 @@ describe("image_resizer", function () {
         [40000, 4000],
         [40000, 10000],
       ]) {
-        const factor = 2 ** ImageResizer.getReducePower(width, height);
+        const factor = 2 ** resizer.getReducePower(width, height);
         // Match `JpegStream`'s rounding.
         const newWidth = Math.ceil(width / factor);
         const newHeight = Math.ceil(height / factor);
@@ -185,7 +208,7 @@ describe("image_resizer", function () {
         expect(newWidth * newHeight)
           .withContext(context)
           .toBeLessThanOrEqual(MAX_AREA);
-        expect(ImageResizer.needsToBeResized(newWidth, newHeight))
+        expect(resizer.needsToBeResized(newWidth, newHeight))
           .withContext(context)
           .toEqual(false);
       }

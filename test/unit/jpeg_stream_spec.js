@@ -159,13 +159,26 @@ describe("jpeg_stream", function () {
       }
     });
 
-    function createStream(data) {
+    const imageResizer = new ImageResizer();
+
+    function createStream(data, isImageDecoderSupported = true) {
       return new JpegStream(
         new Stream(data, 0, data.length, Dict.empty),
         data.length,
-        null
+        null,
+        { evaluatorOptions: { isImageDecoderSupported }, imageResizer }
       );
     }
+
+    it("honours the document's ImageDecoder option", async function () {
+      const data = createJpeg({ width: 1024, height: 1024 });
+      const enabled = createStream(data);
+      const disabled = createStream(data, false);
+
+      expect(await disabled.getTransferableImage(1024, 1024)).toBeNull();
+      expect(await enabled.getTransferableImage(1024, 1024)).not.toBeNull();
+      expect(decoderInits.length).toEqual(1);
+    });
 
     it("should not pass any hint for an image that fits", async function () {
       const data = createJpeg({ width: 1024, height: 1024 });
@@ -180,7 +193,7 @@ describe("jpeg_stream", function () {
     it("should request a smaller frame for an oversized image", async function () {
       const width = 40000,
         height = 4000;
-      const factor = 2 ** ImageResizer.getReducePower(width, height);
+      const factor = 2 ** imageResizer.getReducePower(width, height);
       expect(factor).toBeGreaterThan(1);
 
       const data = createJpeg({ width, height });
@@ -195,7 +208,7 @@ describe("jpeg_stream", function () {
       expect(image.displayWidth).toEqual(decoderInits[0].desiredWidth);
       expect(image.displayHeight).toEqual(decoderInits[0].desiredHeight);
       expect(
-        ImageResizer.needsToBeResized(image.displayWidth, image.displayHeight)
+        imageResizer.needsToBeResized(image.displayWidth, image.displayHeight)
       ).toEqual(false);
     });
 
@@ -203,7 +216,7 @@ describe("jpeg_stream", function () {
       const width = 1024,
         frameHeight = 1030,
         dictionaryHeight = 1024;
-      expect(ImageResizer.getReducePower(width, frameHeight)).toEqual(0);
+      expect(imageResizer.getReducePower(width, frameHeight)).toEqual(0);
 
       const data = createJpeg({ width, height: frameHeight });
       const image = await createStream(data).getTransferableImage(

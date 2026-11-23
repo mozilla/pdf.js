@@ -565,14 +565,14 @@ class NullOptimizer {
 }
 
 class QueueOptimizer extends NullOptimizer {
-  constructor(queue) {
+  constructor(queue, isOffscreenCanvasSupported) {
     super(queue);
     this.state = null;
     this.context = {
       iCurr: 0,
       fnArray: queue.fnArray,
       argsArray: queue.argsArray,
-      isOffscreenCanvasSupported: OperatorList.isOffscreenCanvasSupported,
+      isOffscreenCanvasSupported,
     };
     this.match = null;
     this.lastProcessed = 0;
@@ -656,23 +656,21 @@ class OperatorList {
   // Close to chunk size.
   static CHUNK_SIZE_ABOUT = this.CHUNK_SIZE - 5;
 
-  static isOffscreenCanvasSupported = false;
-
-  constructor(intent = 0, streamSink) {
+  constructor(
+    intent = 0,
+    streamSink,
+    { isOffscreenCanvasSupported = false } = {}
+  ) {
     this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
     this.optimizer =
       streamSink && !(intent & RenderingIntentFlag.OPLIST)
-        ? new QueueOptimizer(this)
+        ? new QueueOptimizer(this, isOffscreenCanvasSupported)
         : new NullOptimizer(this);
     this.dependencies = new Set();
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();
-  }
-
-  static setOptions({ isOffscreenCanvasSupported }) {
-    this.isOffscreenCanvasSupported = isOffscreenCanvasSupported;
   }
 
   get length() {

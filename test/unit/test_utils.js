@@ -24,6 +24,7 @@ import { Page, PDFDocument } from "../../src/core/document.js";
 import { decodeBrotli } from "../../src/core/wasm_loader.js";
 import { DOMBinaryDataFactory } from "../../src/display/binary_data_factory.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
+import { ImageResizer } from "../../src/core/image_resizer.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
@@ -155,7 +156,10 @@ class XRefMock {
 
   stream = new NullStream();
 
-  pdfManager = { evaluatorOptions: { useWasm: true } };
+  pdfManager = {
+    evaluatorOptions: { useWasm: true },
+    imageResizer: new ImageResizer(),
+  };
 
   constructor(array = []) {
     for (const { ref, data } of array) {

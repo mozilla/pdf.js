@@ -26,8 +26,6 @@ import {
 } from "./core_utils.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
 import { ImageResizer } from "./image_resizer.js";
-import { JpegStream } from "./jpeg_stream.js";
-import { OperatorList } from "./operator_list.js";
 import { PDFDocument } from "./document.js";
 import { Stream } from "./stream.js";
 
@@ -79,11 +77,7 @@ class BasePdfManager {
 
     this.evaluatorOptions = Object.freeze(evaluatorOptions);
     this.binaryDataContext = { handler, options: this.evaluatorOptions };
-
-    // Initialize image-options once per document.
-    ImageResizer.setOptions(evaluatorOptions);
-    JpegStream.setOptions(evaluatorOptions);
-    OperatorList.setOptions(evaluatorOptions);
+    this.imageResizer = new ImageResizer(this.evaluatorOptions);
   }
 
   get docId() {

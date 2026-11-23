@@ -836,7 +836,7 @@ class Parser {
           return new LZWStream(stream, maybeLength, earlyChange);
         case "DCT":
         case "DCTDecode":
-          return new JpegStream(stream, maybeLength, params);
+          return new JpegStream(stream, maybeLength, params, pdfManager);
         case "JPX":
         case "JPXDecode":
           return new JpxStream(stream, maybeLength, pdfManager);

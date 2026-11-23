@@ -583,7 +583,7 @@ class Page {
         contentStream.dict,
         RESOURCES_KEYS_OPERATOR_LIST
       );
-      const opList = new OperatorList(intent, sink);
+      const opList = new OperatorList(intent, sink, this.evaluatorOptions);
       handler.send("StartRenderPage", {
         transparency: partialEvaluator.hasBlendModes(
           resources,
