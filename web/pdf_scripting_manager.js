@@ -590,7 +590,11 @@ class PDFScriptingManager {
             break;
           }
           if (command === "print") {
-            await pdfViewer.pagesPromise;
+            try {
+              await pdfViewer.pagesPromise;
+            } catch {
+              break; // The document was closed, or failed to load.
+            }
           }
           this.#eventBus.dispatch(command === "print" ? "print" : "download", {
             source: this,
