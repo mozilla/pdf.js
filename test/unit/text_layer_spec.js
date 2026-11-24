@@ -16,8 +16,10 @@
 import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { DEFAULT_FONT_SIZE, TextLayer } from "../../src/display/text_layer.js";
 import { buildGetDocumentParams } from "./test_utils.js";
+import { buildTextLayerFont } from "../../src/core/text_layer_font.js";
 import { getDocument } from "../../src/display/api.js";
 import { OutputScale } from "../../src/display/output_scale.js";
+import { PageViewport } from "../../src/display/page_viewport.js";
 
 describe("textLayer", function () {
   it("creates textLayer from ReadableStream", async function () {
@@ -251,6 +253,61 @@ describe("textLayer", function () {
     expect(transform2).toEqual(serialTransform2);
 
     await loadingTask.destroy();
+  });
+
+  it("fits a single glyph of a font with scaled advances", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const container = document.createElement("div");
+    container.className = "textLayer";
+    container.style.setProperty("--total-scale-factor", "1");
+    document.body.append(container);
+    // The 80 em advance of A is encoded with a scale in the font.
+    const textLayer = new TextLayer({
+      textContentSource: {
+        items: [
+          {
+            str: "A",
+            dir: "ltr",
+            width: 40,
+            height: 0.5,
+            transform: [0.5, 0, 0, 0.5, 50, 700],
+            fontName: "f1",
+            hasEOL: false,
+          },
+        ],
+        styles: {
+          f1: {
+            fontFamily: "sans-serif",
+            vertical: false,
+            textLayerFont: {
+              name: "scaled_advances",
+              data: buildTextLayerFont(new Map([[0x41, 80000]]), 1, false, 4),
+              ascent: 1,
+              advanceScale: 4,
+            },
+          },
+        },
+      },
+      container,
+      viewport: new PageViewport({
+        viewBox: [0, 0, 800, 800],
+        userUnit: 1,
+        scale: 1,
+        rotation: 0,
+      }),
+    });
+    try {
+      await textLayer.render();
+      expect(textLayer.textDivs[0].getBoundingClientRect().width).toBeCloseTo(
+        40,
+        0
+      );
+    } finally {
+      textLayer.cancel();
+      container.remove();
+    }
   });
 
   describe("with text layer fonts", function () {

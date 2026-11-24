@@ -83,10 +83,14 @@ function loadImage(svg_xml, ctx) {
 }
 
 async function writeSVG(svgElement, ctx) {
+  // XML forbids most C0 controls, even as character references, e.g. in the
+  // text of a font without a ToUnicode map.
+  const xml = new XMLSerializer()
+    .serializeToString(svgElement)
+    // eslint-disable-next-line no-control-regex
+    .replaceAll(/[\x00-\x08\v\f\x0E-\x1F]/g, "\uFFFD");
   // We need to have UTF-8 encoded XML.
-  const svg_xml = unescape(
-    encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
-  );
+  const svg_xml = unescape(encodeURIComponent(xml));
   if (svg_xml.includes("background-image: url(&quot;data:image")) {
     // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1844414
     // we load the image two times.

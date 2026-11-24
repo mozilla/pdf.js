@@ -2546,6 +2546,8 @@ class PartialEvaluator {
 
     let textState, currentTextState;
     let lastFakeSpaceExtraCharId = -1;
+    // A Tz since the previous glyph leaves the em of the next gap unknown.
+    let hScaleChanged = false;
 
     // For a reflected transform with d > 0, move the origin along the baseline
     // by the item width, then reverse the baseline direction.
@@ -2578,28 +2580,33 @@ class PartialEvaluator {
       });
     }
 
+    // The glyph space of a small Type 3 font can be sized by its bbox: the
+    // item height, hence the text layer em, is then the bbox height.
+    function getType3HeightScale() {
+      const { font, fontMatrix, fontSize } = textState;
+      if (
+        font.isType3Font &&
+        (fontSize <= 1 || font.isCharBBox) &&
+        !isArrayEqual(fontMatrix, FONT_IDENTITY_MATRIX)
+      ) {
+        const glyphHeight = font.bbox[3] - font.bbox[1];
+        if (glyphHeight > 0) {
+          return glyphHeight * fontMatrix[3];
+        }
+      }
+      return 1;
+    }
+
     function getCurrentTextTransform() {
       // 9.4.4 Text Space Details
-      const font = textState.font;
       const tsm = [
         textState.fontSize * textState.textHScale,
         0,
         0,
-        textState.fontSize,
+        textState.fontSize * getType3HeightScale(),
         0,
         textState.textRise,
       ];
-
-      if (
-        font.isType3Font &&
-        (textState.fontSize <= 1 || font.isCharBBox) &&
-        !isArrayEqual(textState.fontMatrix, FONT_IDENTITY_MATRIX)
-      ) {
-        const glyphHeight = font.bbox[3] - font.bbox[1];
-        if (glyphHeight > 0) {
-          tsm[3] *= glyphHeight * textState.fontMatrix[3];
-        }
-      }
 
       return Util.transform(
         textState.ctm,
@@ -2625,7 +2632,11 @@ class PartialEvaluator {
           style.fontSubstitution = font.systemFontInfo.css;
           style.fontSubstitutionLoadedName = font.systemFontInfo.loadedName;
         }
-        textLayerFonts?.addFont(loadedName, font);
+        textLayerFonts?.addFont(
+          loadedName,
+          font,
+          /* heightScaled = */ getType3HeightScale() !== 1
+        );
       }
       textContentItem.fontName = loadedName;
 
@@ -2777,6 +2788,19 @@ class PartialEvaluator {
       textContentItem.pendingSpaceIndex = -1;
       textContentItem.pendingSpaceAdvance = 0;
       textContentItem.pendingSpaceExtraCharId = -1;
+    }
+
+    // Line-positioning operators replace the text position and start a new
+    // spacing measurement, even when the new position is on the same line.
+    function resetTextMatrix() {
+      textState.setTextMatrix(textState.textLineMatrix);
+      hScaleChanged = false;
+      resetAdaptiveSpacing();
+    }
+
+    function moveText(x, y) {
+      textState.translateTextLineMatrix(x, y);
+      resetTextMatrix();
     }
 
     function recordPendingSpace(advance, textOrientation) {
@@ -2975,11 +2999,7 @@ class PartialEvaluator {
             textContentItem.height += advanceY;
           }
         } else if (
-          !addFakeSpaces(
-            advanceY,
-            textContentItem.prevTransform,
-            textOrientation
-          )
+          !addFakeSpaces(advanceY, currentTransform, textOrientation)
         ) {
           if (textContentItem.str.length === 0) {
             resetLastChars();
@@ -3072,9 +3092,7 @@ class PartialEvaluator {
         } else {
           textContentItem.width += advanceX;
         }
-      } else if (
-        !addFakeSpaces(advanceX, textContentItem.prevTransform, textOrientation)
-      ) {
+      } else if (!addFakeSpaces(advanceX, currentTransform, textOrientation)) {
         if (textContentItem.str.length === 0) {
           resetLastChars();
           pushWhitespace({ width: Math.abs(advanceX) });
@@ -3136,8 +3154,10 @@ class PartialEvaluator {
 
       const glyphs = font.charsToGlyphs(chars);
       const scale = textState.fontMatrix[0] * textState.fontSize;
-      // Converts the glyph widths to 1/1000 em.
-      const advanceScale = Math.abs(textState.fontMatrix[0] * 1000);
+      // Converts the glyph widths to 1/1000 of the text layer em.
+      const advanceScale = Math.abs(
+        (textState.fontMatrix[0] * 1000) / getType3HeightScale()
+      );
 
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
@@ -3181,7 +3201,10 @@ class PartialEvaluator {
           continue;
         }
 
-        if (!isZeroWidthDiacritic && !compareWithLastPosition(scaledDim)) {
+        const inView =
+          isZeroWidthDiacritic || compareWithLastPosition(scaledDim);
+        hScaleChanged = false;
+        if (!inView) {
           // The glyph is not in page so just skip it but move the cursor.
           if (!font.vertical) {
             textState.translateTextMatrix(scaledDim * textState.textHScale, 0);
@@ -3281,7 +3304,7 @@ class PartialEvaluator {
       }
     }
 
-    function addFakeSpaces(width, transf, textOrientation) {
+    function addFakeSpaces(width, currentTransform, textOrientation) {
       lastFakeSpaceExtraCharId = -1;
       if (
         textOrientation * textContentItem.spaceInFlowMin <= width &&
@@ -3291,13 +3314,17 @@ class PartialEvaluator {
           resetLastChars();
           textContentItem.str.push(" ");
           lastFakeSpaceExtraCharId = intersector?.addExtraChar(" ") ?? -1;
-          if (textLayerFonts && !textContentItem.vertical) {
-            const [, , c, d] = textContentItem.transform;
-            textLayerFonts.addSpaceGap(
-              textContentItem.fontName,
-              (1000 * Math.abs(width) * textContentItem.textAdvanceScale) /
-                Math.hypot(c, d)
-            );
+          if (textLayerFonts && !textContentItem.vertical && !hScaleChanged) {
+            // Measure the gap in page units, in the em along the baseline.
+            const [a, b] = currentTransform;
+            const emLength = Math.hypot(a, b) * Math.abs(getType3HeightScale());
+            if (emLength > 0) {
+              textLayerFonts.addSpaceGap(
+                textContentItem.fontName,
+                (1000 * Math.abs(width) * textContentItem.textAdvanceScale) /
+                  emLength
+              );
+            }
           }
         }
         return false;
@@ -3316,7 +3343,6 @@ class PartialEvaluator {
       pushWhitespace({
         width: Math.abs(width),
         height: Math.abs(height),
-        transform: transf || getCurrentTextTransform(),
         fontName,
       });
 
@@ -3431,46 +3457,26 @@ class PartialEvaluator {
           case OPS.setHScale:
             if (textState.textHScale !== args[0] / 100) {
               textState.textHScale = args[0] / 100;
+              hScaleChanged = true;
               resetAdaptiveSpacing();
             }
             break;
           case OPS.setLeading:
             textState.leading = args[0];
             break;
-          case OPS.moveText:
-            textState.translateTextLineMatrix(args[0], args[1]);
-            textState.textMatrix = textState.textLineMatrix.slice();
-            resetAdaptiveSpacing();
-            break;
           case OPS.setLeadingMoveText:
             textState.leading = -args[1];
-            textState.translateTextLineMatrix(args[0], args[1]);
-            textState.textMatrix = textState.textLineMatrix.slice();
-            resetAdaptiveSpacing();
+          /* falls through */
+          case OPS.moveText:
+            moveText(args[0], args[1]);
             break;
           case OPS.nextLine:
-            textState.carriageReturn();
-            resetAdaptiveSpacing();
+            moveText(0, -textState.leading);
             break;
           case OPS.setTextMatrix:
-            textState.setTextMatrix(
-              args[0],
-              args[1],
-              args[2],
-              args[3],
-              args[4],
-              args[5]
-            );
-            textState.setTextLineMatrix(
-              args[0],
-              args[1],
-              args[2],
-              args[3],
-              args[4],
-              args[5]
-            );
+            textState.setTextLineMatrix(args);
+            resetTextMatrix();
             updateAdvanceScale();
-            resetAdaptiveSpacing();
             break;
           case OPS.setCharSpacing:
             if (textState.charSpacing !== args[0]) {
@@ -3485,9 +3491,8 @@ class PartialEvaluator {
             }
             break;
           case OPS.beginText:
-            textState.textMatrix = IDENTITY_MATRIX.slice();
-            textState.textLineMatrix = IDENTITY_MATRIX.slice();
-            resetAdaptiveSpacing();
+            textState.setTextLineMatrix(IDENTITY_MATRIX);
+            resetTextMatrix();
             textMarkedContentLevel = markedContentLevel;
             break;
           case OPS.endText:
@@ -3545,36 +3550,16 @@ class PartialEvaluator {
             });
             break;
           case OPS.nextLineShowText:
-            if (!stateManager.state.font) {
-              self.ensureStateFont(stateManager.state);
-              continue;
-            }
-            textState.carriageReturn();
-            resetAdaptiveSpacing();
-            buildTextContentItem({
-              chars: args[0],
-              extraSpacing: 0,
-            });
-            break;
           case OPS.nextLineSetSpacingShowText:
             if (!stateManager.state.font) {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            if (
-              textState.wordSpacing !== args[0] ||
-              textState.charSpacing !== args[1]
-            ) {
-              textState.wordSpacing = args[0];
-              textState.charSpacing = args[1];
-              resetAdaptiveSpacing();
+            if (fn === OPS.nextLineSetSpacingShowText) {
+              [textState.wordSpacing, textState.charSpacing] = args;
             }
-            textState.carriageReturn();
-            resetAdaptiveSpacing();
-            buildTextContentItem({
-              chars: args[2],
-              extraSpacing: 0,
-            });
+            moveText(0, -textState.leading);
+            buildTextContentItem({ chars: args.at(-1), extraSpacing: 0 });
             break;
           case OPS.paintXObject:
             flushTextContentItem();
@@ -5328,24 +5313,18 @@ class TextState {
 
   textRise = 0;
 
-  setTextMatrix(a, b, c, d, e, f) {
+  setTextMatrix(matrix) {
     const m = this.textMatrix;
-    m[0] = a;
-    m[1] = b;
-    m[2] = c;
-    m[3] = d;
-    m[4] = e;
-    m[5] = f;
+    for (let i = 0; i < 6; i++) {
+      m[i] = matrix[i];
+    }
   }
 
-  setTextLineMatrix(a, b, c, d, e, f) {
+  setTextLineMatrix(matrix) {
     const m = this.textLineMatrix;
-    m[0] = a;
-    m[1] = b;
-    m[2] = c;
-    m[3] = d;
-    m[4] = e;
-    m[5] = f;
+    for (let i = 0; i < 6; i++) {
+      m[i] = matrix[i];
+    }
   }
 
   translateTextMatrix(x, y) {
@@ -5358,11 +5337,6 @@ class TextState {
     const m = this.textLineMatrix;
     m[4] = m[0] * x + m[2] * y + m[4];
     m[5] = m[1] * x + m[3] * y + m[5];
-  }
-
-  carriageReturn() {
-    this.translateTextLineMatrix(0, -this.leading);
-    this.textMatrix = this.textLineMatrix.slice();
   }
 
   clone() {

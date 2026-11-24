@@ -5632,6 +5632,52 @@ ABCD E`);
 
       expect(text).toEqual("AB CD");
 
+      const { items: fitted, styles } = await pdfPage.getTextContent({
+        includeTextLayerFonts: true,
+      });
+      const { data, advanceScale, ascent } =
+        styles[fitted[0].fontName].textLayerFont;
+      // The rectangles extend from the baseline to the top of the font box.
+      expect(ascent).toBe(1);
+      // The 80 em glyph is 0.8 of the 100 em high font box, the span's em.
+      expect(advanceScale).toEqual(1);
+      expect(new FontTestData(data).getAdvance(0x41)).toBeCloseTo(800, 0);
+
+      await loadingTask.destroy();
+    });
+
+    it("gets text content, with a Type3 inferred space in glyph advance units", async function () {
+      const loadingTask = getDocument(
+        buildGetDocumentParams("type3_space_gap.pdf")
+      );
+      const pdfDoc = await loadingTask.promise;
+      for (const [pageNumber, context, text, space] of [
+        [1, "tall glyph bounding box", "A B", 240],
+        [2, "page scale canceled by the text matrix", "A B", 400],
+        [3, "scale change before the preceding glyph", "AB A", 480],
+        [4, "scale change immediately before the gap", "A BA", 250],
+        [5, "scale change immediately after the gap", "A B\nA B", 240],
+        [6, "absolute positioning after a discarded move", "A B", 240],
+        [7, "spacing moves at different scales", "A B\nA B", 250],
+        [8, "next line", "A B", 480],
+        [9, "next line and show text", "A B", 480],
+        [10, "set spacing, move to next line and show text", "A B", 480],
+      ]) {
+        const pdfPage = await pdfDoc.getPage(pageNumber);
+        const { items, styles } = await pdfPage.getTextContent({
+          includeTextLayerFonts: true,
+        });
+        const font = new FontTestData(
+          styles[items[0].fontName].textLayerFont.data
+        );
+        expect(mergeText(items)).withContext(context).toEqual(text);
+        // The 0.8 em wide glyphs in the 1.25 em high font box, the span's em.
+        expect(font.getAdvance(0x41)).withContext(context).toBeCloseTo(640, 0);
+        expect(font.getAdvance(0x20))
+          .withContext(context)
+          .toBeCloseTo(space, 0);
+      }
+
       await loadingTask.destroy();
     });
 
