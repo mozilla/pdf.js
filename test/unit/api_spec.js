@@ -6224,6 +6224,76 @@ have written that much by now. So, here’s to squashing bugs.`);
       await loadingTask.destroy();
     });
 
+    function getMirroringTestDocument(encoding, bfchars) {
+      const toUnicode =
+        "/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n" +
+        "/CMapName /Adobe-Identity-UCS def\n/CMapType 2 def\n" +
+        "1 begincodespacerange\n<00> <FF>\nendcodespacerange\n" +
+        `${bfchars.length} beginbfchar\n${bfchars.join("\n")}\nendbfchar\n` +
+        "endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend";
+      return getDocument({
+        data: buildSinglePagePdf(
+          "/MediaBox [0 0 100 100] /Resources << /Font << /F1 4 0 R >> >> " +
+            "/Contents 5 0 R",
+          [
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
+              `${encoding} /ToUnicode 6 0 R >>`,
+            streamObject("BT /F1 12 Tf 10 50 Td <2941425D> Tj ET"),
+            streamObject(toUnicode),
+          ]
+        ),
+        standardFontDataUrl: STANDARD_FONT_DATA_URL,
+        wasmUrl: WASM_URL,
+      });
+    }
+
+    it("preserves mirrored ToUnicode mappings and mirrors the other glyphs", async function () {
+      // The ToUnicode map gives the mirror of ')', and ']' as is.
+      const loadingTask = getMirroringTestDocument(
+        "/Encoding << /BaseEncoding /WinAnsiEncoding " +
+          "/Differences [65 /afii57665 /afii57664] >>",
+        ["<29> <0028>", "<5D> <005D>"]
+      );
+      try {
+        const pdfPage = await (await loadingTask.promise).getPage(1);
+        const plainText = await pdfPage.getTextContent();
+        const { items, styles } = await pdfPage.getTextContent({
+          includeTextLayerFonts: true,
+        });
+        expect(items).toEqual(plainText.items);
+        expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
+          { str: "[אב(", dir: "rtl" },
+        ]);
+        const [{ fontName, str, transform, width }] = items;
+        const font = new FontTestData(styles[fontName].textLayerFont.data);
+        const advance = Math.sumPrecise(
+          Array.from(str, char => font.getAdvance(char.codePointAt(0)))
+        );
+        expect((advance * transform[3]) / 1000).toBeCloseTo(width, 1);
+      } finally {
+        await loadingTask.destroy();
+      }
+    });
+
+    it("preserves mirrored ToUnicode mappings of a standard font without encoding", async function () {
+      // The glyph shapes come from the StandardEncoding of Helvetica.
+      const loadingTask = getMirroringTestDocument("", [
+        "<29> <0028>",
+        "<41> <05D1>",
+        "<42> <05D0>",
+        "<5D> <005D>",
+      ]);
+      try {
+        const pdfPage = await (await loadingTask.promise).getPage(1);
+        const { items } = await pdfPage.getTextContent();
+        expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
+          { str: "[אב(", dir: "rtl" },
+        ]);
+      } finally {
+        await loadingTask.destroy();
+      }
+    });
+
     it("gets empty structure tree", async function () {
       const tree = await page.getStructTree();
 

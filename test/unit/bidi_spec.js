@@ -128,7 +128,7 @@ describe("bidi", function () {
       const str = "()\u05d1("; // 25% of the string is RTL characters.
       const bidiText = bidi(str, -1, false);
 
-      expect(bidiText.str).toEqual("(\u05d1)(");
+      expect(bidiText.str).toEqual(")\u05d1()");
       expect(bidiText.dir).toEqual("rtl");
     }
   );
@@ -138,7 +138,7 @@ describe("bidi", function () {
       [["م", "لا", "س"], "سلام"],
       [["١٢", "م"], "م١٢"],
       [["fi", "م", "س"], "سمfi"],
-      [["<>", "م"], "م"],
+      [["<>", "م"], "م<>"],
       // A glyph with mixed levels is reordered char by char.
       [["لa", "م"], "مaل"],
     ]) {
@@ -203,6 +203,24 @@ describe("bidi", function () {
       dir: "rtl",
     });
     expect(bidi("😀 א!")).toEqual({ str: "!א 😀", dir: "rtl" });
+  });
+
+  it("should mirror the RTL characters", function () {
+    expect(bidi('(ר"מב)').str).toEqual('(במ"ר)');
+    expect(bidi("b > a םולש").str).toEqual("שלום b > a");
+    expect(bidi("1 < 2 םולש").str).toEqual("שלום 2 > 1");
+    // LTR text isn't mirrored.
+    expect(bidi("ab (cd) םולש", 0).str).toEqual("ab (cd) שלום");
+  });
+
+  it("should only mirror the glyphs drawn with the shape of their character", function () {
+    // The ToUnicode map of a glyph can already give the logical character.
+    expect(bidi([")", "ב", "("]).str).toEqual("(ב)");
+    const glyphs = ["(", "ב", { unicode: "(", isUnicodeVisual: true }];
+    const mirrored = [];
+    const onMirror = (glyph, unicode) => mirrored.push([glyph, unicode]);
+    expect(bidi(glyphs, -1, false, onMirror).str).toEqual(")ב(");
+    expect(mirrored).toEqual([[glyphs[2], ")"]]);
   });
 
   it("should reorder characters correctly per BidiCharacterTest.txt", async function () {

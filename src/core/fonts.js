@@ -71,6 +71,7 @@ import { DataBuilder } from "./data_builder.js";
 import { FontRendererFactory } from "./font_renderer.js";
 import { getFontBasicMetrics } from "./metrics.js";
 import { getLookupTableFactory } from "./core_utils.js";
+import { getMirroredChar } from "./bidi.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { OpenTypeFileBuilder } from "./opentype_file_builder.js";
 import { pruneCompositeGlyphCycles } from "./glyf.js";
@@ -240,7 +241,41 @@ function amendFallbackToUnicode(properties) {
   properties.toUnicode.amend(toUnicode);
 }
 
+// The characters of the glyph shapes, from the glyph names or else the Unicode
+// cmap of the font, for the char codes whose ToUnicode entry is a mirrored
+// character.
+function getMirroredGlyphShapes(
+  charCodeToGlyphId,
+  toUnicode,
+  glyphNames,
+  getUnicodeCmap
+) {
+  let shapes = null,
+    glyphsUnicodeMap,
+    glyphIdToUnicode;
+  for (const [charCode, glyphId] of charCodeToGlyphId) {
+    const unicode = toUnicode.get(charCode);
+    if (!unicode || !getMirroredChar(unicode)) {
+      continue;
+    }
+    const glyphName = glyphNames?.[glyphId];
+    let shape =
+      glyphName &&
+      getUnicodeForGlyph(glyphName, (glyphsUnicodeMap ??= getGlyphsUnicode()));
+    if (!(shape > 0)) {
+      glyphIdToUnicode ??= getUnicodeCmap();
+      shape = glyphIdToUnicode.get(glyphId);
+    }
+    if (shape > 0) {
+      (shapes ??= new Map()).set(charCode, String.fromCodePoint(shape));
+    }
+  }
+  return shapes;
+}
+
 class Glyph {
+  #isUnicodeVisual;
+
   constructor(
     fontExtraProperties,
     originalCharCode,
@@ -252,8 +287,10 @@ class Glyph {
     operatorListId,
     isSpace,
     isInFont,
-    isRotated
+    isRotated,
+    isUnicodeVisual
   ) {
+    this.#isUnicodeVisual = isUnicodeVisual;
     if (fontExtraProperties) {
       this.originalCharCode = originalCharCode;
     }
@@ -266,6 +303,11 @@ class Glyph {
     this.isSpace = isSpace;
     this.isInFont = isInFont;
     this.isRotated = isRotated;
+  }
+
+  // The Unicode is the glyph shape's character, to mirror at an RTL level.
+  get isUnicodeVisual() {
+    return this.#isUnicodeVisual;
   }
 
   /**
@@ -1066,6 +1108,12 @@ class Font {
 
   #generatedCodePoints = null;
 
+  #encodingToUnicode = null;
+
+  #glyphShapes = null;
+
+  #hasIncludedToUnicodeMap = false;
+
   #id = null;
 
   #isCFFCompiled = false;
@@ -1148,6 +1196,8 @@ class Font {
     this.bbox = properties.bbox;
     this.defaultEncoding = properties.defaultEncoding;
     this.toUnicode = properties.toUnicode;
+    this.#encodingToUnicode = properties.encodingToUnicode ?? null;
+    this.#hasIncludedToUnicodeMap = !!properties.hasIncludedToUnicodeMap;
 
     if (properties.type === "Type3") {
       for (let charCode = 0; charCode < 256; charCode++) {
@@ -3129,9 +3179,8 @@ class Font {
     }
 
     // The 'post' table has glyphs names.
-    if (tables.post) {
-      readPostScriptTable(tables.post, properties, numGlyphs);
-    }
+    const hasGlyphNames =
+      !!tables.post && readPostScriptTable(tables.post, properties, numGlyphs);
 
     // The original 'post' table is not needed, replace it.
     tables.post = {
@@ -3146,6 +3195,7 @@ class Font {
       return !missingGlyphs?.[glyphId];
     }
 
+    let cmapTable = null;
     if (properties.composite) {
       const { cidToGidMap, cMap } = properties;
       const isCidToGidMapEmpty = !cidToGidMap?.size;
@@ -3166,7 +3216,7 @@ class Font {
     } else {
       // Most of the following logic in this code branch is based on the
       // 9.6.6.4 of the PDF spec.
-      const cmapTable = readCmapTable(
+      cmapTable = readCmapTable(
         tables.cmap,
         font,
         this.isSymbolicFont,
@@ -3315,6 +3365,35 @@ class Font {
     if (!charCodeToGlyphId.size) {
       // defines at least one glyph
       charCodeToGlyphId.set(0, 0);
+    }
+
+    if (properties.hasIncludedToUnicodeMap) {
+      this.#glyphShapes = getMirroredGlyphShapes(
+        charCodeToGlyphId,
+        this.toUnicode,
+        hasGlyphNames ? properties.glyphNames : null,
+        () => {
+          const glyphIdToUnicode = new Map();
+          if (!tables.cmap) {
+            return glyphIdToUnicode;
+          }
+          // Prefer the (3, 1) table, even for a symbolic font.
+          cmapTable ??= readCmapTable(
+            tables.cmap,
+            font,
+            /* isSymbolicFont = */ false,
+            /* hasEncoding = */ true,
+            numGlyphs
+          );
+          const { platformId, encodingId, mappings } = cmapTable;
+          if (platformId === 0 || (platformId === 3 && encodingId === 1)) {
+            for (const { charCode, glyphId } of mappings) {
+              glyphIdToUnicode.getOrInsert(glyphId, charCode);
+            }
+          }
+          return glyphIdToUnicode;
+        }
+      );
     }
 
     // Typically glyph 0 is duplicated and the mapping must be updated, but if
@@ -3782,10 +3861,29 @@ class Font {
       operatorListId,
       isSpace,
       isInFont,
-      isRotated
+      isRotated,
+      this.#isUnicodeVisual(charcode)
     );
     this.#glyphCache.set(charcode, glyph);
     return glyph;
+  }
+
+  // Whether a mirrored character is the one of the glyph shape. A ToUnicode
+  // map can give the logical character instead, so the shape must be known,
+  // from its name in the font or else from the encoding.
+  #isUnicodeVisual(charcode) {
+    const unicode = this.toUnicode.get(charcode);
+    if (!unicode || !getMirroredChar(unicode)) {
+      return false;
+    }
+    if (!this.#hasIncludedToUnicodeMap) {
+      // The characters come from the glyph names or the CID ordering.
+      return !(this.toUnicode instanceof IdentityToUnicodeMap);
+    }
+    const shape =
+      this.#glyphShapes?.get(charcode) ??
+      this.#encodingToUnicode?.get(charcode);
+    return shape === unicode;
   }
 
   #hasVerticalVariant(charcode) {

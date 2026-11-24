@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { BidiClassRanges } from "./bidi_tables.js";
+import { BidiClassRanges, BidiMirroringPairs } from "./bidi_tables.js";
 
 // Implements a subset of the Unicode Bidirectional Algorithm (UBA).
 // Specification: https://www.unicode.org/reports/tr9/tr9-48.html
@@ -25,6 +25,7 @@ const BidiClasses = Object.keys(BidiClassRanges);
 // first use.
 let bmpClasses = null;
 let astralRanges = null;
+let mirroredChars = null;
 
 function initBidiClasses() {
   bmpClasses = new Uint8Array(0x10000);
@@ -44,6 +45,18 @@ function initBidiClasses() {
   }
   astral.sort((x, y) => x[0] - y[0]);
   astralRanges = astral;
+}
+
+function getMirroredChar(char) {
+  if (!mirroredChars) {
+    mirroredChars = new Map();
+    for (let i = 0, ii = BidiMirroringPairs.length; i < ii; i += 2) {
+      const a = String.fromCodePoint(BidiMirroringPairs[i]),
+        b = String.fromCodePoint(BidiMirroringPairs[i + 1]);
+      mirroredChars.set(a, b).set(b, a);
+    }
+  }
+  return mirroredChars.get(char);
 }
 
 function getBidiClass(cp) {
@@ -91,6 +104,21 @@ function reverseValues(arr, start, end) {
   }
 }
 
+function mirrorCharacters(levels, start, end) {
+  let changed = false;
+  for (let i = start; i < end; ++i) {
+    if (!isOdd(levels[i])) {
+      continue;
+    }
+    const mirrored = getMirroredChar(chars[i]);
+    if (mirrored) {
+      chars[i] = mirrored;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function createBidiText(str, isLTR, vertical = false) {
   let dir = "ltr";
   if (vertical) {
@@ -105,16 +133,30 @@ function createBidiText(str, isLTR, vertical = false) {
 // each call to avoid unnecessary allocations.
 const chars = [];
 const types = [];
+const glyphTexts = [];
 
 /**
- * @param {string|Array<string>} text - Text to reorder, or glyph texts in
- *   visual order. Each glyph's text is expected to be in logical order and is
- *   kept intact if all its characters resolve to the same bidi level.
+ * @param {string|Array<string|{unicode: string, isUnicodeVisual: boolean}>}
+ *   text - Text to reorder, or glyphs in visual order. Each glyph's text is
+ *   kept intact if all its characters resolve to the same bidi level. A string
+ *   is mirrored as visual text, a glyph only with `isUnicodeVisual`.
+ * @param {number} startLevel - The paragraph level, or -1 to infer it.
+ * @param {boolean} vertical - Whether the text runs from top to bottom.
+ * @param {Function} [onMirror] - Receives a mirrored glyph object and its
+ *   updated Unicode text.
  */
-function bidi(text, startLevel = -1, vertical = false) {
+function bidi(text, startLevel = -1, vertical = false, onMirror = null) {
   let isLTR = true;
   const glyphs = Array.isArray(text) ? text : null;
-  const str = glyphs ? glyphs.join("") : text;
+  let str = text;
+  if (glyphs) {
+    const ii = glyphs.length;
+    glyphTexts.length = ii;
+    for (let i = 0; i < ii; i++) {
+      glyphTexts[i] = glyphs[i].unicode ?? glyphs[i];
+    }
+    str = glyphTexts.join("");
+  }
   const strLength = str.length;
   if (strLength === 0 || vertical) {
     return createBidiText(str, isLTR, vertical);
@@ -395,18 +437,25 @@ function bidi(text, startLevel = -1, vertical = false) {
   if (glyphs) {
     let pos = 0;
     for (const glyph of glyphs) {
-      const end = pos + glyph.length;
+      const { unicode = glyph, isUnicodeVisual } = glyph;
+      const end = pos + unicode.length;
       if (
-        glyph.length > 1 &&
+        unicode.length > 1 &&
         findUnequal(levels, pos + 1, levels[pos], end) === end
       ) {
         // Store the whole glyph in one slot. Empty strings in the remaining
         // slots preserve the indices used by the character levels.
-        chars[pos] = glyph;
+        chars[pos] = unicode;
         chars.fill("", pos + 1, end);
+      }
+      // Undo L4 for the glyphs whose Unicode is the shape's character.
+      if (isUnicodeVisual && mirrorCharacters(levels, pos, end) && onMirror) {
+        onMirror(glyph, chars.slice(pos, end).join(""));
       }
       pos = end;
     }
+  } else {
+    mirrorCharacters(levels, 0, strLength);
   }
 
   // now reverse between those limits
@@ -437,16 +486,8 @@ function bidi(text, startLevel = -1, vertical = false) {
 
   // don't bother for now
 
-  /*
-   L4. A character that possesses the mirrored property as specified by
-   Section 4.7, Mirrored, must be depicted by a mirrored glyph if the resolved
-   directionality of that character is R.
-   */
-
-  // don't mirror as characters are already mirrored in the pdf
-
   // Finally, return string
-  return createBidiText(chars.join("").replaceAll(/[<>]/g, ""), isLTR);
+  return createBidiText(chars.join(""), isLTR);
 }
 
-export { bidi };
+export { bidi, getMirroredChar };
