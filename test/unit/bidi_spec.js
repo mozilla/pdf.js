@@ -163,6 +163,48 @@ describe("bidi", function () {
     expect(bidi(visual).str).toEqual(logical);
   });
 
+  it("should handle the Hebrew presentation forms", function () {
+    // Shin with shin dot, vav with dagesh, alef with patah.
+    const logical = "שׁוּאַ";
+    const visual = [...logical].reverse().join("");
+    expect(bidi(visual)).toEqual({ str: logical, dir: "rtl" });
+    // The varika is a mark and the alternative plus sign a separator.
+    expect(bidi("aﬞ", 1).str).toEqual("aﬞ");
+    expect(bidi("1﬩2", 1).str).toEqual("1﬩2");
+  });
+
+  it("should keep currency and per mille signs with their number", function () {
+    expect(bidi("דבלב ₪ 100 ריחמה").str).toEqual("המחיר 100 ₪ בלבד");
+    expect(bidi("€ 50 ريعس").str).toEqual("سعير 50 €");
+    expect(bidi("5‰ לש רועיש").str).toEqual("שיעור של 5‰");
+  });
+
+  it("should not count a zero width no-break space as RTL", function () {
+    expect(bidi("\ufeffab")).toEqual({ str: "\ufeffab", dir: "ltr" });
+  });
+
+  it("should handle the Arabic Extended-A letters", function () {
+    expect(bidi("abc \u0628\u08b6", 0).str).toEqual("abc \u08b6\u0628");
+  });
+
+  it("should use Unicode bidi class defaults for unassigned code points", function () {
+    expect(bidi("\u0590 xy")).toEqual({ str: "xy \u0590", dir: "rtl" });
+  });
+
+  it("should keep the surrogate pairs together", function () {
+    // Adlam is RTL and outside of the BMP.
+    expect(bidi("\u{1e901}\u{1e900}").str).toEqual("\u{1e900}\u{1e901}");
+    expect(bidi("😀 םולש").str).toEqual("שלום 😀");
+  });
+
+  it("should count code points when determining the text direction", function () {
+    expect(bidi("xy \u{1e901}\u{1e900}")).toEqual({
+      str: "\u{1e900}\u{1e901} xy",
+      dir: "rtl",
+    });
+    expect(bidi("😀 א!")).toEqual({ str: "!א 😀", dir: "rtl" });
+  });
+
   it("should reorder characters correctly per BidiCharacterTest.txt", async function () {
     const content = await readTestFile("BidiCharacterTest.txt");
 
@@ -244,7 +286,7 @@ describe("bidi", function () {
       ES: "+", // U+002B
       ET: "#", // U+0023
       CS: ",", // U+002C
-      NSM: "\u0610", // Arabic combining mark (NSM in arabicTypes)
+      NSM: "\u0610", // Arabic combining mark
       B: "\n", // U+000A paragraph separator
       S: "\t", // U+0009 segment separator
       WS: " ", // U+0020
