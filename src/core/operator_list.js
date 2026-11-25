@@ -664,10 +664,11 @@ class OperatorList {
     this._streamSink = streamSink;
     this.fnArray = [];
     this.argsArray = [];
-    this.optimizer =
-      streamSink && !(intent & RenderingIntentFlag.OPLIST)
-        ? new QueueOptimizer(this, isOffscreenCanvasSupported)
-        : new NullOptimizer(this);
+    this.isStreamingToRenderer =
+      !!streamSink && !(intent & RenderingIntentFlag.OPLIST);
+    this.optimizer = this.isStreamingToRenderer
+      ? new QueueOptimizer(this, isOffscreenCanvasSupported)
+      : new NullOptimizer(this);
     this.dependencies = new Set();
     this.weight = 0;
     this._resolved = streamSink ? null : Promise.resolve();

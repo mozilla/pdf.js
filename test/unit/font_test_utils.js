@@ -13,11 +13,14 @@
  * limitations under the License.
  */
 
-import { bytesToString } from "../../src/shared/util.js";
+import { bytesToString, shadow } from "../../src/shared/util.js";
 import { FontRendererFactory } from "../../src/core/font_renderer.js";
 
 class FontTestData {
+  #data;
+
   constructor(data) {
+    this.#data = data;
     const view = (this.view = new DataView(
       data.buffer,
       data.byteOffset,
@@ -32,7 +35,14 @@ class FontTestData {
         length: view.getUint32(offset + 12),
       });
     }
-    this.renderer = FontRendererFactory.create({ data });
+  }
+
+  get renderer() {
+    return shadow(
+      this,
+      "renderer",
+      FontRendererFactory.create({ data: this.#data })
+    );
   }
 
   get unitsPerEm() {
@@ -50,8 +60,10 @@ class FontTestData {
   }
 
   getAdvance(codePoint) {
-    const offset =
-      this.tables.get("hmtx").offset + 4 * this.getGlyphId(codePoint);
+    // Glyphs past the last long horizontal metric share its advance.
+    const count = this.view.getUint16(this.tables.get("hhea").offset + 34);
+    const index = Math.min(this.getGlyphId(codePoint), count - 1);
+    const offset = this.tables.get("hmtx").offset + 4 * index;
     return (this.view.getUint16(offset) * 1000) / this.unitsPerEm;
   }
 }

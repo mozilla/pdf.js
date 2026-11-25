@@ -1017,7 +1017,13 @@ class PartialEvaluator {
     }
 
     state.font = translated.font;
-    translated.send(this.handler);
+    const sent = translated.send(this.handler);
+    if (!operatorList.isStreamingToRenderer) {
+      // For getOperatorList() and in-memory operator lists, finish preparing
+      // the font before creating glyphs so their fontChar and isInFont reflect
+      // any generated fallback.
+      await sent;
+    }
     return translated.loadedName;
   }
 
@@ -1331,6 +1337,10 @@ class PartialEvaluator {
     this.translateFont(preEvaluatedFont, loadedName)
       .then(async translatedFont => {
         const translated = new TranslatedFont({
+          prepareSystemFont: await Hellbox.prepare(
+            { handler: this.handler, options: this.options },
+            translatedFont
+          ),
           loadedName,
           font: translatedFont,
           dict: font,
@@ -4794,9 +4804,7 @@ class PartialEvaluator {
             newProperties
           );
         }
-        const font = new Font(baseFontName, null, newProperties, this.options);
-        await Hellbox.generate(this, font);
-        return font;
+        return new Font(baseFontName, null, newProperties, this.options);
       }
     }
 
@@ -5027,7 +5035,6 @@ class PartialEvaluator {
         font.systemFontInfo = substitution;
       }
     }
-    await Hellbox.generate(this, font);
     return font;
   }
 
@@ -5073,11 +5080,14 @@ class PartialEvaluator {
 }
 
 class TranslatedFont {
-  #sent = false;
+  #prepareSystemFont;
+
+  sent = null;
 
   #type3Loaded = null;
 
-  constructor({ loadedName, font, dict }) {
+  constructor({ loadedName, font, dict, prepareSystemFont }) {
+    this.#prepareSystemFont = prepareSystemFont;
     this.loadedName = loadedName;
     this.font = font;
     this.dict = dict;
@@ -5085,20 +5095,27 @@ class TranslatedFont {
   }
 
   send(handler) {
-    if (this.#sent) {
-      return;
+    return (this.sent ??= this.#send(handler));
+  }
+
+  async #send(handler) {
+    let fontData;
+    try {
+      if (this.#prepareSystemFont) {
+        // The renderer waits for the font dependency while parsing continues.
+        const prepare = this.#prepareSystemFont;
+        this.#prepareSystemFont = null;
+        await prepare();
+      }
+      fontData = this.font.exportData();
+    } catch (reason) {
+      fontData = new ErrorFont(reason.message).exportData();
     }
-    this.#sent = true;
-
-    const fontData = this.font.exportData(),
-      transfers = fontData.buffer ? [fontData.buffer] : null;
-
-    handler.send("commonobj", [this.loadedName, "Font", fontData], transfers);
-    // future path: switch to a SharedArrayBuffer
-    // const sab = new SharedArrayBuffer(data.byteLength);
-    // const view = new Uint8Array(sab);
-    // view.set(new Uint8Array(data));
-    // handler.send("commonobj", [this.loadedName, "Font", sab]);
+    handler.send(
+      "commonobj",
+      [this.loadedName, "Font", fontData],
+      fontData.buffer ? [fontData.buffer] : null
+    );
   }
 
   fallback(handler, evaluatorOptions) {

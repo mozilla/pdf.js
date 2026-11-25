@@ -30,11 +30,56 @@ import {
 } from "../../src/core/to_unicode_map.js";
 import { CharCodeMap } from "../../src/core/char_code_map.js";
 import { Font } from "../../src/core/fonts.js";
+import { Hellbox } from "../../src/core/hellbox.js";
 import { Name } from "../../src/core/primitives.js";
 import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("Font", () => {
+  describe("Hellbox", () => {
+    const options = {
+      isOffscreenCanvasSupported: true,
+      useWorkerFetch: true,
+      standardFontDataUrl: "./fonts/",
+      wasmUrl: "./wasm/",
+    };
+
+    it("skips fallback preparation when either worker resource URL is missing", async () => {
+      for (const url of ["standardFontDataUrl", "wasmUrl"]) {
+        const prepare = await Hellbox.prepare(
+          { options: { ...options, [url]: null } },
+          { standardFontName: "Helvetica", systemFontInfo: {} }
+        );
+        expect(prepare).withContext(url).toBeNull();
+      }
+    });
+
+    it("defers the coverage check and skips generation for a covered font", async () => {
+      const handler = {
+        sendWithPromise: jasmine.createSpy().and.resolveTo(true),
+      };
+      const font = {
+        standardFontName: "Helvetica",
+        systemFontInfo: {},
+        getMissingFileGlyphs: jasmine
+          .createSpy()
+          .and.returnValue([{ codePoint: 65 }]),
+      };
+      const prepare = await Hellbox.prepare({ handler, options }, font);
+      expect(font.getMissingFileGlyphs).not.toHaveBeenCalled();
+
+      await prepare();
+      expect(handler.sendWithPromise).toHaveBeenCalledOnceWith(
+        "LoadSystemFont",
+        {
+          systemFontInfo: font.systemFontInfo,
+          codePoints: Uint32Array.of(65),
+        },
+        [jasmine.any(ArrayBuffer)]
+      );
+    });
+  });
+
   describe("charsToGlyphs", () => {
     // Match the sparse metric arrays from PartialEvaluator.extractWidths.
     function createFont(vertical) {

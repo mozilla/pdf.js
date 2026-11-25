@@ -59,7 +59,6 @@ import { Lexer, Parser } from "../../src/core/parser.js";
 import { AutoPrintRegExp } from "../../web/ui_utils.js";
 import { CipherTransformFactory } from "../../src/core/crypto.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
-import { FontRendererFactory } from "../../src/core/font_renderer.js";
 import { FontTestData } from "./font_test_utils.js";
 import { GlobalImageCache } from "../../src/core/image_utils.js";
 import { GlobalWorkerOptions } from "../../src/display/worker_options.js";
@@ -8871,34 +8870,35 @@ have written that much by now. So, here’s to squashing bugs.`);
       return loadingTask;
     }
 
-    function buildFontPdf(fonts, content = "BT /F1 60 Tf 10 50 Td (A) Tj ET") {
-      return assemblePdf([
-        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-        "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
-          "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\n" +
-          "endobj\n",
-        `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
-          "endstream\nendobj\n",
-        ...fonts.map((font, i) => `${i + 5} 0 obj\n${font}\nendobj\n`),
-      ]);
+    async function loadPage(params) {
+      const doc = await loadDocument(params).promise;
+      return doc.getPage(1);
     }
 
-    async function getFonts(pdfPage, { fnArray, argsArray }) {
-      const ids = new Set(
-        argsArray.filter((_, i) => fnArray[i] === OPS.setFont).map(([id]) => id)
+    function buildFontPdf(fonts, content = "BT /F1 60 Tf 10 50 Td (A) Tj ET") {
+      return buildSinglePagePdf(
+        "/MediaBox [0 0 200 200] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R",
+        [streamObject(content), ...fonts]
       );
-      return new Map(
-        await Promise.all(
-          Array.from(
-            ids,
-            id =>
-              new Promise(resolve => {
-                pdfPage.commonObjs.get(id, font => resolve([id, font]));
-              })
-          )
-        )
-      );
+    }
+
+    async function getFonts(pdfPage, opList) {
+      const { fnArray, argsArray } =
+        opList ?? (await pdfPage.getOperatorList());
+      const fonts = new Map();
+      for (const [i, fn] of fnArray.entries()) {
+        if (fn !== OPS.setFont) {
+          continue;
+        }
+        const [id] = argsArray[i];
+        if (!fonts.has(id)) {
+          const font = await new Promise((resolve, reject) => {
+            pdfPage.commonObjs.get(id, resolve, reject);
+          });
+          fonts.set(id, font);
+        }
+      }
+      return fonts;
     }
 
     async function getGeneratedFonts(pdfPage, opList) {
@@ -8909,40 +8909,11 @@ have written that much by now. So, here’s to squashing bugs.`);
         .toArray();
     }
 
-    function readFontTables(data) {
-      const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
-      const tables = new Map();
-      for (let i = 0, ii = view.getUint16(4); i < ii; i++) {
-        const tag = String.fromCharCode(
-          ...data.subarray(12 + 16 * i, 16 + 16 * i)
-        );
-        tables.set(tag, view.getUint32(20 + 16 * i));
-      }
-      return { view, tables };
-    }
-
-    function getGeneratedAdvance(data, codePoint) {
-      const { view, tables } = readFontTables(data);
-      const { cmap } = FontRendererFactory.create({ data });
-      const range = cmap.find(
-        ({ start, end }) => codePoint >= start && codePoint <= end
-      );
-      const glyphId =
-        ((range.ids?.[codePoint - range.start] ?? codePoint) + range.idDelta) &
-        0xffff;
-      const numberOfHMetrics = view.getUint16(tables.get("hhea") + 34);
-      const index = Math.min(glyphId, numberOfHMetrics - 1);
-      const advance = view.getUint16(tables.get("hmtx") + 4 * index);
-      return (advance * 1000) / view.getUint16(tables.get("head") + 18);
-    }
-
     it("draws the char code fallbacks of a generated standard font (issue 11915)", async function () {
-      const loadingTask = loadDocument(
-        buildGetDocumentParams("issue11915.pdf")
-      );
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const { fnArray, argsArray } = await pdfPage.getOperatorList();
-      const fonts = await getFonts(pdfPage, { fnArray, argsArray });
+      const pdfPage = await loadPage(buildGetDocumentParams("issue11915.pdf"));
+      const opList = await pdfPage.getOperatorList();
+      const { fnArray, argsArray } = opList;
+      const fonts = await getFonts(pdfPage, opList);
 
       const texts = new Map();
       let font = null;
@@ -8974,7 +8945,7 @@ have written that much by now. So, here’s to squashing bugs.`);
     });
 
     it("synthesizes the weight of a non-embedded black font", async function () {
-      const loadingTask = loadDocument({
+      const pdfPage = await loadPage({
         data: buildFontPdf(
           [
             "<< /Type /Font /Subtype /TrueType /BaseFont /ArialBlack /Encoding /WinAnsiEncoding >>",
@@ -8982,13 +8953,9 @@ have written that much by now. So, here’s to squashing bugs.`);
           "BT /F1 24 Tf 20 100 Td (lHI) Tj ET"
         ),
       });
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const [font] = await getGeneratedFonts(
-        pdfPage,
-        await pdfPage.getOperatorList()
-      );
-      const { view, tables } = readFontTables(font.data);
-      expect(view.getUint16(tables.get("OS/2") + 4)).toEqual(900);
+      const [font] = await getGeneratedFonts(pdfPage);
+      const { view, tables } = new FontTestData(font.data);
+      expect(view.getUint16(tables.get("OS/2").offset + 4)).toEqual(900);
     });
 
     const buildWidthsPdf = () =>
@@ -8998,42 +8965,97 @@ have written that much by now. So, here’s to squashing bugs.`);
       ]);
 
     it("generates a glyph for each width of a character", async function () {
-      const loadingTask = loadDocument({
+      const pdfPage = await loadPage({
         data: buildWidthsPdf(),
       });
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const { fnArray, argsArray } = await pdfPage.getOperatorList();
+      const opList = await pdfPage.getOperatorList();
+      const { fnArray, argsArray } = opList;
 
       const [glyph] = argsArray[fnArray.indexOf(OPS.showText)][0];
       expect(glyph.unicode).toEqual("A");
       expect(glyph.width).toEqual(500);
       expect(glyph.isInFont).toBeTrue();
-      const [font] = await getGeneratedFonts(pdfPage, { fnArray, argsArray });
+      const [font] = await getGeneratedFonts(pdfPage, opList);
       expect(
-        getGeneratedAdvance(font.data, glyph.fontChar.codePointAt(0))
+        new FontTestData(font.data).getAdvance(glyph.fontChar.codePointAt(0))
       ).toBeCloseTo(glyph.width, 0);
     });
 
     it("generates the natural width of a character with several widths, after the system fonts", async function () {
-      const loadingTask = loadDocument({
+      const pdfPage = await loadPage({
         data: buildWidthsPdf(),
+        // Exercise generation independently of installed fonts.
+        isOffscreenCanvasSupported: false,
         useSystemFonts: true,
         disableFontFace: false,
       });
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const [font] = await getGeneratedFonts(
-        pdfPage,
-        await pdfPage.getOperatorList()
-      );
+      const [font] = await getGeneratedFonts(pdfPage);
       expect(font.missingFile).toBeTrue();
       expect(font.systemFontInfo.css).toContain(
         `,"${font.generatedFontName}",sans-serif`
       );
-      expect(getGeneratedAdvance(font.data, 0x41)).toBeCloseTo(667, 0);
+      expect(new FontTestData(font.data).getAdvance(0x41)).toBeCloseTo(667, 0);
+    });
+
+    it("loads an optional font fallback on the first render after text extraction", async function () {
+      if (isNodeJS) {
+        pending("Requires browser font loading.");
+      }
+      const page = await loadPage({
+        // The zero-width space has no measurable fallback advance.
+        data: buildFontPdf([
+          "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
+            "/Encoding << /Differences [66 /uni200B] >> >>",
+        ]),
+        useSystemFonts: true,
+        fontExtraProperties: false,
+      });
+      const add = spyOn(document.fonts, "add").and.callThrough();
+      await page.getTextContent();
+      expect(add).not.toHaveBeenCalled();
+
+      const viewport = page.getViewport({ scale: 1 });
+      const canvas = new OffscreenCanvas(viewport.width, viewport.height);
+      await page.render({ canvas, viewport }).promise;
+      const fonts = await getGeneratedFonts(page);
+      expect(fonts.length).toEqual(1);
+    });
+
+    it("generates and loads a system font fallback without the Font Loading API", async function () {
+      if (isNodeJS) {
+        pending("Requires browser CSS font loading.");
+      }
+      // Providing a style element forces PDF.js to use its CSS loading path.
+      const styleElement = document.createElement("style");
+      document.head.append(styleElement);
+      try {
+        const add = spyOn(document.fonts, "add").and.callThrough();
+        const page = await loadPage({
+          data: buildWidthsPdf(),
+          styleElement,
+          useSystemFonts: true,
+          isOffscreenCanvasSupported: true,
+          fontExtraProperties: false,
+        });
+        const viewport = page.getViewport({ scale: 1 });
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvas, viewport }).promise;
+
+        const [font] = await getGeneratedFonts(page);
+        expect(font.systemFontInfo).toBeTruthy();
+        expect(add).not.toHaveBeenCalled();
+        expect(
+          await document.fonts.load(`16px "${font.generatedFontName}"`)
+        ).toHaveSize(1);
+      } finally {
+        styleElement.remove();
+      }
     });
 
     it("generates a glyph for each width of the fallbacks of an Identity font", async function () {
-      const loadingTask = loadDocument({
+      const pdfPage = await loadPage({
         data: buildFontPdf(
           [
             "<< /Type /Font /Subtype /Type0 /BaseFont /Arial /Encoding /Identity-H /DescendantFonts [6 0 R] >>",
@@ -9044,8 +9066,8 @@ have written that much by now. So, here’s to squashing bugs.`);
           "BT /F1 60 Tf 10 50 Td <00C800C1> Tj ET"
         ),
       });
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const { fnArray, argsArray } = await pdfPage.getOperatorList();
+      const opList = await pdfPage.getOperatorList();
+      const { fnArray, argsArray } = opList;
 
       const [glyph200, glyph193] = argsArray[fnArray.indexOf(OPS.showText)][0];
       expect([glyph200.width, glyph193.width]).toEqual([600, 1000]);
@@ -9053,11 +9075,13 @@ have written that much by now. So, here’s to squashing bugs.`);
       expect(glyph200.fontChar).toEqual("Á");
       expect(glyph193.fontChar).not.toEqual(glyph200.fontChar);
       expect(glyph193.isInFont).toBeTrue();
-      const [font] = await getGeneratedFonts(pdfPage, { fnArray, argsArray });
+      const [font] = await getGeneratedFonts(pdfPage, opList);
+      const fontData = new FontTestData(font.data);
       for (const glyph of [glyph200, glyph193]) {
-        expect(
-          getGeneratedAdvance(font.data, glyph.fontChar.codePointAt(0))
-        ).toBeCloseTo(glyph.width, 0);
+        expect(fontData.getAdvance(glyph.fontChar.codePointAt(0))).toBeCloseTo(
+          glyph.width,
+          0
+        );
       }
     });
 
@@ -9075,17 +9099,13 @@ have written that much by now. So, here’s to squashing bugs.`);
         })
       );
       await loadingTask1.promise;
-      const loadingTask2 = loadDocument(
+      const pdfPage = await loadPage(
         buildGetDocumentParams("issue11915.pdf", {
           worker,
           useWorkerFetch: false,
         })
       );
-      const pdfPage = await (await loadingTask2.promise).getPage(1);
-      const fonts = await getGeneratedFonts(
-        pdfPage,
-        await pdfPage.getOperatorList()
-      );
+      const fonts = await getGeneratedFonts(pdfPage);
       expect(fonts.length).toEqual(5);
     });
 
@@ -9147,14 +9167,10 @@ have written that much by now. So, here’s to squashing bugs.`);
       await closedTask.destroy();
       loadingTasks.delete(closedTask);
 
-      const loadingTask = loadDocument(
+      const pdfPage = await loadPage(
         buildGetDocumentParams("issue11915.pdf", params)
       );
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const fonts = await getGeneratedFonts(
-        pdfPage,
-        await pdfPage.getOperatorList()
-      );
+      const fonts = await getGeneratedFonts(pdfPage);
       expect(fonts.length).toEqual(5);
     });
 
@@ -9167,7 +9183,7 @@ have written that much by now. So, here’s to squashing bugs.`);
           });
         }
       }
-      const loadingTask = loadDocument(
+      const pdfPage = await loadPage(
         buildGetDocumentParams("issue11915.pdf", {
           BinaryDataFactory: ResourceFactory,
           standardFontDataUrl: null,
@@ -9175,18 +9191,14 @@ have written that much by now. So, here’s to squashing bugs.`);
           useWorkerFetch: false,
         })
       );
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const fonts = await getGeneratedFonts(
-        pdfPage,
-        await pdfPage.getOperatorList()
-      );
+      const fonts = await getGeneratedFonts(pdfPage);
       expect(fonts.length).toEqual(5);
     });
 
     it("restores the family name of a subsetted tricky font (issue 22550)", async function () {
       function getMacFamilyName(data) {
-        const { view, tables } = readFontTables(data);
-        const start = tables.get("name");
+        const { view, tables } = new FontTestData(data);
+        const start = tables.get("name").offset;
         const stringsStart = start + view.getUint16(start + 4);
         for (let i = 0, ii = view.getUint16(start + 2); i < ii; i++) {
           const record = start + 6 + 12 * i;
@@ -9203,11 +9215,8 @@ have written that much by now. So, here’s to squashing bugs.`);
         return null;
       }
 
-      const loadingTask = loadDocument(
-        buildGetDocumentParams("issue22550.pdf")
-      );
-      const pdfPage = await (await loadingTask.promise).getPage(1);
-      const fonts = await getFonts(pdfPage, await pdfPage.getOperatorList());
+      const pdfPage = await loadPage(buildGetDocumentParams("issue22550.pdf"));
+      const fonts = await getFonts(pdfPage);
       const familyNames = Object.fromEntries(
         fonts.values().map(({ name, data }) => [name, getMacFamilyName(data)])
       );
