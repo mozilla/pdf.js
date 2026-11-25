@@ -2724,7 +2724,24 @@ class PartialEvaluator {
         str = str.toReversed();
         transform = unmirrored;
       }
-      const bidiResult = bidi(str, -1, textChunk.vertical);
+      const bidiResult = bidi(
+        str,
+        -1,
+        textChunk.vertical,
+        textLayerFonts
+          ? (glyph, unicode) => {
+              glyph.unicode = unicode;
+            }
+          : null
+      );
+      if (textLayerFonts) {
+        // Sample the emitted characters in the original PDF glyph order.
+        for (const { font, unicode, advance } of textChunk.str) {
+          if (font) {
+            textLayerFonts.addGlyph(font, unicode, advance);
+          }
+        }
+      }
       return {
         str: bidiResult.str,
         dir: bidiResult.dir,
@@ -3263,13 +3280,22 @@ class PartialEvaluator {
             ? glyphUnicode
             : glyph.normalizedUnicode;
           if (!intersector) {
-            textChunk.str.push(unicode);
+            const { isUnicodeVisual } = glyph;
+            if (textLayerFonts) {
+              textChunk.str.push({
+                unicode,
+                isUnicodeVisual,
+                font,
+                advance: isZeroWidthDiacritic
+                  ? 0
+                  : Math.abs(glyphWidth) * advanceScale,
+              });
+            } else {
+              textChunk.str.push(
+                isUnicodeVisual ? { unicode, isUnicodeVisual } : unicode
+              );
+            }
           }
-          textLayerFonts?.addGlyph(
-            font,
-            unicode,
-            isZeroWidthDiacritic ? 0 : Math.abs(glyphWidth) * advanceScale
-          );
         }
 
         if (charSpacing) {
@@ -4131,11 +4157,19 @@ class PartialEvaluator {
 
     // Section 9.10.2 Mapping Character Codes to Unicode Values
     if (properties.hasIncludedToUnicodeMap) {
+      // The encoding, when known, gives the characters of the glyph shapes,
+      // used to detect the ToUnicode entries mapping to the mirrored ones.
+      if (
+        !properties.composite &&
+        (properties.hasEncoding || !properties.file)
+      ) {
+        properties.encodingToUnicode = this._simpleFontToUnicode(properties);
+      }
       // Some fonts contain incomplete ToUnicode data, causing issues with
       // text-extraction. For simple fonts, containing encoding information,
       // use a fallback ToUnicode map to improve this (fixes issue8229.pdf).
       if (!properties.composite && properties.hasEncoding) {
-        properties.fallbackToUnicode = this._simpleFontToUnicode(properties);
+        properties.fallbackToUnicode = properties.encodingToUnicode;
       }
       return properties.toUnicode;
     }

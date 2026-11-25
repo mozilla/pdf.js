@@ -13,70 +13,71 @@
  * limitations under the License.
  */
 
-import { warn } from "../shared/util.js";
+import { BidiClassRanges, BidiMirroringPairs } from "./bidi_tables.js";
 
 // Implements a subset of the Unicode Bidirectional Algorithm (UBA).
 // Specification: https://www.unicode.org/reports/tr9/tr9-48.html
 
-// Character types for symbols from 0000 to 00FF.
-// Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
-// prettier-ignore
-const baseTypes = [
-  "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "S", "B", "S",
-  "WS", "B", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN",
-  "BN", "BN", "BN", "BN", "B", "B", "B", "S", "WS", "ON", "ON", "ET",
-  "ET", "ET", "ON", "ON", "ON", "ON", "ON", "ES", "CS", "ES", "CS", "CS",
-  "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "EN", "CS", "ON",
-  "ON", "ON", "ON", "ON", "ON", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "L", "L", "L", "ON", "ON", "ON", "ON", "ON", "ON", "L", "L", "L",
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "ON", "ON", "ON", "ON",
-  "BN", "BN", "BN", "BN", "BN", "BN", "B", "BN", "BN", "BN", "BN", "BN",
-  "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN",
-  "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "BN", "CS", "ON", "ET",
-  "ET", "ET", "ET", "ON", "ON", "ON", "ON", "L", "ON", "ON", "BN", "ON",
-  "ON", "ET", "ET", "EN", "EN", "ON", "L", "ON", "ON", "ON", "EN", "L",
-  "ON", "ON", "ON", "ON", "ON", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "ON", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L", "L",
-  "L", "L", "L", "L", "L", "ON", "L", "L", "L", "L", "L", "L", "L", "L"
-];
+// The first class, L, is the default and has no ranges.
+const BidiClasses = Object.keys(BidiClassRanges);
 
-// Character types for symbols from 0600 to 06FF.
-// Source: ftp://ftp.unicode.org/Public/UNIDATA/UnicodeData.txt
-// Note that 061D does not exist in the Unicode standard (see
-// http://unicode.org/charts/PDF/U0600.pdf), so we replace it with an
-// empty string and issue a warning if we encounter this character. The
-// empty string is required to properly index the items after it.
-// prettier-ignore
-const arabicTypes = [
-  "AN", "AN", "AN", "AN", "AN", "AN", "ON", "ON", "AL", "ET", "ET", "AL",
-  "CS", "AL", "ON", "ON", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM",
-  "NSM", "NSM", "NSM", "NSM", "AL", "AL", "", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM",
-  "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM",
-  "NSM", "NSM", "NSM", "NSM", "AN", "AN", "AN", "AN", "AN", "AN", "AN",
-  "AN", "AN", "AN", "ET", "AN", "AN", "AL", "AL", "AL", "NSM", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL", "AL",
-  "AL", "AL", "AL", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "AN",
-  "ON", "NSM", "NSM", "NSM", "NSM", "NSM", "NSM", "AL", "AL", "NSM", "NSM",
-  "ON", "NSM", "NSM", "NSM", "NSM", "AL", "AL", "EN", "EN", "EN", "EN",
-  "EN", "EN", "EN", "EN", "EN", "EN", "AL", "AL", "AL", "AL", "AL", "AL"
-];
+// Class indices for the BMP and sorted ranges for the other planes, built on
+// first use.
+let bmpClasses = null;
+let astralRanges = null;
+let mirroredChars = null;
 
-const NonSpacingMarkRegExp = /[\p{Mn}\p{Me}]/u;
+function initBidiClasses() {
+  bmpClasses = new Uint8Array(0x10000);
+  const astral = [];
+  for (let i = 1, ii = BidiClasses.length; i < ii; i++) {
+    const ranges = BidiClassRanges[BidiClasses[i]];
+    for (let j = 0, jj = ranges.length; j < jj; j += 2) {
+      const start = ranges[j],
+        end = ranges[j + 1];
+      if (start <= 0xffff) {
+        bmpClasses.fill(i, start, Math.min(end, 0xffff) + 1);
+      }
+      if (end > 0xffff) {
+        astral.push([Math.max(start, 0x10000), end, i]);
+      }
+    }
+  }
+  astral.sort((x, y) => x[0] - y[0]);
+  astralRanges = astral;
+}
+
+function getMirroredChar(char) {
+  if (!mirroredChars) {
+    mirroredChars = new Map();
+    for (let i = 0, ii = BidiMirroringPairs.length; i < ii; i += 2) {
+      const a = String.fromCodePoint(BidiMirroringPairs[i]),
+        b = String.fromCodePoint(BidiMirroringPairs[i + 1]);
+      mirroredChars.set(a, b).set(b, a);
+    }
+  }
+  return mirroredChars.get(char);
+}
+
+function getBidiClass(cp) {
+  if (cp <= 0xffff) {
+    return BidiClasses[bmpClasses[cp]];
+  }
+  let lo = 0,
+    hi = astralRanges.length - 1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const [start, end, cls] = astralRanges[mid];
+    if (cp < start) {
+      hi = mid - 1;
+    } else if (cp > end) {
+      lo = mid + 1;
+    } else {
+      return BidiClasses[cls];
+    }
+  }
+  return "L";
+}
 
 function isOdd(i) {
   return (i & 1) !== 0;
@@ -103,6 +104,21 @@ function reverseValues(arr, start, end) {
   }
 }
 
+function mirrorCharacters(levels, start, end) {
+  let changed = false;
+  for (let i = start; i < end; ++i) {
+    if (!isOdd(levels[i])) {
+      continue;
+    }
+    const mirrored = getMirroredChar(chars[i]);
+    if (mirrored) {
+      chars[i] = mirrored;
+      changed = true;
+    }
+  }
+  return changed;
+}
+
 function createBidiText(str, isLTR, vertical = false) {
   let dir = "ltr";
   if (vertical) {
@@ -117,16 +133,30 @@ function createBidiText(str, isLTR, vertical = false) {
 // each call to avoid unnecessary allocations.
 const chars = [];
 const types = [];
+const glyphTexts = [];
 
 /**
- * @param {string|Array<string>} text - Text to reorder, or glyph texts in
- *   visual order. Each glyph's text is expected to be in logical order and is
- *   kept intact if all its characters resolve to the same bidi level.
+ * @param {string|Array<string|{unicode: string, isUnicodeVisual: boolean}>}
+ *   text - Text to reorder, or glyphs in visual order. Each glyph's text is
+ *   kept intact if all its characters resolve to the same bidi level. A string
+ *   is mirrored as visual text, a glyph only with `isUnicodeVisual`.
+ * @param {number} startLevel - The paragraph level, or -1 to infer it.
+ * @param {boolean} vertical - Whether the text runs from top to bottom.
+ * @param {Function} [onMirror] - Receives a mirrored glyph object and its
+ *   updated Unicode text.
  */
-function bidi(text, startLevel = -1, vertical = false) {
+function bidi(text, startLevel = -1, vertical = false, onMirror = null) {
   let isLTR = true;
   const glyphs = Array.isArray(text) ? text : null;
-  const str = glyphs ? glyphs.join("") : text;
+  let str = text;
+  if (glyphs) {
+    const ii = glyphs.length;
+    glyphTexts.length = ii;
+    for (let i = 0; i < ii; i++) {
+      glyphTexts[i] = glyphs[i].unicode ?? glyphs[i];
+    }
+    str = glyphTexts.join("");
+  }
   const strLength = str.length;
   if (strLength === 0 || vertical) {
     return createBidiText(str, isLTR, vertical);
@@ -136,33 +166,28 @@ function bidi(text, startLevel = -1, vertical = false) {
   chars.length = strLength;
   types.length = strLength;
   let numBidi = 0;
+  let numChars = strLength;
 
   let i, ii;
+  if (!bmpClasses) {
+    initBidiClasses();
+  }
   for (i = 0; i < strLength; ++i) {
-    chars[i] = str.charAt(i);
-
-    const charCode = str.charCodeAt(i);
-    let charType = "L";
-    if (charCode <= 0x00ff) {
-      charType = baseTypes[charCode];
-    } else if (0x0590 <= charCode && charCode <= 0x05f4) {
-      charType = "R";
-    } else if (0x0600 <= charCode && charCode <= 0x06ff) {
-      charType = arabicTypes[charCode & 0xff];
-      if (!charType) {
-        warn("Bidi: invalid Unicode character " + charCode.toString(16));
-      }
-    } else if (
-      (0x0700 <= charCode && charCode <= 0x08ac) ||
-      (0xfb50 <= charCode && charCode <= 0xfdff) ||
-      (0xfe70 <= charCode && charCode <= 0xfeff)
-    ) {
-      charType = "AL";
-    }
+    const charCode = str.codePointAt(i);
+    const charType = getBidiClass(charCode);
     if (charType === "R" || charType === "AL" || charType === "AN") {
       numBidi++;
     }
     types[i] = charType;
+    if (charCode > 0xffff) {
+      // Keep the surrogate pair together, the empty slot preserves indices.
+      chars[i] = str.slice(i, i + 2);
+      chars[++i] = "";
+      types[i] = charType;
+      numChars--;
+    } else {
+      chars[i] = str.charAt(i);
+    }
   }
 
   // Detect the bidi method
@@ -176,7 +201,7 @@ function bidi(text, startLevel = -1, vertical = false) {
   }
 
   if (startLevel === -1) {
-    if (numBidi / strLength < 0.3 && strLength > 4) {
+    if (numBidi / numChars < 0.3 && numChars > 4) {
       isLTR = true;
       startLevel = 0;
     } else {
@@ -200,12 +225,7 @@ function bidi(text, startLevel = -1, vertical = false) {
    */
   let lastType = sor;
   for (i = 0; i < strLength; ++i) {
-    if (
-      types[i] === "NSM" ||
-      (types[i] === "L" &&
-        str.charCodeAt(i) >= 0x0300 &&
-        NonSpacingMarkRegExp.test(chars[i]))
-    ) {
+    if (types[i] === "NSM") {
       types[i] = lastType;
     } else {
       lastType = types[i];
@@ -417,18 +437,25 @@ function bidi(text, startLevel = -1, vertical = false) {
   if (glyphs) {
     let pos = 0;
     for (const glyph of glyphs) {
-      const end = pos + glyph.length;
+      const { unicode = glyph, isUnicodeVisual } = glyph;
+      const end = pos + unicode.length;
       if (
-        glyph.length > 1 &&
+        unicode.length > 1 &&
         findUnequal(levels, pos + 1, levels[pos], end) === end
       ) {
         // Store the whole glyph in one slot. Empty strings in the remaining
         // slots preserve the indices used by the character levels.
-        chars[pos] = glyph;
+        chars[pos] = unicode;
         chars.fill("", pos + 1, end);
+      }
+      // Undo L4 for the glyphs whose Unicode is the shape's character.
+      if (isUnicodeVisual && mirrorCharacters(levels, pos, end) && onMirror) {
+        onMirror(glyph, chars.slice(pos, end).join(""));
       }
       pos = end;
     }
+  } else {
+    mirrorCharacters(levels, 0, strLength);
   }
 
   // now reverse between those limits
@@ -459,16 +486,8 @@ function bidi(text, startLevel = -1, vertical = false) {
 
   // don't bother for now
 
-  /*
-   L4. A character that possesses the mirrored property as specified by
-   Section 4.7, Mirrored, must be depicted by a mirrored glyph if the resolved
-   directionality of that character is R.
-   */
-
-  // don't mirror as characters are already mirrored in the pdf
-
   // Finally, return string
-  return createBidiText(chars.join("").replaceAll(/[<>]/g, ""), isLTR);
+  return createBidiText(chars.join(""), isLTR);
 }
 
-export { bidi };
+export { bidi, getMirroredChar };

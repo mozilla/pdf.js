@@ -128,7 +128,7 @@ describe("bidi", function () {
       const str = "()\u05d1("; // 25% of the string is RTL characters.
       const bidiText = bidi(str, -1, false);
 
-      expect(bidiText.str).toEqual("(\u05d1)(");
+      expect(bidiText.str).toEqual(")\u05d1()");
       expect(bidiText.dir).toEqual("rtl");
     }
   );
@@ -138,7 +138,7 @@ describe("bidi", function () {
       [["م", "لا", "س"], "سلام"],
       [["١٢", "م"], "م١٢"],
       [["fi", "م", "س"], "سمfi"],
-      [["<>", "م"], "م"],
+      [["<>", "م"], "م<>"],
       // A glyph with mixed levels is reordered char by char.
       [["لa", "م"], "مaل"],
     ]) {
@@ -161,6 +161,66 @@ describe("bidi", function () {
     const logical = "مَ\u034fرْ";
     const visual = [...logical].reverse().join("");
     expect(bidi(visual).str).toEqual(logical);
+  });
+
+  it("should handle the Hebrew presentation forms", function () {
+    // Shin with shin dot, vav with dagesh, alef with patah.
+    const logical = "שׁוּאַ";
+    const visual = [...logical].reverse().join("");
+    expect(bidi(visual)).toEqual({ str: logical, dir: "rtl" });
+    // The varika is a mark and the alternative plus sign a separator.
+    expect(bidi("aﬞ", 1).str).toEqual("aﬞ");
+    expect(bidi("1﬩2", 1).str).toEqual("1﬩2");
+  });
+
+  it("should keep currency and per mille signs with their number", function () {
+    expect(bidi("דבלב ₪ 100 ריחמה").str).toEqual("המחיר 100 ₪ בלבד");
+    expect(bidi("€ 50 ريعس").str).toEqual("سعير 50 €");
+    expect(bidi("5‰ לש רועיש").str).toEqual("שיעור של 5‰");
+  });
+
+  it("should not count a zero width no-break space as RTL", function () {
+    expect(bidi("\ufeffab")).toEqual({ str: "\ufeffab", dir: "ltr" });
+  });
+
+  it("should handle the Arabic Extended-A letters", function () {
+    expect(bidi("abc \u0628\u08b6", 0).str).toEqual("abc \u08b6\u0628");
+  });
+
+  it("should use Unicode bidi class defaults for unassigned code points", function () {
+    expect(bidi("\u0590 xy")).toEqual({ str: "xy \u0590", dir: "rtl" });
+  });
+
+  it("should keep the surrogate pairs together", function () {
+    // Adlam is RTL and outside of the BMP.
+    expect(bidi("\u{1e901}\u{1e900}").str).toEqual("\u{1e900}\u{1e901}");
+    expect(bidi("😀 םולש").str).toEqual("שלום 😀");
+  });
+
+  it("should count code points when determining the text direction", function () {
+    expect(bidi("xy \u{1e901}\u{1e900}")).toEqual({
+      str: "\u{1e900}\u{1e901} xy",
+      dir: "rtl",
+    });
+    expect(bidi("😀 א!")).toEqual({ str: "!א 😀", dir: "rtl" });
+  });
+
+  it("should mirror the RTL characters", function () {
+    expect(bidi('(ר"מב)').str).toEqual('(במ"ר)');
+    expect(bidi("b > a םולש").str).toEqual("שלום b > a");
+    expect(bidi("1 < 2 םולש").str).toEqual("שלום 2 > 1");
+    // LTR text isn't mirrored.
+    expect(bidi("ab (cd) םולש", 0).str).toEqual("ab (cd) שלום");
+  });
+
+  it("should only mirror the glyphs drawn with the shape of their character", function () {
+    // The ToUnicode map of a glyph can already give the logical character.
+    expect(bidi([")", "ב", "("]).str).toEqual("(ב)");
+    const glyphs = ["(", "ב", { unicode: "(", isUnicodeVisual: true }];
+    const mirrored = [];
+    const onMirror = (glyph, unicode) => mirrored.push([glyph, unicode]);
+    expect(bidi(glyphs, -1, false, onMirror).str).toEqual(")ב(");
+    expect(mirrored).toEqual([[glyphs[2], ")"]]);
   });
 
   it("should reorder characters correctly per BidiCharacterTest.txt", async function () {
@@ -244,7 +304,7 @@ describe("bidi", function () {
       ES: "+", // U+002B
       ET: "#", // U+0023
       CS: ",", // U+002C
-      NSM: "\u0610", // Arabic combining mark (NSM in arabicTypes)
+      NSM: "\u0610", // Arabic combining mark
       B: "\n", // U+000A paragraph separator
       S: "\t", // U+0009 segment separator
       WS: " ", // U+0020
