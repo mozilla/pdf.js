@@ -1445,8 +1445,12 @@ describe("api flattening", function () {
         "endMarkedContent",
         "Hello",
       ]);
-      expect(items[0].transform).toEqual([10, 0, 0, 10, 100, 100]);
-      expect(items[3].transform).toEqual([10, 0, 0, 10, 10, 10]);
+      expect(items[0].transform).toEqual(
+        new Float32Array([10, 0, 0, 10, 100, 100])
+      );
+      expect(items[3].transform).toEqual(
+        new Float32Array([10, 0, 0, 10, 10, 10])
+      );
 
       await loadingTask.destroy();
     });
