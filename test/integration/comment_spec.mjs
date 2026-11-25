@@ -1245,4 +1245,61 @@ describe("Comment", () => {
       );
     });
   });
+
+  describe("Comment button color of a new highlight in the annotation layer", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".annotationEditorLayer",
+        "page-width",
+        null,
+        { enableComment: true }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must keep the highlight color when leaving the editing mode", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await switchToHighlight(page);
+
+          await highlightSpan(page, 1, "Languages");
+          const editorSelector = getEditorSelector(0);
+          await editComment(page, editorSelector, "Hello world!");
+
+          const toolbarSelector = `${editorSelector} .editToolbar`;
+          await waitAndClick(page, `${toolbarSelector} button.colorPicker`);
+          await waitAndClick(page, `${toolbarSelector} button[title = "Red"]`);
+
+          const editorButtonColor = await page.$eval(
+            `${editorSelector} button.annotationCommentButton`,
+            el => el.style.backgroundColor
+          );
+          expect(editorButtonColor)
+            .withContext(`In ${browserName}`)
+            .not.toBe("");
+
+          // Leave the editing mode: the comment button is now rendered by the
+          // annotation layer.
+          await switchToHighlight(page, /* disable = */ true);
+
+          const buttonSelector =
+            ".annotationLayer button.annotationCommentButton";
+          await page.waitForSelector(buttonSelector, { visible: true });
+          const color = await page.$eval(
+            buttonSelector,
+            el => el.style.backgroundColor
+          );
+          expect(color)
+            .withContext(`In ${browserName}`)
+            .toBe(editorButtonColor);
+        })
+      );
+    });
+  });
 });

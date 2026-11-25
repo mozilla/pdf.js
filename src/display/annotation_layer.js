@@ -2847,7 +2847,7 @@ class PopupElement {
   }
 
   #updateColor() {
-    if (this.#firstElement.extraPopupElement) {
+    if (this.#firstElement.extraPopupElement && !this.#firstElement.editor) {
       return;
     }
     if (!this.#commentButton) {
