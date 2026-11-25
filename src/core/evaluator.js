@@ -2544,30 +2544,46 @@ class PartialEvaluator {
 
     const preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
-    let textState, currentTextState;
+    let textState;
+    let {
+      font: currentFont,
+      fontName: currentFontName,
+      fontSize: currentFontSize,
+    } = stateManager.state;
+    const textSpaceMatrix = new Float32Array(6);
+    const glyphTransform = new Float32Array(6);
     let lastFakeSpaceExtraCharId = -1;
     // A Tz since the previous glyph leaves the em of the next gap unknown.
     let hScaleChanged = false;
 
     // For a reflected transform with d > 0, move the origin along the baseline
     // by the item width, then reverse the baseline direction.
-    function getUnmirroredTransform([a, b, c, d, e, f], width) {
+    function unmirrorTransform(transform, width) {
+      const a = transform[0];
+      const b = transform[1];
+      const c = transform[2];
+      const d = transform[3];
       if (a * d - b * c >= 0 || d <= 0) {
-        return null;
+        return false;
       }
       const scale = width / Math.hypot(a, b);
-      return [-a, -b, c, d, e + a * scale, f + b * scale];
+      transform[0] = -a;
+      transform[1] = -b;
+      transform[4] += a * scale;
+      transform[5] += b * scale;
+      return true;
     }
 
     function pushWhitespace({
       width = 0,
       height = 0,
-      transform = textContentItem.prevTransform,
       fontName = textContentItem.fontName,
     }) {
       intersector?.addExtraChar(" ");
+      // The next glyph can overwrite prevTransform.
+      const transform = textContentItem.prevTransform.slice();
       if (width) {
-        transform = getUnmirroredTransform(transform, width) || transform;
+        unmirrorTransform(transform, width);
       }
       textContent.items.push({
         str: " ",
@@ -2597,21 +2613,13 @@ class PartialEvaluator {
       return 1;
     }
 
-    function getCurrentTextTransform() {
+    function getCurrentTextTransform(result = new Float32Array(6)) {
       // 9.4.4 Text Space Details
-      const tsm = [
-        textState.fontSize * textState.textHScale,
-        0,
-        0,
-        textState.fontSize * getType3HeightScale(),
-        0,
-        textState.textRise,
-      ];
-
-      return Util.transform(
-        textState.ctm,
-        Util.transform(textState.textMatrix, tsm)
-      );
+      textSpaceMatrix[0] = textState.fontSize * textState.textHScale;
+      textSpaceMatrix[3] = textState.fontSize * getType3HeightScale();
+      textSpaceMatrix[5] = textState.textRise;
+      Util.transform(textState.textMatrix, textSpaceMatrix, result);
+      return Util.transform(textState.ctm, result, result);
     }
 
     function ensureTextContentItem() {
@@ -2716,18 +2724,16 @@ class PartialEvaluator {
     }
 
     function runBidiTransform(textChunk) {
-      let { str, transform } = textChunk;
+      const { str, transform, vertical } = textChunk;
       const width = Math.abs(textChunk.totalWidth);
-      const unmirrored =
-        !textChunk.vertical && getUnmirroredTransform(transform, width);
+      const unmirrored = !vertical && unmirrorTransform(transform, width);
       if (unmirrored) {
-        str = str.toReversed();
-        transform = unmirrored;
+        str.reverse();
       }
       const bidiResult = bidi(
         str,
         -1,
-        textChunk.vertical,
+        vertical,
         textLayerFonts
           ? (glyph, unicode) => {
               glyph.unicode = unicode;
@@ -2736,7 +2742,10 @@ class PartialEvaluator {
       );
       if (textLayerFonts) {
         // Sample the emitted characters in the original PDF glyph order.
-        for (const { font, unicode, advance } of textChunk.str) {
+        if (unmirrored) {
+          str.reverse();
+        }
+        for (const { font, unicode, advance } of str) {
           if (font) {
             textLayerFonts.addGlyph(font, unicode, advance);
           }
@@ -2767,14 +2776,6 @@ class PartialEvaluator {
       textState.loadedName = translated.loadedName;
       textState.font = translated.font;
       textState.fontMatrix = translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
-    }
-
-    function applyInverseRotation(x, y, matrix) {
-      const scale = Math.hypot(matrix[0], matrix[1]);
-      return [
-        (matrix[0] * x + matrix[1] * y) / scale,
-        (matrix[2] * x + matrix[3] * y) / scale,
-      ];
     }
 
     function getTrackingSpaceMin(glyphWidth) {
@@ -2875,7 +2876,7 @@ class PartialEvaluator {
     }
 
     function compareWithLastPosition(glyphWidth) {
-      const currentTransform = getCurrentTextTransform();
+      const currentTransform = getCurrentTextTransform(glyphTransform);
       let posX = currentTransform[4];
       let posY = currentTransform[5];
 
@@ -2898,12 +2899,13 @@ class PartialEvaluator {
         return false;
       }
 
-      if (!textState.font || !textContentItem.prevTransform) {
+      const { prevTransform } = textContentItem;
+      if (!textState.font || !prevTransform) {
         return true;
       }
 
-      let lastPosX = textContentItem.prevTransform[4];
-      let lastPosY = textContentItem.prevTransform[5];
+      let lastPosX = prevTransform[4];
+      let lastPosY = prevTransform[5];
 
       if (lastPosX === posX && lastPosY === posY) {
         textContentItem.minAdvance = Infinity;
@@ -2926,37 +2928,43 @@ class PartialEvaluator {
         rotate = currentTransform[1] > 0 ? 90 : 270;
       }
 
+      const x = posX;
+      const lastX = lastPosX;
       switch (rotate) {
         case 0:
           break;
         case 90:
-          [posX, posY] = [posY, posX];
-          [lastPosX, lastPosY] = [lastPosY, lastPosX];
+          posX = posY;
+          posY = x;
+          lastPosX = lastPosY;
+          lastPosY = lastX;
           break;
         case 180:
-          [posX, posY, lastPosX, lastPosY] = [
-            -posX,
-            -posY,
-            -lastPosX,
-            -lastPosY,
-          ];
+          posX = -posX;
+          posY = -posY;
+          lastPosX = -lastPosX;
+          lastPosY = -lastPosY;
           break;
         case 270:
-          [posX, posY] = [-posY, -posX];
-          [lastPosX, lastPosY] = [-lastPosY, -lastPosX];
+          posX = -posY;
+          posY = -x;
+          lastPosX = -lastPosY;
+          lastPosY = -lastX;
           break;
-        default:
-          // This is not a 0, 90, 180, 270 rotation so:
-          //  - remove the scale factor from the matrix to get a rotation matrix
-          //  - apply the inverse (which is the transposed) to the positions
-          // and we can then compare positions of the glyphs to detect
-          // a whitespace.
-          [posX, posY] = applyInverseRotation(posX, posY, currentTransform);
-          [lastPosX, lastPosY] = applyInverseRotation(
-            lastPosX,
-            lastPosY,
-            textContentItem.prevTransform
-          );
+        default: {
+          // For other angles, remove the scale and apply the inverse rotation
+          // (the transpose) before comparing glyph positions for whitespace.
+          const scale = Math.hypot(currentTransform[0], currentTransform[1]);
+          posX = (currentTransform[0] * x + currentTransform[1] * posY) / scale;
+          posY = (currentTransform[2] * x + currentTransform[3] * posY) / scale;
+          const lastScale = Math.hypot(prevTransform[0], prevTransform[1]);
+          lastPosX =
+            (prevTransform[0] * lastX + prevTransform[1] * lastPosY) /
+            lastScale;
+          lastPosY =
+            (prevTransform[2] * lastX + prevTransform[3] * lastPosY) /
+            lastScale;
+        }
       }
 
       if (textState.font.vertical) {
@@ -3134,14 +3142,15 @@ class PartialEvaluator {
 
     function buildTextContentItem({ chars, extraSpacing }) {
       if (
-        currentTextState !== textState &&
-        (currentTextState.fontSize !== textState.fontSize ||
-          (currentTextState.fontName !== textState.fontName &&
-            (currentTextState.font?.name !== textState.font.name ||
-              currentTextState.font.vertical !== textState.font.vertical)))
+        currentFontSize !== textState.fontSize ||
+        (currentFontName !== textState.fontName &&
+          (currentFont?.name !== textState.font.name ||
+            currentFont.vertical !== textState.font.vertical))
       ) {
         flushTextContentItem();
-        currentTextState = textState.clone();
+        currentFont = textState.font;
+        currentFontName = textState.fontName;
+        currentFontSize = textState.fontSize;
       }
 
       const font = textState.font;
@@ -3242,7 +3251,7 @@ class PartialEvaluator {
         if (!font.vertical) {
           scaledDim *= textState.textHScale;
           intersector?.addGlyph(
-            getCurrentTextTransform(),
+            getCurrentTextTransform(glyphTransform),
             scaledDim,
             0,
             glyphUnicode
@@ -3251,7 +3260,7 @@ class PartialEvaluator {
           textChunk.width += scaledDim;
         } else {
           intersector?.addGlyph(
-            getCurrentTextTransform(),
+            getCurrentTextTransform(glyphTransform),
             0,
             scaledDim,
             glyphUnicode
@@ -3263,7 +3272,8 @@ class PartialEvaluator {
 
         if (scaledDim) {
           // Save the position after advancing by this glyph's width.
-          textChunk.prevTransform = getCurrentTextTransform();
+          textChunk.prevTransform ??= new Float32Array(6);
+          getCurrentTextTransform(textChunk.prevTransform);
           textChunk.prevGlyphWidth = scaledDim;
           textChunk.prevTextRise = textState.textRise;
         }
@@ -3342,8 +3352,9 @@ class PartialEvaluator {
           lastFakeSpaceExtraCharId = intersector?.addExtraChar(" ") ?? -1;
           if (textLayerFonts && !textContentItem.vertical && !hScaleChanged) {
             // Measure the gap in page units, in the em along the baseline.
-            const [a, b] = currentTransform;
-            const emLength = Math.hypot(a, b) * Math.abs(getType3HeightScale());
+            const emLength =
+              Math.hypot(currentTransform[0], currentTransform[1]) *
+              Math.abs(getType3HeightScale());
             if (emLength > 0) {
               textLayerFonts.addSpaceGap(
                 textContentItem.fontName,
@@ -3456,7 +3467,6 @@ class PartialEvaluator {
         // operations, so we don't need to worry about them here.
 
         textState = stateManager.state;
-        currentTextState ||= textState.clone();
         const fn = operation.fn;
         args = operation.args;
 
@@ -3582,7 +3592,8 @@ class PartialEvaluator {
               continue;
             }
             if (fn === OPS.nextLineSetSpacingShowText) {
-              [textState.wordSpacing, textState.charSpacing] = args;
+              textState.wordSpacing = args[0];
+              textState.charSpacing = args[1];
             }
             moveText(0, -textState.leading);
             buildTextContentItem({ chars: args.at(-1), extraSpacing: 0 });
@@ -5333,9 +5344,9 @@ class TextState {
 
   fontMatrix = FONT_IDENTITY_MATRIX;
 
-  textMatrix = IDENTITY_MATRIX.slice();
+  textMatrix = new Float32Array(IDENTITY_MATRIX);
 
-  textLineMatrix = IDENTITY_MATRIX.slice();
+  textLineMatrix = new Float32Array(IDENTITY_MATRIX);
 
   charSpacing = 0;
 
@@ -5348,17 +5359,11 @@ class TextState {
   textRise = 0;
 
   setTextMatrix(matrix) {
-    const m = this.textMatrix;
-    for (let i = 0; i < 6; i++) {
-      m[i] = matrix[i];
-    }
+    this.textMatrix.set(matrix);
   }
 
   setTextLineMatrix(matrix) {
-    const m = this.textLineMatrix;
-    for (let i = 0; i < 6; i++) {
-      m[i] = matrix[i];
-    }
+    this.textLineMatrix.set(matrix);
   }
 
   translateTextMatrix(x, y) {
@@ -5377,7 +5382,6 @@ class TextState {
     const clone = Object.assign(Object.create(this), this);
     clone.textMatrix = this.textMatrix.slice();
     clone.textLineMatrix = this.textLineMatrix.slice();
-    clone.fontMatrix = this.fontMatrix.slice();
     return clone;
   }
 }

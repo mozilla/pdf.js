@@ -5234,7 +5234,7 @@ page 1 / 3`);
         fontName,
         height: 18,
         str: "Issue 8276",
-        transform: [18, 0, 0, 18, 441.81, 708.4499999999999],
+        transform: new Float32Array([18, 0, 0, 18, 441.81, 708.45]),
         width: 77.49,
         hasEOL: false,
       });
@@ -6114,12 +6114,12 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
         jasmine.objectContaining({
           str: "ABCDEFGHI",
           dir: "ltr",
-          width: 57.779999999999994,
           height: 10,
-          transform: [10, 0, 0, 10, 100, 100],
+          transform: new Float32Array([10, 0, 0, 10, 100, 100]),
           hasEOL: false,
         }),
       ]);
+      expect(items[0]?.width).toBeCloseTo(57.78, 5);
       await loadingTask.destroy();
     });
 
@@ -6209,6 +6209,10 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent();
+      const withFonts = await pdfPage.getTextContent({
+        includeTextLayerFonts: true,
+      });
+      expect(withFonts.items).toEqual(items);
       // The same Hebrew character sequence uses normal and mirrored text
       // matrices; the mirrored run ends with an LRM (U+200E).
       expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
@@ -6216,10 +6220,41 @@ have written that much by now. So, here’s to squashing bugs.`);
         { str: "באחר", dir: "rtl" },
       ]);
       const { transform, width } = items[1];
+      expect(transform).toBeInstanceOf(Float32Array);
       [20, 0, 0, 20, 145.52, 100].forEach((value, i) => {
         expect(transform[i]).toBeCloseTo(value, 2);
       });
       expect(width).toBeCloseTo(54.48, 2);
+
+      await loadingTask.destroy();
+    });
+
+    it("preserves text and inferred space positions across line moves", async function () {
+      const x = 10.125;
+      const loadingTask = getDocument({
+        data: buildSinglePagePdf(
+          "/MediaBox [0 0 100 100] /Resources << /Font << /F1 4 0 R >> >> " +
+            "/Contents 5 0 R",
+          [
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>",
+            streamObject(
+              `BT /F1 10 Tf 1 0 0 1 ${x} 50 Tm (A) Tj 25 0 Td (B) Tj 25 0 Td (C) Tj ET`
+            ),
+          ]
+        ),
+        standardFontDataUrl: STANDARD_FONT_DATA_URL,
+        wasmUrl: WASM_URL,
+      });
+
+      const pdfPage = await (await loadingTask.promise).getPage(1);
+      const { items } = await pdfPage.getTextContent();
+      expect(items.map(({ str, transform }) => [str, transform])).toEqual([
+        ["A", new Float32Array([10, 0, 0, 10, x, 50])],
+        [" ", new Float32Array([10, 0, 0, 10, x + 6, 50])],
+        ["B", new Float32Array([10, 0, 0, 10, x + 25, 50])],
+        [" ", new Float32Array([10, 0, 0, 10, x + 25 + 6, 50])],
+        ["C", new Float32Array([10, 0, 0, 10, x + 25 + 25, 50])],
+      ]);
 
       await loadingTask.destroy();
     });

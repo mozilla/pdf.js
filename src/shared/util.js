@@ -749,16 +749,25 @@ class Util {
     );
   }
 
-  // Concatenates two transformation matrices together and returns the result.
-  static transform(m1, m2) {
-    return [
-      m1[0] * m2[0] + m1[2] * m2[1],
-      m1[1] * m2[0] + m1[3] * m2[1],
-      m1[0] * m2[2] + m1[2] * m2[3],
-      m1[1] * m2[2] + m1[3] * m2[3],
-      m1[0] * m2[4] + m1[2] * m2[5] + m1[4],
-      m1[1] * m2[4] + m1[3] * m2[5] + m1[5],
-    ];
+  // Concatenates two transformation matrices into an optional result buffer.
+  // The result buffer can also be one of the input matrices.
+  static transform(m1, m2, result) {
+    const a = m1[0] * m2[0] + m1[2] * m2[1];
+    const b = m1[1] * m2[0] + m1[3] * m2[1];
+    const c = m1[0] * m2[2] + m1[2] * m2[3];
+    const d = m1[1] * m2[2] + m1[3] * m2[3];
+    const e = m1[0] * m2[4] + m1[2] * m2[5] + m1[4];
+    const f = m1[1] * m2[4] + m1[3] * m2[5] + m1[5];
+    if (!result) {
+      return [a, b, c, d, e, f];
+    }
+    result[0] = a;
+    result[1] = b;
+    result[2] = c;
+    result[3] = d;
+    result[4] = e;
+    result[5] = f;
+    return result;
   }
 
   // Multiplies m (an array-based transform) by md (a DOMMatrix transform).
