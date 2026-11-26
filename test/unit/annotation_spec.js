@@ -1663,8 +1663,6 @@ describe("annotation", function () {
     });
 
     it("should handle unknown text alignment, maximum length and flags", async function () {
-      textWidgetDict.set("DV", "foo");
-
       const textWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
 
@@ -1681,7 +1679,45 @@ describe("annotation", function () {
       expect(data.hidden).toBeFalse();
       expect(data.multiLine).toBeFalse();
       expect(data.comb).toBeFalse();
-      expect(data.defaultFieldValue).toEqual("foo");
+    });
+
+    it("should keep the current and default text values separate (issue 22602)", async function () {
+      const parent = new Dict();
+      parent.set("FT", textWidgetDict.get("FT"));
+      parent.set("DV", "default");
+      textWidgetDict.delete("FT");
+      textWidgetDict.set("Parent", parent);
+
+      const acroForm = new Dict();
+      acroForm.set("NeedAppearances", true);
+      const annotationGlobals = { ...annotationGlobalsMock, acroForm };
+      const xref = new XRefMock([helvRefObj]);
+      const evaluator = partialEvaluator.clone();
+      evaluator.xref = xref;
+      const task = new WorkerTask("test text field values");
+
+      for (const value of [undefined, "", "saved"]) {
+        if (value !== undefined) {
+          parent.set("V", value);
+        }
+        const annotation = await AnnotationFactory.create(
+          xref,
+          textWidgetDict,
+          annotationGlobals,
+          idFactoryMock
+        );
+        const field = annotation.getFieldObject();
+        expect(field.value).toBe(value ?? "");
+        expect(field.defaultValue).toBe("default");
+
+        const { opList } = await annotation.getOperatorList(
+          evaluator,
+          task,
+          RenderingIntentFlag.DISPLAY
+        );
+        expect(opList.fnArray).toContain(OPS.beginAnnotation);
+        expect(opList.fnArray.includes(OPS.showText)).toBe(Boolean(value));
+      }
     });
 
     it("should not set invalid text alignment, maximum length and flags", async function () {
