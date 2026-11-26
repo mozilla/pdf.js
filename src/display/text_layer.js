@@ -74,7 +74,7 @@ class TextLayer {
 
   #layoutTextParams = null;
 
-  #newTextLayer = false;
+  #hasTextLayerFonts = false;
 
   #ownerDocument;
 
@@ -235,13 +235,13 @@ class TextLayer {
             break;
           }
           if (
-            !this.#newTextLayer &&
+            !this.#hasTextLayerFonts &&
             this.#fonts
               .values()
               .some(({ fontFace }) => fontFace.status === "loaded")
           ) {
-            this.#newTextLayer = true;
-            this.#rootContainer.classList.add("newTextLayer");
+            this.#hasTextLayerFonts = true;
+            this.#rootContainer.classList.add("textLayerFonts");
           }
         }
         this.#processItems(value.items);
@@ -293,7 +293,7 @@ class TextLayer {
       }
     }
     this.#fonts.clear();
-    this.#rootContainer.classList.remove("newTextLayer");
+    this.#rootContainer.classList.remove("textLayerFonts");
   }
 
   /**

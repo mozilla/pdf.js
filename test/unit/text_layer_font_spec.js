@@ -329,8 +329,10 @@ describe("text layer font", function () {
     const sink = createSink();
     let id = 0;
     const extraction = new TextExtraction(sink, {
-      getDocId: () => "g_d0",
-      createFontId: () => `f${++id}`,
+      idFactory: {
+        getDocId: () => "g_d0",
+        createFontId: () => `f${++id}`,
+      },
     });
     const font1 = { ascent: 0.8, descent: -0.2 };
     const font2 = { ascent: 0.8, descent: -0.2 };
@@ -347,7 +349,7 @@ describe("text layer font", function () {
 
   it("stops the text content extraction when its stream is cancelled", async function () {
     const sink = createSink();
-    const extraction = new TextExtraction(sink, idFactory);
+    const extraction = new TextExtraction(sink, { idFactory });
     await expectAsync(extraction.ready).toBeResolved();
     extraction.enqueue({ items: [], styles: {} });
 

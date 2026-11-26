@@ -28,13 +28,7 @@ class SingleIntersector {
 
   #text = [];
 
-  #textExtraCharIds = [];
-
   #extraChars = [];
-
-  #extraCharIds = [];
-
-  #lastExtraCharId = -1;
 
   #lastIntersectingQuadIndex = -1;
 
@@ -114,51 +108,20 @@ class SingleIntersector {
     }
 
     if (this.#extraChars.length > 0) {
-      for (let i = 0, ii = this.#extraChars.length; i < ii; i++) {
-        this.#text.push(this.#extraChars[i]);
-        this.#textExtraCharIds.push(this.#extraCharIds[i]);
+      for (const char of this.#extraChars) {
+        this.#text.push(char);
       }
       this.#extraChars.length = 0;
-      this.#extraCharIds.length = 0;
     }
     this.#text.push(glyph);
-    this.#textExtraCharIds.push(-1);
     this.#canTakeExtraChars = true;
 
     return true;
   }
 
-  addExtraChar(char, id) {
+  addExtraChar(char) {
     if (this.#canTakeExtraChars) {
       this.#extraChars.push(char);
-      this.#extraCharIds.push(id);
-      this.#lastExtraCharId = id;
-    }
-  }
-
-  removeExtraChar(id) {
-    if (id > this.#lastExtraCharId) {
-      return;
-    }
-    const index = this.#extraCharIds.lastIndexOf(id);
-    if (index >= 0) {
-      this.#extraChars.splice(index, 1);
-      this.#extraCharIds.splice(index, 1);
-      return;
-    }
-
-    // Ids are increasing, so stop at the first older one.
-    const ids = this.#textExtraCharIds;
-    for (let i = ids.length - 1; i >= 0; i--) {
-      const textId = ids[i];
-      if (textId === id) {
-        this.#text.splice(i, 1);
-        ids.splice(i, 1);
-        return;
-      }
-      if (textId >= 0 && textId < id) {
-        return;
-      }
     }
   }
 
@@ -168,7 +131,6 @@ class SingleIntersector {
     }
     this.#canTakeExtraChars = false;
     this.#extraChars.length = 0;
-    this.#extraCharIds.length = 0;
   }
 
   setText() {
@@ -183,8 +145,6 @@ class Intersector {
   #intersectors = [];
 
   #grid = [];
-
-  #extraCharId = 0;
 
   #minX;
 
@@ -242,9 +202,12 @@ class Intersector {
     return i + j * STEPS;
   }
 
-  addGlyph(transform, width, height, glyph) {
-    const x = transform[4] + width / 2;
-    const y = transform[5] + height / 2;
+  /**
+   * @param {number} x
+   * @param {number} y - The point of the glyph to intersect.
+   * @param {string} glyph
+   */
+  addGlyph(x, y, glyph) {
     if (x < this.#minX || y < this.#minY || x > this.#maxX || y > this.#maxY) {
       return;
     }
@@ -259,16 +222,8 @@ class Intersector {
   }
 
   addExtraChar(char) {
-    const id = this.#extraCharId++;
     for (const intersector of this.#intersectors) {
-      intersector.addExtraChar(char, id);
-    }
-    return id;
-  }
-
-  removeExtraChar(id) {
-    for (const intersector of this.#intersectors) {
-      intersector.removeExtraChar(id);
+      intersector.addExtraChar(char);
     }
   }
 

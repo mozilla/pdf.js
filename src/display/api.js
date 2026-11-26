@@ -178,6 +178,9 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
+ * @property {boolean} [debugTextLayerFonts] - When true, the glyphs of the
+ *   text layer fonts are the outlines of their boxes. This may be useful for
+ *   debugging purposes. The default value is `false`.
  * @property {boolean} [enableXfa] - Render Xfa forms if any.
  *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
@@ -276,6 +279,7 @@ function getDocument(src = {}) {
   const disableFontFace =
     typeof src.disableFontFace === "boolean" ? src.disableFontFace : isNodeJS;
   const fontExtraProperties = src.fontExtraProperties === true;
+  const debugTextLayerFonts = src.debugTextLayerFonts === true;
   const enableXfa = src.enableXfa === true;
   const ownerDocument = src.ownerDocument || globalThis.document;
   const disableRange = src.disableRange === true;
@@ -404,6 +408,7 @@ function getDocument(src = {}) {
       isImageDecoderSupported,
       canvasMaxAreaInBytes,
       fontExtraProperties,
+      debugTextLayerFonts,
       useSystemFonts,
       useWasm,
       useWorkerFetch,
@@ -1199,8 +1204,6 @@ class PDFDocumentProxy {
  *   content items in the items array of TextContent. The default is `false`.
  * @property {boolean} [disableNormalization] - When true the text is *not*
  *   normalized in the worker-thread. The default is `false`.
- * @property {boolean} [debugTextLayerFonts] - When true, the glyphs of the
- *   text layer fonts are the outlines of their boxes. The default is `false`.
  */
 
 /**
@@ -1791,11 +1794,7 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({
-    includeMarkedContent,
-    disableNormalization,
-    debugTextLayerFonts,
-  } = {}) {
+  streamTextContent({ includeMarkedContent, disableNormalization } = {}) {
     const TEXT_CONTENT_CHUNK_SIZE = 100;
 
     return this._transport.messageHandler.sendWithStream(
@@ -1805,7 +1804,6 @@ class PDFPageProxy {
         pageIndex: this._pageIndex,
         includeMarkedContent: includeMarkedContent === true,
         disableNormalization: disableNormalization === true,
-        debugTextLayerFonts: debugTextLayerFonts === true,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,

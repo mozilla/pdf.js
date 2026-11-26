@@ -1626,7 +1626,7 @@ describe("Text layer", () => {
     const checkFonts = async debug => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const { color, fontFamily, newTextLayer } = await page.evaluate(
+          const { color, fontFamily, hasTextLayerFonts } = await page.evaluate(
             () => {
               const span = [
                 ...document.querySelectorAll(
@@ -1637,9 +1637,9 @@ describe("Text layer", () => {
               return {
                 color: style.color,
                 fontFamily: style.fontFamily,
-                newTextLayer: span
+                hasTextLayerFonts: span
                   .closest(".textLayer")
-                  .classList.contains("newTextLayer"),
+                  .classList.contains("textLayerFonts"),
               };
             }
           );
@@ -1649,7 +1649,7 @@ describe("Text layer", () => {
           expect(/^"?g_d\d+_tf\d+"?$/.test(fontFamily))
             .withContext(`${browserName}: ${fontFamily}`)
             .toBeTrue();
-          expect(newTextLayer).withContext(browserName).toBeTrue();
+          expect(hasTextLayerFonts).withContext(browserName).toBeTrue();
         })
       );
     };

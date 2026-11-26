@@ -695,7 +695,6 @@ class Page {
     task,
     includeMarkedContent,
     disableNormalization,
-    debugTextLayerFonts = false,
     sink,
     intersector = null,
   }) {
@@ -715,9 +714,11 @@ class Page {
 
     const partialEvaluator = this._createPartialEvaluator(handler);
     // The text is buffered until the fonts of the page are known.
-    const textExtraction = sink
-      ? new TextExtraction(sink, this._localIdFactory, debugTextLayerFonts)
-      : null;
+    const textExtraction = new TextExtraction(sink, {
+      idFactory: intersector ? null : this._localIdFactory,
+      debugFonts: this.evaluatorOptions.debugTextLayerFonts,
+      intersector,
+    });
 
     await partialEvaluator.getTextContent({
       stream: contentStream,
@@ -725,13 +726,11 @@ class Page {
       resources,
       includeMarkedContent,
       disableNormalization,
-      textExtraction,
       sink: textExtraction,
       viewBox: this.view,
       lang,
-      intersector,
     });
-    textExtraction?.send();
+    textExtraction.send();
   }
 
   async getStructTree() {
@@ -818,7 +817,7 @@ class Page {
           handler,
           task,
           includeMarkedContent: false,
-          disableNormalization: false,
+          disableNormalization: true,
           sink: null,
           intersector,
         }).then(() => {

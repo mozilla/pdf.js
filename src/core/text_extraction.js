@@ -117,6 +117,14 @@ function unmirrorTransform(transform, width) {
   return true;
 }
 
+// The move across the baseline from the origin `from` to `to`, in page units,
+// without the text rise change.
+function getLineShift(from, fromRise, to, toRise, pa, pb, baselineLength) {
+  const dx = to[4] - from[4] - (toRise[0] - fromRise[0]),
+    dy = to[5] - from[5] - (toRise[1] - fromRise[1]);
+  return (dy * pa - dx * pb) / baselineLength;
+}
+
 // The evaluator walks each content stream in PDF drawing order. A run retains
 // the cursor positions on one baseline and with one font and text transform.
 class TextRuns {
@@ -190,13 +198,18 @@ class TextRuns {
       const pa = sign * prevTransform[axis],
         pb = sign * prevTransform[axis + 1];
       const baselineLength = 1000 * prevScale;
-      const dx = x - prevTransform[4],
-        dy = y - prevTransform[5];
-      const along = (dx * pa + dy * pb) / baselineLength;
-      const across = (dy * pa - dx * pb) / baselineLength;
-      const riseX = textRise[0] - prevTextRise[0],
-        riseY = textRise[1] - prevTextRise[1];
-      const lineShift = across - (riseY * pa - riseX * pb) / baselineLength;
+      const along =
+        ((x - prevTransform[4]) * pa + (y - prevTransform[5]) * pb) /
+        baselineLength;
+      const lineShift = getLineShift(
+        prevTransform,
+        prevTextRise,
+        transform,
+        textRise,
+        pa,
+        pb,
+        baselineLength
+      );
       const height = Math.hypot(
         prevTransform[2 - axis],
         prevTransform[3 - axis]
@@ -284,6 +297,34 @@ class TextRuns {
     this.#prevTextRise = textRise;
     this.#space = false;
     this.#trackingStart = false;
+  }
+
+  // Text without glyphs, e.g. an empty line in a form field, can end a line.
+  addEmptyText(transform, textRise, vertical) {
+    const prevRun = this.#prevRun;
+    if (prevRun?.vertical !== vertical) {
+      return;
+    }
+    const axis = vertical ? 2 : 0;
+    const sign = vertical ? -1 : 1;
+    const prevTransform = this.#prevTransform;
+    const lineShift = getLineShift(
+      prevTransform,
+      this.#prevTextRise,
+      transform,
+      textRise,
+      sign * prevTransform[axis],
+      sign * prevTransform[axis + 1],
+      1000 * prevRun.scale
+    );
+    // Nothing is drawn, hence half a line is enough, as when the cursor moves
+    // back for a glyph.
+    if (
+      Math.abs(lineShift) >
+      0.5 * Math.hypot(prevTransform[2 - axis], prevTransform[3 - axis])
+    ) {
+      this.flush(true);
+    }
   }
 
   flush(hasEOL = false) {
@@ -400,7 +441,7 @@ function inferSpaces({ glyphs, spaceWidth }, fonts, font) {
         ? gap > MIN_SPACE_GAP
         : adjustedGap > (pairTracking > 0 ? 0.8 : 1) * threshold;
       if (right.space && adjustedGap > 0) {
-        fonts.addSpaceGap(font, adjustedGap);
+        fonts?.addSpaceGap(font, adjustedGap);
       }
     }
   }
@@ -542,50 +583,116 @@ function layoutRun({ run, item, text, unmirrored }, metrics, items) {
   }
 }
 
+// The intersector gets the glyphs, and the spaces and line breaks between them,
+// in drawing order.
+function intersectRun(intersector, run) {
+  const { glyphs, transform, vertical } = run;
+  if (run.leadingSpace) {
+    intersector.addExtraChar(" ");
+  }
+  const a = vertical ? -transform[2] : transform[0],
+    b = vertical ? -transform[3] : transform[1];
+  for (const { unicode, offset, advance, space } of glyphs) {
+    if (space) {
+      intersector.addExtraChar(" ");
+    }
+    // The middle of the glyph advance on the baseline.
+    const middle = (offset + advance / 2) / 1000;
+    intersector.addGlyph(
+      transform[4] + a * middle,
+      transform[5] + b * middle,
+      unicode
+    );
+  }
+  if (run.hasEOL) {
+    intersector.addExtraChar("\n");
+  }
+}
+
 /**
- * Infers word spaces and buffers the page to fit the spans to the advances
- * of the generated fonts.
+ * Infers the word spaces of the runs. With the text layer fonts, buffers the
+ * page to fit the spans to the advances of the generated fonts.
  */
 class TextExtraction {
   #chunks = [];
 
   #fonts = new Map();
 
+  #intersector;
+
   #sink;
 
-  constructor(sink, idFactory, debugFonts) {
+  // The number of chunks enqueued by the evaluator.
+  chunkCount = 0;
+
+  /**
+   * @param {object | null} sink - Receives the text content, if any.
+   * @param {object} [options]
+   * @param {object} [options.idFactory] - To generate the text layer fonts.
+   * @param {boolean} [options.debugFonts]
+   * @param {Intersector} [options.intersector] - Gets the glyphs instead of the
+   *   sink.
+   */
+  constructor(
+    sink,
+    { idFactory = null, debugFonts = false, intersector = null } = {}
+  ) {
     this.#sink = sink;
-    this.fonts = new TextLayerFonts(idFactory, debugFonts);
+    this.#intersector = intersector;
+    this.fonts = idFactory ? new TextLayerFonts(idFactory, debugFonts) : null;
   }
 
   get ready() {
+    if (!this.fonts) {
+      return this.#sink?.ready ?? Promise.resolve();
+    }
     return this.#sink.isCancelled
       ? Promise.reject(new AbortException("Text content stream cancelled."))
       : Promise.resolve();
   }
 
   get desiredSize() {
-    // The whole page is buffered to generate the fonts.
-    return Infinity;
+    // The whole page is buffered to generate the fonts. The intersector has no
+    // sink.
+    return this.fonts || !this.#sink ? Infinity : this.#sink.desiredSize;
   }
 
   enqueue(chunk) {
+    this.chunkCount++;
     const { fonts } = this;
+    const intersector = this.#intersector;
     const { items } = chunk;
     for (let i = 0, ii = items.length; i < ii; i++) {
       const run = items[i];
       if (!run.glyphs) {
+        if (run.hasEOL) {
+          intersector?.addExtraChar("\n");
+        }
         continue;
       }
       const font = this.#fonts.get(run.fontName);
       inferSpaces(run, fonts, font);
+      if (intersector) {
+        intersectRun(intersector, run);
+        continue;
+      }
       // The text has the logical characters of the mirrored glyphs, hence the
       // generated font needs them too.
-      items[i] = getBidiRun(run, (glyph, unicode) =>
-        fonts.addGlyph(font, unicode, glyph.advance)
+      items[i] = getBidiRun(
+        run,
+        fonts &&
+          ((glyph, unicode) => fonts.addGlyph(font, unicode, glyph.advance))
       );
     }
-    this.#chunks.push({ ...chunk });
+    if (intersector) {
+      return;
+    }
+    if (fonts) {
+      this.#chunks.push({ ...chunk });
+      return;
+    }
+    const laidOut = this.#layoutItems(items, null);
+    this.#sink?.enqueue({ ...chunk, items: laidOut }, laidOut.length);
   }
 
   #layoutItems(items, getMetrics) {
@@ -599,7 +706,7 @@ class TextExtraction {
       if (run.leadingSpace) {
         result.push(run.leadingSpace);
       }
-      const metrics = getMetrics(entry.item.fontName);
+      const metrics = getMetrics?.(entry.item.fontName);
       if (metrics) {
         layoutRun(entry, metrics, result);
       } else {
@@ -613,13 +720,13 @@ class TextExtraction {
   addFont(name, font, heightScaled = false) {
     this.#fonts.set(name, font);
     if (heightScaled) {
-      this.fonts.addHeightScaledFont(font);
+      this.fonts?.addHeightScaledFont(font);
     }
   }
 
   send() {
     const { fonts } = this;
-    if (this.#sink.isCancelled) {
+    if (!fonts || this.#sink.isCancelled) {
       return;
     }
     // The spans and the fonts use the same metrics.
@@ -648,4 +755,4 @@ class TextExtraction {
   }
 }
 
-export { TextExtraction, TextRuns, unmirrorTransform };
+export { TextExtraction, TextRuns };

@@ -88,7 +88,6 @@ class TextLayerBuilder {
     this.#textContentParams = {
       includeMarkedContent: true,
       disableNormalization: true,
-      debugTextLayerFonts,
     };
     this.#onAppend = onAppend;
     this.#abortSignal = abortSignal;

@@ -617,7 +617,7 @@ const defaultOptions = new Map([
     {
       /** @type {boolean} */
       value: false,
-      kind: OptionKind.VIEWER,
+      kind: OptionKind.API + OptionKind.VIEWER,
     },
   ],
   [

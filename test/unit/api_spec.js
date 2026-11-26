@@ -6243,8 +6243,9 @@ have written that much by now. So, here’s to squashing bugs.`);
       const { items } = await pdfPage.getTextContent({
         disableNormalization: true,
       });
+      // The text drawn with a zero font size is invisible.
       const text = mergeText(items);
-      expect(text).toEqual("hiddenVisible text");
+      expect(text).toEqual("Visible text");
 
       await loadingTask.destroy();
     });

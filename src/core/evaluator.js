@@ -74,10 +74,8 @@ import {
   LocalTilingPatternCache,
   RegionalImageCache,
 } from "./image_utils.js";
-import { parseMarkedContentProps, textSinkWrapper } from "./evaluator_utils.js";
-import { TextRuns, unmirrorTransform } from "./text_extraction.js";
+import { TextExtraction, TextRuns } from "./text_extraction.js";
 import { BaseStream } from "./base_stream.js";
-import { bidi } from "./bidi.js";
 import { CharCodeMap } from "./char_code_map.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
@@ -88,6 +86,7 @@ import { getMetrics } from "./metrics.js";
 import { getUnicodeForGlyph } from "./unicode.js";
 import { Hellbox } from "./hellbox.js";
 import { MurmurHash3_64 } from "../shared/murmurhash3.js";
+import { parseMarkedContentProps } from "./evaluator_utils.js";
 import { PDFImage } from "./image.js";
 import { Stream } from "./stream.js";
 import { stringToPDFString } from "./string_utils.js";
@@ -99,6 +98,7 @@ const DefaultPartialEvaluatorOptions = Object.freeze({
   isImageDecoderSupported: false,
   canvasMaxAreaInBytes: -1,
   fontExtraProperties: false,
+  debugTextLayerFonts: false,
   useSystemFonts: true,
   useWasm: true,
   useWorkerFetch: true,
@@ -2386,10 +2386,8 @@ class PartialEvaluator {
     viewBox,
     lang = null,
     disableNormalization = false,
-    textExtraction = null,
     keepWhiteSpace = false,
     prevRefs = null,
-    intersector = null,
     markedContentScope = "",
   }) {
     if (stream.isAsync) {
@@ -2398,7 +2396,9 @@ class PartialEvaluator {
         stream = new Stream(bytes, 0, bytes.length, stream.dict);
       }
     }
-    sink ??= textSinkWrapper(null);
+    // E.g. the text of the annotations goes to a plain sink.
+    const textExtraction =
+      sink instanceof TextExtraction ? sink : new TextExtraction(sink ?? null);
 
     const objId = stream.dict?.objId;
     const seenRefs = new RefSet(prevRefs);
@@ -2424,133 +2424,8 @@ class PartialEvaluator {
       styles: Object.create(null),
       lang,
     };
-    const textRuns =
-      textExtraction && !keepWhiteSpace && !intersector
-        ? new TextRuns(item => textContent.items.push(item))
-        : null;
-    const textLayerFonts = textExtraction?.fonts ?? null;
-    const textContentItem = {
-      initialized: false,
-      str: [],
-      totalWidth: 0,
-      totalHeight: 0,
-      width: 0,
-      height: 0,
-      vertical: false,
-      prevTransform: null,
-      prevGlyphWidth: 0,
-      prevTextRise: 0,
-      textAdvanceScale: 0,
-      spaceInFlowMin: 0,
-      spaceInFlowMax: 0,
-      trackingSpaceMin: Infinity,
-      useCharWidthThreshold: false,
-      wideSpaceMax: Infinity,
-      minAdvance: Infinity,
-      pendingSpaceIndex: -1,
-      pendingSpaceAdvance: 0,
-      pendingSpaceExtraCharId: -1,
-      negativeSpaceMax: -Infinity,
-      notASpace: -Infinity,
-      transform: null,
-      fontName: null,
-      hasEOL: false,
-    };
-
-    // Use a circular buffer (length === 2) to save the last chars in the
-    // text stream.
-    // This implementation of the circular buffer is using a fixed array
-    // and the position of the next element:
-    // function addElement(x) {
-    //   buffer[pos] = x;
-    //   pos = (pos + 1) % buffer.length;
-    // }
-    // It's a way faster than:
-    // function addElement(x) {
-    //   buffer.push(x);
-    //   buffer.shift();
-    // }
-    //
-    // It's useful to know when we need to add a whitespace in the
-    // text chunk.
-    const twoLastChars = [" ", " "];
-    let twoLastCharsPos = 0;
-
-    /**
-     * Save the last char.
-     * @param {string} char
-     * @returns {boolean} true when the two last chars before adding the new one
-     * are a non-whitespace followed by a whitespace.
-     */
-    function saveLastChar(char) {
-      const nextPos = (twoLastCharsPos + 1) % 2;
-      const ret =
-        twoLastChars[twoLastCharsPos] !== " " && twoLastChars[nextPos] === " ";
-      twoLastChars[twoLastCharsPos] = char;
-      twoLastCharsPos = nextPos;
-
-      return !keepWhiteSpace && ret;
-    }
-
-    function shouldAddWhitepsace() {
-      return (
-        !keepWhiteSpace &&
-        twoLastChars[twoLastCharsPos] !== " " &&
-        twoLastChars[(twoLastCharsPos + 1) % 2] === " "
-      );
-    }
-
-    function resetLastChars() {
-      twoLastChars[0] = twoLastChars[1] = " ";
-      twoLastCharsPos = 0;
-    }
-
-    // Used in addFakeSpaces.
-
-    // A white <= fontSize * TRACKING_SPACE_FACTOR is a tracking space
-    // so it doesn't count as a space.
-    const TRACKING_SPACE_FACTOR = 0.102;
-
-    // When a white <= fontSize * NOT_A_SPACE_FACTOR, there is no space
-    // even if one is present in the text stream.
-    const NOT_A_SPACE_FACTOR = 0.03;
-
-    // A reported space wider than fontSize * MAX_SPACE_WIDTH_FACTOR is treated
-    // as unreliable metrics, so trackingSpaceMin isn't derived from it.
-    const MAX_SPACE_WIDTH_FACTOR = 1 / 3;
-
-    // A negative white < fontSize * NEGATIVE_SPACE_FACTOR induces
-    // a break (a new chunk of text is created).
-    // It doesn't change anything when the text is copied but
-    // it improves potential mismatch between text layer and canvas.
-    const NEGATIVE_SPACE_FACTOR = -0.2;
-
-    // A white with a width in [trackingSpaceMin; fontSize * MAX_FACTOR] is a
-    // space which will be inserted in the current flow of words.
-    // If the width is outside of this range then the flow is broken
-    // (which means a new span in the text layer).
-    // It's useful to adjust the best as possible the span in the layer
-    // to what is displayed in the canvas.
-    const SPACE_IN_FLOW_MAX_FACTOR = 0.6;
-
-    // When every gap within a run is wider than the space threshold (e.g.
-    // letter-spaced text), the threshold is raised to this multiple of the
-    // smallest gap, capped at fontSize * WIDE_SPACE_MAX_FACTOR, so the gaps
-    // between letters of a single word aren't turned into spaces.
-    const WIDE_SPACE_MULT = 1.3;
-    const WIDE_SPACE_MAX_FACTOR = 0.4;
-
-    // For fonts without usable space metrics (Type3), the space threshold is
-    // derived from the smaller of the adjacent glyph advances instead of the
-    // font size, since the latter is unreliable when the font matrix does the
-    // scaling. A wide glyph mustn't hide the word space before or after it.
-    const CHAR_WIDTH_SPACE_FACTOR = 0.25;
-
-    // If a char is too high/too low compared to the previous we just create
-    // a new chunk.
-    // If the advance isn't in the +/-VERTICAL_SHIFT_RATIO * height range then
-    // a new chunk is created.
-    const VERTICAL_SHIFT_RATIO = 0.25;
+    const textRuns = new TextRuns(item => textContent.items.push(item));
+    const textLayerFonts = textExtraction.fonts;
 
     const self = this;
     const xref = this.xref;
@@ -2564,36 +2439,8 @@ class PartialEvaluator {
     const preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
 
     let textState;
-    let {
-      font: currentFont,
-      fontName: currentFontName,
-      fontSize: currentFontSize,
-    } = stateManager.state;
     const textSpaceMatrix = new Float32Array(6);
     const glyphTransform = new Float32Array(6);
-    let lastFakeSpaceExtraCharId = -1;
-
-    function pushWhitespace({
-      width = 0,
-      height = 0,
-      fontName = textContentItem.fontName,
-    }) {
-      intersector?.addExtraChar(" ");
-      // The next glyph can overwrite prevTransform.
-      const transform = textContentItem.prevTransform.slice();
-      if (width) {
-        unmirrorTransform(transform, width);
-      }
-      textContent.items.push({
-        str: " ",
-        dir: "ltr",
-        width,
-        height,
-        transform,
-        fontName,
-        hasEOL: false,
-      });
-    }
 
     // The glyph space of a small Type 3 font can be sized by its bbox: the
     // item height, hence the text layer em, is then the bbox height.
@@ -2636,134 +2483,12 @@ class PartialEvaluator {
           style.fontSubstitution = font.systemFontInfo.css;
           style.fontSubstitutionLoadedName = font.systemFontInfo.loadedName;
         }
-        textExtraction?.addFont(
+        textExtraction.addFont(
           loadedName,
           font,
           /* heightScaled = */ getType3HeightScale() !== 1
         );
       }
-    }
-
-    function ensureTextContentItem() {
-      if (textContentItem.initialized) {
-        return textContentItem;
-      }
-      const { font, loadedName } = textState;
-      ensureTextStyle();
-      textContentItem.fontName = loadedName;
-
-      const trm = (textContentItem.transform = getCurrentTextTransform());
-      if (!font.vertical) {
-        textContentItem.width = textContentItem.totalWidth = 0;
-        textContentItem.height = textContentItem.totalHeight = Math.hypot(
-          trm[2],
-          trm[3]
-        );
-        textContentItem.vertical = false;
-      } else {
-        textContentItem.width = textContentItem.totalWidth = Math.hypot(
-          trm[0],
-          trm[1]
-        );
-        textContentItem.height = textContentItem.totalHeight = 0;
-        textContentItem.vertical = true;
-      }
-
-      const scaleLineX = Math.hypot(
-        textState.textLineMatrix[0],
-        textState.textLineMatrix[1]
-      );
-      const scaleCtmX = Math.hypot(textState.ctm[0], textState.ctm[1]);
-      textContentItem.textAdvanceScale = scaleCtmX * scaleLineX;
-
-      const { fontSize } = textState;
-
-      let trackingFactor = TRACKING_SPACE_FACTOR;
-      if (!font.isType3Font) {
-        const spaceEm = font.spaceWidth / 1000;
-        if (spaceEm > 0 && spaceEm <= MAX_SPACE_WIDTH_FACTOR) {
-          trackingFactor = Math.max(0.5 * spaceEm, TRACKING_SPACE_FACTOR);
-        }
-      }
-      textContentItem.trackingSpaceMin = fontSize * trackingFactor;
-      textContentItem.useCharWidthThreshold = font.isType3Font;
-      textContentItem.spaceInFlowMin = fontSize * trackingFactor;
-      textContentItem.wideSpaceMax = fontSize * WIDE_SPACE_MAX_FACTOR;
-      resetAdaptiveSpacing();
-      textContentItem.notASpace = fontSize * NOT_A_SPACE_FACTOR;
-      textContentItem.negativeSpaceMax = fontSize * NEGATIVE_SPACE_FACTOR;
-      textContentItem.spaceInFlowMax = fontSize * SPACE_IN_FLOW_MAX_FACTOR;
-      textContentItem.hasEOL = false;
-
-      textContentItem.initialized = true;
-      return textContentItem;
-    }
-
-    function updateAdvanceScale() {
-      if (!textContentItem.initialized) {
-        return;
-      }
-
-      const scaleLineX = Math.hypot(
-        textState.textLineMatrix[0],
-        textState.textLineMatrix[1]
-      );
-      const scaleCtmX = Math.hypot(textState.ctm[0], textState.ctm[1]);
-      const scaleFactor = scaleCtmX * scaleLineX;
-      if (scaleFactor === textContentItem.textAdvanceScale) {
-        return;
-      }
-
-      if (!textContentItem.vertical) {
-        textContentItem.totalWidth +=
-          textContentItem.width * textContentItem.textAdvanceScale;
-        textContentItem.width = 0;
-      } else {
-        textContentItem.totalHeight +=
-          textContentItem.height * textContentItem.textAdvanceScale;
-        textContentItem.height = 0;
-      }
-
-      textContentItem.textAdvanceScale = scaleFactor;
-    }
-
-    function runBidiTransform(textChunk) {
-      const { str, transform, vertical } = textChunk;
-      const width = Math.abs(textChunk.totalWidth);
-      const unmirrored = !vertical && unmirrorTransform(transform, width);
-      if (unmirrored) {
-        str.reverse();
-      }
-      const bidiResult = bidi(
-        str,
-        -1,
-        vertical,
-        textLayerFonts
-          ? (glyph, unicode) => {
-              glyph.unicode = unicode;
-            }
-          : null
-      );
-      if (textLayerFonts) {
-        // Sample the emitted characters in the original PDF glyph order.
-        if (unmirrored) {
-          str.reverse();
-        }
-        for (const { font, unicode, advance } of str) {
-          if (font) {
-            textLayerFonts.addGlyph(font, unicode, advance);
-          }
-        }
-      }
-      return {
-        str: bidiResult.str,
-        dir: bidiResult.dir,
-        width,
-        height: Math.abs(textChunk.totalHeight),
-        transform,
-        fontName: textChunk.fontName,
-        hasEOL: textChunk.hasEOL,
-      };
     }
 
     async function handleSetFont(fontName, fontRef) {
@@ -2782,364 +2507,16 @@ class PartialEvaluator {
       textState.fontMatrix = translated.font.fontMatrix || FONT_IDENTITY_MATRIX;
     }
 
-    function getTrackingSpaceMin(glyphWidth) {
-      if (textContentItem.useCharWidthThreshold && glyphWidth) {
-        const width = Math.abs(glyphWidth * textState.textHScale);
-        return (
-          Math.sign(textState.fontSize) *
-          Math.min(width, Math.abs(textContentItem.prevGlyphWidth) || width) *
-          CHAR_WIDTH_SPACE_FACTOR
-        );
-      }
-      return textContentItem.trackingSpaceMin;
-    }
-
-    function getSpaceThreshold(trackingSpaceMin) {
-      const { minAdvance, wideSpaceMax } = textContentItem;
-      if (
-        minAdvance > trackingSpaceMin &&
-        minAdvance < WIDE_SPACE_MULT * trackingSpaceMin
-      ) {
-        return Math.min(WIDE_SPACE_MULT * minAdvance, wideSpaceMax);
-      }
-      return trackingSpaceMin;
-    }
-
-    function resetAdaptiveSpacing() {
-      textContentItem.minAdvance = Infinity;
-      textContentItem.pendingSpaceIndex = -1;
-      textContentItem.pendingSpaceAdvance = 0;
-      textContentItem.pendingSpaceExtraCharId = -1;
-    }
-
     // Line-positioning operators replace the text position and start a new
     // spacing measurement, even when the new position is on the same line.
     function resetTextMatrix() {
       textState.setTextMatrix(textState.textLineMatrix);
-      resetAdaptiveSpacing();
-      textRuns?.resetTracking();
+      textRuns.resetTracking();
     }
 
     function moveText(x, y) {
       textState.translateTextLineMatrix(x, y);
       resetTextMatrix();
-    }
-
-    function recordPendingSpace(advance, textOrientation) {
-      if (
-        textContentItem.useCharWidthThreshold ||
-        textContentItem.minAdvance < Infinity
-      ) {
-        return;
-      }
-      textContentItem.pendingSpaceIndex = textContentItem.str.length - 1;
-      textContentItem.pendingSpaceAdvance = textOrientation * advance;
-      textContentItem.pendingSpaceExtraCharId = lastFakeSpaceExtraCharId;
-    }
-
-    function resolvePendingSpace(
-      advance,
-      textOrientation,
-      trackingSpaceMin,
-      spaceThreshold,
-      hasWhitespace
-    ) {
-      if (textContentItem.pendingSpaceIndex < 0) {
-        return;
-      }
-      const { pendingSpaceAdvance } = textContentItem;
-      const forwardAdvance = textOrientation * advance;
-      const baseline = Math.min(pendingSpaceAdvance, forwardAdvance);
-      // An explicit word space isn't evidence of uniform letter spacing.
-      if (
-        !hasWhitespace &&
-        baseline > trackingSpaceMin / WIDE_SPACE_MULT &&
-        forwardAdvance <= spaceThreshold &&
-        pendingSpaceAdvance <= spaceThreshold
-      ) {
-        textContentItem.str.splice(textContentItem.pendingSpaceIndex, 1);
-        if (textContentItem.pendingSpaceExtraCharId >= 0) {
-          intersector?.removeExtraChar(textContentItem.pendingSpaceExtraCharId);
-        }
-      }
-      textContentItem.pendingSpaceIndex = -1;
-      textContentItem.pendingSpaceExtraCharId = -1;
-    }
-
-    function recordMinAdvance(advance, textOrientation, trackingSpaceMin) {
-      if (textContentItem.useCharWidthThreshold) {
-        return;
-      }
-      const forwardAdvance = textOrientation * advance;
-      if (
-        forwardAdvance > trackingSpaceMin &&
-        forwardAdvance < textContentItem.minAdvance
-      ) {
-        textContentItem.minAdvance = forwardAdvance;
-      }
-    }
-
-    function compareWithLastPosition(glyphWidth) {
-      const currentTransform = getCurrentTextTransform(glyphTransform);
-      let posX = currentTransform[4];
-      let posY = currentTransform[5];
-
-      // Check if the glyph is in the viewbox.
-      if (textState.font?.vertical) {
-        if (
-          posX < viewBox[0] ||
-          posX > viewBox[2] ||
-          posY + glyphWidth < viewBox[1] ||
-          posY > viewBox[3]
-        ) {
-          return false;
-        }
-      } else if (
-        posX + glyphWidth < viewBox[0] ||
-        posX > viewBox[2] ||
-        posY < viewBox[1] ||
-        posY > viewBox[3]
-      ) {
-        return false;
-      }
-
-      const { prevTransform } = textContentItem;
-      if (!textState.font || !prevTransform) {
-        return true;
-      }
-
-      let lastPosX = prevTransform[4];
-      let lastPosY = prevTransform[5];
-
-      if (lastPosX === posX && lastPosY === posY) {
-        textContentItem.minAdvance = Infinity;
-        return true;
-      }
-
-      let rotate = -1;
-      // Take into account the rotation is the current transform.
-      if (
-        currentTransform[0] &&
-        currentTransform[1] === 0 &&
-        currentTransform[2] === 0
-      ) {
-        rotate = currentTransform[0] > 0 ? 0 : 180;
-      } else if (
-        currentTransform[1] &&
-        currentTransform[0] === 0 &&
-        currentTransform[3] === 0
-      ) {
-        rotate = currentTransform[1] > 0 ? 90 : 270;
-      }
-
-      const x = posX;
-      const lastX = lastPosX;
-      switch (rotate) {
-        case 0:
-          break;
-        case 90:
-          posX = posY;
-          posY = x;
-          lastPosX = lastPosY;
-          lastPosY = lastX;
-          break;
-        case 180:
-          posX = -posX;
-          posY = -posY;
-          lastPosX = -lastPosX;
-          lastPosY = -lastPosY;
-          break;
-        case 270:
-          posX = -posY;
-          posY = -x;
-          lastPosX = -lastPosY;
-          lastPosY = -lastX;
-          break;
-        default: {
-          // For other angles, remove the scale and apply the inverse rotation
-          // (the transpose) before comparing glyph positions for whitespace.
-          const scale = Math.hypot(currentTransform[0], currentTransform[1]);
-          posX = (currentTransform[0] * x + currentTransform[1] * posY) / scale;
-          posY = (currentTransform[2] * x + currentTransform[3] * posY) / scale;
-          const lastScale = Math.hypot(prevTransform[0], prevTransform[1]);
-          lastPosX =
-            (prevTransform[0] * lastX + prevTransform[1] * lastPosY) /
-            lastScale;
-          lastPosY =
-            (prevTransform[2] * lastX + prevTransform[3] * lastPosY) /
-            lastScale;
-        }
-      }
-
-      if (textState.font.vertical) {
-        const advanceY = (lastPosY - posY) / textContentItem.textAdvanceScale;
-        const advanceX = posX - lastPosX;
-
-        // When the total height of the current chunk is negative
-        // then we're writing from bottom to top.
-        const textOrientation = Math.sign(
-          textContentItem.height || textContentItem.totalHeight
-        );
-        if (advanceY < textOrientation * textContentItem.negativeSpaceMax) {
-          if (
-            Math.abs(advanceX) >
-            0.5 * textContentItem.width /* not the same column */
-          ) {
-            appendEOL();
-            return true;
-          }
-
-          resetLastChars();
-          flushTextContentItem();
-          return true;
-        }
-
-        if (Math.abs(advanceX) > textContentItem.width) {
-          appendEOL();
-          return true;
-        }
-
-        if (advanceY <= textOrientation * textContentItem.notASpace) {
-          // The real spacing between 2 consecutive chars is thin enough to be
-          // considered a non-space.
-          resetLastChars();
-          textContentItem.minAdvance = Infinity;
-        }
-
-        const trackingSpaceMin = getTrackingSpaceMin(glyphWidth);
-        const spaceThreshold = getSpaceThreshold(trackingSpaceMin);
-        const hasWhitespace = shouldAddWhitepsace();
-        resolvePendingSpace(
-          advanceY,
-          textOrientation,
-          trackingSpaceMin,
-          spaceThreshold,
-          hasWhitespace
-        );
-        if (advanceY <= textOrientation * spaceThreshold) {
-          if (shouldAddWhitepsace()) {
-            // The space is very thin, hence it deserves to have its own span in
-            // order to avoid too much shift between the canvas and the text
-            // layer.
-            resetLastChars();
-            flushTextContentItem();
-            pushWhitespace({ height: Math.abs(advanceY) });
-          } else {
-            textContentItem.height += advanceY;
-          }
-        } else if (!addFakeSpaces(advanceY, textOrientation)) {
-          if (textContentItem.str.length === 0) {
-            resetLastChars();
-            pushWhitespace({ height: Math.abs(advanceY) });
-          } else {
-            textContentItem.height += advanceY;
-            if (!hasWhitespace) {
-              recordPendingSpace(advanceY, textOrientation);
-            }
-          }
-        }
-
-        if (!hasWhitespace) {
-          recordMinAdvance(advanceY, textOrientation, trackingSpaceMin);
-        }
-
-        if (Math.abs(advanceX) > textContentItem.width * VERTICAL_SHIFT_RATIO) {
-          flushTextContentItem();
-        }
-
-        return true;
-      }
-
-      const advanceX = (posX - lastPosX) / textContentItem.textAdvanceScale;
-      const advanceY = posY - lastPosY;
-
-      // When the total width of the current chunk is negative
-      // then we're writing from right to left.
-      const textOrientation = Math.sign(
-        textContentItem.width || textContentItem.totalWidth
-      );
-      if (advanceX < textOrientation * textContentItem.negativeSpaceMax) {
-        if (
-          Math.abs(advanceY) >
-          0.5 * textContentItem.height /* not the same line */
-        ) {
-          appendEOL();
-          return true;
-        }
-
-        // We're moving back so in case the last char was a whitespace
-        // we cancel it: it doesn't make sense to insert it.
-        resetLastChars();
-        flushTextContentItem();
-        return true;
-      }
-
-      // Compensate for a textRise change (e.g. superscript/subscript dropping
-      // back to baseline): textRise is baked into posY/lastPosY via tsm[5] in
-      // getCurrentTextTransform(), scaled by the Y component of the CTM×TM
-      // product, which equals currentTransform[3] / textState.fontSize.
-      // Without this correction a superscript whose textRise exceeds the line
-      // height triggers a spurious EOL when the rise returns to 0.
-      const textRiseDelta = textState.textRise - textContentItem.prevTextRise;
-      const advanceYCorrected =
-        textRiseDelta === 0
-          ? advanceY
-          : advanceY -
-            (currentTransform[3] / textState.fontSize) * textRiseDelta;
-      if (Math.abs(advanceYCorrected) > textContentItem.height) {
-        appendEOL();
-        return true;
-      }
-
-      if (advanceX <= textOrientation * textContentItem.notASpace) {
-        // The real spacing between 2 consecutive chars is thin enough to be
-        // considered a non-space.
-        resetLastChars();
-        textContentItem.minAdvance = Infinity;
-      }
-
-      const trackingSpaceMin = getTrackingSpaceMin(glyphWidth);
-      const spaceThreshold = getSpaceThreshold(trackingSpaceMin);
-      const hasWhitespace = shouldAddWhitepsace();
-      resolvePendingSpace(
-        advanceX,
-        textOrientation,
-        trackingSpaceMin,
-        spaceThreshold,
-        hasWhitespace
-      );
-      if (advanceX <= textOrientation * spaceThreshold) {
-        if (shouldAddWhitepsace()) {
-          // The space is very thin, hence it deserves to have its own span in
-          // order to avoid too much shift between the canvas and the text
-          // layer.
-          resetLastChars();
-          flushTextContentItem();
-          pushWhitespace({ width: Math.abs(advanceX) });
-        } else {
-          textContentItem.width += advanceX;
-        }
-      } else if (!addFakeSpaces(advanceX, textOrientation)) {
-        if (textContentItem.str.length === 0) {
-          resetLastChars();
-          pushWhitespace({ width: Math.abs(advanceX) });
-        } else {
-          textContentItem.width += advanceX;
-          if (!hasWhitespace) {
-            recordPendingSpace(advanceX, textOrientation);
-          }
-        }
-      }
-
-      if (!hasWhitespace) {
-        recordMinAdvance(advanceX, textOrientation, trackingSpaceMin);
-      }
-
-      if (Math.abs(advanceY) > textContentItem.height * VERTICAL_SHIFT_RATIO) {
-        flushTextContentItem();
-      }
-
-      return true;
     }
 
     // Move the cursor along the writing direction.
@@ -3151,28 +2528,51 @@ class PartialEvaluator {
       }
     }
 
+    // The rise offset in page space, the same for all the glyphs of a text.
+    function getTextRiseOffset(transform) {
+      const { fontSize, textRise } = textState;
+      if (!textRise) {
+        return NO_TEXT_RISE;
+      }
+      // The transform's y axis is scaled by the Type 3 height scale.
+      const scale = textRise / (fontSize * getType3HeightScale());
+      return [transform[2] * scale, transform[3] * scale];
+    }
+
     function buildTextRun(chars, extraSpacing) {
-      const { font, fontSize, fontMatrix, loadedName, textRise } = textState;
+      const { font, fontSize, fontMatrix, loadedName } = textState;
       const { vertical } = font;
       if (!chars) {
         // A TJ number moves the cursor without painting a glyph or adding Tc.
         advanceTextMatrix(extraSpacing, vertical);
+        if (keepWhiteSpace) {
+          // An empty string can be an empty line, e.g. in a multiline field.
+          const transform = getCurrentTextTransform(glyphTransform);
+          textRuns.addEmptyText(
+            transform,
+            getTextRiseOffset(transform),
+            vertical
+          );
+        }
         return;
       }
       const glyphs = font.charsToGlyphs(chars);
       const unitScale = fontMatrix[0] * 1000;
+      // A negative font matrix mirrors the glyphs, which then advance against
+      // the text space x axis.
+      const axisSign = !vertical && unitScale < 0 ? -1 : 1;
       const spaceWidth = font.isType3Font
         ? null
         : (vertical ? Math.abs(font.defaultVMetrics[0]) : font.spaceWidth) *
-          unitScale;
+          unitScale *
+          axisSign;
       const charSpacing = vertical
         ? -textState.charSpacing
         : textState.charSpacing;
       const wordSpacing = vertical
         ? -textState.wordSpacing
         : textState.wordSpacing;
-      const charSpacingUnits = (1000 * charSpacing) / fontSize;
-      // The rise offset in page space, the same for all the glyphs.
+      const charSpacingUnits = ((1000 * charSpacing) / fontSize) * axisSign;
       let rise = null;
       for (let i = 0, ii = glyphs.length; i < ii; i++) {
         const glyph = glyphs[i];
@@ -3181,23 +2581,23 @@ class PartialEvaluator {
           (vertical ? -glyph.vmetric[0] : glyph.width) * unitScale;
         // The generated glyph has a positive extent even if W2 moves the
         // cursor back up the column. Keep the signed advance for positioning.
-        const extent = vertical ? Math.abs(advance) : advance;
+        const extent = vertical ? Math.abs(advance) : advance * axisSign;
         const spacing =
           charSpacing +
           (glyph.isSpace ? wordSpacing : 0) +
           (i + 1 === ii ? extraSpacing : 0);
-        if (isWhitespace) {
+        if (isWhitespace && !keepWhiteSpace) {
           textLayerFonts?.addGlyph(font, " ", extent);
           textRuns.addSpace();
         } else if (!isInvisibleFormatMark) {
           // TextRuns copies what it keeps from the shared transform.
           const transform = getCurrentTextTransform(glyphTransform);
-          const c = transform[2],
-            d = transform[3],
-            x = transform[4],
+          const x = transform[4],
             y = transform[5];
-          const endX = x + ((vertical ? -c : transform[0]) * advance) / 1000;
-          const endY = y + ((vertical ? -d : transform[1]) * advance) / 1000;
+          const endX =
+            x + ((vertical ? -transform[2] : transform[0]) * advance) / 1000;
+          const endY =
+            y + ((vertical ? -transform[3] : transform[1]) * advance) / 1000;
           const unicode = disableNormalization
             ? glyph.unicode
             : glyph.normalizedUnicode;
@@ -3209,10 +2609,10 @@ class PartialEvaluator {
             Math.min(y, endY) <= viewBox[3]
           ) {
             ensureTextStyle();
-            if (!rise) {
-              // The transform's y axis is scaled by the Type 3 height scale.
-              const riseScale = textRise / (fontSize * getType3HeightScale());
-              rise = textRise ? [c * riseScale, d * riseScale] : NO_TEXT_RISE;
+            rise ??= getTextRiseOffset(transform);
+            if (axisSign < 0) {
+              transform[0] = -transform[0];
+              transform[1] = -transform[1];
             }
             textRuns.addGlyph(
               loadedName,
@@ -3232,278 +2632,11 @@ class PartialEvaluator {
       }
     }
 
-    function buildTextContentItem({ chars, extraSpacing }) {
-      if (
-        textRuns &&
-        textState.fontSize > 0 &&
-        textState.textHScale > 0 &&
-        textState.fontMatrix[0] > 0
-      ) {
-        // A text state outside the run extractor may have left an item open.
-        if (textContentItem.initialized) {
-          flushTextContentItem();
-        }
-        textContentItem.prevTransform = null;
-        resetLastChars();
-        buildTextRun(chars, extraSpacing);
-        return;
-      }
-      textRuns?.reset();
-      if (
-        currentFontSize !== textState.fontSize ||
-        (currentFontName !== textState.fontName &&
-          (currentFont?.name !== textState.font.name ||
-            currentFont.vertical !== textState.font.vertical))
-      ) {
-        flushTextContentItem();
-        currentFont = textState.font;
-        currentFontName = textState.fontName;
-        currentFontSize = textState.fontSize;
-      }
-
-      const font = textState.font;
-      const baseCharSpacing = font.vertical
-        ? -textState.charSpacing
-        : textState.charSpacing;
-      if (!chars) {
-        // Just move according to the space we have.
-        const charSpacing = baseCharSpacing + extraSpacing;
-        if (charSpacing) {
-          if (!font.vertical) {
-            textState.translateTextMatrix(
-              charSpacing * textState.textHScale,
-              0
-            );
-          } else {
-            textState.translateTextMatrix(0, -charSpacing);
-          }
-        }
-
-        if (keepWhiteSpace) {
-          compareWithLastPosition(0);
-        }
-
-        return;
-      }
-
-      const glyphs = font.charsToGlyphs(chars);
-      const scale = textState.fontMatrix[0] * textState.fontSize;
-      // Converts the glyph widths to 1/1000 em.
-      const advanceScale = Math.abs(textState.fontMatrix[0] * 1000);
-
-      for (let i = 0, ii = glyphs.length; i < ii; i++) {
-        const glyph = glyphs[i];
-        const { category } = glyph;
-        const glyphWidth = font.vertical ? glyph.vmetric[0] : glyph.width;
-        const { isInvisibleFormatMark, isZeroWidthDiacritic } = category;
-
-        if (isInvisibleFormatMark && !glyphWidth) {
-          continue;
-        }
-        let charSpacing = baseCharSpacing + (i + 1 === ii ? extraSpacing : 0);
-
-        let scaledDim = glyphWidth * scale;
-
-        if (glyph.isSpace) {
-          charSpacing += textState.wordSpacing;
-        }
-
-        if (!keepWhiteSpace && category.isWhitespace) {
-          // Don't push a " " in the textContentItem
-          // (except when it's between two non-spaces chars),
-          // it will be done (if required) in next call to
-          // compareWithLastPosition.
-          // This way we can merge real spaces and spaces due to cursor moves.
-          textLayerFonts?.addGlyph(
-            font,
-            " ",
-            Math.abs(glyphWidth) * advanceScale
-          );
-          if (!font.vertical) {
-            charSpacing += scaledDim;
-            textState.translateTextMatrix(
-              charSpacing * textState.textHScale,
-              0
-            );
-          } else {
-            charSpacing += -scaledDim;
-            textState.translateTextMatrix(0, -charSpacing);
-          }
-          saveLastChar(" ");
-          continue;
-        }
-
-        const inView =
-          isZeroWidthDiacritic || compareWithLastPosition(scaledDim);
-        if (!inView) {
-          // The glyph is not in page so just skip it but move the cursor.
-          if (!font.vertical) {
-            textState.translateTextMatrix(scaledDim * textState.textHScale, 0);
-          } else {
-            textState.translateTextMatrix(0, scaledDim);
-          }
-          continue;
-        }
-
-        // Must be called after compareWithLastPosition because
-        // the textContentItem could have been flushed.
-        const textChunk = ensureTextContentItem();
-        if (isZeroWidthDiacritic) {
-          scaledDim = 0;
-        }
-
-        const glyphUnicode = isInvisibleFormatMark ? "" : glyph.unicode;
-        if (!font.vertical) {
-          scaledDim *= textState.textHScale;
-          intersector?.addGlyph(
-            getCurrentTextTransform(glyphTransform),
-            scaledDim,
-            0,
-            glyphUnicode
-          );
-          textState.translateTextMatrix(scaledDim, 0);
-          textChunk.width += scaledDim;
-        } else {
-          intersector?.addGlyph(
-            getCurrentTextTransform(glyphTransform),
-            0,
-            scaledDim,
-            glyphUnicode
-          );
-          textState.translateTextMatrix(0, scaledDim);
-          scaledDim = Math.abs(scaledDim);
-          textChunk.height += scaledDim;
-        }
-
-        if (scaledDim) {
-          // Save the position after advancing by this glyph's width.
-          textChunk.prevTransform ??= new Float32Array(6);
-          getCurrentTextTransform(textChunk.prevTransform);
-          textChunk.prevGlyphWidth = scaledDim;
-          textChunk.prevTextRise = textState.textRise;
-        }
-
-        if (!isInvisibleFormatMark) {
-          if (saveLastChar(glyphUnicode)) {
-            // Insert a standard space (U+0020) between non-whitespace glyphs
-            // when the preceding whitespace was skipped above.
-            textChunk.str.push(" ");
-            intersector?.addExtraChar(" ");
-          }
-
-          const unicode = disableNormalization
-            ? glyphUnicode
-            : glyph.normalizedUnicode;
-          if (!intersector) {
-            const { isUnicodeVisual } = glyph;
-            if (textLayerFonts) {
-              textChunk.str.push({
-                unicode,
-                isUnicodeVisual,
-                font,
-                advance: isZeroWidthDiacritic
-                  ? 0
-                  : Math.abs(glyphWidth) * advanceScale,
-              });
-            } else {
-              textChunk.str.push(
-                isUnicodeVisual ? { unicode, isUnicodeVisual } : unicode
-              );
-            }
-          }
-        }
-
-        if (charSpacing) {
-          if (!font.vertical) {
-            textState.translateTextMatrix(
-              charSpacing * textState.textHScale,
-              0
-            );
-          } else {
-            textState.translateTextMatrix(0, -charSpacing);
-          }
-        }
-      }
-    }
-
-    function appendEOL() {
-      intersector?.addExtraChar("\n");
-      resetLastChars();
-      if (textContentItem.initialized) {
-        textContentItem.hasEOL = true;
-        flushTextContentItem();
-      } else {
-        textContent.items.push({
-          str: "",
-          dir: "ltr",
-          width: 0,
-          height: 0,
-          transform: getCurrentTextTransform(),
-          fontName: textState.loadedName,
-          hasEOL: true,
-        });
-      }
-    }
-
-    function addFakeSpaces(width, textOrientation) {
-      lastFakeSpaceExtraCharId = -1;
-      if (
-        textOrientation * textContentItem.spaceInFlowMin <= width &&
-        width <= textOrientation * textContentItem.spaceInFlowMax
-      ) {
-        if (textContentItem.initialized) {
-          resetLastChars();
-          textContentItem.str.push(" ");
-          lastFakeSpaceExtraCharId = intersector?.addExtraChar(" ") ?? -1;
-        }
-        return false;
-      }
-
-      const fontName = textContentItem.fontName;
-
-      let height = 0;
-      if (textContentItem.vertical) {
-        height = width;
-        width = 0;
-      }
-
-      flushTextContentItem();
-      resetLastChars();
-      pushWhitespace({
-        width: Math.abs(width),
-        height: Math.abs(height),
-        fontName,
-      });
-
-      return true;
-    }
-
-    function flushTextContentItem() {
-      textRuns?.flush();
-      if (!textContentItem.initialized || !textContentItem.str) {
-        return;
-      }
-
-      // Do final text scaling.
-      if (!textContentItem.vertical) {
-        textContentItem.totalWidth +=
-          textContentItem.width * textContentItem.textAdvanceScale;
-      } else {
-        textContentItem.totalHeight +=
-          textContentItem.height * textContentItem.textAdvanceScale;
-      }
-
-      textContent.items.push(runBidiTransform(textContentItem));
-      textContentItem.initialized = false;
-      resetAdaptiveSpacing();
-      textContentItem.str.length = 0;
-    }
-
     function closePendingMarkedContentItems(level = 0) {
       if (!includeMarkedContent || markedContentLevel <= level) {
         return;
       }
-      flushTextContentItem();
+      textRuns.flush();
 
       for (; markedContentLevel > level; markedContentLevel--) {
         textContent.items.push({
@@ -3520,7 +2653,7 @@ class PartialEvaluator {
       if (batch && length < TEXT_CHUNK_BATCH_SIZE) {
         return;
       }
-      sink.enqueue(textContent, length);
+      textExtraction.enqueue(textContent, length);
       textContent.items = [];
       textContent.styles = Object.create(null);
     }
@@ -3530,7 +2663,7 @@ class PartialEvaluator {
     return new Promise(function promiseBody(resolve, reject) {
       const next = function (promise) {
         enqueueChunk(/* batch = */ true);
-        Promise.all([promise, sink.ready]).then(function () {
+        Promise.all([promise, textExtraction.ready]).then(function () {
           try {
             promiseBody(resolve, reject);
           } catch (ex) {
@@ -3584,10 +2717,7 @@ class PartialEvaluator {
             textState.textRise = args[0];
             break;
           case OPS.setHScale:
-            if (textState.textHScale !== args[0] / 100) {
-              textState.textHScale = args[0] / 100;
-              resetAdaptiveSpacing();
-            }
+            textState.textHScale = args[0] / 100;
             break;
           case OPS.setLeading:
             textState.leading = args[0];
@@ -3604,19 +2734,12 @@ class PartialEvaluator {
           case OPS.setTextMatrix:
             textState.setTextLineMatrix(args);
             resetTextMatrix();
-            updateAdvanceScale();
             break;
           case OPS.setCharSpacing:
-            if (textState.charSpacing !== args[0]) {
-              textState.charSpacing = args[0];
-              resetAdaptiveSpacing();
-            }
+            textState.charSpacing = args[0];
             break;
           case OPS.setWordSpacing:
-            if (textState.wordSpacing !== args[0]) {
-              textState.wordSpacing = args[0];
-              resetAdaptiveSpacing();
-            }
+            textState.wordSpacing = args[0];
             break;
           case OPS.beginText:
             textState.setTextLineMatrix(IDENTITY_MATRIX);
@@ -3651,20 +2774,14 @@ class PartialEvaluator {
                 // the left or down by the given amount.
                 const str = showSpacedTextBuffer.join("");
                 showSpacedTextBuffer.length = 0;
-                buildTextContentItem({
-                  chars: str,
-                  extraSpacing: item * spaceFactor,
-                });
+                buildTextRun(str, item * spaceFactor);
               }
             }
 
             if (showSpacedTextBuffer.length > 0) {
               const str = showSpacedTextBuffer.join("");
               showSpacedTextBuffer.length = 0;
-              buildTextContentItem({
-                chars: str,
-                extraSpacing: 0,
-              });
+              buildTextRun(str, 0);
             }
             break;
           case OPS.showText:
@@ -3672,10 +2789,7 @@ class PartialEvaluator {
               self.ensureStateFont(stateManager.state);
               continue;
             }
-            buildTextContentItem({
-              chars: args[0],
-              extraSpacing: 0,
-            });
+            buildTextRun(args[0], 0);
             break;
           case OPS.nextLineShowText:
           case OPS.nextLineSetSpacingShowText:
@@ -3688,10 +2802,10 @@ class PartialEvaluator {
               textState.charSpacing = args[1];
             }
             moveText(0, -textState.leading);
-            buildTextContentItem({ chars: args.at(-1), extraSpacing: 0 });
+            buildTextRun(args.at(-1), 0);
             break;
           case OPS.paintXObject:
-            flushTextContentItem();
+            textRuns.flush();
             xobjs ??= resources.get("XObject") || Dict.empty;
 
             isValidName = args[0] instanceof Name;
@@ -3766,7 +2880,7 @@ class PartialEvaluator {
                 // Enqueue the `textContent` chunk before parsing the /Form
                 // XObject.
                 enqueueChunk();
-                const sinkWrapper = textSinkWrapper(sink);
+                const { chunkCount } = textExtraction;
 
                 self
                   .getTextContent({
@@ -3778,18 +2892,17 @@ class PartialEvaluator {
                         : resources,
                     stateManager: xObjStateManager,
                     includeMarkedContent,
-                    sink: sinkWrapper,
+                    sink: textExtraction,
                     seenStyles,
                     viewBox,
                     lang,
                     disableNormalization,
-                    textExtraction,
                     keepWhiteSpace,
                     prevRefs: seenRefs,
                     markedContentScope: xObjMarkedContentScope,
                   })
                   .then(function () {
-                    if (!sinkWrapper.enqueueInvoked) {
+                    if (textExtraction.chunkCount === chunkCount) {
                       emptyXObjectCache.set(name, dict.objId, true);
                     }
                     resolveXObject();
@@ -3842,7 +2955,7 @@ class PartialEvaluator {
                   resolveGState();
                   return;
                 }
-                flushTextContentItem();
+                textRuns.flush();
 
                 textState.fontName = null;
                 textState.fontSize = gStateFont[1];
@@ -3865,7 +2978,7 @@ class PartialEvaluator {
             );
             return;
           case OPS.beginMarkedContent:
-            flushTextContentItem();
+            textRuns.flush();
             if (includeMarkedContent) {
               markedContentLevel++;
 
@@ -3876,7 +2989,7 @@ class PartialEvaluator {
             }
             break;
           case OPS.beginMarkedContentProps:
-            flushTextContentItem();
+            textRuns.flush();
             if (includeMarkedContent) {
               markedContentLevel++;
 
@@ -3891,7 +3004,7 @@ class PartialEvaluator {
             }
             break;
           case OPS.endMarkedContent:
-            flushTextContentItem();
+            textRuns.flush();
             if (includeMarkedContent) {
               if (markedContentLevel === 0) {
                 // Ignore unmatched EMC operators (issue 15629).
@@ -3905,7 +3018,7 @@ class PartialEvaluator {
             }
             break;
         } // switch
-        if (textContent.items.length >= sink.desiredSize) {
+        if (textContent.items.length >= textExtraction.desiredSize) {
           // Wait for ready, if we reach highWaterMark.
           stop = true;
           break;
@@ -3915,7 +3028,7 @@ class PartialEvaluator {
         next(deferred);
         return;
       }
-      flushTextContentItem();
+      textRuns.flush();
       closePendingMarkedContentItems();
       enqueueChunk();
       resolve();
@@ -3930,7 +3043,7 @@ class PartialEvaluator {
             `task: "${reason}".`
         );
 
-        flushTextContentItem();
+        textRuns.flush();
         closePendingMarkedContentItems();
         enqueueChunk();
         return;
