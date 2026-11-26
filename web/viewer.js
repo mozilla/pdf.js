@@ -96,7 +96,7 @@ function getViewerConfiguration() {
       toggleButton: document.getElementById("secondaryToolbarToggleButton"),
       presentationModeButton: document.getElementById("presentationMode"),
       openFileButton:
-        typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
+        typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")
           ? document.getElementById("secondaryOpenFile")
           : null,
       printButton: document.getElementById("secondaryPrint"),

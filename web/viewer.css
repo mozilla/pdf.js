@@ -103,7 +103,7 @@
   --toolbarButton-zoomIn-icon: url(images/toolbarButton-zoomIn.svg);
   --toolbarButton-presentationMode-icon: url(images/toolbarButton-presentationMode.svg);
   --toolbarButton-print-icon: url(images/toolbarButton-print.svg);
-  /*#if GENERIC*/
+  /*#if GENERIC || CHROME*/
   --toolbarButton-openFile-icon: url(images/toolbarButton-openFile.svg);
   /*#endif*/
   --toolbarButton-download-icon: url(images/toolbarButton-download.svg);
@@ -1213,7 +1213,7 @@ dialog :link {
   );
 
   #secondaryToolbarButtonContainer {
-    /*#if GENERIC*/
+    /*#if GENERIC || CHROME*/
     #secondaryOpenFile::before {
       mask-image: var(--toolbarButton-openFile-icon);
     }

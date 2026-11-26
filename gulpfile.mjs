@@ -2211,11 +2211,6 @@ gulp.task(
 
       const CHROME_BUILD_CONTENT_DIR = CHROMIUM_DIR + "content/";
 
-      const CHROME_WEB_FILES = [
-        ...COMMON_WEB_FILES,
-        "!web/images/toolbarButton-openFile.svg",
-      ];
-
       // Clear out everything in the chrome extension build directory
       fs.rmSync(CHROMIUM_DIR, { recursive: true, force: true });
 
@@ -2238,7 +2233,7 @@ gulp.task(
           gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")
         ),
         gulp
-          .src(CHROME_WEB_FILES, { base: "web/", encoding: false })
+          .src(COMMON_WEB_FILES, { base: "web/", encoding: false })
           .pipe(gulp.dest(CHROME_BUILD_CONTENT_DIR + "web")),
 
         gulp

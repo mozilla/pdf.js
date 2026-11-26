@@ -180,6 +180,7 @@ const PDFViewerApplication = {
   baseUrl: "",
   mlManager: null,
   _downloadUrl: "",
+  _localFileUrl: null,
   _isMergedDocument: false,
   _eventBusAC: null,
   _windowAC: null,
@@ -1040,12 +1041,12 @@ const PDFViewerApplication = {
       file = AppOptions.get("defaultUrl");
     }
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")) {
       const fileInput = (this._openFileInput = document.createElement("input"));
       fileInput.id = "fileInput";
       fileInput.hidden = true;
       fileInput.type = "file";
-      fileInput.value = null;
+      fileInput.accept = "application/pdf,.pdf";
       document.body.append(fileInput);
 
       fileInput.addEventListener("change", function (evt) {
@@ -1058,7 +1059,9 @@ const PDFViewerApplication = {
           fileInput: evt.target,
         });
       });
+    }
 
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       // Enable dragging-and-dropping a new PDF file onto the viewerContainer.
       appConfig.mainContainer.addEventListener("dragover", function (evt) {
         for (const item of evt.dataTransfer.items) {
@@ -1287,7 +1290,7 @@ const PDFViewerApplication = {
     this._caretBrowsing.moveCaret(isUp, select);
   },
 
-  setTitleUsingUrl(url = "", downloadUrl = null) {
+  setTitleUsingUrl(url = "", downloadUrl = null, filename = null) {
     this.url = url;
     this.baseUrl =
       typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")
@@ -1311,7 +1314,10 @@ const PDFViewerApplication = {
       AppOptions.set("docBaseUrl", this.baseUrl);
     }
 
-    let title = getPdfFilenameFromUrl(url, "");
+    if (filename) {
+      this._contentDispositionFilename = filename;
+    }
+    let title = filename || getPdfFilenameFromUrl(url, "");
     if (!title) {
       try {
         title = decodeURIComponent(getFilenameFromUrl(url));
@@ -1418,7 +1424,15 @@ const PDFViewerApplication = {
     }
     const promises = [];
 
-    promises.push(this.pdfLoadingTask.destroy());
+    const localFileUrl = this._localFileUrl;
+    this._localFileUrl = null;
+    let destroyPromise = this.pdfLoadingTask.destroy();
+    if (localFileUrl) {
+      destroyPromise = destroyPromise.finally(() => {
+        URL.revokeObjectURL(localFileUrl);
+      });
+    }
+    promises.push(destroyPromise);
     this.pdfLoadingTask = null;
 
     if (this.pdfDocument) {
@@ -1467,38 +1481,55 @@ const PDFViewerApplication = {
   /**
    * Opens a new PDF document.
    * @param {object} args - Accepts any/all of the properties from
-   *   {@link DocumentInitParameters}, and also a `originalUrl` string.
+   *   {@link DocumentInitParameters}, and also an `originalUrl` string or a
+   *   local `file` selected in the viewer.
    * @returns {Promise} - Promise that is resolved when the document is opened.
    */
-  async open(args) {
+  async open({ file, ...args }) {
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       await this.close();
+      if (file && this.pdfLoadingTask) {
+        return; // A newer document started loading during close().
+      }
     }
     // Set the necessary global worker parameters, using the available options.
     const workerParams = AppOptions.getAll(OptionKind.WORKER);
     Object.assign(GlobalWorkerOptions, workerParams);
 
-    if (args.data && isPdfFile(args.filename)) {
-      this._contentDispositionFilename = args.filename;
-    } else if (
-      (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
-      args.url
-    ) {
-      // The Firefox built-in viewer always calls `setTitleUsingUrl`, before
-      // `initPassiveLoading`, and it never provides an `originalUrl` here.
-      this.setTitleUsingUrl(
-        args.originalUrl || args.url,
-        /* downloadUrl = */ args.url
-      );
-    }
+    const localFileUrl = file ? URL.createObjectURL(file) : null;
+    let loadingTask;
+    try {
+      if (localFileUrl) {
+        args.url = localFileUrl;
+        this.setTitleUsingUrl(localFileUrl, localFileUrl, file.name);
+      } else if (args.data && isPdfFile(args.filename)) {
+        this._contentDispositionFilename = args.filename;
+      } else if (
+        (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+        args.url
+      ) {
+        // The Firefox built-in viewer always calls `setTitleUsingUrl`, before
+        // `initPassiveLoading`, and it never provides an `originalUrl` here.
+        this.setTitleUsingUrl(
+          args.originalUrl || args.url,
+          /* downloadUrl = */ args.url
+        );
+      }
 
-    // Set the necessary API parameters, using all the available options.
-    const apiParams = AppOptions.getAll(OptionKind.API);
-    const loadingTask = getDocument({
-      ...apiParams,
-      ...args,
-    });
+      // Set the necessary API parameters, using all the available options.
+      const apiParams = AppOptions.getAll(OptionKind.API);
+      loadingTask = getDocument({
+        ...apiParams,
+        ...args,
+      });
+    } catch (reason) {
+      if (localFileUrl) {
+        URL.revokeObjectURL(localFileUrl);
+      }
+      throw reason;
+    }
+    this._localFileUrl = localFileUrl;
     this.pdfLoadingTask = loadingTask;
 
     loadingTask.onPassword = (updateCallback, reason) => {
@@ -2599,7 +2630,7 @@ const PDFViewerApplication = {
       opts
     );
 
-    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
+    if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")) {
       eventBus.on("fileinputchange", onFileInputChange.bind(this), opts);
       eventBus.on("openfile", onOpenFile.bind(this), opts);
     }
@@ -2961,23 +2992,24 @@ if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
     // server must be properly configured.
     throw ex;
   };
+}
 
+if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC || CHROME")) {
   // eslint-disable-next-line no-var
   var onFileInputChange = function (evt) {
     if (this.pdfViewer?.isInPresentationMode) {
       return; // Opening a new PDF file isn't supported in Presentation Mode.
     }
-    const file = evt.fileInput.files[0];
-
-    this.open({
-      url: URL.createObjectURL(file),
-      originalUrl: encodeURIComponent(file.name),
-    });
+    this.open({ file: evt.fileInput.files[0] });
   };
 
   // eslint-disable-next-line no-var
-  var onOpenFile = function (evt) {
-    this._openFileInput?.click();
+  var onOpenFile = function () {
+    if (this._openFileInput) {
+      // Reset the picker so choosing the same file fires another change event.
+      this._openFileInput.value = "";
+      this._openFileInput.click();
+    }
   };
 }
 
