@@ -426,6 +426,7 @@ function getDocument(src = {}) {
     rendererWorker: task._rendererWorker,
     enableWebGPU,
     loadingParams: {
+      debugTextLayerFonts,
       disableAutoFetch,
       enableXfa,
     },
@@ -1528,6 +1529,14 @@ class PDFPageProxy {
    */
   get filterFactory() {
     return this._transport.filterFactory;
+  }
+
+  /**
+   * @type {DocumentInitParameters} A subset of the current
+   *   {DocumentInitParameters}, which are needed in the viewer.
+   */
+  get loadingParams() {
+    return this._transport.loadingParams;
   }
 
   /**

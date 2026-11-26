@@ -43,7 +43,7 @@
     user-select: text;
   }
 
-  /* Show the glyph boxes of the text layer fonts, see `debugTextLayerFonts`. */
+  /* Show the glyph boxes of the text layer fonts, see `#textLayer=visible`. */
   &.debugFonts :is(span, br) {
     color: red;
   }

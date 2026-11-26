@@ -32,8 +32,6 @@ import { removeNullCharacters } from "./ui_utils.js";
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {boolean} [enablePermissions]
- * @property {boolean} [debugTextLayerFonts] - Show the glyph boxes in the
- *   text layer. The default value is `false`.
  * @property {Function} [onAppend]
  * @property {AbortSignal} [abortSignal]
  */
@@ -77,7 +75,6 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     enablePermissions = false,
-    debugTextLayerFonts = false,
     onAppend = null,
     abortSignal = null,
   }) {
@@ -95,7 +92,7 @@ class TextLayerBuilder {
     this.div = document.createElement("div");
     this.div.tabIndex = 0;
     this.div.className = "textLayer";
-    if (debugTextLayerFonts) {
+    if (pdfPage.loadingParams.debugTextLayerFonts) {
       this.div.classList.add("debugFonts");
     }
   }

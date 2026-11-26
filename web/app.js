@@ -354,7 +354,7 @@ const PDFViewerApplication = {
     if (!hash) {
       return;
     }
-    const { mainContainer, viewerContainer } = this.appConfig,
+    const { mainContainer } = this.appConfig,
       params = parseQueryString(hash);
 
     const loadPDFBug = async () => {
@@ -390,15 +390,8 @@ const PDFViewerApplication = {
           AppOptions.set("textLayerMode", TextLayerMode.DISABLE);
           break;
         case "visible":
-        case "shadow":
-        case "hover":
-          viewerContainer.classList.add(`textLayer-${params.get("textlayer")}`);
-          try {
-            await loadPDFBug();
-            this._PDFBug.loadCSS();
-          } catch (ex) {
-            console.error("_parseHashParams:", ex);
-          }
+          // Draw the glyph boxes of the text layer fonts.
+          AppOptions.set("debugTextLayerFonts", true);
           break;
       }
     }
@@ -432,7 +425,6 @@ const PDFViewerApplication = {
       disableHistory: x => x === "true",
       disableRange: x => x === "true",
       disableStream: x => x === "true",
-      debugTextLayerFonts: x => x === "true",
       verbosity: x => x | 0,
     };
 
@@ -767,7 +759,6 @@ const PDFViewerApplication = {
         AppOptions.get("enableScripting") && pdfScriptingManager,
       l10n,
       textLayerMode: AppOptions.get("textLayerMode"),
-      debugTextLayerFonts: AppOptions.get("debugTextLayerFonts"),
       annotationMode: AppOptions.get("annotationMode"),
       annotationEditorMode,
       annotationEditorHighlightColors: AppOptions.get("highlightEditorColors"),

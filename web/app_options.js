@@ -613,14 +613,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "debugTextLayerFonts",
-    {
-      /** @type {boolean} */
-      value: false,
-      kind: OptionKind.API + OptionKind.VIEWER,
-    },
-  ],
-  [
     "forcePageColors",
     {
       /** @type {boolean} */
@@ -765,6 +757,14 @@ const defaultOptions = new Map([
           : PDFJSDev.test("MOZCENTRAL")
             ? "resource://pdf.js/web/cmaps/"
             : "../web/cmaps/",
+      kind: OptionKind.API,
+    },
+  ],
+  [
+    "debugTextLayerFonts",
+    {
+      /** @type {boolean} */
+      value: false,
       kind: OptionKind.API,
     },
   ],

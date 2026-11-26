@@ -106,8 +106,6 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
- * @property {boolean} [debugTextLayerFonts] - Show the glyph boxes in the
- *   text layer. The default value is `false`.
  * @property {number} [annotationMode] - Controls if the annotation layer is
  *   created, and if interactive form elements or `AnnotationStorage`-data are
  *   being rendered. The constants from {@link AnnotationMode} should be used;
@@ -260,8 +258,6 @@ class PDFViewer {
 
   #enableAutoLinking = true;
 
-  #debugTextLayerFonts = false;
-
   #abortSignal = null;
 
   #eventAC = null;
@@ -384,7 +380,6 @@ class PDFViewer {
     this.#mlManager = options.mlManager || null;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
-    this.#debugTextLayerFonts = options.debugTextLayerFonts === true;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
     this.renderingQueue = options.renderingQueue;
@@ -1108,7 +1103,6 @@ class PDFViewer {
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerMode,
-            debugTextLayerFonts: this.#debugTextLayerFonts,
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,

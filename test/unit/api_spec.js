@@ -1805,6 +1805,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
 
       expect(pdfDoc.loadingParams).toEqual({
+        debugTextLayerFonts: false,
         disableAutoFetch: true,
         enableXfa: true,
       });

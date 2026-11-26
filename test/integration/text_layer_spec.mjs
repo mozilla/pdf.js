@@ -1615,7 +1615,7 @@ describe("Text layer", () => {
         `.page[data-page-number = "1"] .endOfContent`,
         undefined,
         undefined,
-        { debugTextLayerFonts }
+        debugTextLayerFonts ? { textLayer: "visible" } : undefined
       );
     };
 
