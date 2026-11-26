@@ -5242,6 +5242,10 @@ page 1 / 3`);
         ascent: 0.683,
         descent: -0.217,
         vertical: false,
+        textLayerFont: jasmine.objectContaining({
+          name: jasmine.stringMatching(/^g_d\d+_tf\d+$/),
+          data: jasmine.any(Uint8Array),
+        }),
       });
 
       // Render the page to make sure that the font data is loaded so we can
@@ -5281,10 +5285,7 @@ page 1 / 3`);
       expect(descent).toBeCloseTo(-0.207, 6);
 
       // Hence the text layer font has the ascent of the descriptor.
-      const { styles: fontStyles } = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
-      expect(fontStyles[item.fontName].textLayerFont.ascent).toBeCloseTo(
+      expect(styles[item.fontName].textLayerFont.ascent).toBeCloseTo(
         0.765 / 0.972,
         6
       );
@@ -5299,18 +5300,9 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
 
-      const textContent = await pdfPage.getTextContent({
-        disableNormalization: true,
-      });
-      expect(
-        Object.values(textContent.styles).some(s => "textLayerFont" in s)
-      ).toBeFalse();
-
       const { items, styles } = await pdfPage.getTextContent({
         disableNormalization: true,
-        includeTextLayerFonts: true,
       });
-      expect(items).toEqual(textContent.items);
       const item = items.find(({ str }) => str === "identi\ufb01es");
       const { textLayerFont } = styles[item.fontName];
       expect(textLayerFont.name).toMatch(/^g_d\d+_tf\d+$/);
@@ -5347,9 +5339,7 @@ page 1 / 3`);
       });
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
+      const { items, styles } = await pdfPage.getTextContent();
 
       expect(items.map(({ str }) => str)).toEqual(["A B A B"]);
       // No space is drawn: the spaces get the median gap.
@@ -5373,7 +5363,6 @@ page 1 / 3`);
       const pdfPage = await pdfDoc.getPage(1);
       const { items, styles } = await pdfPage.getTextContent({
         disableNormalization: true,
-        includeTextLayerFonts: true,
       });
 
       const item = items.find(
@@ -5631,9 +5620,7 @@ ABCD E`);
 
       expect(text).toEqual("AB CD");
 
-      const { items: fitted, styles } = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
+      const { items: fitted, styles } = await pdfPage.getTextContent();
       const { data, advanceScale, ascent } =
         styles[fitted[0].fontName].textLayerFont;
       // The rectangles extend from the baseline to the top of the font box.
@@ -5663,9 +5650,7 @@ ABCD E`);
         [10, "set spacing, move to next line and show text", "A B", 480],
       ]) {
         const pdfPage = await pdfDoc.getPage(pageNumber);
-        const { items, styles } = await pdfPage.getTextContent({
-          includeTextLayerFonts: true,
-        });
+        const { items, styles } = await pdfPage.getTextContent();
         const font = new FontTestData(
           styles[items[0].fontName].textLayerFont.data
         );
@@ -6208,9 +6193,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent();
-      const withFonts = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
+      const withFonts = await pdfPage.getTextContent();
       expect(withFonts.items).toEqual(items);
       // The same Hebrew character sequence uses normal and mirrored text
       // matrices; the mirrored run ends with an LRM (U+200E).
@@ -6291,9 +6274,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       try {
         const pdfPage = await (await loadingTask.promise).getPage(1);
         const plainText = await pdfPage.getTextContent();
-        const { items, styles } = await pdfPage.getTextContent({
-          includeTextLayerFonts: true,
-        });
+        const { items, styles } = await pdfPage.getTextContent();
         expect(items).toEqual(plainText.items);
         expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
           { str: "[אב(", dir: "rtl" },

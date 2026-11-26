@@ -106,10 +106,8 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
- * @property {number} [newTextLayerMode] - Controls if the text layer uses fonts
- *   with the advances of the PDF fonts: 1 to enable, 2 to enable with fonts
- *   drawing their glyph boxes (debugging), anything else to disable.
- *   The default value is `0`.
+ * @property {boolean} [debugTextLayerFonts] - Show the glyph boxes in the
+ *   text layer. The default value is `false`.
  * @property {number} [annotationMode] - Controls if the annotation layer is
  *   created, and if interactive form elements or `AnnotationStorage`-data are
  *   being rendered. The constants from {@link AnnotationMode} should be used;
@@ -262,7 +260,7 @@ class PDFViewer {
 
   #enableAutoLinking = true;
 
-  #newTextLayerMode = 0;
+  #debugTextLayerFonts = false;
 
   #abortSignal = null;
 
@@ -386,7 +384,7 @@ class PDFViewer {
     this.#mlManager = options.mlManager || null;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
-    this.#newTextLayerMode = options.newTextLayerMode ?? 0;
+    this.#debugTextLayerFonts = options.debugTextLayerFonts === true;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
     this.renderingQueue = options.renderingQueue;
@@ -1107,7 +1105,7 @@ class PDFViewer {
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerMode,
-            newTextLayerMode: this.#newTextLayerMode,
+            debugTextLayerFonts: this.#debugTextLayerFonts,
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,

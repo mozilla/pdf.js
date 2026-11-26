@@ -1390,7 +1390,7 @@ describe("Reorganize Pages View", () => {
         `.page[data-page-number = "1"] .endOfContent`,
         "1",
         null,
-        { enableSplitMerge: true, newTextLayerMode: 1 }
+        { enableSplitMerge: true }
       );
     });
 

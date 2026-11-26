@@ -613,12 +613,11 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "newTextLayerMode",
+    "debugTextLayerFonts",
     {
-      // 1 to enable, 2 to enable with the glyph boxes drawn, else disabled.
-      /** @type {number} */
-      value: 1,
-      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+      /** @type {boolean} */
+      value: false,
+      kind: OptionKind.VIEWER,
     },
   ],
   [

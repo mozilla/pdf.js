@@ -1157,8 +1157,7 @@ class Driver {
                   includeMarkedContent: true,
                   disableNormalization: true,
                   // Draw the glyph boxes of the text layer fonts.
-                  includeTextLayerFonts: !!task.textLayerFonts,
-                  debugTextLayerFonts: !!task.textLayerFonts,
+                  debugTextLayerFonts: task.type === "text",
                 })
                 .then(textContent =>
                   task.type === "text"

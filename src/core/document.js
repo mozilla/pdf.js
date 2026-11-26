@@ -695,7 +695,6 @@ class Page {
     task,
     includeMarkedContent,
     disableNormalization,
-    includeTextLayerFonts = false,
     debugTextLayerFonts = false,
     sink,
     intersector = null,
@@ -716,7 +715,7 @@ class Page {
 
     const partialEvaluator = this._createPartialEvaluator(handler);
     // The text is buffered until the fonts of the page are known.
-    const textLayerFonts = includeTextLayerFonts
+    const textLayerFonts = sink
       ? new TextLayerFonts(sink, this._localIdFactory, debugTextLayerFonts)
       : null;
 
@@ -727,7 +726,7 @@ class Page {
       includeMarkedContent,
       disableNormalization,
       textLayerFonts,
-      sink: textLayerFonts ?? sink,
+      sink: textLayerFonts,
       viewBox: this.view,
       lang,
       intersector,

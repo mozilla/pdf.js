@@ -338,7 +338,6 @@ describe("textLayer", function () {
       const page = await pdfDocument.getPage(1);
       textContent = await page.getTextContent({
         disableNormalization: true,
-        includeTextLayerFonts: true,
       });
       viewport = page.getViewport({ scale: 1 });
     });

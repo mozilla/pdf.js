@@ -32,8 +32,8 @@ import { removeNullCharacters } from "./ui_utils.js";
  *   highlighting text from the find controller.
  * @property {TextAccessibilityManager} [accessibilityManager]
  * @property {boolean} [enablePermissions]
- * @property {number} [newTextLayerMode] - 1 to use the text layer fonts, 2 to
- *   use them with their glyph boxes drawn in red.
+ * @property {boolean} [debugTextLayerFonts] - Show the glyph boxes in the
+ *   text layer. The default value is `false`.
  * @property {Function} [onAppend]
  * @property {AbortSignal} [abortSignal]
  */
@@ -77,7 +77,7 @@ class TextLayerBuilder {
     highlighter = null,
     accessibilityManager = null,
     enablePermissions = false,
-    newTextLayerMode = 0,
+    debugTextLayerFonts = false,
     onAppend = null,
     abortSignal = null,
   }) {
@@ -85,11 +85,9 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
-    const debugTextLayerFonts = newTextLayerMode === 2;
     this.#textContentParams = {
       includeMarkedContent: true,
       disableNormalization: true,
-      includeTextLayerFonts: newTextLayerMode === 1 || debugTextLayerFonts,
       debugTextLayerFonts,
     };
     this.#onAppend = onAppend;
