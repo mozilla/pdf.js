@@ -1125,6 +1125,8 @@ const PDFViewerApplication = {
       } else {
         this._hideViewBookmark();
       }
+    } else if (PDFJSDev.test("CHROME") && !file) {
+      this._hideViewBookmark();
     } else if (PDFJSDev.test("MOZCENTRAL || CHROME")) {
       this.setTitleUsingUrl(file, /* downloadUrl = */ file);
 

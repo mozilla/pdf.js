@@ -43,9 +43,11 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
     defaultUrl = queryString.slice(4);
   }
 
-  // Example: chrome-extension://.../http://example.com/file.pdf
-  const humanReadableUrl = "/" + defaultUrl + location.hash;
-  history.replaceState(history.state, "", humanReadableUrl);
+  if (defaultUrl) {
+    // Example: chrome-extension://.../http://example.com/file.pdf
+    const humanReadableUrl = "/" + defaultUrl + location.hash;
+    history.replaceState(history.state, "", humanReadableUrl);
+  }
 
   AppOptions.set("defaultUrl", defaultUrl);
 })();
