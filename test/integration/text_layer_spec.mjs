@@ -790,7 +790,7 @@ describe("Text layer", () => {
                 .withContext(`In ${browserName}`)
                 .toHaveRoughlySelected(
                   "rs as the railway projects under\n" +
-                    "development enter the construction phase (estimated a"
+                    "development enter the construction phase (estimated "
                 );
             })
           );
