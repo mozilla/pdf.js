@@ -273,15 +273,17 @@ class TextLayer {
 
     this.#capability.reject(abortEx);
 
-    const fontSet = this.#ownerDocument.fonts;
-    const fontCache = TextLayer.#fontCache.get(fontSet);
-    for (const [name, font] of this.#fonts) {
-      if (--font.count === 0) {
-        fontSet.delete(font.fontFace);
-        fontCache.delete(name);
+    if (this.#fonts.size > 0) {
+      const fontSet = this.#ownerDocument.fonts;
+      const fontCache = TextLayer.#fontCache.get(this.#ownerDocument);
+      for (const [name, font] of this.#fonts) {
+        if (--font.count === 0) {
+          fontSet?.delete(font.fontFace);
+          fontCache?.delete(name);
+        }
       }
+      this.#fonts.clear();
     }
-    this.#fonts.clear();
   }
 
   /**
@@ -299,7 +301,10 @@ class TextLayer {
       if (!textLayerFont || this.#fonts.has(textLayerFont.name)) {
         continue;
       }
-      fontCache ??= TextLayer.#fontCache.getOrInsertComputed(fontSet, makeMap);
+      fontCache ??= TextLayer.#fontCache.getOrInsertComputed(
+        this.#ownerDocument,
+        makeMap
+      );
       const { name, data } = textLayerFont;
       const font = fontCache.getOrInsertComputed(name, () => {
         const fontFace = new FontFace(name, data);
