@@ -54,6 +54,9 @@ import { setLayerDimensions } from "./dom_utils.js";
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
 const DEFAULT_FONT_SIZE = 30;
 
+// Used in the `#appendText` method.
+const TX = new Float32Array(6);
+
 class TextLayer {
   #capability = createPromiseCapability();
 
@@ -140,7 +143,14 @@ class TextLayer {
       ctx: null,
     };
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
-    this.#transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
+    this.#transform = new Float32Array([
+      1,
+      0,
+      0,
+      -1,
+      -pageX,
+      pageY + pageHeight,
+    ]);
     this.#pageWidth = pageWidth;
     this.#pageHeight = pageHeight;
 
@@ -387,8 +397,8 @@ class TextLayer {
     };
     this.#textDivs.push(textDiv);
 
-    const tx = Util.transform(this.#transform, geom.transform);
-    let angle = Math.atan2(tx[1], tx[0]);
+    Util.transform(this.#transform, geom.transform, TX);
+    let angle = Math.atan2(TX[1], TX[0]);
     const style = this.#styleCache[geom.fontName];
     if (style.vertical) {
       angle += Math.PI / 2;
@@ -413,7 +423,7 @@ class TextLayer {
       // Scaled advances need fitting even for a single character.
       shouldScaleText ||= textLayerFont.advanceScale !== 1;
     }
-    const fontHeight = Math.hypot(tx[2], tx[3]);
+    const fontHeight = Math.hypot(TX[2], TX[3]);
     const fontAscent =
       fontHeight *
       (ascent ??
@@ -421,11 +431,11 @@ class TextLayer {
 
     let left, top;
     if (angle === 0) {
-      left = tx[4];
-      top = tx[5] - fontAscent;
+      left = TX[4];
+      top = TX[5] - fontAscent;
     } else {
-      left = tx[4] + fontAscent * Math.sin(angle);
-      top = tx[5] - fontAscent * Math.cos(angle);
+      left = TX[4] + fontAscent * Math.sin(angle);
+      top = TX[5] - fontAscent * Math.cos(angle);
     }
 
     const divStyle = textDiv.style;
