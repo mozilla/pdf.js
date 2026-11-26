@@ -181,6 +181,7 @@ const PDFViewerApplication = {
   mlManager: null,
   _downloadUrl: "",
   _localFile: null,
+  _localFileOpenId: 0,
   _isMergedDocument: false,
   _eventBusAC: null,
   _windowAC: null,
@@ -1525,6 +1526,7 @@ const PDFViewerApplication = {
    * @returns {Promise} - Promise that is resolved when the document is opened.
    */
   async open({ file, ...args }) {
+    const localFileOpenId = file ? ++this._localFileOpenId : null;
     const { emptyViewerOpenButton } = this.appConfig;
     if (emptyViewerOpenButton) {
       emptyViewerOpenButton.hidden = true;
@@ -1532,8 +1534,11 @@ const PDFViewerApplication = {
     if (this.pdfLoadingTask) {
       // We need to destroy already opened document.
       await this.close();
-      if (file && this.pdfLoadingTask) {
-        return; // A newer document started loading during close().
+      if (
+        file &&
+        (this.pdfLoadingTask || localFileOpenId !== this._localFileOpenId)
+      ) {
+        return; // A newer document was requested during close().
       }
     }
     // Set the necessary global worker parameters, using the available options.
