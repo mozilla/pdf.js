@@ -233,11 +233,9 @@ function maybeRenderPdfDoc(isNotPOST) {
     return;
   }
 
-  // Detected PDF that was not redirected by the declarativeNetRequest rules.
-  // Maybe because this was served without Content-Type and sniffed as PDF.
-  // Or because this is Chrome 127-, which does not support responseHeaders
-  // condition in declarativeNetRequest (DNR), and PDF requests are therefore
-  // not redirected via DNR.
+  // Top-level local PDFs reach this path so the viewer can keep the file URL.
+  // Other PDFs may reach it if served without Content-Type and sniffed as PDF,
+  // or if Chrome lacks support for the DNR responseHeaders condition.
 
   // In any case, load the viewer.
   console.log(`Detected PDF via document, opening viewer for ${document.URL}`);
