@@ -2039,12 +2039,8 @@ class WidgetAnnotation extends Annotation {
       data.actions = collectActions(xref, dict, AnnotationActionEventType);
     }
 
-    let fieldValue = getInheritableProperty({
-      dict,
-      key: "V",
-      getArray: true,
-    });
-    data.fieldValue = this._decodeFormValue(fieldValue);
+    const fieldType = getInheritableProperty({ dict, key: "FT" });
+    data.fieldType = fieldType instanceof Name ? fieldType.name : null;
 
     const defaultFieldValue = getInheritableProperty({
       dict,
@@ -2053,20 +2049,21 @@ class WidgetAnnotation extends Annotation {
     });
     data.defaultFieldValue = this._decodeFormValue(defaultFieldValue);
 
-    if (fieldValue === undefined && annotationGlobals.xfaDatasets) {
-      // Try to figure out if we have something in the xfa dataset.
-      const path = this._title.str;
-      if (path) {
-        this._hasValueFromXFA = true;
-        data.fieldValue = fieldValue =
-          annotationGlobals.xfaDatasets.getValue(path);
-      }
-    }
-
-    // When no "V" entry exists, let the fieldValue fallback to the "DV" entry
-    // (fixes issue13823.pdf).
-    if (fieldValue === undefined && data.defaultFieldValue !== null) {
-      data.fieldValue = data.defaultFieldValue;
+    const fieldValue = getInheritableProperty({
+      dict,
+      key: "V",
+      getArray: true,
+    });
+    const { xfaDatasets } = annotationGlobals;
+    const path = this._title.str;
+    if (fieldValue !== undefined) {
+      data.fieldValue = this._decodeFormValue(fieldValue);
+    } else if (xfaDatasets && path) {
+      this._hasValueFromXFA = true;
+      data.fieldValue = xfaDatasets.getValue(path);
+    } else {
+      // Some non-text fields rely on /DV when /V is missing (issue 13823).
+      data.fieldValue = data.fieldType === "Tx" ? null : data.defaultFieldValue;
     }
 
     data.alternativeText = stringToPDFString(dict.get("TU") || "");
@@ -2075,9 +2072,6 @@ class WidgetAnnotation extends Annotation {
       this._needAppearances &&
       data.fieldValue !== undefined &&
       data.fieldValue !== null;
-
-    const fieldType = getInheritableProperty({ dict, key: "FT" });
-    data.fieldType = fieldType instanceof Name ? fieldType.name : null;
 
     const localResources = getInheritableProperty({ dict, key: "DR" });
     const acroFormResources = annotationGlobals.acroForm.get("DR");
