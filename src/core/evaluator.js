@@ -4275,6 +4275,9 @@ class PartialEvaluator {
 }
 
 class TranslatedFont {
+  // The union of the d1 glyph bounds.
+  #glyphBBox = null;
+
   #prepareSystemFont;
 
   sent = null;
@@ -4408,6 +4411,7 @@ class TranslatedFont {
     }
 
     font.charProcOperatorList = charProcOperatorList;
+    font.glyphBBox = this.#glyphBBox;
     if (this._bbox) {
       font.isCharBBox = true;
       font.bbox = this._bbox;
@@ -4433,15 +4437,16 @@ class TranslatedFont {
       // Skip the d1 operator when its bounds are bogus (fixes issue14953.pdf).
       operatorList.fnArray.splice(0, 1);
       operatorList.argsArray.splice(0, 1);
-    } else if (
-      fontBBoxSize === 0 ||
-      Math.round(charBBoxSize / fontBBoxSize) >= 10
-    ) {
-      // Override the fontBBox when it's undefined/empty, or when it's at least
-      // (approximately) one order of magnitude smaller than the charBBox
-      // (fixes issue14999_reduced.pdf).
-      this._bbox ??= BBOX_INIT.slice();
-      Util.rectBoundingBox(...charBBox, this._bbox);
+    } else {
+      this.#glyphBBox ??= BBOX_INIT.slice();
+      Util.rectBoundingBox(...charBBox, this.#glyphBBox);
+      if (fontBBoxSize === 0 || Math.round(charBBoxSize / fontBBoxSize) >= 10) {
+        // Override the fontBBox when it's undefined/empty, or when it's at
+        // least (approximately) one order of magnitude smaller than the
+        // charBBox (fixes issue14999_reduced.pdf).
+        this._bbox ??= BBOX_INIT.slice();
+        Util.rectBoundingBox(...charBBox, this._bbox);
+      }
     }
 
     let i = 0,

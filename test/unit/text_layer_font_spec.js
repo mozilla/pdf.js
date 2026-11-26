@@ -319,6 +319,15 @@ describe("text layer font", function () {
         fontMatrix: [1, 0, 0, -1, 0, 0],
       })
     ).toBe(0);
+    // The d1 bounds of the glyphs win over a placeholder FontBBox.
+    expect(
+      getAscent({
+        isType3Font: true,
+        bbox: [0, 0, 1000, 1000],
+        glyphBBox: [1, -71, 91, 16],
+        fontMatrix: [1, 0, 0, -1, 0, 0],
+      })
+    ).toBeCloseTo(71 / 87, 6);
     // Vertical glyphs are centered on their column.
     expect(getAscent({ ascent: 0.9, descent: -0.3, vertical: true })).toEqual(
       0.5

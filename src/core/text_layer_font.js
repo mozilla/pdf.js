@@ -85,7 +85,7 @@ function createStats() {
  * @returns {number} The fraction of the em above the baseline.
  */
 function getAscentRatio(
-  { ascent, descent, bbox, fontMatrix, isType3Font },
+  { ascent, descent, bbox, glyphBBox, fontMatrix, isType3Font },
   heightScaled = false
 ) {
   const isValid = ratio => ratio > 0.5 && ratio < 0.95;
@@ -99,9 +99,10 @@ function getAscentRatio(
   }
   if (isType3Font && fontMatrix && !heightScaled) {
     // The glyph space of Type3 fonts may be flipped, unless the item height
-    // already carries that flip.
+    // already carries that flip. The d1 bounds are more reliable than the
+    // FontBBox (bug 1245391).
     const bounds = BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox(bbox, fontMatrix, bounds);
+    Util.axialAlignedBoundingBox(glyphBBox ?? bbox, fontMatrix, bounds);
     bbox = bounds;
   }
   const [, yMin, , yMax] = bbox;
