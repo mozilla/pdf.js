@@ -110,6 +110,10 @@ function getViewerConfiguration() {
         typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
           ? document.getElementById("invertPdfBrightness")
           : null,
+      disableSubpixelRenderingButton:
+        typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
+          ? document.getElementById("disableSubpixelRendering")
+          : null,
       cursorSelectToolButton: document.getElementById("cursorSelectTool"),
       cursorHandToolButton: document.getElementById("cursorHandTool"),
       scrollPageButton: document.getElementById("scrollPage"),

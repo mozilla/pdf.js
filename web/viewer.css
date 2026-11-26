@@ -1255,6 +1255,10 @@ dialog :link {
     #invertPdfBrightness::before {
       mask-image: url(images/secondaryToolbarButton-invertPdfBrightness.svg);
     }
+
+    #disableSubpixelRendering::before {
+      mask-image: var(--toolbarButton-editorFreeText-icon);
+    }
     /*#endif*/
 
     #cursorSelectTool::before {

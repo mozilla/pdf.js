@@ -599,6 +599,17 @@ const defaultOptions = new Map([
   ...(typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
     ? [
         [
+          "disableSubpixelRendering",
+          {
+            /** @type {boolean} */
+            value: false,
+            kind:
+              OptionKind.VIEWER +
+              OptionKind.PREFERENCE +
+              OptionKind.EVENT_DISPATCH,
+          },
+        ],
+        [
           "invertPdfBrightness",
           {
             /** @type {boolean} */

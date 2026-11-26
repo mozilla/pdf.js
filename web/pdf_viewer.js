@@ -2001,25 +2001,11 @@ class PDFViewer {
 
   update() {
     const visible = this._getVisiblePages();
-    const visiblePages = visible.views,
-      numVisiblePages = visiblePages.length;
-
-    if (numVisiblePages === 0) {
+    const visiblePages = visible.views;
+    if (visiblePages.length === 0) {
       return;
     }
-    const newCacheSize = Math.max(DEFAULT_CACHE_SIZE, 2 * numVisiblePages + 1);
-    this.#buffer.resize(newCacheSize, visible.ids);
-
-    for (const { view, visibleArea } of visiblePages) {
-      view.updateVisibleArea(visibleArea);
-    }
-    for (const view of this.#buffer) {
-      if (!visible.ids.has(view.id)) {
-        view.updateVisibleArea(null);
-      }
-    }
-
-    this.renderingQueue.renderHighestPriority(visible);
+    this.#renderVisiblePages(visible);
 
     const isSimpleLayout =
       this._spreadMode === SpreadMode.NONE &&
@@ -2046,6 +2032,40 @@ class PDFViewer {
       source: this,
       location: this._location,
     });
+  }
+
+  #renderVisiblePages(visible) {
+    const newCacheSize = Math.max(
+      DEFAULT_CACHE_SIZE,
+      2 * visible.views.length + 1
+    );
+    this.#buffer.resize(newCacheSize, visible.ids);
+
+    for (const { view, visibleArea } of visible.views) {
+      view.updateVisibleArea(visibleArea);
+    }
+    for (const view of this.#buffer) {
+      if (!visible.ids.has(view.id)) {
+        view.updateVisibleArea(null);
+      }
+    }
+
+    this.renderingQueue.renderHighestPriority(visible);
+  }
+
+  invalidatePageCanvases() {
+    if (!this.pdfDocument) {
+      return;
+    }
+    // This buffer includes pages whose rendering has started, even if paused.
+    for (const pageView of this.#buffer) {
+      pageView.reset();
+    }
+    this.#cleanupTimeouts();
+    const visible = this._getVisiblePages();
+    if (visible.views.length > 0) {
+      this.#renderVisiblePages(visible);
+    }
   }
 
   #switchToEditAnnotationMode() {

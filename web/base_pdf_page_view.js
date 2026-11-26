@@ -15,6 +15,7 @@
 
 import { FeatureTest, RenderingCancelledException } from "pdfjs-lib";
 import { RenderableView, RenderingStates } from "./renderable_view.js";
+import { AppOptions } from "./app_options.js";
 
 class BasePDFPageView extends RenderableView {
   #loadingId = null;
@@ -111,6 +112,14 @@ class BasePDFPageView extends RenderableView {
     }
   }
 
+  get #useAlphaCanvas() {
+    return (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("CHROME") &&
+      AppOptions.get("disableSubpixelRendering")
+    );
+  }
+
   _createCanvas(onShow, hideUntilComplete = false) {
     const { pageColors } = this;
     const hasHCM = !!(pageColors?.background && pageColors?.foreground);
@@ -151,7 +160,7 @@ class BasePDFPageView extends RenderableView {
 
         if (tempCanvas) {
           const ctx = canvas.getContext("2d", {
-            alpha: false,
+            alpha: this.#useAlphaCanvas,
           });
           ctx.drawImage(tempCanvas, 0, 0);
           if (isLastShow) {
@@ -203,6 +212,14 @@ class BasePDFPageView extends RenderableView {
   }
 
   async _drawCanvas(options, onCancel, onFinish) {
+    if (this.#useAlphaCanvas) {
+      // Chrome uses grayscale text antialiasing on alpha-capable canvases.
+      // Pass the context explicitly so drawing uses it on the main thread.
+      options.canvasContext = options.canvas.getContext("2d", {
+        alpha: true,
+        willReadFrequently: !AppOptions.get("enableHWA"),
+      });
+    }
     const renderTask = (this.renderTask = this.pdfPage.render(options));
     let hasCanvasPixels = false;
     const showCanvas = () => {

@@ -2626,6 +2626,32 @@ const PDFViewerApplication = {
           ),
         opts
       );
+
+      const subpixelButton = secondaryToolbar?.disableSubpixelRenderingButton;
+      const updateSubpixelButton = value => {
+        if (subpixelButton) {
+          subpixelButton.classList.toggle("toggled", value);
+          subpixelButton.ariaPressed = String(value);
+        }
+      };
+      updateSubpixelButton(AppOptions.get("disableSubpixelRendering"));
+      eventBus.on(
+        "disablesubpixelrendering",
+        ({ value }) => {
+          updateSubpixelButton(value);
+          this.pdfViewer.invalidatePageCanvases();
+        },
+        opts
+      );
+      eventBus.on(
+        "togglesubpixelrendering",
+        () =>
+          preferences.set(
+            "disableSubpixelRendering",
+            !AppOptions.get("disableSubpixelRendering")
+          ),
+        opts
+      );
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus.on(
