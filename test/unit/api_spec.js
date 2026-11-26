@@ -12768,4 +12768,87 @@ small scripts as well as for`);
       });
     });
   });
+
+  describe("Zero-length subpath rendering", function () {
+    async function renderSinglePage(content, width = 20, height = 20) {
+      const pdf = buildSinglePagePdf(
+        `/MediaBox [0 0 ${width} ${height}] /Contents 4 0 R`,
+        [streamObject(content)]
+      );
+      const loadingTask = getDocument({ data: pdf });
+      const pdfDoc = await loadingTask.promise;
+      try {
+        const page = await pdfDoc.getPage(1);
+        const viewport = page.getViewport({ scale: 1 });
+        const canvasAndCtx = pdfDoc.canvasFactory.create(
+          viewport.width,
+          viewport.height
+        );
+        try {
+          await page.render({ canvas: canvasAndCtx.canvas, viewport }).promise;
+          return canvasAndCtx.context.getImageData(
+            0,
+            0,
+            viewport.width,
+            viewport.height
+          );
+        } finally {
+          pdfDoc.canvasFactory.destroy(canvasAndCtx);
+        }
+      } finally {
+        await loadingTask.destroy();
+      }
+    }
+
+    function countDarkPixels(imageData) {
+      const { data } = imageData;
+      let count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        if (data[i] < 128 && data[i + 3] > 128) {
+          count++;
+        }
+      }
+      return count;
+    }
+
+    it("renders zero-length subpaths as circles when lineCap is round", async function () {
+      for (const content of [
+        "0 0 0 RG 6 w 1 J 10 10 m 10 10 l S",
+        "0 0 0 RG 6 w 1 J 10 10 m 10 10 l h S",
+        "0 0 0 RG 6 w 1 J 10 10 m h S",
+        "0 0 0 RG 6 w 1 J 10 10 0 0 re S",
+        "0 0 0 RG 6 w 1 J 10 10 m 10 10 10 10 10 10 c S",
+        "0 0 0 RG 1 1 1 rg 6 w 1 J 10 10 m 10 10 l B",
+        "0 0 0 RG 0.1 0 0 0.1 0 0 cm 60 w 1 J 100 100 m 100 100 l S",
+      ]) {
+        const img = await renderSinglePage(content);
+        expect(countDarkPixels(img)).withContext(content).toBeGreaterThan(15);
+      }
+    });
+
+    it("does not render zero-length subpaths for butt/square caps or bare moveTo", async function () {
+      for (const content of [
+        "0 0 0 RG 6 w 0 J 10 10 m 10 10 l S",
+        "0 0 0 RG 6 w 2 J 10 10 m 10 10 l S",
+        "0 0 0 RG 6 w 1 J 10 10 m S",
+      ]) {
+        const img = await renderSinglePage(content);
+        expect(countDarkPixels(img)).withContext(content).toEqual(0);
+      }
+    });
+
+    it("renders both zero-length and non-zero subpaths in the same path", async function () {
+      const img = await renderSinglePage(
+        "0 0 0 RG 6 w 1 J 6 10 m 6 10 l 14 10 m 24 10 l S",
+        30,
+        20
+      );
+      // Pixel near (6, 10) from the zero-length subpath.
+      const dotIdx = (10 * 30 + 6) * 4;
+      expect(img.data[dotIdx]).toBeLessThan(128);
+      // Pixel near (19, 10) from the line segment.
+      const lineIdx = (10 * 30 + 19) * 4;
+      expect(img.data[lineIdx]).toBeLessThan(128);
+    });
+  });
 });

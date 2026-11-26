@@ -271,6 +271,135 @@ function findContrastColor(baseColor, fixedColor) {
   return cachedValue;
 }
 
+const zeroLengthSubpathCache = new WeakMap();
+// Device-space length (in pixels) used to convert zero-length subpaths into
+// tiny segments so Canvas 2D renders round caps consistently across backends.
+const ZERO_LENGTH_STROKE_DEVICE_EPS = 1e-3;
+
+function applyDrawOP(path, data, i) {
+  switch (data[i++]) {
+    case DrawOPS.moveTo:
+      path.moveTo(data[i++], data[i++]);
+      break;
+    case DrawOPS.lineTo:
+      path.lineTo(data[i++], data[i++]);
+      break;
+    case DrawOPS.curveTo:
+      path.bezierCurveTo(
+        data[i++],
+        data[i++],
+        data[i++],
+        data[i++],
+        data[i++],
+        data[i++]
+      );
+      break;
+    case DrawOPS.quadraticCurveTo:
+      path.quadraticCurveTo(data[i++], data[i++], data[i++], data[i++]);
+      break;
+    case DrawOPS.closePath:
+      path.closePath();
+      break;
+    default:
+      warn(`Unrecognized drawing path operator: ${data[i - 1]}`);
+      break;
+  }
+  return i;
+}
+
+function getZeroLengthSubpaths(data) {
+  if (!data) {
+    return null;
+  }
+  let cached = zeroLengthSubpathCache.get(data);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  let zeroLengthSubpaths = null;
+  let hasSubpath = false;
+  let hasSegment = false;
+  let isZeroLength = true;
+  let subpathStart = 0;
+  let sx = 0;
+  let sy = 0;
+
+  for (let i = 0, ii = data.length; i < ii;) {
+    const opStart = i;
+    switch (data[i++]) {
+      case DrawOPS.moveTo:
+        if (hasSubpath && hasSegment && isZeroLength) {
+          (zeroLengthSubpaths ??= []).push(subpathStart, opStart, sx, sy);
+        }
+        hasSubpath = true;
+        hasSegment = false;
+        isZeroLength = true;
+        subpathStart = opStart;
+        sx = data[i++];
+        sy = data[i++];
+        break;
+      case DrawOPS.lineTo:
+        if (hasSubpath) {
+          hasSegment = true;
+          if (data[i] !== sx || data[i + 1] !== sy) {
+            isZeroLength = false;
+          }
+        }
+        i += 2;
+        break;
+      case DrawOPS.curveTo:
+        if (hasSubpath) {
+          hasSegment = true;
+          if (
+            data[i] !== sx ||
+            data[i + 1] !== sy ||
+            data[i + 2] !== sx ||
+            data[i + 3] !== sy ||
+            data[i + 4] !== sx ||
+            data[i + 5] !== sy
+          ) {
+            isZeroLength = false;
+          }
+        }
+        i += 6;
+        break;
+      case DrawOPS.quadraticCurveTo:
+        if (hasSubpath) {
+          hasSegment = true;
+          if (
+            data[i] !== sx ||
+            data[i + 1] !== sy ||
+            data[i + 2] !== sx ||
+            data[i + 3] !== sy
+          ) {
+            isZeroLength = false;
+          }
+        }
+        i += 4;
+        break;
+      case DrawOPS.closePath:
+        if (hasSubpath) {
+          if (isZeroLength) {
+            (zeroLengthSubpaths ??= []).push(subpathStart, i, sx, sy);
+          }
+          hasSegment = false;
+          isZeroLength = true;
+          subpathStart = i;
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  if (hasSubpath && hasSegment && isZeroLength) {
+    (zeroLengthSubpaths ??= []).push(subpathStart, data.length, sx, sy);
+  }
+
+  cached = zeroLengthSubpaths;
+  zeroLengthSubpathCache.set(data, cached);
+  return cached;
+}
+
 function makePathFromDrawOPS(data) {
   // Using a SVG string is slightly slower than using the following loop.
   const path = new Path2D();
@@ -278,33 +407,58 @@ function makePathFromDrawOPS(data) {
     return path;
   }
   for (let i = 0, ii = data.length; i < ii;) {
-    switch (data[i++]) {
-      case DrawOPS.moveTo:
-        path.moveTo(data[i++], data[i++]);
-        break;
-      case DrawOPS.lineTo:
-        path.lineTo(data[i++], data[i++]);
-        break;
-      case DrawOPS.curveTo:
-        path.bezierCurveTo(
-          data[i++],
-          data[i++],
-          data[i++],
-          data[i++],
-          data[i++],
-          data[i++]
-        );
-        break;
-      case DrawOPS.quadraticCurveTo:
-        path.quadraticCurveTo(data[i++], data[i++], data[i++], data[i++]);
-        break;
-      case DrawOPS.closePath:
-        path.closePath();
-        break;
-      default:
-        warn(`Unrecognized drawing path operator: ${data[i - 1]}`);
-        break;
+    i = applyDrawOP(path, data, i);
+  }
+  return path;
+}
+
+function makeRoundCapStrokePath(data, ctx) {
+  const zeroLengthSubpaths = getZeroLengthSubpaths(data);
+  if (!zeroLengthSubpaths) {
+    return null;
+  }
+
+  const { a, b, c, d } = ctx.getTransform();
+  const normX = Math.hypot(a, b);
+  const normY = Math.hypot(c, d);
+  if (normX === 0 && normY === 0) {
+    return null;
+  }
+
+  const stepAlongX = normX >= normY;
+  const baseEps = ZERO_LENGTH_STROKE_DEVICE_EPS / (stepAlongX ? normX : normY);
+  const path = new Path2D();
+  let pos = 0;
+
+  for (let k = 0, kk = zeroLengthSubpaths.length; k < kk; k += 4) {
+    const start = zeroLengthSubpaths[k];
+    const end = zeroLengthSubpaths[k + 1];
+    const sx = zeroLengthSubpaths[k + 2];
+    const sy = zeroLengthSubpaths[k + 3];
+
+    while (pos < start) {
+      pos = applyDrawOP(path, data, pos);
     }
+
+    path.moveTo(sx, sy);
+    if (stepAlongX) {
+      let x2 = sx + baseEps;
+      if (Math.fround(x2) === Math.fround(sx)) {
+        x2 = sx + (Math.abs(sx) * 2 ** -22 || baseEps);
+      }
+      path.lineTo(x2, sy);
+    } else {
+      let y2 = sy + baseEps;
+      if (Math.fround(y2) === Math.fround(sy)) {
+        y2 = sy + (Math.abs(sy) * 2 ** -22 || baseEps);
+      }
+      path.lineTo(sx, y2);
+    }
+    pos = end;
+  }
+
+  for (let ii = data.length; pos < ii;) {
+    pos = applyDrawOP(path, data, pos);
   }
   return path;
 }
@@ -318,6 +472,7 @@ export {
   getRGB,
   getRGBA,
   makePathFromDrawOPS,
+  makeRoundCapStrokePath,
   PixelsPerInch,
   RenderingCancelledException,
 };

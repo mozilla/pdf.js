@@ -43,6 +43,7 @@ import {
   getCurrentTransformInverse,
   getRGBA,
   makePathFromDrawOPS,
+  makeRoundCapStrokePath,
   PixelsPerInch,
 } from "./display_utils.js";
 import {
@@ -2245,7 +2246,29 @@ class CanvasGraphics {
       }
     }
 
-    this[op](opIdx, path);
+    let strokePath = path;
+    if (this.contentVisible && this.ctx.lineCap === "round") {
+      switch (op) {
+        case OPS.stroke:
+        case OPS.closeStroke:
+        case OPS.fillStroke:
+        case OPS.eoFillStroke:
+        case OPS.closeFillStroke:
+        case OPS.closeEOFillStroke:
+          strokePath = makeRoundCapStrokePath(data[0], this.ctx) || path;
+          break;
+      }
+    }
+
+    if (strokePath !== path) {
+      if (op === OPS.stroke) {
+        this.stroke(opIdx, path, true, strokePath);
+      } else {
+        this[op](opIdx, path, strokePath);
+      }
+    } else {
+      this[op](opIdx, path);
+    }
 
     this._pathStartIdx = opIdx;
   }
@@ -2254,7 +2277,7 @@ class CanvasGraphics {
     this.ctx.closePath();
   }
 
-  stroke(opIdx, path, consumePath = true) {
+  stroke(opIdx, path, consumePath = true, strokePath = path) {
     const started =
       consumePath && this.#beginKnockoutElement(this.current.strokeAlpha);
     const ctx = this.ctx;
@@ -2278,15 +2301,15 @@ class CanvasGraphics {
         if (baseTransform) {
           const newPath = new Path2D();
           newPath.addPath(
-            path,
+            strokePath,
             ctx.getTransform().invertSelf().multiplySelf(baseTransform)
           );
-          path = newPath;
+          strokePath = newPath;
         }
-        this.rescaleAndStroke(path, /* saveRestore */ false);
+        this.rescaleAndStroke(strokePath, /* saveRestore */ false);
         ctx.restore();
       } else {
-        this.rescaleAndStroke(path, /* saveRestore */ true);
+        this.rescaleAndStroke(strokePath, /* saveRestore */ true);
       }
     }
 
@@ -2308,8 +2331,8 @@ class CanvasGraphics {
     this.#endKnockoutElement(started);
   }
 
-  closeStroke(opIdx, path) {
-    this.stroke(opIdx, path);
+  closeStroke(opIdx, path, strokePath = path) {
+    this.stroke(opIdx, path, true, strokePath);
   }
 
   fill(opIdx, path, consumePath = true) {
@@ -2387,7 +2410,7 @@ class CanvasGraphics {
     this.fill(opIdx, path);
   }
 
-  fillStroke(opIdx, path) {
+  fillStroke(opIdx, path, strokePath = path) {
     // Fill and stroke share one KO element so they composite against the
     // initial backdrop once, not twice. Use the smaller of the two alpha_s as
     // the mask divisor: it's conservative (over-clamps the other pass's
@@ -2397,23 +2420,23 @@ class CanvasGraphics {
       Math.min(this.current.fillAlpha, this.current.strokeAlpha)
     );
     this.fill(opIdx, path, false);
-    this.stroke(opIdx, path, false);
+    this.stroke(opIdx, path, false, strokePath);
     this.consumePath(opIdx, path);
     this.#endKnockoutElement(started);
   }
 
-  eoFillStroke(opIdx, path) {
+  eoFillStroke(opIdx, path, strokePath = path) {
     this.pendingEOFill = true;
-    this.fillStroke(opIdx, path);
+    this.fillStroke(opIdx, path, strokePath);
   }
 
-  closeFillStroke(opIdx, path) {
-    this.fillStroke(opIdx, path);
+  closeFillStroke(opIdx, path, strokePath = path) {
+    this.fillStroke(opIdx, path, strokePath);
   }
 
-  closeEOFillStroke(opIdx, path) {
+  closeEOFillStroke(opIdx, path, strokePath = path) {
     this.pendingEOFill = true;
-    this.fillStroke(opIdx, path);
+    this.fillStroke(opIdx, path, strokePath);
   }
 
   endPath(opIdx, path) {
