@@ -39,6 +39,7 @@ import {
   SidebarView,
   SpreadMode,
   TextLayerMode,
+  toggleCheckedBtn,
 } from "./ui_utils.js";
 import {
   AnnotationEditorType,
@@ -2600,6 +2601,31 @@ const PDFViewerApplication = {
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
       eventBus.on("fileinputchange", onFileInputChange.bind(this), opts);
       eventBus.on("openfile", onOpenFile.bind(this), opts);
+    }
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")) {
+      const { viewerContainer, secondaryToolbar } = this.appConfig;
+      const button = secondaryToolbar?.invertPdfBrightnessButton;
+      const updateBrightness = value => {
+        viewerContainer.classList.toggle("invertPdfBrightness", value);
+        if (button) {
+          toggleCheckedBtn(button, value);
+        }
+      };
+      updateBrightness(AppOptions.get("invertPdfBrightness"));
+      eventBus.on(
+        "invertpdfbrightness",
+        ({ value }) => updateBrightness(value),
+        opts
+      );
+      eventBus.on(
+        "togglepdfbrightness",
+        () =>
+          preferences.set(
+            "invertPdfBrightness",
+            !AppOptions.get("invertPdfBrightness")
+          ),
+        opts
+      );
     }
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) {
       eventBus.on(

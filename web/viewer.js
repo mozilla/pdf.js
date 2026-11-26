@@ -106,6 +106,10 @@ function getViewerConfiguration() {
       lastPageButton: document.getElementById("lastPage"),
       pageRotateCwButton: document.getElementById("pageRotateCw"),
       pageRotateCcwButton: document.getElementById("pageRotateCcw"),
+      invertPdfBrightnessButton:
+        typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
+          ? document.getElementById("invertPdfBrightness")
+          : null,
       cursorSelectToolButton: document.getElementById("cursorSelectTool"),
       cursorHandToolButton: document.getElementById("cursorHandTool"),
       scrollPageButton: document.getElementById("scrollPage"),

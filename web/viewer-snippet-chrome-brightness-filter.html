@@ -1,0 +1,18 @@
+<svg id="pdfBrightnessFilterDefs" width="0" height="0" aria-hidden="true">
+  <filter id="pdfBrightnessFilter" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+    <!-- Compute with opaque RGB, then restore the original alpha. -->
+    <feColorMatrix in="SourceGraphic" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" result="opaque" />
+    <feColorMatrix in="opaque" values="1 0 0 0 0  1 0 0 0 0  1 0 0 0 0  0 0 0 1 0" result="red" />
+    <feColorMatrix in="opaque" values="0 1 0 0 0  0 1 0 0 0  0 1 0 0 0  0 0 0 1 0" result="green" />
+    <feColorMatrix in="opaque" values="0 0 1 0 0  0 0 1 0 0  0 0 1 0 0  0 0 0 1 0" result="blue" />
+    <feBlend in="red" in2="green" mode="darken" result="minRedGreen" />
+    <feBlend in="minRedGreen" in2="blue" mode="darken" result="minimum" />
+    <feBlend in="red" in2="green" mode="lighten" result="maxRedGreen" />
+    <feBlend in="maxRedGreen" in2="blue" mode="lighten" result="maximum" />
+    <feColorMatrix in="maximum" values="-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0" result="oneMinusMaximum" />
+    <!-- RGB - minimum + (1 - maximum) mirrors HSL lightness. -->
+    <feBlend in="opaque" in2="minimum" mode="difference" result="aboveMinimum" />
+    <feComposite in="aboveMinimum" in2="oneMinusMaximum" operator="arithmetic" k2="1" k3="1" />
+    <feComposite in2="SourceAlpha" operator="in" />
+  </filter>
+</svg>

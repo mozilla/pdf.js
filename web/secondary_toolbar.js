@@ -46,6 +46,8 @@ import { PagesCountLimit } from "./pdf_viewer.js";
  *   clockwise.
  * @property {HTMLButtonElement} pageRotateCcwButton - Button to rotate the
  *   pages counterclockwise.
+ * @property {HTMLButtonElement} [invertPdfBrightnessButton] - Button to toggle
+ *   PDF page brightness inversion in the Chrome extension.
  * @property {HTMLButtonElement} cursorSelectToolButton - Button to enable the
  *   select tool.
  * @property {HTMLButtonElement} cursorHandToolButton - Button to enable the
@@ -156,6 +158,17 @@ class SecondaryToolbar {
         element: options.openFileButton,
         eventName: "openfile",
         close: true,
+      });
+    }
+    if (
+      typeof PDFJSDev !== "undefined" &&
+      PDFJSDev.test("CHROME") &&
+      options.invertPdfBrightnessButton
+    ) {
+      buttons.push({
+        element: options.invertPdfBrightnessButton,
+        eventName: "togglepdfbrightness",
+        close: false,
       });
     }
 

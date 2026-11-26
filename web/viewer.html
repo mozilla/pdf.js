@@ -752,6 +752,20 @@ See https://github.com/adobe-type-tools/cmap-resources
                         <span data-l10n-id="pdfjs-page-rotate-ccw-button-label"></span>
                       </button>
 
+                      <!--#if CHROME-->
+                      <button
+                        id="invertPdfBrightness"
+                        class="toolbarButton labeled"
+                        type="button"
+                        tabindex="0"
+                        data-l10n-id="pdfjs-invert-pdf-brightness-button"
+                        role="checkbox"
+                        aria-checked="false"
+                      >
+                        <span data-l10n-id="pdfjs-invert-pdf-brightness-button-label"></span>
+                      </button>
+                      <!--#endif-->
+
                       <div class="horizontalToolbarSeparator"></div>
 
                       <div id="cursorToolButtons" role="radiogroup">
@@ -1350,5 +1364,8 @@ See https://github.com/adobe-type-tools/cmap-resources
     </div>
     <!-- outerContainer -->
     <div id="printContainer"></div>
+    <!--#if CHROME-->
+    <!--#include viewer-snippet-chrome-brightness-filter.html-->
+    <!--#endif-->
   </body>
 </html>

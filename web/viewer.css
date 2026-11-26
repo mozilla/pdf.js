@@ -1251,6 +1251,12 @@ dialog :link {
       mask-image: var(--secondaryToolbarButton-rotateCw-icon);
     }
 
+    /*#if CHROME*/
+    #invertPdfBrightness::before {
+      mask-image: url(images/secondaryToolbarButton-invertPdfBrightness.svg);
+    }
+    /*#endif*/
+
     #cursorSelectTool::before {
       mask-image: var(--secondaryToolbarButton-selectTool-icon);
     }
@@ -1469,6 +1475,18 @@ dialog :link {
 #printContainer {
   display: none;
 }
+
+/*#if CHROME*/
+#pdfBrightnessFilterDefs {
+  position: absolute;
+}
+
+@media screen {
+  .pdfViewer.invertPdfBrightness .canvasWrapper > canvas {
+    filter: url("#pdfBrightnessFilter");
+  }
+}
+/*#endif*/
 
 @media print {
   body {

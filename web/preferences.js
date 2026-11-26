@@ -108,7 +108,7 @@ class BasePreferences {
     AppOptions.setAll({ [name]: value }, /* prefs = */ true);
 
     await this._writeToStorage(
-      typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME || MOZCENTRAL")
         ? { [name]: AppOptions.get(name) }
         : AppOptions.getAll(OptionKind.PREFERENCE)
     );
