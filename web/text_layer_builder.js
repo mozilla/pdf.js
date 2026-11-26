@@ -53,8 +53,6 @@ class TextLayerBuilder {
 
   #enablePermissions = false;
 
-  #textContentParams;
-
   #onAppend = null;
 
   #removeOwnSelectionListener = null;
@@ -82,10 +80,6 @@ class TextLayerBuilder {
     this.highlighter = highlighter;
     this.accessibilityManager = accessibilityManager;
     this.#enablePermissions = enablePermissions === true;
-    this.#textContentParams = {
-      includeMarkedContent: true,
-      disableNormalization: true,
-    };
     this.#onAppend = onAppend;
     this.#abortSignal = abortSignal;
 
@@ -114,7 +108,7 @@ class TextLayerBuilder {
     this.cancel();
     this.#textLayer = new TextLayer({
       textContentSource: this.pdfPage.streamTextContent(
-        textContentParams || this.#textContentParams
+        textContentParams || { enableNormalization: false }
       ),
       images,
       container: this.div,

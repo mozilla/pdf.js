@@ -53,7 +53,6 @@ describe("evaluator", function () {
       stream,
       task,
       resources: Dict.empty,
-      includeMarkedContent: true,
       sink,
     });
     return items;

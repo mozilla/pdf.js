@@ -5223,7 +5223,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items, styles, lang } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       expect(items.length).toEqual(1);
       // Font name will be a random object id.
@@ -5307,7 +5307,7 @@ page 1 / 3`);
       const pdfPage = await pdfDoc.getPage(1);
 
       const { items, styles } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const item = items.find(({ str }) => str === "identi\ufb01es");
       const { textLayerFont } = styles[item.fontName];
@@ -5331,7 +5331,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(2);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       const index = items.findIndex(({ str }) => str === "a na\u00a8");
@@ -5384,7 +5384,7 @@ page 1 / 3`);
         );
 
         const { items, styles } = await pdfPage.getTextContent({
-          disableNormalization: true,
+          enableNormalization: false,
         });
 
         const item = items.find(
@@ -5462,16 +5462,14 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
       expect(text).toEqual(
         "Mitarbeiterinnen und Mitarbeiter arbeiten in über 100 Ländern engagiert im Dienste"
       );
-      const { items: textLayerItems } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items: textLayerItems } = await pdfPage.getTextContent();
       expect(mergeText(textLayerItems)).toEqual(text);
 
       await loadingTask.destroy();
@@ -5486,7 +5484,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5500,7 +5498,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5518,7 +5516,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5532,7 +5530,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(items).toEqual([
@@ -5550,7 +5548,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5578,7 +5576,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5602,7 +5600,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5618,7 +5616,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5634,7 +5632,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5650,7 +5648,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("ABCD");
@@ -5665,7 +5663,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual(`FOTBOLL.
@@ -5681,7 +5679,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("ABCD E");
@@ -5696,7 +5694,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5753,7 +5751,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("A B C");
@@ -5778,7 +5776,7 @@ ABCD E`);
       ]) {
         const pdfPage = await pdfDoc.getPage(pageNumber);
         const { items } = await pdfPage.getTextContent({
-          disableNormalization: true,
+          enableNormalization: false,
         });
 
         expect(mergeText(items)).withContext(context).toEqual(expected);
@@ -5797,7 +5795,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("UTR 50");
@@ -5812,7 +5810,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("AB C DE");
@@ -5827,7 +5825,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("AAA BBB CCC");
@@ -5859,7 +5857,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5880,7 +5878,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       let { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       let text = mergeText(items);
       let expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
@@ -5895,9 +5893,7 @@ sources, for full support with Dvips.`;
 
       expect(text.includes(expected)).toBeTrue();
 
-      ({ items } = await pdfPage.getTextContent({
-        disableNormalization: false,
-      }));
+      ({ items } = await pdfPage.getTextContent());
       text = mergeText(items);
       expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
 Open Sans was designed with an upright stress, open forms and a neu-
@@ -5918,7 +5914,7 @@ sources, for full support with Dvips.`;
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5944,7 +5940,7 @@ sozialökonomische Gerechtigkeit.`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5967,7 +5963,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5985,7 +5981,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
       expect(text).toEqual("Hello world!");
@@ -5998,7 +5994,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(6);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6007,18 +6003,18 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
-    it("gets text content with or without includeMarkedContent, and compare (issue 15094)", async function () {
+    it("gets text content with or without enableMarkedContent, and compare (issue 15094)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("pdf.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(568);
       let { items } = await pdfPage.getTextContent({
-        includeMarkedContent: false,
-        disableNormalization: true,
+        enableMarkedContent: false,
+        enableNormalization: false,
       });
       const textWithoutMC = mergeText(items);
       ({ items } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-        disableNormalization: true,
+        enableMarkedContent: true,
+        enableNormalization: false,
       }));
       const textWithMC = mergeText(items);
 
@@ -6033,9 +6029,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await pdfPage.getTextContent();
 
       expect(items.map(item => item.id ?? item.type ?? item.str)).toEqual([
         "Hello, world!",
@@ -6061,8 +6055,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       const start = items.findIndex(item => item.id === "p3R_mc8");
@@ -6090,7 +6083,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6109,7 +6102,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6123,7 +6116,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(items.map(i => i.str)).toEqual(["Hello", " ", "World"]);
@@ -6138,7 +6131,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       // No item should carry a hasEOL flag between the superscript and the
@@ -6157,7 +6150,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6171,7 +6164,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       expect(items.map(({ str }) => str)).toEqual(["ABC", "DEF", "GHI"]);
       expect(items.map(({ transform }) => transform[4])).toEqual([
@@ -6190,7 +6183,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6206,7 +6199,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
       expect(text).toEqual("AA A");
@@ -6219,7 +6212,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
       expect(text)
@@ -6242,7 +6235,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       // The text drawn with a zero font size is invisible.
       const text = mergeText(items);
@@ -6255,9 +6248,9 @@ have written that much by now. So, here’s to squashing bugs.`);
       const loadingTask = getDocument(buildGetDocumentParams("issue16880.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      for (const disableNormalization of [false, true]) {
+      for (const enableNormalization of [true, false]) {
         const { items } = await pdfPage.getTextContent({
-          disableNormalization,
+          enableNormalization,
         });
         expect(mergeText(items)).toEqual("سلام کلاس لاله");
       }
@@ -10574,8 +10567,7 @@ small scripts as well as for`);
             ? item.id
             : (item.str ?? null);
         let { items } = await pdfPage.getTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
+          enableNormalization: false,
         });
         expect(items.map(filterItems)).toEqual([
           "p19R_mc0",
@@ -10626,8 +10618,7 @@ small scripts as well as for`);
         });
 
         ({ items } = await pdfPage.getTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
+          enableNormalization: false,
         }));
         expect(items.map(filterItems)).toEqual([
           "p4R_mc0",
@@ -10668,8 +10659,7 @@ small scripts as well as for`);
         });
 
         ({ items } = await pdfPage.getTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
+          enableNormalization: false,
         }));
         expect(items.map(filterItems)).toEqual([
           "p19R_mc0",

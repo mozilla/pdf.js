@@ -1441,7 +1441,6 @@ class Annotation {
       stream: this.appearance,
       task,
       resources,
-      includeMarkedContent: true,
       keepWhiteSpace: true,
       sink,
       viewBox,

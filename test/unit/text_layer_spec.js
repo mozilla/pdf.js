@@ -331,7 +331,7 @@ describe("textLayer", function () {
       const pdfDocument = await loadingTask.promise;
       const page = await pdfDocument.getPage(1);
       textContent = await page.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       viewport = page.getViewport({ scale: 1 });
     });

@@ -2380,12 +2380,12 @@ class PartialEvaluator {
     task,
     resources,
     stateManager = null,
-    includeMarkedContent = false,
+    enableMarkedContent = true,
     sink,
     seenStyles = new Set(),
     viewBox,
     lang = null,
-    disableNormalization = false,
+    enableNormalization = true,
     keepWhiteSpace = false,
     prevRefs = null,
     markedContentScope = "",
@@ -2598,9 +2598,9 @@ class PartialEvaluator {
             x + ((vertical ? -transform[2] : transform[0]) * advance) / 1000;
           const endY =
             y + ((vertical ? -transform[3] : transform[1]) * advance) / 1000;
-          const unicode = disableNormalization
-            ? glyph.unicode
-            : glyph.normalizedUnicode;
+          const unicode = enableNormalization
+            ? glyph.normalizedUnicode
+            : glyph.unicode;
           if (
             unicode &&
             Math.max(x, endX) >= viewBox[0] &&
@@ -2633,7 +2633,7 @@ class PartialEvaluator {
     }
 
     function closePendingMarkedContentItems(level = 0) {
-      if (!includeMarkedContent || markedContentLevel <= level) {
+      if (!enableMarkedContent || markedContentLevel <= level) {
         return;
       }
       textRuns.flush();
@@ -2891,12 +2891,12 @@ class PartialEvaluator {
                         ? localResources
                         : resources,
                     stateManager: xObjStateManager,
-                    includeMarkedContent,
+                    enableMarkedContent,
                     sink: textExtraction,
                     seenStyles,
                     viewBox,
                     lang,
-                    disableNormalization,
+                    enableNormalization,
                     keepWhiteSpace,
                     prevRefs: seenRefs,
                     markedContentScope: xObjMarkedContentScope,
@@ -2979,7 +2979,7 @@ class PartialEvaluator {
             return;
           case OPS.beginMarkedContent:
             textRuns.flush();
-            if (includeMarkedContent) {
+            if (enableMarkedContent) {
               markedContentLevel++;
 
               textContent.items.push({
@@ -2990,7 +2990,7 @@ class PartialEvaluator {
             break;
           case OPS.beginMarkedContentProps:
             textRuns.flush();
-            if (includeMarkedContent) {
+            if (enableMarkedContent) {
               markedContentLevel++;
 
               const mcid = args[1] instanceof Dict ? args[1].get("MCID") : null;
@@ -3005,7 +3005,7 @@ class PartialEvaluator {
             break;
           case OPS.endMarkedContent:
             textRuns.flush();
-            if (includeMarkedContent) {
+            if (enableMarkedContent) {
               if (markedContentLevel === 0) {
                 // Ignore unmatched EMC operators (issue 15629).
                 break;

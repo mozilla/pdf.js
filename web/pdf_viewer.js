@@ -819,12 +819,9 @@ class PDFViewer {
       }
       buffer.length = 0;
       const page = await this.pdfDocument.getPage(pageNum);
-      // By default getTextContent pass disableNormalization equals to false
-      // which is fine because we want a normalized string. The marked content
-      // splits the text like in the text layer.
-      const { items } = await page.getTextContent({
-        includeMarkedContent: true,
-      });
+      // By default the text is normalized, which is fine because we want a
+      // normalized string.
+      const { items } = await page.getTextContent();
       for (const item of items) {
         if (item.str) {
           buffer.push(item.str);

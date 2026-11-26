@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+import { AbortException, TEXT_CONTENT_CHUNK_SIZE } from "../shared/util.js";
 import {
   getTextAdvance,
   isZeroWidth,
   TextLayerFonts,
 } from "./text_layer_font.js";
-import { AbortException } from "../shared/util.js";
 import { bidi } from "./bidi.js";
 
 // These scripts can be fitted using the generated font's advances and the
@@ -652,9 +652,11 @@ class TextExtraction {
   }
 
   get desiredSize() {
-    // The whole page is buffered to generate the fonts. The intersector has no
-    // sink.
-    return this.fonts || !this.#sink ? Infinity : this.#sink.desiredSize;
+    if (this.fonts) {
+      // The whole page is buffered to generate the fonts.
+      return Infinity;
+    }
+    return this.#sink ? this.#sink.desiredSize : TEXT_CONTENT_CHUNK_SIZE;
   }
 
   enqueue(chunk) {

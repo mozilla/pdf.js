@@ -693,8 +693,8 @@ class Page {
   async extractTextContent({
     handler,
     task,
-    includeMarkedContent,
-    disableNormalization,
+    enableMarkedContent,
+    enableNormalization,
     sink,
     intersector = null,
   }) {
@@ -724,8 +724,8 @@ class Page {
       stream: contentStream,
       task,
       resources,
-      includeMarkedContent,
-      disableNormalization,
+      enableMarkedContent,
+      enableNormalization,
       sink: textExtraction,
       viewBox: this.view,
       lang,
@@ -816,8 +816,10 @@ class Page {
         this.extractTextContent({
           handler,
           task,
-          includeMarkedContent: false,
-          disableNormalization: true,
+          enableMarkedContent: false,
+          // Preserve the original glyph text, including ligatures, in the
+          // text under annotations.
+          enableNormalization: false,
           sink: null,
           intersector,
         }).then(() => {

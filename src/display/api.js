@@ -30,6 +30,7 @@ import {
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
+  TEXT_CONTENT_CHUNK_SIZE,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -1201,10 +1202,10 @@ class PDFDocumentProxy {
 /**
  * Page getTextContent parameters.
  * @typedef {object} getTextContentParameters
- * @property {boolean} [includeMarkedContent] - When true include marked
- *   content items in the items array of TextContent. The default is `false`.
- * @property {boolean} [disableNormalization] - When true the text is *not*
- *   normalized in the worker-thread. The default is `false`.
+ * @property {boolean} [enableMarkedContent] - When true include marked
+ *   content items in the items array of TextContent. The default is `true`.
+ * @property {boolean} [enableNormalization] - When true the text is
+ *   normalized in the worker-thread. The default is `true`.
  */
 
 /**
@@ -1212,7 +1213,7 @@ class PDFDocumentProxy {
  * @typedef {object} TextContent
  * @property {Array<TextItem | TextMarkedContent>} items - Array of
  *   {@link TextItem} and {@link TextMarkedContent} objects. TextMarkedContent
- *   items are included when includeMarkedContent is true.
+ *   items are included when enableMarkedContent is true.
  * @property {Record<string, TextStyle>} styles - {@link TextStyle} objects,
  *   indexed by font name.
  * @property {string | null} lang - The document /Lang attribute.
@@ -1803,16 +1804,14 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({ includeMarkedContent, disableNormalization } = {}) {
-    const TEXT_CONTENT_CHUNK_SIZE = 100;
-
+  streamTextContent({ enableMarkedContent, enableNormalization } = {}) {
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
         pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
         pageIndex: this._pageIndex,
-        includeMarkedContent: includeMarkedContent === true,
-        disableNormalization: disableNormalization === true,
+        enableMarkedContent: enableMarkedContent !== false,
+        enableNormalization: enableNormalization !== false,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
