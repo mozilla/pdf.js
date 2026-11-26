@@ -911,6 +911,11 @@ See https://github.com/adobe-type-tools/cmap-resources
         <!--#endif-->
 
         <div id="viewerContainer" tabindex="0">
+          <!--#if CHROME-->
+          <button id="emptyViewerOpenButton" class="primaryButton" type="button" hidden>
+            <span data-l10n-id="pdfjs-open-file-button-label"></span>
+          </button>
+          <!--#endif-->
           <div id="viewer" class="pdfViewer"></div>
         </div>
       </div>

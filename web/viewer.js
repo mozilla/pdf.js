@@ -34,6 +34,10 @@ function getViewerConfiguration() {
     principalContainer: document.getElementById("mainContainer"),
     mainContainer: document.getElementById("viewerContainer"),
     viewerContainer: document.getElementById("viewer"),
+    emptyViewerOpenButton:
+      typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
+        ? document.getElementById("emptyViewerOpenButton")
+        : null,
     viewerAlert: document.getElementById("viewer-alert"),
     toolbar: {
       container: document.getElementById("toolbarContainer"),

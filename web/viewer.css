@@ -370,6 +370,14 @@ body {
   z-index: 0;
 }
 
+/*#if CHROME*/
+#emptyViewerOpenButton {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  translate: -50% -50%;
+}
+/*#endif*/
+
 #viewerContainer:not(.pdfPresentationMode) {
   /* Don't animate the block-start offset below the notification bar. */
   transition-property: inset-inline-start;
