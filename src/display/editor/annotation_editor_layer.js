@@ -597,7 +597,19 @@ class AnnotationEditorLayer {
     }
 
     const { activeElement } = document;
-    if (editor.div.contains(activeElement) && !this.#editorFocusTimeoutId) {
+    const isFocused = editor.div.contains(activeElement);
+    let savedSelection;
+    if (isFocused) {
+      const selection = document.getSelection();
+      const { anchorNode, anchorOffset, focusNode, focusOffset } = selection;
+      if (
+        activeElement.contains(anchorNode) &&
+        activeElement.contains(focusNode)
+      ) {
+        savedSelection = { anchorNode, anchorOffset, focusNode, focusOffset };
+      }
+    }
+    if (isFocused && !this.#editorFocusTimeoutId) {
       // When the div is moved in the DOM the focus can move somewhere else,
       // so we want to be sure that the focus will stay on the editor but we
       // don't want to call any focus callbacks, hence we disable them and only
@@ -626,6 +638,15 @@ class AnnotationEditorLayer {
       editor.contentDiv,
       /* isRemovable = */ true
     );
+    if (savedSelection) {
+      // Restore before another task can change the selection. A live Range
+      // would already have lost its offsets when the editor was moved.
+      const { anchorNode, anchorOffset, focusNode, focusOffset } =
+        savedSelection;
+      document
+        .getSelection()
+        .setBaseAndExtent(anchorNode, anchorOffset, focusNode, focusOffset);
+    }
   }
 
   /**
