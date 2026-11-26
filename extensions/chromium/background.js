@@ -24,3 +24,10 @@ importScripts(
   "suppress-update.js",
   "telemetry.js"
 );
+
+chrome.action.onClicked.addListener(() => {
+  chrome.tabs.create({
+    url: chrome.runtime.getURL("content/web/viewer.html"),
+    active: true,
+  });
+});

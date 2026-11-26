@@ -9,6 +9,7 @@
     "48": "icon48.png",
     "16": "icon16.png"
   },
+  "action": {},
   "permissions": [
     "alarms",
     "declarativeNetRequestWithHostAccess",
