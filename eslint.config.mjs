@@ -20,6 +20,7 @@ const jsFiles = folder => {
 const chromiumExtensionServiceWorkerFiles = [
   "extensions/chromium/extension-router.js",
   "extensions/chromium/options/migration.js",
+  "extensions/chromium/pdf-opening-preference.js",
   "extensions/chromium/pdfHandler.js",
   "extensions/chromium/preserve-referer.js",
   "extensions/chromium/suppress-update.js",

@@ -39,7 +39,7 @@ if (typeof PDFJSDev === "undefined" || !PDFJSDev.test("CHROME")) {
   const m = /(?:^|&)file=([^&]*)/.exec(queryString);
   let defaultUrl = m ? decodeURIComponent(m[1]) : "";
   if (!defaultUrl && queryString.startsWith("DNR:")) {
-    // Redirected via DNR, see registerPdfRedirectRule in pdfHandler.js.
+    // Redirected via DNR, see getPdfRedirectRules in pdfHandler.js.
     defaultUrl = queryString.slice(4);
   }
 
