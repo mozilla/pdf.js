@@ -788,7 +788,7 @@ const defaultOptions = new Map([
     "disableWorkerRendering",
     {
       /** @type {boolean} */
-      value: typeof PDFJSDev !== "undefined" && !PDFJSDev.test("TESTING"),
+      value: typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL"),
       kind: OptionKind.API + OptionKind.PREFERENCE,
     },
   ],
