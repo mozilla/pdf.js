@@ -383,12 +383,13 @@ const PDFViewerApplication = {
       }
     }
     if (params.has("pdfbug")) {
+      const debuggerSrc = "./debugger.mjs";
       const enabled = params.get("pdfbug").split(",");
       try {
         const { PDFBug } =
           typeof PDFJSDev === "undefined"
-            ? await import(AppOptions.get("debuggerSrc")) // eslint-disable-line no-unsanitized/method
-            : await __raw_import__(AppOptions.get("debuggerSrc"));
+            ? await import(debuggerSrc) // eslint-disable-line no-unsanitized/method
+            : await __raw_import__(debuggerSrc);
 
         PDFBug.init(this.appConfig.mainContainer, enabled);
         this._PDFBug = PDFBug;
