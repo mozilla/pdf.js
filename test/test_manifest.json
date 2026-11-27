@@ -15448,5 +15448,13 @@
     "lastPage": 1,
     "type": "text",
     "about": "Bitmap Type 3 fonts sized by their bbox, with a flipped font matrix"
+  },
+  {
+    "id": "issue22616",
+    "file": "pdfs/issue22616.pdf",
+    "md5": "8ac400a611278cd679e7542cea936cc5",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Function-based shading scaled by the page CTM or by a shading, form, or pattern matrix."
   }
 ]

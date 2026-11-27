@@ -441,34 +441,40 @@ class FunctionBasedShading extends BaseShading {
       : null;
 
     // Domain [x0, x1, y0, y1]; defaults to [0, 1, 0, 1].
-    const [x0, x1, y0, y1] = lookupRect(dict.getArray("Domain"), [0, 1, 0, 1]);
+    this.domain = lookupRect(dict.getArray("Domain"), [0, 1, 0, 1]);
 
     // Matrix maps shading (domain) space to user space; defaults to identity.
-    const matrix = lookupMatrix(dict.getArray("Matrix"), IDENTITY_MATRIX);
+    this.matrix = lookupMatrix(dict.getArray("Matrix"), IDENTITY_MATRIX);
 
     // Transform the four domain corners to find the user-space bounding box.
+    const [x0, x1, y0, y1] = this.domain;
     this.bounds = BBOX_INIT.slice();
-    Util.axialAlignedBoundingBox([x0, y0, x1, y1], matrix, this.bounds);
+    Util.axialAlignedBoundingBox([x0, y0, x1, y1], this.matrix, this.bounds);
+    this.cs = cs;
+    this.fn = fn;
+  }
 
-    const bboxW = this.bounds[2] - this.bounds[0];
-    const bboxH = this.bounds[3] - this.bounds[1];
+  getSamplingGrid(transform) {
+    const [x0, x1, y0, y1] = this.domain;
+    const [a, b, c, d] = Util.transform(transform, this.matrix);
+    // Sample at roughly one step per page unit along each domain axis, capped
+    // for performance. The mesh vertices themselves stay in user space.
+    const steps = (span, scale) =>
+      MathClamp(
+        Math.ceil(Math.abs(span) * scale),
+        1,
+        FunctionBasedShading.MAX_STEP_COUNT
+      );
+    return [steps(x1 - x0, Math.hypot(a, b)), steps(y1 - y0, Math.hypot(c, d))];
+  }
 
-    // 1 step per user-space unit, capped for performance.
-    const stepsX = MathClamp(
-      Math.ceil(bboxW),
-      1,
-      FunctionBasedShading.MAX_STEP_COUNT
-    );
-    const stepsY = MathClamp(
-      Math.ceil(bboxH),
-      1,
-      FunctionBasedShading.MAX_STEP_COUNT
-    );
-
+  getIR([stepsX, stepsY]) {
+    const { cs, fn, matrix } = this;
+    const [x0, x1, y0, y1] = this.domain;
     const verticesPerRow = stepsX + 1;
     const totalVertices = (stepsY + 1) * verticesPerRow;
-    const coords = (this.coords = new Float32Array(totalVertices * 2));
-    const colors = (this.colors = new Uint8ClampedArray(totalVertices * 4));
+    const coords = new Float32Array(totalVertices * 2);
+    const colors = new Uint8ClampedArray(totalVertices * 4);
 
     const { numComps } = cs;
     const xyBuf = new Float32Array(2);
@@ -480,7 +486,6 @@ class FunctionBasedShading extends BaseShading {
     const halfStepX = rangeX / 2;
     const halfStepY = rangeY / 2;
     let coordOffset = 0;
-    let compOffset = 0;
     let batchCount = 0;
     let colorOffset = 0;
     for (let row = 0; row <= stepsY; row++) {
@@ -491,8 +496,7 @@ class FunctionBasedShading extends BaseShading {
       for (let col = 0; col <= stepsX; col++) {
         const xDomain = x0 + rangeX * col;
         xyBuf[0] = col === stepsX ? xDomain - halfStepX : xDomain;
-        fn(xyBuf, 0, comps, compOffset);
-        compOffset += numComps;
+        fn(xyBuf, 0, comps, batchCount * numComps);
         batchCount++;
 
         coords[coordOffset] = xDomain;
@@ -500,7 +504,7 @@ class FunctionBasedShading extends BaseShading {
         Util.applyTransform(coords, matrix, coordOffset);
         coordOffset += 2;
 
-        if (batchCount === batchSize) {
+        if (batchCount === batchSize || coordOffset === coords.length) {
           cs.getRgbItems(
             comps,
             batchCount,
@@ -509,34 +513,25 @@ class FunctionBasedShading extends BaseShading {
             /* alpha01 = */ 1
           );
           colorOffset += batchCount * 4;
-          compOffset = batchCount = 0;
+          batchCount = 0;
         }
       }
     }
-    if (batchCount > 0) {
-      cs.getRgbItems(comps, batchCount, colors, colorOffset, /* alpha01 = */ 1);
-    }
-    // Alpha stays zero.
-
-    const ps = new Uint32Array(totalVertices);
+    const indices = new Uint32Array(totalVertices);
     for (let i = 0; i < totalVertices; i++) {
-      ps[i] = i;
+      indices[i] = i;
     }
-    this.figures = [
-      {
-        type: MeshFigureType.LATTICE,
-        coords: ps,
-        colors: new Uint32Array(ps),
-        verticesPerRow,
-      },
-    ];
-  }
-
-  getIR() {
     const { posData, colData, vertexCount } = buildMeshVertexData(
-      this.coords,
-      this.colors,
-      this.figures
+      coords,
+      colors,
+      [
+        {
+          type: MeshFigureType.LATTICE,
+          coords: indices,
+          colors: indices,
+          verticesPerRow,
+        },
+      ]
     );
     return [
       "Mesh",
@@ -1207,4 +1202,9 @@ function getTilingPatternIR(operatorList, dict, color, needsIsolation = true) {
   ];
 }
 
-export { clearPatternCaches, getTilingPatternIR, Pattern };
+export {
+  clearPatternCaches,
+  FunctionBasedShading,
+  getTilingPatternIR,
+  Pattern,
+};

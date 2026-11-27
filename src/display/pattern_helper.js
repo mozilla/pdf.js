@@ -334,8 +334,8 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     c3g = colors[c3 * 4 + 1],
     c3b = colors[c3 * 4 + 2];
 
-  const minY = Math.round(y1),
-    maxY = Math.round(y3);
+  const minY = Math.max(0, Math.round(y1)),
+    maxY = Math.min(data.height - 1, Math.round(y3));
   let xa, car, cag, cab;
   let xb, cbr, cbg, cbb;
   for (let y = minY; y <= maxY; y++) {
@@ -372,11 +372,12 @@ function drawTriangle(data, context, p1, p2, p3, c1, c2, c3) {
     cbr = c1r - (c1r - c3r) * k;
     cbg = c1g - (c1g - c3g) * k;
     cbb = c1b - (c1b - c3b) * k;
-    const x1_ = Math.round(Math.min(xa, xb));
-    const x2_ = Math.round(Math.max(xa, xb));
-    let j = rowSize * y + x1_ * 4;
-    for (let x = x1_; x <= x2_; x++) {
-      k = (xa - x) / (xa - xb);
+    const minX = Math.max(0, Math.round(Math.min(xa, xb)));
+    const maxX = Math.min(data.width - 1, Math.round(Math.max(xa, xb)));
+    const span = xa - xb;
+    let j = rowSize * y + minX * 4;
+    for (let x = minX; x <= maxX; x++) {
+      k = span ? (xa - x) / span : 0;
       if (k < 0) {
         k = 0;
       } else if (k > 1) {

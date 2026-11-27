@@ -43,6 +43,11 @@ import {
 import { decodeBrotli, WasmLoader } from "./wasm_loader.js";
 import { ErrorFont, Font } from "./fonts.js";
 import {
+  FunctionBasedShading,
+  getTilingPatternIR,
+  Pattern,
+} from "./pattern.js";
+import {
   getEncoding,
   MacRomanEncoding,
   StandardEncoding,
@@ -57,7 +62,6 @@ import {
   getSymbolsFonts,
   isKnownFontName,
 } from "./standard_fonts.js";
-import { getTilingPatternIR, Pattern } from "./pattern.js";
 import {
   IDENTITY_MATRIX,
   isNumberArray,
@@ -505,6 +509,9 @@ class PartialEvaluator {
       operatorList.addOp(OPS.paintFormXObjectBegin, args);
     }
 
+    if (matrix) {
+      initialState.ctm = Util.transform(initialState.ctm, matrix);
+    }
     await this.getOperatorList({
       stream: xobj,
       task,
@@ -1505,45 +1512,55 @@ class PartialEvaluator {
     resources,
     localColorSpaceCache,
     localShadingPatternCache,
+    transform,
   }) {
     // Shadings and patterns may be referenced by the same name but the resource
     // dictionary could be different so we can't use the name for the cache key.
-    let id = localShadingPatternCache.get(shading);
-    if (id) {
-      return id;
+    const cached = localShadingPatternCache.get(shading);
+    if (typeof cached === "string") {
+      return cached;
     }
-    let patternIR;
-
     try {
-      const shadingFill = await Pattern.parseShading(
-        shading,
-        this.xref,
-        resources,
-        this._pdfFunctionFactory,
-        this.globalColorSpaceCache,
-        localColorSpaceCache
+      const parsed =
+        cached?.parsed ??
+        (await Pattern.parseShading(
+          shading,
+          this.xref,
+          resources,
+          this._pdfFunctionFactory,
+          this.globalColorSpaceCache,
+          localColorSpaceCache
+        ));
+      if (!(parsed instanceof FunctionBasedShading)) {
+        const id = this._sendShadingPattern(parsed.getIR());
+        localShadingPatternCache.set(shading, id);
+        return id;
+      }
+
+      // A shading dictionary can be reused at different scales.
+      const entry = cached ?? { parsed, ids: new Map() };
+      const grid = parsed.getSamplingGrid(transform);
+      const id = entry.ids.getOrInsertComputed(grid.join(","), () =>
+        this._sendShadingPattern(parsed.getIR(grid))
       );
-      patternIR = shadingFill.getIR();
+      localShadingPatternCache.set(shading, entry);
+      return id;
     } catch (reason) {
       if (reason instanceof AbortException) {
         return null;
       }
       if (this.options.ignoreErrors) {
         warn(`parseShading - ignoring shading: "${reason}".`);
-
-        localShadingPatternCache.set(shading, null);
         return null;
       }
       throw reason;
     }
+  }
 
-    id = `pattern_${this.idFactory.createObjId()}`;
+  _sendShadingPattern(patternIR) {
+    let id = `pattern_${this.idFactory.createObjId()}`;
     if (this.parsingType3Font) {
       id = `${this.idFactory.getDocId()}_type3_${id}`;
-    }
-    localShadingPatternCache.set(shading, id);
-
-    if (this.parsingType3Font) {
       const buffer = compilePatternInfo(patternIR);
       this.handler.send("commonobj", [id, "Pattern", buffer], [buffer]);
     } else {
@@ -1563,7 +1580,8 @@ class PartialEvaluator {
     localColorSpaceCache,
     localTilingPatternCache,
     localShadingPatternCache,
-    seenRefs
+    seenRefs,
+    baseTransform
   ) {
     // compile tiling patterns
     const patternName = args.pop();
@@ -1610,14 +1628,17 @@ class PartialEvaluator {
           );
         } else if (typeNum === PatternType.SHADING) {
           const shading = dict.get("Shading");
+          const matrix = lookupMatrix(dict.getArray("Matrix"), null);
           const objId = await this.parseShading({
             shading,
             resources,
             localColorSpaceCache,
             localShadingPatternCache,
+            transform: matrix
+              ? Util.transform(baseTransform, matrix)
+              : baseTransform,
           });
           if (objId) {
-            const matrix = lookupMatrix(dict.getArray("Matrix"), null);
             operatorList.addOp(fn, ["Shading", objId, matrix]);
           }
           return undefined;
@@ -1678,6 +1699,7 @@ class PartialEvaluator {
 
     const xobjs = resources.get("XObject") || Dict.empty;
     const patterns = resources.get("Pattern") || Dict.empty;
+    const baseTransform = initialState.ctm;
     const stateManager = new StateManager(initialState);
     const preprocessor = new EvaluatorPreprocessor(stream, xref, stateManager);
     const timeSlotManager = new TimeSlotManager();
@@ -2023,25 +2045,20 @@ class PartialEvaluator {
             args = [ColorSpaceUtils.rgb.getRgbHex(args, 0)];
             break;
           case OPS.setFillColorN:
-            cs = stateManager.state.patternFillColorSpace;
-            if (!cs) {
-              if (isNumberArray(args, null)) {
-                args = [ColorSpaceUtils.gray.getRgbHex(args, 0)];
-                fn = OPS.setFillRGBColor;
-                break;
-              }
-              args = [];
-              fn = OPS.setFillTransparent;
-              break;
-            }
-            if (cs.name === "Pattern") {
+          case OPS.setStrokeColorN: {
+            const isFill = fn === OPS.setFillColorN;
+            const rgbOp = isFill ? OPS.setFillRGBColor : OPS.setStrokeRGBColor;
+            cs = isFill
+              ? stateManager.state.patternFillColorSpace
+              : stateManager.state.patternStrokeColorSpace;
+            if (cs?.name === "Pattern") {
               if (!Array.isArray(args)) {
                 continue;
               }
               next(
                 self.handleColorN(
                   operatorList,
-                  OPS.setFillColorN,
+                  fn,
                   args,
                   cs,
                   patterns,
@@ -2050,56 +2067,23 @@ class PartialEvaluator {
                   localColorSpaceCache,
                   localTilingPatternCache,
                   localShadingPatternCache,
-                  seenRefs
+                  seenRefs,
+                  baseTransform
                 )
               );
               return;
             }
-            if (!isNumberArray(args, null)) {
-              continue;
-            }
-            args = [cs.getRgbHex(args, 0)];
-            fn = OPS.setFillRGBColor;
-            break;
-          case OPS.setStrokeColorN:
-            cs = stateManager.state.patternStrokeColorSpace;
-            if (!cs) {
-              if (isNumberArray(args, null)) {
-                args = [ColorSpaceUtils.gray.getRgbHex(args, 0)];
-                fn = OPS.setStrokeRGBColor;
-                break;
-              }
+            if (isNumberArray(args, null)) {
+              args = [(cs ?? ColorSpaceUtils.gray).getRgbHex(args, 0)];
+              fn = rgbOp;
+            } else if (!cs) {
               args = [];
-              fn = OPS.setStrokeTransparent;
-              break;
-            }
-            if (cs.name === "Pattern") {
-              if (!Array.isArray(args)) {
-                continue;
-              }
-              next(
-                self.handleColorN(
-                  operatorList,
-                  OPS.setStrokeColorN,
-                  args,
-                  cs,
-                  patterns,
-                  resources,
-                  task,
-                  localColorSpaceCache,
-                  localTilingPatternCache,
-                  localShadingPatternCache,
-                  seenRefs
-                )
-              );
-              return;
-            }
-            if (!isNumberArray(args, null)) {
+              fn = isFill ? OPS.setFillTransparent : OPS.setStrokeTransparent;
+            } else {
               continue;
             }
-            args = [cs.getRgbHex(args, 0)];
-            fn = OPS.setStrokeRGBColor;
             break;
+          }
 
           case OPS.shadingFill:
             let shading;
@@ -2130,6 +2114,7 @@ class PartialEvaluator {
                   resources,
                   localColorSpaceCache,
                   localShadingPatternCache,
+                  transform: stateManager.state.ctm,
                 })
                 .then(patternId => {
                   if (patternId) {
