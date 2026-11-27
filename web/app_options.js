@@ -605,14 +605,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "minDurationToUpdateCanvas",
-    {
-      /** @type {number} */
-      value: 500, // ms
-      kind: OptionKind.VIEWER,
-    },
-  ],
-  [
     "forcePageColors",
     {
       /** @type {boolean} */

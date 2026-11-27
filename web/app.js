@@ -403,12 +403,7 @@ const PDFViewerApplication = {
       } catch (ex) {
         console.error("_parseHashParams:", ex);
       }
-
-      const debugOpts = { pdfBug: true, fontExtraProperties: true };
-      if (globalThis.StepperManager?.enabled) {
-        debugOpts.minDurationToUpdateCanvas = 0;
-      }
-      AppOptions.setAll(debugOpts);
+      AppOptions.setAll({ pdfBug: true, fontExtraProperties: true });
     }
     // It is not possible to change locale for the (various) extension builds.
     if (
@@ -786,7 +781,6 @@ const PDFViewerApplication = {
       abortSignal,
       supportsPinchToZoom: this.supportsPinchToZoom,
       enableAutoLinking: AppOptions.get("enableAutoLinking"),
-      minDurationToUpdateCanvas: AppOptions.get("minDurationToUpdateCanvas"),
     }));
 
     renderingQueue.setViewer(pdfViewer);

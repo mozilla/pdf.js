@@ -223,7 +223,6 @@ class PDFPageView extends BasePDFPageView {
       pagesColors: this.pageColors,
       renderingQueue: this.renderingQueue,
       enableOptimizedPartialRendering: this.enableOptimizedPartialRendering,
-      minDurationToUpdateCanvas: this.minDurationToUpdateCanvas,
       defaultViewport: this.viewport,
       id,
       layerProperties: this.#layerProperties,
