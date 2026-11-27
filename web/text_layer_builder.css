@@ -162,6 +162,15 @@
   &.selecting .endOfContent {
     top: 0;
   }
+
+  &.beforeSelection .endOfContent {
+    user-select: text;
+  }
+
+  &.beforeSelection .textLayerImages {
+    /* Let the drag reach .endOfContent beneath the image overlay. */
+    pointer-events: none;
+  }
 }
 
 .textLayerImages {
