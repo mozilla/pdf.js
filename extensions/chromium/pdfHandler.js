@@ -81,11 +81,19 @@ async function registerPdfRedirectRule() {
       action: ACTION_IGNORE_OTHER_RULES,
     },
     {
-      // Redirect local PDF files if isAllowedFileSchemeAccess is true. No-op
-      // otherwise and then handled by webNavigation.onBeforeNavigate below.
+      // Let Chrome open top-level local PDFs so maybeRenderPdfDoc can embed
+      // the viewer. This also takes priority over the MIME-type redirects.
+      condition: {
+        regexFilter: "^file://[^?#]*\\.pdf(?:[?#]|$)",
+        resourceTypes: ["main_frame"],
+      },
+      action: ACTION_IGNORE_OTHER_RULES,
+    },
+    {
+      // Redirect local PDF frames when the extension has file access.
       condition: {
         regexFilter: "^file://.*\\.pdf$",
-        resourceTypes: ["main_frame", "sub_frame"],
+        resourceTypes: ["sub_frame"],
       },
       action: ACTION_REDIRECT_TO_VIEWER,
     },
@@ -289,7 +297,7 @@ chrome.webNavigation.onBeforeNavigate.addListener(
     if (details.frameId === 0) {
       chrome.extension.isAllowedFileSchemeAccess(function (isAllowedAccess) {
         if (isAllowedAccess) {
-          // Expected to be handled by DNR. Don't do anything.
+          // The content script will embed the viewer in the loaded PDF.
           return;
         }
 
