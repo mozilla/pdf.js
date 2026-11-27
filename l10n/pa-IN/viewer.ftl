@@ -336,6 +336,12 @@ pdfjs-editor-ink-editor =
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = ਦਸਤਖ਼ਤ ਐਡੀਟਰ: { $description }
+    .aria-label = ਦਸਤਖ਼ਤ ਸੰਪਾਦਕ
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-signature-editor1 =
     .aria-description = ਦਸਤਖ਼ਤ ਐਡੀਟਰ: { $description }
 pdfjs-editor-stamp-editor =

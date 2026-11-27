@@ -454,6 +454,7 @@ pdfjs-views-manager-pages-status-action-label =
        *[other] { $count } избрани
     }
 pdfjs-views-manager-pages-status-action-button-label = Управление
+pdfjs-views-manager-pages-status-delete-button-label = Изтриване
 pdfjs-views-manager-pages-status-export-selected-button-label = Експортиране на избраните…
 # Variables:
 #   $count (Number) - the number of selected pages to be copied.

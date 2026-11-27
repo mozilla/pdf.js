@@ -211,4 +211,5 @@ pdfjs-editor-ink-thickness-input = ඝණකම
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-dialog-label = විකල්පයක් තෝරන්න
 pdfjs-editor-alt-text-mark-decorative-description = මෙය දාර හෝ දිය සලකුණු වැනි අලංකාර රූප සඳහා භාවිතා වේ.
