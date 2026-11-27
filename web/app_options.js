@@ -240,14 +240,6 @@ const defaultOptions = new Map([
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
-  [
-    "debuggerSrc",
-    {
-      /** @type {string} */
-      value: "./debugger.mjs",
-      kind: OptionKind.VIEWER,
-    },
-  ],
   ...(typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
     ? [
         [

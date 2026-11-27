@@ -354,20 +354,7 @@ const PDFViewerApplication = {
     if (!hash) {
       return;
     }
-    const { mainContainer } = this.appConfig,
-      params = parseQueryString(hash);
-
-    const loadPDFBug = async () => {
-      if (this._PDFBug) {
-        return;
-      }
-      const { PDFBug } =
-        typeof PDFJSDev === "undefined"
-          ? await import(AppOptions.get("debuggerSrc")) // eslint-disable-line no-unsanitized/method
-          : await __raw_import__(AppOptions.get("debuggerSrc"));
-
-      this._PDFBug = PDFBug;
-    };
+    const params = parseQueryString(hash);
 
     // Parameters that need to be handled manually.
     if (params.get("disableworker") === "true") {
@@ -396,10 +383,16 @@ const PDFViewerApplication = {
       }
     }
     if (params.has("pdfbug")) {
+      const debuggerSrc = "./debugger.mjs";
       const enabled = params.get("pdfbug").split(",");
       try {
-        await loadPDFBug();
-        this._PDFBug.init(mainContainer, enabled);
+        const { PDFBug } =
+          typeof PDFJSDev === "undefined"
+            ? await import(debuggerSrc) // eslint-disable-line no-unsanitized/method
+            : await __raw_import__(debuggerSrc);
+
+        PDFBug.init(this.appConfig.mainContainer, enabled);
+        this._PDFBug = PDFBug;
       } catch (ex) {
         console.error("_parseHashParams:", ex);
       }
