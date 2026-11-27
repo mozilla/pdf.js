@@ -14,6 +14,7 @@
  */
 
 import {
+  AnnotationEditorUIManager,
   CommandManager,
   KeyboardManager,
 } from "../../src/display/editor/tools.js";
@@ -26,6 +27,72 @@ import { InputSmoother } from "../../src/display/editor/drawers/input_smoother.j
 import { SignatureExtractor } from "../../src/display/editor/drawers/signaturedraw.js";
 
 describe("editor", function () {
+  describe("editing listeners", function () {
+    let manager;
+    let windowDescriptor, documentDescriptor;
+    let states;
+
+    beforeEach(function () {
+      windowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
+      documentDescriptor = Object.getOwnPropertyDescriptor(globalThis, "document");
+      Object.defineProperty(globalThis, "window", {
+        configurable: true,
+        value: new EventTarget(),
+      });
+      Object.defineProperty(globalThis, "document", {
+        configurable: true,
+        value: new EventTarget(),
+      });
+      states = [];
+      const eventBus = {
+        on() {},
+        dispatch(name, { details }) {
+          if (name === "editingstateschanged") {
+            states.push({ ...details });
+          }
+        },
+      };
+      manager = new AnnotationEditorUIManager(
+        {},
+        { classList: { toggle() {} } },
+        null,
+        null,
+        null,
+        null,
+        eventBus,
+        {}
+      );
+    });
+
+    afterEach(function () {
+      manager.destroy();
+      for (const [name, descriptor] of [
+        ["window", windowDescriptor],
+        ["document", documentDescriptor],
+      ]) {
+        if (descriptor) {
+          Object.defineProperty(globalThis, name, descriptor);
+        } else {
+          delete globalThis[name];
+        }
+      }
+    });
+
+    it("should preserve selection when editing listeners resume", function () {
+      const editor = {
+        select() {},
+        propertiesToUpdate: [],
+      };
+      manager.setSelected(editor);
+      manager.removeEditListeners();
+      manager.addEditListeners();
+
+      expect(manager.hasSelection).toBeTrue();
+      expect(manager.firstSelectedEditor).toBe(editor);
+      expect(states.at(-1).hasSelectedEditor).toBeTrue();
+    });
+  });
+
   describe("Command Manager", function () {
     it("should check undo/redo", function () {
       const manager = new CommandManager(4);
