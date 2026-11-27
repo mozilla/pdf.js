@@ -30,6 +30,7 @@ import {
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
+  TEXT_CONTENT_CHUNK_SIZE,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -178,6 +179,9 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
+ * @property {boolean} [debugTextLayerFonts] - When true, the glyphs of the
+ *   text layer fonts are the outlines of their boxes. This may be useful for
+ *   debugging purposes. The default value is `false`.
  * @property {boolean} [enableXfa] - Render Xfa forms if any.
  *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
@@ -276,6 +280,7 @@ function getDocument(src = {}) {
   const disableFontFace =
     typeof src.disableFontFace === "boolean" ? src.disableFontFace : isNodeJS;
   const fontExtraProperties = src.fontExtraProperties === true;
+  const debugTextLayerFonts = src.debugTextLayerFonts === true;
   const enableXfa = src.enableXfa === true;
   const ownerDocument = src.ownerDocument || globalThis.document;
   const disableRange = src.disableRange === true;
@@ -404,6 +409,7 @@ function getDocument(src = {}) {
       isImageDecoderSupported,
       canvasMaxAreaInBytes,
       fontExtraProperties,
+      debugTextLayerFonts,
       useSystemFonts,
       useWasm,
       useWorkerFetch,
@@ -421,6 +427,7 @@ function getDocument(src = {}) {
     rendererWorker: task._rendererWorker,
     enableWebGPU,
     loadingParams: {
+      debugTextLayerFonts,
       disableAutoFetch,
       enableXfa,
     },
@@ -1195,15 +1202,10 @@ class PDFDocumentProxy {
 /**
  * Page getTextContent parameters.
  * @typedef {object} getTextContentParameters
- * @property {boolean} [includeMarkedContent] - When true include marked
- *   content items in the items array of TextContent. The default is `false`.
- * @property {boolean} [disableNormalization] - When true the text is *not*
- *   normalized in the worker-thread. The default is `false`.
- * @property {boolean} [includeTextLayerFonts] - When true include, in the
- *   styles, the fonts to use in the text layer, see {@link TextLayerFont}.
- *   The default is `false`.
- * @property {boolean} [debugTextLayerFonts] - When true, the glyphs of the
- *   text layer fonts are the outlines of their boxes. The default is `false`.
+ * @property {boolean} [enableMarkedContent] - When true include marked
+ *   content items in the items array of TextContent. The default is `true`.
+ * @property {boolean} [enableNormalization] - When true the text is
+ *   normalized in the worker-thread. The default is `true`.
  */
 
 /**
@@ -1211,7 +1213,7 @@ class PDFDocumentProxy {
  * @typedef {object} TextContent
  * @property {Array<TextItem | TextMarkedContent>} items - Array of
  *   {@link TextItem} and {@link TextMarkedContent} objects. TextMarkedContent
- *   items are included when includeMarkedContent is true.
+ *   items are included when enableMarkedContent is true.
  * @property {Record<string, TextStyle>} styles - {@link TextStyle} objects,
  *   indexed by font name.
  * @property {string | null} lang - The document /Lang attribute.
@@ -1228,6 +1230,8 @@ class PDFDocumentProxy {
  * @property {string} fontName - Font name used by PDF.js for converted font.
  * @property {boolean} hasEOL - Indicating if the text content is followed by a
  *   line-break.
+ * @property {number} [textLayerAdvance] - Advance of the text in the generated
+ *   font, in em.
  */
 
 /**
@@ -1246,7 +1250,8 @@ class PDFDocumentProxy {
  * @property {number} descent - Font descent.
  * @property {boolean} vertical - Whether or not the text is in vertical mode.
  * @property {string} fontFamily - The possible font family.
- * @property {TextLayerFont} [textLayerFont] - See `includeTextLayerFonts`.
+ * @property {TextLayerFont} [textLayerFont] - The generated font for the text
+ *   layer, when available.
  */
 
 /**
@@ -1528,6 +1533,14 @@ class PDFPageProxy {
   }
 
   /**
+   * @type {DocumentInitParameters} A subset of the current
+   *   {DocumentInitParameters}, which are needed in the viewer.
+   */
+  get loadingParams() {
+    return this._transport.loadingParams;
+  }
+
+  /**
    * @type {boolean} True if only XFA form.
    */
   get isPureXfa() {
@@ -1791,23 +1804,14 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({
-    includeMarkedContent,
-    disableNormalization,
-    includeTextLayerFonts,
-    debugTextLayerFonts,
-  } = {}) {
-    const TEXT_CONTENT_CHUNK_SIZE = 100;
-
+  streamTextContent({ enableMarkedContent, enableNormalization } = {}) {
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
         pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
         pageIndex: this._pageIndex,
-        includeMarkedContent: includeMarkedContent === true,
-        disableNormalization: disableNormalization === true,
-        includeTextLayerFonts: includeTextLayerFonts === true,
-        debugTextLayerFonts: debugTextLayerFonts === true,
+        enableMarkedContent: enableMarkedContent !== false,
+        enableNormalization: enableNormalization !== false,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,

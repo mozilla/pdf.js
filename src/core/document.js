@@ -78,7 +78,7 @@ import { PDFImage } from "./image.js";
 import { StreamsSequenceStream } from "./decode_stream.js";
 import { stringToPDFString } from "./string_utils.js";
 import { StructTreePage } from "./struct_tree.js";
-import { TextLayerFonts } from "./text_layer_font.js";
+import { TextExtraction } from "./text_extraction.js";
 import { WasmImage } from "./wasm_image.js";
 import { XRef } from "./xref.js";
 
@@ -693,10 +693,8 @@ class Page {
   async extractTextContent({
     handler,
     task,
-    includeMarkedContent,
-    disableNormalization,
-    includeTextLayerFonts = false,
-    debugTextLayerFonts = false,
+    enableMarkedContent,
+    enableNormalization,
     sink,
     intersector = null,
   }) {
@@ -716,23 +714,23 @@ class Page {
 
     const partialEvaluator = this._createPartialEvaluator(handler);
     // The text is buffered until the fonts of the page are known.
-    const textLayerFonts = includeTextLayerFonts
-      ? new TextLayerFonts(sink, this._localIdFactory, debugTextLayerFonts)
-      : null;
+    const textExtraction = new TextExtraction(sink, {
+      idFactory: intersector ? null : this._localIdFactory,
+      debugFonts: this.evaluatorOptions.debugTextLayerFonts,
+      intersector,
+    });
 
     await partialEvaluator.getTextContent({
       stream: contentStream,
       task,
       resources,
-      includeMarkedContent,
-      disableNormalization,
-      textLayerFonts,
-      sink: textLayerFonts ?? sink,
+      enableMarkedContent,
+      enableNormalization,
+      sink: textExtraction,
       viewBox: this.view,
       lang,
-      intersector,
     });
-    textLayerFonts?.send();
+    textExtraction.send();
   }
 
   async getStructTree() {
@@ -818,8 +816,10 @@ class Page {
         this.extractTextContent({
           handler,
           task,
-          includeMarkedContent: false,
-          disableNormalization: false,
+          enableMarkedContent: false,
+          // Preserve the original glyph text, including ligatures, in the
+          // text under annotations.
+          enableNormalization: false,
           sink: null,
           intersector,
         }).then(() => {

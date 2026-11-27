@@ -1609,13 +1609,13 @@ describe("Text layer", () => {
   describe("with the text layer fonts", () => {
     let pages;
 
-    const load = async mode => {
+    const load = async (debugTextLayerFonts = false) => {
       pages = await loadAndWait(
         "tracemonkey.pdf",
         `.page[data-page-number = "1"] .endOfContent`,
         undefined,
         undefined,
-        { newTextLayerMode: mode }
+        debugTextLayerFonts ? { textLayer: "visible" } : undefined
       );
     };
 
@@ -1623,54 +1623,55 @@ describe("Text layer", () => {
       await closePages(pages);
     });
 
-    const checkFonts = async mode => {
+    const checkFonts = async debug => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
-          const { color, fontFamily } = await page.evaluate(() => {
-            const span = [
-              ...document.querySelectorAll(
-                `.page[data-page-number = "1"] .textLayer span`
-              ),
-            ].find(({ textContent }) => textContent === "Andreas Gal");
-            const style = getComputedStyle(span);
-            return { color: style.color, fontFamily: style.fontFamily };
-          });
+          const { color, fontFamily, hasTextLayerFonts } = await page.evaluate(
+            () => {
+              const span = [
+                ...document.querySelectorAll(
+                  `.page[data-page-number = "1"] .textLayer span`
+                ),
+              ].find(({ textContent }) => textContent === "Andreas Gal");
+              const style = getComputedStyle(span);
+              return {
+                color: style.color,
+                fontFamily: style.fontFamily,
+                hasTextLayerFonts: span
+                  .closest(".textLayer")
+                  .classList.contains("textLayerFonts"),
+              };
+            }
+          );
           expect(color)
             .withContext(browserName)
-            .toEqual(mode === 2 ? "rgb(255, 0, 0)" : "rgba(0, 0, 0, 0)");
-          expect(/^"?g_d\d+_tf\d+"?, /.test(fontFamily))
+            .toEqual(debug ? "rgb(255, 0, 0)" : "rgba(0, 0, 0, 0)");
+          expect(/^"?g_d\d+_tf\d+"?$/.test(fontFamily))
             .withContext(`${browserName}: ${fontFamily}`)
-            .toEqual(mode !== 0);
+            .toBeTrue();
+          expect(hasTextLayerFonts).withContext(browserName).toBeTrue();
         })
       );
     };
 
-    describe("with `newTextLayerMode` set to 0", () => {
-      beforeEach(() => load(0));
-
-      it("must not use the text layer fonts", async () => {
-        await checkFonts(0);
-      });
-    });
-
-    describe("with `newTextLayerMode` set to 1", () => {
-      beforeEach(() => load(1));
+    describe("by default", () => {
+      beforeEach(() => load());
 
       it("must use the text layer fonts", async () => {
-        await checkFonts(1);
+        await checkFonts(false);
       });
     });
 
-    describe("with `newTextLayerMode` set to 2", () => {
-      beforeEach(() => load(2));
+    describe("with glyph boxes enabled", () => {
+      beforeEach(() => load(true));
 
       it("must use the text layer fonts with the glyph boxes", async () => {
-        await checkFonts(2);
+        await checkFonts(true);
       });
     });
 
     describe("when the pages are destroyed", () => {
-      beforeEach(() => load(1));
+      beforeEach(() => load());
 
       it("must unload the fonts of the pages removed from the cache", async () => {
         await Promise.all(

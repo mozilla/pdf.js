@@ -884,7 +884,9 @@ class PDFFindController {
     }
 
     let deferred = Promise.resolve();
-    const textOptions = { disableNormalization: true };
+    const textOptions = {
+      enableNormalization: false,
+    };
     const pdfDoc = this._pdfDocument;
     for (let i = 0, ii = this._linkService.pagesCount; i < ii; i++) {
       const { promise, resolve } = createPromiseCapability();

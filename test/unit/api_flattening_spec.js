@@ -443,7 +443,9 @@ describe("api flattening", function () {
       pdfDoc = await loadingTask.promise;
       const page = await pdfDoc.getPage(1);
       expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
-      const { items } = await page.getTextContent();
+      const { items } = await page.getTextContent({
+        enableMarkedContent: false,
+      });
       expect(items.map(({ str }) => str)).toEqual(["New"]);
 
       await loadingTask.destroy();
@@ -886,9 +888,7 @@ describe("api flattening", function () {
           },
         ],
       });
-      const { items } = await page.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await page.getTextContent();
       expect(
         items
           .filter(({ type }) => type === "beginMarkedContentProps")
@@ -957,9 +957,7 @@ describe("api flattening", function () {
         const page = await pdfDoc.getPage(1);
         expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
 
-        const { items } = await page.getTextContent({
-          includeMarkedContent: true,
-        });
+        const { items } = await page.getTextContent();
         expect(
           items
             .filter(({ type }) => type === "beginMarkedContentProps")
@@ -1047,9 +1045,7 @@ describe("api flattening", function () {
           },
         ],
       });
-      const { items } = await page.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await page.getTextContent();
       expect(
         items
           .filter(({ type }) => type === "beginMarkedContentProps")
@@ -1078,9 +1074,7 @@ describe("api flattening", function () {
       const page = await pdfDoc.getPage(1);
       expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
 
-      const { items } = await page.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await page.getTextContent();
       const marks = items.filter(
         ({ type }) => type === "beginMarkedContentProps"
       );
@@ -1435,9 +1429,7 @@ describe("api flattening", function () {
       const page = await pdfDoc.getPage(1);
       expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
 
-      const { items } = await page.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await page.getTextContent();
       // Preserve page text placement; place the annotation outside the OCG.
       expect(items.map(({ type, str }) => type ?? str)).toEqual([
         "Page",
@@ -1510,7 +1502,9 @@ describe("api flattening", function () {
       const page = await pdfDoc.getPage(1);
       expect(await page.getAnnotations({ intent: "any" })).toEqual([]);
 
-      const { items } = await page.getTextContent();
+      const { items } = await page.getTextContent({
+        enableMarkedContent: false,
+      });
       expect(
         items.map(({ str, transform }) => [str, transform[4], transform[5]])
       ).toEqual([

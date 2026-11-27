@@ -358,9 +358,7 @@ describe("struct tree", function () {
 
     const pdfDoc = await loadingTask.promise;
     const page = await pdfDoc.getPage(1);
-    const tree = await page.getStructTree({
-      includeMarkedContent: true,
-    });
+    const tree = await page.getStructTree({});
     const cells = findNodes(tree, node => node.role === "TD");
     expect(cells.length).toEqual(4);
 
@@ -478,9 +476,7 @@ describe("struct tree", function () {
         role: "Root",
         children: [{ role: "Document", children }],
       });
-      const { items } = await page.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await page.getTextContent();
       expect(
         items
           .filter(item => item.type === "beginMarkedContentProps")

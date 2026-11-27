@@ -6453,6 +6453,52 @@ describe("annotation", function () {
         "World !",
       ]);
     });
+
+    it("should keep an empty line of a FreeText annotation (leading = font size)", async function () {
+      const helvDict = new Dict();
+      helvDict.set("BaseFont", Name.get("Helvetica"));
+      helvDict.set("Type", Name.get("Font"));
+      helvDict.set("Subtype", Name.get("Type1"));
+      const fontDict = new Dict();
+      fontDict.set("Helv", helvDict);
+      const resourcesDict = new Dict();
+      resourcesDict.set("Font", fontDict);
+
+      const appearanceDict = new Dict();
+      appearanceDict.set("Resources", resourcesDict);
+      const appearanceStatesDict = new Dict();
+      appearanceStatesDict.set(
+        "N",
+        new StringStream(
+          "BT /Helv 10 Tf 10 TL 2 40 Td (First) Tj T* () Tj T* (Last) Tj ET",
+          appearanceDict
+        )
+      );
+      const freeTextDict = new Dict();
+      freeTextDict.set("Type", Name.get("Annot"));
+      freeTextDict.set("Subtype", Name.get("FreeText"));
+      freeTextDict.set("Rect", [0, 0, 50, 50]);
+      freeTextDict.set("AP", appearanceStatesDict);
+
+      const freeTextRef = Ref.get(143, 0);
+      const xref = (partialEvaluator.xref = new XRefMock([
+        { ref: freeTextRef, data: freeTextDict },
+      ]));
+      resourcesDict.assignXref(xref);
+      const annotation = await AnnotationFactory.create(
+        xref,
+        freeTextRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      await annotation.extractTextContent(
+        partialEvaluator,
+        new WorkerTask("test FreeText empty line"),
+        [-Infinity, -Infinity, Infinity, Infinity]
+      );
+
+      expect(annotation.data.textContent).toEqual(["First", "", "Last"]);
+    });
   });
 
   describe("InkAnnotation", function () {

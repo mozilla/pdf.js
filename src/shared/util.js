@@ -30,6 +30,8 @@ const F32_BBOX_INIT = new Float32Array(BBOX_INIT);
 
 const FONT_IDENTITY_MATRIX = [0.001, 0, 0, 0.001, 0, 0];
 
+const TEXT_CONTENT_CHUNK_SIZE = 100;
+
 // Default CIDFont /DW2: [vertical origin y, vertical displacement y].
 // PDF 1.7, Table 5.14 specifies [880 -1000].
 const DEFAULT_VERTICAL_ORIGIN_Y = 880;
@@ -1254,6 +1256,7 @@ export {
   stringToUTF8String,
   stripPath,
   SVG_NS,
+  TEXT_CONTENT_CHUNK_SIZE,
   TextRenderingMode,
   UnknownErrorException,
   unreachable,

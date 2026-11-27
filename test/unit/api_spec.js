@@ -35,6 +35,8 @@ import {
 import {
   assemblePdf,
   buildGetDocumentParams,
+  buildTextPdf,
+  buildVerticalTextPdf,
   CMAP_URL,
   DefaultBinaryDataFactory,
   DefaultFileReaderFactory,
@@ -1803,6 +1805,7 @@ describe("api", function () {
       const pdfDoc = await loadingTask.promise;
 
       expect(pdfDoc.loadingParams).toEqual({
+        debugTextLayerFonts: false,
         disableAutoFetch: true,
         enableXfa: true,
       });
@@ -5202,7 +5205,7 @@ describe("api", function () {
     it("gets text content", async function () {
       const { items, styles, lang } = await page.getTextContent();
 
-      expect(items.length).toEqual(15);
+      expect(items.length).toEqual(12);
       expect(Object.keys(styles).length).toEqual(5);
       expect(lang).toEqual("en");
 
@@ -5220,7 +5223,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items, styles, lang } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       expect(items.length).toEqual(1);
       // Font name will be a random object id.
@@ -5234,14 +5237,21 @@ page 1 / 3`);
         height: 18,
         str: "Issue 8276",
         transform: new Float32Array([18, 0, 0, 18, 441.81, 708.45]),
-        width: 77.49,
+        width: jasmine.any(Number),
         hasEOL: false,
+        textLayerAdvance: jasmine.any(Number),
       });
+      expect(items[0].width).toBeCloseTo(77.49, 4);
+      expect(items[0].textLayerAdvance * 18).toBeCloseTo(77.49, 2);
       expect(styles[fontName]).toEqual({
         fontFamily: "serif",
         ascent: 0.683,
         descent: -0.217,
         vertical: false,
+        textLayerFont: jasmine.objectContaining({
+          name: jasmine.stringMatching(/^g_d\d+_tf\d+$/),
+          data: jasmine.any(Uint8Array),
+        }),
       });
 
       // Render the page to make sure that the font data is loaded so we can
@@ -5281,10 +5291,7 @@ page 1 / 3`);
       expect(descent).toBeCloseTo(-0.207, 6);
 
       // Hence the text layer font has the ascent of the descriptor.
-      const { styles: fontStyles } = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
-      expect(fontStyles[item.fontName].textLayerFont.ascent).toBeCloseTo(
+      expect(styles[item.fontName].textLayerFont.ascent).toBeCloseTo(
         0.765 / 0.972,
         6
       );
@@ -5299,25 +5306,15 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
 
-      const textContent = await pdfPage.getTextContent({
-        disableNormalization: true,
-      });
-      expect(
-        Object.values(textContent.styles).some(s => "textLayerFont" in s)
-      ).toBeFalse();
-
       const { items, styles } = await pdfPage.getTextContent({
-        disableNormalization: true,
-        includeTextLayerFonts: true,
+        enableNormalization: false,
       });
-      expect(items).toEqual(textContent.items);
       const item = items.find(({ str }) => str === "identi\ufb01es");
       const { textLayerFont } = styles[item.fontName];
       expect(textLayerFont.name).toMatch(/^g_d\d+_tf\d+$/);
       expect(textLayerFont.ascent).toBeGreaterThan(0.5);
       expect(textLayerFont.ascent).toBeLessThan(0.95);
 
-      // The advances of the font are the ones of the PDF font.
       const font = new FontTestData(textLayerFont.data);
       let advance = 0;
       for (const char of item.str) {
@@ -5329,65 +5326,135 @@ page 1 / 3`);
       await loadingTask.destroy();
     });
 
-    it("gets text content, with the gaps as spaces in the fonts of the text layer", async function () {
-      const content =
-        "BT /F1 20 Tf 10 150 Td [(A) -300 (B) -300 (A) -400 (B)] TJ ET";
-      const loadingTask = getDocument({
-        data: assemblePdf([
-          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
-          "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
-          "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
-            "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\n" +
-            "endobj\n",
-          `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\n` +
-            "endstream\nendobj\n",
-          "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
-            "/Encoding /WinAnsiEncoding >>\nendobj\n",
-        ]),
-      });
+    it("positions text after an overprinted accent in the text layer", async function () {
+      const loadingTask = getDocument(tracemonkeyGetDocumentParams);
       const pdfDoc = await loadingTask.promise;
-      const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
+      const pdfPage = await pdfDoc.getPage(2);
+      const { items } = await pdfPage.getTextContent({
+        enableNormalization: false,
       });
 
-      expect(items.map(({ str }) => str)).toEqual(["A B A B"]);
-      // No space is drawn: the spaces get the median gap.
-      const font = new FontTestData(
-        styles[items[0].fontName].textLayerFont.data
-      );
-      expect(font.getAdvance(0x20)).toBeCloseTo(300, 0);
-      expect(font.getAdvance(0x41)).toBeCloseTo(667, 0);
+      const index = items.findIndex(({ str }) => str === "a na\u00a8");
+      const item = items[index + 1];
+      expect(item.str).toMatch(/^\u0131ve implementation, inner loops/);
+      expect(item.transform[4]).toBeCloseTo(69.6272, 4);
+      expect(items[index].hasEOL).toBeFalse();
 
       await loadingTask.destroy();
     });
 
-    it("gets text content, with the fonts of the text layer for a vertical text", async function () {
-      const loadingTask = getDocument(
-        buildGetDocumentParams("vertical.pdf", {
-          cMapUrl: CMAP_URL,
-          useWorkerFetch: false,
-        })
-      );
-      const pdfDoc = await loadingTask.promise;
-      const pdfPage = await pdfDoc.getPage(1);
-      const { items, styles } = await pdfPage.getTextContent({
-        disableNormalization: true,
-        includeTextLayerFonts: true,
+    describe("text layer extraction", function () {
+      let loadingTask;
+      async function loadPage(params) {
+        loadingTask = getDocument(params);
+        return (await loadingTask.promise).getPage(1);
+      }
+
+      afterEach(async function () {
+        await loadingTask?.destroy();
+        loadingTask = null;
       });
 
-      const item = items.find(
-        ({ str }) => str === "\u3042\u3044\u3046\u3048\u304a"
-      );
-      const { vertical, textLayerFont } = styles[item.fontName];
-      expect(vertical).toBeTrue();
-      // Centered on the column, with the vertical advances.
-      expect(textLayerFont.ascent).toEqual(0.5);
-      expect(
-        new FontTestData(textLayerFont.data).getAdvance(0x3042)
-      ).toBeCloseTo(1000, 0);
+      function loadTextPage(content, fontEntries) {
+        return loadPage({ data: buildTextPdf(content, fontEntries) });
+      }
 
-      await loadingTask.destroy();
+      it("gets text content, with the gaps as spaces in the fonts of the text layer", async function () {
+        const content =
+          "BT /F1 20 Tf 10 150 Td [(A) -300 (B) -300 (A) -400 (B)] TJ ET";
+        const pdfPage = await loadTextPage(content);
+
+        const { items, styles } = await pdfPage.getTextContent();
+
+        expect(items.map(({ str }) => str).join("")).toEqual("A B A B");
+        // No space is drawn: the spaces get the median gap.
+        const font = new FontTestData(
+          styles[items[0].fontName].textLayerFont.data
+        );
+        expect(font.getAdvance(0x20)).toBeCloseTo(300, 0);
+        expect(font.getAdvance(0x41)).toBeCloseTo(667, 0);
+      });
+
+      it("gets text content, with the fonts of the text layer for a vertical text", async function () {
+        const pdfPage = await loadPage(
+          buildGetDocumentParams("vertical.pdf", {
+            cMapUrl: CMAP_URL,
+            useWorkerFetch: false,
+          })
+        );
+
+        const { items, styles } = await pdfPage.getTextContent({
+          enableNormalization: false,
+        });
+
+        const item = items.find(
+          ({ str }) => str === "\u3042\u3044\u3046\u3048\u304a"
+        );
+        const { vertical, textLayerFont } = styles[item.fontName];
+        expect(vertical).toBeTrue();
+        // Centered on the column, with the vertical advances.
+        expect(textLayerFont.ascent).toEqual(0.5);
+        expect(
+          new FontTestData(textLayerFont.data).getAdvance(0x3042)
+        ).toBeCloseTo(1000, 0);
+        expect(item.dir).toBe("ttb");
+        expect(item.height).toBeCloseTo(
+          5 * Math.hypot(...item.transform.slice(2, 4)),
+          1
+        );
+      });
+
+      it("fits vertical character spacing and TJ gaps along the column", async function () {
+        const content =
+          "BT /F1 20 Tf 50 Tz -2 Tc 90 180 Td " +
+          "[<30423044> 350 <3046>] TJ " +
+          "0 1 -1 0 20 80 Tm [100 <3048304a> 800 <3042>] TJ ET";
+        const data = buildVerticalTextPdf(content);
+        const pdfPage = await loadPage({
+          data,
+          cMapUrl: CMAP_URL,
+          useWorkerFetch: false,
+        });
+
+        const { items } = await pdfPage.getTextContent();
+        expect(items.map(item => item.str).join("")).toEqual("あい うえお あ");
+        const [first, rotated] = items;
+        expect(first.dir).toBe("ttb");
+        expect(first.hasEOL).toBeTrue();
+        expect(first.transform).toEqual(
+          new Float32Array([10, 0, 0, 20, 90, 180])
+        );
+        expect(first.width).toBe(10);
+        expect(first.height).toBeCloseTo(65, 6);
+        expect(rotated.transform).toEqual(
+          new Float32Array([0, 10, -20, 0, 22, 80])
+        );
+        // The large TJ gap splits the rotated column at x = 60.
+        expect(rotated.height).toBeCloseTo(38, 6);
+        const [, , space, last] = items;
+        expect(space.str).toBe(" ");
+        expect(space.dir).toBe("ttb");
+        expect(space.transform).toEqual(
+          new Float32Array([0, 10, -20, 0, 60, 80])
+        );
+        expect(space.height).toBeCloseTo(18, 6);
+        expect(last.transform).toEqual(
+          new Float32Array([0, 10, -20, 0, 78, 80])
+        );
+      });
+
+      it("provides the generated font advance for mirrored text", async function () {
+        const pdfPage = await loadTextPage(
+          "BT /F1 20 Tf -1 0 0 1 150 150 Tm (ABC) Tj ET"
+        );
+
+        const { items } = await pdfPage.getTextContent();
+
+        expect(items.length).toBe(1);
+        const [item] = items;
+        expect(item.str).toBe("CBA");
+        expect(item.textLayerAdvance * 20).toBeCloseTo(item.width, 1);
+      });
     });
 
     it("gets text content, with no extra spaces (issue 13226)", async function () {
@@ -5395,13 +5462,15 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
       expect(text).toEqual(
         "Mitarbeiterinnen und Mitarbeiter arbeiten in über 100 Ländern engagiert im Dienste"
       );
+      const { items: textLayerItems } = await pdfPage.getTextContent();
+      expect(mergeText(textLayerItems)).toEqual(text);
 
       await loadingTask.destroy();
     });
@@ -5415,7 +5484,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5429,7 +5498,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5447,7 +5516,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5461,15 +5530,15 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(items).toEqual([
         jasmine.objectContaining({
           str: "सप्रणाम",
-          width: 109.12,
         }),
       ]);
+      expect(items[0]?.width).toBeCloseTo(109.12, 4);
 
       await loadingTask.destroy();
     });
@@ -5479,7 +5548,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5507,7 +5576,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5531,7 +5600,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5547,7 +5616,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5563,7 +5632,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5579,7 +5648,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("ABCD");
@@ -5594,7 +5663,7 @@ page 1 / 3`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual(`FOTBOLL.
@@ -5610,7 +5679,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("ABCD E");
@@ -5625,22 +5694,20 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
       expect(text).toEqual("AB CD");
 
-      const { items: fitted, styles } = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
+      const { items: fitted, styles } = await pdfPage.getTextContent();
       const { data, advanceScale, ascent } =
         styles[fitted[0].fontName].textLayerFont;
       // The rectangles extend from the baseline to the top of the font box.
       expect(ascent).toBe(1);
-      // The 80 em glyph is 0.8 of the 100 em high font box, the span's em.
-      expect(advanceScale).toEqual(1);
-      expect(new FontTestData(data).getAdvance(0x41)).toBeCloseTo(800, 0);
+      expect(new FontTestData(data).getAdvance(0x41) * advanceScale).toBe(
+        80000
+      );
 
       await loadingTask.destroy();
     });
@@ -5651,27 +5718,24 @@ ABCD E`);
       );
       const pdfDoc = await loadingTask.promise;
       for (const [pageNumber, context, text, space] of [
-        [1, "tall glyph bounding box", "A B", 240],
-        [2, "page scale canceled by the text matrix", "A B", 400],
-        [3, "scale change before the preceding glyph", "AB A", 480],
+        [1, "tall glyph bounding box", "A B", 300],
+        [2, "page scale canceled by the text matrix", "A B", 500],
+        [3, "scale change before the preceding glyph", "AB A", 600],
         [4, "scale change immediately before the gap", "A BA", 250],
-        [5, "scale change immediately after the gap", "A B\nA B", 240],
-        [6, "absolute positioning after a discarded move", "A B", 240],
+        [5, "scale change immediately after the gap", "A B\nA B", 300],
+        [6, "absolute positioning after a discarded move", "A B", 300],
         [7, "spacing moves at different scales", "A B\nA B", 250],
-        [8, "next line", "A B", 480],
-        [9, "next line and show text", "A B", 480],
-        [10, "set spacing, move to next line and show text", "A B", 480],
+        [8, "next line", "A B", 250],
+        [9, "next line and show text", "A B", 250],
+        [10, "set spacing, move to next line and show text", "A B", 250],
       ]) {
         const pdfPage = await pdfDoc.getPage(pageNumber);
-        const { items, styles } = await pdfPage.getTextContent({
-          includeTextLayerFonts: true,
-        });
+        const { items, styles } = await pdfPage.getTextContent();
         const font = new FontTestData(
           styles[items[0].fontName].textLayerFont.data
         );
         expect(mergeText(items)).withContext(context).toEqual(text);
-        // The 0.8 em wide glyphs in the 1.25 em high font box, the span's em.
-        expect(font.getAdvance(0x41)).withContext(context).toBeCloseTo(640, 0);
+        expect(font.getAdvance(0x41)).withContext(context).toBeCloseTo(800, 0);
         expect(font.getAdvance(0x20))
           .withContext(context)
           .toBeCloseTo(space, 0);
@@ -5687,7 +5751,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("A B C");
@@ -5712,7 +5776,7 @@ ABCD E`);
       ]) {
         const pdfPage = await pdfDoc.getPage(pageNumber);
         const { items } = await pdfPage.getTextContent({
-          disableNormalization: true,
+          enableNormalization: false,
         });
 
         expect(mergeText(items)).withContext(context).toEqual(expected);
@@ -5731,7 +5795,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("UTR 50");
@@ -5746,7 +5810,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("AB C DE");
@@ -5761,7 +5825,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       expect(mergeText(items)).toEqual("AAA BBB CCC");
@@ -5793,7 +5857,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5814,7 +5878,7 @@ ABCD E`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       let { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       let text = mergeText(items);
       let expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
@@ -5829,9 +5893,7 @@ sources, for full support with Dvips.`;
 
       expect(text.includes(expected)).toBeTrue();
 
-      ({ items } = await pdfPage.getTextContent({
-        disableNormalization: false,
-      }));
+      ({ items } = await pdfPage.getTextContent());
       text = mergeText(items);
       expected = `Open Sans is a humanist sans serif typeface designed by Steve Matteson.
 Open Sans was designed with an upright stress, open forms and a neu-
@@ -5852,7 +5914,7 @@ sources, for full support with Dvips.`;
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5878,7 +5940,7 @@ sozialökonomische Gerechtigkeit.`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5901,7 +5963,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5919,7 +5981,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
       expect(text).toEqual("Hello world!");
@@ -5932,7 +5994,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(6);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -5941,18 +6003,18 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       await loadingTask.destroy();
     });
 
-    it("gets text content with or without includeMarkedContent, and compare (issue 15094)", async function () {
+    it("gets text content with or without enableMarkedContent, and compare (issue 15094)", async function () {
       const loadingTask = getDocument(buildGetDocumentParams("pdf.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(568);
       let { items } = await pdfPage.getTextContent({
-        includeMarkedContent: false,
-        disableNormalization: true,
+        enableMarkedContent: false,
+        enableNormalization: false,
       });
       const textWithoutMC = mergeText(items);
       ({ items } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-        disableNormalization: true,
+        enableMarkedContent: true,
+        enableNormalization: false,
       }));
       const textWithMC = mergeText(items);
 
@@ -5967,9 +6029,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       );
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      const { items } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-      });
+      const { items } = await pdfPage.getTextContent();
 
       expect(items.map(item => item.id ?? item.type ?? item.str)).toEqual([
         "Hello, world!",
@@ -5995,8 +6055,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        includeMarkedContent: true,
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       const start = items.findIndex(item => item.id === "p3R_mc8");
@@ -6024,7 +6083,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6043,7 +6102,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6057,10 +6116,10 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
-      expect(items.map(i => i.str)).toEqual(["Hello ", "World"]);
+      expect(items.map(i => i.str)).toEqual(["Hello", " ", "World"]);
 
       await loadingTask.destroy();
     });
@@ -6072,7 +6131,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
 
       // No item should carry a hasEOL flag between the superscript and the
@@ -6091,7 +6150,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6105,20 +6164,15 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
-      // The pdf has 3 different fonts but with the same underlying font data
-      // so we have finally one chunk.
-      expect(items).toEqual([
-        jasmine.objectContaining({
-          str: "ABCDEFGHI",
-          dir: "ltr",
-          height: 10,
-          transform: new Float32Array([10, 0, 0, 10, 100, 100]),
-          hasEOL: false,
-        }),
+      expect(items.map(({ str }) => str)).toEqual(["ABC", "DEF", "GHI"]);
+      expect(items.map(({ transform }) => transform[4])).toEqual([
+        100, 120, 140,
       ]);
-      expect(items[0]?.width).toBeCloseTo(57.78, 5);
+      expect(items.every(({ hasEOL }) => !hasEOL)).toBeTrue();
+      expect(items[0].fontName).toBe(items[2].fontName);
+      expect(items[0].fontName).not.toBe(items[1].fontName);
       await loadingTask.destroy();
     });
 
@@ -6129,7 +6183,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
 
@@ -6145,7 +6199,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
       expect(text).toEqual("AA A");
@@ -6158,7 +6212,7 @@ Caron Broadcasting, Inc., an Ohio corporation (“Lessee”).`)
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
       const text = mergeText(items);
       expect(text)
@@ -6181,10 +6235,11 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent({
-        disableNormalization: true,
+        enableNormalization: false,
       });
+      // The text drawn with a zero font size is invisible.
       const text = mergeText(items);
-      expect(text).toEqual("hiddenVisible text");
+      expect(text).toEqual("Visible text");
 
       await loadingTask.destroy();
     });
@@ -6193,9 +6248,9 @@ have written that much by now. So, here’s to squashing bugs.`);
       const loadingTask = getDocument(buildGetDocumentParams("issue16880.pdf"));
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
-      for (const disableNormalization of [false, true]) {
+      for (const enableNormalization of [true, false]) {
         const { items } = await pdfPage.getTextContent({
-          disableNormalization,
+          enableNormalization,
         });
         expect(mergeText(items)).toEqual("سلام کلاس لاله");
       }
@@ -6208,22 +6263,18 @@ have written that much by now. So, here’s to squashing bugs.`);
       const pdfDoc = await loadingTask.promise;
       const pdfPage = await pdfDoc.getPage(1);
       const { items } = await pdfPage.getTextContent();
-      const withFonts = await pdfPage.getTextContent({
-        includeTextLayerFonts: true,
-      });
-      expect(withFonts.items).toEqual(items);
       // The same Hebrew character sequence uses normal and mirrored text
-      // matrices; the mirrored run ends with an LRM (U+200E).
+      // matrices. The trailing LRM (U+200E) is outside the visible run.
       expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
         { str: "רחאב", dir: "rtl" },
         { str: "באחר", dir: "rtl" },
       ]);
       const { transform, width } = items[1];
       expect(transform).toBeInstanceOf(Float32Array);
-      [20, 0, 0, 20, 145.52, 100].forEach((value, i) => {
+      [20, 0, 0, 20, 156.64, 100].forEach((value, i) => {
         expect(transform[i]).toBeCloseTo(value, 2);
       });
-      expect(width).toBeCloseTo(54.48, 2);
+      expect(width).toBeCloseTo(43.36, 2);
 
       await loadingTask.destroy();
     });
@@ -6290,11 +6341,7 @@ have written that much by now. So, here’s to squashing bugs.`);
       );
       try {
         const pdfPage = await (await loadingTask.promise).getPage(1);
-        const plainText = await pdfPage.getTextContent();
-        const { items, styles } = await pdfPage.getTextContent({
-          includeTextLayerFonts: true,
-        });
-        expect(items).toEqual(plainText.items);
+        const { items, styles } = await pdfPage.getTextContent();
         expect(items.map(({ str, dir }) => ({ str, dir }))).toEqual([
           { str: "[אב(", dir: "rtl" },
         ]);
@@ -10520,8 +10567,7 @@ small scripts as well as for`);
             ? item.id
             : (item.str ?? null);
         let { items } = await pdfPage.getTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
+          enableNormalization: false,
         });
         expect(items.map(filterItems)).toEqual([
           "p19R_mc0",
@@ -10572,8 +10618,7 @@ small scripts as well as for`);
         });
 
         ({ items } = await pdfPage.getTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
+          enableNormalization: false,
         }));
         expect(items.map(filterItems)).toEqual([
           "p4R_mc0",
@@ -10614,8 +10659,7 @@ small scripts as well as for`);
         });
 
         ({ items } = await pdfPage.getTextContent({
-          includeMarkedContent: true,
-          disableNormalization: true,
+          enableNormalization: false,
         }));
         expect(items.map(filterItems)).toEqual([
           "p19R_mc0",

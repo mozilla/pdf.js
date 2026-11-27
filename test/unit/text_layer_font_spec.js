@@ -19,6 +19,7 @@ import {
   TextLayerFonts,
 } from "../../src/core/text_layer_font.js";
 import { FontTestData } from "./font_test_utils.js";
+import { TextExtraction } from "../../src/core/text_extraction.js";
 
 const idFactory = {
   getDocId: () => "g_d0",
@@ -39,18 +40,17 @@ function getTextLayerFont(
     spaceGaps = [],
   } = {}
 ) {
-  const sink = createSink();
-  const textLayerFonts = new TextLayerFonts(sink, idFactory, drawBoxes);
-  textLayerFonts.addFont("f1", font, heightScaled);
+  const textLayerFonts = new TextLayerFonts(idFactory, drawBoxes);
+  if (heightScaled) {
+    textLayerFonts.addHeightScaledFont(font);
+  }
   for (const [unicode, advance] of glyphs) {
     textLayerFonts.addGlyph(font, unicode, advance);
   }
   for (const gap of spaceGaps) {
-    textLayerFonts.addSpaceGap("f1", gap);
+    textLayerFonts.addSpaceGap(font, gap);
   }
-  textLayerFonts.enqueue({ items: [], styles: { f1: {} } });
-  textLayerFonts.send();
-  return sink.chunks[0].styles.f1.textLayerFont;
+  return textLayerFonts.build(font);
 }
 
 function expectAdvances(font, advances) {
@@ -173,7 +173,7 @@ describe("text layer font", function () {
       ["B", 1000],
       ["C", 40000000],
     ];
-    expect(getTextLayerFont(glyphs, { spaceGaps: [300] })).toBeUndefined();
+    expect(getTextLayerFont(glyphs, { spaceGaps: [300] })).toBeNull();
   });
 
   it("doesn't build a font with advances which don't fit", function () {
@@ -185,7 +185,7 @@ describe("text layer font", function () {
         ["A", 1],
         ["B", 200000],
       ])
-    ).toBeUndefined();
+    ).toBeNull();
   });
 
   it("encodes wide advances with the smallest scale which fits them", function () {
@@ -259,6 +259,22 @@ describe("text layer font", function () {
     ]);
   });
 
+  it("includes the Thai and Lao SARA AM shaping components", function () {
+    const { data } = getTextLayerFont([
+      ["\u0e33", 500],
+      ["\u0eb3", 450],
+      ["\u0eb2", 400],
+    ]);
+    expectAdvances(new FontTestData(data), [
+      [0x0e33, 500],
+      [0x0e4d, 0],
+      [0x0e32, 500],
+      [0x0eb3, 450],
+      [0x0ecd, 0],
+      [0x0eb2, 400],
+    ]);
+  });
+
   it("gets the ascent from the font, else from its bounding box", function () {
     const getAscent = (font, heightScaled = false) =>
       getTextLayerFont([["a", 500]], { font, heightScaled }).ascent;
@@ -303,6 +319,15 @@ describe("text layer font", function () {
         fontMatrix: [1, 0, 0, -1, 0, 0],
       })
     ).toBe(0);
+    // The d1 bounds of the glyphs win over a placeholder FontBBox.
+    expect(
+      getAscent({
+        isType3Font: true,
+        bbox: [0, 0, 1000, 1000],
+        glyphBBox: [1, -71, 91, 16],
+        fontMatrix: [1, 0, 0, -1, 0, 0],
+      })
+    ).toBeCloseTo(71 / 87, 6);
     // Vertical glyphs are centered on their column.
     expect(getAscent({ ascent: 0.9, descent: -0.3, vertical: true })).toEqual(
       0.5
@@ -312,18 +337,20 @@ describe("text layer font", function () {
   it("only builds the fonts of the styles", function () {
     const sink = createSink();
     let id = 0;
-    const textLayerFonts = new TextLayerFonts(sink, {
-      getDocId: () => "g_d0",
-      createFontId: () => `f${++id}`,
+    const extraction = new TextExtraction(sink, {
+      idFactory: {
+        getDocId: () => "g_d0",
+        createFontId: () => `f${++id}`,
+      },
     });
     const font1 = { ascent: 0.8, descent: -0.2 };
     const font2 = { ascent: 0.8, descent: -0.2 };
-    textLayerFonts.addFont("f1", font1);
-    textLayerFonts.addGlyph(font1, "a", 500);
+    extraction.addFont("f1", font1);
+    extraction.fonts.addGlyph(font1, "a", 500);
     // E.g. a font with the same name as the one of the current item.
-    textLayerFonts.addGlyph(font2, "b", 500);
-    textLayerFonts.enqueue({ items: [], styles: { f1: {} } });
-    textLayerFonts.send();
+    extraction.fonts.addGlyph(font2, "b", 500);
+    extraction.enqueue({ items: [], styles: { f1: {} } });
+    extraction.send();
 
     expect(sink.chunks[0].styles.f1.textLayerFont.name).toEqual("g_d0_tf1");
     expect(id).toEqual(1);
@@ -331,15 +358,15 @@ describe("text layer font", function () {
 
   it("stops the text content extraction when its stream is cancelled", async function () {
     const sink = createSink();
-    const textLayerFonts = new TextLayerFonts(sink, idFactory);
-    await expectAsync(textLayerFonts.ready).toBeResolved();
-    textLayerFonts.enqueue({ items: [], styles: {} });
+    const extraction = new TextExtraction(sink, { idFactory });
+    await expectAsync(extraction.ready).toBeResolved();
+    extraction.enqueue({ items: [], styles: {} });
 
     sink.isCancelled = true;
-    await expectAsync(textLayerFonts.ready).toBeRejectedWith(
+    await expectAsync(extraction.ready).toBeRejectedWith(
       jasmine.any(AbortException)
     );
-    textLayerFonts.send();
+    extraction.send();
     expect(sink.chunks).toEqual([]);
   });
 });

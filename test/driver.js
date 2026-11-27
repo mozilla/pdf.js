@@ -960,6 +960,8 @@ class Driver {
       wasmUrl: WASM_URL,
       disableAutoFetch: !task.enableAutoFetch,
       pdfBug: true,
+      // Draw the glyph boxes of the text layer fonts.
+      debugTextLayerFonts: task.type === "text",
       useSystemFonts: task.useSystemFonts,
       useWasm: task.useWasm,
       useWorkerFetch: task.useWorkerFetch,
@@ -1154,11 +1156,7 @@ class Driver {
               // The text builder will draw its content on the test canvas
               initPromise = page
                 .getTextContent({
-                  includeMarkedContent: true,
-                  disableNormalization: true,
-                  // Draw the glyph boxes of the text layer fonts.
-                  includeTextLayerFonts: !!task.textLayerFonts,
-                  debugTextLayerFonts: !!task.textLayerFonts,
+                  enableNormalization: false,
                 })
                 .then(textContent =>
                   task.type === "text"

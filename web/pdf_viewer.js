@@ -106,10 +106,6 @@ function isValidAnnotationEditorMode(mode) {
  * @property {number} [textLayerMode] - Controls if the text layer used for
  *   selection and searching is created. The constants from {TextLayerMode}
  *   should be used. The default value is `TextLayerMode.ENABLE`.
- * @property {number} [newTextLayerMode] - Controls if the text layer uses fonts
- *   with the advances of the PDF fonts: 1 to enable, 2 to enable with fonts
- *   drawing their glyph boxes (debugging), anything else to disable.
- *   The default value is `0`.
  * @property {number} [annotationMode] - Controls if the annotation layer is
  *   created, and if interactive form elements or `AnnotationStorage`-data are
  *   being rendered. The constants from {@link AnnotationMode} should be used;
@@ -262,8 +258,6 @@ class PDFViewer {
 
   #enableAutoLinking = true;
 
-  #newTextLayerMode = 0;
-
   #abortSignal = null;
 
   #eventAC = null;
@@ -386,7 +380,6 @@ class PDFViewer {
     this.#mlManager = options.mlManager || null;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
-    this.#newTextLayerMode = options.newTextLayerMode ?? 0;
     this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
     this.renderingQueue = options.renderingQueue;
@@ -826,8 +819,8 @@ class PDFViewer {
       }
       buffer.length = 0;
       const page = await this.pdfDocument.getPage(pageNum);
-      // By default getTextContent pass disableNormalization equals to false
-      // which is fine because we want a normalized string.
+      // By default the text is normalized, which is fine because we want a
+      // normalized string.
       const { items } = await page.getTextContent();
       for (const item of items) {
         if (item.str) {
@@ -1107,7 +1100,6 @@ class PDFViewer {
             optionalContentConfigPromise,
             renderingQueue: this.renderingQueue,
             textLayerMode,
-            newTextLayerMode: this.#newTextLayerMode,
             annotationMode,
             imageResourcesPath: this.imageResourcesPath,
             maxCanvasPixels: this.maxCanvasPixels,

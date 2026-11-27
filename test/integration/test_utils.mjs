@@ -169,7 +169,7 @@ function getTextLayerFonts(page) {
       .filter(isTextLayerFont);
     const used = new Set();
     for (const span of document.querySelectorAll(".textLayer span")) {
-      const name = span.style.fontFamily.split(",")[0].replaceAll('"', "");
+      const name = span.style.fontFamily.replaceAll('"', "");
       if (isTextLayerFont(name)) {
         used.add(name);
       }
