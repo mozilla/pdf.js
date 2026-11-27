@@ -204,9 +204,14 @@ function searchNode(
             break;
           case operators.dotHash:
             children = node[$getChildrenByClass](name);
-            children = children.isXFAObjectArray
-              ? children.children
-              : [children];
+            if (!children) {
+              // The node has no property of this class.
+              children = [];
+            } else if (children.isXFAObjectArray) {
+              children = children.children;
+            } else {
+              children = [children];
+            }
             break;
           default:
             break;
