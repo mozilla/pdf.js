@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FeatureTest, RenderingCancelledException } from "pdfjs-lib";
+import { FeatureTest, RenderingCancelledException, shadow } from "pdfjs-lib";
 import { RenderableView, RenderingStates } from "./renderable_view.js";
 
 class BasePDFPageView extends RenderableView {
@@ -64,7 +64,6 @@ class BasePDFPageView extends RenderableView {
       options.enableSelectionRendering !== false &&
       FeatureTest.isBackdropFilterSupported;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
-    this.minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }
 
   get renderingState() {
@@ -111,6 +110,14 @@ class BasePDFPageView extends RenderableView {
     }
   }
 
+  get _minDurationToUpdateCanvas() {
+    return shadow(
+      this,
+      "_minDurationToUpdateCanvas",
+      globalThis.StepperManager?.enabled ? 0 : 500
+    );
+  }
+
   _createCanvas(onShow, hideUntilComplete = false) {
     const { pageColors } = this;
     const hasHCM = !!(pageColors?.background && pageColors?.foreground);
@@ -131,15 +138,15 @@ class BasePDFPageView extends RenderableView {
         // through a temporary canvas would only add a copy.
         if (
           !isLastShow &&
-          this.minDurationToUpdateCanvas > 0 &&
-          !this.renderTask?.isWorkerRendering
+          !this.renderTask?.isWorkerRendering &&
+          this._minDurationToUpdateCanvas > 0
         ) {
           // We draw on the canvas at 60fps (in using `requestAnimationFrame`),
           // so if the canvas is large, updating it at 60fps can be a way too
           // much and can cause some serious performance issues.
           // To avoid that we only update the canvas every
-          // `this.#minDurationToUpdateCanvas` ms.
-          if (Date.now() - this.#startTime < this.minDurationToUpdateCanvas) {
+          // `this._minDurationToUpdateCanvas` ms.
+          if (Date.now() - this.#startTime < this._minDurationToUpdateCanvas) {
             return;
           }
           if (!tempCanvas) {

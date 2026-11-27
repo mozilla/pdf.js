@@ -154,8 +154,6 @@ function isValidAnnotationEditorMode(mode) {
  *   The default value is `true`.
  * @property {boolean} [enableAutoLinking] - Enable creation of hyperlinks from
  *   text that look like URLs. The default value is `true`.
- * @property {number} [minDurationToUpdateCanvas] - Minimum duration to wait
- *   before updating the canvas. The default value is `500`.
  */
 
 class PDFPageViewBuffer {
@@ -261,8 +259,6 @@ class PDFViewer {
   #abortSignal = null;
 
   #eventAC = null;
-
-  #minDurationToUpdateCanvas = 0;
 
   #mlManager = null;
 
@@ -380,7 +376,6 @@ class PDFViewer {
     this.#mlManager = options.mlManager || null;
     this.#supportsPinchToZoom = options.supportsPinchToZoom !== false;
     this.#enableAutoLinking = options.enableAutoLinking !== false;
-    this.#minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
 
     this.renderingQueue = options.renderingQueue;
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("GENERIC")) {
@@ -1114,7 +1109,6 @@ class PDFViewer {
             l10n: this.l10n,
             layerProperties: this._layerProperties,
             enableAutoLinking: this.#enableAutoLinking,
-            minDurationToUpdateCanvas: this.#minDurationToUpdateCanvas,
             commentManager: this.#commentManager,
             abortSignal: this.#abortSignal,
           });
