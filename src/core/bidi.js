@@ -79,6 +79,25 @@ function getBidiClass(cp) {
   return "L";
 }
 
+function isRtlClass(charType) {
+  return charType === "R" || charType === "AL" || charType === "AN";
+}
+
+function getCodePointClass(codePoint) {
+  if (!bmpClasses) {
+    initBidiClasses();
+  }
+  return getBidiClass(codePoint);
+}
+
+function isRtlCodePoint(codePoint) {
+  return isRtlClass(getCodePointClass(codePoint));
+}
+
+function isStrongLtrCodePoint(codePoint) {
+  return getCodePointClass(codePoint) === "L";
+}
+
 function isOdd(i) {
   return (i & 1) !== 0;
 }
@@ -175,7 +194,7 @@ function bidi(text, startLevel = -1, vertical = false, onMirror = null) {
   for (i = 0; i < strLength; ++i) {
     const charCode = str.codePointAt(i);
     const charType = getBidiClass(charCode);
-    if (charType === "R" || charType === "AL" || charType === "AN") {
+    if (isRtlClass(charType)) {
       numBidi++;
     }
     types[i] = charType;
@@ -490,4 +509,4 @@ function bidi(text, startLevel = -1, vertical = false, onMirror = null) {
   return createBidiText(chars.join(""), isLTR);
 }
 
-export { bidi, getMirroredChar };
+export { bidi, getMirroredChar, isRtlCodePoint, isStrongLtrCodePoint };

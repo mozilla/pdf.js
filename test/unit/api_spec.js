@@ -5359,6 +5359,53 @@ page 1 / 3`);
         return loadPage({ data: buildTextPdf(content, fontEntries) });
       }
 
+      function fontEncoding(glyphs) {
+        const firstChar = 128;
+        const names = Object.keys(glyphs);
+        return (
+          `/FirstChar ${firstChar} /LastChar ${firstChar + names.length - 1} ` +
+          `/Widths [${Object.values(glyphs).join(" ")}] /Encoding << /BaseEncoding /WinAnsiEncoding ` +
+          `/Differences [${firstChar} /${names.join(" /")}] >>`
+        );
+      }
+
+      it("kerns across a combining mark in the text layer", async function () {
+        const pdfPage = await loadTextPage(
+          "BT /F1 20 Tf 10 150 Td [(\\200\\201) 100 (\\202)] TJ ET",
+          fontEncoding({ A: 667, acutecomb: 0, V: 667 })
+        );
+
+        const { items, styles } = await pdfPage.getTextContent({
+          enableNormalization: false,
+        });
+
+        expect(items.length).toBe(1);
+        const [item] = items;
+        expect(item.str).toEqual("A\u0301V");
+        expect(item.width).toBeCloseTo(24.68, 2);
+        const font = new FontTestData(styles[item.fontName].textLayerFont.data);
+        font.expectKerningPairs([["A", "V", -100]]);
+      });
+
+      it("kerns RTL glyphs in visual order and exposes text in logical order", async function () {
+        const pdfPage = await loadTextPage(
+          "BT /F1 20 Tf 10 150 Td [(\\200) 100 (\\201\\200)] TJ " +
+            "0 -40 Td [(\\200) 100 (\\201)] TJ ET",
+          fontEncoding({ afii57664: 500, afii57665: 500 })
+        );
+
+        const { items, styles } = await pdfPage.getTextContent();
+
+        expect(items.map(({ str, dir }) => [str, dir])).toEqual([
+          ["\u05d0\u05d1\u05d0", "rtl"],
+          ["\u05d1\u05d0", "rtl"],
+        ]);
+        const font = new FontTestData(
+          styles[items[0].fontName].textLayerFont.data
+        );
+        font.expectKerningPairs([["\u05d0", "\u05d1", -100]]);
+      });
+
       it("gets text content, with the gaps as spaces in the fonts of the text layer", async function () {
         const content =
           "BT /F1 20 Tf 10 150 Td [(A) -300 (B) -300 (A) -400 (B)] TJ ET";
@@ -5445,15 +5492,17 @@ page 1 / 3`);
 
       it("provides the generated font advance for mirrored text", async function () {
         const pdfPage = await loadTextPage(
-          "BT /F1 20 Tf -1 0 0 1 150 150 Tm (ABC) Tj ET"
+          "BT /F1 20 Tf -1 0 0 1 150 150 Tm [(AB) 100 (C)] TJ ET"
         );
 
-        const { items } = await pdfPage.getTextContent();
+        const { items, styles } = await pdfPage.getTextContent();
 
         expect(items.length).toBe(1);
         const [item] = items;
         expect(item.str).toBe("CBA");
         expect(item.textLayerAdvance * 20).toBeCloseTo(item.width, 1);
+        const font = new FontTestData(styles[item.fontName].textLayerFont.data);
+        font.expectKerningPairs([["C", "B", -100]]);
       });
     });
 
