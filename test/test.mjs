@@ -28,6 +28,7 @@ import {
   downloadManifestFiles,
   verifyManifestFiles,
 } from "./downloadutils.mjs";
+import { sanitizeFont, translateFont } from "./font/fontdriver.mjs";
 import { execSync } from "child_process";
 import fs from "fs";
 import istanbulCoverage from "istanbul-lib-coverage";
@@ -38,7 +39,6 @@ import { parseArgs } from "node:util";
 import path from "path";
 import puppeteer from "puppeteer";
 import readline from "readline";
-import { translateFont } from "./font/ttxdriver.mjs";
 import { WebServer } from "./webserver.mjs";
 
 const __dirname = import.meta.dirname;
@@ -1017,6 +1017,7 @@ function unitTestPostHandler(parsedUrl, req, res) {
     pathname !== "/tellMeToQuit" &&
     pathname !== "/info" &&
     pathname !== "/ttx" &&
+    !(options.fontTest && pathname === "/ots") &&
     pathname !== "/submit_task_results"
   ) {
     return false;
@@ -1027,6 +1028,17 @@ function unitTestPostHandler(parsedUrl, req, res) {
     body += data;
   });
   req.on("end", async function () {
+    if (pathname === "/ots") {
+      try {
+        await sanitizeFont(body);
+        res.writeHead(204);
+        res.end();
+      } catch (error) {
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end(error.stderr?.trim() || error.message);
+      }
+      return;
+    }
     if (pathname === "/ttx") {
       res.writeHead(200, { "Content-Type": "text/xml" });
       try {

@@ -9,6 +9,9 @@ if PDF.js can successfully read the font data and `ttx` can successfully read
 the PDF.js-interpreted font data back, proving that PDF.js does not apply any
 transformations that break the font data.
 
+The suite also uses `pyots` to check that OpenType Sanitizer accepts the fonts
+generated for the text layer without reporting any diagnostics.
+
 ## Running the font tests
 
 The font tests are run on GitHub Actions using the workflow defined in
@@ -16,21 +19,16 @@ The font tests are run on GitHub Actions using the workflow defined in
 tests locally. The current stable versions of the following dependencies are
 required to be installed on the system:
 
-- Python 3
+- Python 3.10–3.14 (versions with `pyots` wheels)
 - `fonttools` (see https://pypi.org/project/fonttools and https://github.com/fonttools/fonttools)
+- `pyots` (see https://pypi.org/project/pyots/)
 
-The recommended way of installing `fonttools` is using `pip` in a virtual
-environment because it avoids having to do a system-wide installation and
-therefore improves isolation, but any other way of installing `fonttools`
-that makes `ttx` available in the `PATH` environment variable also works.
+Install both packages in a virtual environment so that `python` and `ttx` on
+`PATH` come from the same environment:
 
-Using the virtual environment approach the font tests can be run locally by
-creating and sourcing a virtual environment with `fonttools` installed in
-it before running the font tests:
-    
 ```
 python3 -m venv venv
 source venv/bin/activate
-pip install fonttools
+pip install -r .github/font_tests_requirements.txt
 npx gulp fonttest
 ```

@@ -13,16 +13,23 @@
  * limitations under the License.
  */
 
-async function ttx(data) {
-  const response = await fetch("/ttx", {
+async function postFont(path, data) {
+  const response = await fetch(path, {
     method: "POST",
     body: data.toBase64(),
   });
-
   if (!response.ok) {
-    throw new Error(response.statusText);
+    throw new Error((await response.text()) || response.statusText);
   }
-  return response.text();
+  return response;
+}
+
+async function checkSanitization(data) {
+  await postFont("/ots", data);
+}
+
+async function ttx(data) {
+  return (await postFont("/ttx", data)).text();
 }
 
 function verifyTtxOutput(output) {
@@ -32,4 +39,4 @@ function verifyTtxOutput(output) {
   }
 }
 
-export { ttx, verifyTtxOutput };
+export { checkSanitization, ttx, verifyTtxOutput };

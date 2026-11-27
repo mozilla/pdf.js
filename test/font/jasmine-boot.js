@@ -49,6 +49,7 @@ async function initializePDFJS(callback) {
       "pdfjs-test/font/font_os2_spec.js",
       "pdfjs-test/font/font_post_spec.js",
       "pdfjs-test/font/font_fpgm_spec.js",
+      "pdfjs-test/font/text_layer_font_spec.js",
     ].map(moduleName => import(moduleName)) // eslint-disable-line no-unsanitized/method
   );
 
