@@ -6926,6 +6926,14 @@
     "about": "Nested knockout group used as an element of an outer knockout group."
   },
   {
+    "id": "knockout_smask_clip_nested",
+    "file": "pdfs/knockout_smask_clip_nested.pdf",
+    "md5": "ea48b68fa4cfe20d53b7e76963fae335",
+    "rounds": 1,
+    "type": "eq",
+    "about": "Nested knockout soft-mask shape must respect the current clip."
+  },
+  {
     "id": "knockout_nested_group_alpha",
     "file": "pdfs/knockout_nested_group_alpha.pdf",
     "md5": "cec0133fe020f089a73530274c295fcc",
