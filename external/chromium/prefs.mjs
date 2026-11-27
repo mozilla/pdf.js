@@ -93,6 +93,11 @@ const prefsMetadata = {
     description:
       "When enabled it will maintain the currently active zoom level, rather than letting the PDF document modify it, when navigating to internal destinations.",
   },
+  openPdfAutomatically: {
+    title: "Open PDFs automatically in PDF Viewer",
+    description:
+      "Use PDF Viewer for regular PDF links, local PDFs, and PDFs embedded in web pages.",
+  },
   pageColorsBackground: {
     description:
       "The color is a string as defined in CSS. Its goal is to help improve readability in high contrast mode",

@@ -124,10 +124,10 @@ Promise.all([
           var prefChanges = changes[prefName];
           if (prefChanges) {
             if ("newValue" in prefChanges) {
-              userPrefs[prefName] = prefChanges.newValue;
+              prefs[prefName] = prefChanges.newValue;
             } else {
               // Otherwise the pref was deleted
-              delete userPrefs[prefName];
+              delete prefs[prefName];
             }
             renderPreferenceFunctions[prefName](getPrefValue(prefName));
           }

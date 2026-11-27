@@ -14,9 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/* globals getAutomaticPdfOpening, onAutomaticPdfOpeningChanged */ // From pdf-opening-preference.js
+
 "use strict";
 
 var VIEWER_URL = chrome.runtime.getURL("content/web/viewer.html");
+
+let automaticPdfOpening;
+onAutomaticPdfOpeningChanged(() => {
+  automaticPdfOpening = undefined;
+});
+
+function isAutomaticPdfOpeningEnabled() {
+  return (automaticPdfOpening ??= getAutomaticPdfOpening());
+}
 
 function getViewerURL(pdf_url) {
   return VIEWER_URL + "?file=" + encodeURIComponent(pdf_url);
@@ -24,7 +35,11 @@ function getViewerURL(pdf_url) {
 
 document.addEventListener("animationstart", onAnimationStart, true);
 if (document.contentType === "application/pdf") {
-  chrome.runtime.sendMessage({ action: "canRequestBody" }, maybeRenderPdfDoc);
+  isAutomaticPdfOpeningEnabled().then(enabled => {
+    if (enabled) {
+      chrome.runtime.sendMessage({ action: "canRequestBody" }, maybeRenderPdfDoc);
+    }
+  });
 }
 
 function onAnimationStart(event) {
@@ -87,21 +102,27 @@ function watchObjectOrEmbed(elem) {
     return;
   }
 
-  var lastSrc;
-  var isUpdating = false;
+  let lastSrc;
+  let restoreElement;
 
-  function updateViewerFrame() {
-    if (!isUpdating) {
-      isUpdating = true;
-      try {
-        if (lastSrc !== elem[srcAttribute]) {
-          updateEmbedOrObject(elem);
-          lastSrc = elem[srcAttribute];
-        }
-      } finally {
-        isUpdating = false;
-      }
+  async function updateViewerFrame() {
+    if (lastSrc === elem[srcAttribute]) {
+      return;
     }
+    const enabled = await isAutomaticPdfOpeningEnabled();
+    if (!elem.isConnected || lastSrc === elem[srcAttribute]) {
+      return;
+    }
+    if (enabled) {
+      restoreElement ||= preserveEmbeddedElement(elem);
+      updateEmbedOrObject(elem);
+    } else if (restoreElement) {
+      // The site changed the source after automatic opening was turned off.
+      // Restore Chrome's rendering for the new PDF without reloading existing PDFs.
+      restoreElement();
+      restoreElement = undefined;
+    }
+    lastSrc = elem[srcAttribute];
   }
 
   updateViewerFrame();
@@ -114,6 +135,39 @@ function watchObjectOrEmbed(elem) {
     characterData: false,
     attributeFilter: [srcAttribute],
   });
+}
+
+function preserveEmbeddedElement(elem) {
+  const type = elem.getAttribute("type");
+  const isObject = elem.tagName === "OBJECT";
+  const fallback = isObject ? [...elem.childNodes] : null;
+  const styles = isObject
+    ? ["padding", "display"].map(property => [
+        property,
+        elem.style.getPropertyValue(property),
+        elem.style.getPropertyPriority(property),
+      ])
+    : [];
+
+  return () => {
+    // Reinsert the element so Chrome reloads it with its original type.
+    const parent = elem.parentNode;
+    const nextSibling = elem.nextSibling;
+    elem.remove();
+    if (type === null) {
+      elem.removeAttribute("type");
+    } else {
+      elem.setAttribute("type", type);
+    }
+    if (fallback) {
+      elem.replaceChildren(...fallback);
+      for (const [property, value, priority] of styles) {
+        elem.style.setProperty(property, value, priority);
+      }
+    }
+    // eslint-disable-next-line unicorn/prefer-modern-dom-apis
+    parent.insertBefore(elem, nextSibling);
+  };
 }
 
 // Display the PDF Viewer in an <embed>.

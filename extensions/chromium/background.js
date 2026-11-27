@@ -18,6 +18,7 @@ limitations under the License.
 
 importScripts(
   "options/migration.js",
+  "pdf-opening-preference.js",
   "preserve-referer.js",
   "pdfHandler.js",
   "extension-router.js",

@@ -15,44 +15,69 @@ limitations under the License.
 */
 
 /* globals canRequestBody */ // From preserve-referer.js
+/* globals getAutomaticPdfOpening, onAutomaticPdfOpeningChanged */ // From pdf-opening-preference.js
 
 "use strict";
 
 var VIEWER_URL = chrome.runtime.getURL("content/web/viewer.html");
 
-// Use in-memory storage to ensure that the DNR rules have been registered at
-// least once per session. runtime.onInstalled would have been the most fitting
-// event to ensure that, except there are cases where it does not fire when
-// needed. E.g. in incognito mode: https://issues.chromium.org/issues/41029550
-chrome.storage.session.get({ hasPdfRedirector: false }, async items => {
-  if (items?.hasPdfRedirector) {
-    return;
-  }
-  const rules = await chrome.declarativeNetRequest.getDynamicRules();
-  if (rules.length) {
-    // Dynamic rules persist across extension updates. We don't expect other
-    // dynamic rules, so just remove them all.
-    await chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: rules.map(r => r.id),
-    });
-  }
-  await registerPdfRedirectRule();
+let automaticPdfOpening = getAutomaticPdfOpening();
+let pdfRedirectUpdate = Promise.resolve();
 
-  // Only set the flag in the end, so that we know for sure that all
-  // asynchronous initialization logic has run. If not, then we will run the
-  // logic again at the next background wakeup.
-  chrome.storage.session.set({ hasPdfRedirector: true });
+onAutomaticPdfOpeningChanged(() => {
+  automaticPdfOpening = getAutomaticPdfOpening();
+  syncPdfRedirectRules();
 });
+syncPdfRedirectRules();
+
+function syncPdfRedirectRules() {
+  // Serialize updates so a slow rule registration cannot override a later
+  // change to the setting.
+  pdfRedirectUpdate = pdfRedirectUpdate
+    .then(async () => {
+      const enabled = await automaticPdfOpening;
+      // Reconcile on the first worker startup of each session as well as on
+      // preference changes. Dynamic rules can remain from an earlier version.
+      const { pdfRedirectRulesEnabled } = await chrome.storage.session.get(
+        "pdfRedirectRulesEnabled"
+      );
+      if (enabled === pdfRedirectRulesEnabled) {
+        return;
+      }
+
+      const rules = await chrome.declarativeNetRequest.getDynamicRules();
+      const removeRuleIds = rules.map(rule => rule.id);
+      let addRules = [];
+      if (enabled) {
+        // Chrome 123 - 127 can accept responseHeaders without applying the
+        // conditions. In that case, use the content script's PDF detection.
+        if (await isHeaderConditionSupported()) {
+          addRules = getPdfRedirectRules();
+        } else {
+          console.warn("DNR responseHeaders condition is not supported.");
+        }
+      }
+      if (removeRuleIds.length || addRules.length) {
+        await chrome.declarativeNetRequest.updateDynamicRules({
+          removeRuleIds,
+          addRules,
+        });
+      }
+      await chrome.storage.session.set({ pdfRedirectRulesEnabled: enabled });
+    })
+    .catch(error => {
+      console.error("Failed to update PDF redirect rules.", error);
+    });
+}
 
 /**
- * Registers declarativeNetRequest rules to redirect PDF requests to the viewer.
- * The caller should clear any previously existing dynamic DNR rules.
+ * Builds declarativeNetRequest rules to redirect PDF requests to the viewer.
  *
  * The logic here is the declarative version of the runtime logic in the
  * webRequest.onHeadersReceived implementation at
  * https://github.com/mozilla/pdf.js/blob/0676ea19cf17023ec8c2d6ad69a859c345c01dc1/extensions/chromium/pdfHandler.js#L34-L152
  */
-async function registerPdfRedirectRule() {
+function getPdfRedirectRules() {
   // "allow" means to ignore rules (from this extension) with lower priority.
   const ACTION_IGNORE_OTHER_RULES = { type: "allow" };
 
@@ -197,24 +222,7 @@ async function registerPdfRedirectRule() {
     rule.id = i + 1;
     rule.priority = addRules.length - i;
   }
-  try {
-    // Note: condition.responseHeaders is only supported in Chrome 128+, but
-    // does not trigger errors in Chrome 123 - 127 as explained at:
-    // https://github.com/w3c/webextensions/issues/638#issuecomment-2181124486
-    // We need to detect this and avoid registering rules, because otherwise all
-    // requests are redirected to the viewer instead of just PDF requests,
-    // because Chrome accepts rules while ignoring the responseHeaders condition
-    // - also reported at https://crbug.com/347186592
-    if (!(await isHeaderConditionSupported())) {
-      throw new Error("DNR responseHeaders condition is not supported.");
-    }
-    await chrome.declarativeNetRequest.updateDynamicRules({ addRules });
-  } catch (e) {
-    // When we do not register DNR rules for any reason, fall back to catching
-    // PDF documents via maybeRenderPdfDoc in contentscript.js.
-    console.error("Failed to register rules to redirect PDF requests.");
-    console.error(e);
-  }
+  return addRules;
 }
 
 // For the source and explanation of this logic, see
@@ -282,11 +290,11 @@ function getViewerURL(pdf_url) {
 // The viewer will detect that it has no access to file:-URLs, and prompt the
 // user to activate file permissions.
 chrome.webNavigation.onBeforeNavigate.addListener(
-  function (details) {
+  async function (details) {
     // Note: pdfjs.action=download is not checked here because that code path
     // is not reachable for local files through the viewer when we do not have
     // file:-access.
-    if (details.frameId === 0) {
+    if (details.frameId === 0 && (await automaticPdfOpening)) {
       chrome.extension.isAllowedFileSchemeAccess(function (isAllowedAccess) {
         if (isAllowedAccess) {
           // Expected to be handled by DNR. Don't do anything.

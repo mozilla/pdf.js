@@ -620,6 +620,18 @@ const defaultOptions = new Map([
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
+  ...(typeof PDFJSDev !== "undefined" && PDFJSDev.test("CHROME")
+    ? [
+        [
+          "openPdfAutomatically",
+          {
+            /** @type {boolean} */
+            value: false,
+            kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+          },
+        ],
+      ]
+    : []),
   [
     "pageColorsBackground",
     {
