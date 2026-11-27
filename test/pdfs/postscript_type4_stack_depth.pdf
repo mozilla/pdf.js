@@ -1,0 +1,59 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 220 170] /Resources << /Font << /F1 4 0 R >> /ColorSpace << /CS0 [/Separation /Spot0 /DeviceRGB 5 0 R] /CS1 [/Separation /Spot1 /DeviceRGB 6 0 R] >> >> /Contents 7 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /FunctionType 4 /Domain [0 1] /Range [0 1 0 1 0 1] /Length 94 >>
+stream
+{ dup 0 ge { dup 1 sub abs 0.005 lt { pop 0.934 0.1935 0.1406 -5 } if } if 0 ge { 1 0 0 } if }
+endstream
+endobj
+6 0 obj
+<< /FunctionType 4 /Domain [0 1] /Range [0 1 0 1 0 1] /Length 74 >>
+stream
+{ dup 0.5 gt { pop 1 0 0 -1 } { } ifelse dup 0 lt { pop } { 0 1 } ifelse }
+endstream
+endobj
+7 0 obj
+<< /Length 413 >>
+stream
+BT /F1 10 Tf 10 145 Td (Three red squares, then an orange one) Tj ET
+q
+/CS0 cs 0.25 scn 10 95 40 40 re f
+/CS0 cs 0.5 scn 60 95 40 40 re f
+/CS0 cs 0.75 scn 110 95 40 40 re f
+/CS0 cs 1 scn 160 95 40 40 re f
+Q
+BT /F1 10 Tf 10 60 Td (Two violet squares, then two red ones) Tj ET
+q
+/CS1 cs 0.25 scn 10 10 40 40 re f
+/CS1 cs 0.5 scn 60 10 40 40 re f
+/CS1 cs 0.75 scn 110 10 40 40 re f
+/CS1 cs 1 scn 160 10 40 40 re f
+Q
+endstream
+endobj
+xref
+0 8
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000345 00000 n 
+0000000415 00000 n 
+0000000610 00000 n 
+0000000785 00000 n 
+trailer
+<< /Size 8 /Root 1 0 R >>
+startxref
+1248
+%%EOF

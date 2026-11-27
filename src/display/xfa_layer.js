@@ -280,7 +280,8 @@ class XfaLayer {
       }
     }
 
-    if (isHTMLAnchorElement) {
+    // An invalid URL (e.g. javascript:) has been replaced by an empty string.
+    if (isHTMLAnchorElement && attributes.href) {
       linkService?.addLinkAttributes(
         html,
         attributes.href,

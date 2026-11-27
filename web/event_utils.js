@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability, makeSet } from "pdfjs-lib";
 import { INTERNAL_EVT, internalOpt } from "./internal_evt.js";
-import { makeSet } from "pdfjs-lib";
 
 const WaitOnType = {
   EVENT: "event",
@@ -45,7 +45,7 @@ async function waitOnEventOrTimeout({ target, name, delay = 0 }) {
   ) {
     throw new Error("waitOnEventOrTimeout - invalid parameters.");
   }
-  const { promise, resolve } = Promise.withResolvers();
+  const { promise, resolve } = createPromiseCapability();
   const ac = new AbortController();
 
   function handler(type) {

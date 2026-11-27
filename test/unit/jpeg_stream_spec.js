@@ -14,13 +14,13 @@
  */
 
 import { Dict } from "../../src/core/primitives.js";
+import { getJpegImageInfo } from "../../src/core/jpeg_utils.js";
 import { ImageResizer } from "../../src/core/image_resizer.js";
-import { JpegImage } from "../../src/core/jpg.js";
 import { JpegStream } from "../../src/core/jpeg_stream.js";
 import { Stream } from "../../src/core/stream.js";
 import { stringToBytes } from "../../src/shared/util.js";
 
-// Only a JPEG header is needed: `canUseImageDecoder` stops at the SOF marker.
+// Only a JPEG header is needed: `getJpegImageInfo` stops at the SOF marker.
 function createJpeg({
   width = 1,
   height = 1,
@@ -54,14 +54,14 @@ function createJpeg({
 }
 
 describe("jpeg_stream", function () {
-  describe("JpegImage.canUseImageDecoder", function () {
+  describe("getJpegImageInfo", function () {
     it("should report the frame dimensions", function () {
       expect(
-        JpegImage.canUseImageDecoder(createJpeg({ width: 40000, height: 4000 }))
+        getJpegImageInfo(createJpeg({ width: 40000, height: 4000 }))
       ).toEqual({ width: 40000, height: 4000, exifStart: 0, exifEnd: 0 });
 
       expect(
-        JpegImage.canUseImageDecoder(
+        getJpegImageInfo(
           createJpeg({ width: 123, height: 45, numComponents: 1 })
         )
       ).toEqual({ width: 123, height: 45, exifStart: 0, exifEnd: 0 });
@@ -74,7 +74,7 @@ describe("jpeg_stream", function () {
         0xffc2, // Progressive DCT.
       ]) {
         expect(
-          JpegImage.canUseImageDecoder(
+          getJpegImageInfo(
             createJpeg({ width: 40000, height: 4000, sofMarker })
           )
         )
@@ -84,9 +84,9 @@ describe("jpeg_stream", function () {
     });
 
     it("should report a zero SOF height", function () {
-      expect(
-        JpegImage.canUseImageDecoder(createJpeg({ width: 40000, height: 0 }))
-      ).toEqual({ width: 40000, height: 0, exifStart: 0, exifEnd: 0 });
+      expect(getJpegImageInfo(createJpeg({ width: 40000, height: 0 }))).toEqual(
+        { width: 40000, height: 0, exifStart: 0, exifEnd: 0 }
+      );
     });
 
     it("should report the frame dimensions together with the EXIF-offsets", function () {
@@ -95,9 +95,7 @@ describe("jpeg_stream", function () {
 
       // SOI (2) + APP1-marker (2) + length (2) + "Exif\x00\x00" (6) = 12.
       expect(
-        JpegImage.canUseImageDecoder(
-          createJpeg({ width: 40000, height: 4000, appData })
-        )
+        getJpegImageInfo(createJpeg({ width: 40000, height: 4000, appData }))
       ).toEqual({
         width: 40000,
         height: 4000,
@@ -108,15 +106,11 @@ describe("jpeg_stream", function () {
 
     it("should reject images that cannot be handled", function () {
       // Four-component JPEGs.
-      expect(
-        JpegImage.canUseImageDecoder(createJpeg({ numComponents: 4 }))
-      ).toBeNull();
+      expect(getJpegImageInfo(createJpeg({ numComponents: 4 }))).toBeNull();
       // Three components with ColorTransform = 0.
+      expect(getJpegImageInfo(createJpeg({ numComponents: 3 }), 0)).toBeNull();
       expect(
-        JpegImage.canUseImageDecoder(createJpeg({ numComponents: 3 }), 0)
-      ).toBeNull();
-      expect(
-        JpegImage.canUseImageDecoder(createJpeg({ numComponents: 3 }), 1)
+        getJpegImageInfo(createJpeg({ numComponents: 3 }), 1)
       ).not.toBeNull();
     });
   });
@@ -165,13 +159,26 @@ describe("jpeg_stream", function () {
       }
     });
 
-    function createStream(data) {
+    const imageResizer = new ImageResizer();
+
+    function createStream(data, isImageDecoderSupported = true) {
       return new JpegStream(
         new Stream(data, 0, data.length, Dict.empty),
         data.length,
-        null
+        null,
+        { evaluatorOptions: { isImageDecoderSupported }, imageResizer }
       );
     }
+
+    it("honours the document's ImageDecoder option", async function () {
+      const data = createJpeg({ width: 1024, height: 1024 });
+      const enabled = createStream(data);
+      const disabled = createStream(data, false);
+
+      expect(await disabled.getTransferableImage(1024, 1024)).toBeNull();
+      expect(await enabled.getTransferableImage(1024, 1024)).not.toBeNull();
+      expect(decoderInits.length).toEqual(1);
+    });
 
     it("should not pass any hint for an image that fits", async function () {
       const data = createJpeg({ width: 1024, height: 1024 });
@@ -186,7 +193,7 @@ describe("jpeg_stream", function () {
     it("should request a smaller frame for an oversized image", async function () {
       const width = 40000,
         height = 4000;
-      const factor = 2 ** ImageResizer.getReducePower(width, height);
+      const factor = 2 ** imageResizer.getReducePower(width, height);
       expect(factor).toBeGreaterThan(1);
 
       const data = createJpeg({ width, height });
@@ -201,7 +208,7 @@ describe("jpeg_stream", function () {
       expect(image.displayWidth).toEqual(decoderInits[0].desiredWidth);
       expect(image.displayHeight).toEqual(decoderInits[0].desiredHeight);
       expect(
-        ImageResizer.needsToBeResized(image.displayWidth, image.displayHeight)
+        imageResizer.needsToBeResized(image.displayWidth, image.displayHeight)
       ).toEqual(false);
     });
 
@@ -209,7 +216,7 @@ describe("jpeg_stream", function () {
       const width = 1024,
         frameHeight = 1030,
         dictionaryHeight = 1024;
-      expect(ImageResizer.getReducePower(width, frameHeight)).toEqual(0);
+      expect(imageResizer.getReducePower(width, frameHeight)).toEqual(0);
 
       const data = createJpeg({ width, height: frameHeight });
       const image = await createStream(data).getTransferableImage(

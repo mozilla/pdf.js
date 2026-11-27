@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-import { MathClamp, PDFDataRangeTransport } from "pdfjs-lib";
+import {
+  createPromiseCapability,
+  MathClamp,
+  PDFDataRangeTransport,
+} from "pdfjs-lib";
 import { AppOptions } from "./app_options.js";
 import { BaseDownloadManager } from "./base_download_manager.js";
 import { BaseExternalServices } from "./external_services.js";
@@ -205,7 +209,12 @@ class Preferences extends BasePreferences {
     if (!viewerApp.initialized) {
       return;
     }
-    viewerApp.eventBus.dispatch("download", { source: window });
+    viewerApp.eventBus.dispatch("download", {
+      source: window,
+      // Support renderers that omit annotations.
+      flatten: detail?.flatten ?? false,
+      intent: detail?.intent ?? "print",
+    });
   };
 
   window.addEventListener("save", handleEvent);
@@ -402,7 +411,7 @@ class MLManager {
       return null;
     }
     const resolvers = (this.#requestResolvers ||= new Set());
-    const resolver = Promise.withResolvers();
+    const resolver = createPromiseCapability();
     resolvers.add(resolver);
 
     data.service = MLManager.#AI_ALT_TEXT_MODEL_NAME;

@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 
+import { AbortException, isNodeJS } from "../../src/shared/util.js";
 import { DEFAULT_FONT_SIZE, TextLayer } from "../../src/display/text_layer.js";
 import { buildGetDocumentParams } from "./test_utils.js";
+import { buildTextLayerFont } from "../../src/core/text_layer_font.js";
 import { getDocument } from "../../src/display/api.js";
-import { isNodeJS } from "../../src/shared/util.js";
-import { OutputScale } from "../../src/display/display_utils.js";
+import { OutputScale } from "../../src/display/output_scale.js";
+import { PageViewport } from "../../src/display/page_viewport.js";
 
 describe("textLayer", function () {
   it("creates textLayer from ReadableStream", async function () {
@@ -37,19 +39,16 @@ describe("textLayer", function () {
 
     expect(textLayer.textContentItemsStr).toEqual([
       "Table Of Content",
-      "",
       "Chapter 1",
       " ",
       "..........................................................",
       " ",
       "2",
-      "",
       "Paragraph 1.1",
       " ",
       "......................................................",
       " ",
       "3",
-      "",
       "page 1 / 3",
     ]);
 
@@ -73,19 +72,16 @@ describe("textLayer", function () {
 
     expect(textLayer.textContentItemsStr).toEqual([
       "Table Of Content",
-      "",
       "Chapter 1",
       " ",
       "..........................................................",
       " ",
       "2",
-      "",
       "Paragraph 1.1",
       " ",
       "......................................................",
       " ",
       "3",
-      "",
       "page 1 / 3",
     ]);
 
@@ -253,6 +249,239 @@ describe("textLayer", function () {
     await loadingTask.destroy();
   });
 
+  it("fits a single glyph of a font with scaled advances", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const container = document.createElement("div");
+    container.className = "textLayer";
+    container.style.setProperty("--total-scale-factor", "1");
+    document.body.append(container);
+    // The 80 em advance of A is encoded with a scale in the font.
+    const textLayer = new TextLayer({
+      textContentSource: {
+        items: [
+          {
+            str: "A",
+            dir: "ltr",
+            width: 40,
+            height: 0.5,
+            transform: [0.5, 0, 0, 0.5, 50, 700],
+            fontName: "f1",
+            hasEOL: false,
+          },
+        ],
+        styles: {
+          f1: {
+            fontFamily: "sans-serif",
+            vertical: false,
+            textLayerFont: {
+              name: "scaled_advances",
+              data: buildTextLayerFont(new Map([[0x41, 80000]]), 1, false, 4),
+              ascent: 1,
+              advanceScale: 4,
+            },
+          },
+        },
+      },
+      container,
+      viewport: new PageViewport({
+        viewBox: [0, 0, 800, 800],
+        userUnit: 1,
+        scale: 1,
+        rotation: 0,
+      }),
+    });
+    try {
+      await textLayer.render();
+      expect(textLayer.textDivs[0].getBoundingClientRect().width).toBeCloseTo(
+        40,
+        0
+      );
+    } finally {
+      textLayer.cancel();
+      container.remove();
+    }
+  });
+
+  describe("with text layer fonts", function () {
+    let loadingTask, textContent, viewport, textLayers;
+
+    const hasFont = (name, ownerDocument = document) =>
+      [...ownerDocument.fonts].some(
+        ({ family }) => family.replaceAll('"', "") === name
+      );
+
+    function createTextLayer(container = document.createElement("div")) {
+      const textLayer = new TextLayer({
+        textContentSource: textContent,
+        container,
+        viewport,
+      });
+      textLayers.push(textLayer);
+      return textLayer;
+    }
+
+    beforeEach(async function () {
+      if (isNodeJS) {
+        pending("document.createElement is not supported in Node.js.");
+      }
+      textLayers = [];
+      loadingTask = getDocument(buildGetDocumentParams("tracemonkey.pdf"));
+      const pdfDocument = await loadingTask.promise;
+      const page = await pdfDocument.getPage(1);
+      textContent = await page.getTextContent({
+        enableNormalization: false,
+      });
+      viewport = page.getViewport({ scale: 1 });
+    });
+
+    afterEach(async function () {
+      for (const textLayer of textLayers || []) {
+        textLayer.cancel();
+      }
+      await loadingTask?.destroy();
+    });
+
+    it("fits isolated glyphs with the same text and different PDF widths", async function () {
+      const item = textContent.items.find(({ str }) => /^[A-Z]/i.test(str));
+      const widths = [3, 12];
+      textContent.items = widths.map(width => ({
+        ...item,
+        str: item.str[0],
+        width,
+        textLayerAdvance: undefined,
+      }));
+      const container = document.createElement("div");
+      container.className = "textLayer";
+      container.style.setProperty("--total-scale-factor", "1");
+      document.body.append(container);
+      try {
+        const layer = createTextLayer(container);
+        await layer.render();
+        for (const [i, span] of layer.textDivs.entries()) {
+          expect(span.getBoundingClientRect().width).toBeCloseTo(widths[i], 1);
+        }
+      } finally {
+        container.remove();
+      }
+    });
+
+    it("lays out the text and shares the fonts until the last cancellation", async function () {
+      const first = createTextLayer();
+      const second = createTextLayer();
+      await Promise.all(textLayers.map(textLayer => textLayer.render()));
+
+      const { pageHeight, pageY } = viewport.rawDims;
+      const { items, styles } = textContent;
+      const names = new Set();
+      expect(first.textDivs.length).toEqual(items.length);
+      for (const [i, { style }] of first.textDivs.entries()) {
+        const { name, ascent } = styles[items[i].fontName].textLayerFont;
+        names.add(name);
+        expect(style.fontFamily.replaceAll('"', "")).toBe(name);
+        // The span is moved up by the ascent of the font.
+        const [, , , d, , f] = items[i].transform;
+        expect(parseFloat(style.top)).toBeCloseTo(
+          (100 * (pageY + pageHeight - f - ascent * d)) / pageHeight,
+          2
+        );
+      }
+      expect([...names].every(name => hasFont(name))).toBeTrue();
+      const spaces = first.textDivs.filter(
+        ({ textContent: str }) => str === " "
+      );
+      expect(spaces.length).toBeGreaterThan(0);
+      expect(
+        spaces.every(({ style }) => !style.getPropertyValue("--scale-x"))
+      ).toBeTrue();
+
+      first.cancel();
+      expect([...names].every(name => hasFont(name))).toBeTrue();
+      second.cancel();
+      expect([...names].some(name => hasFont(name))).toBeFalse();
+    });
+
+    it("loads and measures fonts in the container's document", async function () {
+      const iframe = document.createElement("iframe");
+      document.body.append(iframe);
+      const { contentDocument } = iframe;
+      const inner = createTextLayer(contentDocument.createElement("div"));
+      const outer = createTextLayer();
+      const { name } =
+        textContent.styles[textContent.items[0].fontName].textLayerFont;
+
+      try {
+        await inner.render();
+        expect(hasFont(name, contentDocument)).toBeTrue();
+        expect(hasFont(name)).toBeFalse();
+
+        await outer.render();
+        expect(hasFont(name)).toBeTrue();
+        const getScales = ({ textDivs }) =>
+          textDivs.map(({ style }) => style.getPropertyValue("--scale-x"));
+        expect(getScales(inner)).toEqual(getScales(outer));
+
+        inner.cancel();
+        expect(hasFont(name, contentDocument)).toBeFalse();
+        expect(hasFont(name)).toBeTrue();
+      } finally {
+        inner.cancel();
+        TextLayer.cleanup();
+        iframe.remove();
+      }
+    });
+
+    it("doesn't load fonts when cancelled before rendering starts", async function () {
+      const { name } =
+        textContent.styles[textContent.items[0].fontName].textLayerFont;
+      const textLayer = createTextLayer();
+      const promise = textLayer.render();
+      textLayer.cancel();
+      await expectAsync(promise).toBeRejectedWith(jasmine.any(AbortException));
+      await new Promise(resolve => {
+        setTimeout(resolve, 0);
+      });
+      expect(textLayer.textDivs).toEqual([]);
+      expect(hasFont(name)).toBeFalse();
+    });
+
+    it("cancels rendering while the fonts are still loading", async function () {
+      const loading = Promise.withResolvers();
+      const started = Promise.withResolvers();
+      spyOnProperty(FontFace.prototype, "loaded", "get").and.callFake(() => {
+        started.resolve();
+        return loading.promise;
+      });
+
+      const textLayer = createTextLayer();
+      const promise = textLayer.render();
+      try {
+        await started.promise;
+        textLayer.cancel();
+        await expectAsync(promise).toBeRejectedWith(
+          jasmine.any(AbortException)
+        );
+        expect(textLayer.textDivs).toEqual([]);
+      } finally {
+        loading.resolve();
+      }
+    });
+
+    it("removes a failed font and renders with the fallback font", async function () {
+      const { fontFamily, textLayerFont } =
+        textContent.styles[textContent.items[0].fontName];
+      textLayerFont.data = new Uint8Array(1);
+      const textLayer = createTextLayer();
+      await textLayer.render();
+
+      expect(hasFont(textLayerFont.name)).toBeFalse();
+      expect(textLayer.textDivs[0].style.fontFamily).toBe(
+        TextLayer.fontFamilyMap.get(fontFamily) || fontFamily
+      );
+    });
+  });
+
   it("measures the text with the correct font after computing the ascent", async function () {
     if (isNodeJS) {
       pending("document.createElement is not supported in Node.js.");
@@ -300,6 +529,54 @@ describe("textLayer", function () {
       parseFloat(style.getPropertyValue("--scale-x"))
     );
     expect(scaleX1 / scaleX2).toBeCloseTo(1, 1);
+
+    await loadingTask.destroy();
+  });
+
+  it("positions the text precisely", async function () {
+    if (isNodeJS) {
+      pending("document.createElement is not supported in Node.js.");
+    }
+    const loadingTask = getDocument(buildGetDocumentParams("basicapi.pdf"));
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+    const viewport = page.getViewport({ scale: 1 });
+    const { pageWidth, pageX } = viewport.rawDims;
+    // Badly rounded with two decimals: 10.00% instead of 10.0045%.
+    const left = (pageWidth * 10.0045) / 100;
+
+    const textLayer = new TextLayer({
+      textContentSource: {
+        items: [
+          {
+            str: "Hello",
+            dir: "ltr",
+            width: 30,
+            height: 10,
+            transform: [10, 0, 0, 10, pageX + left, 100],
+            fontName: "f1",
+            hasEOL: false,
+          },
+        ],
+        styles: {
+          f1: {
+            fontFamily: "sans-serif",
+            ascent: 0.8,
+            descent: -0.2,
+            vertical: false,
+          },
+        },
+        lang: "en",
+      },
+      container: document.createElement("div"),
+      viewport,
+    });
+    await textLayer.render();
+
+    const { style } = textLayer.textDivs[0];
+    expect(
+      Math.abs((parseFloat(style.left) * pageWidth) / 100 - left)
+    ).toBeLessThan(5e-3);
 
     await loadingTask.destroy();
   });

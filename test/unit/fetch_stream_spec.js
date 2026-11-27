@@ -118,6 +118,40 @@ describe("fetch_stream", function () {
     expect(result2.value).toEqual(tailSize);
   });
 
+  it("cancel after a failed read doesn't cause an unhandled rejection", async function () {
+    spyOn(globalThis, "fetch").and.callFake(
+      async () =>
+        new Response(
+          new ReadableStream({
+            pull(controller) {
+              controller.error(new Error("Network error"));
+            },
+          }),
+          { status: 200 }
+        )
+    );
+    const stream = new PDFFetchStream({
+      url: getPdfUrl(),
+      rangeChunkSize: 32768,
+      disableStream: false,
+      disableRange: false,
+    });
+
+    const fullReader = stream.getFullReader();
+    const rangeReader = stream.getRangeReader(0, 32768);
+    await expectAsync(fullReader.read()).toBeRejectedWithError("Network error");
+    await expectAsync(rangeReader.read()).toBeRejectedWithError(
+      "Network error"
+    );
+
+    fullReader.cancel(new AbortException("Don't need fullReader."));
+    rangeReader.cancel(new AbortException("Don't need rangeReader."));
+    // Allow any unhandled rejections to be reported.
+    await new Promise(resolve => {
+      setTimeout(resolve, 0);
+    });
+  });
+
   describe("Redirects", function () {
     it("redirects allowed if all responses are same-origin", async function () {
       await testCrossOriginRedirects({

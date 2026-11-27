@@ -2421,6 +2421,7 @@ let makeBrotliDecode = () => {
     let /** @type {!State} */ s = new State();
     s.input = new InputStream(bytes);
     initState(s);
+    enableLargeWindow(s);
     if (options) {
       let customDictionary =
           /** @type {?Int8Array} */ (options["customDictionary"]);
@@ -2460,7 +2461,4 @@ let makeBrotliDecode = () => {
   return decode;
 };
 
-/**
- * @type {function(!Int8Array, ?Options=):!Int8Array}
- */
-export let BrotliDecode = makeBrotliDecode();
+export { makeBrotliDecode };

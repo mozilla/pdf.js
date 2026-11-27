@@ -15,10 +15,10 @@
 
 import {
   assert,
+  createPromiseCapability,
   FeatureTest,
   isNodeJS,
   shadow,
-  unreachable,
   warn,
 } from "../shared/util.js";
 import { makePathFromDrawOPS } from "./display_utils.js";
@@ -27,7 +27,7 @@ import { serializeFontFamily } from "../shared/css_utils.js";
 class FontLoader {
   #nativeFontFaces = new Set();
 
-  #systemFonts = new Set();
+  #systemFonts = new Map();
 
   #styleSheet = null;
 
@@ -59,6 +59,17 @@ class FontLoader {
   removeNativeFontFace(nativeFontFace) {
     this.#nativeFontFaces.delete(nativeFontFace);
     this._document.fonts.delete(nativeFontFace);
+  }
+
+  static async loadBinaryFontFace(fontSet, fontFace) {
+    fontSet.add(fontFace);
+    try {
+      // A FontFace created from binary data starts loading on construction.
+      await fontFace.loaded;
+    } catch (reason) {
+      fontSet.delete(fontFace);
+      throw reason;
+    }
   }
 
   insertRule(rule) {
@@ -127,69 +138,136 @@ class FontLoader {
     this.styleElement = null;
   }
 
-  async loadSystemFont({
+  #systemFont(info, probe = false) {
+    const family = probe ? `${info.loadedName}_probe` : info.loadedName;
+    return this.#systemFonts.getOrInsertComputed(family, () => {
+      const face = new FontFace(
+        family,
+        info.src,
+        probe ? { ...info.style, sizeAdjust: "0%" } : info.style
+      );
+      if (!probe) {
+        this.addNativeFontFace(face);
+      }
+      const entry = {
+        loaded: face.load().catch(() => {
+          if (this.#systemFonts.get(family) === entry) {
+            this.#systemFonts.delete(family);
+            if (!probe) {
+              this.removeNativeFontFace(face);
+              warn(
+                `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
+              );
+            }
+          }
+          return null;
+        }),
+      };
+      return entry;
+    });
+  }
+
+  async #loadSystemFont({
     systemFontInfo: info,
     disableFontFace,
     _inspectFont,
   }) {
-    if (!info || this.#systemFonts.has(info.loadedName)) {
-      return;
+    assert(!disableFontFace, "Cannot load a disabled system font.");
+    const entry = this.#systemFont(info);
+    if ((await entry.loaded) && _inspectFont && !entry.inspected) {
+      entry.inspected = true;
+      _inspectFont(info);
     }
-    assert(
-      !disableFontFace,
-      "loadSystemFont shouldn't be called when `disableFontFace` is set."
-    );
+  }
 
-    if (this.isFontLoadingAPISupported) {
-      const { loadedName, src, style } = info;
-      const fontFace = new FontFace(loadedName, src, style);
-      this.addNativeFontFace(fontFace);
-      try {
-        await fontFace.load();
-        this.#systemFonts.add(loadedName);
-        _inspectFont?.(info);
-      } catch {
-        warn(
-          `Cannot load system font: ${info.baseFontName}, installing it could help to improve PDF rendering.`
-        );
+  async hasSystemFontGlyphs({ systemFontInfo: info, codePoints }) {
+    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("WORKER_THREAD")) {
+      throw new Error("Not implemented: hasSystemFontGlyphs");
+    }
 
-        this.removeNativeFontFace(fontFace);
+    if (!this.isFontLoadingAPISupported) {
+      return false;
+    }
+    try {
+      // Start the rendering face and its zero-size probe together. Setting
+      // sizeAdjust after loading a face doesn't update its metrics everywhere.
+      const rendering = this.#systemFont(info);
+      const probe = this.#systemFont(info, true);
+      const [face, probeFace] = await Promise.all([
+        rendering.loaded,
+        probe.loaded,
+      ]);
+      if (!face || probeFace?.sizeAdjust !== "0%") {
+        return false;
       }
+      const coverage = (probe.coverage ??= new Map());
+      const ctx = this._document.createElement("canvas").getContext("2d");
+      const fallback = this._document.createElement("canvas").getContext("2d");
+      fallback.font = "16px sans-serif";
+      function measure(cp) {
+        const char = String.fromCodePoint(cp);
+        // Controls aren't drawn, and Hellbox has no glyph for the Apple logo.
+        return (
+          /\p{Cc}/u.test(char) ||
+          cp === 0xf8ff ||
+          (ctx.measureText(char).width === 0 &&
+            fallback.measureText(char).width > 0)
+        );
+      }
+      this._document.fonts.add(probeFace);
+      try {
+        ctx.font = `16px "${probeFace.family}", sans-serif`;
+        return codePoints.every(cp =>
+          coverage.getOrInsertComputed(cp, measure)
+        );
+      } finally {
+        this._document.fonts.delete(probeFace);
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  async #loadFontFace(font) {
+    const fontFace = font.createNativeFontFace();
+    if (!fontFace) {
       return;
     }
-
-    unreachable(
-      "Not implemented: loadSystemFont without the Font Loading API."
-    );
+    this.#nativeFontFaces.add(fontFace);
+    try {
+      await FontLoader.loadBinaryFontFace(this._document.fonts, fontFace);
+    } catch (ex) {
+      warn(`Failed to load font '${fontFace.family}': '${ex}'.`);
+      this.#nativeFontFaces.delete(fontFace);
+      if (!font.missingFile) {
+        // Use paths when an embedded or replacement font fails to load.
+        font.disableFontFace = true;
+        throw ex;
+      }
+    }
   }
 
   async bind(font) {
     // Add the font to the DOM only once; skip if the font is already loaded.
-    if (font.attached || (font.missingFile && !font.systemFontInfo)) {
+    if (
+      font.attached ||
+      (font.missingFile && !font.systemFontInfo && !font.generatedFontName)
+    ) {
       return;
     }
     font.attached = true;
 
-    if (font.systemFontInfo) {
-      await this.loadSystemFont(font);
-      return;
-    }
-
     if (this.isFontLoadingAPISupported) {
-      const nativeFontFace = font.createNativeFontFace();
-      if (nativeFontFace) {
-        this.addNativeFontFace(nativeFontFace);
-        try {
-          await nativeFontFace.loaded;
-        } catch (ex) {
-          warn(`Failed to load font '${nativeFontFace.family}': '${ex}'.`);
-
-          // When font loading failed, fall back to the built-in font renderer.
-          font.disableFontFace = true;
-          throw ex;
-        }
+      if (font.systemFontInfo) {
+        // Load a system font and its generated fallback in parallel.
+        await Promise.all([
+          this.#loadSystemFont(font),
+          this.#loadFontFace(font),
+        ]);
+      } else {
+        await this.#loadFontFace(font);
       }
-      return; // The font was, asynchronously, loaded.
+      return;
     }
 
     // !this.isFontLoadingAPISupported
@@ -253,7 +331,7 @@ class FontLoader {
     }
 
     const { loadingRequests } = this;
-    const { promise, resolve } = Promise.withResolvers();
+    const { promise, resolve } = createPromiseCapability();
     const request = {
       done: false,
       resolve,
@@ -422,29 +500,41 @@ class FontFaceObject {
     }
   }
 
+  #getFontFaceProperties() {
+    const { generatedFontName } = this;
+    let family = generatedFontName || this.loadedName;
+    const css = Object.create(null);
+    if (generatedFontName) {
+      // Match CanvasGraphics.setFont; these outlines already include the style.
+      css.style = this.italic ? "italic" : "normal";
+      css.weight = "normal";
+      if (this.black) {
+        css.weight = "900";
+      } else if (this.bold) {
+        css.weight = "bold";
+      }
+    } else if (this.cssFontInfo) {
+      family = serializeFontFamily(this.cssFontInfo.fontFamily);
+      css.weight = this.cssFontInfo.fontWeight;
+      if (this.cssFontInfo.italicAngle) {
+        css.style = `oblique ${this.cssFontInfo.italicAngle}deg`;
+      }
+    }
+
+    return { family, css };
+  }
+
   createNativeFontFace() {
     const { data } = this; // Get `data` just once, since it's not shadowed.
     if (!data || this.disableFontFace) {
       return null;
     }
-    let nativeFontFace;
-    if (!this.cssFontInfo) {
-      nativeFontFace = new FontFace(this.loadedName, data, {});
-    } else {
-      const css = {
-        weight: this.cssFontInfo.fontWeight,
-      };
-      if (this.cssFontInfo.italicAngle) {
-        css.style = `oblique ${this.cssFontInfo.italicAngle}deg`;
-      }
-      nativeFontFace = new FontFace(
-        serializeFontFamily(this.cssFontInfo.fontFamily),
-        data,
-        css
-      );
-    }
+    const { family, css } = this.#getFontFaceProperties();
+    const nativeFontFace = new FontFace(family, data, css);
 
-    this._inspectFont?.(this);
+    if (!this.generatedFontName) {
+      this._inspectFont?.(this);
+    }
     return nativeFontFace;
   }
 
@@ -459,21 +549,18 @@ class FontFaceObject {
     }
     // Add the @font-face rule to the document.
     const url = `url(data:${this.mimetype};base64,${data.toBase64()});`;
-    let rule;
-    if (!this.cssFontInfo) {
-      rule = `@font-face {font-family:"${this.loadedName}";src:${url}}`;
-    } else {
-      let css = `font-weight: ${this.cssFontInfo.fontWeight};`;
-      if (this.cssFontInfo.italicAngle) {
-        css += `font-style: oblique ${this.cssFontInfo.italicAngle}deg;`;
-      }
-      // The font family originates from the PDF document, hence it must be
-      // serialized as a <string> to prevent arbitrary rule injection.
-      const fontFamily = serializeFontFamily(this.cssFontInfo.fontFamily);
-      rule = `@font-face {font-family:${fontFamily};${css}src:${url}}`;
+    const { family, css } = this.#getFontFaceProperties();
+    // The font family can originate from the PDF document, hence it must be
+    // serialized as a <string> to prevent arbitrary rule injection.
+    let rule = `@font-face {font-family:${serializeFontFamily(family)};`;
+    for (const [property, value] of Object.entries(css)) {
+      rule += `font-${property}: ${value};`;
     }
+    rule += `src:${url}}`;
 
-    this._inspectFont?.(this, url);
+    if (!this.generatedFontName) {
+      this._inspectFont?.(this, url);
+    }
     return rule;
   }
 
@@ -554,6 +641,10 @@ class FontFaceObject {
 
   get fallbackName() {
     return this.#fontData.fallbackName;
+  }
+
+  get generatedFontName() {
+    return this.#fontData.generatedFontName;
   }
 
   get loadedName() {

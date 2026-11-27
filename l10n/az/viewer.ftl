@@ -205,3 +205,15 @@ pdfjs-password-invalid = Parol səhvdir. Bir daha yoxlayın.
 pdfjs-password-ok-button = Tamam
 pdfjs-password-cancel-button = Ləğv et
 pdfjs-web-fonts-disabled = Web Şriftlər söndürülüb: yerləşdirilmiş PDF şriftlərini istifadə etmək mümkün deyil.
+
+## Alt-text dialog
+
+pdfjs-editor-alt-text-cancel-button = Ləğv et
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = Ləğv et
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-dialog-cancel-button = Ləğv et

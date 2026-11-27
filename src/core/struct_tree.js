@@ -521,68 +521,83 @@ class StructTreeRoot {
   }
 
   static #collectParents({ elements, xref, pageDict, numberTree }) {
-    const idToElements = new Map();
+    const parentArrays = new Map();
     for (const element of elements) {
-      if (element.structTreeParentId) {
-        const id = parseInt(element.structTreeParentId.split("_mc")[1], 10);
-        idToElements.getOrInsertComputed(id, makeArr).push(element);
+      const parentId = element.structTreeParentId;
+      if (!parentId) {
+        continue;
       }
-    }
-
-    const id = pageDict.get("StructParents");
-    if (!Number.isInteger(id)) {
-      return;
-    }
-    // The parentArray type has already been checked by the caller.
-    const parentArray = numberTree.get(id);
-
-    const updateElement = (kid, pageKid, kidRef) => {
-      const elems = idToElements.get(kid);
-      if (elems) {
-        const parentRef = pageKid.getRaw("P");
-        const parentDict = xref.fetchIfRef(parentRef);
-        if (parentRef instanceof Ref && parentDict instanceof Dict) {
-          // It should always the case, but we check just in case.
-          const params = { ref: kidRef, dict: pageKid };
-          for (const element of elems) {
-            element.structTreeParent = params;
+      const [contentId, mcidStr] = parentId.split("_mc", 2);
+      const mcid = parseInt(mcidStr, 10);
+      if (!Number.isInteger(mcid)) {
+        continue;
+      }
+      const streamId = contentId.split("_x", 2)[1] || "";
+      if (!parentArrays.has(streamId)) {
+        let dict = pageDict;
+        if (streamId) {
+          const ref = Ref.fromString(streamId);
+          const stream = ref ? xref.fetch(ref) : null;
+          if (
+            !(stream instanceof BaseStream) ||
+            !isName(stream.dict.get("Subtype"), "Form")
+          ) {
+            parentArrays.set(streamId, null);
+            continue;
           }
+          dict = stream.dict;
         }
-        return true;
-      }
-      return false;
-    };
-    for (const kidRef of parentArray) {
-      if (!(kidRef instanceof Ref)) {
-        continue;
-      }
-      const pageKid = xref.fetch(kidRef);
-      const k = pageKid.get("K");
-      if (Number.isInteger(k)) {
-        updateElement(k, pageKid, kidRef);
-        continue;
+        const id = dict.get("StructParents");
+        parentArrays.set(
+          streamId,
+          Number.isInteger(id) ? numberTree.get(id) : null
+        );
       }
 
-      if (!Array.isArray(k)) {
+      const parentArray = parentArrays.get(streamId);
+      if (!Array.isArray(parentArray)) {
         continue;
       }
-      for (let kid of k) {
-        kid = xref.fetchIfRef(kid);
-        if (Number.isInteger(kid) && updateElement(kid, pageKid, kidRef)) {
-          break;
-        }
-        if (!(kid instanceof Dict)) {
+      // MCIDs should index the parent array of their content stream, but
+      // some files don't follow that.
+      const refs = [parentArray[mcid], ...parentArray];
+      for (const ref of refs) {
+        if (!(ref instanceof Ref)) {
           continue;
         }
-        if (!isName(kid.get("Type"), "MCR")) {
-          break;
+        const dict = xref.fetch(ref);
+        if (
+          !(dict instanceof Dict) ||
+          !StructTreeRoot.#hasMcid(dict, mcid, streamId, xref)
+        ) {
+          continue;
         }
-        const mcid = kid.get("MCID");
-        if (Number.isInteger(mcid) && updateElement(mcid, pageKid, kidRef)) {
-          break;
+        const parentRef = dict.getRaw("P");
+        if (parentRef instanceof Ref && xref.fetch(parentRef) instanceof Dict) {
+          element.structTreeParent = { ref, dict };
         }
+        break;
       }
     }
+  }
+
+  static #hasMcid(dict, mcid, streamId, xref) {
+    const k = dict.get("K");
+    for (let kid of Array.isArray(k) ? k : [k]) {
+      kid = xref.fetchIfRef(kid);
+      if (kid === mcid && !streamId) {
+        return true;
+      }
+      if (
+        kid instanceof Dict &&
+        isName(kid.get("Type"), "MCR") &&
+        kid.get("MCID") === mcid &&
+        (!streamId || kid.getRaw("Stm")?.toString() === streamId)
+      ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   static async #updateParentTag({
@@ -921,6 +936,8 @@ class StructElement {
 }
 
 class StructTreePage {
+  #formStructParents = new Map();
+
   constructor(structTreeRoot, pageDict) {
     this.root = structTreeRoot;
     this.xref = structTreeRoot?.xref ?? null;
@@ -961,35 +978,92 @@ class StructTreePage {
     return map;
   }
 
-  parse(pageRef) {
+  /**
+   * Collect the /StructParents of the form XObjects in the page's resources:
+   * MCIDs are local to their own content stream.
+   * @param {Dict} resources
+   * @param {RefSet} [visited]
+   * @param {number} [level]
+   */
+  #collectFormStructParents(resources, visited = new RefSet(), level = 0) {
+    if (!(resources instanceof Dict)) {
+      return;
+    }
+    if (level > MAX_DEPTH) {
+      warn("StructTree MAX_DEPTH reached.");
+      return;
+    }
+    const xobjs = resources.get("XObject");
+    if (!(xobjs instanceof Dict)) {
+      return;
+    }
+    for (const ref of xobjs.getRawValues()) {
+      if (!(ref instanceof Ref) || visited.has(ref)) {
+        continue;
+      }
+      visited.put(ref);
+      try {
+        const stream = this.xref.fetch(ref);
+        if (
+          !(stream instanceof BaseStream) ||
+          !isName(stream.dict.get("Subtype"), "Form")
+        ) {
+          continue;
+        }
+        const id = stream.dict.get("StructParents");
+        if (Number.isInteger(id)) {
+          this.#formStructParents.set(ref.toString(), id);
+        }
+        this.#collectFormStructParents(
+          stream.dict.get("Resources"),
+          visited,
+          level + 1
+        );
+      } catch (ex) {
+        if (ex instanceof MissingDataException) {
+          throw ex;
+        }
+        warn(`StructTree: ignoring XObject ${ref}: "${ex}".`);
+      }
+    }
+  }
+
+  parse(pageRef, resources = null) {
     if (!this.root || !this.rootDict || !(pageRef instanceof Ref)) {
       return;
     }
 
+    this.#collectFormStructParents(resources);
     const { parentTree } = this.root;
     if (!parentTree) {
       this.#parseWithoutParentTree(pageRef);
       return;
     }
     const id = this.pageDict.get("StructParents");
-    const ids = this.root.structParentIds?.get(pageRef);
-    if (!Number.isInteger(id) && !ids) {
-      return;
+    const contentIds = new Set(this.#formStructParents.values());
+    if (Number.isInteger(id)) {
+      contentIds.add(id);
     }
 
     const map = new Map();
 
-    if (Number.isInteger(id)) {
-      const parentArray = parentTree.get(id);
+    for (const contentId of contentIds) {
+      const parentArray = parentTree.get(contentId);
       if (Array.isArray(parentArray)) {
         for (const ref of parentArray) {
           if (ref instanceof Ref) {
-            this.addNode(this.xref.fetch(ref), map);
+            this.addNode(
+              this.xref.fetch(ref),
+              map,
+              0,
+              /* mustHavePageContent = */ contentId !== id
+            );
           }
         }
       }
     }
 
+    const ids = this.root.structParentIds?.get(pageRef);
     if (!ids) {
       return;
     }
@@ -1012,7 +1086,7 @@ class StructTreePage {
     }
   }
 
-  addNode(dict, map, level = 0) {
+  addNode(dict, map, level = 0, mustHavePageContent = false) {
     if (level > MAX_DEPTH) {
       warn("StructTree MAX_DEPTH reached.");
       return null;
@@ -1026,6 +1100,19 @@ class StructTreePage {
     }
 
     const element = new StructElementNode(this, dict);
+    // Form resources can be shared by several pages. Only add their content
+    // parents when at least one of their content items belongs to this page.
+    // parseKids already filters content items using their effective /Pg.
+    if (
+      mustHavePageContent &&
+      !element.kids.some(
+        kid =>
+          kid.type === StructElementType.PAGE_CONTENT ||
+          kid.type === StructElementType.STREAM_CONTENT
+      )
+    ) {
+      return null;
+    }
     map.set(dict, element);
     switch (element.role) {
       case "L":
@@ -1125,6 +1212,7 @@ class StructTreePage {
    * @returns {object}
    */
   get serializable() {
+    const formStructParents = this.#formStructParents;
     function nodeToSerializable(node, parent, level = 0) {
       if (level > MAX_DEPTH) {
         warn("StructTree too deep to be fully serialized.");
@@ -1207,9 +1295,12 @@ class StructTreePage {
           kid.type === StructElementType.PAGE_CONTENT ||
           kid.type === StructElementType.STREAM_CONTENT
         ) {
+          const scope = formStructParents.has(kid.refObjId)
+            ? `_x${kid.refObjId}`
+            : "";
           obj.children.push({
             type: "content",
-            id: `p${kid.pageObjId}_mc${kid.mcid}`,
+            id: `p${kid.pageObjId}${scope}_mc${kid.mcid}`,
           });
         } else if (kid.type === StructElementType.OBJECT) {
           obj.children.push({

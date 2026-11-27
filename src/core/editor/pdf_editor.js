@@ -148,6 +148,9 @@ class PDFEditor {
 
   #primaryDocument = null;
 
+  // Reference mappings for each copy of the primary document.
+  #primaryRefMappings = [];
+
   // Deduplicates resource streams (fonts/images) shared across the merged
   // documents. Maps a cheap content key to a bucket of { ref, dictStr, stream }
   // candidates; the key only groups possible matches, an exact byte comparison
@@ -1066,6 +1069,9 @@ class PDFEditor {
       }
       const documentData = new DocumentData(document);
       allDocumentData.push(documentData);
+      if (document === primaryDocument) {
+        this.#primaryRefMappings.push(documentData.oldRefMapping);
+      }
       promises.push(this.#collectDocumentData(documentData));
       let pageIndex = 0;
       for (const i of filteredPageIndices) {
@@ -2493,27 +2499,67 @@ class PDFEditor {
       await this.#collectDependencies(resources, true, xref)
     );
 
-    let newAnnots = null;
-
-    if (annotations) {
-      const newAnnotations = await this.#collectDependencies(
-        annotations,
-        true,
-        xref
-      );
-      this.#fixNamedDestinations(newAnnotations, dedupNamedDestinations);
-      if (Array.isArray(newAnnotations) && newAnnotations.length > 0) {
-        newAnnots = newAnnotations;
-      }
-    }
-
     const newAnnotations =
       documentData.document === this.#primaryDocument
         ? this.#newAnnotationsParams?.newAnnotationsByPage
             ?.get(page.pageIndex)
             ?.filter(({ copyLevel: level }) => (level ?? 0) === copyLevel)
         : null;
+    const deletedAnnotations = new RefSet();
+    for (const { id, deleted, popup, popupRef } of newAnnotations || []) {
+      if (!Ref.fromString(id)) {
+        continue;
+      }
+      if (deleted) {
+        deletedAnnotations.put(id);
+      }
+      if (popupRef && (deleted || popup?.deleted)) {
+        deletedAnnotations.put(popupRef);
+      }
+    }
+
+    let newAnnots = null;
+
+    if (annotations) {
+      const keptAnnotations = await this.#collectDependencies(
+        annotations.filter(
+          annotation =>
+            !(annotation instanceof Ref && deletedAnnotations.has(annotation))
+        ),
+        true,
+        xref
+      );
+      this.#fixNamedDestinations(keptAnnotations, dedupNamedDestinations);
+      if (Array.isArray(keptAnnotations) && keptAnnotations.length > 0) {
+        newAnnots = keptAnnotations;
+      }
+    }
+
     if (newAnnotations?.length) {
+      // Update edited annotations and popups in place.
+      const editedAnnotations = new RefSet();
+      const updateInPlace = (data, id) => {
+        const ref = id && oldRefMapping.get(id);
+        const dict = ref && this.xref[ref.num];
+        if (!(dict instanceof Dict)) {
+          return false;
+        }
+        data.ref = ref;
+        data.oldAnnotation = dict;
+        editedAnnotations.put(ref);
+        return true;
+      };
+      for (const annotation of newAnnotations) {
+        if (annotation.deleted || !updateInPlace(annotation, annotation.id)) {
+          continue;
+        }
+        delete annotation.id;
+        const { popup } = annotation;
+        if (popup && !popup.deleted) {
+          updateInPlace(popup, annotation.popupRef);
+        }
+      }
+
       const { handler, task, imagesPromises } = this.#newAnnotationsParams;
       const changes = new RefMap();
       const newData = await AnnotationFactory.saveNewAnnotations(
@@ -2529,7 +2575,9 @@ class PDFEditor {
       }
       newAnnots ||= [];
       for (const { ref } of newData.annotations) {
-        newAnnots.push(ref);
+        if (!editedAnnotations.has(ref)) {
+          newAnnots.push(ref);
+        }
       }
     }
 
@@ -3021,16 +3069,49 @@ class PDFEditor {
     return infoMap;
   }
 
+  /** Return the sole source of retained PDF pages, or null. */
+  #getSingleDocumentData() {
+    return this.isSingleFile ? this.oldPages.find(p => !!p).documentData : null;
+  }
+
+  /**
+   * @type {string|null} Password of the sole retained PDF source.
+   */
+  get password() {
+    return this.#getSingleDocumentData()?.document.pdfManager.password ?? null;
+  }
+
+  /**
+   * Remap the primary document's annotation storage to copied annotation ids.
+   * @param {Map<string, object> | null} annotationStorage
+   * @returns {Map<string, object> | null}
+   */
+  getCopiedAnnotationStorage(annotationStorage) {
+    const storage = new Map();
+    for (const [key, value] of annotationStorage ?? []) {
+      const ref = Ref.fromString(key);
+      if (!ref) {
+        continue;
+      }
+      for (const oldRefMapping of this.#primaryRefMappings) {
+        const newRef = oldRefMapping.get(ref);
+        if (newRef) {
+          storage.set(newRef.toString(), value);
+        }
+      }
+    }
+    return storage.size > 0 ? storage : null;
+  }
+
   /**
    * Create the encryption dictionary if required.
    * @returns {Promise<[Dict|null, CipherTransformFactory|null, Array|null]>}
    */
   async #makeEncrypt() {
-    if (!this.isSingleFile) {
+    const documentData = this.#getSingleDocumentData();
+    if (!documentData) {
       return [null, null, null];
     }
-    const firstRealPage = this.oldPages.find(p => !!p);
-    const { documentData } = firstRealPage;
     const {
       document: {
         xref: { trailer, encrypt },

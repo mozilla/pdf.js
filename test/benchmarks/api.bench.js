@@ -13,8 +13,12 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
-import { buildGetDocumentParams, readTestPdf } from "./bench_utils.js";
+import {
+  benchmark,
+  buildGetDocumentParams,
+  readTestPdf,
+} from "./bench_utils.js";
+import { describe } from "vitest";
 import { getDocument } from "../../src/display/api.js";
 
 const PDFS = {
@@ -38,12 +42,12 @@ async function withDocument(filename, callback) {
 // Note: every iteration loads a new document, since the worker-thread caches
 // e.g. parsed fonts and images for the lifetime of the document.
 describe("api", () => {
-  bench("load document (tracemonkey.pdf)", async () => {
+  benchmark("load document (tracemonkey.pdf)", async () => {
     await withDocument("tracemonkey.pdf", pdfDocument => pdfDocument.numPages);
   });
 
   for (const filename of ["alphatrans.pdf", "issue14497.pdf"]) {
-    bench(`getOperatorList page 1 (${filename})`, async () => {
+    benchmark(`getOperatorList page 1 (${filename})`, async () => {
       await withDocument(filename, async pdfDocument => {
         const page = await pdfDocument.getPage(1);
         return page.getOperatorList();
@@ -52,7 +56,7 @@ describe("api", () => {
   }
 
   for (const filename of ["issue6387.pdf", "issue16500.pdf"]) {
-    bench(`getTextContent page 1 (${filename})`, async () => {
+    benchmark(`getTextContent page 1 (${filename})`, async () => {
       await withDocument(filename, async pdfDocument => {
         const page = await pdfDocument.getPage(1);
         return page.getTextContent();

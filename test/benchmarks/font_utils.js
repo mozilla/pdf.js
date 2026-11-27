@@ -119,7 +119,7 @@ async function captureFonts(filename, filter, options) {
     "extractWidths",
     () => processPdf(filename, options),
     (evaluator, [, , properties]) =>
-      properties.file && !properties.isInternalFont && filter(properties)
+      properties.file && filter(properties)
         ? new FontInput(properties, evaluator.options)
         : undefined
   );

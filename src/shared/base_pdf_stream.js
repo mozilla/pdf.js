@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, unreachable } from "./util.js";
+import { assert, createPromiseCapability, unreachable } from "./util.js";
 
 /**
  * Interface that represents PDF data transport. If possible, it allows
@@ -107,7 +107,7 @@ class BasePDFStreamReader {
 
   _filename = null;
 
-  _headersCapability = Promise.withResolvers();
+  _headersCapability = createPromiseCapability();
 
   _isRangeSupported = false;
 

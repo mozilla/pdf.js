@@ -15,6 +15,8 @@ concurrency:
 env:
   PREVIEW_REPO: mozilla/pdf.js.refs
   PREVIEW_URL: https://mozilla.github.io/pdf.js.refs/viewers
+  # Deployed from master by publish_website.yml.
+  MASTER_URL: https://mozilla.github.io/pdf.js
   RETENTION_DAYS: 30
   LABEL: viewer-preview
   APPROVAL_CONTEXT: viewer-preview/approval
@@ -95,7 +97,7 @@ jobs:
       - name: Generate app token for pdf.js.refs
         if: steps.check.outputs.action == 'publish' || steps.check.outputs.action == 'remove'
         id: refs-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}

@@ -1,0 +1,56 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200]
+   /Contents 4 0 R
+   /Resources << /Font << /F1 5 0 R >> >>
+   /Annots [6 0 R]
+>>
+endobj
+4 0 obj
+<< /Length 153 >>
+stream
+BT
+/F1 1 Tf
+0.115 Tc -0.115 Tw
+9.3 0 0 9.3 20 150 Tm
+[(FO)29.4(TBOLL)10.3(.)] TJ
+/F1 10 Tf
+1 0 0 1 20 100 Tm
+1.2 Tc
+[(ABC)120] TJ
+0 Tc
+[(D)-120(E)] TJ
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding
+   /FirstChar 32 /LastChar 90
+   /Widths [200 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500 500]
+>>
+endobj
+6 0 obj
+<< /Type /Annot /Subtype /Highlight /Rect [18 145 70 155]
+   /QuadPoints [18 155 70 155 18 145 70 145] /C [1 1 0]
+>>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000266 00000 n 
+0000000470 00000 n 
+0000000846 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+978
+%%EOF

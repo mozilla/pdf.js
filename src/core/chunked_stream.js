@@ -14,7 +14,7 @@
  */
 
 import { arrayBuffersToBytes, MissingDataException } from "./core_utils.js";
-import { assert } from "../shared/util.js";
+import { assert, createPromiseCapability } from "../shared/util.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Stream } from "./stream.js";
 
@@ -259,7 +259,7 @@ class ChunkedStreamManager {
 
   #chunksNeededByRequest = new Map();
 
-  #loadedStreamCapability = Promise.withResolvers();
+  #loadedStreamCapability = createPromiseCapability();
 
   _promisesByRequest = new Map();
 
@@ -337,7 +337,7 @@ class ChunkedStreamManager {
     const requestId = this.#requestId++;
     this.#chunksNeededByRequest.set(requestId, chunksNeeded);
 
-    const capability = Promise.withResolvers();
+    const capability = createPromiseCapability();
     this._promisesByRequest.set(requestId, capability);
 
     const chunksToRequest = [];
@@ -363,9 +363,6 @@ class ChunkedStreamManager {
         this.sendRequest(begin, end).catch(capability.reject);
       }
     }
-
-    // Prevent "uncaught exception: Object"-messages in the console.
-    capability.promise.catch(() => {});
 
     return capability.promise;
   }

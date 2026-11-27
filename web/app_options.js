@@ -240,14 +240,6 @@ const defaultOptions = new Map([
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
-  [
-    "debuggerSrc",
-    {
-      /** @type {string} */
-      value: "./debugger.mjs",
-      kind: OptionKind.VIEWER,
-    },
-  ],
   ...(typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")
     ? [
         [
@@ -336,6 +328,18 @@ const defaultOptions = new Map([
         OptionKind.VIEWER + OptionKind.PREFERENCE + OptionKind.EVENT_DISPATCH,
     },
   ],
+  ...(typeof PDFJSDev === "undefined" || PDFJSDev.test("GECKOVIEW")
+    ? [
+        [
+          "enableAndroidEditing",
+          {
+            /** @type {boolean} */
+            value: false,
+            kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
+          },
+        ],
+      ]
+    : []),
   [
     "enableAutoLinking",
     {
@@ -387,14 +391,6 @@ const defaultOptions = new Map([
       // We'll probably want to make some experiments before enabling this
       // in Firefox release, but it has to be temporary.
       // TODO: remove it when unnecessary.
-      /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
-      kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
-    },
-  ],
-  [
-    "enableMerge",
-    {
       /** @type {boolean} */
       value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
@@ -491,7 +487,7 @@ const defaultOptions = new Map([
     "enableSplitMerge",
     {
       /** @type {boolean} */
-      value: typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING"),
+      value: true,
       kind: OptionKind.VIEWER + OptionKind.PREFERENCE,
     },
   ],
@@ -597,14 +593,6 @@ const defaultOptions = new Map([
     {
       /** @type {number} */
       value: 2 ** 25,
-      kind: OptionKind.VIEWER,
-    },
-  ],
-  [
-    "minDurationToUpdateCanvas",
-    {
-      /** @type {number} */
-      value: 500, // ms
       kind: OptionKind.VIEWER,
     },
   ],
@@ -757,6 +745,14 @@ const defaultOptions = new Map([
     },
   ],
   [
+    "debugTextLayerFonts",
+    {
+      /** @type {boolean} */
+      value: false,
+      kind: OptionKind.API,
+    },
+  ],
+  [
     "disableAutoFetch",
     {
       /** @type {boolean} */
@@ -857,22 +853,6 @@ const defaultOptions = new Map([
     },
   ],
   [
-    "isOffscreenCanvasSupported",
-    {
-      /** @type {boolean} */
-      value: true,
-      kind: OptionKind.API,
-    },
-  ],
-  [
-    "maxImageSize",
-    {
-      /** @type {number} */
-      value: -1,
-      kind: OptionKind.API,
-    },
-  ],
-  [
     "pdfBug",
     {
       /** @type {boolean} */
@@ -887,7 +867,7 @@ const defaultOptions = new Map([
       value:
         // eslint-disable-next-line no-nested-ternary
         typeof PDFJSDev === "undefined"
-          ? "../external/standard_fonts/"
+          ? "../external/hellbox/"
           : PDFJSDev.test("MOZCENTRAL")
             ? "resource://pdf.js/web/standard_fonts/"
             : "../web/standard_fonts/",

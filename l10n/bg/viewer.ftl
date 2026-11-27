@@ -180,6 +180,11 @@ pdfjs-additional-layers = Допълнителни слоеве
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
     .aria-label = Миниатюра на страница { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Страница { $page } от { $total }
 
 ## Find panel button title and messages
 
@@ -272,6 +277,22 @@ pdfjs-editor-ink-button-label = Рисуване
 pdfjs-editor-stamp-button =
     .title = Добавяне или редактиране на изображения
 pdfjs-editor-stamp-button-label = Добавяне или променяне на изображения
+pdfjs-editor-highlight-button =
+    .title = Открояване
+pdfjs-editor-highlight-button-label = Открояване
+pdfjs-highlight-floating-button1 =
+    .aria-label = Открояване
+    .title = Открояване
+pdfjs-highlight-floating-button-label = Открояване
+
+## Default editor aria labels
+
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = Редактор на подписи: { $description }
+    .aria-label = Редактор на подписи
 
 ## Remove button for the various kind of editor.
 
@@ -359,16 +380,47 @@ pdfjs-editor-colorpicker-red =
 ## New alt-text dialog
 ## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
 
+# Modal header positioned above a text box where users can add the alt text.
+pdfjs-editor-new-alt-text-dialog-add-label = Добавяне на заместващ текст (alt text, описание на изображението)
 pdfjs-editor-new-alt-text-disclaimer-learn-more-url = Научете повече
+pdfjs-editor-new-alt-text-create-automatically-button-label = Автоматично създаване на заместващ текст
 pdfjs-editor-new-alt-text-not-now-button = Не сега
+# This is a button that users can click to edit the alt text they have already added.
+pdfjs-editor-new-alt-text-added-button =
+    .aria-label = Alt text добавен
+# This is a button that users can click to open the alt text editor and add alt text when it is not present.
+pdfjs-editor-new-alt-text-missing-button =
+    .aria-label = Липсва alt текст
+pdfjs-editor-new-alt-text-missing-button-label = Липсва alt текст
+# This is a button that opens up the alt text modal where users should review the alt text that was automatically generated.
+pdfjs-editor-new-alt-text-to-review-button =
+    .aria-label = Преглед на заместващия текст
+pdfjs-editor-new-alt-text-to-review-button-label = Преглед на заместващия текст
 
 ## Image alt-text settings
 
-pdfjs-editor-alt-text-settings-show-dialog-button-label = Показване на заместващ текстов редактор веднага при добавяне на изображение
+pdfjs-editor-alt-text-settings-automatic-title = Автоматичен заместващ текст
+pdfjs-editor-alt-text-settings-create-model-button-label = Автоматично създаване на заместващ текст
+pdfjs-editor-alt-text-settings-editor-title = Редактор за заместващ (alt) текст
+pdfjs-editor-alt-text-settings-show-dialog-button-label = Показване на текстовия редактор за заместващия (alt) текст веднага при добавяне на изображение
+pdfjs-editor-alt-text-settings-show-dialog-description = Помага ви да се уверите, че всичките ви изображения имат заместващ текст.
 
 ## Controls
 
+pdfjs-editor-add-signature-description-label = Описание (заместващ текст)
+pdfjs-editor-add-signature-description-input =
+    .title = Описание (заместващ текст)
 pdfjs-editor-add-signature-image-upload-error-description = Проверете мрежовата си връзка или опитайте с друго изображение.
+
+##  Edit a comment dialog
+
+# No existing comment
+pdfjs-editor-edit-comment-dialog-title-when-adding = Добавяне на коментар
+
+## Edit a comment button in the editor toolbar
+
+pdfjs-editor-add-comment-button =
+    .title = Добавяне на коментар
 
 ## The view manager is a sidebar displaying different views:
 ##  - thumbnails;
@@ -377,9 +429,23 @@ pdfjs-editor-add-signature-image-upload-error-description = Проверете �
 ##  - layers.
 ## The thumbnails view is used to edit the pdf: remove/insert pages, ...
 
+pdfjs-toggle-views-manager-notification-button =
+    .title = Превключване на страничния панел (документът съдържа миниатюри/структура/прикачени файлове/слоеве)
 pdfjs-toggle-views-manager-button1-label = Управление на страници
+pdfjs-views-manager-sidebar =
+    .aria-label = Страничен панел
+pdfjs-views-manager-view-selector-button =
+    .title = Изгледи
+pdfjs-views-manager-view-selector-button-label = Изгледи
 pdfjs-views-manager-pages-title = Страници
+pdfjs-views-manager-outlines-title1 = Структура на документа
+    .title = Структура на документа (двукратно щракване за свиване/разгъване на всичко)
+pdfjs-views-manager-layers-title1 = Слоеве
+    .title = Слоеве (двукратно щракване за връщане на всички слоеве в първоначалното им състояние)
 pdfjs-views-manager-pages-option-label = Страници
+pdfjs-views-manager-outlines-option-label = Структура на документа
+pdfjs-views-manager-attachments-option-label = Прикачени файлове
+pdfjs-views-manager-layers-option-label = Слоеве
 # Variables:
 #   $count (Number) - the number of selected pages.
 pdfjs-views-manager-pages-status-action-label =
@@ -388,6 +454,8 @@ pdfjs-views-manager-pages-status-action-label =
        *[other] { $count } избрани
     }
 pdfjs-views-manager-pages-status-action-button-label = Управление
+pdfjs-views-manager-pages-status-delete-button-label = Изтриване
+pdfjs-views-manager-pages-status-export-selected-button-label = Експортиране на избраните…
 # Variables:
 #   $count (Number) - the number of selected pages to be copied.
 pdfjs-views-manager-pages-status-undo-copy-label =
@@ -402,6 +470,9 @@ pdfjs-views-manager-pages-status-undo-delete-label =
         [one] 1 страница е изтрита
        *[other] { $count } страници са изтрити
     }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = НОВО
 pdfjs-toggle-views-manager-button1 =
     .title = Управление на страници
 

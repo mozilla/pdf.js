@@ -22,12 +22,15 @@ import { shadow } from "../shared/util.js";
  * the stream behaves like all the other DecodeStreams.
  */
 class JpxStream extends DecodeStream {
-  constructor(stream, maybeLength) {
+  #pdfManager;
+
+  constructor(stream, maybeLength, pdfManager) {
     super(maybeLength);
 
     this.stream = stream;
     this.dict = stream.dict;
     this.maybeLength = maybeLength;
+    this.#pdfManager = pdfManager;
   }
 
   get bytes() {
@@ -49,7 +52,11 @@ class JpxStream extends DecodeStream {
       return this.buffer;
     }
     bytes ||= this.bytes;
-    this.buffer = await JpxImage.instance.decode(bytes, decoderOptions);
+    this.buffer = await JpxImage.instance.decode(
+      this.#pdfManager.binaryDataContext,
+      bytes,
+      decoderOptions
+    );
     this.bufferLength = this.buffer.length;
     this.eof = true;
 

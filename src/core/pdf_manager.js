@@ -13,23 +13,21 @@
  * limitations under the License.
  */
 
-import { CmykICCBasedCS, IccColorSpace } from "./icc_colorspace.js";
 import {
   createValidAbsoluteUrl,
   FeatureTest,
   unreachable,
   warn,
 } from "../shared/util.js";
+import {
+  MissingDataException,
+  XRefEntryException,
+  XRefParseException,
+} from "./core_utils.js";
 import { ChunkedStreamManager } from "./chunked_stream.js";
 import { ImageResizer } from "./image_resizer.js";
-import { JpegStream } from "./jpeg_stream.js";
-import { MissingDataException } from "./core_utils.js";
-import { OperatorList } from "./operator_list.js";
-import { Pattern } from "./pattern.js";
 import { PDFDocument } from "./document.js";
-import { PDFFunctionFactory } from "./function.js";
 import { Stream } from "./stream.js";
-import { WasmImage } from "./wasm_image.js";
 
 /**
  * @typedef { LocalPdfManager | NetworkPdfManager } PdfManager
@@ -47,8 +45,6 @@ function parseDocBaseUrl(url) {
 }
 
 class BasePdfManager {
-  static #handlers = new Map();
-
   constructor({
     // source,
     // disableAutoFetch,
@@ -72,11 +68,6 @@ class BasePdfManager {
     this._password = password;
     this.enableXfa = enableXfa;
 
-    // Keep track of all active `MessageHandler`s to prevent issues with
-    // Wasm-decoding of images if multiple PDFs are parsed in parallel in one
-    // worker-thread and `useWorkerFetch = false` is set (fixes issue 22131).
-    BasePdfManager.#handlers.set(this, handler);
-
     // Check `OffscreenCanvas` and `ImageDecoder` support once,
     // rather than repeatedly throughout the worker-thread code.
     evaluatorOptions.isOffscreenCanvasSupported &&=
@@ -85,22 +76,8 @@ class BasePdfManager {
       FeatureTest.isImageDecoderSupported;
 
     this.evaluatorOptions = Object.freeze(evaluatorOptions);
-
-    // Initialize image-options once per document.
-    ImageResizer.setOptions(evaluatorOptions);
-    JpegStream.setOptions(evaluatorOptions);
-    OperatorList.setOptions(evaluatorOptions);
-
-    const options = {
-      ...evaluatorOptions,
-      getHandler: () =>
-        BasePdfManager.#handlers.values().find(h => !h.destroyed),
-    };
-    IccColorSpace.setOptions(options);
-    CmykICCBasedCS.setOptions(options);
-    PDFFunctionFactory.setOptions(options);
-    Pattern.setOptions(options);
-    WasmImage.setOptions(options);
+    this.binaryDataContext = { handler, options: this.evaluatorOptions };
+    this.imageResizer = new ImageResizer(this.evaluatorOptions);
   }
 
   get docId() {
@@ -128,6 +105,18 @@ class BasePdfManager {
     await this.ensureDoc("parseStartXRef");
     await this.ensureDoc("parse", [recoveryMode]);
 
+    if (this.enableXfa) {
+      try {
+        await this.ensureDoc("loadXfaFactory");
+      } catch (reason) {
+        if (reason instanceof XRefEntryException && !recoveryMode) {
+          await this.cleanup();
+          throw new XRefParseException();
+        }
+        warn(`Cannot load XFA data: "${reason}".`);
+      }
+    }
+
     // Check that at least the first page can be successfully loaded,
     // since otherwise the XRef table is definitely not valid.
     await this.ensureDoc("checkFirstPage", [recoveryMode]);
@@ -138,10 +127,6 @@ class BasePdfManager {
 
   getPage(pageIndex) {
     return this.pdfDocument.getPage(pageIndex);
-  }
-
-  fontFallback(id, handler) {
-    return this.pdfDocument.fontFallback(id, handler);
   }
 
   cleanup(manuallyTriggered = false) {
@@ -176,9 +161,7 @@ class BasePdfManager {
     this.pdfDocument.xref.encrypt?.setPassword(password);
   }
 
-  terminate(reason) {
-    BasePdfManager.#handlers.delete(this);
-  }
+  terminate(reason) {}
 }
 
 class LocalPdfManager extends BasePdfManager {

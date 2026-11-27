@@ -199,6 +199,101 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Zoom while scrolling (bug 1915803)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        ".textLayer .endOfContent",
+        "page-width"
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("allows pinching during scrolling while blocking Ctrl+wheel", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          for (const { scrolling, ctrlKeyDown, zoomed } of [
+            { scrolling: true, ctrlKeyDown: true, zoomed: false },
+            { scrolling: true, ctrlKeyDown: false, zoomed: true },
+            { scrolling: false, ctrlKeyDown: true, zoomed: true },
+          ]) {
+            // Check in an animation frame: a zoom moves the scroll position
+            // synchronously but the `scroll` event only comes with the next
+            // frame, before the rAF callbacks.
+            await page.waitForFunction(
+              () =>
+                new Promise(resolve => {
+                  requestAnimationFrame(() =>
+                    resolve(!window.PDFViewerApplication._isScrolling)
+                  );
+                })
+            );
+            const result = await page.evaluate(
+              (shouldScroll, withCtrlKey) => {
+                const app = window.PDFViewerApplication;
+                const zoom = () => {
+                  if (withCtrlKey) {
+                    // Don't use `page.keyboard.down/up`: the key must be
+                    // pressed in the same task as the wheel event.
+                    window.dispatchEvent(
+                      new KeyboardEvent("keydown", { key: "Control" })
+                    );
+                  }
+                  const { currentScale } = app.pdfViewer;
+                  const isScrolling = app._isScrolling;
+                  window.dispatchEvent(
+                    new WheelEvent("wheel", {
+                      // Use a full tick for Ctrl+wheel, less for pinching.
+                      deltaY: withCtrlKey ? -30 : -3,
+                      deltaMode: WheelEvent.DOM_DELTA_PIXEL,
+                      ctrlKey: true,
+                      cancelable: true,
+                    })
+                  );
+                  if (withCtrlKey) {
+                    window.dispatchEvent(
+                      new KeyboardEvent("keyup", { key: "Control" })
+                    );
+                  }
+                  return {
+                    isScrolling,
+                    zoomed: app.pdfViewer.currentScale !== currentScale,
+                  };
+                };
+                if (!shouldScroll) {
+                  return zoom();
+                }
+
+                const container = document.getElementById("viewerContainer");
+                return new Promise(resolve => {
+                  // Dispatch within the scroll listener, after the viewer sets
+                  // `_isScrolling`, so scrollend or its timeout can't reset it
+                  // before the wheel event is handled.
+                  container.addEventListener("scroll", () => resolve(zoom()), {
+                    once: true,
+                  });
+                  container.scrollBy({ top: 1000 });
+                });
+              },
+              scrolling,
+              ctrlKeyDown
+            );
+            expect(result)
+              .withContext(
+                `In ${browserName}: scrolling=${scrolling}, ctrlKeyDown=${ctrlKeyDown}`
+              )
+              .toEqual({ isScrolling: scrolling, zoomed });
+          }
+        })
+      );
+    });
+  });
+
   describe("Zoom commands", () => {
     let pages;
 
@@ -232,87 +327,6 @@ describe("PDF viewer", () => {
   });
 
   describe("CSS-only zoom", () => {
-    function createPromiseForFirstPageRendered(page) {
-      return createPromise(page, (resolve, reject) => {
-        const controller = new AbortController();
-        window.PDFViewerApplication.eventBus.on(
-          "pagerendered",
-          ({ pageNumber, timestamp }) => {
-            if (pageNumber === 1) {
-              resolve(timestamp);
-              controller.abort();
-            }
-          },
-          { signal: controller.signal }
-        );
-        setTimeout(reject, 1000, new Error("Timeout"));
-      });
-    }
-
-    describe("forced (maxCanvasPixels: 0)", () => {
-      let pages;
-
-      beforeEach(async () => {
-        pages = await loadAndWait(
-          "tracemonkey.pdf",
-          ".textLayer .endOfContent",
-          null,
-          null,
-          { maxCanvasPixels: 0 }
-        );
-      });
-
-      afterEach(async () => {
-        await closePages(pages);
-      });
-
-      it("respects drawing delay when zooming out", async () => {
-        await Promise.all(
-          pages.map(async ([browserName, page]) => {
-            const promise = await createPromiseForFirstPageRendered(page);
-
-            const start = await page.evaluate(() => {
-              const startTime = performance.now();
-              window.PDFViewerApplication.pdfViewer.decreaseScale({
-                drawingDelay: 100,
-                scaleFactor: 0.9,
-              });
-              return startTime;
-            });
-
-            const end = await awaitPromise(promise);
-
-            expect(end - start)
-              .withContext(`In ${browserName}`)
-              .toBeGreaterThanOrEqual(100);
-          })
-        );
-      });
-
-      it("respects drawing delay when zooming in", async () => {
-        await Promise.all(
-          pages.map(async ([browserName, page]) => {
-            const promise = await createPromiseForFirstPageRendered(page);
-
-            const start = await page.evaluate(() => {
-              const startTime = performance.now();
-              window.PDFViewerApplication.pdfViewer.increaseScale({
-                drawingDelay: 100,
-                scaleFactor: 1.1,
-              });
-              return startTime;
-            });
-
-            const end = await awaitPromise(promise);
-
-            expect(end - start)
-              .withContext(`In ${browserName}`)
-              .toBeGreaterThanOrEqual(100);
-          })
-        );
-      });
-    });
-
     describe("triggers when going bigger than maxCanvasPixels", () => {
       let pages;
 
@@ -503,6 +517,78 @@ describe("PDF viewer", () => {
     });
   });
 
+  describe("Canvas isn't cropped (bug 2094402)", () => {
+    let pages;
+
+    beforeEach(async () => {
+      // At 60% zoom and DPR 1.5, the 489.6 x 633.6 viewport is rounded
+      // down to 488 x 632 CSS pixels.
+      pages = await loadAndWait(
+        "bug2094402.pdf",
+        ".textLayer .endOfContent",
+        "60",
+        {
+          earlySetup: () => {
+            Object.defineProperty(window, "devicePixelRatio", { value: 1.5 });
+          },
+        },
+        { capCanvasAreaFactor: -1 },
+        { width: 800, height: 1000 }
+      );
+    });
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    it("must render the page edges when the page dimensions are rounded", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const wrapper = await page.$(".canvasWrapper");
+          const { data, width, height } = await decodePNG(
+            await wrapper.screenshot({ type: "png" })
+          );
+          const redAt = (x, y) => data[4 * (y * width + x)];
+
+          // The PDF has a black frame on a white background. Check each
+          // midpoint away from the corners, where two edges meet.
+          expect(redAt(Math.floor(width / 2), height - 1))
+            .withContext(`In ${browserName}, bottom edge`)
+            .toBeLessThan(0x40);
+          expect(redAt(width - 1, Math.floor(height / 2)))
+            .withContext(`In ${browserName}, right edge`)
+            .toBeLessThan(0x40);
+        })
+      );
+    });
+
+    it("must keep the canvas dimensions when a page is redrawn", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const getCanvasSize = () =>
+            page.$eval(".canvasWrapper canvas", ({ width, height }) => [
+              width,
+              height,
+            ]);
+          const size = await getCanvasSize();
+
+          // Simulate the page being evicted from the cache and redrawn.
+          const handle = await waitForPageRendered(page);
+          await page.evaluate(() => {
+            const { pdfViewer } = window.PDFViewerApplication;
+            pdfViewer.getPageView(0).reset();
+            pdfViewer.update();
+          });
+          await awaitPromise(handle);
+
+          expect(await getCanvasSize())
+            .withContext(`In ${browserName}`)
+            .toEqual(size);
+        })
+      );
+    });
+  });
+
   describe("Page background under the canvas (bug 2070624)", () => {
     let pages;
 
@@ -599,6 +685,47 @@ describe("PDF viewer", () => {
             .toEqual("rgb(255, 255, 255)");
         })
       );
+    });
+
+    function checkBackgroundOnRenderFailure(keepCanvas) {
+      return Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const result = await page.evaluate(async keep => {
+            const pageView =
+              window.PDFViewerApplication.pdfViewer.getPageView(0);
+            if (keep) {
+              // Keep the canvas from the previous render.
+              pageView.update({});
+            } else {
+              pageView.reset();
+            }
+            // Fail before graphics initialization.
+            pageView._optionalContentConfigPromise = Promise.reject(
+              new Error("Rendering failure")
+            );
+            await pageView.draw().catch(() => {});
+
+            return {
+              canvasCount: pageView.div.querySelectorAll(
+                ".canvasWrapper > canvas"
+              ).length,
+              backgroundColor: getComputedStyle(pageView.div).backgroundColor,
+            };
+          }, keepCanvas);
+          expect(result).withContext(`In ${browserName}`).toEqual({
+            canvasCount: 0,
+            backgroundColor: "rgb(255, 255, 255)",
+          });
+        })
+      );
+    }
+
+    it("must paint the page background when rendering fails before drawing with a kept canvas (issue 22437)", async () => {
+      await checkBackgroundOnRenderFailure(/* keepCanvas = */ true);
+    });
+
+    it("must paint the page background when rendering fails before drawing with a reset canvas (issue 22437)", async () => {
+      await checkBackgroundOnRenderFailure(/* keepCanvas = */ false);
     });
   });
 

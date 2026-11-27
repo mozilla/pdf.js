@@ -324,6 +324,12 @@ pdfjs-editor-ink-editor =
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = 簽章編輯器：{ $description }
+    .aria-label = 簽章編輯器
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-signature-editor1 =
     .aria-description = 簽章編輯器：{ $description }
 pdfjs-editor-stamp-editor =
@@ -707,9 +713,9 @@ pdfjs-digital-signature-properties-button-label = 數位簽章屬性
 pdfjs-digital-signature-properties-banner-verified = 文件使用有效的數位簽章進行簽署
 pdfjs-digital-signature-properties-banner-unknown = 文件已進行簽署，但無法驗證當中的 { $count } 筆數位簽章
 pdfjs-digital-signature-properties-banner-untrusted = 文件已進行簽署，但當中的 { $count } 筆數位簽章不受信任
-pdfjs-digital-signature-properties-banner-expired = 文件已進行簽署，但當中的 { $count } 筆數位簽章已過期
+pdfjs-digital-signature-properties-banner-expired = 文件已進行簽署，但當中的 { $count } 張憑證已過期
 pdfjs-digital-signature-properties-banner-invalid = 文件中有 { $count } 筆無效的數位簽章
-pdfjs-digital-signature-properties-banner-revoked = 文件已進行簽署，但當中的 { $count } 筆數位簽章已廢止
+pdfjs-digital-signature-properties-banner-revoked = 文件已進行簽署，但當中的 { $count } 張憑證已廢止
 
 ## Per-signature status row. Only three distinct strings are needed:
 ## the signature crypto either verified (the cert chain may still be

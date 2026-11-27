@@ -80,39 +80,6 @@
   color: grey;
 }
 
-#viewer.textLayer-visible .textLayer {
-  opacity: 1;
-}
-
-#viewer.textLayer-visible .canvasWrapper {
-  background-color: rgb(128 255 128);
-}
-
-#viewer.textLayer-visible .canvasWrapper canvas {
-  mix-blend-mode: screen;
-}
-
-#viewer.textLayer-visible .textLayer span {
-  background-color: rgb(255 255 0 / 0.1);
-  color: rgb(0 0 0);
-  border: solid 1px rgb(255 0 0 / 0.5);
-  box-sizing: border-box;
-}
-
-#viewer.textLayer-visible .textLayer span[aria-owns] {
-  background-color: rgb(255 0 0 / 0.3);
-}
-
-#viewer.textLayer-hover .textLayer span:hover {
-  background-color: rgb(255 255 255);
-  color: rgb(0 0 0);
-}
-
-#viewer.textLayer-shadow .textLayer span {
-  background-color: rgb(255 255 255 / 0.6);
-  color: rgb(0 0 0);
-}
-
 .pdfBugGroupsLayer {
   position: absolute;
   inset: 0;

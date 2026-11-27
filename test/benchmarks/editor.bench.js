@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
+import { benchmark } from "./bench_utils.js";
 import { createImage } from "../../src/core/editor/pdf_images.js";
+import { describe } from "vitest";
 import { loadTestImage } from "./editor_utils.js";
 
 const IMAGES = [
@@ -27,7 +28,7 @@ for (const entry of IMAGES) {
 
 describe("editor", () => {
   for (const { kind, filename, bitmap } of IMAGES) {
-    bench(`createImage: ${kind} (${filename})`, async () =>
+    benchmark(`createImage: ${kind} (${filename})`, async () =>
       createImage(bitmap, /* xref = */ null)
     );
   }

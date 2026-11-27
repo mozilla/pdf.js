@@ -14,7 +14,12 @@
  */
 /* globals process */
 
-import { AbortException, assert } from "../shared/util.js";
+import {
+  AbortException,
+  assert,
+  createPromiseCapability,
+  noopFn,
+} from "../shared/util.js";
 import {
   BasePDFStream,
   BasePDFStreamRangeReader,
@@ -99,12 +104,12 @@ class PDFNodeStreamReader extends BasePDFStreamReader {
   }
 
   cancel(reason) {
-    this._reader?.cancel(reason);
+    this._reader?.cancel(reason).catch(noopFn);
   }
 }
 
 class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
-  _readCapability = Promise.withResolvers();
+  _readCapability = createPromiseCapability();
 
   _reader = null;
 
@@ -123,10 +128,6 @@ class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
     } catch (error) {
       this._readCapability.reject(error);
     }
-
-    // Prevent "uncaught exception: Object"-messages in the console,
-    // if the document is destroyed before the `read` method is invoked.
-    this._readCapability.promise.catch(() => {});
   }
 
   async read() {
@@ -138,7 +139,7 @@ class PDFNodeStreamRangeReader extends BasePDFStreamRangeReader {
   }
 
   cancel(reason) {
-    this._reader?.cancel(reason);
+    this._reader?.cancel(reason).catch(noopFn);
   }
 }
 

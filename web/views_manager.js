@@ -99,7 +99,6 @@ class ViewsManager extends Sidebar {
     },
     eventBus,
     l10n,
-    enableMerge = false,
     enableSplitMerge = false,
     globalAbortSignal,
   }) {
@@ -149,12 +148,9 @@ class ViewsManager extends Sidebar {
 
     if (!enableSplitMerge) {
       viewsManagerStatus.hidden = true;
-    }
-    this._enableSplitMerge = enableSplitMerge;
-    this._enableMerge = enableMerge;
-    if (!enableMerge) {
       viewsManagerAddFileButton.hidden = true;
     }
+    this._enableSplitMerge = enableSplitMerge;
 
     this.menu = new Menu(
       viewsManagerSelectorOptions,
@@ -266,10 +262,10 @@ class ViewsManager extends Sidebar {
         return;
     }
 
-    this.viewsManagerStatus.hidden =
+    const hideSplitMerge =
       !this._enableSplitMerge || view !== SidebarView.THUMBS;
-    this.viewsManagerAddFileButton.hidden =
-      !this._enableMerge || view !== SidebarView.THUMBS;
+    this.viewsManagerStatus.hidden = hideSplitMerge;
+    this.viewsManagerAddFileButton.hidden = hideSplitMerge;
     this.viewsManagerCurrentOutlineButton.hidden = view !== SidebarView.OUTLINE;
     this.viewsManagerHeaderLabel.setAttribute(
       "data-l10n-id",

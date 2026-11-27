@@ -144,8 +144,6 @@ class Catalog {
 
   pageKidsCountCache = new RefMap();
 
-  standardFontDataCache = new Map();
-
   systemFontCache = new Map();
 
   constructor(pdfManager, xref) {
@@ -1285,12 +1283,13 @@ class Catalog {
     this.pageDictCache.clear();
     this.nonBlendModesSet.clear();
 
-    for (const { dict } of await Promise.all(this.fontCache)) {
+    const fonts = await Promise.all(this.fontCache);
+    await Promise.all(fonts.map(font => font.sent));
+    for (const { dict } of fonts) {
       delete dict.cacheKey;
     }
     this.fontCache.clear();
     this.builtInCMapCache.clear();
-    this.standardFontDataCache.clear();
     this.systemFontCache.clear();
   }
 

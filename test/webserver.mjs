@@ -25,6 +25,7 @@ import { pathToFileURL } from "url";
 import { WebSocketServer } from "ws";
 
 const MIME_TYPES = {
+  ".br": "application/octet-stream",
   ".css": "text/css",
   ".html": "text/html",
   ".js": "application/javascript",

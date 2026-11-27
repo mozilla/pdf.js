@@ -13,12 +13,73 @@
  * limitations under the License.
  */
 
+import { CFFCompiler, CFFParser } from "../../src/core/cff_parser.js";
+import {
+  CMAP_URL,
+  DefaultBinaryDataFactory,
+  fetchBuiltInCMapHelper,
+} from "./test_utils.js";
+import { CMapFactory, IdentityCMap } from "../../src/core/cmap.js";
+import {
+  getTrickyFontName,
+  getTrickyFontNameFromTables,
+} from "../../src/core/tricky_fonts.js";
+import {
+  IdentityToUnicodeMap,
+  ToUnicodeMap,
+} from "../../src/core/to_unicode_map.js";
+import { CharCodeMap } from "../../src/core/char_code_map.js";
 import { Font } from "../../src/core/fonts.js";
-import { IdentityCMap } from "../../src/core/cmap.js";
-import { IdentityToUnicodeMap } from "../../src/core/to_unicode_map.js";
+import { Hellbox } from "../../src/core/hellbox.js";
+import { Name } from "../../src/core/primitives.js";
+import { SEAC_ANALYSIS_ENABLED } from "../../src/core/fonts_utils.js";
 import { Stream } from "../../src/core/stream.js";
 
 describe("Font", () => {
+  describe("Hellbox", () => {
+    const options = {
+      isOffscreenCanvasSupported: true,
+      useWorkerFetch: true,
+      standardFontDataUrl: "./fonts/",
+      wasmUrl: "./wasm/",
+    };
+
+    it("skips fallback preparation when either worker resource URL is missing", async () => {
+      for (const url of ["standardFontDataUrl", "wasmUrl"]) {
+        const prepare = await Hellbox.prepare(
+          { options: { ...options, [url]: null } },
+          { standardFontName: "Helvetica", systemFontInfo: {} }
+        );
+        expect(prepare).withContext(url).toBeNull();
+      }
+    });
+
+    it("defers the coverage check and skips generation for a covered font", async () => {
+      const handler = {
+        sendWithPromise: jasmine.createSpy().and.resolveTo(true),
+      };
+      const font = {
+        standardFontName: "Helvetica",
+        systemFontInfo: {},
+        getMissingFileGlyphs: jasmine
+          .createSpy()
+          .and.returnValue([{ codePoint: 65 }]),
+      };
+      const prepare = await Hellbox.prepare({ handler, options }, font);
+      expect(font.getMissingFileGlyphs).not.toHaveBeenCalled();
+
+      await prepare();
+      expect(handler.sendWithPromise).toHaveBeenCalledOnceWith(
+        "LoadSystemFont",
+        {
+          systemFontInfo: font.systemFontInfo,
+          codePoints: Uint32Array.of(65),
+        },
+        [jasmine.any(ArrayBuffer)]
+      );
+    });
+  });
+
   describe("charsToGlyphs", () => {
     // Match the sparse metric arrays from PartialEvaluator.extractWidths.
     function createFont(vertical) {
@@ -64,6 +125,109 @@ describe("Font", () => {
       for (const glyph of glyphs) {
         expect(glyph.vmetric).toBeUndefined();
       }
+    });
+  });
+
+  describe("vertical glyphs in non-embedded fonts", () => {
+    const binaryDataFactory = new DefaultBinaryDataFactory({
+      cMapUrl: CMAP_URL,
+    });
+    const fetchBuiltInCMap = name =>
+      fetchBuiltInCMapHelper(binaryDataFactory, /* cMapPacked = */ true, name);
+
+    async function getGlyphs(cMapName, charCodes, unicodes = charCodes) {
+      const cMap = await CMapFactory.create({
+        encoding: Name.get(cMapName),
+        fetchBuiltInCMap,
+        useCMap: null,
+      });
+      const toUnicode = new CharCodeMap();
+      for (let i = 0; i < charCodes.length; i++) {
+        toUnicode.set(charCodes[i], String.fromCharCode(unicodes[i]));
+      }
+      const font = new Font(
+        "TestFont",
+        null,
+        {
+          type: "CIDFontType0",
+          composite: true,
+          vertical: cMap.vertical,
+          cMap,
+          cidEncoding: cMapName,
+          toUnicode: new ToUnicodeMap(toUnicode),
+          differences: new Map(),
+          defaultEncoding: [],
+          widths: [],
+          defaultWidth: 1000,
+          vmetrics: [],
+          defaultVMetrics: [-1000, 500, 880],
+        },
+        {}
+      );
+      expect(font.missingFile).toBeTrue();
+
+      const chars = charCodes.map(c => String.fromCharCode(c >> 8, c & 0xff));
+      return font
+        .charsToGlyphs(chars.join(""))
+        .map(({ fontChar, isRotated }) => ({ fontChar, isRotated }));
+    }
+
+    it("should only use the vertical variants defined by the CMap", async () => {
+      const glyphs = await getGlyphs(
+        "UniJIS-UTF16-V",
+        [0x3001, 0xff01, 0x301c, 0x3042]
+      );
+
+      expect(glyphs).toEqual([
+        { fontChar: "︑", isRotated: false },
+        // U+FF01 maps to CID 642 in both UniJIS-UTF16-H and UniJIS-UTF16-V.
+        { fontChar: "！", isRotated: false },
+        { fontChar: "〜", isRotated: true },
+        { fontChar: "あ", isRotated: false },
+      ]);
+    });
+
+    it("should handle a half-width vertical CMap", async () => {
+      // UniJIS-UCS2-HW-V directly inherits UniJIS-UCS2-H.
+      const glyphs = await getGlyphs("UniJIS-UCS2-HW-V", [0x301c, 0xff01]);
+
+      expect(glyphs).toEqual([
+        { fontChar: "〜", isRotated: true },
+        { fontChar: "！", isRotated: false },
+      ]);
+    });
+
+    it("should use all the vertical variants with an Identity-V CMap", async () => {
+      // Identity-V has no base CMap to compare with.
+      const glyphs = await getGlyphs(
+        "Identity-V",
+        [7887, 642, 7894],
+        [0x3001, 0xff01, 0x301c]
+      );
+
+      expect(glyphs).toEqual([
+        { fontChar: "︑", isRotated: false },
+        { fontChar: "︕", isRotated: false },
+        { fontChar: "〜", isRotated: true },
+      ]);
+    });
+
+    it("should not use any vertical variant in a horizontal font", async () => {
+      const glyphs = await getGlyphs("UniJIS-UTF16-H", [0x3001, 0x301c]);
+
+      expect(glyphs).toEqual([
+        { fontChar: "、", isRotated: false },
+        { fontChar: "〜", isRotated: false },
+      ]);
+    });
+
+    it("should not rotate the fullwidth macron", async () => {
+      const glyphs = await getGlyphs("Identity-V", [1, 2], [0x30fc, 0xffe3]);
+
+      expect(glyphs).toEqual([
+        { fontChar: "ー", isRotated: true },
+        { fontChar: "￣", isRotated: false },
+      ]);
     });
   });
 
@@ -354,5 +518,160 @@ describe("Font", () => {
       const font = loadFont(65535, format12(groups));
       expect(font.data.length).toBeLessThan(0x400000);
     });
+  });
+
+  describe("CFF fonts", () => {
+    // Example font from Appendix D of the CFF spec:
+    // https://adobe-type-tools.github.io/font-tech-notes/pdfs/5176.CFF.pdf
+    const exampleFont = Uint8Array.fromHex(
+      "0100040100010101134142434445462b" +
+        "54696d65732d526f6d616e000101011f" +
+        "f81b00f81c02f81d03f819041c6f000d" +
+        "fb3cfb6efa7cfa1605e911b8f1120003" +
+        "01010813183030312e30303754696d65" +
+        "7320526f6d616e54696d657300000002" +
+        "010102030e0e7d99f92a99fb7695f773" +
+        "8b06f79a93fc7c8c077d99f85695f75e" +
+        "9908fb6e8cf87393f7108b09a70adf0b" +
+        "f78e14"
+    );
+
+    function createFont(fontBBox) {
+      const cff = new CFFParser(
+        new Stream(exampleFont),
+        {},
+        SEAC_ANALYSIS_ENABLED
+      ).parse();
+      cff.topDict.setByName("FontBBox", fontBBox);
+
+      return loadFont(new CFFCompiler(cff).compile());
+    }
+
+    function loadFont(data) {
+      return new Font(
+        "TestFont",
+        new Stream(data),
+        {
+          type: "Type1",
+          subtype: "Type1C",
+          composite: false,
+          loadedName: "font",
+          differences: new Map(),
+          defaultEncoding: [],
+          toUnicode: new IdentityToUnicodeMap(0, 255),
+          widths: [],
+          defaultWidth: 0,
+          italicAngle: 0,
+          xHeight: 0,
+          capHeight: 0,
+        },
+        {}
+      );
+    }
+
+    function getHorizontalExtents(data) {
+      const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+      const numTables = view.getUint16(4);
+      for (let i = 0; i < numTables; i++) {
+        const record = 12 + i * 16;
+        const tag = String.fromCharCode(...data.subarray(record, record + 4));
+        if (tag === "head") {
+          const offset = view.getUint32(record + 8);
+          return [view.getInt16(offset + 36), view.getInt16(offset + 40)];
+        }
+      }
+      return null;
+    }
+
+    it("should skip charstring validation when rendering compiled CFF data", () => {
+      const font = createFont([-168, -218, 1000, 898]);
+      const validate = spyOn(
+        CFFParser.prototype,
+        "parseCharStrings"
+      ).and.callThrough();
+
+      expect(font.renderer.glyphs.length).toBeGreaterThan(0);
+      expect(validate).not.toHaveBeenCalled();
+    });
+
+    it("should validate original CFF data after compilation fails", () => {
+      const cff = new CFFParser(
+        new Stream(exampleFont),
+        {},
+        SEAC_ANALYSIS_ENABLED
+      ).parse();
+      // A global subroutine that calls itself. Validation replaces the glyph,
+      // but that replacement isn't written back to the original font bytes.
+      cff.globalSubrIndex.add(new Uint8Array([32, 29, 11]));
+      cff.charStrings.set(1, new Uint8Array([32, 29, 14]));
+      const data = new CFFCompiler(cff).compile();
+      const compile = spyOn(CFFCompiler.prototype, "compile").and.throwError(
+        "CFF compilation failed"
+      );
+
+      const font = loadFont(data);
+      expect(compile).toHaveBeenCalledTimes(1);
+      expect(font.missingFile).toBeFalse();
+      const renderer = font.renderer;
+      expect(renderer.glyphs[1]).toEqual(new Uint8Array([14]));
+      expect(renderer.compileGlyph(renderer.glyphs[1], 1).length).toEqual(0);
+    });
+
+    it("should extend the horizontal extents with the font bbox", () => {
+      // FontDescriptor bbox from bug 1888084.
+      let font = createFont([-1044, -3060, 4087.9998, 3560]);
+
+      expect(font.missingFile).withContext("bug 1888084").toBeFalse();
+      expect(getHorizontalExtents(font.data))
+        .withContext("bug 1888084")
+        .toEqual([-1044, 0x0fff]);
+
+      font = createFont([-100.5, -218, 5000.5, 898]);
+
+      expect(font.missingFile).withContext("wide bbox").toBeFalse();
+      expect(getHorizontalExtents(font.data))
+        .withContext("wide bbox")
+        .toEqual([-101, 5001]);
+    });
+
+    it("should not shrink the default horizontal extents", () => {
+      const font = createFont([100, -218, 1000, 898]);
+
+      expect(font.missingFile).toBeFalse();
+      expect(getHorizontalExtents(font.data)).toEqual([0, 0x0fff]);
+    });
+  });
+});
+
+describe("Tricky fonts", () => {
+  function createTable(length, firstWord) {
+    const view = new DataView(new ArrayBuffer(length));
+    view.setUint32(0, firstWord);
+    return { length, view };
+  }
+
+  it("matches the lengths and checksums of the hint tables", () => {
+    const tables = {
+      "cvt ": createTable(0x350, 0x11e5ead4),
+      fpgm: createTable(0x9063, 0x5a30c93b),
+      prep: createTable(0x7e, 0x13a42602),
+    };
+    // The last fpgm byte adds 0x100 to the DFKai-SB checksum.
+    tables.fpgm.view.setUint8(0x9062, 1);
+    expect(getTrickyFontNameFromTables(tables)).toBe("DFKai-SB");
+
+    expect(getTrickyFontNameFromTables({ ...tables, prep: null })).toBeNull();
+    tables.fpgm.view.setUint8(0x9062, 2);
+    expect(getTrickyFontNameFromTables(tables)).toBeNull();
+  });
+
+  it("identifies a tricky font from its name", () => {
+    expect(getTrickyFontName("ABCDEF+DFKaiShu-SB-Estd-BF")).toBe(
+      "DFKaiShu-SB-Estd-BF"
+    );
+    expect(getTrickyFontName("Arial")).toBeNull();
+    expect(getTrickyFontName(undefined)).toBeNull();
+    // Use the ASCII match when the name would require Mac Roman transcoding.
+    expect(getTrickyFontName("DFHei Caf\u00e9")).toBe("DFHei");
   });
 });

@@ -162,7 +162,19 @@ class AnnotationLayerBuilder {
     const div = (this.div = document.createElement("div"));
     div.className = "annotationLayer";
     this.#onAppend?.(div);
-    this.#initAnnotationLayer(viewport, structTreeLayer);
+
+    this.annotationLayer = new AnnotationLayer({
+      div,
+      accessibilityManager: this._accessibilityManager,
+      annotationCanvasMap: this._annotationCanvasMap,
+      annotationEditorUIManager: this._annotationEditorUIManager,
+      annotationStorage: this.annotationStorage,
+      page: this.pdfPage,
+      viewport: viewport.clone({ dontFlip: true }),
+      structTreeLayer,
+      commentManager: this.#commentManager,
+      linkService: this.linkService,
+    });
 
     if (annotations.length === 0) {
       this.#annotations = annotations;
@@ -176,6 +188,11 @@ class AnnotationLayerBuilder {
       renderForms: this.renderForms,
       downloadManager: this.downloadManager,
       enableComment: this.enableComment,
+      // Disable editor conversion for existing annotations in GeckoView.
+      enableAnnotationEditing:
+        typeof PDFJSDev === "undefined"
+          ? !window.isGECKOVIEW
+          : !PDFJSDev.test("GECKOVIEW"),
       enableScripting: this.enableScripting,
       hasJSActions,
       fieldObjects,
@@ -200,21 +217,6 @@ class AnnotationLayerBuilder {
         { signal: this.#eventAC.signal, ...internalOpt }
       );
     }
-  }
-
-  #initAnnotationLayer(viewport, structTreeLayer) {
-    this.annotationLayer = new AnnotationLayer({
-      div: this.div,
-      accessibilityManager: this._accessibilityManager,
-      annotationCanvasMap: this._annotationCanvasMap,
-      annotationEditorUIManager: this._annotationEditorUIManager,
-      annotationStorage: this.annotationStorage,
-      page: this.pdfPage,
-      viewport: viewport.clone({ dontFlip: true }),
-      structTreeLayer,
-      commentManager: this.#commentManager,
-      linkService: this.linkService,
-    });
   }
 
   cancel() {
@@ -256,15 +258,25 @@ class AnnotationLayerBuilder {
     }
     this.#linksInjected = true;
 
-    const newLinks = this.#annotations.length
-      ? this.#checkInferredLinks(inferredLinks)
-      : inferredLinks;
-
-    if (!newLinks.length) {
+    if (!inferredLinks.length) {
       return;
     }
+    let newLinks;
 
+    if (this.#annotations.length) {
+      newLinks = this.#checkInferredLinks(inferredLinks);
+
+      if (!newLinks.length) {
+        return; // All inferred links overlap existing annotations.
+      }
+    } else {
+      newLinks = inferredLinks;
+    }
     await this.annotationLayer.addLinkAnnotations(newLinks);
+  }
+
+  get linksInjected() {
+    return this.#linksInjected;
   }
 
   #updatePresentationModeState(state) {

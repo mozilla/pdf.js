@@ -139,7 +139,7 @@ pdfjs-additional-layers = අතිරේක ස්තර
 # Variables:
 #   $page (Number) - the page number
 pdfjs-thumb-page-canvas =
-    .aria-label = පිටුවේ සිඟිත රූව { $page }
+    .aria-label = { $page } පිටුවේ සිඟිති රුව
 
 ## Find panel button title and messages
 
@@ -211,4 +211,5 @@ pdfjs-editor-ink-thickness-input = ඝණකම
 
 ## Alt-text dialog
 
+pdfjs-editor-alt-text-dialog-label = විකල්පයක් තෝරන්න
 pdfjs-editor-alt-text-mark-decorative-description = මෙය දාර හෝ දිය සලකුණු වැනි අලංකාර රූප සඳහා භාවිතා වේ.

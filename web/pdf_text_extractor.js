@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+import { createPromiseCapability } from "pdfjs-lib";
 import { internalOpt } from "./internal_evt.js";
 
 /**
@@ -26,7 +27,7 @@ class PdfTextExtractor {
   /** @type {?Promise<string>} */
   #textPromise;
 
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   constructor(externalServices, pdfViewer, eventBus) {
     this.#externalServices = externalServices;
@@ -44,7 +45,7 @@ class PdfTextExtractor {
         this.#capability.reject(new Error("pagesdestroy"));
         this.#textPromise = null;
 
-        this.#capability = Promise.withResolvers();
+        this.#capability = createPromiseCapability();
       },
       internalOpt
     );

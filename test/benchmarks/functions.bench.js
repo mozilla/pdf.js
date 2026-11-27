@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import { AlternateCS } from "../../src/core/colorspace.js";
+import { benchmark } from "./bench_utils.js";
 import { captureImages } from "./image_utils.js";
 import { captureShadings } from "./shading_utils.js";
-import { Pattern } from "../../src/core/pattern.js";
+import { describe } from "vitest";
 
 const SHADINGS = [
   { kind: "axial, exponential", filename: "bug1019475_1.pdf" },
@@ -52,12 +52,14 @@ const DEVICEN_IMAGES = await captureImages(
 
 describe("functions", () => {
   for (const { kind, filename, shadings } of SHADINGS) {
-    bench(`Pattern.parseShading: ${kind} (${filename})`, () =>
-      shadings.map(input => Pattern.parseShading(...input.args()).getIR())
-    );
+    benchmark(`Pattern.parseShading: ${kind} (${filename})`, async () => {
+      for (const input of shadings) {
+        await input.getIR();
+      }
+    });
   }
 
-  bench(
+  benchmark(
     "PDFImage.createImageData: DeviceN, PostScript tint (colorspace_cos.pdf)",
     async () =>
       Promise.all(

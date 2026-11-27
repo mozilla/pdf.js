@@ -22,6 +22,8 @@ import {
   convertRGBToRGBA,
 } from "../shared/image_utils.js";
 import {
+  DEFAULT_VERTICAL_ADVANCE,
+  DEFAULT_VERTICAL_ORIGIN_Y,
   F32_BBOX_INIT,
   FeatureTest,
   FONT_IDENTITY_MATRIX,
@@ -41,7 +43,6 @@ import {
   getCurrentTransformInverse,
   getRGBA,
   makePathFromDrawOPS,
-  OutputScale,
   PixelsPerInch,
 } from "./display_utils.js";
 import {
@@ -256,6 +257,9 @@ class CanvasExtraState {
   lineWidth = 1;
 
   activeSMask = null;
+
+  // PDF blend mode; the soft-mask scratch context uses source-over.
+  blendMode = "source-over";
 
   transferMaps = "none";
 
@@ -605,11 +609,7 @@ class CanvasGraphics {
     objs,
     canvasFactory,
     filterFactory,
-    {
-      optionalContentConfig,
-      markedContentStack = null,
-      pixelRatio = OutputScale.pixelRatio,
-    },
+    { optionalContentConfig, markedContentStack = null, pixelRatio },
     annotationCanvasMap,
     pageColors,
     dependencyTracker,
@@ -1260,19 +1260,16 @@ class CanvasGraphics {
             "globalCompositeOperation",
             opIdx
           );
-          this.ctx.globalCompositeOperation = value;
+          this.current.blendMode = value;
+          if (!this.inSMaskMode) {
+            this.ctx.globalCompositeOperation = value;
+          }
           break;
         case "SMask":
           this.dependencyTracker?.recordSimpleData("SMask", opIdx);
           this.current.activeSMask = value ? this.tempSMask : null;
-          if (this.current.activeSMask) {
-            // Save the current blend mode so that it can be applied when
-            // compositing the SMask result back to the main canvas.
-            this.current.activeSMask.blendMode =
-              this.ctx.globalCompositeOperation;
-          }
           this.tempSMask = null;
-          this.checkSMaskState(opIdx);
+          this.checkSMaskState();
           break;
         case "TR": {
           this.dependencyTracker?.recordSimpleData("filter", opIdx);
@@ -1333,18 +1330,16 @@ class CanvasGraphics {
     this._prepareSMaskCanvas(smask);
   }
 
-  checkSMaskState(opIdx) {
-    const inSMaskMode = this.inSMaskMode;
-    if (this.current.activeSMask && !inSMaskMode) {
-      this.beginSMaskMode(opIdx);
-    } else if (!this.current.activeSMask && inSMaskMode) {
-      this.endSMaskMode();
-    } else if (this.current.activeSMask && inSMaskMode) {
-      // The active SMask may have changed while SMask mode stayed active
-      // (e.g. a direct SMask A->B replacement, or a restore() that surfaces
-      // a different saved mask). _ensurePreparedSMask is a no-op when the
-      // same mask object is re-encountered.
-      this._ensurePreparedSMask(this.current.activeSMask);
+  checkSMaskState() {
+    const { activeSMask } = this.current;
+    if (!activeSMask) {
+      if (this.inSMaskMode) {
+        this.endSMaskMode();
+      }
+    } else if (this.inSMaskMode) {
+      this._ensurePreparedSMask(activeSMask);
+    } else {
+      this.beginSMaskMode();
     }
   }
 
@@ -1539,7 +1534,7 @@ class CanvasGraphics {
    * that clipping paths and transformations remain correct when soft mask mode
    * ends.
    */
-  beginSMaskMode(opIdx) {
+  beginSMaskMode() {
     if (this.inSMaskMode) {
       throw new Error("beginSMaskMode called while already in smask mode");
     }
@@ -1554,7 +1549,8 @@ class CanvasGraphics {
 
     this._ensurePreparedSMask(this.current.activeSMask);
 
-    this.setGState(opIdx, [["BM", "source-over"]]);
+    // Blend in composeSMask; keep the original BM dependency.
+    ctx.globalCompositeOperation = "source-over";
   }
 
   endSMaskMode() {
@@ -1566,6 +1562,7 @@ class CanvasGraphics {
     this.ctx._removeMirroring();
     copyCtxState(this.ctx, this.suspendedCtx);
     this.ctx = this.suspendedCtx;
+    this.ctx.globalCompositeOperation = this.current.blendMode;
 
     this.suspendedCtx = null;
     this.canvasFactory.destroy(this.smaskScratchCanvas);
@@ -2001,7 +1998,7 @@ class CanvasGraphics {
 
     ctx.save();
     ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = smask.blendMode || "source-over";
+    ctx.globalCompositeOperation = this.current.blendMode;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     // Blit only the dirty box -- the rest of the scratch canvas was
     // cleared in compose().
@@ -2140,6 +2137,7 @@ class CanvasGraphics {
       // Graphics state is stored on the main(suspended) canvas. Restore its
       // state then copy it over to the temporary canvas.
       copyCtxState(this.suspendedCtx, this.ctx);
+      this.ctx.globalCompositeOperation = "source-over";
       // The scratch canvas may have been freshly created by beginSMaskMode
       // (called from checkSMaskState during a previous endGroup), in which
       // case its save/restore stack is empty and ctx.restore() above was a
@@ -2148,7 +2146,7 @@ class CanvasGraphics {
       // reflected on the scratch canvas.
       this.ctx.setTransform(this.suspendedCtx.getTransform());
     }
-    this.checkSMaskState(opIdx);
+    this.checkSMaskState();
 
     // Ensure that the clipping path is reset (fixes issue6413.pdf).
     this.pendingClip = null;
@@ -2157,11 +2155,13 @@ class CanvasGraphics {
   }
 
   /**
-   * Resets the graphics state, except the clip and the transfer maps.
+   * Preserves the clip, blend mode and transfer maps.
    */
   resetGraphicsState() {
-    const { clipBox, transferMaps, transferMapsFallback } = this.current;
+    const { blendMode, clipBox, transferMaps, transferMapsFallback } =
+      this.current;
     const current = (this.current = new CanvasExtraState(0, 0));
+    current.blendMode = blendMode;
     current.clipBox = clipBox;
     current.transferMaps = transferMaps;
     current.transferMapsFallback = transferMapsFallback;
@@ -2780,6 +2780,24 @@ class CanvasGraphics {
     return shadow(this, "isFontSubpixelAAEnabled", enabled);
   }
 
+  /**
+   * Return the pattern and the transform left by getPattern.
+   */
+  #getTextPattern(color, pathType, opIdx) {
+    const ctx = this.ctx;
+    ctx.save();
+    const pattern = color.getPattern(
+      ctx,
+      this,
+      getCurrentTransformInverse(ctx),
+      pathType,
+      opIdx
+    );
+    const transform = getCurrentTransform(ctx);
+    ctx.restore();
+    return [pattern, transform];
+  }
+
   showText(opIdx, glyphs) {
     if (this.dependencyTracker) {
       this.dependencyTracker
@@ -2869,31 +2887,19 @@ class CanvasGraphics {
     ctx.lineWidth = lineWidth;
 
     if (needsFill && current.patternFill) {
-      ctx.save();
-      const pattern = current.fillColor.getPattern(
-        ctx,
-        this,
-        getCurrentTransformInverse(ctx),
+      [ctx.fillStyle, patternFillTransform] = this.#getTextPattern(
+        current.fillColor,
         PathType.FILL,
         opIdx
       );
-      patternFillTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.fillStyle = pattern;
     }
 
     if (needsStroke && current.patternStroke) {
-      ctx.save();
-      const pattern = current.strokeColor.getPattern(
-        ctx,
-        this,
-        getCurrentTransformInverse(ctx),
+      [ctx.strokeStyle, patternStrokeTransform] = this.#getTextPattern(
+        current.strokeColor,
         PathType.STROKE,
         opIdx
       );
-      patternStrokeTransform = getCurrentTransform(ctx);
-      ctx.restore();
-      ctx.strokeStyle = pattern;
     }
 
     if (font.isInvalidPDFjsFont) {
@@ -2926,7 +2932,8 @@ class CanvasGraphics {
     }
 
     let x = 0,
-      i;
+      i,
+      glyphPatterns = null;
     for (i = 0; i < glyphsLength; ++i) {
       const glyph = glyphs[i];
       if (typeof glyph === "number") {
@@ -2938,7 +2945,7 @@ class CanvasGraphics {
       const spacing = (glyph.isSpace ? wordSpacing : 0) + charSpacing;
       const character = glyph.fontChar;
       const accent = glyph.accent;
-      let scaledX, scaledY;
+      let scaledX, scaledY, measure;
       let width = glyph.width;
       if (vertical) {
         const vmetric = glyph.vmetric;
@@ -2948,31 +2955,83 @@ class CanvasGraphics {
         width = -vmetric[0];
         scaledX = vx / fontSizeScale;
         scaledY = (x + vy) / fontSizeScale;
+        if (glyph.isRotated) {
+          // Anchor at 880 - 1000 / 2 = 380 glyph units above the horizontal
+          // baseline. Use ink bounds to center the glyph across the column.
+          measure = ctx.measureText(character);
+          const glyphScale = widthAdvanceScale / fontSizeScale;
+          const halfWidth = (glyph.width / 2) * glyphScale;
+          const centerX = scaledX + halfWidth;
+          // Convert to the 90-degree clockwise frame: (x, y) -> (y, -x).
+          scaledX =
+            scaledY -
+            (DEFAULT_VERTICAL_ORIGIN_Y - DEFAULT_VERTICAL_ADVANCE / 2) *
+              glyphScale -
+            halfWidth;
+          scaledY =
+            (measure.actualBoundingBoxAscent -
+              measure.actualBoundingBoxDescent) /
+              2 -
+            centerX;
+
+          restoreNeeded = true;
+          ctx.save();
+          ctx.rotate(Math.PI / 2);
+        }
       } else {
         scaledX = x / fontSizeScale;
         scaledY = 0;
       }
 
-      let measure;
-
-      if (font.remeasure && width > 0) {
-        measure = ctx.measureText(character);
+      // Fit rotated glyphs using their horizontal width; the vertical advance
+      // only controls spacing to the next glyph.
+      const glyphWidth = glyph.isRotated ? glyph.width : width;
+      let characterScaleX = 1;
+      if ((font.remeasure || glyph.isRotated) && glyphWidth > 0) {
+        measure ??= ctx.measureText(character);
 
         // Some standard fonts may not have the exact width: rescale per
         // character if measured width is greater than expected glyph width
         // and subpixel-aa is enabled, otherwise just center the glyph.
         const measuredWidth =
           ((measure.width * 1000) / fontSize) * fontSizeScale;
-        if (width < measuredWidth && this.isFontSubpixelAAEnabled) {
-          const characterScaleX = width / measuredWidth;
-          restoreNeeded = true;
-          ctx.save();
+        if (glyphWidth < measuredWidth && this.isFontSubpixelAAEnabled) {
+          characterScaleX = glyphWidth / measuredWidth;
+          if (!restoreNeeded) {
+            restoreNeeded = true;
+            ctx.save();
+          }
           ctx.scale(characterScaleX, 1);
           scaledX /= characterScaleX;
-        } else if (width !== measuredWidth) {
+        } else if (glyphWidth !== measuredWidth) {
           scaledX +=
-            (((width - measuredWidth) / 2000) * fontSize) / fontSizeScale;
+            (((glyphWidth - measuredWidth) / 2000) * fontSize) / fontSizeScale;
         }
+      }
+
+      if (
+        restoreNeeded &&
+        font.missingFile &&
+        (patternFillTransform || patternStrokeTransform)
+      ) {
+        // Compensate for glyph rotation and scaling in the pattern transform.
+        // Cache by scale; negative keys distinguish rotated glyphs.
+        glyphPatterns ||= new Map();
+        [ctx.fillStyle, ctx.strokeStyle] = glyphPatterns.getOrInsertComputed(
+          glyph.isRotated ? -characterScaleX : characterScaleX,
+          () => [
+            patternFillTransform
+              ? this.#getTextPattern(current.fillColor, PathType.FILL, opIdx)[0]
+              : ctx.fillStyle,
+            patternStrokeTransform
+              ? this.#getTextPattern(
+                  current.strokeColor,
+                  PathType.STROKE,
+                  opIdx
+                )[0]
+              : ctx.strokeStyle,
+          ]
+        );
       }
 
       // Only attempt to draw the glyph if it is actually in the embedded font
@@ -3288,9 +3347,8 @@ class CanvasGraphics {
   }
 
   paintFormXObjectBegin(opIdx, matrix, bbox) {
-    if (!this.contentVisible) {
-      return;
-    }
+    // Hidden forms still need their own state, since their transforms and
+    // clips are applied.
     this.save(opIdx);
     this.baseTransformStack.push(this.baseTransform);
 
@@ -3315,9 +3373,6 @@ class CanvasGraphics {
   }
 
   paintFormXObjectEnd(opIdx) {
-    if (!this.contentVisible) {
-      return;
-    }
     this.restore(opIdx);
     this.baseTransform = this.baseTransformStack.pop();
   }
@@ -3373,9 +3428,7 @@ class CanvasGraphics {
       return;
     }
 
-    // Reached only when the direct path above didn't apply, e.g. a soft mask,
-    // non-default group alpha or blend mode: we still composite on a
-    // transparent intermediate canvas rather than the real backdrop.
+    // A soft mask, group alpha or blend mode requires an intermediate canvas.
     if (!group.isolated && !group.knockout && this.#knockoutGroupLevel === 0) {
       info("TODO: Fully support non-isolated non-knockout groups.");
     }
@@ -3462,52 +3515,23 @@ class CanvasGraphics {
     groupCtx.translate(-offsetX, -offsetY);
     groupCtx.transform(...currentTransform);
 
-    const needsBackdropCopy =
-      !group.isolated && !group.smask && group.needsIsolation;
-    const replaceBackdrop =
-      needsBackdropCopy &&
-      !inSMaskMode &&
-      savedKnockoutLevel === 0 &&
-      !group.knockout &&
-      !group.isGray &&
-      group.hasSoftMask &&
-      currentCtx.globalAlpha === 1 &&
-      currentCtx.globalCompositeOperation === "source-over" &&
-      this.current.transferMaps === "none" &&
-      !this.current.transferMapsFallback;
-    if (needsBackdropCopy && (inSMaskMode || replaceBackdrop)) {
-      // A non-isolated group that needs isolation (because of an inner blend
-      // mode and/or a soft mask) can't use the direct path above, so it
-      // renders on a transparent intermediate canvas. Copy the current
-      // backdrop into it so the inner blend modes (e.g. "multiply", "screen")
-      // interact with the real background instead of transparency; otherwise a
-      // /Multiply highlight, say, would be painted opaquely over the text
-      // behind it, hiding it (bug 1873345 -- same as the direct path, but here
-      // the soft mask forces an intermediate canvas).
-      // This is needed both when entered from SMask mode and at the top level;
-      // a non-isolated subgroup nested inside a knockout group instead gets its
-      // backdrop through the hasInnerBackdrop path in endGroup, so it's
-      // excluded here via savedKnockoutLevel.
-      //
-      // Outside SMask mode the copy is limited to a group that *would* have
-      // qualified for the direct path (source-over, group alpha 1, not
-      // knockout/gray) but was forced onto the intermediate canvas by its soft
-      // mask (`hasSoftMask`). Restricting to that domain keeps the change
-      // surgical:
-      //   - Only the soft-mask case is the bug 1873345 gap; a non-isolated
-      //     blend group pushed onto the intermediate canvas merely by a
-      //     non-default group alpha (no soft mask) is a separate pre-existing
-      //     case, left untouched to avoid changing its rendering (issue 13520).
-      //   - source-over/alpha 1 let endGroup replace the backdrop region with
-      //     the copied-and-updated result; compositing it normally would blend
-      //     partially transparent backdrop pixels twice. Under an outer blend
-      //     mode the outer blend would combine the backdrop with itself (e.g.
-      //     a /Multiply group with an inner soft mask darkens, issue 12798); a
-      //     non-1 group alpha would likewise mix the copied backdrop back in.
-      //     Those groups keep the transparent canvas and blend against the
-      //     real backdrop instead.
-      //   - isGray groups are grayscaled in endGroup, and inherited transfer
-      //     maps would also alter the copied backdrop.
+    // Inner blend modes need the real backdrop (bug 1873345). Outside SMask
+    // mode, endGroup must replace it rather than composite it twice. An outer
+    // blend mode, grayscale conversion or transfer map would alter the copied
+    // backdrop, so those cases keep a transparent canvas (issue 12798).
+    // Knockout subgroups get their backdrop through hasInnerBackdrop instead.
+    const copyBackdrop =
+      !group.isolated &&
+      !group.smask &&
+      group.needsIsolation &&
+      (inSMaskMode ||
+        (savedKnockoutLevel === 0 &&
+          !group.knockout &&
+          !group.isGray &&
+          currentCtx.globalCompositeOperation === "source-over" &&
+          this.current.transferMaps === "none" &&
+          !this.current.transferMapsFallback));
+    if (copyBackdrop) {
       groupCtx.save();
       groupCtx.setTransform(1, 0, 0, 1, 0, 0);
       groupCtx.drawImage(currentCtx.canvas, -offsetX, -offsetY);
@@ -3576,7 +3600,7 @@ class CanvasGraphics {
       offsetX,
       offsetY,
       hasInnerBackdrop,
-      replaceBackdrop,
+      replaceBackdrop: copyBackdrop && !inSMaskMode,
       knockoutMaskEntry,
       // Per-group scratch pools, lazily filled and freed in endGroup.
       knockoutTempEntry: null,
@@ -3735,10 +3759,20 @@ class CanvasGraphics {
         if (groupMeta.replaceBackdrop) {
           // "copy" clears the destination outside the source within the
           // current clip, so limit it to the intermediate canvas bounds.
+          const { width, height } = groupCtx.canvas;
           const clip = new Path2D();
-          clip.rect(0, 0, groupCtx.canvas.width, groupCtx.canvas.height);
+          clip.rect(0, 0, width, height);
           this.ctx.clip(clip);
-          this.ctx.globalCompositeOperation = "copy";
+          if (this.ctx.globalAlpha === 1) {
+            this.ctx.globalCompositeOperation = "copy";
+          } else {
+            // The result includes the backdrop: interpolate in premultiplied
+            // space as backdrop * (1 - alpha) + result * alpha.
+            this.ctx.globalCompositeOperation = "destination-out";
+            this.ctx.fillStyle = "#000";
+            this.ctx.fillRect(0, 0, width, height);
+            this.ctx.globalCompositeOperation = "lighter";
+          }
         }
         this.ctx.drawImage(groupCtx.canvas, 0, 0);
       }

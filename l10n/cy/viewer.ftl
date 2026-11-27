@@ -348,6 +348,12 @@ pdfjs-editor-ink-editor =
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = Golygydd llofnod: { $description }
+    .aria-label = Golygydd llofnodion
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-signature-editor1 =
     .aria-description = Golygydd llofnod: { $description }
 pdfjs-editor-stamp-editor =

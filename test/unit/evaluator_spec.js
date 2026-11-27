@@ -14,7 +14,7 @@
  */
 
 import { createIdFactory, XRefMock } from "./test_utils.js";
-import { Dict, Name } from "../../src/core/primitives.js";
+import { Dict, Name, Ref, RefMap } from "../../src/core/primitives.js";
 import { FormatError, OPS } from "../../src/shared/util.js";
 import { Stream, StringStream } from "../../src/core/stream.js";
 import { GlobalColorSpaceCache } from "../../src/core/image_utils.js";
@@ -23,22 +23,11 @@ import { PartialEvaluator } from "../../src/core/evaluator.js";
 import { WorkerTask } from "../../src/core/worker.js";
 
 describe("evaluator", function () {
-  function HandlerMock() {
-    this.inputs = [];
-  }
-  HandlerMock.prototype = {
-    send(name, data) {
-      this.inputs.push({ name, data });
-    },
-  };
-  function ResourcesMock() {}
-  ResourcesMock.prototype = {
-    get(name) {
-      return this[name];
-    },
-  };
-
-  async function runOperatorListCheck(evaluator, stream, resources) {
+  async function runOperatorListCheck(
+    evaluator,
+    stream,
+    resources = Dict.empty
+  ) {
     const operatorList = new OperatorList();
     const task = new WorkerTask("OperatorListCheck");
     await evaluator.getOperatorList({
@@ -63,8 +52,7 @@ describe("evaluator", function () {
     await evaluator.getTextContent({
       stream,
       task,
-      resources: new ResourcesMock(),
-      includeMarkedContent: true,
+      resources: Dict.empty,
       sink,
     });
     return items;
@@ -75,7 +63,7 @@ describe("evaluator", function () {
   beforeAll(function () {
     partialEvaluator = new PartialEvaluator({
       xref: new XRefMock(),
-      handler: new HandlerMock(),
+      handler: { send() {} },
       pageIndex: 0,
       idFactory: createIdFactory(/* pageIndex = */ 0),
       globalColorSpaceCache: new GlobalColorSpaceCache(),
@@ -89,27 +77,18 @@ describe("evaluator", function () {
   describe("splitCombinedOperations", function () {
     it("should reject unknown operations", async function () {
       const stream = new StringStream("fTT");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
       expect(result.fnArray.length).toEqual(1);
       expect(result.fnArray[0]).toEqual(OPS.constructPath);
       expect(result.argsArray[0]).toEqual([OPS.fill, [null], null]);
     });
 
     it("should handle one operation", async function () {
-      const stream = new StringStream("Q");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
-      expect(result.fnArray.length).toEqual(1);
-      expect(result.fnArray[0]).toEqual(OPS.restore);
+      const stream = new StringStream("W");
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
+      expect(result.fnArray).toEqual([OPS.clip]);
     });
 
     it("should handle two glued operations", async function () {
@@ -124,34 +103,33 @@ describe("evaluator", function () {
       const xObject = new Dict();
       xObject.set("Res1", imgStream);
 
-      const resources = new ResourcesMock();
-      resources.XObject = xObject;
+      const resources = new Dict();
+      resources.set("XObject", xObject);
 
-      const stream = new StringStream("/Res1 DoQ");
+      const stream = new StringStream("q/Res1 DoQ");
       const result = await runOperatorListCheck(
         partialEvaluator,
         stream,
         resources
       );
-      expect(result.fnArray.length).toEqual(3);
-      expect(result.fnArray[0]).toEqual(OPS.dependency);
-      expect(result.fnArray[1]).toEqual(OPS.paintImageXObject);
-      expect(result.fnArray[2]).toEqual(OPS.restore);
-      expect(result.argsArray.length).toEqual(3);
-      expect(result.argsArray[0]).toEqual(["img_p0_1"]);
-      expect(result.argsArray[1]).toEqual(["img_p0_1", 1, 1]);
-      expect(result.argsArray[2]).toBeNull();
+      expect(result.fnArray).toEqual([
+        OPS.save,
+        OPS.dependency,
+        OPS.paintImageXObject,
+        OPS.restore,
+      ]);
+      expect(result.argsArray).toEqual([
+        null,
+        ["img_p0_1"],
+        ["img_p0_1", 1, 1],
+        null,
+      ]);
     });
 
     it("should handle three glued operations", async function () {
       const stream = new StringStream("fff");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
-      expect(result.fnArray.length).toEqual(3);
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
       expect(result.fnArray).toEqual([
         OPS.constructPath,
         OPS.constructPath,
@@ -163,15 +141,9 @@ describe("evaluator", function () {
     });
 
     it("should handle three glued operations #2", async function () {
-      const resources = new ResourcesMock();
-      resources.Res1 = {};
       const stream = new StringStream("B*Bf*");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        resources
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
       expect(result.fnArray).toEqual([
         OPS.constructPath,
         OPS.constructPath,
@@ -184,12 +156,8 @@ describe("evaluator", function () {
 
     it("should handle glued operations and operands", async function () {
       const stream = new StringStream("f5 Ts");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
       expect(result.fnArray.length).toEqual(2);
       expect(result.fnArray[0]).toEqual(OPS.constructPath);
       expect(result.fnArray[1]).toEqual(OPS.setTextRise);
@@ -200,12 +168,8 @@ describe("evaluator", function () {
 
     it("should handle glued operations and literals", async function () {
       const stream = new StringStream("trueifalserinulln");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
       expect(result.fnArray.length).toEqual(3);
       expect(result.fnArray[0]).toEqual(OPS.setFlatness);
       expect(result.fnArray[1]).toEqual(OPS.setRenderingIntent);
@@ -222,11 +186,7 @@ describe("evaluator", function () {
   describe("validateNumberOfArgs", function () {
     it("should execute if correct number of arguments", async function () {
       const stream = new StringStream("5 1 d0");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
+      const result = await runOperatorListCheck(partialEvaluator, stream);
       expect(result.argsArray[0][0]).toEqual(5);
       expect(result.argsArray[0][1]).toEqual(1);
       expect(result.fnArray[0]).toEqual(OPS.setCharWidth);
@@ -234,11 +194,7 @@ describe("evaluator", function () {
 
     it("should execute if too many arguments", async function () {
       const stream = new StringStream("5 1 4 d0");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
+      const result = await runOperatorListCheck(partialEvaluator, stream);
       expect(result.argsArray[0][0]).toEqual(1);
       expect(result.argsArray[0][1]).toEqual(4);
       expect(result.fnArray[0]).toEqual(OPS.setCharWidth);
@@ -252,8 +208,8 @@ describe("evaluator", function () {
       const extGState = new Dict();
       extGState.set("GS2", gState);
 
-      const resources = new ResourcesMock();
-      resources.ExtGState = extGState;
+      const resources = new Dict();
+      resources.set("ExtGState", extGState);
 
       const stream = new StringStream("/F2 /GS2 gs 5.711 Tf");
       const result = await runOperatorListCheck(
@@ -278,11 +234,7 @@ describe("evaluator", function () {
 
     it("should skip if too few arguments", async function () {
       const stream = new StringStream("5 d0");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
+      const result = await runOperatorListCheck(partialEvaluator, stream);
       expect(result.argsArray).toEqual([]);
       expect(result.fnArray).toEqual([]);
     });
@@ -298,8 +250,7 @@ describe("evaluator", function () {
         const moveTextStream = new StringStream(invalidMoveText);
         const result = await runOperatorListCheck(
           partialEvaluator,
-          moveTextStream,
-          new ResourcesMock()
+          moveTextStream
         );
         expect(result.argsArray).toEqual([]);
         expect(result.fnArray).toEqual([]);
@@ -308,55 +259,21 @@ describe("evaluator", function () {
         const invalidLineTo = "20 l\n".repeat(NUM_INVALID_OPS);
         const lineToStream = new StringStream(invalidLineTo);
 
-        try {
-          await runOperatorListCheck(
-            partialEvaluator,
-            lineToStream,
-            new ResourcesMock()
-          );
-
-          // Shouldn't get here.
-          expect(false).toBeTrue();
-        } catch (reason) {
-          expect(reason).toBeInstanceOf(FormatError);
-          expect(reason.message).toEqual(
-            "Invalid command l: expected 2 args, but received 1 args."
-          );
-        }
+        await expectAsync(
+          runOperatorListCheck(partialEvaluator, lineToStream)
+        ).toBeRejectedWithError(
+          FormatError,
+          "Invalid command l: expected 2 args, but received 1 args."
+        );
       }
     );
-
-    it("should close opened saves", async function () {
-      const stream = new StringStream("qq");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
-      expect(!!result.fnArray && !!result.argsArray).toBeTrue();
-      expect(result.fnArray.length).toEqual(4);
-      expect(result.fnArray[0]).toEqual(OPS.save);
-      expect(result.fnArray[1]).toEqual(OPS.save);
-      expect(result.fnArray[2]).toEqual(OPS.restore);
-      expect(result.fnArray[3]).toEqual(OPS.restore);
-    });
 
     it("should error on paintXObject if name is missing", async function () {
       const stream = new StringStream("/ Do");
 
-      try {
-        await runOperatorListCheck(
-          partialEvaluator,
-          stream,
-          new ResourcesMock()
-        );
-
-        // Shouldn't get here.
-        expect(false).toBeTrue();
-      } catch (reason) {
-        expect(reason).toBeInstanceOf(FormatError);
-        expect(reason.message).toEqual("XObject should be a stream");
-      }
+      await expectAsync(
+        runOperatorListCheck(partialEvaluator, stream)
+      ).toBeRejectedWithError(FormatError, "XObject should be a stream");
     });
 
     it("should skip paintXObject if subtype is PS", async function () {
@@ -396,11 +313,7 @@ describe("evaluator", function () {
 
       for (const op of colorOps) {
         const stream = new StringStream(`/DeviceRGB CS /DeviceRGB cs ${op}`);
-        const result = await runOperatorListCheck(
-          partialEvaluator,
-          stream,
-          new ResourcesMock()
-        );
+        const result = await runOperatorListCheck(partialEvaluator, stream);
         expect(result.argsArray).toEqual([]);
         expect(result.fnArray).toEqual([]);
       }
@@ -408,11 +321,7 @@ describe("evaluator", function () {
 
     it("should handle invalid dash stuff", async function () {
       const stream = new StringStream("[ none ] 0 d");
-      const result = await runOperatorListCheck(
-        partialEvaluator,
-        stream,
-        new ResourcesMock()
-      );
+      const result = await runOperatorListCheck(partialEvaluator, stream);
       expect(result.argsArray[0][0]).toEqual([]);
       expect(result.argsArray[0][1]).toEqual(0);
       expect(result.fnArray[0]).toEqual(OPS.setDash);
@@ -422,45 +331,31 @@ describe("evaluator", function () {
   describe("thread control", function () {
     it("should abort operator list parsing", async function () {
       const stream = new StringStream("qqQQ");
-      const resources = new ResourcesMock();
+      const resources = new Dict();
       const result = new OperatorList();
       const task = new WorkerTask("OperatorListAbort");
       task.terminate();
 
-      try {
-        await partialEvaluator.getOperatorList({
+      await expectAsync(
+        partialEvaluator.getOperatorList({
           stream,
           task,
           resources,
           operatorList: result,
-        });
-
-        // Shouldn't get here.
-        expect(false).toBeTrue();
-      } catch {
-        expect(!!result.fnArray && !!result.argsArray).toBeTrue();
-        expect(result.fnArray.length).toEqual(0);
-      }
+        })
+      ).toBeRejectedWithError(Error, "Worker task was terminated");
+      expect(result.fnArray).toEqual([]);
     });
 
     it("should abort text content parsing", async function () {
-      const resources = new ResourcesMock();
+      const resources = new Dict();
       const stream = new StringStream("qqQQ");
       const task = new WorkerTask("TextContentAbort");
       task.terminate();
 
-      try {
-        await partialEvaluator.getTextContent({
-          stream,
-          task,
-          resources,
-        });
-
-        // Shouldn't get here.
-        expect(false).toBeTrue();
-      } catch {
-        expect(true).toBeTrue();
-      }
+      await expectAsync(
+        partialEvaluator.getTextContent({ stream, task, resources })
+      ).toBeRejectedWithError(Error, "Worker task was terminated");
     });
   });
 
@@ -526,15 +421,54 @@ describe("evaluator", function () {
     });
   });
 
+  describe("fonts", function () {
+    it("should use distinct names for concurrently loaded fallback fonts", async function () {
+      const evaluator = new PartialEvaluator({
+        xref: new XRefMock(),
+        idFactory: createIdFactory(/* pageIndex = */ 0),
+        fontCache: new RefMap(),
+        systemFontCache: new Map(),
+      }).clone({ ignoreErrors: true });
+
+      // Missing refs share the fallback dictionary.
+      const [font1, font2] = await Promise.all(
+        [10, 11].map(num =>
+          evaluator.loadFont(null, Ref.get(num, 0), Dict.empty)
+        )
+      );
+
+      expect(font1.dict).toBe(font2.dict);
+      expect(font1.loadedName).not.toEqual(font2.loadedName);
+    });
+  });
+
   describe("graphics-state operators", function () {
+    it("should ignore a restore without a save", async function () {
+      const stream = new StringStream("Q q Q Q");
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+      expect(result.fnArray).toEqual([OPS.save, OPS.restore]);
+    });
+
+    it("should close opened saves", async function () {
+      const stream = new StringStream("qq");
+      const result = await runOperatorListCheck(partialEvaluator, stream);
+
+      expect(result.fnArray).toEqual([
+        OPS.save,
+        OPS.save,
+        OPS.restore,
+        OPS.restore,
+      ]);
+    });
+
     it("should convert negative line width to absolute value in the graphic state", async function () {
       const gState = new Dict();
       gState.set("LW", -5);
       const extGState = new Dict();
       extGState.set("GSneg", gState);
 
-      const resources = new ResourcesMock();
-      resources.ExtGState = extGState;
+      const resources = new Dict();
+      resources.set("ExtGState", extGState);
 
       const stream = new StringStream("/GSneg gs");
       const result = await runOperatorListCheck(

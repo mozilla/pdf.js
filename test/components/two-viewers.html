@@ -1,0 +1,106 @@
+<!doctype html>
+<!--
+Copyright 2026 Mozilla Foundation
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+<html dir="ltr" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PDF.js — Two viewers</title>
+
+    <style>
+      .containers > div {
+        overflow: auto;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 50%;
+      }
+      #viewerContainer0 {
+        left: 0;
+      }
+      #viewerContainer1 {
+        left: 50%;
+      }
+    </style>
+
+    <link rel="resource" type="application/l10n" href="../../web/locale/locale.json" />
+    <link rel="stylesheet" href="../../web/pdf_viewer.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "pdfjs/": "../../src/",
+          "pdfjs-lib": "../../src/pdf.js",
+
+          "display-binary_data_factory": "../../src/display/binary_data_factory.js",
+          "display-network_stream": "../../src/display/network_stream.js",
+          "display-node_utils": "../../src/display/stubs.js",
+
+          "fluent-bundle": "../../node_modules/@fluent/bundle/esm/index.js",
+          "fluent-dom": "../../node_modules/@fluent/dom/esm/index.js",
+          "cached-iterable": "../../node_modules/cached-iterable/src/index.mjs",
+
+          "web-null_l10n": "../../web/genericl10n.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="containers">
+      <div id="viewerContainer0">
+        <div class="pdfViewer"></div>
+      </div>
+      <div id="viewerContainer1">
+        <div class="pdfViewer"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { getDocument, GlobalWorkerOptions } from "pdfjs-lib";
+      import { EventBus } from "../../web/event_utils.js";
+      import { GenericL10n } from "../../web/genericl10n.js";
+      import { PDFViewer } from "../../web/pdf_viewer.js";
+
+      GlobalWorkerOptions.workerSrc = "../../src/pdf.worker.js";
+
+      async function createViewer(container, url) {
+        const abortController = new AbortController();
+        const eventBus = new EventBus();
+        const pdfViewer = new PDFViewer({
+          container,
+          eventBus,
+          l10n: new GenericL10n(navigator.language),
+          abortSignal: abortController.signal,
+        });
+
+        const loadingTask = getDocument({ url });
+        pdfViewer.setDocument(await loadingTask.promise);
+
+        // Wait for the first text layer, so that its selection listeners are
+        // registered once the viewer is initialized.
+        await new Promise(resolve => {
+          eventBus.on("textlayerrendered", resolve, { once: true });
+        });
+
+        return async () => {
+          abortController.abort();
+          await loadingTask.destroy();
+        };
+      }
+
+      window.initializeViewer = index => createViewer(document.getElementById(`viewerContainer${index}`), "../../web/compressed.tracemonkey-pldi-09.pdf");
+    </script>
+  </body>
+</html>

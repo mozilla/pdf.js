@@ -43,6 +43,7 @@ import {
   FeatureTest,
   LINE_FACTOR,
   makeArr,
+  noopFn,
   shadow,
   SVG_NS,
   unreachable,
@@ -62,6 +63,65 @@ const DEFAULT_FONT_SIZE = 9;
 const GetElementsByNameSet = new WeakSet();
 const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
 
+// Properties which can't change what is under the pointer: applying any other
+// one is reported as a possible layout change.
+const STATIC_SANDBOX_PROPERTIES = new Set([
+  "bgColor",
+  "borderColor",
+  "charLimit",
+  "clear",
+  "editable",
+  "fgColor",
+  "fillColor",
+  "formattedValue",
+  "indices",
+  "insert",
+  "items",
+  "multipleSelection",
+  "print",
+  "readonly",
+  "remove",
+  "required",
+  "selRange",
+  "strokeColor",
+  "textColor",
+  "userName",
+  "value",
+]);
+
+// Named actions which neither print nor save, hence don't need a user gesture.
+const SAFE_NAMED_ACTIONS = new Set([
+  "FirstPage",
+  "Find",
+  "GoBack",
+  "GoForward",
+  "GoToPage",
+  "LastPage",
+  "NextPage",
+  "PrevPage",
+]);
+
+// True during a focus() call requested by the sandbox.
+let isScriptFocusing = false;
+
+// Element marked as script-focused; cleared by its blur listener.
+let scriptFocusedElement = null;
+
+/**
+ * Collect what the viewer needs to tell whether a DOM event is from the user.
+ * @param {Event} event
+ * @returns {object}
+ */
+function getUserEventInfo(event) {
+  return {
+    originalEvent: event,
+    // The event fired during a script-requested focus() call.
+    scripted: isScriptFocusing,
+    // The target is still marked as script-focused.
+    scriptFocused: event.target === scriptFocusedElement,
+  };
+}
+
 /**
  * @typedef {object} AnnotationElementParameters
  * @property {object} data
@@ -72,7 +132,6 @@ const TIMEZONE_OFFSET = new Date().getTimezoneOffset() * 60 * 1000;
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
- * @property {object} svgFactory
  * @property {boolean} [enableScripting]
  * @property {boolean} [hasJSActions]
  * @property {Map} [fieldObjects]
@@ -194,9 +253,9 @@ class AnnotationElement {
     this.downloadManager = parameters.downloadManager;
     this.imageResourcesPath = parameters.imageResourcesPath;
     this.renderForms = parameters.renderForms;
-    this.svgFactory = parameters.svgFactory;
     this.annotationStorage = parameters.annotationStorage;
     this.enableComment = parameters.enableComment;
+    this.enableAnnotationEditing = parameters.enableAnnotationEditing !== false;
     this.enableScripting = parameters.enableScripting;
     this.hasJSActions = parameters.hasJSActions;
     this._fieldObjects = parameters.fieldObjects;
@@ -216,8 +275,12 @@ class AnnotationElement {
     return !!(contentsObj?.str || richText?.str);
   }
 
+  static get _svgFactory() {
+    return shadow(this, "_svgFactory", new DOMSVGFactory());
+  }
+
   get _isEditable() {
-    return this.data.isEditable;
+    return this.enableAnnotationEditing && this.data.isEditable;
   }
 
   get hasPopupData() {
@@ -556,7 +619,32 @@ class AnnotationElement {
         });
       },
       focus: event => {
-        setTimeout(() => event.target.focus({ preventScroll: false }), 0);
+        setTimeout(() => {
+          const { target } = event;
+          isScriptFocusing = true;
+          try {
+            target.focus({ preventScroll: false });
+          } finally {
+            isScriptFocusing = false;
+          }
+          // The focus, and any scrolling it causes, only happen now.
+          this._notifyLayoutChange();
+          if (
+            target.ownerDocument.activeElement === target &&
+            scriptFocusedElement !== target
+          ) {
+            scriptFocusedElement = target;
+            target.addEventListener(
+              "blur",
+              () => {
+                if (scriptFocusedElement === target) {
+                  scriptFocusedElement = null;
+                }
+              },
+              { once: true }
+            );
+          }
+        }, 0);
       },
       userName: event => {
         // tooltip
@@ -596,11 +684,66 @@ class AnnotationElement {
     });
   }
 
+  /**
+   * Dispatch in the sandbox an event triggered by a DOM event.
+   * @param {object} detail
+   * @param {Event} event
+   */
+  _dispatchDOMEventInSandbox(detail, event) {
+    this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
+      source: this,
+      detail,
+      ...getUserEventInfo(event),
+    });
+  }
+
+  /**
+   * Whether a DOM event can trigger an action with an effect outside of the
+   * document: printing, saving, downloading or navigating.
+   * @param {Event} event
+   * @returns {boolean}
+   */
+  _isUserActivation(event) {
+    const { eventBus } = this.linkService;
+    if (!this.enableScripting || !eventBus) {
+      // Without a scripting manager, which requires an event bus, no script can
+      // have changed what the user interacts with.
+      return true;
+    }
+    const request = {
+      source: this,
+      ...getUserEventInfo(event),
+      allowed: false,
+    };
+    eventBus.dispatch("useractivationrequest", request);
+    return request.allowed;
+  }
+
+  /**
+   * Notify the viewer of a possible layout change from a sandbox update.
+   */
+  _notifyLayoutChange() {
+    this.linkService.eventBus?.dispatch("sandboxlayoutchange", {
+      source: this,
+    });
+  }
+
+  /**
+   * Apply the properties set by a script, reporting a possible layout change
+   * for the ones not in STATIC_SANDBOX_PROPERTIES.
+   * @param {object} actions - The actions specific to the element.
+   * @param {object} jsEvent - The event, with the properties in its detail.
+   */
   _dispatchEventFromSandbox(actions, jsEvent) {
     const commonActions = this._commonActions;
     for (const name of Object.keys(jsEvent.detail)) {
       const action = actions[name] || commonActions[name];
-      action?.(jsEvent);
+      if (action) {
+        action(jsEvent);
+        if (!STATIC_SANDBOX_PROPERTIES.has(name)) {
+          this._notifyLayoutChange();
+        }
+      }
     }
   }
 
@@ -617,15 +760,11 @@ class AnnotationElement {
 
     const commonActions = this._commonActions;
     for (const [actionName, detail] of Object.entries(storedData)) {
-      const action = commonActions[actionName];
-      if (action) {
-        const eventProxy = {
-          detail: {
-            [actionName]: detail,
-          },
+      if (commonActions[actionName]) {
+        this._dispatchEventFromSandbox(commonActions, {
+          detail: { [actionName]: detail },
           target: element,
-        };
-        action(eventProxy);
+        });
         // The action has been consumed: no need to keep it.
         delete storedData[actionName];
       }
@@ -684,7 +823,7 @@ class AnnotationElement {
     const width = rectTrX - rectBlX;
     const height = rectTrY - rectBlY;
 
-    const { svgFactory } = this;
+    const svgFactory = AnnotationElement._svgFactory;
     const svg = svgFactory.createElement("svg");
     svg.classList.add("quadrilateralsContainer");
     svg.setAttribute("width", 0);
@@ -972,6 +1111,14 @@ class LinkAnnotationElement extends AnnotationElement {
 
     if (data.url) {
       linkService.addLinkAttributes(link, data.url, data.newWindow);
+      // Guard both primary and auxiliary clicks (e.g. middle-clicking a link).
+      for (const type of ["click", "auxclick"]) {
+        link.addEventListener(type, event => {
+          if (!this._isUserActivation(event)) {
+            event.preventDefault();
+          }
+        });
+      }
       isBound = true;
     } else if (data.action) {
       this._bindNamedAction(link, data.action, data.overlaidText);
@@ -1061,8 +1208,10 @@ class LinkAnnotationElement extends AnnotationElement {
    */
   _bindNamedAction(link, action, overlaidText = "") {
     link.href = this.linkService.getAnchorUrl("");
-    link.onclick = () => {
-      this.linkService.executeNamedAction(action);
+    link.onclick = event => {
+      if (SAFE_NAMED_ACTIONS.has(action) || this._isUserActivation(event)) {
+        this.linkService.executeNamedAction(action);
+      }
       return false;
     };
     if (overlaidText) {
@@ -1112,8 +1261,10 @@ class LinkAnnotationElement extends AnnotationElement {
       }
     };
 
-    link.onclick = () => {
-      openAttachment();
+    link.onclick = event => {
+      if (this._isUserActivation(event)) {
+        openAttachment();
+      }
       return false;
     };
     this.#setInternalLink();
@@ -1159,11 +1310,8 @@ class LinkAnnotationElement extends AnnotationElement {
       if (!jsName) {
         continue;
       }
-      link[jsName] = () => {
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: { id, name },
-        });
+      link[jsName] = event => {
+        this._dispatchDOMEventInSandbox({ id, name }, event);
         return false;
       };
     }
@@ -1193,8 +1341,8 @@ class LinkAnnotationElement extends AnnotationElement {
       return;
     }
 
-    link.onclick = () => {
-      otherClickAction?.();
+    link.onclick = event => {
+      otherClickAction?.(event);
 
       const {
         fields: resetFormFields,
@@ -1337,16 +1485,16 @@ class WidgetAnnotationElement extends AnnotationElement {
     if (baseName.includes("mouse")) {
       // Mouse events
       element.addEventListener(baseName, event => {
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: {
+        this._dispatchDOMEventInSandbox(
+          {
             id: this.data.id,
             name: eventName,
             value: valueGetter(event),
             shift: event.shiftKey,
             modifier: this._getKeyModifier(event),
           },
-        });
+          event
+        );
       });
     } else {
       // Non-mouse events
@@ -1367,14 +1515,14 @@ class WidgetAnnotationElement extends AnnotationElement {
           return;
         }
 
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: {
+        this._dispatchDOMEventInSandbox(
+          {
             id: this.data.id,
             name: eventName,
             value: valueGetter(event),
           },
-        });
+          event
+        );
       });
     }
   }
@@ -1735,9 +1883,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           elementData.lastCommittedValue = value;
           // Save the entered value
           elementData.userValue = value;
-          this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-            source: this,
-            detail: {
+          this._dispatchDOMEventInSandbox(
+            {
               id,
               name: "Keystroke",
               value,
@@ -1746,7 +1893,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
               selStart: event.target.selectionStart,
               selEnd: event.target.selectionEnd,
             },
-          });
+            event
+          );
         });
         const _blurListener = blurListener;
         blurListener = null;
@@ -1786,9 +1934,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
           }
           elementData.userValue = value;
           if (elementData.lastCommittedValue !== value) {
-            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-              source: this,
-              detail: {
+            this._dispatchDOMEventInSandbox(
+              {
                 id,
                 name: "Keystroke",
                 value,
@@ -1797,7 +1944,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 selStart: event.target.selectionStart,
                 selEnd: event.target.selectionEnd,
               },
-            });
+              event
+            );
           }
           _blurListener(event);
         });
@@ -1853,9 +2001,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
 
             // We handle the event ourselves.
             event.preventDefault();
-            this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-              source: this,
-              detail: {
+            this._dispatchDOMEventInSandbox(
+              {
                 id,
                 name: "Keystroke",
                 value,
@@ -1864,7 +2011,8 @@ class TextWidgetAnnotationElement extends WidgetAnnotationElement {
                 selStart,
                 selEnd,
               },
-            });
+              event
+            );
           });
         }
 
@@ -2369,9 +2517,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
 
         event.preventDefault();
 
-        this.linkService.eventBus?.dispatch("dispatcheventinsandbox", {
-          source: this,
-          detail: {
+        this._dispatchDOMEventInSandbox(
+          {
             id,
             name: "Keystroke",
             value: selectedValues,
@@ -2381,7 +2528,8 @@ class ChoiceWidgetAnnotationElement extends WidgetAnnotationElement {
             commitKey: 1,
             keyDown: false,
           },
-        });
+          event
+        );
       });
 
       this._setEventListeners(
@@ -3186,15 +3334,12 @@ class LineAnnotationElement extends AnnotationElement {
     // that acts as the trigger for the popup. Only the line itself should
     // trigger the popup, not the entire container.
     const { data, width, height } = this;
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // PDF coordinates are calculated from a bottom left origin, so transform
     // the line coordinates to a top left origin for the SVG element.
-    const line = (this.#line = this.svgFactory.createElement("svg:line"));
+    const line = (this.#line = svgFactory.createElement("svg:line"));
     line.setAttribute("x1", data.rect[2] - data.lineCoordinates[0]);
     line.setAttribute("y1", data.rect[3] - data.lineCoordinates[1]);
     line.setAttribute("x2", data.rect[2] - data.lineCoordinates[2]);
@@ -3241,17 +3386,14 @@ class SquareAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the square itself should trigger the
     // popup, not the entire container.
     const { data, width, height } = this;
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // The browser draws half of the borders inside the square and half of
     // the borders outside the square by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     const borderWidth = data.borderStyle.width;
-    const square = (this.#square = this.svgFactory.createElement("svg:rect"));
+    const square = (this.#square = svgFactory.createElement("svg:rect"));
     square.setAttribute("x", borderWidth / 2);
     square.setAttribute("y", borderWidth / 2);
     square.setAttribute("width", width - borderWidth);
@@ -3298,18 +3440,14 @@ class CircleAnnotationElement extends AnnotationElement {
     // trigger for the popup. Only the circle itself should trigger the
     // popup, not the entire container.
     const { data, width, height } = this;
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // The browser draws half of the borders inside the circle and half of
     // the borders outside the circle by default. This behavior cannot be
     // changed programmatically, so correct for that here.
     const borderWidth = data.borderStyle.width;
-    const circle = (this.#circle =
-      this.svgFactory.createElement("svg:ellipse"));
+    const circle = (this.#circle = svgFactory.createElement("svg:ellipse"));
     circle.setAttribute("cx", width / 2);
     circle.setAttribute("cy", height / 2);
     circle.setAttribute("rx", width / 2 - borderWidth / 2);
@@ -3366,11 +3504,8 @@ class PolylineAnnotationElement extends AnnotationElement {
     if (!vertices) {
       return this.container;
     }
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
 
     // Convert the vertices array to a single points string that the SVG
     // polyline element expects ("x1,y1 x2,y2 ..."). PDF coordinates are
@@ -3384,7 +3519,7 @@ class PolylineAnnotationElement extends AnnotationElement {
     }
     points = points.join(" ");
 
-    const polyline = (this.#polyline = this.svgFactory.createElement(
+    const polyline = (this.#polyline = svgFactory.createElement(
       this.svgElementName
     ));
     polyline.setAttribute("points", points);
@@ -3504,13 +3639,9 @@ class InkAnnotationElement extends AnnotationElement {
     } = this;
     const { transform, width, height } = this.#getTransform(rotation, rect);
 
-    const svg = this.svgFactory.create(
-      width,
-      height,
-      /* skipDimensions = */ true
-    );
-    const g = (this.#polylinesGroupElement =
-      this.svgFactory.createElement("svg:g"));
+    const svgFactory = AnnotationElement._svgFactory;
+    const svg = svgFactory.create(width, height, /* skipDimensions = */ true);
+    const g = (this.#polylinesGroupElement = svgFactory.createElement("svg:g"));
     svg.append(g);
     // Ensure that the 'stroke-width' is always non-zero, since otherwise it
     // won't be possible to open/close the popup (note e.g. issue 11122).
@@ -3523,7 +3654,7 @@ class InkAnnotationElement extends AnnotationElement {
     g.setAttribute("transform", transform);
 
     for (const inkList of inkLists) {
-      const polyline = this.svgFactory.createElement(this.svgElementName);
+      const polyline = svgFactory.createElement(this.svgElementName);
       this.#polylines.push(polyline);
       polyline.setAttribute("points", inkList.join(","));
       g.append(polyline);
@@ -3770,7 +3901,7 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
     const { isMac } = FeatureTest.platform;
     container.addEventListener("keydown", evt => {
       if (evt.key === "Enter" && (isMac ? evt.metaKey : evt.ctrlKey)) {
-        this.#download();
+        this.#download(evt);
       }
     });
 
@@ -3795,8 +3926,12 @@ class FileAttachmentAnnotationElement extends AnnotationElement {
 
   /**
    * Download the file attachment associated with this annotation.
+   * @param {Event} event - The DOM event which triggered the download.
    */
-  async #download() {
+  async #download(event) {
+    if (!this._isUserActivation(event)) {
+      return;
+    }
     const { fileId, filename, content: fallbackContent } = this;
     /** @type {CatalogAttachmentContent} */
     const content =
@@ -3921,7 +4056,7 @@ class MediaAnnotationElement extends AnnotationElement {
     });
 
     button.replaceWith(media);
-    media.play().catch(() => {});
+    media.play().catch(noopFn);
   }
 
   #revokeContentUrl(url = this.#contentUrl) {
@@ -3957,6 +4092,8 @@ class MediaAnnotationElement extends AnnotationElement {
  * @property {string} [imageResourcesPath] - Path for image resources, mainly
  *   for annotation icons. Include trailing slash.
  * @property {boolean} renderForms
+ * @property {boolean} [enableAnnotationEditing] - Allow editing existing
+ *   annotations. The default value is `true`.
  * @property {boolean} [enableScripting] - Enable embedded script execution.
  * @property {boolean} [hasJSActions] - Some fields have JS actions.
  *   The default value is `false`.
@@ -4049,9 +4186,9 @@ class AnnotationLayer {
       downloadManager: params.downloadManager,
       imageResourcesPath: params.imageResourcesPath || "",
       renderForms: params.renderForms !== false,
-      svgFactory: new DOMSVGFactory(),
       annotationStorage: this.#annotationStorage,
       enableComment: params.enableComment === true,
+      enableAnnotationEditing: params.enableAnnotationEditing !== false,
       enableScripting: params.enableScripting === true,
       hasJSActions: params.hasJSActions,
       fieldObjects: params.fieldObjects,
@@ -4248,7 +4385,6 @@ class AnnotationLayer {
       data: null,
       layer: this.div,
       linkService: this.#linkService,
-      svgFactory: new DOMSVGFactory(),
       parent: this,
     };
     for (const data of annotations) {

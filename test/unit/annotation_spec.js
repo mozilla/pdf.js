@@ -136,7 +136,6 @@ describe("annotation", function () {
       idFactory: createIdFactory(/* pageIndex = */ 0),
       fontCache: new RefMap(),
       builtInCMapCache,
-      standardFontDataCache: new Map(),
       systemFontCache: new Map(),
     });
   });
@@ -666,6 +665,28 @@ describe("annotation", function () {
       );
       expect(data.inReplyTo).toBeUndefined();
       expect(data.replyType).toBeUndefined();
+    });
+
+    it("should convert XHTML rich text in a markup annotation", async function () {
+      const richTextDict = new Dict();
+      richTextDict.set("Subtype", Name.get("Text"));
+      richTextDict.set(
+        "RC",
+        '<body xmlns="http://www.w3.org/1999/xhtml"><p><b>Rich text</b></p></body>'
+      );
+      const xref = new XRefMock([{ ref, data: richTextDict }]);
+      const { data } = await AnnotationFactory.create(
+        xref,
+        ref,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+
+      expect(data.richText.str).toEqual("Rich text");
+      expect(data.richText.html.attributes.dir).toEqual("auto");
+      expect(data.richText.html.children[0].children[0]).toEqual(
+        jasmine.objectContaining({ name: "b", value: "Rich text" })
+      );
     });
 
     it("should parse IRT and set default RT when not defined", async function () {
@@ -1480,6 +1501,30 @@ describe("annotation", function () {
       widgetDict = null;
     });
 
+    it("should honor scripted visibility over NoView", async function () {
+      widgetDict.set("F", AnnotationFlag.NOVIEW);
+      const widgetRef = Ref.get(20, 0);
+      const xref = new XRefMock([{ ref: widgetRef, data: widgetDict }]);
+      const annotation = await AnnotationFactory.create(
+        xref,
+        widgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      const entry = {};
+      const storage = new Map([[annotation.data.id, entry]]);
+
+      expect(annotation.mustBeViewed(storage, false)).toBeFalse();
+      entry.noView = false;
+      expect(annotation.mustBeViewed(storage, false)).toBeTrue();
+      entry.noView = true;
+      expect(annotation.mustBeViewed(storage, false)).toBeFalse();
+
+      // renderForms bypasses the stored noView value.
+      expect(annotation.mustBeViewed(storage, true)).toBeTrue();
+      expect(annotation.flags).toEqual(AnnotationFlag.NOVIEW);
+    });
+
     it("should handle unknown field names", async function () {
       const widgetRef = Ref.get(20, 0);
       const xref = new XRefMock([{ ref: widgetRef, data: widgetDict }]);
@@ -1618,8 +1663,6 @@ describe("annotation", function () {
     });
 
     it("should handle unknown text alignment, maximum length and flags", async function () {
-      textWidgetDict.set("DV", "foo");
-
       const textWidgetRef = Ref.get(124, 0);
       const xref = new XRefMock([{ ref: textWidgetRef, data: textWidgetDict }]);
 
@@ -1636,7 +1679,45 @@ describe("annotation", function () {
       expect(data.hidden).toBeFalse();
       expect(data.multiLine).toBeFalse();
       expect(data.comb).toBeFalse();
-      expect(data.defaultFieldValue).toEqual("foo");
+    });
+
+    it("should keep the current and default text values separate (issue 22602)", async function () {
+      const parent = new Dict();
+      parent.set("FT", textWidgetDict.get("FT"));
+      parent.set("DV", "default");
+      textWidgetDict.delete("FT");
+      textWidgetDict.set("Parent", parent);
+
+      const acroForm = new Dict();
+      acroForm.set("NeedAppearances", true);
+      const annotationGlobals = { ...annotationGlobalsMock, acroForm };
+      const xref = new XRefMock([helvRefObj]);
+      const evaluator = partialEvaluator.clone();
+      evaluator.xref = xref;
+      const task = new WorkerTask("test text field values");
+
+      for (const value of [undefined, "", "saved"]) {
+        if (value !== undefined) {
+          parent.set("V", value);
+        }
+        const annotation = await AnnotationFactory.create(
+          xref,
+          textWidgetDict,
+          annotationGlobals,
+          idFactoryMock
+        );
+        const field = annotation.getFieldObject();
+        expect(field.value).toBe(value ?? "");
+        expect(field.defaultValue).toBe("default");
+
+        const { opList } = await annotation.getOperatorList(
+          evaluator,
+          task,
+          RenderingIntentFlag.DISPLAY
+        );
+        expect(opList.fnArray).toContain(OPS.beginAnnotation);
+        expect(opList.fnArray.includes(OPS.showText)).toBe(Boolean(value));
+      }
     });
 
     it("should not set invalid text alignment, maximum length and flags", async function () {
@@ -3145,6 +3226,190 @@ describe("annotation", function () {
       expect(id).toEqual("124R");
       expect(isUsingOwnCanvas).toBeTrue();
       expect(canvasName).toEqual("checked");
+    });
+
+    describe("constructed appearances", function () {
+      const buttonWidgetRef = Ref.get(124, 0);
+      let xref, task, evaluator, annotationGlobals, mkDict;
+
+      beforeEach(function () {
+        mkDict = new Dict();
+        buttonWidgetDict.set("Rect", [0, 0, 20, 20]);
+        buttonWidgetDict.set("V", Name.get("Checked"));
+        buttonWidgetDict.set("MK", mkDict);
+        xref = new XRefMock([{ ref: buttonWidgetRef, data: buttonWidgetDict }]);
+        task = new WorkerTask("test constructed button appearances");
+        evaluator = partialEvaluator.clone({ ignoreErrors: true });
+        evaluator.xref = xref;
+        annotationGlobals = { ...annotationGlobalsMock, acroForm: new Dict() };
+        annotationGlobals.acroForm.set("NeedAppearances", true);
+      });
+
+      function createButton(globals = annotationGlobals, buttonXref = xref) {
+        return AnnotationFactory.create(
+          buttonXref,
+          buttonWidgetRef,
+          globals,
+          idFactoryMock
+        );
+      }
+
+      function setAppearances(checked = "", unchecked = "") {
+        const normal = new Dict();
+        for (const [state, content] of [
+          ["Checked", checked],
+          ["Off", unchecked],
+        ]) {
+          const dict = new Dict();
+          dict.set("BBox", [0, 0, 8, 8]);
+          normal.set(state, new StringStream(content, dict));
+        }
+        const ap = new Dict();
+        ap.set("N", normal);
+        buttonWidgetDict.set("AP", ap);
+      }
+
+      async function getOpList(annotation, value) {
+        const storage = new Map();
+        if (value !== undefined) {
+          storage.set(annotation.data.id, { value });
+        }
+        const { opList } = await annotation.getOperatorList(
+          evaluator,
+          task,
+          RenderingIntentFlag.PRINT,
+          storage
+        );
+        return opList;
+      }
+
+      function getMarks(opList) {
+        const glyphs =
+          opList.argsArray[opList.fnArray.indexOf(OPS.showText)][0];
+        return glyphs.map(g => g.unicode);
+      }
+
+      it("should use the /MK /CA mark for checkboxes without an /AP", async function () {
+        mkDict.set("CA", "8");
+        const annotation = await createButton(annotationGlobalsMock);
+        expect(getMarks(await getOpList(annotation))).toEqual(["8"]);
+      });
+
+      it("should construct the appearances when NeedAppearances is set (bug 2084610)", async function () {
+        // The existing streams draw #1a334c (checked) and #4c331a (unchecked).
+        setAppearances("0.1 0.2 0.3 rg", "0.3 0.2 0.1 rg");
+        mkDict.set("CA", "H");
+        mkDict.set("BG", [1, 1, 0]);
+        buttonWidgetDict.set("DA", "/ZaDb 0 Tf 1 0 0 rg");
+        buttonWidgetDict.set("AS", Name.get("Checked"));
+
+        for (const flags of [0, AnnotationFieldFlag.RADIO]) {
+          buttonWidgetDict.set("Ff", flags);
+          const annotation = await createButton();
+          const opList = await getOpList(annotation);
+          expect(opList.argsArray).not.toContain(["#1a334c"]);
+          // /MK /BG supplies the background; /DA supplies the mark color.
+          expect(opList.argsArray).toContain(["#ffff00"]);
+          expect(opList.argsArray).toContain(["#ff0000"]);
+          expect(getMarks(opList)).toEqual(["H"]);
+
+          const uncheckedOpList = await getOpList(annotation, false);
+          expect(uncheckedOpList.argsArray).not.toContain(["#4c331a"]);
+          expect(uncheckedOpList.argsArray).toContain(["#ffff00"]);
+          expect(uncheckedOpList.fnArray).not.toContain(OPS.showText);
+        }
+
+        // Keep the existing appearance without /NeedAppearances.
+        const annotation = await createButton(annotationGlobalsMock);
+        const opList = await getOpList(annotation);
+        expect(opList.fnArray).not.toContain(OPS.showText);
+        expect(opList.argsArray).toContain(["#1a334c"]);
+      });
+
+      it("should not draw a zero width border in a constructed appearance", async function () {
+        mkDict.set("BC", [1, 0, 0]);
+
+        // /MK /BC without border entries still draws a border.
+        const defaultOpList = await getOpList(
+          await createButton(annotationGlobalsMock)
+        );
+        expect(defaultOpList.argsArray).toContain(["#ff0000"]);
+
+        const bsDict = new Dict();
+        bsDict.set("W", 0);
+        buttonWidgetDict.set("BS", bsDict);
+        const opList = await getOpList(
+          await createButton(annotationGlobalsMock)
+        );
+        expect(opList.argsArray).not.toContain(["#ff0000"]);
+        // Only the border is dropped: the appearance is still built.
+        expect(opList.fnArray).toContain(OPS.showText);
+      });
+
+      it("should construct round radio buttons with the circle style", async function () {
+        setAppearances();
+        mkDict.set("BG", [0, 0, 1]);
+        buttonWidgetDict.set("Ff", AnnotationFieldFlag.RADIO);
+
+        // Argument counts indexed by DrawOPS.
+        const ARGS_COUNT = [2, 2, 6, 4, 0];
+        const getBackgroundPathOps = opList => {
+          const index = opList.fnArray.indexOf(OPS.constructPath);
+          const [[path]] = opList.argsArray[index].slice(1);
+          const ops = [];
+          for (let i = 0; i < path.length; i += 1 + ARGS_COUNT[path[i]]) {
+            ops.push(path[i]);
+          }
+          return ops;
+        };
+
+        // Both states have a round background for the default disc mark.
+        const annotation = await createButton();
+        for (const value of [true, false]) {
+          expect(
+            getBackgroundPathOps(await getOpList(annotation, value))
+          ).toContain(DrawOPS.curveTo);
+        }
+        mkDict.set("CA", "H");
+        const starAnnotation = await createButton();
+        for (const value of [true, false]) {
+          expect(
+            getBackgroundPathOps(await getOpList(starAnnotation, value))
+          ).not.toContain(DrawOPS.curveTo);
+        }
+      });
+
+      it("should keep the /MK /CA mark when saving and reloading checkboxes", async function () {
+        const normal = new Dict();
+        normal.set("Checked", Ref.get(314, 0));
+        normal.set("Off", Ref.get(271, 0));
+        const ap = new Dict();
+        ap.set("N", normal);
+        buttonWidgetDict.set("AP", ap);
+        buttonWidgetDict.set("V", Name.get("Off"));
+        mkDict.set("CA", "H");
+        mkDict.set("BG", [1]);
+
+        const annotation = await createButton();
+        const changes = new RefMap();
+        await annotation.save(
+          evaluator,
+          task,
+          new Map([[annotation.data.id, { value: true }]]),
+          changes
+        );
+        const [{ data }] = await writeChanges(changes, xref);
+        expect(data).toContain("/MK << /CA (H) /BG [1 1 1]>>");
+
+        const savedXref = new XRefMock([
+          { ref: buttonWidgetRef, data: changes.get(buttonWidgetRef).data },
+        ]);
+        const savedAnnotation = await createButton(
+          annotationGlobals,
+          savedXref
+        );
+        expect(getMarks(await getOpList(savedAnnotation))).toEqual(["H"]);
+      });
     });
 
     it("should render checkboxes for printing", async function () {
@@ -6187,6 +6452,52 @@ describe("annotation", function () {
         "Hello PDF.js",
         "World !",
       ]);
+    });
+
+    it("should keep an empty line of a FreeText annotation (leading = font size)", async function () {
+      const helvDict = new Dict();
+      helvDict.set("BaseFont", Name.get("Helvetica"));
+      helvDict.set("Type", Name.get("Font"));
+      helvDict.set("Subtype", Name.get("Type1"));
+      const fontDict = new Dict();
+      fontDict.set("Helv", helvDict);
+      const resourcesDict = new Dict();
+      resourcesDict.set("Font", fontDict);
+
+      const appearanceDict = new Dict();
+      appearanceDict.set("Resources", resourcesDict);
+      const appearanceStatesDict = new Dict();
+      appearanceStatesDict.set(
+        "N",
+        new StringStream(
+          "BT /Helv 10 Tf 10 TL 2 40 Td (First) Tj T* () Tj T* (Last) Tj ET",
+          appearanceDict
+        )
+      );
+      const freeTextDict = new Dict();
+      freeTextDict.set("Type", Name.get("Annot"));
+      freeTextDict.set("Subtype", Name.get("FreeText"));
+      freeTextDict.set("Rect", [0, 0, 50, 50]);
+      freeTextDict.set("AP", appearanceStatesDict);
+
+      const freeTextRef = Ref.get(143, 0);
+      const xref = (partialEvaluator.xref = new XRefMock([
+        { ref: freeTextRef, data: freeTextDict },
+      ]));
+      resourcesDict.assignXref(xref);
+      const annotation = await AnnotationFactory.create(
+        xref,
+        freeTextRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      await annotation.extractTextContent(
+        partialEvaluator,
+        new WorkerTask("test FreeText empty line"),
+        [-Infinity, -Infinity, Infinity, Infinity]
+      );
+
+      expect(annotation.data.textContent).toEqual(["First", "", "Last"]);
     });
   });
 

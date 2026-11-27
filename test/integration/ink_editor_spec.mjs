@@ -69,6 +69,19 @@ const drawLine = async (page, x0, y0, x1, y1) => {
   await awaitPromise(clickHandle);
 };
 
+// Tokenize generated SVG paths, ignoring whitespace.
+const getPathTokens = d => d.match(/[a-z]|-?[\d.]+/gi);
+
+// Extract endpoints and control points from the generated M/L/C/Z paths.
+const getPathPoints = d => {
+  const numbers = d.match(/-?[\d.]+/g).map(Number);
+  const points = [];
+  for (let i = 0; i < numbers.length; i += 2) {
+    points.push([numbers[i], numbers[i + 1]]);
+  }
+  return points;
+};
+
 // Draw an editor large enough to have room for two fingers on it, and leave it
 // selected since that's what makes it resizable with a touchscreen.
 const drawAndSelectEditor = async page => {
@@ -88,6 +101,56 @@ const drawAndSelectEditor = async page => {
     editor: await getRect(page, getEditorSelector(0)),
   };
 };
+
+describe("Zoom out with ink near a page edge", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "empty.pdf",
+      ".annotationEditorLayer",
+      100,
+      null,
+      null,
+      { width: 1000, height: 900 }
+    );
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must keep the stroke at the same PDF coordinates", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const { x, y } = await getRect(page, ".annotationEditorLayer");
+        await drawLine(page, x + 8, y + 60, x + 100, y + 90);
+        await commit(page);
+
+        const getPoints = () =>
+          page.evaluate(() => {
+            const { map } =
+              window.PDFViewerApplication.pdfDocument.annotationStorage
+                .serializable;
+            const [drawing] = map.values();
+            return Array.from(drawing.paths.points[0]);
+          });
+        const before = await getPoints();
+        await page.evaluate(() => {
+          window.PDFViewerApplication.pdfViewer.currentScale /= 4;
+        });
+        const after = await getPoints();
+
+        expect(after.length).withContext(browserName).toEqual(before.length);
+        for (let i = 0; i < before.length; i++) {
+          expect(after[i]).withContext(browserName).toBeCloseTo(before[i], 3);
+        }
+      })
+    );
+  });
+});
 
 describe("Ink Editor", () => {
   describe("Basic operations", () => {
@@ -1022,8 +1085,11 @@ describe("Ink Editor", () => {
 
           let editorSelector = getEditorSelector(1);
           await waitForSelectedEditor(page, editorSelector);
-          await dragAndDrop(page, editorSelector, [[0, -30]], /* steps = */ 10);
+          // Cross onto the first page on the only pointer move.
+          await dragAndDrop(page, editorSelector, [[0, -30]]);
           await waitForSerialized(page, 2);
+          const pageIndices = await getSerialized(page, data => data.pageIndex);
+          expect(pageIndices).withContext(browserName).toEqual([0, 0]);
 
           await page.waitForSelector(`${editorSelector} button.deleteButton`);
           await page.click(`${editorSelector} button.deleteButton`);
@@ -1148,9 +1214,63 @@ describe("The drawn line must reach the pointer", () => {
           `.canvasWrapper svg.draw path[d]:not([d=""])`,
           el => el.getAttribute("d")
         );
-        expect(/\sL\s[\d.-]+\s[\d.-]+\s*$/.test(d))
+        expect(/L\s*[\d.-]+\s+[\d.-]+\s*$/.test(d))
           .withContext(`In ${browserName}, with "${d}"`)
           .toBeFalse();
+      })
+    );
+  });
+
+  it("must update the path when the drawing session is cancelled", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const rect = await getRect(page, ".annotationEditorLayer");
+        const x = Math.round(rect.x + 50);
+        const y = Math.round(rect.y + rect.height / 2);
+        await page.evaluate(() => {
+          window.addEventListener(
+            "pointerdown",
+            e => {
+              globalThis.__pointerId = e.pointerId;
+            },
+            { capture: true, once: true }
+          );
+        });
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        for (const deltaX of [20, 60, 120, 200]) {
+          await page.mouse.move(x + deltaX, y);
+        }
+        await page.evaluate(() => {
+          window.dispatchEvent(
+            new PointerEvent("pointercancel", {
+              pointerId: globalThis.__pointerId,
+            })
+          );
+          delete globalThis.__pointerId;
+        });
+        await page.waitForSelector(getEditorSelector(0));
+
+        // Compare paths before releasing the mouse button.
+        const { displayed, stored } = await page.evaluate(id => {
+          const editor =
+            window.PDFViewerApplication.pdfViewer._layerProperties.annotationEditorUIManager.getEditor(
+              id
+            );
+          return {
+            displayed: document
+              .querySelector(".canvasWrapper svg.draw path[d]")
+              .getAttribute("d"),
+            stored: editor._drawOutlines.toSVGPath(),
+          };
+        }, getEditorSelector(0).slice(1));
+        await page.mouse.up();
+
+        expect(getPathPoints(displayed))
+          .withContext(`In ${browserName}, with "${displayed}"`)
+          .toEqual(getPathPoints(stored));
       })
     );
   });
@@ -1169,8 +1289,38 @@ describe("The drawn line must reach the pointer", () => {
         const rect = await getRect(page, ".annotationEditorLayer");
         const x = Math.round(rect.x + 50);
         const y = Math.round(rect.y + rect.height / 2);
-        const points = [20, 60, 120].map(deltaX => [x + deltaX, y]);
+        // Use a bend to expose dropped intermediate samples.
+        const points = [
+          [x + 20, y + 10],
+          [x + 60, y - 10],
+          [x + 120, y + 15],
+        ];
 
+        // Replay positions and time intervals: smoothing uses both.
+        await page.evaluate(() => {
+          const samples = (globalThis.__samples = []);
+          const ac = new AbortController();
+          globalThis.__stopRecording = () => ac.abort();
+          window.addEventListener(
+            "pointerdown",
+            e => samples.push([e.clientX, e.clientY, e.timeStamp]),
+            { capture: true, signal: ac.signal }
+          );
+          window.addEventListener(
+            "pointermove",
+            e => {
+              if (!samples.length) {
+                // The pointer isn't down yet.
+                return;
+              }
+              const coalesced = e.getCoalescedEvents?.();
+              for (const s of coalesced?.length ? coalesced : [e]) {
+                samples.push([s.clientX, s.clientY, s.timeStamp]);
+              }
+            },
+            { capture: true, signal: ac.signal }
+          );
+        });
         let pointerUpHandle = await waitForPointerUp(page);
         await page.mouse.move(x, y);
         await page.mouse.down();
@@ -1181,17 +1331,36 @@ describe("The drawn line must reach the pointer", () => {
           `.canvasWrapper svg.draw path[d]:not([d=""])`,
           el => el.getAttribute("d").trim()
         );
+        const samples = await page.evaluate(() => {
+          globalThis.__stopRecording();
+          delete globalThis.__stopRecording;
+          const s = globalThis.__samples;
+          delete globalThis.__samples;
+          return s;
+        });
         await page.mouse.up();
         await awaitPromise(pointerUpHandle);
 
         pointerUpHandle = await waitForPointerUp(page);
+        await page.evaluate(() => {
+          window.addEventListener(
+            "pointerdown",
+            e => {
+              globalThis.__pointerDownTime = e.timeStamp;
+            },
+            { capture: true, once: true }
+          );
+        });
         await page.mouse.move(x, y);
         await page.mouse.down();
-        // Preserve each sample's offset from the dispatched event. Firefox can
-        // snap that event to a device pixel, so its client coordinates may
-        // differ from the requested ones at a fractional device pixel ratio.
-        const [lastX, lastY] = points.at(-1);
-        const deltas = points.map(([px, py]) => [px - lastX, py - lastY]);
+        // Preserve sample offsets if event coordinates are rounded.
+        const [[, , startTime], ...moves] = samples;
+        const [lastX, lastY] = moves.at(-1);
+        const deltas = moves.map(([px, py, time]) => [
+          px - lastX,
+          py - lastY,
+          time - startTime,
+        ]);
         await page.evaluate(sampleDeltas => {
           const prototype = PointerEvent.prototype;
           const descriptor = Object.getOwnPropertyDescriptor(
@@ -1214,21 +1383,24 @@ describe("The drawn line must reach the pointer", () => {
             configurable: true,
             value() {
               globalThis.__coalescedEventsCalls++;
-              return sampleDeltas.map(
-                ([deltaX, deltaY]) =>
-                  new PointerEvent("pointermove", {
-                    buttons: this.buttons,
-                    clientX: this.clientX + deltaX,
-                    clientY: this.clientY + deltaY,
-                    isPrimary: this.isPrimary,
-                    pointerId: this.pointerId,
-                    pointerType: this.pointerType,
-                  })
-              );
+              return sampleDeltas.map(([deltaX, deltaY, deltaTime]) => {
+                const sample = new PointerEvent("pointermove", {
+                  buttons: this.buttons,
+                  clientX: this.clientX + deltaX,
+                  clientY: this.clientY + deltaY,
+                  isPrimary: this.isPrimary,
+                  pointerId: this.pointerId,
+                  pointerType: this.pointerType,
+                });
+                Object.defineProperty(sample, "timeStamp", {
+                  value: globalThis.__pointerDownTime + deltaTime,
+                });
+                return sample;
+              });
             },
           });
         }, deltas);
-        await page.mouse.move(lastX, lastY);
+        await page.mouse.move(...points.at(-1));
         const { coalescedEventsCalls, path } = await page.evaluate(() => {
           const d = document
             .querySelector(`.canvasWrapper svg.draw path[d]:not([d=""])`)
@@ -1237,6 +1409,7 @@ describe("The drawn line must reach the pointer", () => {
           globalThis.__restoreGetCoalescedEvents();
           delete globalThis.__coalescedEventsCalls;
           delete globalThis.__restoreGetCoalescedEvents;
+          delete globalThis.__pointerDownTime;
           return {
             coalescedEventsCalls: calls,
             path: d.slice(d.lastIndexOf("M")).trim(),
@@ -1246,7 +1419,9 @@ describe("The drawn line must reach the pointer", () => {
         await awaitPromise(pointerUpHandle);
 
         expect(coalescedEventsCalls).withContext(`In ${browserName}`).toBe(1);
-        expect(path).withContext(`In ${browserName}`).toEqual(sequentialPath);
+        expect(getPathTokens(path))
+          .withContext(`In ${browserName}, with "${path}"`)
+          .toEqual(getPathTokens(sequentialPath));
       })
     );
   });
@@ -1273,10 +1448,10 @@ describe("The pen-drawn shape must maintain correct curvature regardless of the 
     const y = rect.y + 200;
     await page.mouse.move(x, y);
     await page.mouse.down();
-    // Create a reference curve on first page.
+    // Draw to the left page edge.
     await page.mouse.move(x - 100, y);
-    if (page !== 1) {
-      // Add a move to create a curve that extends beyond the page boundary.
+    if (pageNumber !== 1) {
+      // Continue beyond the page boundary.
       await page.mouse.move(x - 200, y);
     }
     await page.mouse.up();
@@ -1299,17 +1474,27 @@ describe("The pen-drawn shape must maintain correct curvature regardless of the 
 
         await switchToInk(page);
 
-        // Creating a reference curve on the first page with end
-        // within the page boundaries.
+        // End at the page edge.
         const d1 = await getCurveOnPage({ pageNumber: 1, page });
 
-        // Creating a curve on the second page with end
-        // beyond the page boundaries.
+        // Release outside the second page.
         const d2 = await getCurveOnPage({ pageNumber: 2, page });
 
-        // Expect that the endpoint beyond the boundaries is ignored,
-        // ensuring both curves have the same shape on both pages.
-        expect(d1).withContext(`In ${browserName}`).toEqual(d2);
+        // Timestamps can change the samples, but all path points must stay on
+        // the horizontal segment between the start and the left page edge.
+        const points1 = getPathPoints(d1);
+        const points2 = getPathPoints(d2);
+        const [startX, startY] = points1[0];
+        expect(points2[0])
+          .withContext(`In ${browserName}, with "${d2}"`)
+          .toEqual(points1[0]);
+        expect(
+          [...points1, ...points2].every(
+            ([x, y]) => y === startY && x >= 0 && x <= startX
+          )
+        )
+          .withContext(`In ${browserName}, with "${d1}" and "${d2}"`)
+          .toBeTrue();
       })
     );
   });
@@ -1859,6 +2044,75 @@ describe("Removal during a pinch-resize", () => {
           await finger0?.end();
           await finger1?.end();
         }
+      })
+    );
+  });
+});
+
+describe("Rebuild ink after zooming and rotating an unloaded page", () => {
+  let pages;
+
+  beforeEach(async () => {
+    pages = await loadAndWait(
+      "empty.pdf",
+      ".annotationEditorLayer",
+      50,
+      null,
+      null,
+      { width: 1000, height: 900 }
+    );
+  });
+
+  afterEach(async () => {
+    await closePages(pages);
+  });
+
+  it("must update the editor padding and the SVG transform", async () => {
+    await Promise.all(
+      pages.map(async ([browserName, page]) => {
+        await switchToInk(page);
+
+        const { x, y } = await getRect(page, ".annotationEditorLayer");
+        await drawLine(page, x + 60, y + 60, x + 150, y + 100);
+        await commit(page);
+
+        const editorSelector = getEditorSelector(0);
+        const svgSelector = ".canvasWrapper svg.draw";
+        const before = await getRect(page, editorSelector);
+        await page.evaluate(() => {
+          const { pdfViewer } = window.PDFViewerApplication;
+          const { renderingQueue } = pdfViewer;
+          const pageView = pdfViewer.getPageView(0);
+          renderingQueue.renderHighestPriority = () => {};
+          pageView.reset();
+          pdfViewer.currentScale *= 2;
+          pdfViewer.pagesRotation = 90;
+          renderingQueue.renderView(pageView);
+        });
+
+        const editorRect = await getRect(page, editorSelector);
+        const svgRect = await getRect(page, svgSelector);
+        for (const key of ["x", "y", "width", "height"]) {
+          expect(Math.abs(editorRect[key] - svgRect[key]))
+            .withContext(`${browserName} ${key}`)
+            .toBeLessThanOrEqual(1);
+        }
+
+        // Rotation swaps the dimensions, and the three CSS pixels of
+        // padding on each side stay constant through the zoom change.
+        const padding = 6;
+        expect(Math.abs(editorRect.width - (2 * before.height - padding)))
+          .withContext(browserName)
+          .toBeLessThanOrEqual(1);
+        expect(Math.abs(editorRect.height - (2 * before.width - padding)))
+          .withContext(browserName)
+          .toBeLessThanOrEqual(1);
+        const transform = await page.$eval(`${svgSelector} defs > path`, path =>
+          path.getAttribute("transform")
+        );
+        expect(transform)
+          .withContext(browserName)
+          .toMatch(/^matrix\(0 [\d.]+ -/);
       })
     );
   });

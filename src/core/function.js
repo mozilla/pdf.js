@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
+import { bytesToString, FormatError, info, shadow } from "../shared/util.js";
 import { Dict, Ref } from "./primitives.js";
-import { FormatError, info, shadow, warn } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
-import { buildPostScriptJsFunction } from "./postscript/js_evaluator.js";
-import { buildPostScriptWasmFunction } from "./postscript/wasm_compiler.js";
 import { isNumberArray } from "./core_utils.js";
 import { LocalFunctionCache } from "./image_utils.js";
 import { MathClamp } from "../shared/math_clamp.js";
@@ -30,21 +28,15 @@ const FunctionType = {
 };
 
 class PDFFunctionFactory {
-  static #useWasm = true;
-
-  static setOptions({ useWasm }) {
-    this.#useWasm = useWasm;
-  }
-
   constructor({ xref }) {
     this.xref = xref;
   }
 
   get useWasm() {
-    return PDFFunctionFactory.#useWasm;
+    return this.xref.pdfManager.evaluatorOptions.useWasm;
   }
 
-  create(fn, parseArray = false) {
+  async create(fn, parseArray = false) {
     let fnRef, parsedFn;
 
     // Check if the Function is cached first, to avoid re-parsing it.
@@ -69,9 +61,9 @@ class PDFFunctionFactory {
           'PDFFunctionFactory.create - expected "parseArray" argument.'
         );
       }
-      parsedFn = PDFFunction.parseArray(this, fnObj);
+      parsedFn = await PDFFunction.parseArray(this, fnObj);
     } else {
-      parsedFn = PDFFunction.parse(this, fnObj);
+      parsedFn = await PDFFunction.parse(this, fnObj);
     }
 
     // Attempt to cache the parsed Function, by reference.
@@ -132,7 +124,7 @@ class PDFFunction {
     // 32 is a valid bps so shifting won't work
     const sampleMul = 1.0 / (2.0 ** bps - 1);
 
-    const strBytes = stream.getBytes((length * bps + 7) / 8);
+    const strBytes = stream.peekBytes(Math.ceil((length * bps) / 8));
     let strIdx = 0;
     for (let i = 0; i < length; i++) {
       while (codeSize < bps) {
@@ -141,13 +133,15 @@ class PDFFunction {
         codeSize += 8;
       }
       codeSize -= bps;
-      array[i] = (codeBuf >> codeSize) * sampleMul;
+      // Use an unsigned shift, since `codeBuf` can have the high bit set for
+      // 32 bits-per-sample data.
+      array[i] = (codeBuf >>> codeSize) * sampleMul;
       codeBuf &= (1 << codeSize) - 1;
     }
     return array;
   }
 
-  static parse(factory, fn) {
+  static parse(factory, fn, ancestors) {
     const dict = fn.dict || fn;
     const typeNum = dict.get("FunctionType");
 
@@ -157,19 +151,19 @@ class PDFFunction {
       case FunctionType.EXPONENTIAL_INTERPOLATION:
         return this.constructInterpolated(factory, dict);
       case FunctionType.STITCHING:
-        return this.constructStitched(factory, dict);
+        return this.constructStitched(factory, dict, ancestors);
       case FunctionType.POSTSCRIPT_CALCULATOR:
         return this.constructPostScript(factory, fn, dict);
     }
     throw new FormatError(`Unknown function type: ${typeNum}`);
   }
 
-  static parseArray(factory, fnObj) {
+  static async parseArray(factory, fnObj) {
     const { xref } = factory;
 
     const fnArray = [];
     for (const fn of fnObj) {
-      fnArray.push(this.parse(factory, xref.fetchIfRef(fn)));
+      fnArray.push(await this.parse(factory, xref.fetchIfRef(fn)));
     }
     if (fnArray.length === 1) {
       return fnArray[0];
@@ -356,7 +350,7 @@ class PDFFunction {
     );
   }
 
-  static constructStitched(factory, dict) {
+  static async constructStitched(factory, dict, ancestors = new Set()) {
     const domain = toNumberArray(dict.getArray("Domain"));
 
     if (!domain) {
@@ -370,8 +364,16 @@ class PDFFunction {
     const { xref } = factory;
 
     const fns = [];
-    for (const fn of dict.get("Functions")) {
-      fns.push(this.parse(factory, xref.fetchIfRef(fn)));
+    if (ancestors.has(dict)) {
+      throw new FormatError("Circular stitched function");
+    }
+    ancestors.add(dict);
+    try {
+      for (const fn of dict.get("Functions")) {
+        fns.push(await this.parse(factory, xref.fetchIfRef(fn), ancestors));
+      }
+    } finally {
+      ancestors.delete(dict);
     }
     // Each sub-function takes one input and produces all outputs (Table 41).
     const numOutputs = fns[0]?.numOutputs ?? 0;
@@ -415,7 +417,7 @@ class PDFFunction {
     return setArity(constructStitchedFn, inputSize, numOutputs);
   }
 
-  static constructPostScript(factory, fn, dict) {
+  static async constructPostScript(factory, fn, dict) {
     const domain = toNumberArray(dict.getArray("Domain"));
     const range = toNumberArray(dict.getArray("Range"));
 
@@ -427,23 +429,15 @@ class PDFFunction {
       throw new FormatError("No range.");
     }
 
-    const psCode = fn.getString();
+    const { buildPostScriptFunction } = await import(
+      /* webpackChunkName: "postscript" */ "./postscript/calculator.js"
+    );
+    const psCode = bytesToString(fn.peekBytes());
     const numInputs = domain.length / 2,
       numOutputs = range.length / 2;
 
-    try {
-      if (factory.useWasm) {
-        const wasmFn = buildPostScriptWasmFunction(psCode, domain, range);
-        if (wasmFn) {
-          return setArity(wasmFn, numInputs, numOutputs);
-        }
-      }
-    } catch {}
-
-    warn("Failed to compile PostScript function to wasm, falling back to JS");
-
     return setArity(
-      buildPostScriptJsFunction(psCode, domain, range),
+      buildPostScriptFunction(psCode, domain, range, factory.useWasm),
       numInputs,
       numOutputs
     );

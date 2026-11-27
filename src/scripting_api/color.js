@@ -14,7 +14,6 @@
  */
 
 import { ColorConverters } from "../shared/scripting_utils.js";
-import { PDFObject } from "./pdf_object.js";
 
 function isValidSpace(cColorSpace) {
   return (
@@ -46,7 +45,7 @@ function getCorrectColor(colorArray) {
   return isValidColor(colorArray) ? colorArray : ["G", 0];
 }
 
-class Color extends PDFObject {
+class Color {
   transparent = ["T"];
 
   black = ["G", 0];
@@ -70,10 +69,6 @@ class Color extends PDFObject {
   gray = ["G", 0.5];
 
   ltGray = ["G", 0.75];
-
-  constructor() {
-    super({});
-  }
 
   convert(colorArray, cColorSpace) {
     if (!isValidSpace(cColorSpace)) {

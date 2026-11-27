@@ -37,7 +37,7 @@ class FONT_INFO {
     "vertical",
   ];
 
-  static strings = ["fallbackName", "loadedName"];
+  static strings = ["fallbackName", "generatedFontName", "loadedName"];
 
   static OFFSET_BBOX = Math.ceil((this.bools.length * 2) / 8);
 

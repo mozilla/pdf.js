@@ -217,8 +217,12 @@ class FontInfo {
     return shadow(this, "fallbackName", this.#readString(0));
   }
 
+  get generatedFontName() {
+    return shadow(this, "generatedFontName", this.#readString(1));
+  }
+
   get loadedName() {
-    return shadow(this, "loadedName", this.#readString(1));
+    return shadow(this, "loadedName", this.#readString(2));
   }
 
   #getBufferOffset(index) {

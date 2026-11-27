@@ -30,7 +30,6 @@ import {
   XRefParseException,
 } from "./core_utils.js";
 import { BaseStream } from "./base_stream.js";
-import { CipherTransformFactory } from "./crypto.js";
 
 class XRef {
   #cacheMap = new Map();
@@ -116,7 +115,7 @@ class XRef {
     this.startXRefQueue = [startXRef];
   }
 
-  parse(recoveryMode = false) {
+  async parse(recoveryMode = false) {
     this.#parsedWithRecovery = recoveryMode;
     let trailerDict;
     if (!recoveryMode) {
@@ -140,6 +139,9 @@ class XRef {
     if (encrypt instanceof Dict) {
       const ids = trailerDict.get("ID");
       const fileId = ids?.length ? ids[0] : "";
+      const { CipherTransformFactory } = await import(
+        /* webpackChunkName: "crypto" */ "./crypto.js"
+      );
       // The 'Encrypt' dictionary itself should not be encrypted, and by
       // setting `suppressEncryption` we can prevent an infinite loop inside
       // of `XRef_fetchUncompressed` if the dictionary contains indirect
@@ -351,23 +353,26 @@ class XRef {
     const [typeFieldWidth, offsetFieldWidth, generationFieldWidth] =
       streamState.byteWidths;
 
+    if (
+      ![typeFieldWidth, offsetFieldWidth, generationFieldWidth].every(
+        width => Number.isInteger(width) && width >= 0
+      )
+    ) {
+      throw new FormatError(
+        `Invalid XRef entry fields length: ${streamState.byteWidths}`
+      );
+    }
+    // Zero-width entries carry no data, so skip the entire stream.
+    if (typeFieldWidth + offsetFieldWidth + generationFieldWidth === 0) {
+      return;
+    }
+
     const entryRanges = streamState.entryRanges;
     while (entryRanges.length > 0) {
       const [first, n] = entryRanges;
 
       if (!Number.isInteger(first) || !Number.isInteger(n)) {
         throw new FormatError(`Invalid XRef range fields: ${first}, ${n}`);
-      }
-      // Each entry must consume a byte to bound the loop by the stream length.
-      if (
-        ![typeFieldWidth, offsetFieldWidth, generationFieldWidth].every(
-          width => Number.isInteger(width) && width >= 0
-        ) ||
-        typeFieldWidth + offsetFieldWidth + generationFieldWidth === 0
-      ) {
-        throw new FormatError(
-          `Invalid XRef entry fields length: ${first}, ${n}`
-        );
       }
       for (let i = streamState.entryNum; i < n; ++i) {
         streamState.entryNum = i;
@@ -808,6 +813,12 @@ class XRef {
         if (e instanceof MissingDataException) {
           throw e;
         }
+        // Don't let the state of a corrupt XRef table/stream, which is only
+        // kept to be able to resume parsing after a `MissingDataException`,
+        // be used when parsing the next one.
+        delete this._tableState;
+        delete this.streamState;
+
         this.#xrefSectionsComplete = false;
         info("(while reading XRef): " + e);
       }

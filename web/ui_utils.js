@@ -219,6 +219,9 @@ function binarySearchFirstItem(items, condition, start = 0) {
   return minIndex; /* === maxIndex */
 }
 
+// Used to add a fast-path for non-integer numbers in `approximateFraction`.
+const ApproximateFractionCache = new Map();
+
 /**
  *  Approximates float number as a fraction using Farey sequence (max order
  *  of 8).
@@ -240,6 +243,10 @@ function approximateFraction(x) {
     return [1, xinv];
   }
 
+  const cached = ApproximateFractionCache.get(x);
+  if (cached) {
+    return cached.slice();
+  }
   const x_ = x > 1 ? xinv : x;
   // a/b and c/d are neighbours in Farey sequence.
   let a = 0,
@@ -263,10 +270,14 @@ function approximateFraction(x) {
     }
   }
   // Select closest of the neighbours to x.
+  let res;
   if (x_ - a / b < c / d - x_) {
-    return x_ === x ? [a, b] : [b, a];
+    res = x_ === x ? [a, b] : [b, a];
+  } else {
+    res = x_ === x ? [c, d] : [d, c];
   }
-  return x_ === x ? [c, d] : [d, c];
+  ApproximateFractionCache.set(x, res);
+  return res;
 }
 
 /**

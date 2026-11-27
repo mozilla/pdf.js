@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { assert, isNodeJS } from "../../src/shared/util.js";
+import { assert, isNodeJS, stringToBytes } from "../../src/shared/util.js";
 import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import {
   fetchData as fetchDataNode,
@@ -21,19 +21,23 @@ import {
 } from "../../src/display/node_utils.js";
 import { NullStream, StringStream } from "../../src/core/stream.js";
 import { Page, PDFDocument } from "../../src/core/document.js";
+import { decodeBrotli } from "../../src/core/wasm_loader.js";
 import { DOMBinaryDataFactory } from "../../src/display/binary_data_factory.js";
 import { fetchData as fetchDataDOM } from "../../src/display/dom_utils.js";
+import { ImageResizer } from "../../src/core/image_resizer.js";
 
 const TEST_PDFS_PATH = isNodeJS ? "./test/pdfs/" : "../pdfs/";
 
 const CMAP_URL = isNodeJS ? "./external/bcmaps/" : "../../external/bcmaps/";
 
+const ICC_URL = isNodeJS ? "./external/iccs/" : "../../external/iccs/";
+
 const STANDARD_FONT_DATA_URL = isNodeJS
-  ? "./external/standard_fonts/"
-  : "../../external/standard_fonts/";
+  ? "./external/hellbox/"
+  : "../../external/hellbox/";
 
 const WASM_URL = isNodeJS
-  ? "../../generic-legacy/web/wasm/"
+  ? "./build/generic-legacy/web/wasm/"
   : "../../build/generic/web/wasm/";
 
 class DefaultFileReaderFactory {
@@ -50,13 +54,14 @@ const DefaultBinaryDataFactory =
     : DOMBinaryDataFactory;
 
 async function fetchBuiltInCMapHelper(binaryDataFactory, cMapPacked, name) {
-  return {
-    cMapData: await binaryDataFactory.fetch({
-      kind: "cMapUrl",
-      filename: `${name}${cMapPacked ? ".bcmap" : ""}`,
-    }),
-    isCompressed: cMapPacked,
-  };
+  let cMapData = await binaryDataFactory.fetch({
+    kind: "cMapUrl",
+    filename: `${name}${cMapPacked ? ".bcmap.br" : ""}`,
+  });
+  if (cMapPacked) {
+    cMapData = await decodeBrotli(cMapData);
+  }
+  return { cMapData, cMapPacked };
 }
 
 function buildGetDocumentParams(filename, options) {
@@ -71,6 +76,57 @@ function buildGetDocumentParams(filename, options) {
     params[option] = options[option];
   }
   return params;
+}
+
+// Builds a PDF file from its objects, with a valid xref table.
+function assemblePdf(objects, trailerEntries = "") {
+  let pdf = "%PDF-1.7\n";
+  const offsets = [];
+  for (const obj of objects) {
+    offsets.push(pdf.length);
+    pdf += obj;
+  }
+  const xrefOffset = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += "0000000000 65535 f \n";
+  for (const offset of offsets) {
+    pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
+  }
+  pdf +=
+    `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R ${trailerEntries}>>\n` +
+    `startxref\n${xrefOffset}\n%%EOF\n`;
+  return stringToBytes(pdf);
+}
+
+function buildPdfWithFont(content, fontObjects) {
+  return assemblePdf([
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] " +
+      "/Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>\nendobj\n",
+    `4 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`,
+    ...fontObjects,
+  ]);
+}
+
+function buildTextPdf(content, fontEntries = "/Encoding /WinAnsiEncoding") {
+  return buildPdfWithFont(content, [
+    "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica " +
+      `${fontEntries} >>\nendobj\n`,
+  ]);
+}
+
+function buildVerticalTextPdf(content) {
+  return buildPdfWithFont(content, [
+    "5 0 obj\n<< /Type /Font /Subtype /Type0 /BaseFont /VerticalTest " +
+      "/Encoding /UniJIS-UTF16-V /DescendantFonts [6 0 R] >>\nendobj\n",
+    "6 0 obj\n<< /Type /Font /Subtype /CIDFontType0 /BaseFont /VerticalTest " +
+      "/CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 6 >> " +
+      "/FontDescriptor 7 0 R /DW2 [880 -900] >>\nendobj\n",
+    "7 0 obj\n<< /Type /FontDescriptor /FontName /VerticalTest /Flags 4 " +
+      "/FontBBox [0 -120 1000 880] /ItalicAngle 0 /Ascent 880 /Descent -120 " +
+      "/CapHeight 700 /StemV 80 >>\nendobj\n",
+  ]);
 }
 
 // Builds a PDF sound object's stream dictionary (ISO 32000-1, 12.5.6.16). Pass
@@ -130,6 +186,11 @@ class XRefMock {
   #newTemporaryRefNum = null;
 
   stream = new NullStream();
+
+  pdfManager = {
+    evaluatorOptions: { useWasm: true },
+    imageResizer: new ImageResizer(),
+  };
 
   constructor(array = []) {
     for (const { ref, data } of array) {
@@ -308,8 +369,11 @@ class TestPdfsServer {
 }
 
 export {
+  assemblePdf,
   BoundedXRefMock,
   buildGetDocumentParams,
+  buildTextPdf,
+  buildVerticalTextPdf,
   CMAP_URL,
   createIdFactory,
   createSoundDict,
@@ -317,8 +381,10 @@ export {
   DefaultFileReaderFactory,
   fetchBuiltInCMapHelper,
   getCrossOriginHostname,
+  ICC_URL,
   STANDARD_FONT_DATA_URL,
   TEST_PDFS_PATH,
   TestPdfsServer,
+  WASM_URL,
   XRefMock,
 };

@@ -651,14 +651,10 @@ async function createBuiltInCMap(name, fetchBuiltInCMap) {
   if (!BUILT_IN_CMAPS.has(name)) {
     throw new Error("Unknown CMap name: " + name);
   }
-  if (!fetchBuiltInCMap) {
-    throw new Error("Built-in CMap parameters are not provided.");
-  }
-
-  const { cMapData, isCompressed } = await fetchBuiltInCMap(name);
+  const { cMapData, cMapPacked } = await fetchBuiltInCMap(name);
   const cMap = new CMap(true);
 
-  if (isCompressed) {
+  if (cMapPacked) {
     return new BinaryCMapReader().process(cMapData, cMap, useCMap =>
       extendCMap(cMap, fetchBuiltInCMap, useCMap)
     );

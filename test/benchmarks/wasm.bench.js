@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 
-import { bench, describe } from "vitest";
 import { captureImages, captureWasmImages } from "./image_utils.js";
+import { benchmark } from "./bench_utils.js";
+import { describe } from "vitest";
 import { JBig2CCITTFaxImage } from "../../src/core/jbig2_ccittFax.js";
 import { JpxImage } from "../../src/core/jpx.js";
 
@@ -52,12 +53,12 @@ const ICC_IMAGES = await captureImages(
 
 describe("wasm", () => {
   for (const { kind, filename, ImageClass, images } of WASM_IMAGES) {
-    bench(`${ImageClass.name}.decode: ${kind} (${filename})`, async () =>
+    benchmark(`${ImageClass.name}.decode: ${kind} (${filename})`, async () =>
       Promise.all(images.map(args => ImageClass.instance.decode(...args)))
     );
   }
 
-  bench(
+  benchmark(
     "PDFImage.createImageData: ICCBased (issue6931_reduced.pdf)",
     async () =>
       Promise.all(

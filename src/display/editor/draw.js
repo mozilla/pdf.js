@@ -522,13 +522,19 @@ class DrawingEditor extends AnnotationEditor {
     }
 
     this.#addToDrawLayer();
-    this.#updateBbox(this._drawOutlines.box);
-
     if (!this.isAttachedToDOM) {
       // At some point this editor was removed and we're rebuilding it,
       // hence we must add it to its parent.
       this.parent.add(this);
     }
+
+    // Detached drawings don't receive zoom or rotation updates.
+    const bbox = this._drawOutlines.updateParentDimensions(
+      this.parentDimensions,
+      this.parent.scale
+    );
+    this.#updateBbox(bbox ?? this._drawOutlines.box, /* fixPosition = */ false);
+    this.rotate();
   }
 
   setParent(parent) {
@@ -627,11 +633,15 @@ class DrawingEditor extends AnnotationEditor {
     }
   }
 
-  #updateBbox(bbox) {
+  #updateBbox(bbox, fixPosition = true) {
     [this.x, this.y, this.width, this.height] =
       this.#convertToParentSpace(bbox);
     if (this.div) {
-      this.fixAndSetPosition();
+      if (fixPosition) {
+        this.fixAndSetPosition();
+      } else {
+        this.setPosition();
+      }
       this.setDims();
     }
     this._onResized();
@@ -800,7 +810,8 @@ class DrawingEditor extends AnnotationEditor {
       this.parent.scale
     );
     if (bbox) {
-      this.#updateBbox(bbox);
+      // Only the editor padding changes with zoom. The stroke stays put.
+      this.#updateBbox(bbox, /* fixPosition = */ false);
     }
   }
 
@@ -852,6 +863,7 @@ class DrawingEditor extends AnnotationEditor {
    * @param {number} _params.rotation - The viewport rotation.
    * @param {AnnotationEditorLayer} _params.parent - The parent layer.
    * @param {boolean} _params.isLTR - Whether the direction is left-to-right.
+   * @param {number} _params.timeStamp - The timestamp of the pointer event.
    */
   static createDrawerInstance(_params) {
     unreachable("Not implemented");
@@ -1009,7 +1021,8 @@ class DrawingEditor extends AnnotationEditor {
           y,
           parentWidth,
           parentHeight,
-          rotation
+          rotation,
+          event.timeStamp
         )
       );
       return;
@@ -1024,6 +1037,7 @@ class DrawingEditor extends AnnotationEditor {
       rotation,
       parent,
       isLTR,
+      timeStamp: event.timeStamp,
     });
     DrawingEditor.#currentDrawingOptions = this.getDefaultDrawingOptions();
     this._currentParent = parent;
@@ -1061,13 +1075,16 @@ class DrawingEditor extends AnnotationEditor {
     const coalesced = event.getCoalescedEvents?.();
     if (coalesced?.length) {
       const points = [];
+      const timeStamps = [];
       for (const sample of coalesced) {
         points.push(...this._getPointerCoords(sample, event));
+        timeStamps.push(sample.timeStamp);
       }
-      properties = DrawingEditor.#currentDraw.addPoints(points);
+      properties = DrawingEditor.#currentDraw.addPoints(points, timeStamps);
     } else {
       properties = DrawingEditor.#currentDraw.add(
-        ...this._getPointerCoords(event)
+        ...this._getPointerCoords(event),
+        event.timeStamp
       );
     }
     this._currentParent.drawLayer.updateProperties(
@@ -1110,7 +1127,10 @@ class DrawingEditor extends AnnotationEditor {
     parent.drawLayer.updateProperties(
       this._currentDrawId,
       event?.target === parent.div
-        ? DrawingEditor.#currentDraw.end(...this._getPointerCoords(event))
+        ? DrawingEditor.#currentDraw.end(
+            ...this._getPointerCoords(event),
+            event.timeStamp
+          )
         : DrawingEditor.#currentDraw.end()
     );
     if (this.supportMultipleDrawings) {

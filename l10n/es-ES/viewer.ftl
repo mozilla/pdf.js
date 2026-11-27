@@ -336,6 +336,12 @@ pdfjs-editor-ink-editor =
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = Editor de firmas: { $description }
+    .aria-label = Editor de firmas
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-signature-editor1 =
     .aria-description = Editor de firmas: { $description }
 pdfjs-editor-stamp-editor =
@@ -741,6 +747,31 @@ pdfjs-digital-signature-properties-button-label = Propiedades de firma digital
 ##   $count (Number) - number of signatures at the worst level.
 
 pdfjs-digital-signature-properties-banner-verified = El documento fue firmado con una firma digital válida
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Documento firmado, pero no se ha podido verificar { $count } firma digital
+       *[other] Documento firmado, pero no se han podido verificar { $count } firmas digitales
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Documento firmado con { $count } certificado que no es de confianza
+       *[other] Documento firmado con { $count } certificados que no son de confianza
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Documento firmado con { $count } certificado caducado
+       *[other] Documento firmado con { $count } certificados caducados
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] El documento tiene { $count } firma digital no válida
+       *[other] El documento tiene { $count } firmas digitales no válidas
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Documento firmado con { $count } certificado revocado
+       *[other] Documento firmado con { $count } certificados revocados
+    }
 
 ## Per-signature status row. Only three distinct strings are needed:
 ## the signature crypto either verified (the cert chain may still be

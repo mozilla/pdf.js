@@ -28,19 +28,20 @@ import {
   Util,
   warn,
 } from "../shared/util.js";
+import { Stream, StringStream } from "./stream.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { EvaluatorPreprocessor } from "./evaluator.js";
 import { LocalColorSpaceCache } from "./image_utils.js";
 import { PDFFunctionFactory } from "./function.js";
-import { StringStream } from "./stream.js";
 import { stringToUTF16HexString } from "./string_utils.js";
 
 class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
-  constructor(str) {
+  constructor(str, xref) {
     super(new StringStream(str));
+    this.xref = xref;
   }
 
-  parse() {
+  async parse() {
     const operation = {
       fn: 0,
       args: [],
@@ -79,9 +80,11 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+          case OPS.setFillCMYKColor: {
+            const cmyk = await ColorSpaceUtils.getCmyk(this.xref);
+            cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
+          }
         }
       }
     } catch (reason) {
@@ -93,21 +96,29 @@ class DefaultAppearanceEvaluator extends EvaluatorPreprocessor {
 }
 
 // Parse DA to extract font and color information.
-function parseDefaultAppearance(str) {
-  return new DefaultAppearanceEvaluator(str).parse();
+function parseDefaultAppearance(str, xref) {
+  return new DefaultAppearanceEvaluator(str, xref).parse();
 }
 
 class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
   constructor(stream, xref, globalColorSpaceCache) {
-    super(stream);
-    this.stream = stream;
+    // Parse a copy, since the stream can be shared and parsing is async.
+    let bytes;
+    try {
+      bytes = stream.getBytes();
+    } catch (reason) {
+      warn(`parseAppearanceStream - ignoring errors: "${reason}".`);
+      bytes = new Uint8Array(0);
+    }
+    stream.reset();
+    super(new Stream(bytes, 0, bytes.length, stream.dict));
     this.xref = xref;
     this.globalColorSpaceCache = globalColorSpaceCache;
 
     this.resources = stream.dict?.get("Resources");
   }
 
-  parse() {
+  async parse() {
     const operation = {
       fn: 0,
       args: [],
@@ -158,7 +169,7 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
             }
             break;
           case OPS.setFillColorSpace:
-            result.fillColorSpace = ColorSpaceUtils.parse({
+            result.fillColorSpace = await ColorSpaceUtils.parse({
               cs: args[0],
               xref: this.xref,
               resources: this.resources,
@@ -177,9 +188,11 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
           case OPS.setFillGray:
             ColorSpaceUtils.gray.getRgbItem(args, 0, result.fontColor, 0);
             break;
-          case OPS.setFillCMYKColor:
-            ColorSpaceUtils.cmyk.getRgbItem(args, 0, result.fontColor, 0);
+          case OPS.setFillCMYKColor: {
+            const cmyk = await ColorSpaceUtils.getCmyk(this.xref);
+            cmyk.getRgbItem(args, 0, result.fontColor, 0);
             break;
+          }
           case OPS.showText:
           case OPS.showSpacedText:
           case OPS.nextLineShowText:
@@ -195,7 +208,6 @@ class AppearanceStreamEvaluator extends EvaluatorPreprocessor {
     } catch (reason) {
       warn(`parseAppearanceStream - ignoring errors: "${reason}".`);
     }
-    this.stream.reset();
     delete result.scaleFactor;
     delete result.fillColorSpace;
 

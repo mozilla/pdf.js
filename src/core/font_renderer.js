@@ -97,14 +97,14 @@ function parseCmap(data, start, end) {
   throw new FormatError(`unsupported cmap: ${format}`);
 }
 
-function parseCff(data, start, end, seacAnalysisEnabled) {
+function parseCff(data, start, end, seacAnalysisEnabled, validate) {
   const properties = {};
   const parser = new CFFParser(
     new Stream(data, start, end - start),
     properties,
     seacAnalysisEnabled
   );
-  const cff = parser.parse();
+  const cff = parser.parse(validate);
   return {
     glyphs: cff.charStrings.objects,
     subrs: cff.topDict.privateDict?.subrsIndex?.objects,
@@ -901,7 +901,7 @@ class Type2Compiled extends CompiledFont {
 }
 
 class FontRendererFactory {
-  static create(font, seacAnalysisEnabled) {
+  static create(font, seacAnalysisEnabled, validate = true) {
     const data = new Uint8Array(font.data),
       view = new DataView(data.buffer);
     let cmap, glyf, loca, cff, indexToLocFormat, unitsPerEm;
@@ -925,7 +925,13 @@ class FontRendererFactory {
           indexToLocFormat = view.getUint16(offset + 50);
           break;
         case "CFF ":
-          cff = parseCff(data, offset, offset + length, seacAnalysisEnabled);
+          cff = parseCff(
+            data,
+            offset,
+            offset + length,
+            seacAnalysisEnabled,
+            validate
+          );
           break;
       }
     }

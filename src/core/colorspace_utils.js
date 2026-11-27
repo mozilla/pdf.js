@@ -25,13 +25,15 @@ import {
   LabCS,
   PatternCS,
 } from "./colorspace.js";
-import { CmykICCBasedCS, IccColorSpace } from "./icc_colorspace.js";
 import { Dict, Name, Ref } from "./primitives.js";
 import { shadow, unreachable, warn } from "../shared/util.js";
+import { IccColorSpace } from "./icc_colorspace.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { MissingDataException } from "./core_utils.js";
 
 class ColorSpaceUtils {
+  static #cmykByContext = new WeakMap();
+
   static parse({
     cs,
     xref,
@@ -39,7 +41,6 @@ class ColorSpaceUtils {
     pdfFunctionFactory,
     globalColorSpaceCache,
     localColorSpaceCache,
-    asyncIfNotCached = false,
   }) {
     if (
       (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) &&
@@ -54,9 +55,8 @@ class ColorSpaceUtils {
       resources,
       pdfFunctionFactory,
       globalColorSpaceCache,
-      localColorSpaceCache,
     };
-    let csName, csRef, parsedCS;
+    let csName, csRef;
 
     // Check if the ColorSpace is cached first, to avoid re-parsing it.
     if (cs instanceof Ref) {
@@ -79,24 +79,22 @@ class ColorSpaceUtils {
       }
     }
 
-    try {
-      parsedCS = this.#parse(cs, options);
-    } catch (ex) {
-      if (asyncIfNotCached && !(ex instanceof MissingDataException)) {
-        return Promise.reject(ex);
+    const parsed = csRef
+      ? this.#parseAndCacheGlobally(cs, csRef, options)
+      : this.#parse(cs, options);
+    return parsed.then(parsedCS => {
+      // Attempt to cache the parsed ColorSpace by name and/or reference.
+      if (csName || csRef) {
+        localColorSpaceCache.set(csName, csRef, parsedCS);
       }
-      throw ex;
-    }
+      return parsedCS;
+    });
+  }
 
-    // Attempt to cache the parsed ColorSpace, by name and/or reference.
-    if (csName || csRef) {
-      localColorSpaceCache.set(csName, csRef, parsedCS);
-
-      if (csRef) {
-        globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
-      }
-    }
-    return asyncIfNotCached ? Promise.resolve(parsedCS) : parsedCS;
+  static async #parseAndCacheGlobally(cs, csRef, options) {
+    const parsedCS = await this.#parse(cs, options);
+    options.globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
+    return parsedCS;
   }
 
   /**
@@ -104,28 +102,16 @@ class ColorSpaceUtils {
    *       when parsing "sub" ColorSpaces.
    */
   static #subParse(cs, options) {
-    const { globalColorSpaceCache } = options;
-    let csRef;
-
-    // Check if the ColorSpace is cached first, to avoid re-parsing it.
-    if (cs instanceof Ref) {
-      csRef = cs;
-
-      const cachedCS = globalColorSpaceCache.getByRef(csRef);
-      if (cachedCS) {
-        return cachedCS;
-      }
+    if (!(cs instanceof Ref)) {
+      return this.#parse(cs, options);
     }
-    const parsedCS = this.#parse(cs, options);
-
-    // Only cache the parsed ColorSpace globally, by reference.
-    if (csRef) {
-      globalColorSpaceCache.set(/* name = */ null, csRef, parsedCS);
-    }
-    return parsedCS;
+    return (
+      options.globalColorSpaceCache.getByRef(cs) ||
+      this.#parseAndCacheGlobally(cs, cs, options)
+    );
   }
 
-  static #parse(cs, options) {
+  static async #parse(cs, options) {
     const { xref, resources, pdfFunctionFactory, globalColorSpaceCache } =
       options;
 
@@ -142,7 +128,7 @@ class ColorSpaceUtils {
           return this.rgba;
         case "CMYK":
         case "DeviceCMYK":
-          return this.cmyk;
+          return this.getCmyk(xref);
         case "Pattern":
           return new PatternCS(/* baseCS = */ null);
         default:
@@ -177,7 +163,7 @@ class ColorSpaceUtils {
           return this.rgb;
         case "CMYK":
         case "DeviceCMYK":
-          return this.cmyk;
+          return this.getCmyk(xref);
         case "CalGray":
           params = xref.fetchIfRef(cs[1]);
           whitePoint = params.getArray("WhitePoint");
@@ -193,6 +179,9 @@ class ColorSpaceUtils {
           return new CalRGBCS(whitePoint, blackPoint, gamma, matrix);
         case "ICCBased":
           const isRef = cs[1] instanceof Ref;
+          const useIcc = await IccColorSpace.load(
+            xref.pdfManager?.binaryDataContext
+          );
           if (isRef) {
             const cachedCS = globalColorSpaceCache.getByRef(cs[1]);
             if (cachedCS) {
@@ -204,10 +193,10 @@ class ColorSpaceUtils {
           const dict = stream.dict;
           numComps = dict.get("N");
 
-          if (IccColorSpace.isUsable) {
+          if (useIcc) {
             try {
               const iccCS = new IccColorSpace(
-                stream.getBytes(),
+                stream.peekBytes(),
                 "ICCBased",
                 numComps
               );
@@ -225,7 +214,7 @@ class ColorSpaceUtils {
 
           const altRaw = dict.getRaw("Alternate");
           if (altRaw) {
-            const altCS = this.#subParse(altRaw, options);
+            const altCS = await this.#subParse(altRaw, options);
             // Ensure that the number of components are correct,
             // and also (indirectly) that it is not a PatternCS.
             if (altCS.numComps === numComps) {
@@ -238,16 +227,16 @@ class ColorSpaceUtils {
           } else if (numComps === 3) {
             return this.rgb;
           } else if (numComps === 4) {
-            return this.cmyk;
+            return this.getCmyk(xref);
           }
           break;
         case "Pattern":
-          baseCS = cs[1] || null;
-          baseCS &&= this.#subParse(baseCS, options);
-          return new PatternCS(baseCS);
+          return new PatternCS(
+            cs[1] ? await this.#subParse(cs[1], options) : null
+          );
         case "I":
         case "Indexed":
-          baseCS = this.#subParse(cs[1], options);
+          baseCS = await this.#subParse(cs[1], options);
           const hiVal = MathClamp(xref.fetchIfRef(cs[2]), 0, 255);
           const lookup = xref.fetchIfRef(cs[3]);
           return new IndexedCS(baseCS, hiVal, lookup);
@@ -255,8 +244,8 @@ class ColorSpaceUtils {
         case "DeviceN":
           const name = xref.fetchIfRef(cs[1]);
           numComps = Array.isArray(name) ? name.length : 1;
-          baseCS = this.#subParse(cs[2], options);
-          const tintFn = pdfFunctionFactory.create(cs[3]);
+          baseCS = await this.#subParse(cs[2], options);
+          const tintFn = await pdfFunctionFactory.create(cs[3]);
           return new AlternateCS(numComps, baseCS, tintFn);
         case "Lab":
           params = xref.fetchIfRef(cs[1]);
@@ -287,15 +276,24 @@ class ColorSpaceUtils {
     return shadow(this, "rgba", new DeviceRgbaCS());
   }
 
-  static get cmyk() {
-    if (CmykICCBasedCS.isUsable) {
-      try {
-        return shadow(this, "cmyk", new CmykICCBasedCS());
-      } catch {
-        warn("CMYK fallback: DeviceCMYK");
-      }
+  static get deviceCmyk() {
+    return shadow(this, "deviceCmyk", new DeviceCmykCS());
+  }
+
+  // Share the profile request and keep the resulting color space for the
+  // lifetime of this document, even when the request falls back to DeviceCMYK.
+  static getCmyk(xref) {
+    const context = xref?.pdfManager?.binaryDataContext;
+    if (!context?.options.useWasm) {
+      return this.deviceCmyk;
     }
-    return shadow(this, "cmyk", new DeviceCmykCS());
+    return this.#cmykByContext.getOrInsertComputed(context, () =>
+      IccColorSpace.createCmyk(context).then(colorSpace => {
+        const cmyk = colorSpace ?? this.deviceCmyk;
+        this.#cmykByContext.set(context, cmyk);
+        return cmyk;
+      })
+    );
   }
 }
 

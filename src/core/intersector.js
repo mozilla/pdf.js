@@ -108,7 +108,9 @@ class SingleIntersector {
     }
 
     if (this.#extraChars.length > 0) {
-      this.#text.push(this.#extraChars.join(""));
+      for (const char of this.#extraChars) {
+        this.#text.push(char);
+      }
       this.#extraChars.length = 0;
     }
     this.#text.push(glyph);
@@ -200,9 +202,12 @@ class Intersector {
     return i + j * STEPS;
   }
 
-  addGlyph(transform, width, height, glyph) {
-    const x = transform[4] + width / 2;
-    const y = transform[5] + height / 2;
+  /**
+   * @param {number} x
+   * @param {number} y - The point of the glyph to intersect.
+   * @param {string} glyph
+   */
+  addGlyph(x, y, glyph) {
     if (x < this.#minX || y < this.#minY || x > this.#maxX || y > this.#maxY) {
       return;
     }

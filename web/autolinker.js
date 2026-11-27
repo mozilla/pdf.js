@@ -105,29 +105,6 @@ function textPosition(container, offset) {
   throw new Error("Offset is bigger than container's contents length.");
 }
 
-function createLinkAnnotation({ url, index, length }, pdfPageView, id) {
-  const highlighter = pdfPageView._textHighlighter;
-  const [{ begin, end }] = highlighter._convertMatches([index], [length]);
-
-  const range = new Range();
-  range.setStart(
-    ...textPosition(highlighter.textDivs[begin.divIdx], begin.offset)
-  );
-  range.setEnd(...textPosition(highlighter.textDivs[end.divIdx], end.offset));
-
-  return {
-    id: `inferred_link_${id}`,
-    unsafeUrl: url,
-    url,
-    annotationType: AnnotationType.LINK,
-    rotation: 0,
-    ...calculateLinkPosition(range, pdfPageView),
-    // Populated in the annotationLayer to avoid unnecessary object creation,
-    // since most inferred links overlap existing LinkAnnotations:
-    borderStyle: null,
-  };
-}
-
 class Autolinker {
   static #index = 0;
 
@@ -185,9 +162,39 @@ class Autolinker {
   }
 
   static processLinks(pdfPageView) {
-    return this.findLinks(
-      pdfPageView._textHighlighter.textContentItemsStr.join("\n")
-    ).map(link => createLinkAnnotation(link, pdfPageView, this.#index++));
+    const highlighter = pdfPageView._textHighlighter;
+    const textContent = highlighter.textContentItemsStr.join("\n");
+    if (!textContent) {
+      return []; // The page has no text content.
+    }
+    const links = this.findLinks(textContent);
+    if (!links.length) {
+      return []; // The page has no inferred links.
+    }
+    const matches = highlighter._convertMatches(
+      links.map(({ index }) => index),
+      links.map(({ length }) => length)
+    );
+    const { textDivs } = highlighter;
+    const range = new Range();
+    return links.map(({ url }, i) => {
+      const { begin, end } = matches[i];
+      range.setStart(...textPosition(textDivs[begin.divIdx], begin.offset));
+      range.setEnd(...textPosition(textDivs[end.divIdx], end.offset));
+
+      return {
+        id: `inferred_link_${this.#index++}`,
+        unsafeUrl: url,
+        url,
+        annotationType: AnnotationType.LINK,
+        rotation: 0,
+        ...calculateLinkPosition(range, pdfPageView),
+        // Populated in the annotationLayer to avoid unnecessary object
+        // creation, since most inferred links overlap existing
+        // LinkAnnotations:
+        borderStyle: null,
+      };
+    });
   }
 }
 

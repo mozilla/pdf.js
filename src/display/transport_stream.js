@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
+import { assert, createPromiseCapability } from "../shared/util.js";
 import {
   BasePDFStream,
   BasePDFStreamRangeReader,
   BasePDFStreamReader,
 } from "../shared/base_pdf_stream.js";
-import { assert } from "../shared/util.js";
 import { isPdfFile } from "./dom_utils.js";
 
 function getArrayBuffer(val) {
@@ -180,7 +180,7 @@ class PDFDataTransportStreamReader extends BasePDFStreamReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const capability = Promise.withResolvers();
+    const capability = createPromiseCapability();
     this._requests.push(capability);
     return capability.promise;
   }
@@ -242,7 +242,7 @@ class PDFDataTransportStreamRangeReader extends BasePDFStreamRangeReader {
     if (this._done) {
       return { value: undefined, done: true };
     }
-    const capability = Promise.withResolvers();
+    const capability = createPromiseCapability();
     this._requests.push(capability);
     return capability.promise;
   }

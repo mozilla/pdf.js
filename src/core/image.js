@@ -28,7 +28,6 @@ import { BaseStream } from "./base_stream.js";
 import { ColorSpace } from "./colorspace.js";
 import { ColorSpaceUtils } from "./colorspace_utils.js";
 import { DecodeStream } from "./decode_stream.js";
-import { ImageResizer } from "./image_resizer.js";
 import { JpegStream } from "./jpeg_stream.js";
 import { JpxImage } from "./jpx.js";
 import { MathClamp } from "../shared/math_clamp.js";
@@ -140,7 +139,9 @@ function sumPreblendedRow(
 }
 
 class PDFImage {
-  constructor({
+  #imageResizer;
+
+  async #initialize({
     xref,
     res,
     image,
@@ -153,6 +154,7 @@ class PDFImage {
     localColorSpaceCache,
   }) {
     this.image = image;
+    this.#imageResizer = xref.pdfManager.imageResizer;
     const dict = image.dict;
 
     const filter = dict.get("F", "Filter");
@@ -174,7 +176,7 @@ class PDFImage {
           bitsPerComponent: image.bitsPerComponent,
         } = JpxImage.parseImageProperties(image.stream));
         image.stream.reset();
-        const reducePower = ImageResizer.getReducePowerForJPX(
+        const reducePower = this.#imageResizer.getReducePowerForJPX(
           image.width,
           image.height,
           image.numComps
@@ -266,7 +268,7 @@ class PDFImage {
       ) {
         this.jpxPremultiplied = true;
         if (this.matte) {
-          const matteColorSpace = ColorSpaceUtils.parse({
+          const matteColorSpace = await ColorSpaceUtils.parse({
             cs: hasColorSpace ? colorSpace : Name.get("DeviceRGB"),
             xref,
             resources: isInline ? res : null,
@@ -304,7 +306,7 @@ class PDFImage {
         colorSpace = Name.get("DeviceRGBA");
       }
 
-      this.colorSpace = ColorSpaceUtils.parse({
+      this.colorSpace = await ColorSpaceUtils.parse({
         cs: colorSpace,
         xref,
         resources: isInline ? res : null,
@@ -356,7 +358,7 @@ class PDFImage {
       // (see issue19611.pdf).
       smask.fallbackDims ??= { width, height };
 
-      this.smask = new PDFImage({
+      this.smask = await new PDFImage().#initialize({
         xref,
         res,
         image: smask,
@@ -376,7 +378,7 @@ class PDFImage {
           // (see issue19611.pdf).
           mask.fallbackDims ??= { width, height };
 
-          this.mask = new PDFImage({
+          this.mask = await new PDFImage().#initialize({
             xref,
             res,
             image: mask,
@@ -392,56 +394,35 @@ class PDFImage {
         this.mask = mask;
       }
     }
+    return this;
   }
 
   /**
    * Handles processing of image data and returns the Promise that is resolved
    * with a PDFImage when the image is ready to be used.
    */
-  static async buildImage({
-    xref,
-    res,
-    image,
-    isInline = false,
-    pdfFunctionFactory,
-    globalColorSpaceCache,
-    localColorSpaceCache,
-  }) {
-    const imageData = image;
-    let smaskData = null;
-    let maskData = null;
-
-    const smask = image.dict.get("SMask");
-    const mask = image.dict.get("Mask");
-
+  static async buildImage(options) {
+    const { dict } = options.image;
+    let smask = dict.get("SMask");
+    let mask = dict.get("Mask");
     if (smask) {
-      if (smask instanceof BaseStream) {
-        smaskData = smask;
-      } else {
+      mask = null;
+      if (!(smask instanceof BaseStream)) {
         warn("Unsupported /SMask format.");
+        smask = null;
       }
-    } else if (mask) {
-      if (mask instanceof BaseStream || Array.isArray(mask)) {
-        maskData = mask;
-      } else {
-        warn("Unsupported /Mask format.");
-      }
+    } else if (mask && !(mask instanceof BaseStream || Array.isArray(mask))) {
+      warn("Unsupported /Mask format.");
+      mask = null;
     }
-
-    return new PDFImage({
-      xref,
-      res,
-      image: imageData,
-      isInline,
-      smask: smaskData,
-      mask: maskData,
-      pdfFunctionFactory,
-      globalColorSpaceCache,
-      localColorSpaceCache,
-    });
+    return new PDFImage().#initialize({ ...options, smask, mask });
   }
 
-  static async createMask({ image, isOffscreenCanvasSupported = false }) {
+  static async createMask({
+    image,
+    imageResizer,
+    isOffscreenCanvasSupported = false,
+  }) {
     const { dict } = image;
     const width = dict.get("W", "Width");
     const height = dict.get("H", "Height");
@@ -463,7 +444,7 @@ class PDFImage {
     }
 
     if (isOffscreenCanvasSupported) {
-      if (ImageResizer.needsToBeResized(width, height)) {
+      if (imageResizer.needsToBeResized(width, height)) {
         const data = new Uint8ClampedArray(width * height * 4);
         convertBlackAndWhiteToRGBA({
           src: imgArray,
@@ -473,7 +454,7 @@ class PDFImage {
           nonBlackColor: 0,
           inverseDecode,
         });
-        return ImageResizer.createImage({
+        return imageResizer.createImage({
           kind: ImageKind.RGBA_32BPP,
           data,
           width,
@@ -774,6 +755,7 @@ class PDFImage {
   }
 
   async createImageData(forceRGBA = false, isOffscreenCanvasSupported = false) {
+    const imageResizer = this.#imageResizer;
     const drawWidth = this.drawWidth;
     const drawHeight = this.drawHeight;
     const imgData = {
@@ -794,7 +776,7 @@ class PDFImage {
     const rowBytes = (originalWidth * numComps * bpc + 7) >> 3;
     const mustBeResized =
       isOffscreenCanvasSupported &&
-      ImageResizer.needsToBeResized(drawWidth, drawHeight);
+      imageResizer.needsToBeResized(drawWidth, drawHeight);
 
     if (!this.smask && !this.mask && this.colorSpace.name === "DeviceRGBA") {
       imgData.kind = ImageKind.RGBA_32BPP;
@@ -823,7 +805,7 @@ class PDFImage {
             imgArray
           );
         }
-        return ImageResizer.createImage(imgData, false);
+        return imageResizer.createImage(imgData);
       }
 
       return imgData;
@@ -861,7 +843,7 @@ class PDFImage {
         });
         if (isOffscreenCanvasSupported) {
           if (mustBeResized) {
-            return ImageResizer.createImage(
+            return imageResizer.createImage(
               {
                 data,
                 kind,
@@ -942,7 +924,7 @@ class PDFImage {
             forceRGB: true,
             internal: mustBeResized,
           });
-          return mustBeResized ? ImageResizer.createImage(imgData) : imgData;
+          return mustBeResized ? imageResizer.createImage(imgData) : imgData;
         }
       }
     }
@@ -950,10 +932,10 @@ class PDFImage {
     if (mustBeResized && !Array.isArray(this.mask)) {
       // Avoid a full-size RGBA buffer and BMP conversion (see issue16263.pdf).
       // Color-key masks use the existing path to mask source components.
-      const reducePower = ImageResizer.getReducePower(drawWidth, drawHeight);
+      const reducePower = imageResizer.getReducePower(drawWidth, drawHeight);
       const width = Math.max(1, drawWidth >> reducePower);
       const height = Math.max(1, drawHeight >> reducePower);
-      if (!ImageResizer.needsToBeResized(width, height)) {
+      if (!imageResizer.needsToBeResized(width, height)) {
         const rgba = new Uint8ClampedArray(width * height * 4);
         await this._fillDownscaledRgba(rgba, width, height);
         return this.createBitmap(ImageKind.RGBA_32BPP, width, height, rgba);
@@ -1038,7 +1020,7 @@ class PDFImage {
     }
 
     imgData.data = data;
-    return mustBeResized ? ImageResizer.createImage(imgData) : imgData;
+    return mustBeResized ? imageResizer.createImage(imgData) : imgData;
   }
 
   /**

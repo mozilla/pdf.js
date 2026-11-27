@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
+import { noopFn, unreachable } from "../shared/util.js";
 import { BaseStream } from "./base_stream.js";
 import { Stream } from "./stream.js";
-import { unreachable } from "../shared/util.js";
 
 // Lots of DecodeStreams are created whose buffers are never used.  For these
 // we share a single empty buffer. This is (a) space-efficient and (b) avoids
@@ -132,8 +132,8 @@ class DecodeStream extends BaseStream {
       // close() is queued behind write(), so the stream is only closed once
       // all the bytes have been written.
       // Handle decompression errors through reader.read() below.
-      writer.write(bytes).catch(() => {});
-      writer.close().catch(() => {});
+      writer.write(bytes).catch(noopFn);
+      writer.close().catch(noopFn);
 
       const chunks = [];
       let totalLength = 0;

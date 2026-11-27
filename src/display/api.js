@@ -21,13 +21,16 @@ import {
   AbortException,
   AnnotationMode,
   assert,
+  createPromiseCapability,
   getVerbosityLevel,
   info,
   isNodeJS,
   makeObj,
+  noopFn,
   RenderingIntentFlag,
   setVerbosityLevel,
   shadow,
+  TEXT_CONTENT_CHUNK_SIZE,
   unreachable,
   warn,
 } from "../shared/util.js";
@@ -45,6 +48,7 @@ import {
   LoopbackPort,
   StatTimer,
 } from "./api_utils.js";
+import { initGPU, isGPUReady } from "./webgpu.js";
 import { isDataScheme, isValidFetchUrl } from "./dom_utils.js";
 import { MessageHandler, wrapReason } from "../shared/message_handler.js";
 import {
@@ -60,11 +64,11 @@ import { DOMFilterFactory } from "./dom_filter_factory.js";
 import { FontLoader } from "./font_loader.js";
 import { getNetworkStream } from "display-network_stream";
 import { GlobalWorkerOptions } from "./worker_options.js";
-import { initGPU } from "./webgpu.js";
 import { MathClamp } from "../shared/math_clamp.js";
 import { Metadata } from "./metadata.js";
 import { ObjectHandler } from "./object_handler.js";
 import { OptionalContentConfig } from "./optional_content_config.js";
+import { OutputScale } from "./output_scale.js";
 import { PagesMapper } from "./pages_mapper.js";
 import { PageViewport } from "./page_viewport.js";
 import { PDFDataTransportStream } from "./transport_stream.js";
@@ -141,9 +145,12 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  * @property {string} [wasmUrl] - The URL where the wasm files are located.
  *   Include the trailing slash.
  * @property {boolean} [useWorkerFetch] - Enable using the Fetch API in the
- *   worker-thread when reading built-in CMap files, standard font files,
- *   and wasm files. If `true`, the `BinaryDataFactory` option is ignored.
- *   The default value is `true` in web environments and `false` in Node.js.
+ *   worker-thread when reading built-in CMap files, ICC profiles, standard
+ *   font files, and wasm files. If `true`, the `BinaryDataFactory` option is
+ *   ignored.
+ *   In web environments, this defaults to `true` when using the default
+ *   `BinaryDataFactory`, packed CMaps, and valid fetch URLs for all four
+ *   resources. It defaults to `false` in Node.js.
  * @property {boolean} [useWasm] - Attempt to use WebAssembly in order to
  *    improve e.g. image decoding performance.
  *    The default value is `true`.
@@ -151,9 +158,6 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   `getOperatorList`, `getTextContent`, and `RenderTask`, when the associated
  *   PDF data cannot be successfully parsed, instead of attempting to recover
  *   whatever possible of the data. The default value is `false`.
- * @property {number} [maxImageSize] - The maximum allowed image size in total
- *   pixels, i.e. width * height. Images above this value will not be rendered.
- *   Use -1 for no limit, which is also the default value.
  * @property {boolean} [isOffscreenCanvasSupported] - Determines if we can use
  *   `OffscreenCanvas` in the worker. Primarily used to improve performance of
  *   image conversion/rendering.
@@ -175,6 +179,9 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *   parsed font data from the worker-thread. This may be useful for debugging
  *   purposes (and backwards compatibility), but note that it will lead to
  *   increased memory usage. The default value is `false`.
+ * @property {boolean} [debugTextLayerFonts] - When true, the glyphs of the
+ *   text layer fonts are the outlines of their boxes. This may be useful for
+ *   debugging purposes. The default value is `false`.
  * @property {boolean} [enableXfa] - Render Xfa forms if any.
  *   The default value is `false`.
  * @property {HTMLDocument} [ownerDocument] - Specify an explicit document
@@ -202,11 +209,13 @@ const RENDERING_CANCELLED_TIMEOUT = 100; // ms
  *    create SVG filters when rendering some images on the main canvas.
  *    The default value is {DOMFilterFactory}.
  * @property {object} [BinaryDataFactory] - The factory that will be used when
- *   falling back to reading built-in CMap files, standard font files,
- *   and wasm files in the main-thread.
+ *   falling back to reading built-in CMap files, ICC profiles, standard font
+ *   files, and wasm files in the main-thread.
  *   The default value is {DOMBinaryDataFactory}.
  * @property {boolean} [enableHWA] - Enables hardware acceleration for
- *   rendering. The default value is `false`.
+ *   rendering. The default value is `true`.
+ * @property {boolean} [enableWebGPU] - Enables WebGPU rendering.
+ *   The default value is `true`.
  * @property {object} [pagesMapper] - The pages mapper that will be used to map
  *   page ids and page numbers. It's used when the page order is changed or some
  *   pages are removed, cloned, etc.
@@ -237,7 +246,9 @@ function getDocument(src = {}) {
   const rangeTransport =
     src.range instanceof PDFDataRangeTransport ? src.range : null;
   const rangeChunkSize =
-    Number.isInteger(src.rangeChunkSize) && src.rangeChunkSize > 0
+    (typeof PDFJSDev === "undefined" || !PDFJSDev.test("MOZCENTRAL")) &&
+    Number.isInteger(src.rangeChunkSize) &&
+    src.rangeChunkSize > 0
       ? src.rangeChunkSize
       : 2 ** 16;
   let worker = src.worker instanceof PDFWorker ? src.worker : null;
@@ -255,10 +266,6 @@ function getDocument(src = {}) {
   const standardFontDataUrl = getFactoryUrlProp(src.standardFontDataUrl);
   const wasmUrl = getFactoryUrlProp(src.wasmUrl);
   const ignoreErrors = src.stopAtErrors !== true;
-  const maxImageSize =
-    Number.isInteger(src.maxImageSize) && src.maxImageSize > -1
-      ? src.maxImageSize
-      : -1;
   const isOffscreenCanvasSupported =
     typeof src.isOffscreenCanvasSupported === "boolean"
       ? src.isOffscreenCanvasSupported
@@ -273,6 +280,7 @@ function getDocument(src = {}) {
   const disableFontFace =
     typeof src.disableFontFace === "boolean" ? src.disableFontFace : isNodeJS;
   const fontExtraProperties = src.fontExtraProperties === true;
+  const debugTextLayerFonts = src.debugTextLayerFonts === true;
   const enableXfa = src.enableXfa === true;
   const ownerDocument = src.ownerDocument || globalThis.document;
   const disableRange = src.disableRange === true;
@@ -294,11 +302,11 @@ function getDocument(src = {}) {
     (typeof PDFJSDev !== "undefined" && PDFJSDev.test("GENERIC") && isNodeJS
       ? NodeBinaryDataFactory
       : DOMBinaryDataFactory);
-  const enableHWA = src.enableHWA === true;
-  const enableWebGPU = src.enableWebGPU === true;
-  // Start GPU initialisation immediately so it runs in parallel with the
-  // worker bootstrap; the resolved boolean is forwarded to the worker.
-  const gpuPromise = enableWebGPU ? initGPU() : Promise.resolve(false);
+  const enableHWA = src.enableHWA !== false;
+  const enableWebGPU = src.enableWebGPU !== false;
+  if (enableWebGPU) {
+    initGPU(); // Initialize without delaying document loading.
+  }
   const useWasm = src.useWasm !== false;
   const pagesMapper = src.pagesMapper || new PagesMapper();
 
@@ -314,19 +322,21 @@ function getDocument(src = {}) {
       ? src.useSystemFonts
       : !isNodeJS && !disableFontFace;
   const useWorkerFetch =
-    typeof src.useWorkerFetch === "boolean"
+    (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
+    (typeof src.useWorkerFetch === "boolean"
       ? src.useWorkerFetch
-      : (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
-        !!(
+      : !!(
           BinaryDataFactory === DOMBinaryDataFactory &&
           cMapUrl &&
           cMapPacked &&
+          iccUrl &&
           standardFontDataUrl &&
           wasmUrl &&
           isValidFetchUrl(cMapUrl, document.baseURI) &&
+          isValidFetchUrl(iccUrl, document.baseURI) &&
           isValidFetchUrl(standardFontDataUrl, document.baseURI) &&
           isValidFetchUrl(wasmUrl, document.baseURI)
-        );
+        ));
   const disableWorkerRendering =
     src.disableWorkerRendering === true ||
     !isOffscreenCanvasSupported ||
@@ -346,7 +356,12 @@ function getDocument(src = {}) {
       (typeof PDFJSDev !== "undefined" && PDFJSDev.test("MOZCENTRAL")) ||
       useWorkerFetch
         ? null
-        : new BinaryDataFactory({ cMapUrl, standardFontDataUrl, wasmUrl }),
+        : new BinaryDataFactory({
+            cMapUrl,
+            iccUrl,
+            standardFontDataUrl,
+            wasmUrl,
+          }),
   };
 
   if (!worker) {
@@ -388,13 +403,13 @@ function getDocument(src = {}) {
     docBaseUrl,
     enableXfa,
     evaluatorOptions: {
-      maxImageSize,
       disableFontFace,
       ignoreErrors,
       isOffscreenCanvasSupported,
       isImageDecoderSupported,
       canvasMaxAreaInBytes,
       fontExtraProperties,
+      debugTextLayerFonts,
       useSystemFonts,
       useWasm,
       useWorkerFetch,
@@ -403,7 +418,6 @@ function getDocument(src = {}) {
       iccUrl,
       standardFontDataUrl,
       wasmUrl,
-      hasGPU: false, // Set below.
     },
   };
   const transportParams = {
@@ -411,19 +425,19 @@ function getDocument(src = {}) {
     pdfBug,
     styleElement,
     rendererWorker: task._rendererWorker,
+    enableWebGPU,
     loadingParams: {
+      debugTextLayerFonts,
       disableAutoFetch,
       enableXfa,
     },
   };
 
-  Promise.all([worker.promise, gpuPromise])
-    .then(function ([, hasGPU]) {
+  worker.promise
+    .then(function () {
       if (worker.destroyed) {
         throw new Error("Worker was destroyed");
       }
-      docParams.evaluatorOptions.hasGPU = hasGPU;
-
       const workerIdPromise = worker.messageHandler.sendWithPromise(
         "GetDocRequest",
         docParams,
@@ -509,7 +523,7 @@ class PDFDocumentLoadingTask {
   /**
    * @private
    */
-  _capability = Promise.withResolvers();
+  _capability = createPromiseCapability();
 
   /**
    * Resolves once the load-time setup chain has settled, regardless of
@@ -517,7 +531,7 @@ class PDFDocumentLoadingTask {
    * or definitely never going to be.
    * @private
    */
-  _setupCapability = Promise.withResolvers();
+  _setupCapability = createPromiseCapability();
 
   /**
    * @private
@@ -577,11 +591,6 @@ class PDFDocumentLoadingTask {
    */
   async destroy() {
     this.destroyed = true;
-    // The setup chain rejects `_capability` with "Loading aborted" once the
-    // load-time chain unwinds (see `getDocument`). Claim that rejection
-    // here so it isn't reported as unhandled during the awaits below;
-    // callers awaiting `task.promise` still see it.
-    this._capability.promise.catch(() => {});
 
     try {
       // `_pendingDestroy` must be set synchronously, before any `await`,
@@ -632,7 +641,7 @@ class PDFDocumentLoadingTask {
  * main-thread memory usage, however it will take ownership of the TypedArrays.
  */
 class PDFDataRangeTransport {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #listener = null;
 
@@ -692,6 +701,25 @@ class PDFDataRangeTransport {
 
   abort() {}
 }
+
+/**
+ * @typedef {object} SaveDocumentParameters
+ * @property {function(Array<object>): Promise<Uint8Array | null>} [printToPDF]
+ *   Firefox-only callback receiving ordered `{ data }` entries. Returns a PDF
+ *   with one page per entry, or `null`. Place each appearance within
+ *   `[0, 0, data.width, data.height]` in points.
+ * @property {boolean | "non-forms"} [flatten] - Draw visible annotation
+ *   appearances into page content where possible. Keep links, file attachments
+ *   and media annotations interactive. With `true`, also flatten widgets
+ *   and remove widgets hidden for `intent`, except barcodes. Keep visible
+ *   widgets without drawable appearances. Remove AcroForm if this removes all
+ *   page widgets, unless SigFlags declares signatures. With `"non-forms"`, keep
+ *   widgets and AcroForm. Ignored for pure XFA documents. Defaults to `false`.
+ * @property {"display" | "print"} [intent] - Visibility to use when flattening
+ *   annotations. The default value is `"print"`. Ignored unless `flatten` is
+ *   enabled. Document scripts are not executed. Callers handle WillPrint
+ *   before saving and DidPrint afterward for scripted print changes.
+ */
 
 /**
  * Proxy to a `PDFDocument` in the worker thread.
@@ -1001,17 +1029,13 @@ class PDFDocumentProxy {
   }
 
   /**
-   * @param {function(Array<object>): Promise<Uint8Array | null>} [printToPDF] -
-   *   Firefox-only platform appearance renderer. It receives ordered
-   *   `{ data }` entries and returns a PDF with one page per entry, or `null`.
-   *   Each page must place its appearance in
-   *   `[0, 0, data.width, data.height]`, with dimensions in points.
+   * @param {SaveDocumentParameters} [params] - Save parameters.
    * @returns {Promise<Uint8Array<ArrayBuffer>>} A promise that is
    *   resolved with a {Uint8Array<ArrayBuffer>} containing the
    *   full data of the saved document.
    */
-  saveDocument(printToPDF) {
-    return this._transport.saveDocument(printToPDF);
+  saveDocument(params) {
+    return this._transport.saveDocument(params);
   }
 
   /**
@@ -1050,11 +1074,18 @@ class PDFDocumentProxy {
    *  extracted pages sharing the same source page, or -1 if it isn't extracted.
    *  This routes editor annotations when the viewer contains multiple copies
    *  of a source page.
-   * @returns {Promise<Uint8Array>} A promise that is resolved with a
-   *   {Uint8Array} containing the full data of the saved document.
+   * @param {object} [options]
+   * @param {boolean | "non-forms"} [options.flatten] - Flatten extracted
+   *   annotations; see {@link SaveDocumentParameters}. The default value is
+   *   `false`.
+   * @param {"display" | "print"} [options.intent] - Visibility to use when
+   *   flattening; see {@link SaveDocumentParameters}. The default value is
+   *   `"print"`.
+   * @returns {Promise<Uint8Array|null>} The extracted PDF bytes, or `null`
+   *   if extraction fails.
    */
-  extractPages(pageInfos, copyLevels = null) {
-    return this._transport.extractPages(pageInfos, copyLevels);
+  extractPages(pageInfos, copyLevels = null, options = {}) {
+    return this._transport.extractPages(pageInfos, copyLevels, options);
   }
 
   /**
@@ -1171,10 +1202,10 @@ class PDFDocumentProxy {
 /**
  * Page getTextContent parameters.
  * @typedef {object} getTextContentParameters
- * @property {boolean} [includeMarkedContent] - When true include marked
- *   content items in the items array of TextContent. The default is `false`.
- * @property {boolean} [disableNormalization] - When true the text is *not*
- *   normalized in the worker-thread. The default is `false`.
+ * @property {boolean} [enableMarkedContent] - When true include marked
+ *   content items in the items array of TextContent. The default is `true`.
+ * @property {boolean} [enableNormalization] - When true the text is
+ *   normalized in the worker-thread. The default is `true`.
  */
 
 /**
@@ -1182,7 +1213,7 @@ class PDFDocumentProxy {
  * @typedef {object} TextContent
  * @property {Array<TextItem | TextMarkedContent>} items - Array of
  *   {@link TextItem} and {@link TextMarkedContent} objects. TextMarkedContent
- *   items are included when includeMarkedContent is true.
+ *   items are included when enableMarkedContent is true.
  * @property {Record<string, TextStyle>} styles - {@link TextStyle} objects,
  *   indexed by font name.
  * @property {string | null} lang - The document /Lang attribute.
@@ -1193,12 +1224,14 @@ class PDFDocumentProxy {
  * @typedef {object} TextItem
  * @property {string} str - Text content.
  * @property {string} dir - Text direction: 'ttb', 'ltr' or 'rtl'.
- * @property {Array<any>} transform - Transformation matrix.
+ * @property {Float32Array} transform - Six-element transformation matrix.
  * @property {number} width - Width in device space.
  * @property {number} height - Height in device space.
  * @property {string} fontName - Font name used by PDF.js for converted font.
  * @property {boolean} hasEOL - Indicating if the text content is followed by a
  *   line-break.
+ * @property {number} [textLayerAdvance] - Advance of the text in the generated
+ *   font, in em.
  */
 
 /**
@@ -1217,6 +1250,18 @@ class PDFDocumentProxy {
  * @property {number} descent - Font descent.
  * @property {boolean} vertical - Whether or not the text is in vertical mode.
  * @property {string} fontFamily - The possible font family.
+ * @property {TextLayerFont} [textLayerFont] - The generated font for the text
+ *   layer, when available.
+ */
+
+/**
+ * A font with empty glyphs, having the advances of the PDF font, and a line
+ * height of one em. For a vertical font, they're the vertical advances.
+ * @typedef {object} TextLayerFont
+ * @property {string} name - Font family name.
+ * @property {Uint8Array} data - TrueType font.
+ * @property {number} ascent - Fraction of the em above the baseline.
+ * @property {number} advanceScale - Multiplier from encoded to PDF advances.
  */
 
 /**
@@ -1488,6 +1533,14 @@ class PDFPageProxy {
   }
 
   /**
+   * @type {DocumentInitParameters} A subset of the current
+   *   {DocumentInitParameters}, which are needed in the viewer.
+   */
+  get loadingParams() {
+    return this._transport.loadingParams;
+  }
+
+  /**
    * @type {boolean} True if only XFA form.
    */
   get isPureXfa() {
@@ -1559,7 +1612,7 @@ class PDFPageProxy {
     // If there's no displayReadyCapability yet, then the operatorList
     // was never requested before. Make the request and create the promise.
     if (!intentState.displayReadyCapability) {
-      intentState.displayReadyCapability = Promise.withResolvers();
+      intentState.displayReadyCapability = createPromiseCapability();
       intentState.operatorList = {
         fnArray: [],
         argsArray: [],
@@ -1657,6 +1710,7 @@ class PDFPageProxy {
       pageColors,
       operationsFilter,
       rendererWorker: this._transport.rendererWorker,
+      waitForGPU: () => this._transport.waitForGPU(),
     });
 
     (intentState.renderTasks ||= new Set()).add(internalRenderTask);
@@ -1729,7 +1783,7 @@ class PDFPageProxy {
     if (!intentState.opListReadCapability) {
       opListTask = Object.create(null);
       opListTask.operatorListChanged = operatorListChanged;
-      intentState.opListReadCapability = Promise.withResolvers();
+      intentState.opListReadCapability = createPromiseCapability();
       (intentState.renderTasks ||= new Set()).add(opListTask);
       intentState.operatorList = {
         fnArray: [],
@@ -1750,19 +1804,14 @@ class PDFPageProxy {
    * @param {getTextContentParameters} params - getTextContent parameters.
    * @returns {ReadableStream} Stream for reading text content chunks.
    */
-  streamTextContent({
-    includeMarkedContent = false,
-    disableNormalization = false,
-  } = {}) {
-    const TEXT_CONTENT_CHUNK_SIZE = 100;
-
+  streamTextContent({ enableMarkedContent, enableNormalization } = {}) {
     return this._transport.messageHandler.sendWithStream(
       "GetTextContent",
       {
         pageId: this.#pagesMapper.getPageId(this._pageIndex + 1) - 1,
         pageIndex: this._pageIndex,
-        includeMarkedContent: includeMarkedContent === true,
-        disableNormalization: disableNormalization === true,
+        enableMarkedContent: enableMarkedContent !== false,
+        enableNormalization: enableNormalization !== false,
       },
       {
         highWaterMark: TEXT_CONTENT_CHUNK_SIZE,
@@ -1785,6 +1834,8 @@ class PDFPageProxy {
       return this.getXfa().then(xfa => XfaText.textContent(xfa));
     }
     const readableStream = this.streamTextContent(params);
+    // Faster than `for await`.
+    const reader = readableStream.getReader();
 
     const textContent = {
       items: [],
@@ -1792,7 +1843,11 @@ class PDFPageProxy {
       lang: null,
     };
 
-    for await (const value of readableStream) {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) {
+        break;
+      }
       textContent.lang ??= value.lang;
       Object.assign(textContent.styles, value.styles);
       textContent.items.push(...value.items);
@@ -2036,9 +2091,7 @@ class PDFPageProxy {
     }
     intentState.streamReader
       .cancel(new AbortException(reason.message))
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      });
+      .catch(noopFn);
     intentState.streamReader = null;
 
     if (this._transport.destroyed) {
@@ -2081,7 +2134,7 @@ class PDFPageProxy {
  * @param {PDFWorkerParameters} params - The worker initialization parameters.
  */
 class PDFWorker {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #messageHandler = null;
 
@@ -2179,10 +2232,9 @@ class PDFWorker {
   #initializeFromPort(port) {
     this.#port = port;
     this.#messageHandler = new MessageHandler("main", "worker", port);
-    this.#messageHandler.on("ready", () => {
-      // Ignoring "ready" event -- MessageHandler should already be initialized
-      // and ready to accept messages.
-    });
+    // Ignoring "ready" event -- MessageHandler should already be initialized
+    // and ready to accept messages.
+    this.#messageHandler.on("ready", noopFn);
     this.#resolve();
   }
 
@@ -2358,9 +2410,11 @@ class PDFWorker {
  * @ignore
  */
 class WorkerTransport {
-  downloadInfoCapability = Promise.withResolvers();
+  downloadInfoCapability = createPromiseCapability();
 
   #fullReader = null;
+
+  #hasMeshPattern = false;
 
   #methodPromises = new Map();
 
@@ -2469,6 +2523,15 @@ class WorkerTransport {
     return shadow(this, "annotationStorage", new AnnotationStorage());
   }
 
+  #getFlattenIntent(intent) {
+    if (intent !== "display" && intent !== "print") {
+      warn(`Invalid flattening intent: ${intent}, using "print".`);
+    }
+    return intent === "display"
+      ? RenderingIntentFlag.DISPLAY
+      : RenderingIntentFlag.PRINT;
+  }
+
   getRenderingIntent(
     intent,
     annotationMode = AnnotationMode.ENABLE,
@@ -2546,7 +2609,7 @@ class WorkerTransport {
     }
 
     this.destroyed = true;
-    this.destroyCapability = Promise.withResolvers();
+    this.destroyCapability = createPromiseCapability();
 
     this.#passwordCapability?.reject(
       new Error("Worker was destroyed during onPassword callback")
@@ -2716,7 +2779,7 @@ class WorkerTransport {
     });
 
     messageHandler.on("PasswordRequest", ex => {
-      this.#passwordCapability = Promise.withResolvers();
+      this.#passwordCapability = createPromiseCapability();
 
       try {
         if (!loadingTask.onPassword) {
@@ -2754,6 +2817,11 @@ class WorkerTransport {
       page._startRenderPage(data.transparency, data.cacheKey);
     });
 
+    messageHandler.on(
+      "LoadSystemFont",
+      data => !this.destroyed && this.fontLoader.hasSystemFontGlyphs(data)
+    );
+
     const objectHandler = new ObjectHandler({
       messageHandler,
       commonObjs: this.commonObjs,
@@ -2763,16 +2831,13 @@ class WorkerTransport {
     });
 
     // TODO: Connect the core and renderer workers directly.
-    this.rendererWorker?.promise.then(
-      () => {
-        this.rendererWorker?.messageHandler?.on("FontFallback", data =>
-          this.destroyed
-            ? null
-            : messageHandler.sendWithPromise("FontFallback", data)
-        );
-      },
-      () => {} // Rendering handles startup failure.
-    );
+    this.rendererWorker?.promise.then(() => {
+      this.rendererWorker?.messageHandler?.on("FontFallback", data =>
+        this.destroyed
+          ? null
+          : messageHandler.sendWithPromise("FontFallback", data)
+      );
+    }, noopFn); // Rendering handles startup failure.
 
     messageHandler.on("commonobj", ([id, type, exportedData]) => {
       if (this.destroyed) {
@@ -2801,6 +2866,10 @@ class WorkerTransport {
 
       if (!this.commonObjs.has(id)) {
         objectHandler.resolveCommonObject(id, type, exportedData);
+        // Patterns in Type 3 fonts use common objects.
+        if (type === "Pattern" && this.commonObjs.get(id)[0] === "Mesh") {
+          this.#hasMeshPattern = true;
+        }
       }
       return null;
     });
@@ -2809,6 +2878,9 @@ class WorkerTransport {
       if (this.destroyed) {
         // Ignore any pending requests if the worker was terminated.
         return;
+      }
+      if (type === "Pattern" && imageData[0] === "Mesh") {
+        this.#hasMeshPattern = true;
       }
 
       if (objectHandler.resolveObject(id, pageProxyId, type, imageData)) {
@@ -2849,8 +2921,8 @@ class WorkerTransport {
     return this.messageHandler.sendWithPromise("GetData", null);
   }
 
-  saveDocument(printToPDF = null) {
-    if (this.annotationStorage.size <= 0) {
+  saveDocument({ printToPDF = null, flatten = false, intent = "print" } = {}) {
+    if (this.annotationStorage.size <= 0 && !flatten) {
       warn(
         "saveDocument called while `annotationStorage` is empty, " +
           "please use the getData-method instead."
@@ -2873,6 +2945,8 @@ class WorkerTransport {
           annotationStorage: map,
           supportsPrintToPDF: this.#printToPDF !== null,
           filename: this.#fullReader?.filename ?? null,
+          flatten,
+          intent: this.#getFlattenIntent(intent),
         },
         transfer
       )
@@ -2882,9 +2956,15 @@ class WorkerTransport {
       });
   }
 
-  extractPages(pageInfos, copyLevels = null) {
+  extractPages(
+    pageInfos,
+    copyLevels = null,
+    { flatten = false, intent = "print" } = {}
+  ) {
     const params = {
       pageInfos,
+      flatten,
+      intent: this.#getFlattenIntent(intent),
     };
     let transfer;
     const ImageBitmapCtor = globalThis.ImageBitmap;
@@ -2941,6 +3021,16 @@ class WorkerTransport {
       .finally(() => {
         this.annotationStorage.resetModified();
       });
+  }
+
+  /**
+   * @returns {Promise<boolean> | null} GPU initialization result, or null if
+   *   no wait is needed.
+   */
+  waitForGPU() {
+    return this._params.enableWebGPU && this.#hasMeshPattern && !isGPUReady()
+      ? initGPU()
+      : null;
   }
 
   getPage(pageNumber) {
@@ -3293,6 +3383,10 @@ class InternalRenderTask {
 
   #rendererTask = null;
 
+  #waitForGPU = null;
+
+  capability = createPromiseCapability();
+
   static #canvasInUse = new WeakSet();
 
   constructor({
@@ -3311,6 +3405,7 @@ class InternalRenderTask {
     pageColors = null,
     operationsFilter = null,
     rendererWorker = null,
+    waitForGPU = null,
   }) {
     this.callback = callback;
     this.params = params;
@@ -3331,7 +3426,6 @@ class InternalRenderTask {
     this._useRequestAnimationFrame =
       useRequestAnimationFrame === true && typeof window !== "undefined";
     this.cancelled = false;
-    this.capability = Promise.withResolvers();
     this.task = new RenderTask(this);
     // caching this-bound methods
     this._cancelBound = this.cancel.bind(this);
@@ -3341,6 +3435,7 @@ class InternalRenderTask {
     this._canvas = params.canvas;
     this._canvasContext = params.canvas ? null : params.canvasContext;
     this._operationsFilter = operationsFilter;
+    this.#waitForGPU = waitForGPU;
 
     this.#rendererTask =
       rendererWorker?.createRenderTask({
@@ -3356,10 +3451,9 @@ class InternalRenderTask {
   }
 
   get completed() {
-    return this.capability.promise.catch(() => {
-      // Ignoring errors, since we only want to know when rendering is
-      // no longer pending.
-    });
+    // Ignoring errors, since we only want to know when rendering is
+    // no longer pending.
+    return this.capability.promise.catch(noopFn);
   }
 
   get isWorkerRendering() {
@@ -3450,7 +3544,7 @@ class InternalRenderTask {
         this.objs,
         this.canvasFactory,
         this.filterFactory,
-        { optionalContentConfig },
+        { optionalContentConfig, pixelRatio: OutputScale.pixelRatio },
         this.annotationCanvasMap,
         this.pageColors,
         dependencyTracker,
@@ -3530,6 +3624,16 @@ class InternalRenderTask {
   async _next() {
     if (this.cancelled) {
       return;
+    }
+    if (!this.#rendererTask) {
+      // Pattern messages precede their operators.
+      const gpuPromise = this.#waitForGPU?.();
+      if (gpuPromise) {
+        await gpuPromise;
+        if (this.cancelled) {
+          return;
+        }
+      }
     }
     const { operatorList } = this;
     const { lastChunk } = operatorList;

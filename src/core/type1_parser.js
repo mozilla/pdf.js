@@ -23,6 +23,18 @@ import { warn } from "../shared/util.js";
 // in tracemonkey and various other pdfs with type1 fonts.
 const HINTING_ENABLED = false;
 
+// Subroutine nesting limit (FreeType).
+const MAX_SUBR_NESTING = 16;
+
+// Per-glyph token limit, including subroutines.
+const MAX_CHARSTRING_TOKENS = 64 * 1024 * 1024;
+
+// Operand stack limit (FreeType's Adobe engine).
+const MAX_STACK_SIZE = 48;
+
+// Converted Type 2 charstring limit in bytes (OTS).
+const MAX_CHARSTRING_LENGTH = 65535;
+
 const COMMAND_MAP = {
   hstem: [1],
   vstem: [3],
@@ -90,11 +102,22 @@ class Type1CharString {
 
   stack = [];
 
-  convert(encoded, subrs, seacAnalysisEnabled) {
+  tokens = 0;
+
+  convert(encoded, subrs, seacAnalysisEnabled, depth = 0) {
+    if (depth > MAX_SUBR_NESTING) {
+      return true;
+    }
     const count = encoded.length;
     let error = false;
     let wx, sbx, subrNumber;
     for (let i = 0; i < count; i++) {
+      if (
+        ++this.tokens > MAX_CHARSTRING_TOKENS ||
+        this.stack.length > MAX_STACK_SIZE
+      ) {
+        return true;
+      }
       let value = encoded[i];
       if (value < 32) {
         if (value === 12) {
@@ -156,7 +179,12 @@ class Type1CharString {
               error = true;
               break;
             }
-            error = this.convert(subrs[subrNumber], subrs, seacAnalysisEnabled);
+            error = this.convert(
+              subrs[subrNumber],
+              subrs,
+              seacAnalysisEnabled,
+              depth + 1
+            );
             break;
           case 11: // return
             return error;
@@ -176,6 +204,7 @@ class Type1CharString {
             break;
           case 14: // endchar
             this.output.push(COMMAND_MAP.endchar[0]);
+            error = this.output.length > MAX_CHARSTRING_LENGTH;
             break;
           case 21: // rmoveto
             if (this.flexing) {
@@ -354,7 +383,7 @@ class Type1CharString {
     } else {
       this.stack.length = 0;
     }
-    return false;
+    return this.output.length > MAX_CHARSTRING_LENGTH;
   }
 }
 

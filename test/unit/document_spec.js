@@ -18,7 +18,6 @@ import { Dict, Name, Ref } from "../../src/core/primitives.js";
 import { PDFDocument } from "../../src/core/document.js";
 import { StringStream } from "../../src/core/stream.js";
 import { XRef } from "../../src/core/xref.js";
-import { XRefParseException } from "../../src/core/core_utils.js";
 
 describe("document", function () {
   describe("Page", function () {
@@ -74,19 +73,26 @@ describe("document", function () {
       expect(xref.countUpdatesAfter(0)).toBeNull();
     });
 
-    it("rejects an xref stream whose entries have zero width", function () {
+    it("skips an xref stream whose entries have zero width", function () {
+      const previousXRef =
+        "xref\n" +
+        "0 2\n" +
+        "0000000000 65535 f \n" +
+        "0000000123 00000 n \n" +
+        "trailer\n" +
+        "<</Size 2>>\n";
       const stream = new StringStream(
-        "%PDF-1.5\n" +
-          "1 0 obj\n" +
-          "<</Type/XRef/W[0 0 0]/Index[0 10000000]/Size 10000001" +
-          "/Root 2 0 R/Length 0>>\n" +
-          "stream\nendstream\nendobj\n" +
-          "startxref\n9\n%%EOF\n"
+        previousXRef +
+          "3 0 obj\n" +
+          "<</Type/XRef/W[0 0 0]/Size 10000000/Prev 0/Length 0>>\n" +
+          "stream\nendstream\nendobj\n"
       );
       const xref = new XRef(stream, {});
-      xref.setStartXRef(9);
+      xref.setStartXRef(previousXRef.length);
+      xref.readXRef();
 
-      expect(() => xref.readXRef()).toThrowError(XRefParseException);
+      expect(xref.getEntry(1).offset).toEqual(123);
+      expect(xref.countUpdatesAfter(0)).toEqual(2);
     });
 
     it("parses xref stream offsets that don't fit in 32 bits", function () {

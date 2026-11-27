@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-@import url(draw_layer_builder.css);
 @import url(toggle_button.css);
 @import url(signature_manager.css);
 @import url(comment_manager.css);
+@import url(annotation_editor_layer_common.css);
 
 :root {
   --editor-toolbar-vert-offset: 6px;
@@ -28,22 +28,12 @@
   --outline-around-width: 1px;
   --outline-around-color: var(--color-gray-20, #f0f0f4);
   --hover-outline-around-color: var(--outline-around-color);
-  --editor-selection-outline: solid var(--outline-width) var(--outline-color);
-  --unfocus-outline: solid var(--outline-width) transparent;
-  --focus-outline-around: solid var(--outline-around-width)
-    var(--outline-around-color);
   --hover-outline-color: var(--color-gray-60, #8f8f9d);
-  --hover-outline: solid var(--outline-width) var(--hover-outline-color);
-  --hover-outline-around: solid var(--outline-around-width)
-    var(--hover-outline-around-color);
   --freetext-line-height: 1.35;
   --freetext-padding: 2px;
   --resizer-bg-color: var(--outline-color);
   --resizer-size: 6px;
-  --resizer-shift: calc(
-    0px - (var(--outline-width) + var(--resizer-size)) / 2 -
-      var(--outline-around-width)
-  );
+  --resizer-border-radius: 2px;
   --editorFreeText-editing-cursor: text;
   --editorInk-editing-cursor: url(images/cursor-editorInk.svg) 0 16, pointer;
   --editorHighlight-editing-cursor:
@@ -72,13 +62,6 @@
   }
 }
 
-.page:has(.annotationEditorLayer.nonEditing)
-  .annotationLayer
-  .editorAnnotation {
-  position: absolute;
-  pointer-events: none;
-}
-
 #viewerContainer.pdfPresentationMode:fullscreen,
 .annotationEditorLayer.disabled {
   .noAltTextBadge {
@@ -103,134 +86,12 @@
   }
 }
 
-[data-editor-rotation="90"] {
-  transform: rotate(90deg);
-}
-
-[data-editor-rotation="180"] {
-  transform: rotate(180deg);
-}
-
-[data-editor-rotation="270"] {
-  transform: rotate(270deg);
-}
-
-.annotationEditorLayer {
-  background: transparent;
-  position: absolute;
-  inset: 0;
-  font-size: calc(100px * var(--total-scale-factor));
-  transform-origin: 0 0;
-  cursor: auto;
-
-  .selectedEditor {
-    z-index: 100000 !important;
-  }
-
-  &.drawing * {
-    pointer-events: none !important;
-  }
-
-  &.getElements {
-    pointer-events: auto !important;
-    > div {
-      pointer-events: auto !important;
-    }
-  }
-}
-
-.annotationEditorLayer.waiting {
-  content: "";
-  cursor: wait;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.annotationEditorLayer.disabled {
-  pointer-events: none;
-
-  &.highlightEditing
-    :is(
-      .freeTextEditor,
-      .inkEditor,
-      .stampEditor,
-      .signatureEditor,
-      .commentPopup
-    ) {
-    pointer-events: auto;
-  }
-}
-
 .annotationEditorLayer.freetextEditing {
   cursor: var(--editorFreeText-editing-cursor);
 }
 
 .annotationEditorLayer.inkEditing {
   cursor: var(--editorInk-editing-cursor);
-}
-
-.annotationEditorLayer .draw {
-  box-sizing: border-box;
-}
-
-.annotationEditorLayer
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
-  position: absolute;
-  background: transparent;
-  z-index: 1;
-  transform-origin: 0 0;
-  cursor: auto;
-  max-width: 100%;
-  max-height: 100%;
-  border: var(--unfocus-outline);
-
-  &.draggable.selectedEditor {
-    cursor: move;
-  }
-
-  &.selectedEditor {
-    border: var(--editor-selection-outline);
-    outline: var(--focus-outline-around);
-
-    &::before {
-      /*
-        This is a workaround for the lack of support for stripes(...) (see
-        https://drafts.csswg.org/css-images-4/#stripes).
-        The outline should be composed of 1px white, 2px blue and 1px white.
-        This could be achieved in different ways:
-          - using a linear-gradient;
-          - using a box-shadow;
-          - using an outline on the selected element and an outline+border on
-            the ::before pseudo-element.
-        All these options lead to incorrect rendering likely due to rounding
-        issues.
-        That said it doesn't mean that the current is ideal, but it's the best
-        we could come up with for the moment.
-        One drawback of this approach is that we use a border on the selected
-        element which means that we must take care of it when positioning the
-        div in js (see AnnotationEditor._borderLineWidth in editor.js).
-      */
-      content: "";
-      position: absolute;
-      inset: 0;
-      border: var(--focus-outline-around);
-      pointer-events: none;
-    }
-  }
-
-  &:hover:not(.selectedEditor) {
-    border: var(--hover-outline);
-    outline: var(--hover-outline-around);
-
-    &::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border: var(--focus-outline-around);
-    }
-  }
 }
 
 .annotationEditorLayer
@@ -710,67 +571,6 @@
 }
 
 .annotationEditorLayer {
-  :is(.freeTextEditor, .inkEditor, .stampEditor, .signatureEditor) {
-    & > .resizers {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-
-      &.hidden {
-        display: none;
-      }
-
-      & > .resizer {
-        width: var(--resizer-size);
-        height: var(--resizer-size);
-        background: content-box var(--resizer-bg-color);
-        border: var(--focus-outline-around);
-        border-radius: 2px;
-        position: absolute;
-
-        &.topLeft {
-          top: var(--resizer-shift);
-          left: var(--resizer-shift);
-        }
-
-        &.topMiddle {
-          top: var(--resizer-shift);
-          left: calc(50% + var(--resizer-shift));
-        }
-
-        &.topRight {
-          top: var(--resizer-shift);
-          right: var(--resizer-shift);
-        }
-
-        &.middleRight {
-          top: calc(50% + var(--resizer-shift));
-          right: var(--resizer-shift);
-        }
-
-        &.bottomRight {
-          bottom: var(--resizer-shift);
-          right: var(--resizer-shift);
-        }
-
-        &.bottomMiddle {
-          bottom: var(--resizer-shift);
-          left: calc(50% + var(--resizer-shift));
-        }
-
-        &.bottomLeft {
-          bottom: var(--resizer-shift);
-          left: var(--resizer-shift);
-        }
-
-        &.middleLeft {
-          top: calc(50% + var(--resizer-shift));
-          left: var(--resizer-shift);
-        }
-      }
-    }
-  }
-
   &[data-main-rotation="0"]
     :is([data-editor-rotation="0"], [data-editor-rotation="180"]),
   &[data-main-rotation="90"]

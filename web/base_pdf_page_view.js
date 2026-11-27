@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import { FeatureTest, RenderingCancelledException } from "pdfjs-lib";
+import { FeatureTest, RenderingCancelledException, shadow } from "pdfjs-lib";
 import { RenderableView, RenderingStates } from "./renderable_view.js";
 
 class BasePDFPageView extends RenderableView {
@@ -64,7 +64,6 @@ class BasePDFPageView extends RenderableView {
       options.enableSelectionRendering !== false &&
       FeatureTest.isBackdropFilterSupported;
     this.imagesRightClickMinSize = options.imagesRightClickMinSize ?? -1;
-    this.minDurationToUpdateCanvas = options.minDurationToUpdateCanvas ?? 500;
   }
 
   get renderingState() {
@@ -111,6 +110,14 @@ class BasePDFPageView extends RenderableView {
     }
   }
 
+  get _minDurationToUpdateCanvas() {
+    return shadow(
+      this,
+      "_minDurationToUpdateCanvas",
+      globalThis.StepperManager?.enabled ? 0 : 500
+    );
+  }
+
   _createCanvas(onShow, hideUntilComplete = false) {
     const { pageColors } = this;
     const hasHCM = !!(pageColors?.background && pageColors?.foreground);
@@ -131,15 +138,15 @@ class BasePDFPageView extends RenderableView {
         // through a temporary canvas would only add a copy.
         if (
           !isLastShow &&
-          this.minDurationToUpdateCanvas > 0 &&
-          !this.renderTask?.isWorkerRendering
+          !this.renderTask?.isWorkerRendering &&
+          this._minDurationToUpdateCanvas > 0
         ) {
           // We draw on the canvas at 60fps (in using `requestAnimationFrame`),
           // so if the canvas is large, updating it at 60fps can be a way too
           // much and can cause some serious performance issues.
           // To avoid that we only update the canvas every
-          // `this.#minDurationToUpdateCanvas` ms.
-          if (Date.now() - this.#startTime < this.minDurationToUpdateCanvas) {
+          // `this._minDurationToUpdateCanvas` ms.
+          if (Date.now() - this.#startTime < this._minDurationToUpdateCanvas) {
             return;
           }
           if (!tempCanvas) {
@@ -184,22 +191,6 @@ class BasePDFPageView extends RenderableView {
     return { canvas, prevCanvas };
   }
 
-  #renderContinueCallback = cont => {
-    // In the worker path the canvas only gains pixels in `onFrame`.
-    if (!this.renderTask?.isWorkerRendering) {
-      this.#showCanvas?.(false);
-    }
-    if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
-      this.renderingState = RenderingStates.PAUSED;
-      this.resume = () => {
-        this.renderingState = RenderingStates.RUNNING;
-        cont();
-      };
-      return;
-    }
-    cont();
-  };
-
   _resetCanvas() {
     const { canvas } = this;
     if (!canvas) {
@@ -220,8 +211,27 @@ class BasePDFPageView extends RenderableView {
 
   async _drawCanvas(options, onCancel, onFinish) {
     const renderTask = (this.renderTask = this.pdfPage.render(options));
-    renderTask.onContinue = this.#renderContinueCallback;
-    renderTask.onFrame = () => this.#showCanvas?.(false);
+    let hasCanvasPixels = false;
+    const showCanvas = () => {
+      hasCanvasPixels = true;
+      this.#showCanvas?.(false);
+    };
+    renderTask.onFrame = showCanvas;
+    renderTask.onContinue = cont => {
+      // Wait for a worker frame before showing the canvas.
+      if (!this.renderTask?.isWorkerRendering) {
+        showCanvas();
+      }
+      if (this.renderingQueue && !this.renderingQueue.isHighestPriority(this)) {
+        this.renderingState = RenderingStates.PAUSED;
+        this.resume = () => {
+          this.renderingState = RenderingStates.RUNNING;
+          cont();
+        };
+        return;
+      }
+      cont();
+    };
     renderTask.onError = error => {
       if (error instanceof RenderingCancelledException) {
         onCancel();
@@ -242,7 +252,12 @@ class BasePDFPageView extends RenderableView {
       }
       error = e;
 
-      this.#showCanvas?.(true);
+      if (hasCanvasPixels) {
+        this.#showCanvas?.(true);
+      } else {
+        // Don't cover the page background with an empty canvas.
+        onCancel();
+      }
     } finally {
       this.#renderError = error;
 

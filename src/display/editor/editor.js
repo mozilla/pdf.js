@@ -547,9 +547,10 @@ class AnnotationEditor {
       // a problem to not find a new parent: it's something which is related to
       // what the user is seeing, hence it depends on how pages are layed out.
 
-      // The element will be outside of its parent so change the parent.
-      const { x, y } = this.div.getBoundingClientRect();
-      if (this.parent.findNewParent(this, x, y)) {
+      // The DOM still has the editor's previous position.
+      const { x, y } = div.getBoundingClientRect();
+      const [dx, dy] = this.pageTranslationToScreen(tx, ty);
+      if (this.parent.findNewParent(this, x + dx, y + dy)) {
         this.x -= Math.floor(this.x);
         this.y -= Math.floor(this.y);
       }
@@ -636,15 +637,47 @@ class AnnotationEditor {
    * @param {number} [rotation] - the rotation of the page.
    */
   fixAndSetPosition(rotation = this.rotation) {
-    const {
-      div: { style },
-      pageDimensions: [pageWidth, pageHeight],
-    } = this;
+    const [pageWidth, pageHeight] = this.pageDimensions;
     let { x, y, width, height } = this;
     width *= pageWidth;
     height *= pageHeight;
     x *= pageWidth;
     y *= pageHeight;
+
+    let tx = 0;
+    let ty = 0;
+    const toolbar =
+      this._uiManager._keepToolbarInPage && this._editToolbar?.div;
+    if (toolbar?.offsetParent) {
+      // Offset metrics ignore transforms; include the toolbar before rotating.
+      const scale = this.parentScale;
+      const toolbarLeft = toolbar.offsetLeft + this.div.clientLeft;
+      const toolbarTop = toolbar.offsetTop + this.div.clientTop;
+      const left = Math.min(0, toolbarLeft) / scale;
+      const top = Math.min(0, toolbarTop) / scale;
+      const widthWithToolbar =
+        width -
+        left +
+        Math.max(0, toolbarLeft + toolbar.offsetWidth - this.div.offsetWidth) /
+          scale;
+      const heightWithToolbar =
+        height -
+        top +
+        Math.max(0, toolbarTop + toolbar.offsetHeight - this.div.offsetHeight) /
+          scale;
+      // Keep the editor in the page if the toolbar cannot fit.
+      if (widthWithToolbar <= (rotation % 180 ? pageHeight : pageWidth)) {
+        width = widthWithToolbar;
+        tx = left;
+      }
+      if (heightWithToolbar <= (rotation % 180 ? pageWidth : pageHeight)) {
+        height = heightWithToolbar;
+        ty = top;
+      }
+      [tx, ty] = AnnotationEditor.#rotatePoint(tx, ty, rotation);
+      x += tx;
+      y += ty;
+    }
 
     if (this._mustFixPosition) {
       switch (rotation) {
@@ -667,15 +700,16 @@ class AnnotationEditor {
       }
     }
 
-    this.x = x /= pageWidth;
-    this.y = y /= pageHeight;
+    this.x = (x - tx) / pageWidth;
+    this.y = (y - ty) / pageHeight;
+    this.setPosition();
+  }
 
+  setPosition() {
+    const { style } = this.div;
     const [bx, by] = this.getBaseTranslation();
-    x += bx;
-    y += by;
-
-    style.left = `${(100 * x).toFixed(2)}%`;
-    style.top = `${(100 * y).toFixed(2)}%`;
+    style.left = `${(100 * (this.x + bx)).toFixed(2)}%`;
+    style.top = `${(100 * (this.y + by)).toFixed(2)}%`;
 
     this.moveInDOM();
   }
@@ -792,6 +826,8 @@ class AnnotationEditor {
       this.#resizersDiv.append(div);
       div.classList.add("resizer", name);
       div.setAttribute("data-resizer-name", name);
+      div.setAttribute("role", "spinbutton");
+      div.setAttribute("data-l10n-id", AnnotationEditor._l10nResizer[name]);
       div.addEventListener(
         "pointerdown",
         this.#resizerPointerdown.bind(this, name),
@@ -2056,13 +2092,11 @@ class AnnotationEditor {
       const signal = this._uiManager._signal;
       for (const div of this.#allResizerDivs) {
         const name = div.getAttribute("data-resizer-name");
-        div.setAttribute("role", "spinbutton");
         div.addEventListener("keydown", boundResizerKeydown, { signal });
         div.addEventListener("blur", boundResizerBlur, { signal });
         div.addEventListener("focus", this.#resizerFocus.bind(this, name), {
           signal,
         });
-        div.setAttribute("data-l10n-id", AnnotationEditor._l10nResizer[name]);
       }
     }
 
@@ -2172,16 +2206,23 @@ class AnnotationEditor {
     if (!this._editToolbar) {
       this.addEditToolbar().then(() => {
         if (this.div?.classList.contains("selectedEditor")) {
-          // The editor can have been unselected while we were waiting for the
-          // edit toolbar to be created, hence we want to be sure that this
-          // editor is still selected.
-          this._editToolbar?.show();
+          // Selection may have changed while the toolbar was being created.
+          this.#showEditToolbar();
         }
       });
       return;
     }
-    this._editToolbar?.show();
+    this.#showEditToolbar();
     this.#altText?.toggleAltTextBadge(false);
+  }
+
+  #showEditToolbar() {
+    this._editToolbar?.show();
+    if (this._uiManager._keepToolbarInPage) {
+      // Include the newly visible toolbar in the bounds.
+      this.fixAndSetPosition();
+      this._onTranslated();
+    }
   }
 
   focus() {

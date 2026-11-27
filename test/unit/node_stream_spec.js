@@ -153,4 +153,29 @@ describe("node_stream", function () {
     expect(isRangeSupported).toBeFalse();
     expect(len).toEqual(smallLength);
   });
+
+  it("cancel after a failed read doesn't cause an unhandled rejection", async function () {
+    // We point the stream at a directory instead of at a PDF file on purpose.
+    // Opening a directory succeeds, but reading from it fails (with EISDIR),
+    // so both the full reader and the range reader end up with an errored
+    // stream.
+    const stream = new PDFNodeStream({
+      url: new URL("./test/pdfs/", cwdURL),
+      rangeChunkSize: 65536,
+      disableStream: false,
+      disableRange: false,
+    });
+
+    const fullReader = stream.getFullReader();
+    const rangeReader = stream.getRangeReader(0, 65536);
+    await expectAsync(fullReader.read()).toBeRejected();
+    await expectAsync(rangeReader.read()).toBeRejected();
+
+    fullReader.cancel(new AbortException("Don't need fullReader."));
+    rangeReader.cancel(new AbortException("Don't need rangeReader."));
+    // Allow any unhandled rejections to be reported.
+    await new Promise(resolve => {
+      setTimeout(resolve, 0);
+    });
+  });
 });

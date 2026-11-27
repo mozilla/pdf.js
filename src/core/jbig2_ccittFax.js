@@ -14,7 +14,6 @@
  */
 
 import { BaseException, shadow } from "../shared/util.js";
-import JBig2 from "../../external/jbig2/jbig2.js";
 import { WasmImage } from "./wasm_image.js";
 
 class Jbig2Error extends BaseException {
@@ -24,20 +23,20 @@ class Jbig2Error extends BaseException {
 }
 
 class JBig2CCITTFaxImage extends WasmImage {
-  _filename = "jbig2.wasm";
-
-  _noWasmFilename = "jbig2_nowasm_fallback.js";
-
   static get instance() {
     return shadow(
       this,
       "instance",
-      new JBig2CCITTFaxImage(/* trackInstance = */ true)
+      new JBig2CCITTFaxImage("jbig2.wasm", "jbig2_nowasm_fallback.js")
     );
   }
 
-  async decode(bytes, width, height, globals, CCITTOptions) {
-    const module = await this._getModule(JBig2);
+  async decode(context, bytes, width, height, globals, CCITTOptions) {
+    const module = await this._getModule(
+      context,
+      () =>
+        import(/* webpackChunkName: "jbig2" */ "../../external/jbig2/jbig2.js")
+    );
 
     if (!module) {
       throw new Jbig2Error("JBig2 failed to initialize");
@@ -74,8 +73,6 @@ class JBig2CCITTFaxImage extends WasmImage {
         throw new Jbig2Error("Unknown error");
       }
       const { imageData } = module;
-      module.imageData = null;
-
       return imageData;
     } finally {
       if (ptr) {
@@ -84,6 +81,7 @@ class JBig2CCITTFaxImage extends WasmImage {
       if (globalsPtr) {
         module._free(globalsPtr);
       }
+      module.imageData = null;
     }
   }
 }

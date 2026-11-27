@@ -29,8 +29,10 @@ class Toolbar {
    * @param {ToolbarOptions} options
    * @param {EventBus} eventBus
    * @param {object} nimbusData - Nimbus configuration.
+   * @param {boolean} hasNativeTools - Whether the embedding app provides its
+   *   own PDF tools, in which case the viewer toolbar buttons are removed.
    */
-  constructor(options, eventBus, nimbusData) {
+  constructor(options, eventBus, nimbusData, hasNativeTools = false) {
     this.#eventBus = eventBus;
     const buttons = [
       {
@@ -40,24 +42,19 @@ class Toolbar {
       },
     ];
 
-    if (nimbusData) {
-      this.#buttons = [];
-      for (const button of buttons) {
-        if (nimbusData[button.nimbusName]) {
-          this.#buttons.push(button);
-        } else {
-          button.element.remove();
-        }
-      }
-      if (this.#buttons.length > 0) {
-        options.container.classList.add("show");
+    this.#buttons = [];
+    for (const button of buttons) {
+      if (!hasNativeTools && (!nimbusData || nimbusData[button.nimbusName])) {
+        this.#buttons.push(button);
       } else {
-        options.container.remove();
-        options.mainContainer.classList.add("noToolbar");
+        button.element.remove();
       }
-    } else {
+    }
+    if (this.#buttons.length > 0) {
       options.container.classList.add("show");
-      this.#buttons = buttons;
+    } else {
+      options.container.remove();
+      options.mainContainer.classList.add("noToolbar");
     }
 
     // Bind the event listeners for click and various other actions.

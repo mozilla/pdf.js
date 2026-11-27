@@ -83,10 +83,14 @@ function loadImage(svg_xml, ctx) {
 }
 
 async function writeSVG(svgElement, ctx) {
+  // XML forbids most C0 controls, even as character references, e.g. in the
+  // text of a font without a ToUnicode map.
+  const xml = new XMLSerializer()
+    .serializeToString(svgElement)
+    // eslint-disable-next-line no-control-regex
+    .replaceAll(/[\x00-\x08\v\f\x0E-\x1F]/g, "\uFFFD");
   // We need to have UTF-8 encoded XML.
-  const svg_xml = unescape(
-    encodeURIComponent(new XMLSerializer().serializeToString(svgElement))
-  );
+  const svg_xml = unescape(encodeURIComponent(xml));
   if (svg_xml.includes("background-image: url(&quot;data:image")) {
     // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=1844414
     // we load the image two times.
@@ -330,8 +334,19 @@ class Rasterize {
       // Items are transformed to have 1px font size.
       svg.setAttribute("font-size", 1);
 
+      // The fonts of the document aren't available in the SVG image.
+      const fontRules = [];
+      for (const { textLayerFont } of Object.values(textContent.styles)) {
+        if (textLayerFont) {
+          const { name, data } = textLayerFont;
+          fontRules.push(
+            `@font-face { font-family: "${name}"; src: url(data:font/opentype;base64,${data.toBase64()}); }`
+          );
+        }
+      }
+
       const [common, overrides] = await this.textStylePromise;
-      style.textContent = `${common}\n${overrides}\n${this.createRootCSS(viewport)}`;
+      style.textContent = `${common}\n${overrides}\n${this.createRootCSS(viewport)}\n${fontRules.join("\n")}`;
 
       // Rendering text layer as HTML.
       const textLayer = new TextLayer({
@@ -344,6 +359,9 @@ class Rasterize {
       svg.append(foreignObject);
 
       await writeSVG(svg, ctx);
+
+      // Release the text layer fonts.
+      textLayer.cancel();
     } catch (reason) {
       throw new Error(`Rasterize.textLayer: "${reason?.message}".`);
     }
@@ -744,15 +762,9 @@ class Driver {
 
       this._log(`[${++this.tasksDone}] ${task.id}:\n`);
 
-      // Support *linked* test-cases for the other suites, e.g. unit- and
-      // integration-tests, without needing to run them as reference-tests.
+      // Skip PDFs used by other test suites.
       if (task.type === "other") {
         this._log(`  Skipping file "${task.file}"\n`);
-
-        if (!task.link) {
-          this._nextPage(task, 'Expected "other" test-case to be linked.');
-          return;
-        }
         this._nextTask();
         return;
       }
@@ -948,6 +960,8 @@ class Driver {
       wasmUrl: WASM_URL,
       disableAutoFetch: !task.enableAutoFetch,
       pdfBug: true,
+      // Draw the glyph boxes of the text layer fonts.
+      debugTextLayerFonts: task.type === "text",
       useSystemFonts: task.useSystemFonts,
       useWasm: task.useWasm,
       useWorkerFetch: task.useWorkerFetch,
@@ -1142,8 +1156,7 @@ class Driver {
               // The text builder will draw its content on the test canvas
               initPromise = page
                 .getTextContent({
-                  includeMarkedContent: true,
-                  disableNormalization: true,
+                  enableNormalization: false,
                 })
                 .then(textContent =>
                   task.type === "text"

@@ -15,16 +15,21 @@
 
 /** @typedef {import("./page_viewport").PageViewport} PageViewport */
 /** @typedef {import("./api").TextContent} TextContent */
+/** @typedef {import("./api").TextStyle} TextStyle */
 /** @typedef {import("./text_layer_images").TextLayerImages} TextLayerImages */
 
 import {
   AbortException,
+  createPromiseCapability,
   FeatureTest,
+  makeMap,
+  noopFn,
   shadow,
   Util,
   warn,
 } from "../shared/util.js";
-import { OutputScale } from "./display_utils.js";
+import { FontLoader } from "./font_loader.js";
+import { OutputScale } from "./output_scale.js";
 import { setLayerDimensions } from "./dom_utils.js";
 
 /**
@@ -49,8 +54,11 @@ import { setLayerDimensions } from "./dom_utils.js";
 const MAX_TEXT_DIVS_TO_RENDER = 100000;
 const DEFAULT_FONT_SIZE = 30;
 
+// Used in the `#appendText` method.
+const TX = new Float32Array(6);
+
 class TextLayer {
-  #capability = Promise.withResolvers();
+  #capability = createPromiseCapability();
 
   #container = null;
 
@@ -58,11 +66,17 @@ class TextLayer {
 
   #fontInspectorEnabled = !!globalThis.FontInspector?.enabled;
 
+  #fonts = new Map();
+
   #imagesHandler = null;
 
   #lang = null;
 
   #layoutTextParams = null;
+
+  #hasTextLayerFonts = false;
+
+  #ownerDocument;
 
   #pageHeight = 0;
 
@@ -88,11 +102,12 @@ class TextLayer {
 
   #transform = null;
 
-  static #ascentCache = new Map();
-
   static #canvasContexts = new Map();
 
   static #canvasCtxFonts = new WeakMap();
+
+  // Text layers in the same document share fonts by name.
+  static #fontCache = new WeakMap();
 
   static #minFontSize = null;
 
@@ -118,6 +133,7 @@ class TextLayer {
       throw new Error('No "textContentSource" parameter specified.');
     }
     this.#container = this.#rootContainer = container;
+    this.#ownerDocument = container.ownerDocument || globalThis.document;
 
     this.#imagesHandler = images;
 
@@ -129,7 +145,14 @@ class TextLayer {
       ctx: null,
     };
     const { pageWidth, pageHeight, pageX, pageY } = viewport.rawDims;
-    this.#transform = [1, 0, 0, -1, -pageX, pageY + pageHeight];
+    this.#transform = new Float32Array([
+      1,
+      0,
+      0,
+      -1,
+      -pageX,
+      pageY + pageHeight,
+    ]);
     this.#pageWidth = pageWidth;
     this.#pageHeight = pageHeight;
 
@@ -145,9 +168,7 @@ class TextLayer {
         this.#layoutTextParams = null;
         this.#styleCache = null;
       })
-      .catch(() => {
-        // Avoid "Uncaught promise" messages in the console.
-      });
+      .catch(noopFn);
 
     if (typeof PDFJSDev === "undefined" || PDFJSDev.test("TESTING")) {
       // For testing purposes.
@@ -186,26 +207,48 @@ class TextLayer {
    * Render the textLayer.
    * @returns {Promise}
    */
-  render() {
+  async render() {
     if (this.#imagesHandler) {
       this.#container.append(this.#imagesHandler.render());
     }
 
-    const pump = () => {
-      this.#reader.read().then(({ value, done }) => {
+    this.#reader = this.#textContentSource.getReader();
+    TextLayer.#pendingTextLayers.add(this);
+
+    try {
+      while (this.#reader) {
+        const { value, done } = await this.#reader.read();
+        if (!this.#reader) {
+          break; // Cancelled.
+        }
         if (done) {
           this.#capability.resolve();
-          return;
+          break;
         }
         this.#lang ??= value.lang;
         Object.assign(this.#styleCache, value.styles);
+        const fontsPromise = this.#loadFonts(value.styles);
+        if (fontsPromise) {
+          // Cancellation should also interrupt the wait for fonts.
+          await Promise.race([fontsPromise, this.#capability.promise]);
+          if (!this.#reader) {
+            break;
+          }
+          if (
+            !this.#hasTextLayerFonts &&
+            this.#fonts
+              .values()
+              .some(({ fontFace }) => fontFace.status === "loaded")
+          ) {
+            this.#hasTextLayerFonts = true;
+            this.#rootContainer.classList.add("textLayerFonts");
+          }
+        }
         this.#processItems(value.items);
-        pump();
-      }, this.#capability.reject);
-    };
-    this.#reader = this.#textContentSource.getReader();
-    TextLayer.#pendingTextLayers.add(this);
-    pump();
+      }
+    } catch (reason) {
+      this.#capability.reject(reason);
+    }
 
     return this.#capability.promise;
   }
@@ -230,18 +273,63 @@ class TextLayer {
   }
 
   /**
-   * Cancel rendering of the textLayer.
+   * Cancel rendering of the textLayer, and release its fonts.
    * @returns {undefined}
    */
   cancel() {
     const abortEx = new AbortException("TextLayer task cancelled.");
 
-    this.#reader?.cancel(abortEx).catch(() => {
-      // Avoid "Uncaught promise" messages in the console.
-    });
+    this.#reader?.cancel(abortEx).catch(noopFn);
     this.#reader = null;
 
     this.#capability.reject(abortEx);
+
+    const fontSet = this.#ownerDocument.fonts;
+    const fontCache = TextLayer.#fontCache.get(fontSet);
+    for (const [name, font] of this.#fonts) {
+      if (--font.count === 0) {
+        fontSet.delete(font.fontFace);
+        fontCache.delete(name);
+      }
+    }
+    this.#fonts.clear();
+    this.#rootContainer.classList.remove("textLayerFonts");
+  }
+
+  /**
+   * @param {Record<string, TextStyle>} styles
+   * @returns {Promise|null} Resolved when the fonts are loaded, or failed to.
+   */
+  #loadFonts(styles) {
+    const fontSet = this.#ownerDocument.fonts;
+    if (!fontSet || typeof FontFace === "undefined") {
+      return null;
+    }
+    const promises = [];
+    let fontCache;
+    for (const { textLayerFont } of Object.values(styles)) {
+      if (!textLayerFont || this.#fonts.has(textLayerFont.name)) {
+        continue;
+      }
+      fontCache ??= TextLayer.#fontCache.getOrInsertComputed(fontSet, makeMap);
+      const { name, data } = textLayerFont;
+      const font = fontCache.getOrInsertComputed(name, () => {
+        const fontFace = new FontFace(name, data);
+        return {
+          fontFace,
+          count: 0,
+          promise: FontLoader.loadBinaryFontFace(fontSet, fontFace).catch(
+            reason => {
+              warn(`Cannot load the text layer font "${name}": "${reason}".`);
+            }
+          ),
+        };
+      });
+      this.#fonts.set(name, font);
+      font.count++;
+      promises.push(font.promise);
+    }
+    return promises.length ? Promise.all(promises) : null;
   }
 
   /**
@@ -266,7 +354,10 @@ class TextLayer {
     if (this.#disableProcessItems) {
       return;
     }
-    this.#layoutTextParams.ctx ??= TextLayer.#getCtx(this.#lang);
+    this.#layoutTextParams.ctx ??= TextLayer.#getCtx(
+      this.#ownerDocument,
+      this.#lang
+    );
 
     const textDivs = this.#textDivs,
       textContentItemsStr = this.#textContentItemsStr;
@@ -287,7 +378,7 @@ class TextLayer {
           item.type === "beginMarkedContent"
         ) {
           const parent = this.#container;
-          this.#container = document.createElement("span");
+          this.#container = this.#ownerDocument.createElement("span");
           this.#container.classList.add("markedContent");
           if (item.id) {
             this.#container.setAttribute("id", item.id);
@@ -308,47 +399,66 @@ class TextLayer {
 
   #appendText(geom) {
     // Initialize all used properties to keep the caches monomorphic.
-    const textDiv = document.createElement("span");
+    const textDiv = this.#ownerDocument.createElement("span");
+    const isSpace = geom.str === " ";
     const textDivProperties = {
       angle: 0,
       canvasWidth: 0,
       hasText: geom.str !== "",
       hasEOL: geom.hasEOL,
       fontSize: 0,
+      fontAdvance: 0,
+      scaleX: 1,
     };
     this.#textDivs.push(textDiv);
 
-    const tx = Util.transform(this.#transform, geom.transform);
-    let angle = Math.atan2(tx[1], tx[0]);
+    Util.transform(this.#transform, geom.transform, TX);
+    let angle = Math.atan2(TX[1], TX[0]);
     const style = this.#styleCache[geom.fontName];
     if (style.vertical) {
       angle += Math.PI / 2;
     }
 
-    let fontFamily =
-      (this.#fontInspectorEnabled && style.fontSubstitution) ||
-      style.fontFamily;
-
-    // Workaround for bug 1922063.
-    fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
-    const fontHeight = Math.hypot(tx[2], tx[3]);
+    const { textLayerFont } = style;
+    let fontFamily,
+      ascent,
+      advanceScale = 1;
+    const hasTextLayerFont =
+      textLayerFont &&
+      this.#fonts.get(textLayerFont.name)?.fontFace.status === "loaded";
+    if (hasTextLayerFont) {
+      fontFamily = textLayerFont.name;
+      ascent = textLayerFont.ascent;
+      advanceScale = textLayerFont.advanceScale;
+      textDivProperties.fontAdvance =
+        (geom.textLayerAdvance ?? 0) / advanceScale;
+    } else {
+      fontFamily =
+        (this.#fontInspectorEnabled && style.fontSubstitution) ||
+        style.fontFamily;
+      // Workaround for bug 1922063.
+      fontFamily = TextLayer.fontFamilyMap.get(fontFamily) || fontFamily;
+    }
+    const fontHeight = Math.hypot(TX[2], TX[3]);
     const fontAscent =
-      fontHeight * TextLayer.#getAscent(fontFamily, style, this.#lang);
+      fontHeight *
+      (ascent ??
+        TextLayer.#getAscent(fontFamily, style, this.#layoutTextParams.ctx));
 
     let left, top;
     if (angle === 0) {
-      left = tx[4];
-      top = tx[5] - fontAscent;
+      left = TX[4];
+      top = TX[5] - fontAscent;
     } else {
-      left = tx[4] + fontAscent * Math.sin(angle);
-      top = tx[5] - fontAscent * Math.cos(angle);
+      left = TX[4] + fontAscent * Math.sin(angle);
+      top = TX[5] - fontAscent * Math.cos(angle);
     }
 
     const divStyle = textDiv.style;
     // Setting the style properties individually, rather than all at once,
     // should be OK since the `textDiv` isn't appended to the document yet.
-    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(2)}%`;
-    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(2)}%`;
+    divStyle.left = `${((100 * left) / this.#pageWidth).toFixed(3)}%`;
+    divStyle.top = `${((100 * top) / this.#pageHeight).toFixed(3)}%`;
     // The text is laid out with the rounded value, hence keep it around in
     // order to measure the text with the very same size, see `#layout`.
     const roundedFontHeight = Math.round(fontHeight * 100) / 100;
@@ -373,26 +483,26 @@ class TextLayer {
     if (angle !== 0) {
       textDivProperties.angle = angle * (180 / Math.PI);
     }
-    // We don't bother scaling single-char text divs, because it has very
-    // little effect on text highlighting. This makes scrolling on docs with
-    // lots of such divs a lot faster.
-    let shouldScaleText = false;
-    if (geom.str.length > 1) {
-      shouldScaleText = true;
-    } else if (geom.str !== " " && geom.transform[0] !== geom.transform[3]) {
-      const absScaleX = Math.abs(geom.transform[0]),
-        absScaleY = Math.abs(geom.transform[3]);
+    // Different PDF glyphs can map to the same character. The generated font
+    // has one advance for it, so even an isolated glyph may need width fitting.
+    let shouldScaleText =
+      geom.str.length > 1 ||
+      (hasTextLayerFont && (!isSpace || advanceScale !== 1));
+    const scaleX = geom.transform[0],
+      scaleY = geom.transform[3];
+    if (!shouldScaleText && !isSpace && scaleX !== scaleY) {
       // When the horizontal/vertical scaling differs significantly, also scale
       // even single-char text to improve highlighting (fixes issue11713.pdf).
-      if (
-        absScaleX !== absScaleY &&
-        Math.max(absScaleX, absScaleY) / Math.min(absScaleX, absScaleY) > 1.5
-      ) {
-        shouldScaleText = true;
-      }
+      const absScaleX = Math.abs(scaleX),
+        absScaleY = Math.abs(scaleY);
+      shouldScaleText =
+        Math.max(absScaleX, absScaleY) > 1.5 * Math.min(absScaleX, absScaleY);
     }
     if (shouldScaleText) {
       textDivProperties.canvasWidth = style.vertical ? geom.height : geom.width;
+      if (!textDivProperties.canvasWidth && textDivProperties.fontAdvance > 0) {
+        textDivProperties.scaleX = 0;
+      }
     }
 
     // Finally, layout and append the text to the DOM.
@@ -404,7 +514,7 @@ class TextLayer {
       this.#container.append(textDiv);
     }
     if (textDivProperties.hasEOL) {
-      const br = document.createElement("br");
+      const br = this.#ownerDocument.createElement("br");
       br.setAttribute("role", "presentation");
       this.#container.append(br);
     }
@@ -413,27 +523,31 @@ class TextLayer {
   #layout(params) {
     const { div, properties, ctx } = params;
     const { style } = div;
-    const { canvasWidth, fontSize } = properties;
+    const { canvasWidth, fontSize, fontAdvance } = properties;
+    let { scaleX } = properties;
 
     if (canvasWidth !== 0 && fontSize !== 0 && properties.hasText) {
-      const { fontFamily } = style;
-      // Firefox quantizes canvas font sizes after dividing by the device-pixel
-      // ratio. Measure at a quantized size, then rescale the width.
-      const pixelRatio = this.#pixelRatio;
-      const measuredSize =
-        TextLayer.#quantizeFontSize((fontSize * this.#scale) / pixelRatio) *
-        pixelRatio;
+      let width = fontAdvance * fontSize;
+      if (!width) {
+        // Firefox quantizes canvas font sizes after dividing by the
+        // device-pixel ratio. Measure at a quantized size, then rescale the
+        // width.
+        const pixelRatio = this.#pixelRatio;
+        const measuredSize =
+          TextLayer.#quantizeFontSize((fontSize * this.#scale) / pixelRatio) *
+          pixelRatio;
 
-      TextLayer.#ensureCtxFont(ctx, measuredSize, fontFamily);
-      // Only measure the width for multi-char text divs, see `appendText`.
-      const { width } = ctx.measureText(div.textContent);
+        TextLayer.#ensureCtxFont(ctx, measuredSize, style.fontFamily);
+        width =
+          (ctx.measureText(div.textContent).width * fontSize) / measuredSize;
+      }
 
       if (width > 0) {
-        style.setProperty(
-          "--scale-x",
-          (canvasWidth * measuredSize) / (width * fontSize)
-        );
+        scaleX = canvasWidth / width;
       }
+    }
+    if (scaleX !== 1) {
+      style.setProperty("--scale-x", scaleX);
     }
     if (properties.angle !== 0) {
       style.setProperty("--rotate", `${properties.angle}deg`);
@@ -448,16 +562,20 @@ class TextLayer {
     if (this.#pendingTextLayers.size > 0) {
       return;
     }
-    this.#ascentCache.clear();
-
-    for (const { canvas } of this.#canvasContexts.values()) {
-      canvas.remove();
+    for (const contexts of this.#canvasContexts.values()) {
+      for (const { canvas } of contexts.values()) {
+        canvas.remove();
+      }
     }
     this.#canvasContexts.clear();
   }
 
-  static #getCtx(lang = null) {
-    let ctx = this.#canvasContexts.get((lang ||= ""));
+  static #getCtx(ownerDocument, lang = null) {
+    const contexts = this.#canvasContexts.getOrInsertComputed(
+      ownerDocument,
+      makeMap
+    );
+    let ctx = contexts.get((lang ||= ""));
     if (!ctx) {
       // We don't use an OffscreenCanvas here because we use serif/sans serif
       // fonts with it and they depends on the locale.
@@ -469,21 +587,25 @@ class TextLayer {
       // Ideally, we should use in the text layer the fonts we've in the pdf (or
       // their replacements when they aren't embedded) and then we can use an
       // OffscreenCanvas.
-      const canvas = document.createElement("canvas");
+      const canvas = ownerDocument.createElement("canvas");
       canvas.style.cssText =
         "position:absolute;top:0;left:0;width:0;height:0;display:none;" +
         "letter-spacing:normal;word-spacing:normal";
       canvas.lang = lang;
-      document.body.append(canvas);
+      ownerDocument.body.append(canvas);
       ctx = canvas.getContext("2d", {
         alpha: false,
         willReadFrequently: true,
       });
-      this.#canvasContexts.set(lang, ctx);
+      contexts.set(lang, ctx);
 
       // Also, initialize state for the `#ensureCtxFont` method.
       // Resizing the canvas resets ctx.font but leaves this cache stale.
-      this.#canvasCtxFonts.set(ctx, { size: 0, family: "" });
+      this.#canvasCtxFonts.set(ctx, {
+        size: 0,
+        family: "",
+        ascents: new Map(),
+      });
     }
     return ctx;
   }
@@ -527,13 +649,12 @@ class TextLayer {
     div.remove();
   }
 
-  static #getAscent(fontFamily, style, lang) {
-    const cachedAscent = this.#ascentCache.get(fontFamily);
+  static #getAscent(fontFamily, style, ctx) {
+    const { ascents } = this.#canvasCtxFonts.get(ctx);
+    const cachedAscent = ascents.get(fontFamily);
     if (cachedAscent) {
       return cachedAscent;
     }
-    const ctx = this.#getCtx(lang);
-
     this.#ensureCtxFont(ctx, DEFAULT_FONT_SIZE, fontFamily);
     const metrics = ctx.measureText("");
 
@@ -561,7 +682,7 @@ class TextLayer {
       }
     }
 
-    this.#ascentCache.set(fontFamily, ratio);
+    ascents.set(fontFamily, ratio);
     return ratio;
   }
 }

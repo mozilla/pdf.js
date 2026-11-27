@@ -22,6 +22,7 @@ import { $toPages } from "../../src/core/xfa/symbol_utils.js";
 import { SimpleXMLParser } from "../../src/core/xml_parser.js";
 import { XFAFactory } from "../../src/core/xfa/factory.js";
 import { XFAParser } from "../../src/core/xfa/parser.js";
+import { XFAParserBase } from "../../src/core/xfa/parser_base.js";
 
 class XfaInput {
   constructor(xdp, resources) {
@@ -93,10 +94,10 @@ async function captureXfaDocument(filename) {
  */
 async function captureRichTexts(filename, options) {
   const richTexts = await captureCalls(
-    XFAFactory,
-    "getRichTextAsHtml",
+    XFAParserBase.prototype,
+    "parse",
     () => processPdf(filename, { ...options, operatorList: true }),
-    (target, [rc]) => (typeof rc === "string" ? rc : undefined),
+    (parser, [data]) => (parser._richText ? data : undefined),
     { before: true }
   );
   if (richTexts.length === 0) {

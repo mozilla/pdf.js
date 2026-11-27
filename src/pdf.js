@@ -28,6 +28,7 @@ import {
   AnnotationEditorType,
   AnnotationMode,
   AnnotationType,
+  createPromiseCapability,
   createValidAbsoluteUrl,
   FeatureTest,
   getUuid,
@@ -37,6 +38,7 @@ import {
   makeMap,
   makeObj,
   makeSet,
+  noopFn,
   normalizeUnicode,
   OPS,
   PasswordException,
@@ -53,10 +55,8 @@ import {
   findContrastColor,
   getRGB,
   getRGBA,
-  OutputScale,
   PixelsPerInch,
   RenderingCancelledException,
-  SupportedImageMimeTypes,
 } from "./display/display_utils.js";
 import {
   build,
@@ -77,6 +77,7 @@ import {
   renderRichText,
   setLayerDimensions,
   stopEvent,
+  SupportedImageMimeTypes,
 } from "./display/dom_utils.js";
 import { AnnotationEditorLayer } from "./display/editor/annotation_editor_layer.js";
 import { AnnotationEditorUIManager } from "./display/editor/tools.js";
@@ -88,6 +89,7 @@ import { GlobalWorkerOptions } from "./display/worker_options.js";
 import { HighlightOutliner } from "./display/editor/drawers/highlight.js";
 import { isValidExplicitDest } from "./display/api_utils.js";
 import { MathClamp } from "./shared/math_clamp.js";
+import { OutputScale } from "./display/output_scale.js";
 import { SignatureExtractor } from "./display/editor/drawers/signaturedraw.js";
 import { TextLayer } from "./display/text_layer.js";
 import { TextLayerImages } from "./display/text_layer_images.js";
@@ -112,6 +114,7 @@ globalThis.pdfjsLib = {
   applyOpacity,
   build,
   ColorPicker,
+  createPromiseCapability,
   createValidAbsoluteUrl,
   CSSConstants,
   DOMSVGFactory,
@@ -137,6 +140,7 @@ globalThis.pdfjsLib = {
   makeSet,
   MathClamp,
   noContextMenu,
+  noopFn,
   normalizeUnicode,
   OPS,
   OutputScale,
@@ -177,6 +181,7 @@ export {
   applyOpacity,
   build,
   ColorPicker,
+  createPromiseCapability,
   createValidAbsoluteUrl,
   CSSConstants,
   DOMSVGFactory,
@@ -202,6 +207,7 @@ export {
   makeSet,
   MathClamp,
   noContextMenu,
+  noopFn,
   normalizeUnicode,
   OPS,
   OutputScale,

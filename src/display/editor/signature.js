@@ -81,7 +81,7 @@ class SignatureEditor extends DrawingEditor {
     this._willKeepAspectRatio = true;
     this.#signatureData = params.signatureData || null;
     this.#description = null;
-    this.defaultL10nId = "pdfjs-editor-signature-editor1";
+    this.defaultL10nId = "pdfjs-editor-signature-editor2";
   }
 
   /** @inheritdoc */
@@ -166,6 +166,7 @@ class SignatureEditor extends DrawingEditor {
     }
 
     super.render();
+    this.#updateRoleForSelection();
 
     if (this._drawId === null) {
       if (this.#signatureData) {
@@ -214,6 +215,27 @@ class SignatureEditor extends DrawingEditor {
     }
 
     return this.div;
+  }
+
+  /** @inheritdoc */
+  select() {
+    super.select();
+    this.#updateRoleForSelection();
+  }
+
+  /** @inheritdoc */
+  unselect() {
+    super.unselect();
+    this.#updateRoleForSelection();
+  }
+
+  #updateRoleForSelection() {
+    if (this._uiManager._useButtonRoleForUnselectedSignatures) {
+      this.div?.setAttribute(
+        "role",
+        this.isSelected ? "application" : "button"
+      );
+    }
   }
 
   setUuid(uuid) {

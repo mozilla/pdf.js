@@ -78,9 +78,10 @@ globalThis.OffscreenCanvas = OffscreenCanvasStub;
 
 // The stub above accepts any canvas size, so the actual canvas limits can't be
 // probed. Instead set a small limit (one megapixel), such that images which are
-// just larger than `MIN_IMAGE_DIM` (see `ImageResizer.needsToBeResized`) in one
+// just larger than `MIN_IMAGE_DIM` (see `ImageResizer#needsToBeResized`) in one
 // dimension, hence still fast enough to benchmark, are downscaled.
-ImageResizer.setOptions({ canvasMaxAreaInBytes: 4 * 2 ** 20 });
+const canvasMaxAreaInBytes = 4 * 2 ** 20;
+const imageResizer = new ImageResizer({ canvasMaxAreaInBytes });
 
 /**
  * @param {BaseStream} stream
@@ -133,7 +134,12 @@ async function captureImages(filename, filter, options) {
   const images = await captureCalls(
     PDFImage.prototype,
     "createImageData",
-    () => processPdf(filename, { ...options, operatorList: true }),
+    () =>
+      processPdf(filename, {
+        canvasMaxAreaInBytes,
+        ...options,
+        operatorList: true,
+      }),
     (image, [forceRGBA]) => {
       const streams = filter(image) && copyImageStreams(image);
       return streams ? { image, forceRGBA, streams } : undefined;
@@ -155,25 +161,36 @@ async function captureImages(filename, filter, options) {
 /**
  * @param {string} filename
  * @param {object} [options] - See `processPdf`.
- * @returns {Promise<Array<BaseStream>>} Copied mask streams, excluding JPEG,
- *   JPX, JBIG2 and CCITT.
+ * @returns {Promise<Array<object>>} Mask options with copied streams,
+ *   excluding JPEG, JPX, JBIG2 and CCITT.
  */
 async function captureImageMasks(filename, options) {
   const masks = await captureCalls(
     PDFImage,
     "createMask",
-    () => processPdf(filename, { ...options, operatorList: true }),
-    (target, [{ image }]) =>
-      image.isImageStream ? undefined : copyStream(image),
+    () =>
+      processPdf(filename, {
+        canvasMaxAreaInBytes,
+        ...options,
+        operatorList: true,
+      }),
+    (target, [params]) =>
+      params.image.isImageStream
+        ? undefined
+        : {
+            ...params,
+            image: copyStream(params.image),
+            isOffscreenCanvasSupported: true,
+          },
     { before: true }
   );
   if (masks.length === 0) {
     throw new Error(`No image mask in "${filename}".`);
   }
-  for (const image of masks) {
+  for (const params of masks) {
     await checkReplay(filename, () => {
-      image.reset();
-      return PDFImage.createMask({ image, isOffscreenCanvasSupported: true });
+      params.image.reset();
+      return PDFImage.createMask(params);
     });
   }
   return masks;
@@ -211,19 +228,21 @@ async function createSyntheticImage({
   colorSpace,
   smask = false,
 }) {
-  const image = new PDFImage({
-    xref: new XRef(new NullStream(), /* pdfManager = */ null),
-    res: null,
-    image: createImageStream(
-      width,
-      height,
-      colorSpace,
-      (x, y, c) => (x + (c + 1) * y) & 0xff
-    ),
-    smask: smask
-      ? createImageStream(width, height, "DeviceGray", (x, y) => (x ^ y) & 0xff)
-      : null,
-    pdfFunctionFactory: null,
+  const stream = createImageStream(
+    width,
+    height,
+    colorSpace,
+    (x, y, c) => (x + (c + 1) * y) & 0xff
+  );
+  if (smask) {
+    stream.dict.set(
+      "SMask",
+      createImageStream(width, height, "DeviceGray", (x, y) => (x ^ y) & 0xff)
+    );
+  }
+  const image = await PDFImage.buildImage({
+    xref: new XRef(new NullStream(), { imageResizer }),
+    image: stream,
     globalColorSpaceCache: new GlobalColorSpaceCache(),
     localColorSpaceCache: new LocalColorSpaceCache(),
   });

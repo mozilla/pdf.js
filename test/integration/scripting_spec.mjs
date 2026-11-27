@@ -29,14 +29,9 @@ import {
   scrollIntoView,
   waitForEntryInStorage,
   waitForSandboxTrip,
+  waitForScripting,
   waitForTimeout,
 } from "./test_utils.mjs";
-
-async function waitForScripting(page) {
-  await page.waitForFunction(
-    "window.PDFViewerApplication.scriptingReady === true"
-  );
-}
 
 async function typeAndWaitForSandbox(page, selector, value) {
   /**
@@ -429,6 +424,68 @@ describe("Interaction", () => {
 
     afterEach(async () => {
       await closePages(pages);
+    });
+
+    async function checkFlatteningActions(intent) {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          await waitForScripting(page);
+          const text = await page.evaluate(async flattenIntent => {
+            const app = window.PDFViewerApplication;
+            let savedData;
+            const download = app.downloadManager.download;
+            app.downloadManager.download = data => {
+              savedData = data;
+            };
+            try {
+              await app.downloadOrSave({
+                flatten: true,
+                intent: flattenIntent,
+              });
+            } finally {
+              app.downloadManager.download = download;
+            }
+
+            const loadingTask = window.pdfjsLib.getDocument({
+              data: savedData,
+            });
+            try {
+              const pdf = await loadingTask.promise;
+              const savedPage = await pdf.getPage(1);
+              const { items } = await savedPage.getTextContent();
+              return items.map(({ str }) => str);
+            } finally {
+              await loadingTask.destroy();
+            }
+          }, intent);
+
+          // Flatten the WillPrint/WillSave value, before DidPrint/DidSave.
+          const event = intent === "print" ? "Print" : "Save";
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .toContain(`Will${event}`);
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .not.toContain(intent === "print" ? "WillSave" : "WillPrint");
+          expect(text)
+            .withContext(`In ${browserName}`)
+            .not.toContain(`Did${event}`);
+          await page.waitForFunction(
+            `${getQuerySelector("50R")}.value === "Did${event}"`
+          );
+          await page.waitForFunction(
+            `${getQuerySelector("47R")}.value === "Will${event}"`
+          );
+        })
+      );
+    }
+
+    it("must run the appropriate document actions when flattening with print intent", async () => {
+      await checkFlatteningActions("print");
+    });
+
+    it("must run the appropriate document actions when flattening with display intent", async () => {
+      await checkFlatteningActions("display");
     });
 
     it("must execute WillPrint and DidPrint actions", async () => {

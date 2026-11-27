@@ -43,6 +43,11 @@
     user-select: text;
   }
 
+  /* Show the glyph boxes of the text layer fonts, see `#textLayer=visible`. */
+  &.debugFonts :is(span, br) {
+    color: red;
+  }
+
   /* We multiply the font size by --min-font-size, and then scale the text
    * elements by 1/--min-font-size. This allows us to effectively ignore the
    * minimum font size enforced by the browser, so that the text layer <span>s
@@ -50,6 +55,10 @@
   --min-font-size: 1;
   --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
   --min-font-size-inv: calc(1 / var(--min-font-size));
+
+  &.textLayerFonts {
+    font-variant-ligatures: none;
+  }
 
   > :not(.markedContent),
   .markedContent span:not(.markedContent) {

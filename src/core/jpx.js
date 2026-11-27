@@ -14,8 +14,6 @@
  */
 
 import { BaseException, shadow } from "../shared/util.js";
-import OpenJPEG from "../../external/openjpeg/openjpeg.js";
-import { Stream } from "./stream.js";
 import { WasmImage } from "./wasm_image.js";
 
 class JpxError extends BaseException {
@@ -25,15 +23,16 @@ class JpxError extends BaseException {
 }
 
 class JpxImage extends WasmImage {
-  _filename = "openjpeg.wasm";
-
-  _noWasmFilename = "openjpeg_nowasm_fallback.js";
-
   static get instance() {
-    return shadow(this, "instance", new JpxImage(/* trackInstance = */ true));
+    return shadow(
+      this,
+      "instance",
+      new JpxImage("openjpeg.wasm", "openjpeg_nowasm_fallback.js")
+    );
   }
 
   async decode(
+    context,
     bytes,
     {
       numComponents,
@@ -44,7 +43,13 @@ class JpxImage extends WasmImage {
   ) {
     const padComponents = numComponents !== undefined;
     numComponents ??= 4;
-    const module = await this._getModule(OpenJPEG);
+    const module = await this._getModule(
+      context,
+      () =>
+        import(
+          /* webpackChunkName: "openjpeg" */ "../../external/openjpeg/openjpeg.js"
+        )
+    );
 
     if (!module) {
       throw new JpxError("OpenJPEG failed to initialize");
@@ -73,24 +78,16 @@ class JpxImage extends WasmImage {
         throw new JpxError("Unknown error");
       }
       const { imageData } = module;
-      module.imageData = null;
-
       return imageData;
     } finally {
       if (ptr) {
         module._free(ptr);
       }
+      module.imageData = null;
     }
   }
 
   static parseImageProperties(stream) {
-    if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("IMAGE_DECODERS")) {
-      if (stream instanceof ArrayBuffer || ArrayBuffer.isView(stream)) {
-        stream = new Stream(stream);
-      } else {
-        throw new JpxError("Invalid data format, must be a TypedArray.");
-      }
-    }
     // No need to use OpenJPEG here since we're only getting very basic
     // information which are located in the first bytes of the file.
     let newByte = stream.getByte();

@@ -30,6 +30,7 @@ import {
   getRect,
   getSelector,
   getSpanRectFromText,
+  getTextLayerFonts,
   kbSelectAll,
   loadAndWait,
   scrollIntoView,
@@ -789,7 +790,7 @@ describe("Text layer", () => {
                 .withContext(`In ${browserName}`)
                 .toHaveRoughlySelected(
                   "rs as the railway projects under\n" +
-                    "development enter the construction phase (estimated a"
+                    "development enter the construction phase (estimated "
                 );
             })
           );
@@ -1602,6 +1603,115 @@ describe("Text layer", () => {
           expect(count).toBe(6);
         })
       );
+    });
+  });
+
+  describe("with the text layer fonts", () => {
+    let pages;
+
+    const load = async (debugTextLayerFonts = false) => {
+      pages = await loadAndWait(
+        "tracemonkey.pdf",
+        `.page[data-page-number = "1"] .endOfContent`,
+        undefined,
+        undefined,
+        debugTextLayerFonts ? { textLayer: "visible" } : undefined
+      );
+    };
+
+    afterEach(async () => {
+      await closePages(pages);
+    });
+
+    const checkFonts = async debug => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          const { color, fontFamily, hasTextLayerFonts } = await page.evaluate(
+            () => {
+              const span = [
+                ...document.querySelectorAll(
+                  `.page[data-page-number = "1"] .textLayer span`
+                ),
+              ].find(({ textContent }) => textContent === "Andreas Gal");
+              const style = getComputedStyle(span);
+              return {
+                color: style.color,
+                fontFamily: style.fontFamily,
+                hasTextLayerFonts: span
+                  .closest(".textLayer")
+                  .classList.contains("textLayerFonts"),
+              };
+            }
+          );
+          expect(color)
+            .withContext(browserName)
+            .toEqual(debug ? "rgb(255, 0, 0)" : "rgba(0, 0, 0, 0)");
+          expect(/^"?g_d\d+_tf\d+"?$/.test(fontFamily))
+            .withContext(`${browserName}: ${fontFamily}`)
+            .toBeTrue();
+          expect(hasTextLayerFonts).withContext(browserName).toBeTrue();
+        })
+      );
+    };
+
+    describe("by default", () => {
+      beforeEach(() => load());
+
+      it("must use the text layer fonts", async () => {
+        await checkFonts(false);
+      });
+    });
+
+    describe("with glyph boxes enabled", () => {
+      beforeEach(() => load(true));
+
+      it("must use the text layer fonts with the glyph boxes", async () => {
+        await checkFonts(true);
+      });
+    });
+
+    describe("when the pages are destroyed", () => {
+      beforeEach(() => load());
+
+      it("must unload the fonts of the pages removed from the cache", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const pagesCount = await page.evaluate(
+              () => window.PDFViewerApplication.pagesCount
+            );
+            for (let i = 2; i <= pagesCount; i++) {
+              await page.evaluate(n => {
+                window.PDFViewerApplication.page = n;
+              }, i);
+              await page.waitForSelector(
+                `.page[data-page-number = "${i}"] .textLayer .endOfContent`
+              );
+            }
+            // The first pages aren't in the cache anymore.
+            expect(await page.$(`.page[data-page-number = "1"] .textLayer`))
+              .withContext(browserName)
+              .toBeNull();
+
+            const { loaded, used } = await getTextLayerFonts(page);
+            expect(used.length).withContext(browserName).toBeGreaterThan(0);
+            expect(loaded).withContext(browserName).toEqual(used);
+          })
+        );
+      });
+
+      it("must unload the fonts when the document is closed", async () => {
+        await Promise.all(
+          pages.map(async ([browserName, page]) => {
+            const { loaded } = await getTextLayerFonts(page);
+            expect(loaded.length).withContext(browserName).toBeGreaterThan(0);
+
+            await page.evaluate(() => window.PDFViewerApplication.close());
+            expect((await getTextLayerFonts(page)).loaded)
+              .withContext(browserName)
+              .toEqual([]);
+          })
+        );
+      });
     });
   });
 });

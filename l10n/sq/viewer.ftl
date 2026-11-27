@@ -144,6 +144,27 @@ pdfjs-document-properties-linearized = Parje e Shpjetë në Web:
 pdfjs-document-properties-linearized-yes = Po
 pdfjs-document-properties-linearized-no = Jo
 pdfjs-document-properties-close-button = Mbylleni
+pdfjs-digital-signature-properties-view-certificate = Shiheni dëshminë
+# Shown beneath an invalid signature card to explain why verification
+# failed. The text comes from NSS (e.g. "Signature integrity has been
+# compromised", "PKCS#7 signature could not be parsed") and is not
+# itself localized — it is the underlying error message produced by
+# the verification backend.
+# Variables:
+#   $reason (String) - error message describing why the signature
+#                      could not be verified.
+pdfjs-digital-signature-properties-reason = Arsye: { $reason }
+# Variables:
+#   $dateObj (Date) - the signing time from the /Sig dict's /M entry.
+pdfjs-digital-signature-properties-timestamp = Vulë kohore: { DATETIME($dateObj, dateStyle: "short", timeStyle: "medium") }
+# Variables:
+#   $count (Number) - number of nested sub-signatures (one per earlier
+#                     incremental revision of the document).
+pdfjs-digital-signature-properties-sub-signatures =
+    { $count ->
+        [one] Nën-nënshkrim ({ $count })
+       *[other] Nën-nënshkrime ({ $count })
+    }
 
 ## Print
 
@@ -303,6 +324,12 @@ pdfjs-editor-highlight-editor =
 # “Drawing” is a noun, the string is used on the editor for drawings.
 pdfjs-editor-ink-editor =
     .aria-label = Përpunues vizatimesh
+# Used when a signature editor is selected/hovered.
+# Variables:
+#   $description (String) - a string describing/labeling the signature.
+pdfjs-editor-signature-editor2 =
+    .aria-description = Përpunues nënshkrimesh: { $description }
+    .aria-label = Përpunues nënshkrimesh
 # Used when a signature editor is selected/hovered.
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
@@ -689,8 +716,77 @@ pdfjs-views-manager-paste-button-after =
 # Badge used to promote a new feature in the UI, keep it as short as possible.
 # It's spelled uppercase for English, but it can be translated as usual.
 pdfjs-new-badge-content = E RE
+pdfjs-views-manager-waiting-for-file = Po ngarkohet kartelë…
 pdfjs-toggle-views-manager-button1 =
     .title = Administroni faqe
+
+## Digital signature properties (signature verification panel)
+
+pdfjs-digital-signature-properties-button =
+    .aria-label = Veti nënshkrimi dixhital
+    .title = Veti nënshkrimi dixhital
+pdfjs-digital-signature-properties-button-label = Veti nënshkrimi dixhital
+
+## Banner shown above the signature list summarising the overall
+## verification state of the document. Each variant is selected by the
+## viewer based on the worst per-signature status; one signature is
+## enough to lower the banner.
+##
+## Variables:
+##   $count (Number) - number of signatures at the worst level.
+
+pdfjs-digital-signature-properties-banner-verified = Dokumenti qe nënshkruar me një nënshkrimi dixhital të vlefshëm
+pdfjs-digital-signature-properties-banner-unknown =
+    { $count ->
+        [one] Dokumenti u nënshkrua, por { $count } nënshkrim dixhital s’u verifikuan dot
+       *[other] Dokumenti u nënshkrua, por { $count } nënshkrime dixhitale s’u verifikuan dot
+    }
+pdfjs-digital-signature-properties-banner-untrusted =
+    { $count ->
+        [one] Dokument i nënshkruar me { $count } dëshmi që nuk besohet
+       *[other] Dokument i nënshkruar me { $count } dëshmi që nuk besohen
+    }
+pdfjs-digital-signature-properties-banner-expired =
+    { $count ->
+        [one] Dokument i nënshkruar me { $count } dëshmi të skaduar
+       *[other] Dokument i nënshkruar me { $count } dëshmi të skaduara
+    }
+pdfjs-digital-signature-properties-banner-invalid =
+    { $count ->
+        [one] Dokumenti ka { $count } nënshkrim dixhital të pavlefshëm
+       *[other] Dokumenti ka { $count } nënshkrime dixhitale të pavlefshëm
+    }
+pdfjs-digital-signature-properties-banner-revoked =
+    { $count ->
+        [one] Dokument i nënshkruar me { $count } dëshmi të shfuqizuar
+       *[other] Dokument i nënshkruar me { $count } dëshmi të shfuqizuara
+    }
+
+## Per-signature status row. Only three distinct strings are needed:
+## the signature crypto either verified (the cert chain may still be
+## untrusted/expired/revoked, but that's surfaced on the cert row
+## below), or it failed, or its sub-format isn't supported.
+
+pdfjs-digital-signature-properties-status-verified = Gjendje: Nënshkrim i verifikuar
+pdfjs-digital-signature-properties-status-invalid = Gjendje: Nënshkrim i pavlefshëm
+pdfjs-digital-signature-properties-status-unknown = Gjendje: S’arrihet të verifikohet (i pambuluar)
+
+## Per-signature certificate row. The variants with an issuer / date in
+## parentheses embed fully-localized context — no English fall-through.
+##
+## Variables:
+##   $issuer (String) - issuer or subject common name from the cert.
+##   $dateObj (Date)  - notAfter date for the expired-with-date form.
+
+pdfjs-digital-signature-properties-certificate-trusted = Dëshmi: E besuar ({ $issuer })
+pdfjs-digital-signature-properties-certificate-unknown = Dëshmi: S’ka
+pdfjs-digital-signature-properties-certificate-untrusted = Dëshmi: E pabesuar
+pdfjs-digital-signature-properties-certificate-untrusted-unknown-issuer = Dëshmi: Lëshues i panjohur ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-self-signed = Dëshmi: E vetënënshkuar ({ $issuer })
+pdfjs-digital-signature-properties-certificate-untrusted-untrusted-issuer = Dëshmi: Lëshues jo i besuar ({ $issuer })
+pdfjs-digital-signature-properties-certificate-expired = Dëshmi: E skaduar
+pdfjs-digital-signature-properties-certificate-expired-with-date = Dëshmi: E skaduar ({ DATETIME($dateObj, dateStyle: "medium") })
+pdfjs-digital-signature-properties-certificate-revoked = Dëshmi: E shfuqizuar
 
 ## Main menu for adding/removing signatures
 

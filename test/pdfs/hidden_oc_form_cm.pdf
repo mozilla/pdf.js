@@ -1,0 +1,40 @@
+%PDF-1.7
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R /OCProperties << /OCGs [5 0 R] /D << /OFF [5 0 R] >> >> >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] /Resources << /Properties << /oc1 5 0 R >> /XObject << /Fm0 6 0 R >> >> /Contents 4 0 R  >>
+endobj
+4 0 obj
+<<  /Length 50 >>
+stream
+/OC /oc1 BDC /Fm0 Do EMC 1 0 0 rg 10 10 40 40 re f
+endstream
+endobj
+5 0 obj
+<< /Type /OCG /Name (Hidden) >>
+endobj
+6 0 obj
+<< /Type /XObject /Subtype /Form /BBox [0 0 200 200] /Length 42 >>
+stream
+1 0 0 1 100 100 cm 0 0 1 rg 0 0 50 50 re f
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000015 00000 n 
+0000000120 00000 n 
+0000000177 00000 n 
+0000000337 00000 n 
+0000000438 00000 n 
+0000000485 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+627
+%%EOF

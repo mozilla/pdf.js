@@ -21,6 +21,7 @@ import {
   AnnotationEditorParamsType,
   AnnotationEditorPrefix,
   AnnotationEditorType,
+  createPromiseCapability,
   FeatureTest,
   getUuid,
   makeArr,
@@ -281,16 +282,27 @@ class ImageManager {
     return this.getFromUrl(data.url);
   }
 
-  getFromCanvas(id, canvas) {
+  /**
+   * @param {string} id
+   * @param {HTMLCanvasElement} canvas
+   * @param {number} [rotation] - Annotation rotation in degrees.
+   */
+  getFromCanvas(id, canvas, rotation = 0) {
     this.#cache ||= new Map();
     let data = this.#cache.get(id);
     if (data?.bitmap) {
       data.refCounter += 1;
       return data;
     }
-    const offscreen = new OffscreenCanvas(canvas.width, canvas.height);
+    const { width, height } = canvas;
+    const offscreen =
+      rotation % 180 === 0
+        ? new OffscreenCanvas(width, height)
+        : new OffscreenCanvas(height, width);
     const ctx = offscreen.getContext("2d");
-    ctx.drawImage(canvas, 0, 0);
+    ctx.translate(offscreen.width / 2, offscreen.height / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.drawImage(canvas, -width / 2, -height / 2);
     data = {
       bitmap: offscreen.transferToImageBitmap(),
       id: `image_${this.#baseId}_${this.#id++}`,
@@ -985,7 +997,9 @@ class AnnotationEditorUIManager {
     enableNewAltTextWhenAddingImage,
     mlManager,
     editorUndoBar,
-    supportsPinchToZoom
+    supportsPinchToZoom,
+    keepToolbarInPage,
+    useButtonRoleForUnselectedSignatures
   ) {
     const signal = (this._signal = this.#abortController.signal);
     this.#container = container;
@@ -1048,6 +1062,9 @@ class AnnotationEditorUIManager {
     this.isShiftKeyDown = false;
     this._editorUndoBar = editorUndoBar || null;
     this._supportsPinchToZoom = supportsPinchToZoom !== false;
+    this._keepToolbarInPage = keepToolbarInPage === true;
+    this._useButtonRoleForUnselectedSignatures =
+      useButtonRoleForUnselectedSignatures === true;
     commentManager?.setSidebarUiManager(this);
 
     if (typeof PDFJSDev !== "undefined" && PDFJSDev.test("TESTING")) {
@@ -1273,7 +1290,7 @@ class AnnotationEditorUIManager {
     if (this.#allLayers.has(pageNumber - 1)) {
       return;
     }
-    const { resolve, promise } = Promise.withResolvers();
+    const { resolve, promise } = createPromiseCapability();
     const onEditorsRendered = evt => {
       if (evt.pageNumber === pageNumber) {
         this._eventBus.off("editorsrendered", onEditorsRendered);
@@ -2128,7 +2145,7 @@ class AnnotationEditorUIManager {
       }
     }
 
-    this.#updateModeCapability = Promise.withResolvers();
+    this.#updateModeCapability = createPromiseCapability();
     this.#currentDrawingSession?.commitOrRemove();
 
     if (this.#mode === AnnotationEditorType.POPUP) {
