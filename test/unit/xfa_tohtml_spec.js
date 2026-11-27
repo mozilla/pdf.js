@@ -829,4 +829,103 @@ describe("XFAFactory", function () {
       expect(sizes.get(element)).withContext(element).toEqual(sizes.get(span));
     }
   });
+
+  it("should use a page set again once its page areas are used up", async () => {
+    const pageSets = [
+      // The page set can be used again any number of times.
+      "",
+      // The page set is used up too, so the layout starts it again.
+      `<occur max="1"/>`,
+    ];
+    for (const pageSetOccur of pageSets) {
+      const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        ${pageSetOccur}
+        <pageArea>
+          <occur max="1"/>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+        </pageArea>
+      </pageSet>
+      ${["first", "second", "third"]
+        .map(
+          name => `
+      <subform name="${name}">
+        <breakBefore targetType="pageArea" startNew="1"/>
+        <draw w="1pt" h="1pt"><value><text>${name}</text></value></draw>
+      </subform>`
+        )
+        .join("")}
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+      `;
+      const factory = new XFAFactory(new Map([["xdp:xdp", xml]]));
+      factory.setFonts([]);
+
+      expect(await factory.getNumPages())
+        .withContext(pageSetOccur || "no occur")
+        .toEqual(3);
+    }
+  });
+
+  it("should start a nested page set again with its parent", async () => {
+    const xml = `
+<?xml version="1.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/">
+  <template xmlns="http://www.xfa.org/schema/xfa-template/3.3">
+    <subform name="root" mergeMode="matchTemplate">
+      <pageSet>
+        <pageArea name="a">
+          <occur max="1"/>
+          <contentArea x="0pt" w="456pt" h="789pt"/>
+          <medium stock="default" short="456pt" long="789pt"/>
+        </pageArea>
+        <pageSet>
+          <occur max="1"/>
+          <pageArea name="b">
+            <occur max="1"/>
+            <contentArea x="0pt" w="456pt" h="789pt"/>
+            <medium stock="default" short="456pt" long="789pt"/>
+          </pageArea>
+        </pageSet>
+      </pageSet>
+      ${["first", "second", "third", "fourth"]
+        .map(
+          name => `
+      <subform name="${name}">
+        <breakBefore targetType="pageArea" startNew="1"/>
+        <draw w="1pt" h="1pt"><value><text>${name}</text></value></draw>
+      </subform>`
+        )
+        .join("")}
+    </subform>
+  </template>
+  <xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+    <xfa:data>
+    </xfa:data>
+  </xfa:datasets>
+</xdp:xdp>
+    `;
+    const factory = new XFAFactory(new Map([["xdp:xdp", xml]]));
+    factory.setFonts([]);
+
+    expect(await factory.getNumPages()).toEqual(4);
+
+    const pages = await factory.getPages();
+    expect(pages.children.map(page => page.attributes.xfaName)).toEqual([
+      "a",
+      "b",
+      "a",
+      "b",
+    ]);
+  });
 });
