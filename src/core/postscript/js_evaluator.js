@@ -23,7 +23,8 @@ import { MathClamp } from "../../shared/math_clamp.js";
 import { TOKEN } from "./lexer.js";
 
 // Consecutive integers for a dense jump table in _execute.
-// 2-slot: ARG, CONST, IF, JUMP, SHIFT. 4-slot: STORE. All others: 1 slot.
+// 2-slot: ARG, CONST, IF, JUMP, SHIFT, TEE_TMP, LOAD_TMP, STORE_TMP.
+// 4-slot: STORE. All others: 1 slot.
 const OP = {
   ARG: 0, // [ARG, idx]
   CONST: 1, // [CONST, val]
@@ -67,6 +68,7 @@ const OP = {
   MAX: 38,
   TEE_TMP: 39, // [TEE_TMP, slot]  peek top of stack → tmp[slot], leave on stack
   LOAD_TMP: 40, // [LOAD_TMP, slot]  push tmp[slot]
+  STORE_TMP: 41, // [STORE_TMP, slot]  pop() → tmp[slot]
 };
 
 const _DEG_TO_RAD = Math.PI / 180;
@@ -279,8 +281,60 @@ class PsJsCompiler {
     return true;
   }
 
+  /**
+   * Compute the shared nodes used in `node`, which haven't been compiled yet,
+   * and store them in their tmp slots.
+   * A shared node is stored in a tmp slot where it's compiled for the first
+   * time, so this mustn't happen in a branch of a ternary node: the slot
+   * wouldn't be set when the other branch is taken. Since the operators don't
+   * have any side effect, computing these nodes unconditionally is fine.
+   */
+  _hoistSharedNodes(node) {
+    if (this._tmpMap.has(node)) {
+      return true;
+    }
+    switch (node.type) {
+      case PS_NODE.unary:
+        if (!this._hoistSharedNodes(node.operand)) {
+          return false;
+        }
+        break;
+      case PS_NODE.binary:
+        if (
+          !this._hoistSharedNodes(node.second) ||
+          !this._hoistSharedNodes(node.first)
+        ) {
+          return false;
+        }
+        break;
+      case PS_NODE.ternary:
+        if (
+          !this._hoistSharedNodes(node.cond) ||
+          !this._hoistSharedNodes(node.then) ||
+          !this._hoistSharedNodes(node.otherwise)
+        ) {
+          return false;
+        }
+        break;
+    }
+    if (!node.shared) {
+      return true;
+    }
+    if (!this._compileNodeImpl(node)) {
+      return false;
+    }
+    const slot = this._nextTmp++;
+    this._tmpMap.set(node, slot);
+    this.ir.push(OP.STORE_TMP, slot);
+    return true;
+  }
+
   _compileTernary(node) {
-    if (!this._compileNode(node.cond)) {
+    if (
+      !this._hoistSharedNodes(node.then) ||
+      !this._hoistSharedNodes(node.otherwise) ||
+      !this._compileNode(node.cond)
+    ) {
       return false;
     }
 
@@ -508,6 +562,9 @@ class PsJsCompiler {
           break;
         case OP.LOAD_TMP:
           stack[sp++] = tmp[ir[ip++] | 0];
+          break;
+        case OP.STORE_TMP:
+          tmp[ir[ip++] | 0] = stack[--sp];
           break;
       }
     }

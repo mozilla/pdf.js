@@ -7,6 +7,13 @@
     "type": "eq"
   },
   {
+    "id": "postscript-type4-shared-branch",
+    "file": "pdfs/postscript_type4_shared_branch.pdf",
+    "md5": "e5b4be02df3e63ab2565972f6ec5e331",
+    "rounds": 1,
+    "type": "eq"
+  },
+  {
     "id": "bug1755201",
     "file": "pdfs/bug1755201.pdf",
     "md5": "cece14097812d8a1f69e86a51e4a3804",

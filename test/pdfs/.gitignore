@@ -2,6 +2,7 @@
 *.error
 
 !postscript_type4_many_outputs.pdf
+!postscript_type4_shared_branch.pdf
 !boundingBox_invalid.pdf
 !pdkids.pdf
 !tracemonkey.pdf
