@@ -87,6 +87,45 @@ describe("accessibility", () => {
       );
     });
 
+    it("must expose the text to the browser's accessibility tree", async () => {
+      await Promise.all(
+        pages.map(async ([browserName, page]) => {
+          if (browserName === "firefox") {
+            // Puppeteer can only read the accessibility tree through CDP.
+            return;
+          }
+
+          // Chrome ignores aria-owns for an element without a layout box, which
+          // left the headings and paragraphs empty (issue 20790).
+          await page.waitForSelector(".textLayer .endOfContent");
+          const snapshot = await page.accessibility.snapshot({
+            interestingOnly: false,
+          });
+          const textOf = node =>
+            node.role === "StaticText"
+              ? node.name
+              : (node.children ?? []).map(textOf).join("");
+          const texts = [];
+          const walk = node => {
+            if (node.role === "heading" || node.role === "paragraph") {
+              texts.push(textOf(node));
+              return;
+            }
+            node.children?.forEach(walk);
+          };
+          walk(snapshot);
+          expect(texts)
+            .withContext(`In ${browserName}`)
+            .toEqual([
+              "Heading 1",
+              "This paragraph 1.",
+              "Heading 2",
+              "This paragraph 2.",
+            ]);
+        })
+      );
+    });
+
     it("must check that the struct tree is still there after zooming", async () => {
       await Promise.all(
         pages.map(async ([browserName, page]) => {
