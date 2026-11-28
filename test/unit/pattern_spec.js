@@ -19,6 +19,7 @@ import {
   LocalColorSpaceCache,
 } from "../../src/core/image_utils.js";
 import { compilePatternInfo } from "../../src/core/obj_bin_transform_core.js";
+import { IDENTITY_MATRIX } from "../../src/core/core_utils.js";
 import { Pattern } from "../../src/core/pattern.js";
 import { PatternInfo } from "../../src/display/obj_bin_transform_display.js";
 
@@ -71,9 +72,13 @@ describe("pattern", function () {
       );
     }
 
+    function getMeshIR(shading) {
+      return shading.getIR(shading.getSamplingGrid(IDENTITY_MATRIX));
+    }
+
     it("must convert Type 1 shading into packed mesh IR", async function () {
       const shading = await createFunctionBasedShading();
-      const ir = shading.getIR();
+      const ir = getMeshIR(shading);
 
       expect(ir[0]).toEqual("Mesh");
       expect(ir[1]).toEqual(1);
@@ -120,7 +125,7 @@ describe("pattern", function () {
         },
         numOutputs: numComps,
       });
-      const [, , , colors] = shading.getIR();
+      const [, , , colors] = getMeshIR(shading);
 
       const totalVertices = (64 + 1) ** 2;
       expect(batchStarts).toBeGreaterThan(1);
@@ -132,7 +137,7 @@ describe("pattern", function () {
       const shading = await createFunctionBasedShading({
         background: [0.25, 0.5, 0.75],
       });
-      const ir = shading.getIR();
+      const ir = getMeshIR(shading);
       const buffer = compilePatternInfo(ir);
       const reconstructedIR = new PatternInfo(buffer).getIR();
 
@@ -152,7 +157,7 @@ describe("pattern", function () {
         },
         numOutputs: 1,
       });
-      const [, , , colors] = shading.getIR();
+      const [, , , colors] = getMeshIR(shading);
 
       expect(colors.length).toEqual(144);
       expect(Array.from(colors)).toEqual(new Array(144).fill(0));

@@ -19,6 +19,7 @@ import {
   LocalColorSpaceCache,
 } from "../../src/core/image_utils.js";
 import { BaseStream } from "../../src/core/base_stream.js";
+import { IDENTITY_MATRIX } from "../../src/core/core_utils.js";
 import { Pattern } from "../../src/core/pattern.js";
 import { PDFFunctionFactory } from "../../src/core/function.js";
 
@@ -53,7 +54,7 @@ class ShadingInput {
       new GlobalColorSpaceCache(),
       new LocalColorSpaceCache()
     );
-    return pattern.getIR();
+    return pattern.getIR(pattern.getSamplingGrid?.(IDENTITY_MATRIX));
   }
 }
 
