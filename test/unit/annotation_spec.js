@@ -2037,6 +2037,69 @@ describe("annotation", function () {
       expect(opList.argsArray[1]).toEqual(["#1a334c"]);
     });
 
+    it("should render the value for printing when there's no appearance stream (issue 20266)", async function () {
+      textWidgetDict.set("V", "test print");
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.hasAppearance).toEqual(true);
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        new Map()
+      );
+      expect(appearance).toEqual(
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
+          " 2 3.72 Td (test print) Tj ET Q EMC"
+      );
+    });
+
+    it("should render the value for printing when the appearance is a string (issue 20266)", async function () {
+      textWidgetDict.set("V", "test print");
+      textWidgetDict.set("AP", "test print");
+
+      const textWidgetRef = Ref.get(271, 0);
+      const xref = new XRefMock([
+        { ref: textWidgetRef, data: textWidgetDict },
+        helvRefObj,
+      ]);
+      const task = new WorkerTask("test print");
+      partialEvaluator.xref = xref;
+
+      const annotation = await AnnotationFactory.create(
+        xref,
+        textWidgetRef,
+        annotationGlobalsMock,
+        idFactoryMock
+      );
+      expect(annotation.data.hasAppearance).toEqual(true);
+
+      const appearance = await annotation._getAppearance(
+        partialEvaluator,
+        task,
+        RenderingIntentFlag.PRINT,
+        new Map()
+      );
+      expect(appearance).toEqual(
+        "/Tx BMC q BT /Helv 5 Tf 1 0 0 1 0 0 Tm" +
+          " 2 3.72 Td (test print) Tj ET Q EMC"
+      );
+    });
+
     it("should render auto-sized text for printing", async function () {
       textWidgetDict.set("DA", "/Helv 0 Tf");
 
