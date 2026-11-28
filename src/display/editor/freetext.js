@@ -757,8 +757,8 @@ class FreeTextEditor extends AnnotationEditor {
     }
   }
 
-  #serializeContent() {
-    return this.#content.replaceAll("\xa0", " ");
+  static #serializeContent(content) {
+    return content.replaceAll("\xa0", " ");
   }
 
   static #deserializeContent(content) {
@@ -808,7 +808,7 @@ class FreeTextEditor extends AnnotationEditor {
         annotationType: AnnotationEditorType.FREETEXT,
         color: Array.from(fontColor),
         fontSize,
-        value: textContent.join("\n"),
+        value: FreeTextEditor.#serializeContent(textContent.join("\n")),
         position: textPosition,
         pageIndex: pageNumber - 1,
         rect: rect.slice(0),
@@ -851,37 +851,42 @@ class FreeTextEditor extends AnnotationEditor {
     const serialized = Object.assign(super.serialize(isForCopying), {
       color,
       fontSize: this.#fontSize,
-      value: this.#serializeContent(),
+      value: FreeTextEditor.#serializeContent(this.#content),
     });
+    if (!isForCopying && this.annotationElementId) {
+      const {
+        value,
+        fontSize,
+        color: initialColor,
+        pageIndex,
+        rect,
+      } = this._initialData;
+      serialized.appearanceChanged =
+        serialized.value !== value ||
+        serialized.fontSize !== fontSize ||
+        color.some((c, i) => c !== initialColor[i]);
+      if (!serialized.appearanceChanged) {
+        if (
+          !this.hasEditedComment &&
+          !this._hasBeenMoved &&
+          serialized.pageIndex === pageIndex
+        ) {
+          return null;
+        }
+        // Keep the original appearance at its original size.
+        serialized.rect = this._getTranslatedRect(rect);
+      }
+    }
+
     this.addComment(serialized);
-
     if (isForCopying) {
-      // Don't add the id when copying because the pasted editor mustn't be
-      // linked to an existing annotation.
+      // Don't link the pasted editor to the existing annotation.
       serialized.isCopy = true;
-      return serialized;
+    } else {
+      serialized.id = this.annotationElementId;
     }
-
-    if (this.annotationElementId && !this.#hasElementChanged(serialized)) {
-      return null;
-    }
-
-    serialized.id = this.annotationElementId;
 
     return serialized;
-  }
-
-  #hasElementChanged(serialized) {
-    const { value, fontSize, color, pageIndex } = this._initialData;
-
-    return (
-      this.hasEditedComment ||
-      this._hasBeenMoved ||
-      serialized.value !== value ||
-      serialized.fontSize !== fontSize ||
-      serialized.color.some((c, i) => c !== color[i]) ||
-      serialized.pageIndex !== pageIndex
-    );
   }
 
   /** @inheritdoc */
